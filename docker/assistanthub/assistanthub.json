@@ -1,0 +1,55 @@
+{
+  "Webserver": {
+    "Hostname": "*",
+    "Port": 8800,
+    "Ssl": false
+  },
+  "Database": {
+    "Type": "Sqlite",
+    "Filename": "assistanthub.db",
+    "Hostname": "",
+    "Port": 0,
+    "DatabaseName": "",
+    "Username": "",
+    "Password": ""
+  },
+  "S3": {
+    "Region": "us-west-1",
+    "BucketName": "default",
+    "AccessKey": "default",
+    "SecretKey": "default",
+    "EndpointUrl": "http://less3:8000",
+    "UseSsl": false,
+    "BaseUrl": "http://less3:8000"
+  },
+  "DocumentAtom": {
+    "Endpoint": "http://documentatom-server:8000",
+    "AccessKey": "default"
+  },
+  "Chunking": {
+    "Endpoint": "http://partio-server:8400",
+    "AccessKey": "default",
+    "EndpointId": "default"
+  },
+  "Inference": {
+    "Provider": "Ollama",
+    "Endpoint": "http://ollama:11434",
+    "ApiKey": "default",
+    "DefaultModel": "gemma3:4b"
+  },
+  "RecallDb": {
+    "Endpoint": "http://recalldb-server:8600",
+    "TenantId": "default",
+    "AccessKey": "default"
+  },
+  "Logging": {
+    "ConsoleLogging": true,
+    "EnableColors": false,
+    "FileLogging": true,
+    "LogDirectory": "./logs/",
+    "LogFilename": "assistanthub.log",
+    "IncludeDateInFilename": true,
+    "MinimumSeverity": 1,
+    "Servers": []
+  }
+}

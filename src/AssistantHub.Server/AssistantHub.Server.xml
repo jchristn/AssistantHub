@@ -1,0 +1,709 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AssistantHub.Server</name>
+    </assembly>
+    <members>
+        <member name="T:AssistantHub.Server.AssistantHubServer">
+            <summary>
+            AssistantHub server.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.AssistantHubServer.Main(System.String[])">
+            <summary>
+            Entry point.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.AssistantHandler">
+            <summary>
+            Handles assistant CRUD routes with ownership checks.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.PutAssistantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/assistants - Create a new assistant.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.GetAssistantsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants - List assistants (non-admins see only their own).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.GetAssistantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId} - Get assistant by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.PutAssistantByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/assistants/{assistantId} - Update assistant by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.DeleteAssistantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/assistants/{assistantId} - Delete assistant and cascade settings, documents, feedback.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.HeadAssistantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/assistants/{assistantId} - Check assistant existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.AssistantSettingsHandler">
+            <summary>
+            Handles assistant settings GET and PUT routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.GetSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/settings - Get settings for an assistant.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.PutSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/assistants/{assistantId}/settings - Create or update assistant settings.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.AuthenticateHandler">
+            <summary>
+            Handles POST /v1.0/authenticate route.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AuthenticateHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AuthenticateHandler.PostAuthenticateAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/authenticate - Authenticate by email+password or bearer token.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.AuthenticationHandler">
+            <summary>
+            Handles bearer token authentication for protected routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AuthenticationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AuthenticationHandler.HandleAuthenticateRequestAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Extract and validate a bearer token from the request, setting user metadata on the context.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.BucketHandler">
+            <summary>
+            Handles S3 bucket CRUD routes using AmazonS3Client (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.PutBucketAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/buckets - Create a new bucket.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetBucketsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/buckets - List all buckets.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetBucketAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/buckets/{name} - Get a specific bucket by name.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.DeleteBucketAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/buckets/{name} - Delete a bucket by name.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.HeadBucketAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/buckets/{name} - Check bucket existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetObjectsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/buckets/{name}/objects - List objects in a bucket.
+            Query params: prefix, delimiter (default "/").
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetObjectMetadataAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/buckets/{name}/objects/metadata - Get object metadata.
+            Query param: key (required).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.DeleteObjectAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/buckets/{name}/objects - Delete an object.
+            Query param: key (required).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.DownloadObjectAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/buckets/{name}/objects/download - Download an object.
+            Query param: key (required).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.PutObjectAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/buckets/{name}/objects - Create an empty object (directory marker).
+            Query param: key (required).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.UploadObjectAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/buckets/{name}/objects/upload - Upload a file.
+            Query param: key (required).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.ChatHandler">
+            <summary>
+            Handles public assistant info, chat, and feedback submission routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantPublicAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/public - Public assistant info.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostChatAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/chat - OpenAI-compatible chat completion endpoint.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/feedback - Public feedback submission.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.CollectionHandler">
+            <summary>
+            Handles collection CRUD routes by proxying to RecallDB (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.PutCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/collections - Create a new collection.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetCollectionsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections - List collections via RecallDB enumerate.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections/{collectionId} - Get collection by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.PutCollectionByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/collections/{collectionId} - Update collection by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.DeleteCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/collections/{collectionId} - Delete collection by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.HeadCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/collections/{collectionId} - Check collection existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections/{collectionId}/records - List records in a collection via RecallDB enumerate.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections/{collectionId}/records/{recordId} - Get a record by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.DeleteRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/collections/{collectionId}/records/{recordId} - Delete a record by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.PutRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/collections/{collectionId}/records - Create a new record (document) in a collection.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.ConfigurationHandler">
+            <summary>
+            Handles server configuration routes (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.GetConfigurationAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/configuration - Return current settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.PutConfigurationAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/configuration - Update settings and persist to disk.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.CredentialHandler">
+            <summary>
+            Handles credential CRUD routes (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.PutCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/credentials - Create a new credential.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.GetCredentialsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/credentials - List credentials.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.GetCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/credentials/{credentialId} - Get credential by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.PutCredentialByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/credentials/{credentialId} - Update credential by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.DeleteCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/credentials/{credentialId} - Delete credential by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.HeadCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/credentials/{credentialId} - Check credential existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.DocumentHandler">
+            <summary>
+            Handles document upload, CRUD, and existence check routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.PutDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/documents - Upload document and trigger fire-and-forget ingestion.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/documents - List documents (non-admins see only their assistants' documents).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/documents/{documentId} - Get document by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DeleteDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/documents/{documentId} - Delete document and S3 object.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.HeadDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/documents/{documentId} - Check document existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.FeedbackHandler">
+            <summary>
+            Handles feedback list, read, and delete routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.GetFeedbackListAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/feedback - List feedback (non-admins see only their assistants' feedback).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.GetFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/feedback/{feedbackId} - Get feedback by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.DeleteFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/feedback/{feedbackId} - Delete feedback by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.HandlerBase">
+            <summary>
+            Base class for route handlers providing shared dependencies and helper methods.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Database">
+            <summary>Database driver instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Logging">
+            <summary>Logging module instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Settings">
+            <summary>Application settings.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Authentication">
+            <summary>Authentication service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Storage">
+            <summary>Storage service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Ingestion">
+            <summary>Ingestion service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Retrieval">
+            <summary>Retrieval service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.Inference">
+            <summary>Inference service instance.</summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.GetMetadata(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Retrieve or initialize the metadata dictionary on the context.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Metadata dictionary.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.IsAdmin(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Check whether the authenticated user is an admin.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>True if admin.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.GetUser(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Retrieve the authenticated user from context metadata.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Authenticated user.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.BuildEnumerationQuery(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Build an enumeration query from request query parameters.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Enumeration query.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.InferenceHandler">
+            <summary>
+            Handles inference model listing and pull routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.GetModelsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/models - List available models on the configured inference provider.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.PostPullModelAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/models/pull - Start pulling a model in the background (admin only).
+            Returns 202 Accepted immediately. Poll GET /v1.0/models/pull/status for progress.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.GetPullStatusAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/models/pull/status - Get the current pull operation status (admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.DeleteModelAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/models/{modelName} - Delete a model (admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RootHandler">
+            <summary>
+            Handles GET / and HEAD / routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RootHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RootHandler.GetRootAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET / - Returns product name, version, and timestamp.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RootHandler.HeadRootAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD / - Returns 200.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.UserHandler">
+            <summary>
+            Handles user CRUD routes (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.PutUserAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/users - Create a new user.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.GetUsersAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/users - List users.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.GetUserAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/users/{userId} - Get user by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.PutUserByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/users/{userId} - Update user by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.DeleteUserAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/users/{userId} - Delete user and cascade credentials.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.HeadUserAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/users/{userId} - Check user existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+    </members>
+</doc>

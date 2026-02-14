@@ -1,0 +1,255 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { ApiClient } from '../utils/api';
+import AlertModal from '../components/AlertModal';
+
+function AssistantSettingsView() {
+  const { serverUrl, credential } = useAuth();
+  const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const [assistants, setAssistants] = useState([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState(null);
+  const [dirty, setDirty] = useState(false);
+
+  const loadAssistants = useCallback(async () => {
+    try {
+      const result = await api.getAssistants({ maxResults: 1000 });
+      const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+      setAssistants(items);
+      if (items.length === 1) {
+        setSelectedId(items[0].Id);
+        loadSettings(items[0].Id);
+      }
+    } catch (err) {
+      console.error('Failed to load assistants:', err);
+    }
+  }, [serverUrl, credential]);
+
+  useEffect(() => { loadAssistants(); }, [loadAssistants]);
+
+  const loadSettings = useCallback(async (id) => {
+    if (!id) { setSettings(null); return; }
+    setLoading(true);
+    try {
+      const result = await api.getAssistantSettings(id);
+      setSettings({
+        Temperature: result?.Temperature ?? 0.7,
+        TopP: result?.TopP ?? 1.0,
+        SystemPrompt: result?.SystemPrompt || 'You are a helpful assistant. Use the provided context to answer questions accurately.',
+        MaxTokens: result?.MaxTokens || 4096,
+        ContextWindow: result?.ContextWindow || 8192,
+        Model: result?.Model || 'gpt-4o',
+        EnableRag: result?.EnableRag ?? false,
+        CollectionId: result?.CollectionId || '',
+        RetrievalTopK: result?.RetrievalTopK || 5,
+        RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
+        InferenceProvider: result?.InferenceProvider || 'OpenAI',
+        InferenceEndpoint: result?.InferenceEndpoint || '',
+        InferenceApiKey: result?.InferenceApiKey || '',
+        Title: result?.Title || '',
+        LogoUrl: result?.LogoUrl || '',
+        FaviconUrl: result?.FaviconUrl || '',
+        Streaming: result?.Streaming ?? false,
+      });
+      setDirty(false);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to load settings' });
+      setSettings(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [serverUrl, credential]);
+
+  const handleSelectAssistant = (e) => {
+    const id = e.target.value;
+    setSelectedId(id);
+    loadSettings(id);
+  };
+
+  const handleChange = (field, value) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+    setDirty(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedId || !settings) return;
+    setSaving(true);
+    try {
+      await api.updateAssistantSettings(selectedId, settings);
+      setDirty(false);
+      setAlert({ title: 'Success', message: 'Settings saved successfully.' });
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to save settings' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    loadSettings(selectedId);
+  };
+
+  const selectedAssistant = assistants.find(a => a.Id === selectedId);
+
+  return (
+    <div>
+      <div className="content-header">
+        <div>
+          <h1 className="content-title">Assistant Settings</h1>
+          <p className="content-subtitle">Configure model, retrieval, and inference settings for each assistant.</p>
+        </div>
+      </div>
+      <div className="settings-view">
+        <div className="form-group">
+          <label className="form-label">Select Assistant</label>
+          <select
+            className="form-input"
+            value={selectedId}
+            onChange={handleSelectAssistant}
+          >
+            <option value="">-- Select an assistant --</option>
+            {assistants.map(a => (
+              <option key={a.Id} value={a.Id}>{a.Name} ({a.Id.substring(0, 8)}...)</option>
+            ))}
+          </select>
+        </div>
+
+        {loading && (
+          <div className="loading"><div className="spinner" /></div>
+        )}
+
+        {settings && !loading && (
+          <div className="settings-form">
+            {selectedAssistant && (
+              <div className="settings-assistant-info">
+                Editing settings for <strong>{selectedAssistant.Name}</strong>
+              </div>
+            )}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Appearance</h3>
+              <div className="form-group">
+                <label className="form-label">Title</label>
+                <input className="form-input" type="text" value={settings.Title} onChange={(e) => handleChange('Title', e.target.value)} placeholder="Heading shown on the chat window" />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Logo URL</label>
+                  <input className="form-input" type="text" value={settings.LogoUrl} onChange={(e) => handleChange('LogoUrl', e.target.value)} placeholder="Image URL for chat logo (max 192x192)" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Favicon URL</label>
+                  <input className="form-input" type="text" value={settings.FaviconUrl} onChange={(e) => handleChange('FaviconUrl', e.target.value)} placeholder="Image URL for browser tab favicon" />
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Model Configuration</h3>
+              <div className="form-group">
+                <label className="form-label">Inference Provider</label>
+                <select className="form-input" value={settings.InferenceProvider} onChange={(e) => handleChange('InferenceProvider', e.target.value)}>
+                  <option value="OpenAI">OpenAI</option>
+                  <option value="Ollama">Ollama</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Model</label>
+                <input className="form-input" type="text" value={settings.Model} onChange={(e) => handleChange('Model', e.target.value)} />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Temperature <span className="range-value">{settings.Temperature}</span></label>
+                  <input type="range" min="0" max="2" step="0.1" value={settings.Temperature} onChange={(e) => handleChange('Temperature', parseFloat(e.target.value))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Top P <span className="range-value">{settings.TopP}</span></label>
+                  <input type="range" min="0" max="1" step="0.05" value={settings.TopP} onChange={(e) => handleChange('TopP', parseFloat(e.target.value))} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Max Tokens</label>
+                  <input className="form-input" type="number" value={settings.MaxTokens} onChange={(e) => handleChange('MaxTokens', parseInt(e.target.value) || 0)} min="1" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Context Window</label>
+                  <input className="form-input" type="number" value={settings.ContextWindow} onChange={(e) => handleChange('ContextWindow', parseInt(e.target.value) || 0)} min="1" />
+                </div>
+              </div>
+              <div className="form-group form-toggle">
+                <label>
+                  <input type="checkbox" checked={settings.Streaming} onChange={(e) => handleChange('Streaming', e.target.checked)} />
+                  Streaming
+                </label>
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">System Prompt</h3>
+              <div className="form-group">
+                <textarea className="form-input" value={settings.SystemPrompt} onChange={(e) => handleChange('SystemPrompt', e.target.value)} rows={6} />
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Retrieval (RAG)</h3>
+              <div className="form-group form-toggle">
+                <label>
+                  <input type="checkbox" checked={settings.EnableRag} onChange={(e) => handleChange('EnableRag', e.target.checked)} />
+                  Enable RAG
+                </label>
+              </div>
+              {settings.EnableRag && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Collection ID (RecallDB)</label>
+                    <input className="form-input" type="text" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)} />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Retrieval Top K</label>
+                      <input className="form-input" type="number" value={settings.RetrievalTopK} onChange={(e) => handleChange('RetrievalTopK', parseInt(e.target.value) || 1)} min="1" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Score Threshold <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
+                      <input type="range" min="0" max="1" step="0.05" value={settings.RetrievalScoreThreshold} onChange={(e) => handleChange('RetrievalScoreThreshold', parseFloat(e.target.value))} />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Inference Endpoint</h3>
+              <div className="form-group">
+                <label className="form-label">Endpoint URL</label>
+                <input className="form-input" type="text" value={settings.InferenceEndpoint} onChange={(e) => handleChange('InferenceEndpoint', e.target.value)} placeholder="Leave blank to use server default" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">API Key</label>
+                <input className="form-input" type="password" value={settings.InferenceApiKey} onChange={(e) => handleChange('InferenceApiKey', e.target.value)} placeholder="Leave blank to use server default" />
+              </div>
+            </div>
+
+            <div className="settings-actions">
+              <button className="btn btn-secondary" onClick={handleReset} disabled={!dirty || saving}>Reset</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={!dirty || saving}>
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!settings && !loading && selectedId && (
+          <div className="empty-state"><p>No settings found for this assistant.</p></div>
+        )}
+      </div>
+      {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
+    </div>
+  );
+}
+
+export default AssistantSettingsView;

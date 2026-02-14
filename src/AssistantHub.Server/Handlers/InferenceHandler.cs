@@ -1,0 +1,295 @@
+namespace AssistantHub.Server.Handlers
+{
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Text;
+    using System.Text.Json;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Web;
+    using AssistantHub.Core;
+    using AssistantHub.Core.Database;
+    using Enums = AssistantHub.Core.Enums;
+    using AssistantHub.Core.Helpers;
+    using AssistantHub.Core.Models;
+    using AssistantHub.Core.Services;
+    using AssistantHub.Core.Settings;
+    using SyslogLogging;
+    using WatsonWebserver.Core;
+
+    /// <summary>
+    /// Handles inference model listing and pull routes.
+    /// </summary>
+    public class InferenceHandler : HandlerBase
+    {
+        private static readonly string _Header = "[InferenceHandler] ";
+        private readonly object _PullLock = new object();
+        private PullProgress _CurrentPullProgress = null;
+
+        /// <summary>
+        /// Instantiate.
+        /// </summary>
+        /// <param name="database">Database driver.</param>
+        /// <param name="logging">Logging module.</param>
+        /// <param name="settings">Application settings.</param>
+        /// <param name="authentication">Authentication service.</param>
+        /// <param name="storage">Storage service.</param>
+        /// <param name="ingestion">Ingestion service.</param>
+        /// <param name="retrieval">Retrieval service.</param>
+        /// <param name="inference">Inference service.</param>
+        public InferenceHandler(
+            DatabaseDriverBase database,
+            LoggingModule logging,
+            AssistantHubSettings settings,
+            AuthenticationService authentication,
+            StorageService storage,
+            IngestionService ingestion,
+            RetrievalService retrieval,
+            InferenceService inference)
+            : base(database, logging, settings, authentication, storage, ingestion, retrieval, inference)
+        {
+        }
+
+        /// <summary>
+        /// GET /v1.0/models - List available models on the configured inference provider.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetModelsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                List<InferenceModel> models = await Inference.ListModelsAsync().ConfigureAwait(false);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(models)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetModelsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/models/pull - Start pulling a model in the background (admin only).
+        /// Returns 202 Accepted immediately. Poll GET /v1.0/models/pull/status for progress.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PostPullModelAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                if (!IsAdmin(ctx))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!Inference.IsPullSupported)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, description: "Pull is not supported by the configured inference provider."))).ConfigureAwait(false);
+                    return;
+                }
+
+                string requestBody = null;
+                using (StreamReader reader = new StreamReader(ctx.Request.Data))
+                {
+                    requestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                }
+
+                if (String.IsNullOrEmpty(requestBody))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                PullModelRequest pullRequest = Serializer.DeserializeJson<PullModelRequest>(requestBody);
+                if (pullRequest == null || String.IsNullOrEmpty(pullRequest.Name))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, description: "Model name is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                lock (_PullLock)
+                {
+                    if (_CurrentPullProgress != null && !_CurrentPullProgress.IsComplete && !_CurrentPullProgress.HasError)
+                    {
+                        ctx.Response.StatusCode = 409;
+                        ctx.Response.ContentType = "application/json";
+                        ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, description: "A pull operation is already in progress."))).Wait();
+                        return;
+                    }
+
+                    _CurrentPullProgress = new PullProgress
+                    {
+                        ModelName = pullRequest.Name,
+                        Status = "starting",
+                        StartedUtc = DateTime.UtcNow
+                    };
+                }
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Inference.PullModelWithProgressAsync(pullRequest.Name, (progress) =>
+                        {
+                            lock (_PullLock)
+                            {
+                                _CurrentPullProgress = progress;
+                            }
+                            return Task.CompletedTask;
+                        }).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        Logging.Warn(_Header + "background pull exception: " + e.Message);
+                        lock (_PullLock)
+                        {
+                            if (_CurrentPullProgress != null)
+                            {
+                                _CurrentPullProgress.HasError = true;
+                                _CurrentPullProgress.ErrorMessage = e.Message;
+                                _CurrentPullProgress.IsComplete = true;
+                            }
+                        }
+                    }
+                });
+
+                ctx.Response.StatusCode = 202;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new { ModelName = pullRequest.Name, Status = "starting" })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PostPullModelAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/models/pull/status - Get the current pull operation status (admin only).
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetPullStatusAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                if (!IsAdmin(ctx))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                PullProgress progress;
+                lock (_PullLock)
+                {
+                    progress = _CurrentPullProgress;
+                }
+
+                if (progress == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, description: "No pull operation in progress."))).ConfigureAwait(false);
+                    return;
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(progress)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetPullStatusAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// DELETE /v1.0/models/{modelName} - Delete a model (admin only).
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task DeleteModelAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                if (!IsAdmin(ctx))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string modelName = ctx.Request.Url.Parameters["modelName"];
+                if (!String.IsNullOrEmpty(modelName))
+                    modelName = HttpUtility.UrlDecode(modelName);
+
+                if (String.IsNullOrEmpty(modelName))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, description: "Model name is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                bool success = await Inference.DeleteModelAsync(modelName).ConfigureAwait(false);
+
+                if (success)
+                {
+                    ctx.Response.StatusCode = 204;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                }
+                else
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in DeleteModelAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        #region Private-Classes
+
+        private class PullModelRequest
+        {
+            public string Name { get; set; } = null;
+        }
+
+        #endregion
+    }
+}

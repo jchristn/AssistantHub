@@ -1,0 +1,125 @@
+namespace AssistantHub.Core.Database.Postgresql.Queries
+{
+    /// <summary>
+    /// PostgreSQL table creation and index queries.
+    /// </summary>
+    internal static class TableQueries
+    {
+        #region Tables
+
+        internal static string CreateUsersTable =
+            "CREATE TABLE IF NOT EXISTS users (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  email TEXT NOT NULL, " +
+            "  password_sha256 TEXT, " +
+            "  first_name TEXT, " +
+            "  last_name TEXT, " +
+            "  is_admin INTEGER NOT NULL DEFAULT 0, " +
+            "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateCredentialsTable =
+            "CREATE TABLE IF NOT EXISTS credentials (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  user_id TEXT NOT NULL, " +
+            "  name TEXT, " +
+            "  bearer_token TEXT NOT NULL, " +
+            "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateAssistantsTable =
+            "CREATE TABLE IF NOT EXISTS assistants (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  user_id TEXT NOT NULL, " +
+            "  name TEXT NOT NULL, " +
+            "  description TEXT, " +
+            "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateAssistantSettingsTable =
+            "CREATE TABLE IF NOT EXISTS assistant_settings (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  assistant_id TEXT NOT NULL, " +
+            "  temperature DOUBLE PRECISION NOT NULL DEFAULT 0.7, " +
+            "  top_p DOUBLE PRECISION NOT NULL DEFAULT 1.0, " +
+            "  system_prompt TEXT, " +
+            "  max_tokens INTEGER NOT NULL DEFAULT 4096, " +
+            "  context_window INTEGER NOT NULL DEFAULT 8192, " +
+            "  model TEXT, " +
+            "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
+            "  collection_id TEXT, " +
+            "  retrieval_top_k INTEGER NOT NULL DEFAULT 5, " +
+            "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.7, " +
+            "  inference_provider TEXT NOT NULL DEFAULT 'OpenAI', " +
+            "  inference_endpoint TEXT, " +
+            "  inference_api_key TEXT, " +
+            "  title TEXT, " +
+            "  logo_url TEXT, " +
+            "  favicon_url TEXT, " +
+            "  streaming INTEGER NOT NULL DEFAULT 0, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateAssistantDocumentsTable =
+            "CREATE TABLE IF NOT EXISTS assistant_documents (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  assistant_id TEXT NOT NULL, " +
+            "  name TEXT NOT NULL, " +
+            "  original_filename TEXT, " +
+            "  content_type TEXT, " +
+            "  size_bytes INTEGER NOT NULL DEFAULT 0, " +
+            "  s3_key TEXT, " +
+            "  status TEXT NOT NULL DEFAULT 'Pending', " +
+            "  status_message TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateAssistantFeedbackTable =
+            "CREATE TABLE IF NOT EXISTS assistant_feedback (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  assistant_id TEXT NOT NULL, " +
+            "  user_message TEXT, " +
+            "  assistant_response TEXT, " +
+            "  rating TEXT NOT NULL DEFAULT 'ThumbsUp', " +
+            "  feedback_text TEXT, " +
+            "  message_history TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        #endregion
+
+        #region Indices
+
+        internal static string CreateUsersEmailIndex =
+            "CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)";
+
+        internal static string CreateCredentialsUserIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_credentials_user_id ON credentials (user_id)";
+
+        internal static string CreateCredentialsBearerTokenIndex =
+            "CREATE INDEX IF NOT EXISTS idx_credentials_bearer_token ON credentials (bearer_token)";
+
+        internal static string CreateAssistantsUserIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistants_user_id ON assistants (user_id)";
+
+        internal static string CreateAssistantSettingsAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_settings_assistant_id ON assistant_settings (assistant_id)";
+
+        internal static string CreateAssistantDocumentsAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_assistant_id ON assistant_documents (assistant_id)";
+
+        internal static string CreateAssistantFeedbackAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id)";
+
+        #endregion
+    }
+}

@@ -1,0 +1,3770 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AssistantHub.Core</name>
+    </assembly>
+    <members>
+        <member name="T:AssistantHub.Core.Constants">
+            <summary>
+            Global constants.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ProductName">
+            <summary>
+            Product name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ProductVersion">
+            <summary>
+            Product version.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.Logo">
+            <summary>
+            Logo.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.SettingsFile">
+            <summary>
+            Settings file.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.LogDirectory">
+            <summary>
+            Log directory.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.UserIdentifierPrefix">
+            <summary>
+            User identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.CredentialIdentifierPrefix">
+            <summary>
+            Credential identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantIdentifierPrefix">
+            <summary>
+            Assistant identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantSettingsIdentifierPrefix">
+            <summary>
+            Assistant settings identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantDocumentIdentifierPrefix">
+            <summary>
+            Assistant document identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantFeedbackIdentifierPrefix">
+            <summary>
+            Assistant feedback identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ChatCompletionIdentifierPrefix">
+            <summary>
+            Chat completion identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.IdentifierLength">
+            <summary>
+            Identifier length (total length including prefix).
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.BearerTokenLength">
+            <summary>
+            Bearer token length.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.UsersTable">
+            <summary>
+            Users table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.CredentialsTable">
+            <summary>
+            Credentials table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantsTable">
+            <summary>
+            Assistants table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantSettingsTable">
+            <summary>
+            Assistant settings table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantDocumentsTable">
+            <summary>
+            Assistant documents table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantFeedbackTable">
+            <summary>
+            Assistant feedback table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultAdminEmail">
+            <summary>
+            Default admin email.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultAdminPassword">
+            <summary>
+            Default admin password.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultAdminFirstName">
+            <summary>
+            Default admin first name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultAdminLastName">
+            <summary>
+            Default admin last name.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.DatabaseDriverBase">
+            <summary>
+            Database driver base class.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.User">
+            <summary>
+            User methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.Credential">
+            <summary>
+            Credential methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.Assistant">
+            <summary>
+            Assistant methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantSettings">
+            <summary>
+            Assistant settings methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantDocument">
+            <summary>
+            Assistant document methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantFeedback">
+            <summary>
+            Assistant feedback methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.InitializeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Initialize the database (create tables and indices).
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.ExecuteQueryAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Execute a query.
+            </summary>
+            <param name="query">SQL query.</param>
+            <param name="isTransaction">Execute within a transaction.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>DataTable result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.ExecuteQueriesAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Execute multiple queries.
+            </summary>
+            <param name="queries">SQL queries.</param>
+            <param name="isTransaction">Execute within a transaction.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>DataTable result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.Sanitize(System.String)">
+            <summary>
+            Sanitize a string for SQL.
+            </summary>
+            <param name="input">Input string.</param>
+            <returns>Sanitized string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.FormatBoolean(System.Boolean)">
+            <summary>
+            Format a boolean for SQL.
+            </summary>
+            <param name="value">Boolean value.</param>
+            <returns>SQL boolean string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.FormatDateTime(System.DateTime)">
+            <summary>
+            Format a DateTime for SQL.
+            </summary>
+            <param name="value">DateTime value.</param>
+            <returns>ISO 8601 string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.FormatNullableString(System.String)">
+            <summary>
+            Format a nullable string for SQL.
+            </summary>
+            <param name="value">String value.</param>
+            <returns>SQL string or NULL.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.FormatDouble(System.Double)">
+            <summary>
+            Format a nullable double for SQL.
+            </summary>
+            <param name="value">Double value.</param>
+            <returns>SQL value string.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.DatabaseDriverFactory">
+            <summary>
+            Database driver factory.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverFactory.Create(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Create a database driver.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+            <returns>Database driver.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverFactory.CreateAndInitializeAsync(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule,System.Threading.CancellationToken)">
+            <summary>
+            Create and initialize a database driver.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Database driver.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods">
+            <summary>
+            Assistant document database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.CreateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <summary>
+            Create an assistant document record.
+            </summary>
+            <param name="document">Assistant document record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created assistant document record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an assistant document record by identifier.
+            </summary>
+            <param name="id">Assistant document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant document record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <summary>
+            Update an assistant document record.
+            </summary>
+            <param name="document">Assistant document record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated assistant document record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update the status of an assistant document record.
+            </summary>
+            <param name="id">Assistant document identifier.</param>
+            <param name="status">Document status.</param>
+            <param name="statusMessage">Status message.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an assistant document record.
+            </summary>
+            <param name="id">Assistant document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if an assistant document record exists.
+            </summary>
+            <param name="id">Assistant document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate assistant document records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing assistant document records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all assistant document records belonging to an assistant.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods">
+            <summary>
+            Assistant feedback database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.CreateAsync(AssistantHub.Core.Models.AssistantFeedback,System.Threading.CancellationToken)">
+            <summary>
+            Create an assistant feedback record.
+            </summary>
+            <param name="feedback">Assistant feedback record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created assistant feedback record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an assistant feedback record by identifier.
+            </summary>
+            <param name="id">Assistant feedback identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant feedback record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an assistant feedback record.
+            </summary>
+            <param name="id">Assistant feedback identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate assistant feedback records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing assistant feedback records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all assistant feedback records belonging to an assistant.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantMethods">
+            <summary>
+            Assistant database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.CreateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <summary>
+            Create an assistant record.
+            </summary>
+            <param name="assistant">Assistant record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created assistant record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an assistant record by identifier.
+            </summary>
+            <param name="id">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.UpdateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <summary>
+            Update an assistant record.
+            </summary>
+            <param name="assistant">Assistant record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated assistant record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an assistant record.
+            </summary>
+            <param name="id">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if an assistant record exists.
+            </summary>
+            <param name="id">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate assistant records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing assistant records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the count of assistant records.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Count of assistant records.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods">
+            <summary>
+            Assistant settings database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.CreateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <summary>
+            Create an assistant settings record.
+            </summary>
+            <param name="settings">Assistant settings record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created assistant settings record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an assistant settings record by identifier.
+            </summary>
+            <param name="id">Assistant settings identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant settings record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.ReadByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an assistant settings record by assistant identifier.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant settings record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.UpdateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <summary>
+            Update an assistant settings record.
+            </summary>
+            <param name="settings">Assistant settings record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated assistant settings record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an assistant settings record.
+            </summary>
+            <param name="id">Assistant settings identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an assistant settings record by assistant identifier.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.ICredentialMethods">
+            <summary>
+            Credential database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.CreateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <summary>
+            Create a credential record.
+            </summary>
+            <param name="credential">Credential record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created credential record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a credential record by identifier.
+            </summary>
+            <param name="id">Credential identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Credential record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.ReadByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a credential record by bearer token.
+            </summary>
+            <param name="bearerToken">Bearer token value.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Credential record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.UpdateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <summary>
+            Update a credential record.
+            </summary>
+            <param name="credential">Credential record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated credential record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a credential record.
+            </summary>
+            <param name="id">Credential identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a credential record exists.
+            </summary>
+            <param name="id">Credential identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate credential records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing credential records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all credential records belonging to a user.
+            </summary>
+            <param name="userId">User identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IUserMethods">
+            <summary>
+            User database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.CreateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <summary>
+            Create a user record.
+            </summary>
+            <param name="user">User master record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created user master record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a user record by identifier.
+            </summary>
+            <param name="id">User identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User master record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a user record by email address.
+            </summary>
+            <param name="email">Email address.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>User master record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <summary>
+            Update a user record.
+            </summary>
+            <param name="user">User master record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated user master record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a user record.
+            </summary>
+            <param name="id">User identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a user record exists.
+            </summary>
+            <param name="id">User identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate user records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing user master records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the count of user records.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Count of user records.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods">
+            <summary>
+            MySQL assistant document methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.CreateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods">
+            <summary>
+            MySQL assistant feedback methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.CreateAsync(AssistantHub.Core.Models.AssistantFeedback,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods">
+            <summary>
+            MySQL assistant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.CreateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.UpdateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods">
+            <summary>
+            MySQL assistant settings methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.CreateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.ReadByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.UpdateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods">
+            <summary>
+            MySQL credential methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.CreateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.ReadByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.UpdateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.UserMethods">
+            <summary>
+            MySQL user methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.CreateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver">
+            <summary>
+            MySQL database driver.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver.#ctor(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver.InitializeAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver.ExecuteQueryAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver.ExecuteQueriesAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver.FormatBoolean(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Queries.TableQueries">
+            <summary>
+            MySQL table creation and index queries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods">
+            <summary>
+            PostgreSQL assistant document methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.CreateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods">
+            <summary>
+            PostgreSQL assistant feedback methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.CreateAsync(AssistantHub.Core.Models.AssistantFeedback,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods">
+            <summary>
+            PostgreSQL assistant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.CreateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.UpdateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods">
+            <summary>
+            PostgreSQL assistant settings methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.CreateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.ReadByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.UpdateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods">
+            <summary>
+            PostgreSQL credential methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.CreateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.ReadByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.UpdateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods">
+            <summary>
+            PostgreSQL user methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.CreateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver">
+            <summary>
+            PostgreSQL database driver.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver.#ctor(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver.InitializeAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver.ExecuteQueryAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver.ExecuteQueriesAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver.FormatBoolean(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Queries.TableQueries">
+            <summary>
+            PostgreSQL table creation and index queries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods">
+            <summary>
+            SQLite assistant document methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.CreateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods">
+            <summary>
+            SQLite assistant feedback methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.CreateAsync(AssistantHub.Core.Models.AssistantFeedback,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods">
+            <summary>
+            SQLite assistant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.CreateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.UpdateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods">
+            <summary>
+            SQLite assistant settings methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.CreateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.ReadByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.UpdateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods">
+            <summary>
+            SQLite credential methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.CreateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.ReadByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.UpdateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods">
+            <summary>
+            SQLite user methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.CreateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Queries.TableQueries">
+            <summary>
+            SQLite table creation queries.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.CreateTables">
+            <summary>
+            Get the CREATE TABLE statements.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.CreateIndices">
+            <summary>
+            Get the CREATE INDEX statements.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver">
+            <summary>
+            SQLite database driver.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.#ctor(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.InitializeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Initialize the database (create tables and indices).
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.ExecuteQueryAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Execute a query.
+            </summary>
+            <param name="query">SQL query.</param>
+            <param name="isTransaction">Execute within a transaction.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>DataTable result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.ExecuteQueriesAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Execute multiple queries.
+            </summary>
+            <param name="queries">SQL queries.</param>
+            <param name="isTransaction">Execute within a transaction.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>DataTable result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.Dispose">
+            <summary>
+            Dispose of resources.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver.Dispose(System.Boolean)">
+            <summary>
+            Dispose of resources.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods">
+            <summary>
+            SQL Server assistant document methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.CreateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods">
+            <summary>
+            SQL Server assistant feedback methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.CreateAsync(AssistantHub.Core.Models.AssistantFeedback,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods">
+            <summary>
+            SQL Server assistant methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.CreateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.UpdateAsync(AssistantHub.Core.Models.Assistant,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods">
+            <summary>
+            SQL Server assistant settings methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.CreateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.ReadByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.UpdateAsync(AssistantHub.Core.Models.AssistantSettings,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods">
+            <summary>
+            SQL Server credential methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.CreateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.ReadByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.UpdateAsync(AssistantHub.Core.Models.Credential,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods">
+            <summary>
+            SQL Server user methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.CreateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Queries.TableQueries">
+            <summary>
+            SQL Server table and index creation queries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver">
+            <summary>
+            SQL Server database driver.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver.#ctor(AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver.InitializeAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver.ExecuteQueryAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver.ExecuteQueriesAsync(System.Collections.Generic.IEnumerable{System.String},System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver.FormatBoolean(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Enums.ApiErrorEnum">
+            <summary>
+            API error enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.AuthenticationFailed">
+            <summary>
+            Authentication failed.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.AuthorizationFailed">
+            <summary>
+            Authorization failed.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.BadRequest">
+            <summary>
+            Bad request.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.NotFound">
+            <summary>
+            Not found.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.Conflict">
+            <summary>
+            Conflict.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ApiErrorEnum.InternalError">
+            <summary>
+            Internal error.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.DatabaseTypeEnum">
+            <summary>
+            Database type enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DatabaseTypeEnum.Sqlite">
+            <summary>
+            SQLite.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DatabaseTypeEnum.Postgresql">
+            <summary>
+            PostgreSQL.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DatabaseTypeEnum.SqlServer">
+            <summary>
+            SQL Server.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DatabaseTypeEnum.Mysql">
+            <summary>
+            MySQL.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.DocumentStatusEnum">
+            <summary>
+            Document processing status enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Pending">
+            <summary>
+            Pending.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Uploading">
+            <summary>
+            Uploading.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Uploaded">
+            <summary>
+            Uploaded.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.TypeDetecting">
+            <summary>
+            Type detecting.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.TypeDetectionSuccess">
+            <summary>
+            Type detection success.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.TypeDetectionFailed">
+            <summary>
+            Type detection failed.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Processing">
+            <summary>
+            Processing.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.ProcessingChunks">
+            <summary>
+            Processing chunks.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.StoringEmbeddings">
+            <summary>
+            Storing embeddings.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Completed">
+            <summary>
+            Completed.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Failed">
+            <summary>
+            Failed.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.EnumerationOrderEnum">
+            <summary>
+            Enumeration order enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EnumerationOrderEnum.CreatedAscending">
+            <summary>
+            Created ascending.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EnumerationOrderEnum.CreatedDescending">
+            <summary>
+            Created descending.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.FeedbackRatingEnum">
+            <summary>
+            Feedback rating enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.FeedbackRatingEnum.ThumbsUp">
+            <summary>
+            Thumbs up.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.FeedbackRatingEnum.ThumbsDown">
+            <summary>
+            Thumbs down.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.InferenceProviderEnum">
+            <summary>
+            Inference provider enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.InferenceProviderEnum.OpenAI">
+            <summary>
+            OpenAI.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.InferenceProviderEnum.Ollama">
+            <summary>
+            Ollama.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
+            <summary>
+            Helper class for extracting typed values from DataRow objects.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetStringValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a string value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>String value or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetBooleanValue(System.Data.DataRow,System.String,System.Boolean)">
+            <summary>
+            Get a boolean value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <param name="defaultValue">Default value.</param>
+            <returns>Boolean value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetIntValue(System.Data.DataRow,System.String,System.Int32)">
+            <summary>
+            Get an integer value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <param name="defaultValue">Default value.</param>
+            <returns>Integer value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetLongValue(System.Data.DataRow,System.String,System.Int64)">
+            <summary>
+            Get a long value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <param name="defaultValue">Default value.</param>
+            <returns>Long value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetNullableLongValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a nullable long value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Nullable long value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetDoubleValue(System.Data.DataRow,System.String,System.Double)">
+            <summary>
+            Get a double value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <param name="defaultValue">Default value.</param>
+            <returns>Double value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetDateTimeValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a DateTime value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>DateTime value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetEnumValue``1(System.Data.DataRow,System.String,``0)">
+            <summary>
+            Get an enum value from a data row.
+            </summary>
+            <typeparam name="T">Enum type.</typeparam>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <param name="defaultValue">Default value.</param>
+            <returns>Enum value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetFloatArrayValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a float array value from a data row (stored as JSON).
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Float array or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetByteArrayValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a byte array value from a data row (stored as base64).
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Byte array or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Helpers.IdGenerator">
+            <summary>
+            Helper class for generating K-sortable identifiers and bearer tokens.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewUserId">
+            <summary>
+            Generate a user identifier.
+            </summary>
+            <returns>User identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCredentialId">
+            <summary>
+            Generate a credential identifier.
+            </summary>
+            <returns>Credential identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantId">
+            <summary>
+            Generate an assistant identifier.
+            </summary>
+            <returns>Assistant identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantSettingsId">
+            <summary>
+            Generate an assistant settings identifier.
+            </summary>
+            <returns>Assistant settings identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantDocumentId">
+            <summary>
+            Generate an assistant document identifier.
+            </summary>
+            <returns>Assistant document identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantFeedbackId">
+            <summary>
+            Generate an assistant feedback identifier.
+            </summary>
+            <returns>Assistant feedback identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatCompletionId">
+            <summary>
+            Generate a chat completion identifier.
+            </summary>
+            <returns>Chat completion identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewBearerToken">
+            <summary>
+            Generate a cryptographic random bearer token.
+            </summary>
+            <returns>Bearer token string.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Helpers.Serializer">
+            <summary>
+            JSON serialization helper.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.Serializer.SerializeJson(System.Object,System.Boolean)">
+            <summary>
+            Serialize an object to JSON.
+            </summary>
+            <param name="obj">Object.</param>
+            <param name="pretty">Pretty print.</param>
+            <returns>JSON string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.Serializer.DeserializeJson``1(System.String)">
+            <summary>
+            Deserialize JSON to an object.
+            </summary>
+            <typeparam name="T">Type.</typeparam>
+            <param name="json">JSON string.</param>
+            <returns>Object.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.Serializer.CopyObject``1(``0)">
+            <summary>
+            Copy an object by serialization and deserialization.
+            </summary>
+            <typeparam name="T">Type.</typeparam>
+            <param name="obj">Object.</param>
+            <returns>Copy.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ApiErrorResponse">
+            <summary>
+            API error response returned to clients.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ApiErrorResponse.Error">
+            <summary>
+            Error type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ApiErrorResponse.Message">
+            <summary>
+            Human-readable error message derived from the error type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ApiErrorResponse.StatusCode">
+            <summary>
+            HTTP status code derived from the error type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ApiErrorResponse.Context">
+            <summary>
+            Optional context object providing additional error details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ApiErrorResponse.Description">
+            <summary>
+            Optional description providing additional error information.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ApiErrorResponse.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ApiErrorResponse.#ctor(AssistantHub.Core.Enums.ApiErrorEnum,System.Object,System.String)">
+            <summary>
+            Instantiate with an error type and optional context and description.
+            </summary>
+            <param name="error">API error type.</param>
+            <param name="context">Optional context object.</param>
+            <param name="description">Optional description.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Models.Assistant">
+            <summary>
+            Assistant record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.Id">
+            <summary>
+            Unique identifier with prefix asst_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.UserId">
+            <summary>
+            User identifier to which this assistant belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.Name">
+            <summary>
+            Display name for the assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.Description">
+            <summary>
+            Description of the assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.Active">
+            <summary>
+            Indicates whether the assistant is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.Assistant.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.Assistant.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an Assistant from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>Assistant instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantDocument">
+            <summary>
+            Assistant document record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Id">
+            <summary>
+            Unique identifier with prefix adoc_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.AssistantId">
+            <summary>
+            Assistant identifier to which this document belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Name">
+            <summary>
+            Display name for the document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.OriginalFilename">
+            <summary>
+            Original filename as uploaded by the user.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.ContentType">
+            <summary>
+            MIME content type of the document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.SizeBytes">
+            <summary>
+            Size of the document in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.S3Key">
+            <summary>
+            S3 object key for the stored document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Status">
+            <summary>
+            Processing status of the document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.StatusMessage">
+            <summary>
+            Status message providing additional processing details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantDocument.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantDocument.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an AssistantDocument from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>AssistantDocument instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantFeedback">
+            <summary>
+            Assistant feedback record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.Id">
+            <summary>
+            Unique identifier with prefix afb_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.AssistantId">
+            <summary>
+            Assistant identifier to which this feedback belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.UserMessage">
+            <summary>
+            The user message that prompted the assistant response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.AssistantResponse">
+            <summary>
+            The assistant response that was rated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.Rating">
+            <summary>
+            Feedback rating.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.FeedbackText">
+            <summary>
+            Optional free-text feedback from the user.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantFeedback.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantFeedback.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an AssistantFeedback from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>AssistantFeedback instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantSettings">
+            <summary>
+            Assistant settings record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.Id">
+            <summary>
+            Unique identifier with prefix aset_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.AssistantId">
+            <summary>
+            Assistant identifier to which these settings belong.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.Temperature">
+            <summary>
+            Sampling temperature (0.0 to 2.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.TopP">
+            <summary>
+            Top-p nucleus sampling (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SystemPrompt">
+            <summary>
+            System prompt sent to the inference provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.MaxTokens">
+            <summary>
+            Maximum number of tokens to generate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ContextWindow">
+            <summary>
+            Context window size in tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.Model">
+            <summary>
+            Model name or identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableRag">
+            <summary>
+            Whether RAG retrieval is enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
+            <summary>
+            Collection identifier for document retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalTopK">
+            <summary>
+            Number of top results to retrieve.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalScoreThreshold">
+            <summary>
+            Minimum score threshold for retrieval results (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceProvider">
+            <summary>
+            Inference provider type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpoint">
+            <summary>
+            Inference provider endpoint URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceApiKey">
+            <summary>
+            Inference provider API key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.Title">
+            <summary>
+            Title displayed as the heading on the chat window.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.LogoUrl">
+            <summary>
+            URL for the logo image shown in the chat window upper-left (max 192x192).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FaviconUrl">
+            <summary>
+            URL for the favicon shown in the browser tab.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.Streaming">
+            <summary>
+            Whether to enable SSE streaming for chat responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantSettings.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an AssistantSettings from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>AssistantSettings instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AuthenticateRequest">
+            <summary>
+            Authentication request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateRequest.Email">
+            <summary>
+            Email address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateRequest.Password">
+            <summary>
+            Password.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateRequest.BearerToken">
+            <summary>
+            Bearer token.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AuthenticateRequest.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AuthenticateResult">
+            <summary>
+            Authentication result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.Success">
+            <summary>
+            Indicates whether or not the authentication was successful.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.User">
+            <summary>
+            User.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.Credential">
+            <summary>
+            Credential.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.ErrorMessage">
+            <summary>
+            Error message.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AuthenticateResult.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionChoice">
+            <summary>
+            OpenAI-compatible chat completion choice.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionChoice.Index">
+            <summary>
+            Choice index.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionChoice.Message">
+            <summary>
+            Full message (non-streaming responses).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionChoice.Delta">
+            <summary>
+            Delta message (streaming responses).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionChoice.FinishReason">
+            <summary>
+            Finish reason: "stop", "length", etc.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionMessage">
+            <summary>
+            OpenAI-compatible chat completion message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.Role">
+            <summary>
+            Message role: "system", "user", or "assistant".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.Content">
+            <summary>
+            Message content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionRequest">
+            <summary>
+            OpenAI-compatible chat completion request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.Model">
+            <summary>
+            Model name (optional, assistant settings used as default).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.Messages">
+            <summary>
+            List of messages in the conversation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.Stream">
+            <summary>
+            Whether to stream the response (ignored; assistant setting controls this).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.Temperature">
+            <summary>
+            Sampling temperature (optional override).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.TopP">
+            <summary>
+            Top-p nucleus sampling (optional override).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.MaxTokens">
+            <summary>
+            Maximum tokens to generate (optional override).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionResponse">
+            <summary>
+            OpenAI-compatible chat completion response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Id">
+            <summary>
+            Unique identifier for the completion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Object">
+            <summary>
+            Object type: "chat.completion" or "chat.completion.chunk".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Created">
+            <summary>
+            Unix timestamp of when the completion was created.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Model">
+            <summary>
+            Model used for the completion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Choices">
+            <summary>
+            List of completion choices.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Usage">
+            <summary>
+            Token usage information (non-streaming only).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Status">
+            <summary>
+            Optional status message (extension for compaction notifications).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
+            <summary>
+            OpenAI-compatible token usage information.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.PromptTokens">
+            <summary>
+            Number of tokens in the prompt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.CompletionTokens">
+            <summary>
+            Number of tokens in the completion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.TotalTokens">
+            <summary>
+            Total number of tokens used.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatRequest">
+            <summary>
+            Chat request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatRequest.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatRequest.Message">
+            <summary>
+            Message.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatRequest.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatResult">
+            <summary>
+            Chat result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.Success">
+            <summary>
+            Indicates whether or not the chat request was successful.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.UserMessage">
+            <summary>
+            User message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.AssistantResponse">
+            <summary>
+            Assistant response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.Sources">
+            <summary>
+            Sources referenced in the response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatResult.ErrorMessage">
+            <summary>
+            Error message.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatResult.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.Credential">
+            <summary>
+            API credential record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.Id">
+            <summary>
+            Unique identifier with prefix cred_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.UserId">
+            <summary>
+            User identifier to which this credential belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.Name">
+            <summary>
+            Display name for the credential.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.BearerToken">
+            <summary>
+            Bearer token value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.Active">
+            <summary>
+            Indicates whether the credential is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.Credential.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.Credential.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a Credential from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>Credential instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EnumerationQuery">
+            <summary>
+            Enumeration query.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.MaxResults">
+            <summary>
+            Maximum number of results to return.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.ContinuationToken">
+            <summary>
+            Continuation token for pagination.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.Ordering">
+            <summary>
+            Ordering for results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.AssistantIdFilter">
+            <summary>
+            Filter by assistant identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EnumerationQuery.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EnumerationResult`1">
+            <summary>
+            Enumeration result.
+            </summary>
+            <typeparam name="T">Type of object contained in the result.</typeparam>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.Success">
+            <summary>
+            Indicates whether or not the enumeration was successful.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.MaxResults">
+            <summary>
+            Maximum number of results requested.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.TotalRecords">
+            <summary>
+            Total number of records available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.RecordsRemaining">
+            <summary>
+            Number of records remaining.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.ContinuationToken">
+            <summary>
+            Continuation token for retrieving the next page of results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.EndOfResults">
+            <summary>
+            Indicates whether or not the end of results has been reached.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.Objects">
+            <summary>
+            List of objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationResult`1.TotalMs">
+            <summary>
+            Total milliseconds elapsed.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EnumerationResult`1.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.FeedbackRequest">
+            <summary>
+            Feedback request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.UserMessage">
+            <summary>
+            User message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.AssistantResponse">
+            <summary>
+            Assistant response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.Rating">
+            <summary>
+            Feedback rating.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.FeedbackText">
+            <summary>
+            Feedback text.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.FeedbackRequest.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.InferenceModel">
+            <summary>
+            Represents a model available on the configured inference provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceModel.Name">
+            <summary>
+            Model name (e.g. "gemma3:4b").
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceModel.SizeBytes">
+            <summary>
+            Model size on disk in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceModel.ModifiedUtc">
+            <summary>
+            Last modified timestamp (UTC).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceModel.OwnedBy">
+            <summary>
+            Owner of the model (OpenAI only, null for Ollama).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceModel.PullSupported">
+            <summary>
+            Whether the provider supports pulling new models.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.InferenceResult">
+            <summary>
+            Result from an inference request, carrying either a response or error details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.Success">
+            <summary>
+            Indicates whether inference succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.Content">
+            <summary>
+            The generated response content, or null on failure.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.ErrorMessage">
+            <summary>
+            Error message describing what went wrong, or null on success.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.InferenceResult.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String)">
+            <summary>
+            Create a successful result.
+            </summary>
+            <param name="content">Generated response content.</param>
+            <returns>InferenceResult.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromError(System.String)">
+            <summary>
+            Create a failed result.
+            </summary>
+            <param name="errorMessage">Error message.</param>
+            <returns>InferenceResult.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PullProgress">
+            <summary>
+            Represents the progress of a model pull operation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.ModelName">
+            <summary>
+            Name of the model being pulled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.Status">
+            <summary>
+            Current status message from the pull operation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.Digest">
+            <summary>
+            Digest of the layer currently being downloaded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.TotalBytes">
+            <summary>
+            Total bytes to download for the current layer.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.CompletedBytes">
+            <summary>
+            Bytes completed for the current layer.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.PercentComplete">
+            <summary>
+            Percentage complete (0-100).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.IsComplete">
+            <summary>
+            Whether the pull operation has completed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.HasError">
+            <summary>
+            Whether the pull operation encountered an error.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.ErrorMessage">
+            <summary>
+            Error message if the pull operation failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PullProgress.StartedUtc">
+            <summary>
+            When the pull operation started (UTC).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.UserMaster">
+            <summary>
+            User master record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.Id">
+            <summary>
+            Unique identifier with prefix usr_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.Email">
+            <summary>
+            Email address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.PasswordSha256">
+            <summary>
+            SHA-256 hash of the password.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.FirstName">
+            <summary>
+            First name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.LastName">
+            <summary>
+            Last name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.IsAdmin">
+            <summary>
+            Indicates whether the user is an administrator.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.Active">
+            <summary>
+            Indicates whether the user is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.UserMaster.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.UserMaster.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a UserMaster from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>UserMaster instance or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.UserMaster.SetPassword(System.String)">
+            <summary>
+            Set the password by computing its SHA-256 hash.
+            </summary>
+            <param name="password">Plain-text password.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Models.UserMaster.VerifyPassword(System.String)">
+            <summary>
+            Verify a plain-text password against the stored hash.
+            </summary>
+            <param name="password">Plain-text password.</param>
+            <returns>True if the password matches.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.AuthenticationService">
+            <summary>
+            Authentication service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticate using a bearer token.
+            </summary>
+            <param name="bearerToken">Bearer token.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Authentication result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByEmailPasswordAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticate using email and password.
+            </summary>
+            <param name="email">Email address.</param>
+            <param name="password">Password.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Authentication result.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService">
+            <summary>
+            Inference service for generating responses from language models.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.IsPullSupported">
+            <summary>
+            Whether the configured provider supports pulling models.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.IsDeleteSupported">
+            <summary>
+            Whether the configured provider supports deleting models.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.#ctor(AssistantHub.Core.Settings.InferenceSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Inference settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.ListModelsAsync">
+            <summary>
+            List models available on the configured inference provider.
+            </summary>
+            <returns>List of available models.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.PullModelAsync(System.String)">
+            <summary>
+            Pull a model on the configured inference provider.
+            </summary>
+            <param name="modelName">Name of the model to pull.</param>
+            <returns>True on success, false on failure or if not supported.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.PullModelWithProgressAsync(System.String,System.Func{AssistantHub.Core.Models.PullProgress,System.Threading.Tasks.Task},System.Threading.CancellationToken)">
+            <summary>
+            Pull a model with streaming progress, invoking a callback for each progress update.
+            </summary>
+            <param name="modelName">Name of the model to pull.</param>
+            <param name="onProgress">Callback invoked for each progress event.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.DeleteModelAsync(System.String)">
+            <summary>
+            Delete a model from the configured inference provider.
+            </summary>
+            <param name="modelName">Name of the model to delete.</param>
+            <returns>True on success, false on failure or if not supported.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseAsync(System.String,System.Collections.Generic.List{System.String},System.String,System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generate a response from a language model using the provided context and user message.
+            </summary>
+            <param name="systemPrompt">System prompt for the model.</param>
+            <param name="contextChunks">List of context chunks retrieved from documents.</param>
+            <param name="userMessage">User message to respond to.</param>
+            <param name="model">Model name or identifier.</param>
+            <param name="maxTokens">Maximum number of tokens to generate.</param>
+            <param name="temperature">Sampling temperature (0.0 to 2.0).</param>
+            <param name="topP">Top-p nucleus sampling (0.0 to 1.0).</param>
+            <param name="provider">Inference provider type.</param>
+            <param name="endpoint">Inference provider endpoint URL.</param>
+            <param name="apiKey">Inference provider API key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Inference result containing the response or error details.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generate a response from a language model using a multi-message conversation.
+            </summary>
+            <param name="messages">List of chat completion messages.</param>
+            <param name="model">Model name or identifier.</param>
+            <param name="maxTokens">Maximum number of tokens to generate.</param>
+            <param name="temperature">Sampling temperature (0.0 to 2.0).</param>
+            <param name="topP">Top-p nucleus sampling (0.0 to 1.0).</param>
+            <param name="provider">Inference provider type.</param>
+            <param name="endpoint">Inference provider endpoint URL.</param>
+            <param name="apiKey">Inference provider API key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Inference result containing the response or error details.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Threading.CancellationToken)">
+            <summary>
+            Generate a streaming response from a language model using a multi-message conversation.
+            </summary>
+            <param name="messages">List of chat completion messages.</param>
+            <param name="model">Model name or identifier.</param>
+            <param name="maxTokens">Maximum number of tokens to generate.</param>
+            <param name="temperature">Sampling temperature (0.0 to 2.0).</param>
+            <param name="topP">Top-p nucleus sampling (0.0 to 1.0).</param>
+            <param name="provider">Inference provider type.</param>
+            <param name="endpoint">Inference provider endpoint URL.</param>
+            <param name="apiKey">Inference provider API key.</param>
+            <param name="onDelta">Callback invoked for each content delta.</param>
+            <param name="onComplete">Callback invoked when generation is complete, with the full accumulated content.</param>
+            <param name="onError">Callback invoked on error.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Build the full system message including context chunks.
+            </summary>
+            <param name="systemPrompt">Base system prompt.</param>
+            <param name="contextChunks">List of context chunks.</param>
+            <returns>Complete system message with context.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOpenAIResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generate a response using the OpenAI-compatible chat completions API.
+            </summary>
+            <param name="systemMessage">Full system message with context.</param>
+            <param name="userMessage">User message.</param>
+            <param name="model">Model name.</param>
+            <param name="maxTokens">Maximum tokens to generate.</param>
+            <param name="temperature">Sampling temperature.</param>
+            <param name="topP">Top-p nucleus sampling.</param>
+            <param name="endpoint">API endpoint URL.</param>
+            <param name="apiKey">API key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant response content.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generate a response using the Ollama chat API.
+            </summary>
+            <param name="systemMessage">Full system message with context.</param>
+            <param name="userMessage">User message.</param>
+            <param name="model">Model name.</param>
+            <param name="endpoint">Ollama endpoint URL.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Assistant response content.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse">
+            <summary>
+            Ollama tags response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse.Models">
+            <summary>
+            List of models.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaModelEntry">
+            <summary>
+            Ollama model entry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.Name">
+            <summary>
+            Model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.Size">
+            <summary>
+            Model size in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.ModifiedAt">
+            <summary>
+            Last modified timestamp.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse">
+            <summary>
+            OpenAI models list response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse.Data">
+            <summary>
+            List of model entries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry">
+            <summary>
+            OpenAI model entry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Id">
+            <summary>
+            Model identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Created">
+            <summary>
+            Creation timestamp (Unix seconds).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.OwnedBy">
+            <summary>
+            Model owner.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse">
+            <summary>
+            OpenAI chat completion response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Choices">
+            <summary>
+            Response choices.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIChoice">
+            <summary>
+            OpenAI chat completion choice.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChoice.Message">
+            <summary>
+            Message in the choice.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIMessage">
+            <summary>
+            OpenAI chat message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIMessage.Role">
+            <summary>
+            Message role.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIMessage.Content">
+            <summary>
+            Message content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaChatResponse">
+            <summary>
+            Ollama chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaChatResponse.Message">
+            <summary>
+            Response message.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaMessage">
+            <summary>
+            Ollama chat message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaMessage.Role">
+            <summary>
+            Message role.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaMessage.Content">
+            <summary>
+            Message content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService">
+            <summary>
+            Background document ingestion pipeline service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="storage">Storage service.</param>
+            <param name="documentAtomSettings">DocumentAtom service settings.</param>
+            <param name="chunkingSettings">Chunking service settings.</param>
+            <param name="recallDbSettings">RecallDb service settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Process a document through the full ingestion pipeline.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.UpdateDocumentStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update the status of a document in the database.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <param name="status">New status.</param>
+            <param name="statusMessage">Status message.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.DetectDocumentTypeAsync(System.Byte[],System.String,System.Threading.CancellationToken)">
+            <summary>
+            Detect the type of a document using the DocumentAtom service.
+            </summary>
+            <param name="fileBytes">Raw file bytes.</param>
+            <param name="filename">Original filename.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Detected document type string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentContentAsync(System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Process document content using the DocumentAtom service.
+            </summary>
+            <param name="fileBytes">Raw file bytes.</param>
+            <param name="documentType">Detected document type.</param>
+            <param name="filename">Original filename.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Extracted text content.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ChunkAndEmbedContentAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Chunk and embed document content using the Partio chunking service.
+            </summary>
+            <param name="content">Extracted text content.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of chunks with their embeddings.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding,System.Threading.CancellationToken)">
+            <summary>
+            Store a single chunk embedding in RecallDB.
+            </summary>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="documentId">Source document identifier.</param>
+            <param name="chunk">Chunk with embedding data.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the embedding was stored successfully.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService.TypeDetectResponse">
+            <summary>
+            Type detection response from DocumentAtom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.TypeDetectResponse.Type">
+            <summary>
+            Detected document type.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService.ProcessResponse">
+            <summary>
+            Processing response from DocumentAtom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.ProcessResponse.Content">
+            <summary>
+            Extracted text content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkingResponse">
+            <summary>
+            Chunking response from the Partio service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkingResponse.Chunks">
+            <summary>
+            List of chunks with embeddings.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding">
+            <summary>
+            A single chunk with its embedding vector.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Index">
+            <summary>
+            Chunk index.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Content">
+            <summary>
+            Text content of the chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Embeddings">
+            <summary>
+            Embedding vector for the chunk.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalService">
+            <summary>
+            Retrieval service for querying embedded document chunks.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="chunkingSettings">Chunking service settings.</param>
+            <param name="recallDbSettings">RecallDb service settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken)">
+            <summary>
+            Retrieve relevant document chunks for a given query.
+            </summary>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="query">Search query text.</param>
+            <param name="topK">Number of top results to retrieve.</param>
+            <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of content strings from matching document chunks.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Embed a query string using the Partio chunking service.
+            </summary>
+            <param name="query">Query text.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Embedding vector.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.SearchRecallDbAsync(System.String,System.Collections.Generic.List{System.Double},System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Search RecallDB for similar documents.
+            </summary>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="embeddings">Query embedding vector.</param>
+            <param name="topK">Number of top results to retrieve.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of search results.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalService.EmbeddingResponse">
+            <summary>
+            Embedding response from the Partio service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.EmbeddingResponse.Embeddings">
+            <summary>
+            Embedding vector.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResponse">
+            <summary>
+            Search response from RecallDB.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResponse.Documents">
+            <summary>
+            List of matching documents.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResult">
+            <summary>
+            A single search result from RecallDB.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Score">
+            <summary>
+            Similarity score.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Content">
+            <summary>
+            Text content of the matching chunk.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.StorageService">
+            <summary>
+            Storage service wrapping an S3-compatible blob client.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.#ctor(AssistantHub.Core.Settings.S3Settings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">S3 storage settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.UploadAsync(System.String,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Upload a file to S3-compatible storage.
+            </summary>
+            <param name="key">Object key.</param>
+            <param name="contentType">MIME content type.</param>
+            <param name="data">File data.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.DownloadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Download a file from S3-compatible storage.
+            </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>File data as byte array.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a file from S3-compatible storage.
+            </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check whether a file exists in S3-compatible storage.
+            </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the object exists.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
+            <summary>
+            AssistantHub settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Webserver">
+            <summary>
+            Webserver settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Database">
+            <summary>
+            Database settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.S3">
+            <summary>
+            S3-compatible storage settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.DocumentAtom">
+            <summary>
+            DocumentAtom service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Chunking">
+            <summary>
+            Chunking service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Inference">
+            <summary>
+            Inference service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.RecallDb">
+            <summary>
+            RecallDb service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Logging">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.ChunkingSettings">
+            <summary>
+            Chunking service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.Endpoint">
+            <summary>
+            Endpoint URL for the chunking service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.AccessKey">
+            <summary>
+            Access key for the chunking service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.EndpointId">
+            <summary>
+            Endpoint identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.DatabaseSettings">
+            <summary>
+            Database settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Type">
+            <summary>
+            Database type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Filename">
+            <summary>
+            Database filename, for use with Sqlite.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Hostname">
+            <summary>
+            Database server hostname.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Port">
+            <summary>
+            Database server port.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.DatabaseName">
+            <summary>
+            Database name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Username">
+            <summary>
+            Database username.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Password">
+            <summary>
+            Database password.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.Schema">
+            <summary>
+            Database schema.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.RequireEncryption">
+            <summary>
+            Require encryption for the database connection.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DatabaseSettings.LogQueries">
+            <summary>
+            Enable or disable query logging.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.DatabaseSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.DatabaseSettings.GetConnectionString">
+            <summary>
+            Build the connection string based on the configured database type.
+            </summary>
+            <returns>Connection string.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.DocumentAtomSettings">
+            <summary>
+            DocumentAtom service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DocumentAtomSettings.Endpoint">
+            <summary>
+            Endpoint URL for the DocumentAtom service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DocumentAtomSettings.AccessKey">
+            <summary>
+            Access key for the DocumentAtom service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.DocumentAtomSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.InferenceSettings">
+            <summary>
+            Inference service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.Provider">
+            <summary>
+            Inference provider type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.Endpoint">
+            <summary>
+            Endpoint URL for the inference provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.ApiKey">
+            <summary>
+            API key for the inference provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.DefaultModel">
+            <summary>
+            Default model to use for inference.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.InferenceSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.LoggingSettings">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.ConsoleLogging">
+            <summary>
+            Enable or disable console logging.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.MinimumSeverity">
+            <summary>
+            Minimum severity level for logging (0 through 7).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.EnableColors">
+            <summary>
+            Enable or disable color output in console logging.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.FileLogging">
+            <summary>
+            Enable or disable file logging.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.LogDirectory">
+            <summary>
+            Log directory.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.LogFilename">
+            <summary>
+            Log filename.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.IncludeDateInFilename">
+            <summary>
+            Include date in log filename.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.LoggingSettings.Servers">
+            <summary>
+            List of syslog servers to which log messages should be sent.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.LoggingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.RecallDbSettings">
+            <summary>
+            RecallDb service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.Endpoint">
+            <summary>
+            Endpoint URL for the RecallDb service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.TenantId">
+            <summary>
+            Tenant identifier for the RecallDb service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.AccessKey">
+            <summary>
+            Access key for the RecallDb service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.RecallDbSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.S3Settings">
+            <summary>
+            S3-compatible storage settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.Region">
+            <summary>
+            AWS region.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.BucketName">
+            <summary>
+            Bucket name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.AccessKey">
+            <summary>
+            Access key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.SecretKey">
+            <summary>
+            Secret key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.EndpointUrl">
+            <summary>
+            Endpoint URL for S3-compatible storage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.UseSsl">
+            <summary>
+            Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.BaseUrl">
+            <summary>
+            Base URL for accessing stored objects.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.S3Settings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.SyslogServerSettings">
+            <summary>
+            Syslog server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.SyslogServerSettings.Hostname">
+            <summary>
+            Hostname of the syslog server.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.SyslogServerSettings.Port">
+            <summary>
+            Port of the syslog server.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.SyslogServerSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.WebserverSettings">
+            <summary>
+            Webserver settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.WebserverSettings.Hostname">
+            <summary>
+            Hostname on which to listen.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.WebserverSettings.Port">
+            <summary>
+            Port on which to listen.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.WebserverSettings.Ssl">
+            <summary>
+            Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.WebserverSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+    </members>
+</doc>

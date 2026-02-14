@@ -1,0 +1,206 @@
+services:
+
+  # --- Infrastructure ---
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: assistanthub-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  # --- S3-Compatible Storage (Less3) ---
+
+  less3:
+    image: jchristn77/less3:latest
+    container_name: assistanthub-less3
+    ports:
+      - "8000:8000"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./less3/system.json:/app/system.json
+      - ./less3/less3.db:/app/less3.db
+      - ./less3/logs/:/app/logs/
+      - ./less3/temp/:/app/temp/
+      - ./less3/disk/:/app/disk/
+    healthcheck:
+      test: curl --fail http://localhost:8000
+      interval: 5s
+      timeout: 2s
+      retries: 2
+      start_period: 30s
+    restart: unless-stopped
+
+  less3-ui:
+    image: jchristn77/less3-ui:latest
+    container_name: assistanthub-less3-ui
+    ports:
+      - "8001:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      less3:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Document Processing (DocumentAtom) ---
+
+  documentatom-server:
+    image: jchristn77/documentatom:latest
+    container_name: assistanthub-documentatom
+    ports:
+      - "8301:8000"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./documentatom/documentatom.json:/app/documentatom.json
+      - ./documentatom/logs/:/app/logs/
+    healthcheck:
+      test: curl --fail http://localhost:8000
+      interval: 5s
+      timeout: 2s
+      retries: 2
+      start_period: 30s
+    restart: unless-stopped
+
+  documentatom-dashboard:
+    image: jchristn77/documentatom-ui:latest
+    container_name: assistanthub-documentatom-ui
+    ports:
+      - "8302:3000"
+    stdin_open: true
+    tty: true
+    depends_on:
+      documentatom-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Chunking (Partio) ---
+
+  partio-server:
+    image: jchristn77/partio-server:latest
+    container_name: assistanthub-partio-server
+    ports:
+      - "8321:8400"
+    volumes:
+      - ./partio/partio.json:/app/partio.json:ro
+      - ./partio/data/:/app/data/
+      - ./partio/logs/:/app/logs/
+      - ./partio/request-history/:/app/request-history/
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  partio-dashboard:
+    image: jchristn77/partio-dashboard:latest
+    container_name: assistanthub-partio-dashboard
+    ports:
+      - "8322:8401"
+    depends_on:
+      - partio-server
+    restart: unless-stopped
+
+  # --- Vector Database (RecallDB) ---
+
+  pgvector:
+    image: ankane/pgvector:latest
+    container_name: assistanthub-pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 2
+    restart: unless-stopped
+
+  recalldb-init:
+    image: ankane/pgvector:latest
+    container_name: assistanthub-recalldb-init
+    environment:
+      PGPASSWORD: password
+    volumes:
+      - ./recalldb/init-recalldb.sh:/init-recalldb.sh:ro
+    entrypoint: ["bash", "/init-recalldb.sh"]
+    depends_on:
+      pgvector:
+        condition: service_healthy
+    restart: "no"
+
+  recalldb-server:
+    image: jchristn77/recalldb-server:latest
+    container_name: assistanthub-recalldb-server
+    ports:
+      - "8401:8600"
+    environment:
+      RECALLDB_DB_HOST: pgvector
+      RECALLDB_DB_PORT: "5432"
+      RECALLDB_DB_NAME: recalldb
+      RECALLDB_DB_USER: postgres
+      RECALLDB_DB_PASS: password
+    volumes:
+      - ./recalldb/recalldb.json:/app/recalldb.json:ro
+    depends_on:
+      recalldb-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8600/"]
+      interval: 5s
+      timeout: 2s
+      retries: 2
+      start_period: 30s
+    restart: unless-stopped
+
+  recalldb-dashboard:
+    image: jchristn77/recalldb-dashboard:latest
+    container_name: assistanthub-recalldb-dashboard
+    ports:
+      - "8402:8601"
+    depends_on:
+      recalldb-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- AssistantHub ---
+
+  assistanthub-server:
+    image: jchristn77/assistanthub-server:latest
+    container_name: assistanthub-server
+    ports:
+      - "8800:8800"
+    volumes:
+      - ./assistanthub/assistanthub.json:/app/assistanthub.json
+      - ./assistanthub/assistanthub.db:/app/assistanthub.db
+      - ./assistanthub/logs/:/app/logs/
+    depends_on:
+      pgvector:
+        condition: service_healthy
+      less3:
+        condition: service_healthy
+      recalldb-server:
+        condition: service_healthy
+      documentatom-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  assistanthub-dashboard:
+    image: jchristn77/assistanthub-dashboard:latest
+    container_name: assistanthub-dashboard
+    ports:
+      - "8801:8801"
+    depends_on:
+      - assistanthub-server
+    restart: unless-stopped
+
+volumes:
+  pgvector-data:
+  ollama-models:

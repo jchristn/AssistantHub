@@ -1,0 +1,81 @@
+{
+  "EnableConsole": false,
+  "ValidateSignatures": true,
+  "UseTcpServer": false,
+  "HeaderApiKey": "x-api-key",
+  "AdminApiKey": "less3admin",
+  "RegionString": "us-west-1",
+  "Database": {
+    "Type": "Sqlite",
+    "Filename": "./less3.db",
+    "Hostname": null,
+    "Port": 0,
+    "DatabaseName": null,
+    "Username": null,
+    "Password": null,
+    "Instance": null,
+    "Debug": {
+      "DatabaseQueries": false,
+      "DatabaseResults": false
+    }
+  },
+  "Storage": {
+    "TempDirectory": "./temp/",
+    "StorageType": "Disk",
+    "DiskDirectory": "./disk/"
+  },
+  "Logging": {
+    "SyslogServerIp": "127.0.0.1",
+    "SyslogServerPort": 514,
+    "MinimumLevel": "Info",
+    "ConsoleLogging": true,
+    "EnableColors": false,
+    "DiskLogging": true,
+    "DiskDirectory": "./logs/",
+    "LogHttpRequests": false,
+    "LogS3Requests": false,
+    "LogExceptions": false,
+    "LogSignatureValidation": false
+  },
+  "Webserver": {
+    "Hostname": "*",
+    "Port": 8000,
+    "Ssl": {
+      "Enable": false,
+      "MutuallyAuthenticate": false,
+      "AcceptInvalidCertificates": true
+    },
+    "IO": {
+      "StreamBufferSize": 65536,
+      "MaxRequests": 1024,
+      "ReadTimeoutMs": 10000,
+      "MaxIncomingHeadersSize": 65536,
+      "EnableKeepAlive": false
+    },
+    "Headers": {
+      "IncludeContentLength": true,
+      "DefaultHeaders": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "",
+        "Accept": "*/*",
+        "Accept-Language": "en-US, en",
+        "Accept-Charset": "ISO-8859-1, utf-8",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      }
+    },
+    "AccessControl": {
+      "Mode": "DefaultPermit",
+      "DenyList": {},
+      "PermitList": {}
+    },
+    "Debug": {
+      "AccessControl": false,
+      "Routing": false,
+      "Requests": false,
+      "Responses": false
+    }
+  }
+}

@@ -272,6 +272,24 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostCreateThreadAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/threads - Create a new thread ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostCompactAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/compact - Force conversation compaction.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetThreadHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.CollectionHandler">
             <summary>
             Handles collection CRUD routes by proxying to RecallDB (admin only).
@@ -589,6 +607,48 @@
             <param name="ctx">HTTP context.</param>
             <returns>Enumeration query.</returns>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.HistoryHandler">
+            <summary>
+            Handles chat history list, read, and delete routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.GetHistoryListAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/history - List chat history entries.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.GetHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/history/{historyId} - Get history entry by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.DeleteHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/history/{historyId} - Delete history entry by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.GetThreadsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/threads - List distinct threads with summary info.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.InferenceHandler">
             <summary>
             Handles inference model listing and pull routes.
@@ -610,6 +670,7 @@
         <member name="M:AssistantHub.Server.Handlers.InferenceHandler.GetModelsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/models - List available models on the configured inference provider.
+            Accepts optional query parameter ?assistantId={id} to list models from an assistant's endpoint.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -631,6 +692,15 @@
             DELETE /v1.0/models/{modelName} - Delete a model (admin only).
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.ResolveInferenceServiceAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Resolve the inference service to use. If an assistantId query parameter is present,
+            loads the assistant's settings and creates a temporary InferenceService targeting
+            that assistant's endpoint. Otherwise returns the global Inference service.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>InferenceService instance, or null if an error response was sent.</returns>
         </member>
         <member name="T:AssistantHub.Server.Handlers.IngestionRuleHandler">
             <summary>

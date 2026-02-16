@@ -84,6 +84,16 @@ namespace AssistantHub.Core
         public static string IngestionRuleIdentifierPrefix = "irule_";
 
         /// <summary>
+        /// Thread identifier prefix.
+        /// </summary>
+        public static string ThreadIdentifierPrefix = "thr_";
+
+        /// <summary>
+        /// Chat history identifier prefix.
+        /// </summary>
+        public static string ChatHistoryIdentifierPrefix = "chist_";
+
+        /// <summary>
         /// Chat completion identifier prefix.
         /// </summary>
         public static string ChatCompletionIdentifierPrefix = "chatcmpl-";
@@ -136,6 +146,20 @@ namespace AssistantHub.Core
         /// Ingestion rules table name.
         /// </summary>
         public static string IngestionRulesTable = "ingestion_rules";
+
+        /// <summary>
+        /// Chat history table name.
+        /// </summary>
+        public static string ChatHistoryTable = "chat_history";
+
+        #endregion
+
+        #region Headers
+
+        /// <summary>
+        /// Thread ID header name.
+        /// </summary>
+        public static string ThreadIdHeader = "X-Thread-ID";
 
         #endregion
 

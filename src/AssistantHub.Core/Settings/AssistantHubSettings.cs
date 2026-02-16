@@ -90,6 +90,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _ProcessingLog = value; }
         }
 
+        /// <summary>
+        /// Chat history settings.
+        /// </summary>
+        public ChatHistorySettings ChatHistory
+        {
+            get => _ChatHistory;
+            set { if (value != null) _ChatHistory = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -103,6 +112,7 @@ namespace AssistantHub.Core.Settings
         private RecallDbSettings _RecallDb = new RecallDbSettings();
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
+        private ChatHistorySettings _ChatHistory = new ChatHistorySettings();
 
         #endregion
 

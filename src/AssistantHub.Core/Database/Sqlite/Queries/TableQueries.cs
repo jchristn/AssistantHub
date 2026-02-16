@@ -106,6 +106,23 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  embedding_json TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS chat_history (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  thread_id TEXT NOT NULL, " +
+                "  assistant_id TEXT NOT NULL, " +
+                "  collection_id TEXT, " +
+                "  user_message_utc TEXT NOT NULL, " +
+                "  user_message TEXT, " +
+                "  retrieval_start_utc TEXT, " +
+                "  retrieval_duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  retrieval_context TEXT, " +
+                "  prompt_sent_utc TEXT, " +
+                "  time_to_first_token_ms REAL NOT NULL DEFAULT 0, " +
+                "  time_to_last_token_ms REAL NOT NULL DEFAULT 0, " +
+                "  assistant_response TEXT, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
                 "); ";
         }
 
@@ -123,7 +140,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_assistant_documents_status ON assistant_documents (status); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON ingestion_rules (name); " +
-                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id); ";
+                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_assistant_id ON chat_history (assistant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_thread_id ON chat_history (thread_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc); ";
         }
 
     }

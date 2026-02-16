@@ -48,6 +48,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string CollectionIdFilter { get; set; } = null;
 
+        /// <summary>
+        /// Filter by thread identifier.
+        /// </summary>
+        public string ThreadIdFilter { get; set; } = null;
+
         #endregion
 
         #region Private-Members

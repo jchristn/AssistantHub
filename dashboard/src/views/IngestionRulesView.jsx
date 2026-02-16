@@ -80,6 +80,17 @@ function IngestionRulesView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteIngestionRule(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some ingestion rules' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
@@ -89,7 +100,7 @@ function IngestionRulesView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditRule(null); setShowForm(true); }}>Create Ingestion Rule</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
       {showJson && <JsonViewModal title="Ingestion Rule JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Ingestion Rule" message={`Are you sure you want to delete ingestion rule "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

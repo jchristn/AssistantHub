@@ -164,6 +164,12 @@ namespace AssistantHub.Server.Handlers
                 query.CollectionIdFilter = collectionIdFilter;
             }
 
+            string threadIdFilter = ctx.Request.Query.Elements.Get("threadId");
+            if (!String.IsNullOrEmpty(threadIdFilter))
+            {
+                query.ThreadIdFilter = threadIdFilter;
+            }
+
             return query;
         }
     }

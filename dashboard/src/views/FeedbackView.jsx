@@ -67,6 +67,17 @@ function FeedbackView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteFeedback(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some feedback entries' });
+    }
+  };
+
   const handleFilterChange = (e) => {
     setAssistantFilter(e.target.value);
     setRefresh(r => r + 1);
@@ -103,7 +114,7 @@ function FeedbackView() {
           </select>
         </div>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {viewFeedback && <FeedbackViewModal feedback={viewFeedback} onClose={() => setViewFeedback(null)} />}
       {showJson && <JsonViewModal title="Feedback JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Feedback" message="Are you sure you want to delete this feedback entry? This action cannot be undone." confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

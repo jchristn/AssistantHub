@@ -49,6 +49,11 @@ namespace AssistantHub.Core.Database
         /// </summary>
         public IIngestionRuleMethods IngestionRule { get; protected set; }
 
+        /// <summary>
+        /// Chat history methods.
+        /// </summary>
+        public IChatHistoryMethods ChatHistory { get; protected set; }
+
         #endregion
 
         #region Constructors-and-Factories
@@ -143,6 +148,17 @@ namespace AssistantHub.Core.Database
         public virtual string FormatDouble(double value)
         {
             return value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Format a nullable DateTime for SQL.
+        /// </summary>
+        /// <param name="value">Nullable DateTime value.</param>
+        /// <returns>SQL string or NULL.</returns>
+        public virtual string FormatNullableDateTime(DateTime? value)
+        {
+            if (value == null) return "NULL";
+            return "'" + FormatDateTime(value.Value) + "'";
         }
 
         #endregion

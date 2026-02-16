@@ -31,11 +31,25 @@ function ModelsView() {
   const [alert, setAlert] = useState(null);
   const [refreshState, setRefreshState] = useState('idle');
   const refreshTimerRef = useRef(null);
+  const [assistants, setAssistants] = useState([]);
+  const [selectedAssistantId, setSelectedAssistantId] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await api.getAssistants({ maxResults: 1000 });
+        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        setAssistants(items);
+      } catch (err) {
+        console.error('Failed to load assistants', err);
+      }
+    })();
+  }, [serverUrl, credential]);
 
   const loadModels = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await api.getModels();
+      const result = await api.getModels(selectedAssistantId || undefined);
       if (Array.isArray(result)) {
         setModels(result);
       } else {
@@ -46,7 +60,7 @@ function ModelsView() {
     } finally {
       setLoading(false);
     }
-  }, [serverUrl, credential]);
+  }, [serverUrl, credential, selectedAssistantId]);
 
   useEffect(() => { loadModels(); }, [loadModels]);
 
@@ -119,7 +133,7 @@ function ModelsView() {
     setPullProgress({ Status: 'starting', PercentComplete: 0, TotalBytes: 0, CompletedBytes: 0 });
 
     try {
-      const result = await api.pullModel(pullName.trim());
+      const result = await api.pullModel(pullName.trim(), selectedAssistantId || undefined);
       if (!result.ok) {
         setPulling(false);
         setPullProgress(null);
@@ -136,7 +150,7 @@ function ModelsView() {
 
   const handleDelete = async () => {
     try {
-      await api.deleteModel(deleteTarget.Name);
+      await api.deleteModel(deleteTarget.Name, selectedAssistantId || undefined);
       setDeleteTarget(null);
       loadModels();
     } catch (err) {
@@ -159,6 +173,17 @@ function ModelsView() {
             <button className="btn btn-primary" onClick={() => setShowPull(true)}>Pull Model</button>
           )}
         </div>
+      </div>
+      <div className="filter-bar">
+        <label className="filter-label">
+          Assistant:
+          <select value={selectedAssistantId} onChange={(e) => setSelectedAssistantId(e.target.value)}>
+            <option value="">System default</option>
+            {assistants.map((a) => (
+              <option key={a.Id} value={a.Id}>{a.Name || a.Id}</option>
+            ))}
+          </select>
+        </label>
       </div>
       <div className="data-table-container">
         <div className="data-table-toolbar">

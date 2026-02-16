@@ -124,6 +124,26 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  PRIMARY KEY (`id`)" +
             ")";
 
+        internal static string CreateChatHistoryTable =
+            "CREATE TABLE IF NOT EXISTS `chat_history` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `thread_id` VARCHAR(256) NOT NULL, " +
+            "  `assistant_id` VARCHAR(256) NOT NULL, " +
+            "  `collection_id` VARCHAR(256), " +
+            "  `user_message_utc` TEXT NOT NULL, " +
+            "  `user_message` LONGTEXT, " +
+            "  `retrieval_start_utc` TEXT, " +
+            "  `retrieval_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `retrieval_context` LONGTEXT, " +
+            "  `prompt_sent_utc` TEXT, " +
+            "  `time_to_first_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `time_to_last_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `assistant_response` LONGTEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
         #endregion
 
         #region Indices
@@ -151,6 +171,15 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateAssistantDocumentsIngestionRuleIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON `assistant_documents` (`ingestion_rule_id`(191))";
+
+        internal static string CreateChatHistoryAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_assistant_id ON `chat_history` (`assistant_id`)";
+
+        internal static string CreateChatHistoryThreadIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_thread_id ON `chat_history` (`thread_id`)";
+
+        internal static string CreateChatHistoryCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON `chat_history` (`created_utc`(191))";
 
         #endregion
     }

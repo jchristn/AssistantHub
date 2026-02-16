@@ -3,7 +3,7 @@ import Pagination from './Pagination';
 import ActionMenu from './ActionMenu';
 import Tooltip from './Tooltip';
 
-function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters }) {
+function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -12,6 +12,8 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   const [filters, setFilters] = useState(initialFilters || {});
   const [sortKey, setSortKey] = useState(null);
   const [sortDirection, setSortDirection] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const refreshTimerRef = useRef(null);
 
   const loadData = useCallback(async () => {
@@ -101,19 +103,62 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
     }
   };
 
+  // Clear selection when data or page changes
+  useEffect(() => { setSelectedIds(new Set()); }, [paginatedData, currentPage]);
+
+  const pageIds = useMemo(() => paginatedData.map(row => row.Id || row.GUID), [paginatedData]);
+  const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pageIds));
+    }
+  };
+
+  const toggleSelectRow = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0 || !onBulkDelete) return;
+    setBulkDeleting(true);
+    await onBulkDelete(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setBulkDeleting(false);
+  };
+
   const hasFilterableColumns = columns.some(col => col.filterable);
 
   return (
     <div className="data-table-container">
-      <Pagination
-        totalRecords={totalRecords}
-        maxResults={pageSize}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        onRefresh={handleRefresh}
-        refreshState={refreshState}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <Pagination
+          totalRecords={totalRecords}
+          maxResults={pageSize}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          onRefresh={handleRefresh}
+          refreshState={refreshState}
+        />
+        {onBulkDelete && selectedIds.size > 0 && (
+          <button
+            className="btn btn-danger"
+            style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}
+            onClick={handleBulkDelete}
+            disabled={bulkDeleting}
+          >
+            {bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
+          </button>
+        )}
+      </div>
       {loading ? (
         <div className="loading"><div className="spinner" /></div>
       ) : allData.length === 0 ? (
@@ -122,6 +167,11 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
         <table className="data-table">
           <thead>
             <tr>
+              {onBulkDelete && (
+                <th style={{ width: '2.5rem', textAlign: 'center' }}>
+                  <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAll} />
+                </th>
+              )}
               {columns.map((col) => (
                 <th key={col.key} onClick={() => handleSort(col.key)}>
                   <span className="th-content">
@@ -142,6 +192,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
             </tr>
             {hasFilterableColumns && (
               <tr className="data-table-filter-row">
+                {onBulkDelete && <td></td>}
                 {columns.map((col) => (
                   <td key={col.key}>
                     {col.filterable && (
@@ -162,22 +213,30 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (getRowActions ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                <td colSpan={columns.length + (getRowActions ? 1 : 0) + (onBulkDelete ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                   No matching records.
                 </td>
               </tr>
-            ) : paginatedData.map((row, idx) => (
-              <tr key={row.Id || row.GUID || idx}>
-                {columns.map((col) => (
-                  <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>
-                ))}
-                {getRowActions && (
-                  <td className="actions-cell">
-                    <ActionMenu items={getRowActions(row)} />
-                  </td>
-                )}
-              </tr>
-            ))}
+            ) : paginatedData.map((row, idx) => {
+              const rowId = row.Id || row.GUID;
+              return (
+                <tr key={rowId || idx}>
+                  {onBulkDelete && (
+                    <td style={{ width: '2.5rem', textAlign: 'center' }}>
+                      <input type="checkbox" checked={selectedIds.has(rowId)} onChange={() => toggleSelectRow(rowId)} />
+                    </td>
+                  )}
+                  {columns.map((col) => (
+                    <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>
+                  ))}
+                  {getRowActions && (
+                    <td className="actions-cell">
+                      <ActionMenu items={getRowActions(row)} />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

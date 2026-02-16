@@ -24,5 +24,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("total_tokens")]
         public int TotalTokens { get; set; } = 0;
+
+        /// <summary>
+        /// Total context window size in tokens.
+        /// </summary>
+        [JsonPropertyName("context_window")]
+        public int ContextWindow { get; set; } = 0;
     }
 }

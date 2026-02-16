@@ -2,6 +2,7 @@ namespace AssistantHub.Server.Handlers
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -156,6 +157,11 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                // Check for thread ID header for history tracking
+                string threadId = ctx.Request.Headers[Constants.ThreadIdHeader];
+
+                DateTime userMessageUtc = DateTime.UtcNow;
+
                 // Extract last user message for RAG retrieval
                 string lastUserMessage = null;
                 for (int i = chatReq.Messages.Count - 1; i >= 0; i--)
@@ -169,13 +175,21 @@ namespace AssistantHub.Server.Handlers
 
                 // Retrieve relevant context from the vector database
                 List<string> contextChunks = new List<string>();
+                DateTime? retrievalStartUtc = null;
+                double retrievalDurationMs = 0;
                 if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
                 {
+                    retrievalStartUtc = DateTime.UtcNow;
+                    Stopwatch retrievalSw = Stopwatch.StartNew();
+
                     List<string> retrievedChunks = await Retrieval.RetrieveAsync(
                         settings.CollectionId,
                         lastUserMessage,
                         settings.RetrievalTopK,
                         settings.RetrievalScoreThreshold).ConfigureAwait(false);
+
+                    retrievalSw.Stop();
+                    retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
 
                     if (retrievedChunks != null)
                     {
@@ -222,15 +236,24 @@ namespace AssistantHub.Server.Handlers
                 messages = await CompactIfNeeded(messages, settings, model, inferenceEndpoint, inferenceApiKey,
                     settings.Streaming ? ctx : null).ConfigureAwait(false);
 
+                DateTime promptSentUtc = DateTime.UtcNow;
+                Stopwatch inferenceSw = Stopwatch.StartNew();
+
+                string retrievalContextText = contextChunks.Count > 0 ? String.Join("\n---\n", contextChunks) : null;
+
                 if (settings.Streaming)
                 {
                     await HandleStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
-                        settings, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+                        settings, inferenceEndpoint, inferenceApiKey,
+                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, promptSentUtc, inferenceSw).ConfigureAwait(false);
                 }
                 else
                 {
                     await HandleNonStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
-                        settings, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+                        settings, inferenceEndpoint, inferenceApiKey,
+                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, promptSentUtc, inferenceSw).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -304,6 +327,242 @@ namespace AssistantHub.Server.Handlers
             }
         }
 
+        /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/threads - Create a new thread ID.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PostCreateThreadAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string threadId = IdGenerator.NewThreadId();
+
+                ctx.Response.StatusCode = 201;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new { ThreadId = threadId })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PostCreateThreadAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/compact - Force conversation compaction.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PostCompactAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = ctx.Request.DataAsString;
+                ChatCompletionRequest chatReq = Serializer.DeserializeJson<ChatCompletionRequest>(body);
+                if (chatReq == null || chatReq.Messages == null || chatReq.Messages.Count == 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "At least one message is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
+                    return;
+                }
+
+                string threadId = ctx.Request.Headers[Constants.ThreadIdHeader];
+
+                // Build message list with system prompt + RAG context (same as PostChatAsync)
+                string lastUserMessage = null;
+                for (int i = chatReq.Messages.Count - 1; i >= 0; i--)
+                {
+                    if (String.Equals(chatReq.Messages[i].Role, "user", StringComparison.OrdinalIgnoreCase))
+                    {
+                        lastUserMessage = chatReq.Messages[i].Content;
+                        break;
+                    }
+                }
+
+                List<string> contextChunks = new List<string>();
+                if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+                {
+                    List<string> retrievedChunks = await Retrieval.RetrieveAsync(
+                        settings.CollectionId, lastUserMessage,
+                        settings.RetrievalTopK, settings.RetrievalScoreThreshold).ConfigureAwait(false);
+                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks);
+                }
+
+                List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
+
+                bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
+                if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
+                {
+                    string fullSystemMessage = Inference.BuildSystemMessage(settings.SystemPrompt, contextChunks);
+                    messages.Insert(0, new ChatCompletionMessage { Role = "system", Content = fullSystemMessage });
+                }
+                else if (hasSystemMessage && contextChunks.Count > 0)
+                {
+                    for (int i = 0; i < messages.Count; i++)
+                    {
+                        if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase))
+                        {
+                            messages[i] = new ChatCompletionMessage
+                            {
+                                Role = "system",
+                                Content = Inference.BuildSystemMessage(messages[i].Content, contextChunks)
+                            };
+                            break;
+                        }
+                    }
+                }
+
+                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
+                string inferenceEndpoint = !String.IsNullOrEmpty(settings.InferenceEndpoint) ? settings.InferenceEndpoint : Settings.Inference.Endpoint;
+                string inferenceApiKey = !String.IsNullOrEmpty(settings.InferenceApiKey) ? settings.InferenceApiKey : Settings.Inference.ApiKey;
+
+                // Force compaction
+                messages = await CompactIfNeeded(messages, settings, model, inferenceEndpoint, inferenceApiKey, null, force: true).ConfigureAwait(false);
+
+                // Filter out system messages for the response
+                List<ChatCompletionMessage> responseMessages = messages
+                    .Where(m => !String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                int promptTokens = EstimateTokenCount(messages);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new
+                {
+                    messages = responseMessages,
+                    usage = new ChatCompletionUsage
+                    {
+                        PromptTokens = promptTokens,
+                        TotalTokens = promptTokens,
+                        ContextWindow = settings.ContextWindow
+                    }
+                })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PostCompactAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetThreadHistoryAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                string threadId = ctx.Request.Url.Parameters["threadId"];
+                if (String.IsNullOrEmpty(assistantId) || String.IsNullOrEmpty(threadId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                EnumerationQuery query = new EnumerationQuery();
+                query.ThreadIdFilter = threadId;
+                query.AssistantIdFilter = assistantId;
+                query.Ordering = Enums.EnumerationOrderEnum.CreatedAscending;
+                query.MaxResults = 1000;
+
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(query).ConfigureAwait(false);
+
+                List<object> items = new List<object>();
+                if (result?.Objects != null)
+                {
+                    foreach (ChatHistory h in result.Objects)
+                    {
+                        items.Add(new
+                        {
+                            UserMessage = h.UserMessage,
+                            AssistantResponse = h.AssistantResponse,
+                            UserMessageUtc = h.UserMessageUtc
+                        });
+                    }
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(items)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetThreadHistoryAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
         #region Private-Methods
 
         private async Task HandleNonStreamingResponse(
@@ -315,11 +574,28 @@ namespace AssistantHub.Server.Handlers
             double topP,
             AssistantSettings settings,
             string inferenceEndpoint,
-            string inferenceApiKey)
+            string inferenceApiKey,
+            string threadId = null,
+            string assistantId = null,
+            string collectionId = null,
+            DateTime? userMessageUtc = null,
+            string lastUserMessage = null,
+            DateTime? retrievalStartUtc = null,
+            double retrievalDurationMs = 0,
+            string retrievalContext = null,
+            DateTime? promptSentUtc = null,
+            Stopwatch inferenceSw = null)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
                 settings.InferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+
+            double timeToLastTokenMs = 0;
+            if (inferenceSw != null)
+            {
+                inferenceSw.Stop();
+                timeToLastTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+            }
 
             if (inferenceResult != null && inferenceResult.Success && !String.IsNullOrEmpty(inferenceResult.Content))
             {
@@ -345,13 +621,24 @@ namespace AssistantHub.Server.Handlers
                     {
                         PromptTokens = promptTokens,
                         CompletionTokens = completionTokens,
-                        TotalTokens = promptTokens + completionTokens
+                        TotalTokens = promptTokens + completionTokens,
+                        ContextWindow = settings.ContextWindow
                     }
                 };
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(response)).ConfigureAwait(false);
+
+                // Fire-and-forget chat history write
+                if (!String.IsNullOrEmpty(threadId))
+                {
+                    _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                        userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
+                        retrievalStartUtc, retrievalDurationMs, retrievalContext,
+                        promptSentUtc, timeToLastTokenMs, timeToLastTokenMs,
+                        inferenceResult.Content);
+                }
             }
             else
             {
@@ -372,10 +659,22 @@ namespace AssistantHub.Server.Handlers
             double topP,
             AssistantSettings settings,
             string inferenceEndpoint,
-            string inferenceApiKey)
+            string inferenceApiKey,
+            string threadId = null,
+            string assistantId = null,
+            string collectionId = null,
+            DateTime? userMessageUtc = null,
+            string lastUserMessage = null,
+            DateTime? retrievalStartUtc = null,
+            double retrievalDurationMs = 0,
+            string retrievalContext = null,
+            DateTime? promptSentUtc = null,
+            Stopwatch inferenceSw = null)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            double timeToFirstTokenMs = 0;
+            bool firstTokenCaptured = false;
 
             ctx.Response.StatusCode = 200;
             ctx.Response.ContentType = "text/event-stream";
@@ -407,6 +706,12 @@ namespace AssistantHub.Server.Handlers
                 settings.InferenceProvider, inferenceEndpoint, inferenceApiKey,
                 onDelta: async (deltaContent) =>
                 {
+                    if (!firstTokenCaptured && inferenceSw != null)
+                    {
+                        timeToFirstTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                        firstTokenCaptured = true;
+                    }
+
                     ChatCompletionResponse deltaChunk = new ChatCompletionResponse
                     {
                         Id = completionId,
@@ -426,7 +731,26 @@ namespace AssistantHub.Server.Handlers
                 },
                 onComplete: async (fullContent) =>
                 {
-                    // Send finish chunk
+                    double timeToLastTokenMs = 0;
+                    if (inferenceSw != null)
+                    {
+                        inferenceSw.Stop();
+                        timeToLastTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                    }
+
+                    // Fire-and-forget chat history write
+                    if (!String.IsNullOrEmpty(threadId))
+                    {
+                        _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                            userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
+                            retrievalStartUtc, retrievalDurationMs, retrievalContext,
+                            promptSentUtc, timeToFirstTokenMs, timeToLastTokenMs,
+                            fullContent);
+                    }
+
+                    // Send finish chunk with usage
+                    int finishPromptTokens = EstimateTokenCount(messages);
+                    int finishCompletionTokens = EstimateTokenCount(fullContent);
                     ChatCompletionResponse finishChunk = new ChatCompletionResponse
                     {
                         Id = completionId,
@@ -441,6 +765,13 @@ namespace AssistantHub.Server.Handlers
                                 Delta = new ChatCompletionMessage(),
                                 FinishReason = "stop"
                             }
+                        },
+                        Usage = new ChatCompletionUsage
+                        {
+                            PromptTokens = finishPromptTokens,
+                            CompletionTokens = finishCompletionTokens,
+                            TotalTokens = finishPromptTokens + finishCompletionTokens,
+                            ContextWindow = settings.ContextWindow
                         }
                     };
                     await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
@@ -472,12 +803,13 @@ namespace AssistantHub.Server.Handlers
             string model,
             string inferenceEndpoint,
             string inferenceApiKey,
-            HttpContextBase streamingCtx)
+            HttpContextBase streamingCtx,
+            bool force = false)
         {
             int estimatedTokens = EstimateTokenCount(messages);
             int availableTokens = settings.ContextWindow - settings.MaxTokens;
 
-            if (estimatedTokens <= availableTokens || messages.Count <= 3)
+            if (!force && (estimatedTokens <= availableTokens || messages.Count <= 3))
             {
                 return messages;
             }
@@ -612,6 +944,38 @@ namespace AssistantHub.Server.Handlers
             {
                 Logging.Warn(_Header + "compaction failed: " + e.Message + ", proceeding with original messages");
                 return messages;
+            }
+        }
+
+        private async Task WriteChatHistoryAsync(
+            string threadId, string assistantId, string collectionId,
+            DateTime userMessageUtc, string userMessage,
+            DateTime? retrievalStartUtc, double retrievalDurationMs, string retrievalContext,
+            DateTime? promptSentUtc, double timeToFirstTokenMs, double timeToLastTokenMs,
+            string assistantResponse)
+        {
+            try
+            {
+                ChatHistory history = new ChatHistory();
+                history.Id = IdGenerator.NewChatHistoryId();
+                history.ThreadId = threadId;
+                history.AssistantId = assistantId;
+                history.CollectionId = collectionId;
+                history.UserMessageUtc = userMessageUtc;
+                history.UserMessage = userMessage;
+                history.RetrievalStartUtc = retrievalStartUtc;
+                history.RetrievalDurationMs = retrievalDurationMs;
+                history.RetrievalContext = retrievalContext;
+                history.PromptSentUtc = promptSentUtc;
+                history.TimeToFirstTokenMs = timeToFirstTokenMs;
+                history.TimeToLastTokenMs = timeToLastTokenMs;
+                history.AssistantResponse = assistantResponse;
+
+                await Database.ChatHistory.CreateAsync(history).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "failed to write chat history: " + e.Message);
             }
         }
 

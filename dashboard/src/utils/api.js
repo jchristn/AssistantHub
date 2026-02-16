@@ -133,28 +133,60 @@ export class ApiClient {
   getFeedback(id) { return this.request('GET', `/v1.0/feedback/${id}`); }
   deleteFeedback(id) { return this.request('DELETE', `/v1.0/feedback/${id}`); }
 
+  // History
+  getHistoryList(params) { return this.request('GET', '/v1.0/history' + this.buildQuery(params)); }
+  getHistory(id) { return this.request('GET', `/v1.0/history/${id}`); }
+  deleteHistory(id) { return this.request('DELETE', `/v1.0/history/${id}`); }
+  getThreads(params) { return this.request('GET', '/v1.0/threads' + this.buildQuery(params)); }
+
   // Models
-  getModels() { return this.request('GET', '/v1.0/models'); }
-  async pullModel(name) {
+  getModels(assistantId) {
+    const query = assistantId ? `?assistantId=${encodeURIComponent(assistantId)}` : '';
+    return this.request('GET', '/v1.0/models' + query);
+  }
+  async pullModel(name, assistantId) {
     const headers = { 'Content-Type': 'application/json' };
     if (this.bearerToken) headers['Authorization'] = `Bearer ${this.bearerToken}`;
-    const response = await fetch(`${this.serverUrl}/v1.0/models/pull`, {
+    const query = assistantId ? `?assistantId=${encodeURIComponent(assistantId)}` : '';
+    const response = await fetch(`${this.serverUrl}/v1.0/models/pull${query}`, {
       method: 'POST', headers, body: JSON.stringify({ Name: name })
     });
     return { statusCode: response.status, ok: response.ok };
   }
   getPullStatus() { return this.request('GET', '/v1.0/models/pull/status'); }
-  deleteModel(name) { return this.request('DELETE', `/v1.0/models/${encodeURIComponent(name)}`); }
+  deleteModel(name, assistantId) {
+    const query = assistantId ? `?assistantId=${encodeURIComponent(assistantId)}` : '';
+    return this.request('DELETE', `/v1.0/models/${encodeURIComponent(name)}${query}`);
+  }
 
   // Configuration
   getConfiguration() { return this.request('GET', '/v1.0/configuration'); }
   updateConfiguration(settings) { return this.request('PUT', '/v1.0/configuration', settings); }
 
+  // Thread creation (unauthenticated)
+  static async createThread(serverUrl, assistantId) {
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/threads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response.json();
+  }
+
+  // Thread history (unauthenticated)
+  static async getThreadHistory(serverUrl, assistantId, threadId) {
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/threads/${threadId}/history`);
+    if (!response.ok) return [];
+    return response.json();
+  }
+
   // Chat (unauthenticated) - handles both JSON and SSE streaming responses
-  static async chat(serverUrl, assistantId, messages, onDelta) {
+  static async chat(serverUrl, assistantId, messages, onDelta, threadId) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (threadId) headers['X-Thread-ID'] = threadId;
+
     const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ messages })
     });
 
@@ -171,6 +203,7 @@ export class ApiClient {
     let fullContent = '';
     let buffer = '';
     let status = null;
+    let usage = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -187,6 +220,11 @@ export class ApiClient {
 
         try {
           const chunk = JSON.parse(data);
+
+          // Capture usage data when present
+          if (chunk.usage) {
+            usage = chunk.usage;
+          }
 
           // Surface status messages (e.g. "Compacting the conversation...")
           if (chunk.status) {
@@ -211,8 +249,28 @@ export class ApiClient {
         index: 0,
         message: { role: 'assistant', content: fullContent },
         finish_reason: 'stop'
-      }]
+      }],
+      usage
     };
+  }
+
+  // Compact (unauthenticated) - force conversation compaction
+  static async compact(serverUrl, assistantId, messages, threadId) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (threadId) headers['X-Thread-ID'] = threadId;
+
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/compact`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ messages })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.Message || err.message || `Compact failed with status ${response.status}`);
+    }
+
+    return response.json();
   }
 
   // Feedback (unauthenticated)
@@ -233,6 +291,7 @@ export class ApiClient {
     if (params.assistantId) parts.push(`assistantId=${params.assistantId}`);
     if (params.bucketName) parts.push(`bucketName=${encodeURIComponent(params.bucketName)}`);
     if (params.collectionId) parts.push(`collectionId=${encodeURIComponent(params.collectionId)}`);
+    if (params.threadId) parts.push(`threadId=${encodeURIComponent(params.threadId)}`);
     return parts.length > 0 ? '?' + parts.join('&') : '';
   }
 }

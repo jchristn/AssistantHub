@@ -131,6 +131,27 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 CONSTRAINT pk_ingestion_rules PRIMARY KEY (id)
             );";
 
+        internal static readonly string CreateChatHistoryTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'chat_history')
+            CREATE TABLE chat_history (
+                id NVARCHAR(256) NOT NULL,
+                thread_id NVARCHAR(256) NOT NULL,
+                assistant_id NVARCHAR(256) NOT NULL,
+                collection_id NVARCHAR(256) NULL,
+                user_message_utc NVARCHAR(64) NOT NULL,
+                user_message NVARCHAR(MAX) NULL,
+                retrieval_start_utc NVARCHAR(64) NULL,
+                retrieval_duration_ms FLOAT NOT NULL DEFAULT 0,
+                retrieval_context NVARCHAR(MAX) NULL,
+                prompt_sent_utc NVARCHAR(64) NULL,
+                time_to_first_token_ms FLOAT NOT NULL DEFAULT 0,
+                time_to_last_token_ms FLOAT NOT NULL DEFAULT 0,
+                assistant_response NVARCHAR(MAX) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_chat_history PRIMARY KEY (id)
+            );";
+
         #endregion
 
         #region Indices
@@ -166,6 +187,18 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateAssistantDocumentsIngestionRuleIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_ingestion_rule_id')
             CREATE INDEX idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id);";
+
+        internal static readonly string CreateChatHistoryAssistantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_assistant_id')
+            CREATE INDEX idx_chat_history_assistant_id ON chat_history (assistant_id);";
+
+        internal static readonly string CreateChatHistoryThreadIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_thread_id')
+            CREATE INDEX idx_chat_history_thread_id ON chat_history (thread_id);";
+
+        internal static readonly string CreateChatHistoryCreatedUtcIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_created_utc')
+            CREATE INDEX idx_chat_history_created_utc ON chat_history (created_utc);";
 
         #endregion
     }

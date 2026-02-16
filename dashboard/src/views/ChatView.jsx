@@ -15,13 +15,20 @@ function ChatView() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [compacting, setCompacting] = useState(false);
   const [error, setError] = useState(null);
   const [feedbackSent, setFeedbackSent] = useState({});
   const [showFeedbackText, setShowFeedbackText] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
+  const [chatName, setChatName] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const titleRequestedRef = useRef(false);
+  const [threadId, setThreadId] = useState(() => {
+    return localStorage.getItem(`ah_thread_${assistantId}`) || null;
+  });
   const [theme, setTheme] = useState(() => localStorage.getItem('ah_chat_theme') || 'light');
+  const [contextUsage, setContextUsage] = useState(null);
 
   // Apply theme
   useEffect(() => {
@@ -49,12 +56,14 @@ function ChatView() {
 
   // Set document title
   useEffect(() => {
-    if (assistant?.Title) {
+    if (chatName) {
+      document.title = chatName;
+    } else if (assistant?.Title) {
       document.title = assistant.Title;
     } else if (assistant?.Name) {
       document.title = assistant.Name;
     }
-  }, [assistant?.Title, assistant?.Name]);
+  }, [chatName, assistant?.Title, assistant?.Name]);
 
   useEffect(() => {
     const fetchAssistant = async () => {
@@ -73,6 +82,42 @@ function ChatView() {
     fetchAssistant();
   }, [serverUrl, assistantId]);
 
+  // Persist threadId to localStorage
+  useEffect(() => {
+    const key = `ah_thread_${assistantId}`;
+    if (threadId) {
+      localStorage.setItem(key, threadId);
+    } else {
+      localStorage.removeItem(key);
+    }
+  }, [threadId, assistantId]);
+
+  // Load chat history from server when a stored threadId exists
+  useEffect(() => {
+    if (!threadId || !serverUrl || !assistantId) return;
+    let cancelled = false;
+    const loadHistory = async () => {
+      try {
+        const history = await ApiClient.getThreadHistory(serverUrl, assistantId, threadId);
+        if (cancelled || !history || history.length === 0) return;
+        const restored = [];
+        for (const entry of history) {
+          if (entry.UserMessage) restored.push({ role: 'user', content: entry.UserMessage });
+          if (entry.AssistantResponse) restored.push({ role: 'assistant', content: entry.AssistantResponse, userMessage: entry.UserMessage });
+        }
+        if (restored.length > 0) {
+          setMessages(restored);
+          titleRequestedRef.current = true;
+          generateChatTitle(restored);
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+      }
+    };
+    loadHistory();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -85,22 +130,156 @@ function ChatView() {
     }
   }, [input]);
 
+  const generateChatTitle = async (conversationMessages) => {
+    try {
+      const titleMessages = [
+        ...conversationMessages.filter(m => !m.isError).map(({ role, content }) => ({ role, content })),
+        {
+          role: 'user',
+          content: 'Generate a short title (max 6 words) for this conversation. Reply with ONLY the title text, nothing else.'
+        }
+      ];
+      const result = await ApiClient.chat(serverUrl, assistantId, titleMessages);
+      if (result.choices && result.choices.length > 0) {
+        const title = result.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
+        setChatName(title);
+      }
+    } catch (err) {
+      console.error('Failed to generate chat title:', err);
+    }
+  };
+
+  const handleClear = () => {
+    setMessages([]);
+    setThreadId(null);
+    localStorage.removeItem(`ah_thread_${assistantId}`);
+    setChatName(null);
+    titleRequestedRef.current = false;
+    setFeedbackSent({});
+    setError(null);
+    setContextUsage(null);
+  };
+
+  const handleCompact = async () => {
+    const chatMessages = messages.filter(m => !m.isError && !m.isSystem).map(({ role, content }) => ({ role, content }));
+    if (chatMessages.length < 3) {
+      setMessages(prev => [...prev, { role: 'system', content: 'Not enough conversation to compact.', isSystem: true }]);
+      return;
+    }
+    setLoading(true);
+    setCompacting(true);
+    setMessages(prev => [...prev, { role: 'system', content: 'Please wait while the conversation is compacted...', isSystem: true, isCompacting: true }]);
+    try {
+      const result = await ApiClient.compact(serverUrl, assistantId, chatMessages, threadId);
+      if (result.messages) {
+        setMessages(result.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content })));
+        setMessages(prev => [...prev, { role: 'system', content: 'Conversation compacted successfully.', isSystem: true }]);
+      }
+      if (result.usage) {
+        setContextUsage(result.usage);
+      }
+    } catch (err) {
+      setMessages(prev => [...prev.filter(m => !m.isCompacting), { role: 'system', content: 'Failed to compact: ' + err.message, isSystem: true }]);
+    } finally {
+      setLoading(false);
+      setCompacting(false);
+    }
+  };
+
+  const handleContext = () => {
+    const chatMessages = messages.filter(m => !m.isError && !m.isSystem);
+    const userCount = chatMessages.filter(m => m.role === 'user').length;
+    const assistantCount = chatMessages.filter(m => m.role === 'assistant').length;
+    const totalChars = chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+    const estimatedTokens = Math.ceil(totalChars / 4);
+
+    let md = '### Current Context\n\n';
+    md += `| Property | Value |\n|----------|-------|\n`;
+    md += `| **Assistant** | ${assistant?.Name || 'Unknown'} |\n`;
+    md += `| **Assistant ID** | \`${assistantId}\` |\n`;
+    md += `| **Thread ID** | ${threadId ? `\`${threadId}\`` : '_None (new thread on next message)_'} |\n`;
+    md += `| **Messages** | ${chatMessages.length} (${userCount} user, ${assistantCount} assistant) |\n`;
+    md += `| **Est. tokens** | ~${estimatedTokens.toLocaleString()} |\n`;
+
+    if (contextUsage) {
+      if (contextUsage.prompt_tokens != null) md += `| **Prompt tokens** | ${contextUsage.prompt_tokens.toLocaleString()} |\n`;
+      if (contextUsage.completion_tokens != null) md += `| **Completion tokens** | ${contextUsage.completion_tokens.toLocaleString()} |\n`;
+      if (contextUsage.total_tokens != null) md += `| **Total tokens** | ${contextUsage.total_tokens.toLocaleString()} |\n`;
+      if (contextUsage.context_window) md += `| **Context window** | ${contextUsage.context_window.toLocaleString()} |\n`;
+      if (contextUsage.context_window && contextUsage.total_tokens != null) {
+        const pct = Math.round((contextUsage.total_tokens / contextUsage.context_window) * 100);
+        md += `| **Usage** | ${pct}% |\n`;
+      }
+    }
+
+    md += `| **Server** | \`${serverUrl}\` |\n`;
+    md += `| **Theme** | ${theme} |\n`;
+
+    setMessages(prev => [...prev, { role: 'system', content: md, isSystem: true }]);
+  };
+
+  const handleHelp = () => {
+    const helpText = `| Command | Description |\n|---------|-------------|\n| \`/clear\` | Clear all messages and reset the conversation |\n| \`/compact\` | Summarize and compact the conversation to save tokens |\n| \`/context\` | Display current context information |\n| \`/help\` | Show this help message |`;
+    setMessages(prev => [...prev, { role: 'system', content: helpText, isSystem: true }]);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     const userMessage = input.trim();
     setInput('');
+
+    // Handle slash commands
+    if (userMessage.startsWith('/')) {
+      const command = userMessage.split(/\s/)[0].toLowerCase();
+      switch (command) {
+        case '/clear':
+          handleClear();
+          return;
+        case '/compact':
+          handleCompact();
+          return;
+        case '/context':
+          handleContext();
+          return;
+        case '/help':
+          handleHelp();
+          return;
+        default:
+          setMessages(prev => [...prev, { role: 'system', content: `Unknown command \`${command}\`. Type \`/help\` to see available commands.`, isSystem: true }]);
+          return;
+      }
+    }
+
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
 
     try {
+      // Create thread on first message
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        try {
+          const threadResult = await ApiClient.createThread(serverUrl, assistantId);
+          if (threadResult && threadResult.ThreadId) {
+            currentThreadId = threadResult.ThreadId;
+            setThreadId(currentThreadId);
+          }
+        } catch (err) {
+          console.error('Failed to create thread:', err);
+        }
+      }
+
       const updatedMessages = [...messages, { role: 'user', content: userMessage }];
       const chatMessages = updatedMessages
-        .filter(m => !m.isError)
+        .filter(m => !m.isError && !m.isSystem)
         .map(({ role, content }) => ({ role, content }));
 
       // Add a placeholder assistant message for streaming
       let streamingIndex = null;
+      let compactionDetected = false;
       const onDelta = (delta) => {
+        if (delta.status === 'Compacting the conversation...') {
+          compactionDetected = true;
+        }
         if (delta.content) {
           setMessages(prev => {
             const updated = [...prev];
@@ -118,7 +297,7 @@ function ChatView() {
         }
       };
 
-      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta);
+      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId);
 
       if (streamingIndex !== null) {
         // Streaming completed — finalize the message
@@ -149,6 +328,22 @@ function ChatView() {
           content: 'Sorry, I encountered an error.',
           isError: true
         }]);
+      }
+
+      // Update context usage from response
+      if (result.usage) {
+        setContextUsage(result.usage);
+      }
+
+      // Generate title after first successful response or after compaction
+      const hadSuccess = streamingIndex !== null || (result.choices && result.choices.length > 0);
+      if (hadSuccess) {
+        if (!titleRequestedRef.current) {
+          titleRequestedRef.current = true;
+          setMessages(current => { generateChatTitle(current); return current; });
+        } else if (compactionDetected) {
+          setMessages(current => { generateChatTitle(current); return current; });
+        }
       }
     } catch (err) {
       setMessages(prev => [...prev, {
@@ -200,6 +395,7 @@ function ChatView() {
     setFeedbackText('');
   };
 
+  const [copiedThreadId, setCopiedThreadId] = useState(false);
   const [copiedBlock, setCopiedBlock] = useState(null);
   const copyCode = (code, id) => {
     navigator.clipboard.writeText(code);
@@ -302,7 +498,7 @@ function ChatView() {
             onError={(e) => { e.target.src = '/logo-no-text.png'; }}
           />
           <div className="chat-header-info">
-            <div className="chat-header-title">{chatTitle}</div>
+            <div className="chat-header-title">{chatName || chatTitle}</div>
             {assistant?.Description && <div className="chat-header-desc">{assistant.Description}</div>}
           </div>
           <div className="chat-header-actions">
@@ -336,6 +532,21 @@ function ChatView() {
           )}
           {messages.map((msg, idx) => {
             codeBlockCounter.current = 0;
+
+            if (msg.isSystem) {
+              return (
+                <div key={idx} className="chat-message-row system">
+                  <div className="chat-system-message">
+                    <div className="chat-markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={idx} className={`chat-message-row ${msg.role}`}>
                 {msg.role === 'assistant' && (
@@ -398,7 +609,7 @@ function ChatView() {
               </div>
             );
           })}
-          {loading && !messages.some(m => m.isStreaming) && (
+          {loading && !compacting && !messages.some(m => m.isStreaming) && (
             <div className="chat-message-row assistant">
               <div className="chat-avatar assistant-avatar">
                 <img
@@ -445,8 +656,32 @@ function ChatView() {
             </svg>
           </button>
         </div>
-        <div className="chat-input-footer">
-          <span>Press Enter to send, Shift+Enter for new line</span>
+      </div>
+
+      {/* Status Bar */}
+      <div className="chat-status-bar">
+        <span className="chat-status-disclaimer">AI assistants can make mistakes. Press ENTER to send, shift-ENTER for a new line.</span>
+        <div className="chat-status-right">
+          {contextUsage && contextUsage.context_window > 0 && (
+            <span className="chat-context-usage" title={`Prompt: ${contextUsage.prompt_tokens?.toLocaleString() || 0} | Completion: ${contextUsage.completion_tokens?.toLocaleString() || 0}`}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              {(contextUsage.total_tokens || 0).toLocaleString()} / {contextUsage.context_window.toLocaleString()} tokens ({Math.round(((contextUsage.total_tokens || 0) / contextUsage.context_window) * 100)}%)
+            </span>
+          )}
+          {threadId && (
+            <button
+              className="chat-thread-id"
+              onClick={() => {
+                navigator.clipboard.writeText(threadId);
+                setCopiedThreadId(true);
+                setTimeout(() => setCopiedThreadId(false), 2000);
+              }}
+              title={`Thread: ${threadId}\nClick to copy`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>{copiedThreadId ? 'Copied!' : threadId.substring(0, 12) + '...'}</span>
+            </button>
+          )}
         </div>
       </div>
 

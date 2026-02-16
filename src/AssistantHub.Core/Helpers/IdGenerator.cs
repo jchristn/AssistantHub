@@ -80,6 +80,24 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate a thread identifier.
+        /// </summary>
+        /// <returns>Thread identifier.</returns>
+        public static string NewThreadId()
+        {
+            return _Generator.GenerateKSortable(Constants.ThreadIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
+        /// Generate a chat history identifier.
+        /// </summary>
+        /// <returns>Chat history identifier.</returns>
+        public static string NewChatHistoryId()
+        {
+            return _Generator.GenerateKSortable(Constants.ChatHistoryIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a chat completion identifier.
         /// </summary>
         /// <returns>Chat completion identifier.</returns>

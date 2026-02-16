@@ -134,12 +134,23 @@ function DocumentsView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteDocument(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some documents' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
         <div>
           <h1 className="content-title">Documents</h1>
-          <p className="content-subtitle">Upload and manage documents for knowledge bases.</p>
+          <p className="content-subtitle">Upload and manage documents for knowledgebases.  Ingested documents are stored within RecallDB collections and optionally stored in S3 buckets.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload Document</button>
       </div>
@@ -163,7 +174,7 @@ function DocumentsView() {
           </select>
         </label>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showUpload && <DocumentUploadModal ingestionRules={ingestionRules} onUpload={handleUpload} onClose={() => setShowUpload(false)} />}
       {showJson && <JsonViewModal title="Document JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}

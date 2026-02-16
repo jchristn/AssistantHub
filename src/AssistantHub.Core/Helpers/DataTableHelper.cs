@@ -118,6 +118,20 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Get a nullable DateTime value from a data row.
+        /// </summary>
+        /// <param name="row">Data row.</param>
+        /// <param name="columnName">Column name.</param>
+        /// <returns>Nullable DateTime value.</returns>
+        public static DateTime? GetNullableDateTimeValue(DataRow row, string columnName)
+        {
+            string val = GetStringValue(row, columnName);
+            if (String.IsNullOrEmpty(val)) return null;
+            if (DateTime.TryParse(val, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime result)) return result;
+            return null;
+        }
+
+        /// <summary>
         /// Get an enum value from a data row.
         /// </summary>
         /// <typeparam name="T">Enum type.</typeparam>

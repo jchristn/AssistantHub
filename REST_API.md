@@ -21,8 +21,11 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Assistant Settings](#assistant-settings)
 - [Documents](#documents)
 - [Feedback (Authenticated)](#feedback-authenticated)
+- [History (Authenticated)](#history-authenticated)
+- [Threads (Authenticated)](#threads-authenticated)
 - [Models](#models)
 - [Public Endpoints](#public-endpoints)
+- [Configuration: ChatHistory Settings](#configuration-chathistory-settings)
 
 ---
 
@@ -138,6 +141,7 @@ List endpoints support pagination via query parameters:
 | `continuationToken` | string | null               | Token from a previous response for next page.     |
 | `ordering`          | string | CreatedDescending  | Sort order (`CreatedDescending`, `CreatedAscending`). |
 | `assistantId`       | string | null               | Filter results by assistant ID (where applicable).|
+| `threadId`          | string | null               | Filter results by thread ID (history only).       |
 | `bucketName`        | string | null               | Filter documents by bucket name (documents only). |
 | `collectionId`      | string | null               | Filter documents by collection ID (documents only).|
 
@@ -1304,6 +1308,116 @@ Delete a feedback record.
 
 ---
 
+## History (Authenticated)
+
+Authenticated users can view and manage chat history for their assistants. Admin users can see all history. History entries are created automatically when the `X-Thread-ID` header is provided on chat requests.
+
+### GET /v1.0/history
+
+List all chat history records with pagination.
+
+**Auth:** Required
+
+**Query Parameters:** See [Pagination](#pagination). Use `assistantId` to filter by assistant and `threadId` to filter by thread.
+
+**Response (200 OK):** Paginated envelope containing `ChatHistory` objects.
+
+### GET /v1.0/history/{historyId}
+
+Retrieve a single chat history record by ID.
+
+**Auth:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "Id": "chist_abc123...",
+  "ThreadId": "thr_abc123...",
+  "AssistantId": "asst_abc123...",
+  "CollectionId": "collection-uuid",
+  "UserMessageUtc": "2025-01-01T12:00:00Z",
+  "UserMessage": "How do I reset my password?",
+  "RetrievalStartUtc": "2025-01-01T12:00:00.100Z",
+  "RetrievalDurationMs": 45.23,
+  "RetrievalContext": "Chunk 1: To reset your password...",
+  "PromptSentUtc": "2025-01-01T12:00:00.150Z",
+  "TimeToFirstTokenMs": 120.50,
+  "TimeToLastTokenMs": 890.75,
+  "AssistantResponse": "To reset your password, navigate to Settings > Security...",
+  "CreatedUtc": "2025-01-01T12:00:00Z",
+  "LastUpdateUtc": "2025-01-01T12:00:00Z"
+}
+```
+
+**Field Descriptions:**
+
+| Field                  | Type     | Description                                                  |
+|------------------------|----------|--------------------------------------------------------------|
+| `Id`                   | string   | Unique identifier (chist_ prefix).                           |
+| `ThreadId`             | string   | Conversation thread identifier (thr_ prefix).                |
+| `AssistantId`          | string   | The assistant that handled the conversation.                 |
+| `CollectionId`         | string   | RecallDB collection used for retrieval (may be null).        |
+| `UserMessageUtc`       | datetime | UTC timestamp when the user message was received.            |
+| `UserMessage`          | string   | The user's message text.                                     |
+| `RetrievalStartUtc`    | datetime | UTC timestamp when RAG retrieval started (null if no RAG).   |
+| `RetrievalDurationMs`  | double   | RAG retrieval duration in milliseconds.                      |
+| `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
+| `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
+| `TimeToFirstTokenMs`   | double   | Time to first token from the model in milliseconds.          |
+| `TimeToLastTokenMs`    | double   | Time to last token from the model in milliseconds.           |
+| `AssistantResponse`    | string   | The assistant's full response text.                          |
+
+**Error Responses:**
+- `404` -- History entry not found.
+
+### DELETE /v1.0/history/{historyId}
+
+Delete a chat history record.
+
+**Auth:** Required
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `404` -- History entry not found.
+
+---
+
+## Threads (Authenticated)
+
+### GET /v1.0/threads
+
+List distinct conversation threads grouped from chat history records.
+
+**Auth:** Required
+
+**Query Parameters:** Use `assistantId` to filter by assistant.
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "ThreadId": "thr_abc123...",
+    "AssistantId": "asst_abc123...",
+    "FirstMessageUtc": "2025-01-01T12:00:00Z",
+    "LastMessageUtc": "2025-01-01T12:05:00Z",
+    "TurnCount": 5
+  }
+]
+```
+
+| Field             | Type     | Description                                  |
+|-------------------|----------|----------------------------------------------|
+| `ThreadId`        | string   | Conversation thread identifier.              |
+| `AssistantId`     | string   | The assistant for this thread.               |
+| `FirstMessageUtc` | datetime | Timestamp of the first message in the thread.|
+| `LastMessageUtc`  | datetime | Timestamp of the last message in the thread. |
+| `TurnCount`       | int      | Number of conversation turns in the thread.  |
+
+---
+
 ## Models
 
 List available models on the configured inference provider and pull new models (Ollama only).
@@ -1417,6 +1531,23 @@ Retrieve public information about an assistant. Returns basic details and appear
 **Error Responses:**
 - `404` -- Assistant not found or not active.
 
+### POST /v1.0/assistants/{assistantId}/threads
+
+Create a new conversation thread for an assistant. Returns a thread ID that can be passed as the `X-Thread-ID` header on subsequent chat requests to enable history tracking.
+
+**Auth:** None
+
+**Response (201 Created):**
+
+```json
+{
+  "ThreadId": "thr_abc123..."
+}
+```
+
+**Error Responses:**
+- `404` -- Assistant not found or not active.
+
 ### POST /v1.0/assistants/{assistantId}/chat
 
 Send a chat completion request using the OpenAI-compatible format. The server retrieves relevant document chunks via vector similarity search, injects them into the system message, and forwards the conversation to the configured LLM.
@@ -1426,6 +1557,12 @@ If the assistant has `Streaming` enabled, the response is delivered as Server-Se
 When the conversation history approaches the context window limit, older messages are automatically summarized (compacted). During streaming, a status event with `"status": "Compacting the conversation..."` is sent.
 
 **Auth:** None
+
+**Request Headers:**
+
+| Header         | Required | Description                                                                      |
+|----------------|----------|----------------------------------------------------------------------------------|
+| `X-Thread-ID`  | No       | Thread ID from `POST /v1.0/assistants/{assistantId}/threads`. When provided, the server records timing metrics and conversation history for this turn. |
 
 **Request Body:**
 
@@ -1540,3 +1677,21 @@ Submit feedback for an assistant response.
 **Error Responses:**
 - `400` -- Invalid request body.
 - `404` -- Assistant not found or not active.
+
+---
+
+## Configuration: ChatHistory Settings
+
+Chat history retention is configured in the server settings file under the `ChatHistory` section:
+
+```json
+{
+  "ChatHistory": {
+    "RetentionDays": 7
+  }
+}
+```
+
+| Field           | Type | Default | Description                                                       |
+|-----------------|------|---------|-------------------------------------------------------------------|
+| `RetentionDays` | int  | 7       | Number of days to retain chat history records. Records older than this are automatically deleted by the background cleanup service (runs every hour). Set to 0 to disable retention (keep records indefinitely). |

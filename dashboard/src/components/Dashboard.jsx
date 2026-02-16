@@ -7,6 +7,7 @@ import CredentialsView from '../views/CredentialsView';
 import AssistantsView from '../views/AssistantsView';
 import DocumentsView from '../views/DocumentsView';
 import FeedbackView from '../views/FeedbackView';
+import HistoryView from '../views/HistoryView';
 import CollectionsView from '../views/CollectionsView';
 import BucketsView from '../views/BucketsView';
 import ObjectsView from '../views/ObjectsView';
@@ -39,6 +40,7 @@ function Dashboard() {
             {isAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
             <Route path="/documents" element={<DocumentsView />} />
             <Route path="/feedback" element={<FeedbackView />} />
+            <Route path="/history" element={<HistoryView />} />
             <Route path="/models" element={<ModelsView />} />
             {isAdmin && <Route path="/configuration" element={<ConfigurationView />} />}
             <Route path="*" element={<Navigate to="/assistants" />} />

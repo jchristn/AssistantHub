@@ -53,6 +53,7 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>
         /// GET /v1.0/models - List available models on the configured inference provider.
+        /// Accepts optional query parameter ?assistantId={id} to list models from an assistant's endpoint.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetModelsAsync(HttpContextBase ctx)
@@ -61,7 +62,10 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                List<InferenceModel> models = await Inference.ListModelsAsync().ConfigureAwait(false);
+                InferenceService inference = await ResolveInferenceServiceAsync(ctx).ConfigureAwait(false);
+                if (inference == null) return; // response already sent
+
+                List<InferenceModel> models = await inference.ListModelsAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -95,7 +99,10 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!Inference.IsPullSupported)
+                InferenceService inference = await ResolveInferenceServiceAsync(ctx).ConfigureAwait(false);
+                if (inference == null) return; // response already sent
+
+                if (!inference.IsPullSupported)
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
@@ -148,7 +155,7 @@ namespace AssistantHub.Server.Handlers
                 {
                     try
                     {
-                        await Inference.PullModelWithProgressAsync(pullRequest.Name, (progress) =>
+                        await inference.PullModelWithProgressAsync(pullRequest.Name, (progress) =>
                         {
                             lock (_PullLock)
                             {
@@ -248,6 +255,9 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                InferenceService inference = await ResolveInferenceServiceAsync(ctx).ConfigureAwait(false);
+                if (inference == null) return; // response already sent
+
                 string modelName = ctx.Request.Url.Parameters["modelName"];
                 if (!String.IsNullOrEmpty(modelName))
                     modelName = HttpUtility.UrlDecode(modelName);
@@ -260,7 +270,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                bool success = await Inference.DeleteModelAsync(modelName).ConfigureAwait(false);
+                bool success = await inference.DeleteModelAsync(modelName).ConfigureAwait(false);
 
                 if (success)
                 {
@@ -282,6 +292,43 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
         }
+
+        #region Private-Methods
+
+        /// <summary>
+        /// Resolve the inference service to use. If an assistantId query parameter is present,
+        /// loads the assistant's settings and creates a temporary InferenceService targeting
+        /// that assistant's endpoint. Otherwise returns the global Inference service.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <returns>InferenceService instance, or null if an error response was sent.</returns>
+        private async Task<InferenceService> ResolveInferenceServiceAsync(HttpContextBase ctx)
+        {
+            string assistantId = ctx.Request.Query.Elements.Get("assistantId");
+            if (String.IsNullOrEmpty(assistantId))
+                return Inference;
+
+            AssistantSettings assistantSettings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+            if (assistantSettings == null)
+            {
+                ctx.Response.StatusCode = 404;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, description: "Assistant or assistant settings not found."))).ConfigureAwait(false);
+                return null;
+            }
+
+            InferenceSettings tempSettings = new InferenceSettings
+            {
+                Provider = assistantSettings.InferenceProvider,
+                Endpoint = !String.IsNullOrEmpty(assistantSettings.InferenceEndpoint) ? assistantSettings.InferenceEndpoint : Settings.Inference.Endpoint,
+                ApiKey = !String.IsNullOrEmpty(assistantSettings.InferenceApiKey) ? assistantSettings.InferenceApiKey : Settings.Inference.ApiKey,
+                DefaultModel = !String.IsNullOrEmpty(assistantSettings.Model) ? assistantSettings.Model : Settings.Inference.DefaultModel
+            };
+
+            return new InferenceService(tempSettings, Logging);
+        }
+
+        #endregion
 
         #region Private-Classes
 

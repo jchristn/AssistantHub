@@ -62,6 +62,17 @@ function CollectionsView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteCollection(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some collections' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
@@ -71,7 +82,7 @@ function CollectionsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditCollection(null); setShowForm(true); }}>Create Collection</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showForm && <CollectionFormModal collection={editCollection} onSave={handleSave} onClose={() => { setShowForm(false); setEditCollection(null); }} />}
       {showJson && <JsonViewModal title="Collection JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Collection" message={`Are you sure you want to delete collection "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

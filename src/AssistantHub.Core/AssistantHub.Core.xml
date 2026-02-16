@@ -69,6 +69,16 @@
             Ingestion rule identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.ThreadIdentifierPrefix">
+            <summary>
+            Thread identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ChatHistoryIdentifierPrefix">
+            <summary>
+            Chat history identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.ChatCompletionIdentifierPrefix">
             <summary>
             Chat completion identifier prefix.
@@ -117,6 +127,16 @@
         <member name="F:AssistantHub.Core.Constants.IngestionRulesTable">
             <summary>
             Ingestion rules table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ChatHistoryTable">
+            <summary>
+            Chat history table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ThreadIdHeader">
+            <summary>
+            Thread ID header name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.DefaultAdminEmail">
@@ -177,6 +197,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.IngestionRule">
             <summary>
             Ingestion rule methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistory">
+            <summary>
+            Chat history methods.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
@@ -243,6 +268,13 @@
             </summary>
             <param name="value">Double value.</param>
             <returns>SQL value string.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.FormatNullableDateTime(System.Nullable{System.DateTime})">
+            <summary>
+            Format a nullable DateTime for SQL.
+            </summary>
+            <param name="value">Nullable DateTime value.</param>
+            <returns>SQL string or NULL.</returns>
         </member>
         <member name="T:AssistantHub.Core.Database.DatabaseDriverFactory">
             <summary>
@@ -493,6 +525,59 @@
             Delete an assistant settings record by assistant identifier.
             </summary>
             <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods">
+            <summary>
+            Chat history database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.CreateAsync(AssistantHub.Core.Models.ChatHistory,System.Threading.CancellationToken)">
+            <summary>
+            Create a chat history record.
+            </summary>
+            <param name="history">Chat history record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created chat history record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a chat history record by identifier.
+            </summary>
+            <param name="id">Chat history identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Chat history record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a chat history record.
+            </summary>
+            <param name="id">Chat history identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate chat history records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing chat history records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all chat history records belonging to an assistant.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete chat history records older than the specified retention period.
+            </summary>
+            <param name="retentionDays">Number of days to retain.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
@@ -816,6 +901,37 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods">
+            <summary>
+            MySQL chat history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.CreateAsync(AssistantHub.Core.Models.ChatHistory,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods">
             <summary>
             MySQL credential methods implementation.
@@ -1080,6 +1196,37 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods">
+            <summary>
+            PostgreSQL chat history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.CreateAsync(AssistantHub.Core.Models.ChatHistory,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods">
             <summary>
             PostgreSQL credential methods implementation.
@@ -1339,6 +1486,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods">
+            <summary>
+            SQLite chat history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.CreateAsync(AssistantHub.Core.Models.ChatHistory,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods">
@@ -1637,6 +1815,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods">
+            <summary>
+            SQL Server chat history methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.CreateAsync(AssistantHub.Core.Models.ChatHistory,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods">
@@ -2003,6 +2212,14 @@
             <param name="columnName">Column name.</param>
             <returns>DateTime value.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetNullableDateTimeValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a nullable DateTime value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Nullable DateTime value.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetEnumValue``1(System.Data.DataRow,System.String,``0)">
             <summary>
             Get an enum value from a data row.
@@ -2075,6 +2292,18 @@
             Generate an ingestion rule identifier.
             </summary>
             <returns>Ingestion rule identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewThreadId">
+            <summary>
+            Generate a thread identifier.
+            </summary>
+            <returns>Thread identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatHistoryId">
+            <summary>
+            Generate a chat history identifier.
+            </summary>
+            <returns>Chat history identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatCompletionId">
             <summary>
@@ -2683,6 +2912,103 @@
             Total number of tokens used.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.ContextWindow">
+            <summary>
+            Total context window size in tokens.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatHistory">
+            <summary>
+            Chat history record representing a single turn in a conversation thread.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.Id">
+            <summary>
+            Unique identifier with prefix chist_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.ThreadId">
+            <summary>
+            Thread identifier with prefix thr_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantId">
+            <summary>
+            Assistant identifier to which this history belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CollectionId">
+            <summary>
+            Collection identifier from assistant settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.UserMessageUtc">
+            <summary>
+            UTC timestamp of user message receipt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.UserMessage">
+            <summary>
+            The user message content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalStartUtc">
+            <summary>
+            UTC timestamp when retrieval started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalDurationMs">
+            <summary>
+            Duration of retrieval in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
+            <summary>
+            Text retrieved from the vector database.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.PromptSentUtc">
+            <summary>
+            UTC timestamp when the prompt was sent to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToFirstTokenMs">
+            <summary>
+            Time to first token from the model in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToLastTokenMs">
+            <summary>
+            Time to last token from the model in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantResponse">
+            <summary>
+            The assistant response content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatHistory.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatHistory.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a ChatHistory from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>ChatHistory instance or null.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatRequest">
             <summary>
             Chat request.
@@ -2828,6 +3154,11 @@
         <member name="P:AssistantHub.Core.Models.EnumerationQuery.CollectionIdFilter">
             <summary>
             Filter by collection identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.ThreadIdFilter">
+            <summary>
+            Filter by thread identifier.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.EnumerationQuery.#ctor">
@@ -3986,7 +4317,27 @@
             Per-document processing log settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.ChatHistory">
+            <summary>
+            Chat history settings.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.ChatHistorySettings">
+            <summary>
+            Chat history settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChatHistorySettings.RetentionDays">
+            <summary>
+            Number of days to retain chat history records before cleanup.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.ChatHistorySettings.#ctor">
             <summary>
             Instantiate.
             </summary>

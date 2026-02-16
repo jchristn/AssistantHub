@@ -65,6 +65,17 @@ function UsersView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteUser(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some users' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
@@ -74,7 +85,7 @@ function UsersView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditUser(null); setShowForm(true); }}>Create User</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showForm && <UserFormModal user={editUser} onSave={handleSave} onClose={() => { setShowForm(false); setEditUser(null); }} />}
       {showJson && <JsonViewModal title="User JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete User" message={`Are you sure you want to delete user "${deleteTarget.Email}"? This will also delete all their credentials.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

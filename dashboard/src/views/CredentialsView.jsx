@@ -67,16 +67,27 @@ function CredentialsView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteCredential(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some credentials' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
         <div>
           <h1 className="content-title">Credentials</h1>
-          <p className="content-subtitle">Manage API credentials and bearer tokens for authentication.</p>
+          <p className="content-subtitle">Manage bearer tokens used for API authentication.</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditCredential(null); setShowForm(true); }}>Create Credential</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} onBulkDelete={handleBulkDelete} />
       {showForm && <CredentialFormModal credential={editCredential} onSave={handleSave} onClose={() => { setShowForm(false); setEditCredential(null); }} />}
       {showJson && <JsonViewModal title="Credential JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Credential" message={`Are you sure you want to delete credential "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

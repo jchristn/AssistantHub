@@ -94,16 +94,27 @@ function AssistantsView() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      for (const id of ids) {
+        await api.deleteAssistant(id);
+      }
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some assistants' });
+    }
+  };
+
   return (
     <div>
       <div className="content-header">
         <div>
           <h1 className="content-title">Assistants</h1>
-          <p className="content-subtitle">Create and manage AI assistants with custom configurations.</p>
+          <p className="content-subtitle">Create and manage AI-powered assistants, their settings, user feedback, and conversation history.</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditAssistant(null); setShowForm(true); }}>Create Assistant</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
       {showForm && <AssistantFormModal assistant={editAssistant} onSave={handleSave} onClose={() => { setShowForm(false); setEditAssistant(null); }} />}
       {showSettings && settingsData && <AssistantSettingsFormModal settings={settingsData} onSave={handleSaveSettings} onClose={() => { setShowSettings(null); setSettingsData(null); }} />}
       {showJson && <JsonViewModal title="Assistant JSON" data={showJson} onClose={() => setShowJson(null)} />}

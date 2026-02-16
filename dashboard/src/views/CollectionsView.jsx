@@ -19,12 +19,12 @@ function CollectionsView() {
   const [refresh, setRefresh] = useState(0);
 
   const columns = [
-    { key: 'GUID', label: 'ID', filterable: true, render: (row) => <CopyableId id={row.GUID} /> },
-    { key: 'Name', label: 'Name', filterable: true },
-    { key: 'Description', label: 'Description', filterable: true, render: (row) => row.Description ? (row.Description.length > 50 ? row.Description.substring(0, 50) + '...' : row.Description) : '' },
-    { key: 'Dimensionality', label: 'Dimensions' },
-    { key: 'Active', label: 'Status', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
-    { key: 'CreatedUtc', label: 'Created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
+    { key: 'GUID', label: 'ID', tooltip: 'Unique identifier for this vector collection', filterable: true, render: (row) => <CopyableId id={row.GUID || row.Id} /> },
+    { key: 'Name', label: 'Name', tooltip: 'Display name for this collection', filterable: true },
+    { key: 'Description', label: 'Description', tooltip: "Brief summary of the collection's purpose", filterable: true, render: (row) => row.Description ? (row.Description.length > 50 ? row.Description.substring(0, 50) + '...' : row.Description) : '' },
+    { key: 'Dimensionality', label: 'Dimensions', tooltip: 'Number of dimensions in the vector embeddings' },
+    { key: 'Active', label: 'Status', tooltip: 'Whether this collection is currently active', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
+    { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the collection was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
   const fetchData = useCallback(async (params) => {
@@ -40,7 +40,7 @@ function CollectionsView() {
   const handleSave = async (data) => {
     try {
       if (editCollection) {
-        await api.updateCollection(editCollection.GUID, data);
+        await api.updateCollection(editCollection.GUID || editCollection.Id, data);
       } else {
         await api.createCollection(data);
       }
@@ -54,7 +54,7 @@ function CollectionsView() {
 
   const handleDelete = async () => {
     try {
-      await api.deleteCollection(deleteTarget.GUID);
+      await api.deleteCollection(deleteTarget.GUID || deleteTarget.Id);
       setDeleteTarget(null);
       setRefresh(r => r + 1);
     } catch (err) {

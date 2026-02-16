@@ -22,15 +22,6 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
-        /// Assistant identifier to which this document belongs.
-        /// </summary>
-        public string AssistantId
-        {
-            get => _AssistantId;
-            set => _AssistantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(AssistantId));
-        }
-
-        /// <summary>
         /// Display name for the document.
         /// </summary>
         public string Name
@@ -74,6 +65,36 @@ namespace AssistantHub.Core.Models
         public string StatusMessage { get; set; } = null;
 
         /// <summary>
+        /// Ingestion rule identifier used to process this document.
+        /// </summary>
+        public string IngestionRuleId { get; set; } = null;
+
+        /// <summary>
+        /// S3 bucket name where the document is stored.
+        /// </summary>
+        public string BucketName { get; set; } = null;
+
+        /// <summary>
+        /// RecallDB collection identifier for embeddings.
+        /// </summary>
+        public string CollectionId { get; set; } = null;
+
+        /// <summary>
+        /// Labels associated with this document (JSON).
+        /// </summary>
+        public string Labels { get; set; } = null;
+
+        /// <summary>
+        /// Tags associated with this document (JSON).
+        /// </summary>
+        public string Tags { get; set; } = null;
+
+        /// <summary>
+        /// Chunk record IDs stored in RecallDB (JSON array).
+        /// </summary>
+        public string ChunkRecordIds { get; set; } = null;
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -88,7 +109,6 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewAssistantDocumentId();
-        private string _AssistantId = "asst_placeholder";
         private string _Name = "Untitled Document";
         private long _SizeBytes = 0;
 
@@ -113,7 +133,6 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             AssistantDocument obj = new AssistantDocument();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
-            obj.AssistantId = DataTableHelper.GetStringValue(row, "assistant_id");
             obj.Name = DataTableHelper.GetStringValue(row, "name");
             obj.OriginalFilename = DataTableHelper.GetStringValue(row, "original_filename");
             obj.ContentType = DataTableHelper.GetStringValue(row, "content_type");
@@ -121,6 +140,12 @@ namespace AssistantHub.Core.Models
             obj.S3Key = DataTableHelper.GetStringValue(row, "s3_key");
             obj.Status = DataTableHelper.GetEnumValue<DocumentStatusEnum>(row, "status", DocumentStatusEnum.Pending);
             obj.StatusMessage = DataTableHelper.GetStringValue(row, "status_message");
+            obj.IngestionRuleId = DataTableHelper.GetStringValue(row, "ingestion_rule_id");
+            obj.BucketName = DataTableHelper.GetStringValue(row, "bucket_name");
+            obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
+            obj.Labels = DataTableHelper.GetStringValue(row, "labels_json");
+            obj.Tags = DataTableHelper.GetStringValue(row, "tags_json");
+            obj.ChunkRecordIds = DataTableHelper.GetStringValue(row, "chunk_record_ids");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

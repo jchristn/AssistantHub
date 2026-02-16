@@ -16,6 +16,7 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Bucket Objects (Admin Only)](#bucket-objects-admin-only)
 - [Collections (Admin Only)](#collections-admin-only)
 - [Collection Records (Admin Only)](#collection-records-admin-only)
+- [Ingestion Rules](#ingestion-rules)
 - [Assistants](#assistants)
 - [Assistant Settings](#assistant-settings)
 - [Documents](#documents)
@@ -136,7 +137,9 @@ List endpoints support pagination via query parameters:
 | `maxResults`        | int    | 100                | Maximum number of results to return (1-1000).     |
 | `continuationToken` | string | null               | Token from a previous response for next page.     |
 | `ordering`          | string | CreatedDescending  | Sort order (`CreatedDescending`, `CreatedAscending`). |
-| `assistantIdFilter` | string | null               | Filter results by assistant ID (where applicable).|
+| `assistantId`       | string | null               | Filter results by assistant ID (where applicable).|
+| `bucketName`        | string | null               | Filter documents by bucket name (documents only). |
+| `collectionId`      | string | null               | Filter documents by collection ID (documents only).|
 
 **Paginated Response Envelope:**
 
@@ -775,6 +778,136 @@ Delete a record from a collection.
 
 ---
 
+## Ingestion Rules
+
+Ingestion rules define how documents are processed, chunked, and embedded. Each rule specifies a target S3 bucket and RecallDB collection, along with optional chunking and embedding configuration.
+
+### PUT /v1.0/ingestion-rules
+
+Create a new ingestion rule.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Name": "Knowledge Base Documents",
+  "Description": "Process PDF and text documents for the support knowledge base.",
+  "Bucket": "kb-documents",
+  "Collection": "collection-uuid-here",
+  "Labels": ["support", "knowledge-base"],
+  "Tags": { "department": "engineering", "priority": "high" },
+  "Chunking": {
+    "Strategy": "FixedTokenCount",
+    "FixedTokenCount": 256,
+    "OverlapCount": 32,
+    "OverlapPercentage": null,
+    "OverlapStrategy": null,
+    "RowGroupSize": 5,
+    "ContextPrefix": null,
+    "RegexPattern": null
+  },
+  "Embedding": {
+    "Model": null,
+    "L2Normalization": false
+  }
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "Id": "irule_abc123...",
+  "Name": "Knowledge Base Documents",
+  "Description": "Process PDF and text documents for the support knowledge base.",
+  "Bucket": "kb-documents",
+  "Collection": "collection-uuid-here",
+  "Labels": ["support", "knowledge-base"],
+  "Tags": { "department": "engineering", "priority": "high" },
+  "Chunking": {
+    "Strategy": "FixedTokenCount",
+    "FixedTokenCount": 256,
+    "OverlapCount": 32,
+    "OverlapPercentage": null,
+    "OverlapStrategy": null,
+    "RowGroupSize": 5,
+    "ContextPrefix": null,
+    "RegexPattern": null
+  },
+  "Embedding": {
+    "Model": null,
+    "L2Normalization": false
+  },
+  "CreatedUtc": "2025-01-01T00:00:00Z",
+  "LastUpdateUtc": "2025-01-01T00:00:00Z"
+}
+```
+
+**Error Responses:**
+- `400` -- Name is required.
+- `403` -- Not an admin user.
+
+### GET /v1.0/ingestion-rules
+
+List ingestion rules with pagination.
+
+**Auth:** Required
+
+**Query Parameters:** See [Pagination](#pagination).
+
+**Response (200 OK):** Paginated envelope containing `IngestionRule` objects.
+
+### GET /v1.0/ingestion-rules/{ruleId}
+
+Retrieve a single ingestion rule by ID.
+
+**Auth:** Required
+
+**Response (200 OK):** An `IngestionRule` object.
+
+**Error Responses:**
+- `404` -- Ingestion rule not found.
+
+### PUT /v1.0/ingestion-rules/{ruleId}
+
+Update an existing ingestion rule. The `Id` and `CreatedUtc` fields are preserved from the existing record.
+
+**Auth:** Required (admin only)
+
+**Request Body:** Same format as create.
+
+**Response (200 OK):** The updated `IngestionRule` object.
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Ingestion rule not found.
+
+### DELETE /v1.0/ingestion-rules/{ruleId}
+
+Delete an ingestion rule.
+
+**Auth:** Required (admin only)
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Ingestion rule not found.
+
+### HEAD /v1.0/ingestion-rules/{ruleId}
+
+Check whether an ingestion rule exists.
+
+**Auth:** Required
+
+**Response:**
+- `200 OK` -- Ingestion rule exists.
+- `404 Not Found` -- Ingestion rule does not exist.
+
+---
+
 ## Assistants
 
 Authenticated users can manage their own assistants. Admin users can see and manage all assistants.
@@ -996,49 +1129,56 @@ Create or update settings for an assistant. If settings already exist, they are 
 
 ## Documents
 
-Documents are uploaded as raw file data and automatically processed through the ingestion pipeline (storage, text extraction, chunking, embedding).
+Documents are uploaded via a JSON request body that references an ingestion rule. The ingestion rule defines the target S3 bucket, RecallDB collection, and processing configuration. Documents are automatically processed through the ingestion pipeline (storage, text extraction, chunking, embedding). On deletion, the S3 object and all associated RecallDB embeddings are cleaned up.
 
 ### PUT /v1.0/documents
 
-Upload a new document.
+Upload a new document using an ingestion rule.
 
-**Auth:** Required (owner of the assistant or admin)
+**Auth:** Required
 
-**Query Parameters:**
+**Request Body:**
 
-| Parameter     | Type   | Required | Description                            |
-|---------------|--------|----------|----------------------------------------|
-| `assistantId` | string | Yes      | The assistant to associate the document with. |
-| `filename`    | string | No       | Original filename. Can also be provided via `Content-Disposition` header. |
-
-**Request Body:** Raw binary file data.
-
-**Headers:**
-- `Content-Type`: MIME type of the uploaded file (e.g., `application/pdf`, `text/plain`).
-- `Content-Disposition` (optional): `attachment; filename="document.pdf"`
-
-**Example (curl):**
-
-```bash
-curl -X PUT "http://localhost:8800/v1.0/documents?assistantId=asst_abc123&filename=guide.pdf" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/pdf" \
-  --data-binary @guide.pdf
+```json
+{
+  "IngestionRuleId": "irule_abc123...",
+  "Name": "guide.pdf",
+  "OriginalFilename": "guide.pdf",
+  "ContentType": "application/pdf",
+  "Labels": ["user-guide", "v2"],
+  "Tags": { "version": "2.0" },
+  "Base64Content": "JVBERi0xLjQK..."
+}
 ```
+
+| Field              | Type               | Required | Description                                                |
+|--------------------|--------------------|----------|------------------------------------------------------------|
+| `IngestionRuleId`  | string             | Yes      | The ingestion rule that defines processing configuration.  |
+| `Name`             | string             | No       | Display name for the document.                             |
+| `OriginalFilename` | string             | No       | Original filename of the uploaded file.                    |
+| `ContentType`      | string             | No       | MIME type (defaults to `application/octet-stream`).        |
+| `Labels`           | string[]           | No       | Per-document labels (merged with rule labels on ingestion).|
+| `Tags`             | object             | No       | Per-document tags (merged with rule tags on ingestion).    |
+| `Base64Content`    | string             | Yes      | Base64-encoded file content.                               |
 
 **Response (201 Created):**
 
 ```json
 {
   "Id": "adoc_abc123...",
-  "AssistantId": "asst_abc123...",
   "Name": "guide.pdf",
   "OriginalFilename": "guide.pdf",
   "ContentType": "application/pdf",
   "SizeBytes": 1048576,
-  "S3Key": "asst_abc123/adoc_abc123",
-  "Status": "Pending",
-  "StatusMessage": null,
+  "S3Key": "irule_abc123/adoc_abc123/guide.pdf",
+  "Status": "Uploaded",
+  "StatusMessage": "File uploaded successfully.",
+  "IngestionRuleId": "irule_abc123...",
+  "BucketName": "kb-documents",
+  "CollectionId": "collection-uuid-here",
+  "Labels": "[\"user-guide\",\"v2\"]",
+  "Tags": "{\"version\":\"2.0\"}",
+  "ChunkRecordIds": null,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -1048,7 +1188,6 @@ curl -X PUT "http://localhost:8800/v1.0/documents?assistantId=asst_abc123&filena
 
 | Status                  | Description                                      |
 |-------------------------|--------------------------------------------------|
-| `Pending`               | Document created, processing not yet started.     |
 | `Uploading`             | File is being uploaded to object storage.         |
 | `Uploaded`              | File successfully uploaded to object storage.     |
 | `TypeDetecting`         | Detecting the document type/format.               |
@@ -1061,17 +1200,22 @@ curl -X PUT "http://localhost:8800/v1.0/documents?assistantId=asst_abc123&filena
 | `Failed`                | Processing failed (see `StatusMessage`).          |
 
 **Error Responses:**
-- `400` -- `assistantId` query parameter is required; or request body is empty.
-- `403` -- Not the owner of the assistant and not an admin.
-- `404` -- Assistant not found.
+- `400` -- `IngestionRuleId` is required; or `Base64Content` is missing/invalid.
+- `404` -- Ingestion rule not found.
+- `503` -- S3 storage is not configured.
 
 ### GET /v1.0/documents
 
-List documents with pagination.
+List documents with pagination and optional filtering.
 
 **Auth:** Required
 
-**Query Parameters:** See [Pagination](#pagination). Use `assistantIdFilter` to filter by assistant.
+**Query Parameters:** See [Pagination](#pagination), plus:
+
+| Parameter      | Type   | Default | Description                                          |
+|----------------|--------|---------|------------------------------------------------------|
+| `bucketName`   | string | null    | Filter documents by S3 bucket name.                  |
+| `collectionId` | string | null    | Filter documents by RecallDB collection identifier.  |
 
 **Response (200 OK):** Paginated envelope containing `AssistantDocument` objects.
 
@@ -1079,47 +1223,29 @@ List documents with pagination.
 
 Retrieve a single document record by ID.
 
-**Auth:** Required (owner of the parent assistant or admin)
+**Auth:** Required
 
-**Response (200 OK):**
-
-```json
-{
-  "Id": "adoc_abc123...",
-  "AssistantId": "asst_abc123...",
-  "Name": "guide.pdf",
-  "OriginalFilename": "guide.pdf",
-  "ContentType": "application/pdf",
-  "SizeBytes": 1048576,
-  "S3Key": "asst_abc123/adoc_abc123",
-  "Status": "Completed",
-  "StatusMessage": "Processed 42 chunks.",
-  "CreatedUtc": "2025-01-01T00:00:00Z",
-  "LastUpdateUtc": "2025-01-01T12:00:00Z"
-}
-```
+**Response (200 OK):** An `AssistantDocument` object.
 
 **Error Responses:**
-- `403` -- Not the owner and not an admin.
 - `404` -- Document not found.
 
 ### DELETE /v1.0/documents/{documentId}
 
-Delete a document record and its associated data.
+Delete a document, its S3 object, and all associated RecallDB embeddings.
 
-**Auth:** Required (owner of the parent assistant or admin)
+**Auth:** Required
 
 **Response:** `204 No Content`
 
 **Error Responses:**
-- `403` -- Not the owner and not an admin.
 - `404` -- Document not found.
 
 ### HEAD /v1.0/documents/{documentId}
 
 Check whether a document exists.
 
-**Auth:** Required (owner of the parent assistant or admin)
+**Auth:** Required
 
 **Response:**
 - `200 OK` -- Document exists.

@@ -53,6 +53,7 @@ namespace AssistantHub.Core.Database.Sqlite
             AssistantSettings = new AssistantSettingsMethods(this, _Settings, _Logging);
             AssistantDocument = new AssistantDocumentMethods(this, _Settings, _Logging);
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
+            IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
         }
 
         #endregion

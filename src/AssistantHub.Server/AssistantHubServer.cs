@@ -3,7 +3,10 @@ namespace AssistantHub.Server
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Net.Http;
     using System.Runtime.Loader;
+    using System.Text;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core;
@@ -34,6 +37,7 @@ namespace AssistantHub.Server
         private static IngestionService _Ingestion = null;
         private static RetrievalService _Retrieval = null;
         private static InferenceService _Inference = null;
+        private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
         private static bool _ShuttingDown = false;
@@ -53,6 +57,7 @@ namespace AssistantHub.Server
             await InitializeDatabaseAsync();
             await InitializeFirstRunAsync();
             InitializeServices();
+            StartProcessingLogCleanup();
             InitializeWebserver();
 
             _Logging.Info(_Header + "server started on " + _Settings.Webserver.Hostname + ":" + _Settings.Webserver.Port);
@@ -204,11 +209,54 @@ namespace AssistantHub.Server
             Console.WriteLine("Password    : " + Constants.DefaultAdminPassword);
             Console.WriteLine("Bearer token: " + credential.BearerToken);
             Console.WriteLine("");
+
+            IngestionRule defaultRule = new IngestionRule();
+            defaultRule.Id = IdGenerator.NewIngestionRuleId();
+            defaultRule.Name = "Default";
+            defaultRule.Description = "Default ingestion rule";
+            defaultRule.Bucket = "default";
+            defaultRule.CollectionName = "default";
+            defaultRule.Chunking = new IngestionChunkingConfig();
+            defaultRule.Embedding = new IngestionEmbeddingConfig();
+            defaultRule.CreatedUtc = DateTime.UtcNow;
+            defaultRule.LastUpdateUtc = DateTime.UtcNow;
+            defaultRule = await _Database.IngestionRule.CreateAsync(defaultRule).ConfigureAwait(false);
+
+            _Logging.Info(_Header + "default ingestion rule created: " + defaultRule.Id);
+
+            // Create default collection in RecallDB
+            try
+            {
+                using (HttpClient http = new HttpClient())
+                {
+                    string url = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _Settings.RecallDb.TenantId + "/collections";
+                    using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, url))
+                    {
+                        object body = new { Id = "default", Name = "default" };
+                        req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+                        if (!String.IsNullOrEmpty(_Settings.RecallDb.AccessKey))
+                            req.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
+
+                        HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
+                        if (resp.IsSuccessStatusCode)
+                            _Logging.Info(_Header + "default RecallDB collection created");
+                        else
+                            _Logging.Warn(_Header + "failed to create default RecallDB collection: HTTP " + (int)resp.StatusCode);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "could not create default RecallDB collection: " + e.Message);
+            }
         }
 
         private static void InitializeServices()
         {
             _Authentication = new AuthenticationService(_Database, _Logging);
+
+            _ProcessingLog = new ProcessingLogService(_Settings.ProcessingLog, _Logging);
 
             try
             {
@@ -221,7 +269,7 @@ namespace AssistantHub.Server
 
             if (_Storage != null)
             {
-                _Ingestion = new IngestionService(_Database, _Storage, _Settings.DocumentAtom, _Settings.Chunking, _Settings.RecallDb, _Logging);
+                _Ingestion = new IngestionService(_Database, _Storage, _Settings.DocumentAtom, _Settings.Chunking, _Settings.RecallDb, _Logging, _ProcessingLog);
             }
             else
             {
@@ -231,6 +279,33 @@ namespace AssistantHub.Server
             _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging);
             _Inference = new InferenceService(_Settings.Inference, _Logging);
             _Logging.Info(_Header + "services initialized");
+        }
+
+        private static void StartProcessingLogCleanup()
+        {
+            if (_ProcessingLog == null) return;
+
+            _ = Task.Run(async () =>
+            {
+                while (!_TokenSource.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromHours(1), _TokenSource.Token).ConfigureAwait(false);
+                        await _ProcessingLog.CleanupOldLogsAsync().ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _Logging.Warn(_Header + "processing log cleanup error: " + e.Message);
+                    }
+                }
+            });
+
+            _Logging.Info(_Header + "processing log cleanup loop started");
         }
 
         private static void InitializeWebserver()
@@ -249,7 +324,8 @@ namespace AssistantHub.Server
             BucketHandler bucketHandler = new BucketHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantHandler assistantHandler = new AssistantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
-            DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
+            IngestionRuleHandler ingestionRuleHandler = new IngestionRuleHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             FeedbackHandler feedbackHandler = new FeedbackHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             InferenceHandler inferenceHandler = new InferenceHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
@@ -322,12 +398,21 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync);
 
+            // Authenticated routes - Ingestion Rules
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules", ingestionRuleHandler.GetIngestionRulesAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.GetIngestionRuleAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.PutIngestionRuleByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.DeleteIngestionRuleAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.HeadIngestionRuleAsync);
+
             // Authenticated routes - Documents
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents", documentHandler.PutDocumentAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents", documentHandler.GetDocumentsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}", documentHandler.GetDocumentAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/documents/{documentId}", documentHandler.DeleteDocumentAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/documents/{documentId}", documentHandler.HeadDocumentAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/processing-log", documentHandler.GetDocumentProcessingLogAsync);
 
             // Authenticated routes - Feedback
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/feedback", feedbackHandler.GetFeedbackListAsync);
@@ -343,6 +428,18 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/models/pull", inferenceHandler.PostPullModelAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models/pull/status", inferenceHandler.GetPullStatusAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/models/{modelName}", inferenceHandler.DeleteModelAsync);
+
+            // Post-routing
+            _Server.Routes.PostRouting = async (ctx) =>
+            {
+                ctx.Timestamp.End = DateTime.UtcNow;
+
+                _Logging.Debug(
+                    _Header
+                    + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery + " "
+                    + ctx.Response.StatusCode + " "
+                    + "(" + ctx.Timestamp.TotalMs?.ToString("F2") + "ms)");
+            };
 
             _Server.Start();
             _Logging.Info(_Header + "webserver started");

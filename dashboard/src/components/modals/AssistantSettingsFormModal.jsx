@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { ApiClient } from '../../utils/api';
 import Modal from '../Modal';
 
 function AssistantSettingsFormModal({ settings, onSave, onClose }) {
+  const { serverUrl, credential } = useAuth();
+  const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const [collections, setCollections] = useState([]);
   const [form, setForm] = useState({
     Temperature: settings?.Temperature ?? 0.7,
     TopP: settings?.TopP ?? 1.0,
     SystemPrompt: settings?.SystemPrompt || 'You are a helpful assistant. Use the provided context to answer questions accurately.',
     MaxTokens: settings?.MaxTokens || 4096,
     ContextWindow: settings?.ContextWindow || 8192,
-    Model: settings?.Model || 'gpt-4o',
+    Model: settings?.Model || 'gemma3:4b',
     CollectionId: settings?.CollectionId || '',
     RetrievalTopK: settings?.RetrievalTopK || 5,
     RetrievalScoreThreshold: settings?.RetrievalScoreThreshold ?? 0.7,
-    InferenceProvider: settings?.InferenceProvider || 'OpenAI',
-    InferenceEndpoint: settings?.InferenceEndpoint || '',
+    InferenceProvider: settings?.InferenceProvider || 'Ollama',
+    InferenceEndpoint: settings?.InferenceEndpoint || 'http://ollama:11434',
     InferenceApiKey: settings?.InferenceApiKey || '',
-    Streaming: settings?.Streaming ?? false
+    Streaming: settings?.Streaming ?? true
   });
   const [saving, setSaving] = useState(false);
+
+  const loadCollections = useCallback(async () => {
+    try {
+      const result = await api.getCollections({ maxResults: 1000 });
+      const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+      setCollections(items);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
+  }, [serverUrl, credential]);
+
+  useEffect(() => { loadCollections(); }, [loadCollections]);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -71,7 +88,12 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
       </div>
       <div className="form-group">
         <label>Collection ID (RecallDB)</label>
-        <input type="text" value={form.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)} />
+        <select value={form.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)}>
+          <option value="">-- Select a collection --</option>
+          {collections.map(c => (
+            <option key={c.Id} value={c.Id}>{c.Name || c.Id}</option>
+          ))}
+        </select>
       </div>
       <div className="form-row">
         <div className="form-group">

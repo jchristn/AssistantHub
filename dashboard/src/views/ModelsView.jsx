@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Modal from '../components/Modal';
+import Tooltip from '../components/Tooltip';
 import AlertModal from '../components/AlertModal';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -154,29 +155,35 @@ function ModelsView() {
           <p className="content-subtitle">View and manage available inference models.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            className={`refresh-btn ${refreshState}`}
-            onClick={handleRefresh}
-            disabled={refreshState === 'spinning'}
-            title="Refresh"
-          >
-            {refreshState === 'done' ? (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3,8 7,12 13,4" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 8A6 6 0 1 1 10 2.5" />
-                <polyline points="14,2 14,6 10,6" />
-              </svg>
-            )}
-          </button>
           {isAdmin && pullSupported && (
             <button className="btn btn-primary" onClick={() => setShowPull(true)}>Pull Model</button>
           )}
         </div>
       </div>
       <div className="data-table-container">
+        <div className="data-table-toolbar">
+          <div className="data-table-toolbar-left">
+            <button
+              className={`refresh-btn ${refreshState}`}
+              onClick={handleRefresh}
+              disabled={refreshState === 'spinning'}
+              title="Refresh"
+            >
+              {refreshState === 'done' ? (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3,8 7,12 13,4" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 8A6 6 0 1 1 10 2.5" />
+                  <polyline points="14,2 14,6 10,6" />
+                </svg>
+              )}
+            </button>
+            <span>{models.length} record{models.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="data-table-toolbar-right" />
+        </div>
         {loading ? (
           <div className="loading"><div className="spinner" /></div>
         ) : models.length === 0 ? (
@@ -185,11 +192,11 @@ function ModelsView() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Size</th>
-                <th>Modified</th>
-                <th>Owned By</th>
-                {isAdmin && pullSupported && <th>Actions</th>}
+                <th><Tooltip text="Model identifier (e.g. gpt-4o, gemma3:4b)">Name</Tooltip></th>
+                <th><Tooltip text="Disk space used by the model">Size</Tooltip></th>
+                <th><Tooltip text="Date and time the model was last updated">Modified</Tooltip></th>
+                <th><Tooltip text="Provider or organization that owns the model">Owned By</Tooltip></th>
+                {isAdmin && pullSupported && <th><Tooltip text="Administrative actions for managing this model">Actions</Tooltip></th>}
               </tr>
             </thead>
             <tbody>

@@ -79,6 +79,11 @@ namespace AssistantHub.Core
         public static string AssistantFeedbackIdentifierPrefix = "afb_";
 
         /// <summary>
+        /// Ingestion rule identifier prefix.
+        /// </summary>
+        public static string IngestionRuleIdentifierPrefix = "irule_";
+
+        /// <summary>
         /// Chat completion identifier prefix.
         /// </summary>
         public static string ChatCompletionIdentifierPrefix = "chatcmpl-";
@@ -126,6 +131,11 @@ namespace AssistantHub.Core
         /// Assistant feedback table name.
         /// </summary>
         public static string AssistantFeedbackTable = "assistant_feedback";
+
+        /// <summary>
+        /// Ingestion rules table name.
+        /// </summary>
+        public static string IngestionRulesTable = "ingestion_rules";
 
         #endregion
 

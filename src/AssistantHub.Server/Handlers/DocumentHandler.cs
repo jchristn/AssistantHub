@@ -2,6 +2,7 @@ namespace AssistantHub.Server.Handlers
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -31,6 +32,7 @@ namespace AssistantHub.Server.Handlers
         /// <param name="ingestion">Ingestion service.</param>
         /// <param name="retrieval">Retrieval service.</param>
         /// <param name="inference">Inference service.</param>
+        /// <param name="processingLog">Processing log service.</param>
         public DocumentHandler(
             DatabaseDriverBase database,
             LoggingModule logging,
@@ -39,13 +41,14 @@ namespace AssistantHub.Server.Handlers
             StorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
-            InferenceService inference)
-            : base(database, logging, settings, authentication, storage, ingestion, retrieval, inference)
+            InferenceService inference,
+            ProcessingLogService processingLog = null)
+            : base(database, logging, settings, authentication, storage, ingestion, retrieval, inference, processingLog)
         {
         }
 
         /// <summary>
-        /// PUT /v1.0/documents - Upload document and trigger fire-and-forget ingestion.
+        /// PUT /v1.0/documents - Upload document via JSON body with IngestionRuleId.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task PutDocumentAsync(HttpContextBase ctx)
@@ -65,77 +68,86 @@ namespace AssistantHub.Server.Handlers
                 UserMaster user = GetUser(ctx);
                 bool isAdmin = IsAdmin(ctx);
 
-                string assistantId = ctx.Request.Query.Elements.Get("assistantId");
-                if (String.IsNullOrEmpty(assistantId))
+                string body = ctx.Request.DataAsString;
+                if (String.IsNullOrEmpty(body))
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "assistantId query parameter is required."))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Request body is required."))).ConfigureAwait(false);
                     return;
                 }
 
-                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
-                if (assistant == null)
+                DocumentUploadRequest uploadRequest = Serializer.DeserializeJson<DocumentUploadRequest>(body);
+                if (uploadRequest == null || String.IsNullOrEmpty(uploadRequest.IngestionRuleId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "IngestionRuleId is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Look up ingestion rule
+                IngestionRule rule = await Database.IngestionRule.ReadAsync(uploadRequest.IngestionRuleId).ConfigureAwait(false);
+                if (rule == null)
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Assistant not found."))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Ingestion rule not found."))).ConfigureAwait(false);
                     return;
                 }
 
-                if (!isAdmin && assistant.UserId != user.Id)
-                {
-                    ctx.Response.StatusCode = 403;
-                    ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
-                    return;
-                }
-
-                byte[] data = ctx.Request.DataAsBytes;
-                if (data == null || data.Length == 0)
+                // Decode base64 content
+                if (String.IsNullOrEmpty(uploadRequest.Base64Content))
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Request body must contain file data."))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Base64Content is required."))).ConfigureAwait(false);
                     return;
                 }
 
-                // Get filename from query parameter or Content-Disposition header
-                string filename = ctx.Request.Query.Elements.Get("filename");
-                if (String.IsNullOrEmpty(filename))
+                byte[] data;
+                try
                 {
-                    string contentDisposition = ctx.Request.Headers.Get("Content-Disposition");
-                    if (!String.IsNullOrEmpty(contentDisposition))
-                    {
-                        int filenameIdx = contentDisposition.IndexOf("filename=", StringComparison.OrdinalIgnoreCase);
-                        if (filenameIdx >= 0)
-                        {
-                            filename = contentDisposition.Substring(filenameIdx + 9).Trim(' ', '"', '\'');
-                        }
-                    }
+                    data = Convert.FromBase64String(uploadRequest.Base64Content);
+                }
+                catch (FormatException)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Invalid Base64Content."))).ConfigureAwait(false);
+                    return;
                 }
 
-                if (String.IsNullOrEmpty(filename))
+                if (data.Length == 0)
                 {
-                    filename = "upload_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "File data is empty."))).ConfigureAwait(false);
+                    return;
                 }
 
-                string contentType = ctx.Request.ContentType;
-                if (String.IsNullOrEmpty(contentType))
-                {
-                    contentType = "application/octet-stream";
-                }
+                string filename = uploadRequest.Name ?? uploadRequest.OriginalFilename ?? ("upload_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
+                string contentType = uploadRequest.ContentType ?? "application/octet-stream";
 
                 // Create the document record
                 AssistantDocument doc = new AssistantDocument();
                 doc.Id = IdGenerator.NewAssistantDocumentId();
-                doc.AssistantId = assistantId;
                 doc.Name = filename;
-                doc.OriginalFilename = filename;
+                doc.OriginalFilename = uploadRequest.OriginalFilename ?? filename;
                 doc.ContentType = contentType;
                 doc.SizeBytes = data.Length;
-                doc.S3Key = assistantId + "/" + doc.Id + "/" + filename;
+                doc.IngestionRuleId = rule.Id;
+                doc.BucketName = rule.Bucket;
+                doc.CollectionId = rule.CollectionId;
+                doc.S3Key = rule.Id + "/" + doc.Id + "/" + filename;
                 doc.Status = Enums.DocumentStatusEnum.Uploading;
+
+                // Store user-provided labels/tags as JSON
+                if (uploadRequest.Labels != null && uploadRequest.Labels.Count > 0)
+                    doc.Labels = Serializer.SerializeJson(uploadRequest.Labels);
+                if (uploadRequest.Tags != null && uploadRequest.Tags.Count > 0)
+                    doc.Tags = Serializer.SerializeJson(uploadRequest.Tags);
+
                 doc.CreatedUtc = DateTime.UtcNow;
                 doc.LastUpdateUtc = DateTime.UtcNow;
 
@@ -144,7 +156,7 @@ namespace AssistantHub.Server.Handlers
                 // Upload to storage
                 try
                 {
-                    await Storage.UploadAsync(doc.S3Key, contentType, data).ConfigureAwait(false);
+                    await Storage.UploadAsync(rule.Bucket, doc.S3Key, contentType, data).ConfigureAwait(false);
                     await Database.AssistantDocument.UpdateStatusAsync(doc.Id, Enums.DocumentStatusEnum.Uploaded, "File uploaded successfully.").ConfigureAwait(false);
                     doc.Status = Enums.DocumentStatusEnum.Uploaded;
                     doc.StatusMessage = "File uploaded successfully.";
@@ -188,7 +200,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// GET /v1.0/documents - List documents (non-admins see only their assistants' documents).
+        /// GET /v1.0/documents - List documents.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetDocumentsAsync(HttpContextBase ctx)
@@ -197,26 +209,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
-
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 EnumerationResult<AssistantDocument> result = await Database.AssistantDocument.EnumerateAsync(query).ConfigureAwait(false);
-
-                // Non-admin users: filter to only their assistants' documents
-                if (!isAdmin && result != null && result.Objects != null)
-                {
-                    List<AssistantDocument> filtered = new List<AssistantDocument>();
-                    foreach (AssistantDocument doc in result.Objects)
-                    {
-                        Assistant assistant = await Database.Assistant.ReadAsync(doc.AssistantId).ConfigureAwait(false);
-                        if (assistant != null && assistant.UserId == user.Id)
-                        {
-                            filtered.Add(doc);
-                        }
-                    }
-                    result.Objects = filtered;
-                }
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -241,9 +235,6 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
-
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -260,18 +251,6 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
                     return;
-                }
-
-                if (!isAdmin)
-                {
-                    Assistant assistant = await Database.Assistant.ReadAsync(doc.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
-                    {
-                        ctx.Response.StatusCode = 403;
-                        ctx.Response.ContentType = "application/json";
-                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
-                        return;
-                    }
                 }
 
                 ctx.Response.StatusCode = 200;
@@ -288,7 +267,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// DELETE /v1.0/documents/{documentId} - Delete document and S3 object.
+        /// DELETE /v1.0/documents/{documentId} - Delete document, S3 object, and RecallDB embeddings.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task DeleteDocumentAsync(HttpContextBase ctx)
@@ -297,9 +276,6 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
-
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -318,28 +294,46 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin)
-                {
-                    Assistant assistant = await Database.Assistant.ReadAsync(doc.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
-                    {
-                        ctx.Response.StatusCode = 403;
-                        ctx.Response.ContentType = "application/json";
-                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
-                        return;
-                    }
-                }
-
-                // Delete from storage if S3 key is set
+                // Delete from storage
                 if (Storage != null && !String.IsNullOrEmpty(doc.S3Key))
                 {
                     try
                     {
-                        await Storage.DeleteAsync(doc.S3Key).ConfigureAwait(false);
+                        if (!String.IsNullOrEmpty(doc.BucketName))
+                            await Storage.DeleteAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                        else
+                            await Storage.DeleteAsync(doc.S3Key).ConfigureAwait(false);
                     }
                     catch (Exception storageEx)
                     {
                         Logging.Warn(_Header + "failed to delete S3 object " + doc.S3Key + ": " + storageEx.Message);
+                    }
+                }
+
+                // Delete embeddings from RecallDB
+                if (!String.IsNullOrEmpty(doc.ChunkRecordIds) && !String.IsNullOrEmpty(doc.CollectionId) && Ingestion != null)
+                {
+                    try
+                    {
+                        List<string> recordIds = JsonSerializer.Deserialize<List<string>>(doc.ChunkRecordIds);
+                        if (recordIds != null)
+                        {
+                            foreach (string recordId in recordIds)
+                            {
+                                try
+                                {
+                                    await Ingestion.DeleteEmbeddingAsync(doc.CollectionId, recordId).ConfigureAwait(false);
+                                }
+                                catch (Exception embeddingEx)
+                                {
+                                    Logging.Warn(_Header + "failed to delete embedding " + recordId + ": " + embeddingEx.Message);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception parseEx)
+                    {
+                        Logging.Warn(_Header + "failed to parse chunk record IDs for document " + documentId + ": " + parseEx.Message);
                     }
                 }
 
@@ -367,9 +361,6 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
-
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -378,26 +369,8 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
-                {
-                    ctx.Response.StatusCode = 404;
-                    await ctx.Response.Send().ConfigureAwait(false);
-                    return;
-                }
-
-                if (!isAdmin)
-                {
-                    Assistant assistant = await Database.Assistant.ReadAsync(doc.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
-                    {
-                        ctx.Response.StatusCode = 403;
-                        await ctx.Response.Send().ConfigureAwait(false);
-                        return;
-                    }
-                }
-
-                ctx.Response.StatusCode = 200;
+                bool exists = await Database.AssistantDocument.ExistsAsync(documentId).ConfigureAwait(false);
+                ctx.Response.StatusCode = exists ? 200 : 404;
                 await ctx.Response.Send().ConfigureAwait(false);
             }
             catch (Exception e)
@@ -407,5 +380,67 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send().ConfigureAwait(false);
             }
         }
+
+        /// <summary>
+        /// GET /v1.0/documents/{documentId}/processing-log - Get processing log for a document.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetDocumentProcessingLogAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                bool exists = await Database.AssistantDocument.ExistsAsync(documentId).ConfigureAwait(false);
+                if (!exists)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string log = null;
+                if (ProcessingLog != null)
+                {
+                    log = await ProcessingLog.GetLogAsync(documentId).ConfigureAwait(false);
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new { DocumentId = documentId, Log = log })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetDocumentProcessingLogAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        #region Private-Classes
+
+        private class DocumentUploadRequest
+        {
+            public string IngestionRuleId { get; set; } = null;
+            public string Name { get; set; } = null;
+            public string OriginalFilename { get; set; } = null;
+            public string ContentType { get; set; } = null;
+            public List<string> Labels { get; set; } = null;
+            public Dictionary<string, string> Tags { get; set; } = null;
+            public string Base64Content { get; set; } = null;
+        }
+
+        #endregion
     }
 }

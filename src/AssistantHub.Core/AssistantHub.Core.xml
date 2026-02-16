@@ -64,6 +64,11 @@
             Assistant feedback identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.IngestionRuleIdentifierPrefix">
+            <summary>
+            Ingestion rule identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.ChatCompletionIdentifierPrefix">
             <summary>
             Chat completion identifier prefix.
@@ -107,6 +112,11 @@
         <member name="F:AssistantHub.Core.Constants.AssistantFeedbackTable">
             <summary>
             Assistant feedback table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.IngestionRulesTable">
+            <summary>
+            Ingestion rules table name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.DefaultAdminEmail">
@@ -162,6 +172,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantFeedback">
             <summary>
             Assistant feedback methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.IngestionRule">
+            <summary>
+            Ingestion rule methods.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
@@ -314,11 +329,12 @@
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing assistant document records.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
-            Delete all assistant document records belonging to an assistant.
+            Update the chunk record IDs for a document after ingestion.
             </summary>
-            <param name="assistantId">Assistant identifier.</param>
+            <param name="id">Assistant document identifier.</param>
+            <param name="chunkRecordIdsJson">JSON array of record IDs.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
@@ -549,6 +565,59 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods">
+            <summary>
+            Ingestion rule database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.CreateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <summary>
+            Create an ingestion rule record.
+            </summary>
+            <param name="rule">Ingestion rule record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created ingestion rule record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an ingestion rule record by identifier.
+            </summary>
+            <param name="id">Ingestion rule identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Ingestion rule record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <summary>
+            Update an ingestion rule record.
+            </summary>
+            <param name="rule">Ingestion rule record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated ingestion rule record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an ingestion rule record.
+            </summary>
+            <param name="id">Ingestion rule identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if an ingestion rule record exists.
+            </summary>
+            <param name="id">Ingestion rule identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate ingestion rule records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing ingestion rule records.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IUserMethods">
             <summary>
             User database methods interface.
@@ -651,7 +720,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods">
@@ -784,6 +853,37 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods">
+            <summary>
+            MySQL ingestion rule methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.CreateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.UserMethods">
             <summary>
             MySQL user methods implementation.
@@ -884,7 +984,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods">
@@ -1017,6 +1117,37 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods">
+            <summary>
+            PostgreSQL ingestion rule methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.CreateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods">
             <summary>
             PostgreSQL user methods implementation.
@@ -1115,9 +1246,6 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
-            <inheritdoc />
-        </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods">
@@ -1248,6 +1376,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods">
+            <summary>
+            SQLite ingestion rule methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.CreateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods">
@@ -1384,7 +1543,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods">
@@ -1515,6 +1674,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods">
+            <summary>
+            SQL Server ingestion rule methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.CreateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods">
@@ -1880,6 +2070,12 @@
             </summary>
             <returns>Assistant feedback identifier.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewIngestionRuleId">
+            <summary>
+            Generate an ingestion rule identifier.
+            </summary>
+            <returns>Ingestion rule identifier.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatCompletionId">
             <summary>
             Generate a chat completion identifier.
@@ -2026,11 +2222,6 @@
             Unique identifier with prefix adoc_.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantDocument.AssistantId">
-            <summary>
-            Assistant identifier to which this document belongs.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.Name">
             <summary>
             Display name for the document.
@@ -2064,6 +2255,36 @@
         <member name="P:AssistantHub.Core.Models.AssistantDocument.StatusMessage">
             <summary>
             Status message providing additional processing details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.IngestionRuleId">
+            <summary>
+            Ingestion rule identifier used to process this document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.BucketName">
+            <summary>
+            S3 bucket name where the document is stored.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.CollectionId">
+            <summary>
+            RecallDB collection identifier for embeddings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Labels">
+            <summary>
+            Labels associated with this document (JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Tags">
+            <summary>
+            Tags associated with this document (JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.ChunkRecordIds">
+            <summary>
+            Chunk record IDs stored in RecallDB (JSON array).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.CreatedUtc">
@@ -2121,6 +2342,11 @@
         <member name="P:AssistantHub.Core.Models.AssistantFeedback.FeedbackText">
             <summary>
             Optional free-text feedback from the user.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.MessageHistory">
+            <summary>
+            Full message history as JSON string.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantFeedback.CreatedUtc">
@@ -2594,6 +2820,16 @@
             Filter by assistant identifier.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.BucketNameFilter">
+            <summary>
+            Filter by bucket name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.CollectionIdFilter">
+            <summary>
+            Filter by collection identifier.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.EnumerationQuery.#ctor">
             <summary>
             Instantiate.
@@ -2680,6 +2916,11 @@
             Feedback text.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.FeedbackRequest.MessageHistory">
+            <summary>
+            Full message history as JSON string.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.FeedbackRequest.#ctor">
             <summary>
             Instantiate.
@@ -2753,6 +2994,158 @@
             </summary>
             <param name="errorMessage">Error message.</param>
             <returns>InferenceResult.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionChunkingConfig">
+            <summary>
+            Chunking configuration for an ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.Strategy">
+            <summary>
+            Chunking strategy (e.g. FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.FixedTokenCount">
+            <summary>
+            Fixed token count per chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapCount">
+            <summary>
+            Number of overlapping tokens between chunks.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapPercentage">
+            <summary>
+            Overlap percentage between chunks (0-1).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapStrategy">
+            <summary>
+            Overlap strategy (e.g. SlidingWindow, SentenceBoundaryAware, SemanticBoundaryAware).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.RowGroupSize">
+            <summary>
+            Number of rows per group for row-based chunking.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.ContextPrefix">
+            <summary>
+            Context prefix to prepend to each chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.RegexPattern">
+            <summary>
+            Regex pattern for regex-based chunking.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionChunkingConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionEmbeddingConfig">
+            <summary>
+            Embedding configuration for an ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.Model">
+            <summary>
+            Embedding model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.L2Normalization">
+            <summary>
+            Whether to apply L2 normalization to embeddings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionEmbeddingConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionRule">
+            <summary>
+            Ingestion rule record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Id">
+            <summary>
+            Unique identifier with prefix irule_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Name">
+            <summary>
+            Display name for the ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Description">
+            <summary>
+            Description of the ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Bucket">
+            <summary>
+            S3 bucket name for document storage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.CollectionName">
+            <summary>
+            RecallDB collection display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.CollectionId">
+            <summary>
+            RecallDB collection GUID for API calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Labels">
+            <summary>
+            Labels to apply to ingested documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Tags">
+            <summary>
+            Tags to apply to ingested documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Atomization">
+            <summary>
+            Atomization configuration (placeholder).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Chunking">
+            <summary>
+            Chunking configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Embedding">
+            <summary>
+            Embedding configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionRule.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionRule.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an IngestionRule from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>IngestionRule instance or null.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.PullProgress">
             <summary>
@@ -3171,7 +3564,7 @@
             Background document ingestion pipeline service.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -3181,12 +3574,22 @@
             <param name="chunkingSettings">Chunking service settings.</param>
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
+            <param name="processingLog">Optional processing log service.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Process a document through the full ingestion pipeline.
             </summary>
             <param name="documentId">Document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a single embedding record from a RecallDB collection.
+            </summary>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="recordId">Record identifier.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
@@ -3200,42 +3603,72 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.DetectDocumentTypeAsync(System.Byte[],System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.DetectDocumentTypeAsync(System.String,System.Byte[],System.String,System.Threading.CancellationToken)">
             <summary>
             Detect the type of a document using the DocumentAtom service.
             </summary>
+            <param name="documentId">Document identifier for logging.</param>
             <param name="fileBytes">Raw file bytes.</param>
             <param name="filename">Original filename.</param>
             <param name="token">Cancellation token.</param>
             <returns>Detected document type string.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentContentAsync(System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentContentAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Process document content using the DocumentAtom service.
             </summary>
+            <param name="documentId">Document identifier for logging.</param>
             <param name="fileBytes">Raw file bytes.</param>
             <param name="documentType">Detected document type.</param>
             <param name="filename">Original filename.</param>
             <param name="token">Cancellation token.</param>
             <returns>Extracted text content.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ChunkAndEmbedContentAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.GetAtomPath(System.String)">
+            <summary>
+            Map a detected document type to the corresponding DocumentAtom atom endpoint path.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ChunkAndEmbedContentAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken)">
             <summary>
             Chunk and embed document content using the Partio chunking service.
             </summary>
+            <param name="documentId">Document identifier for logging.</param>
             <param name="content">Extracted text content.</param>
+            <param name="rule">Optional ingestion rule with chunking/embedding config.</param>
+            <param name="labels">Merged labels.</param>
+            <param name="tags">Merged tags.</param>
             <param name="token">Cancellation token.</param>
             <returns>List of chunks with their embeddings.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check that a RecallDB collection exists via HEAD.
+            Collections must be created via the dashboard/RecallDB before ingestion.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
             <param name="collectionId">Collection identifier.</param>
             <param name="documentId">Source document identifier.</param>
             <param name="chunk">Chunk with embedding data.</param>
+            <param name="chunkIndex">Zero-based chunk position within the document.</param>
             <param name="token">Cancellation token.</param>
-            <returns>True if the embedding was stored successfully.</returns>
+            <returns>Document key if stored successfully, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
+            <summary>
+            Merge labels from ingestion rule and document.
+            Document labels are appended to rule labels.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.MergeTags(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
+            <summary>
+            Merge tags from ingestion rule and document.
+            Document tags override rule tags for the same key.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.TypeDetectResponse">
             <summary>
@@ -3247,14 +3680,14 @@
             Detected document type.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ProcessResponse">
+        <member name="T:AssistantHub.Core.Services.IngestionService.AtomResponse">
             <summary>
-            Processing response from DocumentAtom.
+            Atom response from DocumentAtom.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ProcessResponse.Content">
+        <member name="P:AssistantHub.Core.Services.IngestionService.AtomResponse.Text">
             <summary>
-            Extracted text content.
+            Text content of the atom.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.ChunkingResponse">
@@ -3272,12 +3705,7 @@
             A single chunk with its embedding vector.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Index">
-            <summary>
-            Chunk index.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Content">
+        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Text">
             <summary>
             Text content of the chunk.
             </summary>
@@ -3286,6 +3714,68 @@
             <summary>
             Embedding vector for the chunk.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse">
+            <summary>
+            Response from RecallDB when storing a document/embedding.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse.DocumentKey">
+            <summary>
+            Document key (unique identifier within the collection).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ProcessingLogService">
+            <summary>
+            Service for writing and reading per-document processing log files.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.#ctor(AssistantHub.Core.Settings.ProcessingLogSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Processing log settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogAsync(System.String,System.String,System.String)">
+            <summary>
+            Write a log entry for a document.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <param name="level">Log level (INFO, WARN, ERROR, DEBUG).</param>
+            <param name="message">Log message.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepStartAsync(System.String,System.String)">
+            <summary>
+            Log the start of a processing step.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <param name="stepName">Step name.</param>
+            <returns>A Stopwatch started at call time for measuring elapsed time.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepCompleteAsync(System.String,System.String,System.String,System.Diagnostics.Stopwatch)">
+            <summary>
+            Log the completion of a processing step.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <param name="stepName">Step name.</param>
+            <param name="result">Result description.</param>
+            <param name="sw">Stopwatch from LogStepStartAsync.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.GetLogAsync(System.String)">
+            <summary>
+            Read the processing log for a document.
+            </summary>
+            <param name="documentId">Document identifier.</param>
+            <returns>Log file contents, or null if no log file exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.CleanupOldLogsAsync">
+            <summary>
+            Delete processing log files older than the configured retention period.
+            </summary>
+            <returns>Task.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService">
             <summary>
@@ -3378,8 +3868,19 @@
         </member>
         <member name="M:AssistantHub.Core.Services.StorageService.UploadAsync(System.String,System.String,System.Byte[],System.Threading.CancellationToken)">
             <summary>
-            Upload a file to S3-compatible storage.
+            Upload a file to S3-compatible storage (default bucket).
             </summary>
+            <param name="key">Object key.</param>
+            <param name="contentType">MIME content type.</param>
+            <param name="data">File data.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.UploadAsync(System.String,System.String,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Upload a file to a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
             <param name="key">Object key.</param>
             <param name="contentType">MIME content type.</param>
             <param name="data">File data.</param>
@@ -3388,16 +3889,34 @@
         </member>
         <member name="M:AssistantHub.Core.Services.StorageService.DownloadAsync(System.String,System.Threading.CancellationToken)">
             <summary>
-            Download a file from S3-compatible storage.
+            Download a file from S3-compatible storage (default bucket).
             </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>File data as byte array.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.DownloadAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Download a file from a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>File data as byte array.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.StorageService.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <summary>
-            Delete a file from S3-compatible storage.
+            Delete a file from S3-compatible storage (default bucket).
             </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.DeleteAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a file from a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
@@ -3409,6 +3928,13 @@
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>True if the object exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.GetClientForBucket(System.String)">
+            <summary>
+            Get or create an S3 client for a specific bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
+            <returns>S3 blob client for the bucket.</returns>
         </member>
         <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
             <summary>
@@ -3453,6 +3979,11 @@
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Logging">
             <summary>
             Logging settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.ProcessingLog">
+            <summary>
+            Per-document processing log settings.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
@@ -3647,6 +4178,26 @@
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.LoggingSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.ProcessingLogSettings">
+            <summary>
+            Per-document processing log settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ProcessingLogSettings.Directory">
+            <summary>
+            Directory where per-document processing log files are stored.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ProcessingLogSettings.RetentionDays">
+            <summary>
+            Number of days to retain processing log files before cleanup.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.ProcessingLogSettings.#ctor">
             <summary>
             Instantiate.
             </summary>

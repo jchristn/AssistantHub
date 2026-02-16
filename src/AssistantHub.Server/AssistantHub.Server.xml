@@ -429,7 +429,7 @@
             Handles document upload, CRUD, and existence check routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -441,16 +441,17 @@
             <param name="ingestion">Ingestion service.</param>
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
+            <param name="processingLog">Processing log service.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.PutDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            PUT /v1.0/documents - Upload document and trigger fire-and-forget ingestion.
+            PUT /v1.0/documents - Upload document via JSON body with IngestionRuleId.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/documents - List documents (non-admins see only their assistants' documents).
+            GET /v1.0/documents - List documents.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -462,13 +463,19 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DeleteDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            DELETE /v1.0/documents/{documentId} - Delete document and S3 object.
+            DELETE /v1.0/documents/{documentId} - Delete document, S3 object, and RecallDB embeddings.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.HeadDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/documents/{documentId} - Check document existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetDocumentProcessingLogAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/documents/{documentId}/processing-log - Get processing log for a document.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -537,7 +544,10 @@
         <member name="F:AssistantHub.Server.Handlers.HandlerBase.Inference">
             <summary>Inference service instance.</summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.HandlerBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.ProcessingLog">
+            <summary>Processing log service instance.</summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -549,6 +559,7 @@
             <param name="ingestion">Ingestion service.</param>
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
+            <param name="processingLog">Processing log service.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.HandlerBase.GetMetadata(WatsonWebserver.Core.HttpContextBase)">
             <summary>
@@ -618,6 +629,60 @@
         <member name="M:AssistantHub.Server.Handlers.InferenceHandler.DeleteModelAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             DELETE /v1.0/models/{modelName} - Delete a model (admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.IngestionRuleHandler">
+            <summary>
+            Handles ingestion rule CRUD routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.PutIngestionRuleAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/ingestion-rules - Create a new ingestion rule.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.GetIngestionRulesAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/ingestion-rules - List ingestion rules.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.GetIngestionRuleAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/ingestion-rules/{ruleId} - Get ingestion rule by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.PutIngestionRuleByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/ingestion-rules/{ruleId} - Update ingestion rule by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.DeleteIngestionRuleAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/ingestion-rules/{ruleId} - Delete ingestion rule.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.HeadIngestionRuleAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/ingestion-rules/{ruleId} - Check ingestion rule existence.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>

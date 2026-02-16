@@ -38,6 +38,16 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string AssistantIdFilter { get; set; } = null;
 
+        /// <summary>
+        /// Filter by bucket name.
+        /// </summary>
+        public string BucketNameFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by collection identifier.
+        /// </summary>
+        public string CollectionIdFilter { get; set; } = null;
+
         #endregion
 
         #region Private-Members

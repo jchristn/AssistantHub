@@ -64,7 +64,7 @@ namespace AssistantHub.Core.Settings
 
         #region Private-Members
 
-        private string _Region = "us-west-1";
+        private string _Region = "USWest1";
         private string _BucketName = "assistanthub";
         private string _EndpointUrl = "http://localhost:8000";
         private string _BaseUrl = "http://localhost:8000";

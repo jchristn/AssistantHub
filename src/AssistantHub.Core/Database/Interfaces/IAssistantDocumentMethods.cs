@@ -70,11 +70,12 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<EnumerationResult<AssistantDocument>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
-        /// Delete all assistant document records belonging to an assistant.
+        /// Update the chunk record IDs for a document after ingestion.
         /// </summary>
-        /// <param name="assistantId">Assistant identifier.</param>
+        /// <param name="id">Assistant document identifier.</param>
+        /// <param name="chunkRecordIdsJson">JSON array of record IDs.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Task.</returns>
-        Task DeleteByAssistantIdAsync(string assistantId, CancellationToken token = default);
+        Task UpdateChunkRecordIdsAsync(string id, string chunkRecordIdsJson, CancellationToken token = default);
     }
 }

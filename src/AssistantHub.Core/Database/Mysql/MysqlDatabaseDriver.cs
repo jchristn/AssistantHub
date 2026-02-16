@@ -55,6 +55,7 @@ namespace AssistantHub.Core.Database.Mysql
             AssistantSettings = new AssistantSettingsMethods(this, _Settings, _Logging);
             AssistantDocument = new AssistantDocumentMethods(this, _Settings, _Logging);
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
+            IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
         }
 
         #endregion
@@ -72,16 +73,19 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateAssistantSettingsTable,
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.CreateAssistantFeedbackTable,
+                TableQueries.CreateIngestionRulesTable,
                 TableQueries.CreateUsersEmailIndex,
                 TableQueries.CreateCredentialsUserIdIndex,
                 TableQueries.CreateCredentialsBearerTokenIndex,
                 TableQueries.CreateAssistantsUserIdIndex,
                 TableQueries.CreateAssistantSettingsAssistantIdIndex,
-                TableQueries.CreateAssistantDocumentsAssistantIdIndex,
-                TableQueries.CreateAssistantFeedbackAssistantIdIndex
+                TableQueries.CreateAssistantFeedbackAssistantIdIndex,
+                TableQueries.CreateIngestionRulesNameIndex,
+                TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
+
             _Logging.Info("MySQL database initialized successfully");
         }
 

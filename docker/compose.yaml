@@ -172,6 +172,24 @@ services:
 
   # --- AssistantHub ---
 
+  assistanthub-db-init:
+    image: alpine:latest
+    container_name: assistanthub-db-init
+    volumes:
+      - ./assistanthub/:/data/
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /data/assistanthub.db ]; then
+          apk add --no-cache sqlite > /dev/null 2>&1
+          sqlite3 /data/assistanthub.db "VACUUM;"
+          echo "Created new assistanthub.db"
+        else
+          echo "assistanthub.db already exists, skipping"
+        fi
+    restart: "no"
+
   assistanthub-server:
     image: jchristn77/assistanthub-server:latest
     container_name: assistanthub-server
@@ -181,7 +199,10 @@ services:
       - ./assistanthub/assistanthub.json:/app/assistanthub.json
       - ./assistanthub/assistanthub.db:/app/assistanthub.db
       - ./assistanthub/logs/:/app/logs/
+      - ./assistanthub/processing-logs/:/app/processing-logs/
     depends_on:
+      assistanthub-db-init:
+        condition: service_completed_successfully
       pgvector:
         condition: service_healthy
       less3:

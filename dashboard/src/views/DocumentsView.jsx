@@ -5,6 +5,7 @@ import DataTable from '../components/DataTable';
 import CopyableId from '../components/CopyableId';
 import DocumentUploadModal from '../components/modals/DocumentUploadModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
+import ProcessingLogModal from '../components/modals/ProcessingLogModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
@@ -20,8 +21,8 @@ function getStatusBadgeClass(status) {
   const s = status.toLowerCase();
   if (s === 'completed' || s === 'indexed' || s === 'active') return 'active';
   if (s === 'failed' || s === 'error') return 'failed';
-  if (s === 'processing' || s === 'indexing') return 'processing';
-  if (s === 'pending' || s === 'queued') return 'pending';
+  if (s.includes('processing') || s.includes('detecting') || s.includes('chunking') || s.includes('storing') || s === 'indexing') return 'processing';
+  if (s === 'pending' || s === 'queued' || s === 'uploading' || s === 'uploaded') return 'pending';
   return 'info';
 }
 
@@ -30,48 +31,66 @@ function DocumentsView() {
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showUpload, setShowUpload] = useState(false);
   const [showJson, setShowJson] = useState(null);
+  const [showLogs, setShowLogs] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
-  const [assistantFilter, setAssistantFilter] = useState('');
-  const [assistants, setAssistants] = useState([]);
+  const [ingestionRules, setIngestionRules] = useState([]);
+  const [buckets, setBuckets] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [bucketFilter, setBucketFilter] = useState('');
+  const [collectionFilter, setCollectionFilter] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await api.getAssistants({ maxResults: 1000 });
+        const result = await api.getIngestionRules({ maxResults: 1000 });
         const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
-        setAssistants(items);
-        if (items.length === 1) {
-          setAssistantFilter(items[0].Id);
-        }
+        setIngestionRules(items);
       } catch (err) {
-        console.error('Failed to load assistants', err);
+        console.error('Failed to load ingestion rules', err);
+      }
+    })();
+    (async () => {
+      try {
+        const result = await api.getBuckets();
+        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        setBuckets(items);
+      } catch (err) {
+        console.error('Failed to load buckets', err);
+      }
+    })();
+    (async () => {
+      try {
+        const result = await api.getCollections({ maxResults: 1000 });
+        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        setCollections(items);
+      } catch (err) {
+        console.error('Failed to load collections', err);
       }
     })();
   }, [serverUrl, credential]);
 
   const columns = [
-    { key: 'Id', label: 'ID', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
-    { key: 'Name', label: 'Name', filterable: true },
-    { key: 'AssistantId', label: 'Assistant ID', render: (row) => <CopyableId id={row.AssistantId} /> },
-    { key: 'OriginalFilename', label: 'Filename', filterable: true },
-    { key: 'ContentType', label: 'Content Type', filterable: true },
-    { key: 'SizeBytes', label: 'Size', render: (row) => formatFileSize(row.SizeBytes) },
-    { key: 'Status', label: 'Status', render: (row) => <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span> },
-    { key: 'CreatedUtc', label: 'Created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
+    { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this document', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    { key: 'Name', label: 'Name', tooltip: 'Display name assigned to this document', filterable: true },
+    { key: 'OriginalFilename', label: 'Filename', tooltip: 'Original filename when the document was uploaded', filterable: true },
+    { key: 'ContentType', label: 'Content Type', tooltip: 'MIME type of the document (e.g. application/pdf)', filterable: true },
+    { key: 'SizeBytes', label: 'Size', tooltip: 'File size of the uploaded document', render: (row) => formatFileSize(row.SizeBytes) },
+    { key: 'Status', label: 'Status', tooltip: 'Current processing state of the document', render: (row) => <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span> },
+    { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the document was uploaded', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
   const fetchData = useCallback(async (params) => {
-    const queryParams = { ...params };
-    if (assistantFilter) {
-      queryParams.assistantId = assistantFilter;
-    }
-    return await api.getDocuments(queryParams);
-  }, [serverUrl, credential, assistantFilter]);
+    const filterParams = { ...params };
+    if (bucketFilter) filterParams.bucketName = bucketFilter;
+    if (collectionFilter) filterParams.collectionId = collectionFilter;
+    return await api.getDocuments(filterParams);
+  }, [serverUrl, credential, bucketFilter, collectionFilter]);
 
   const getRowActions = (row) => [
     { label: 'View JSON', onClick: () => setShowJson(row) },
+    { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];
 
@@ -115,46 +134,40 @@ function DocumentsView() {
     }
   };
 
-  const handleFilterChange = (e) => {
-    setAssistantFilter(e.target.value);
-    setRefresh(r => r + 1);
-  };
-
   return (
     <div>
       <div className="content-header">
         <div>
           <h1 className="content-title">Documents</h1>
-          <p className="content-subtitle">Upload and manage documents for assistant knowledge bases.</p>
+          <p className="content-subtitle">Upload and manage documents for knowledge bases.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <select
-            value={assistantFilter}
-            onChange={handleFilterChange}
-            style={{
-              padding: '0.5rem 0.75rem',
-              border: '1px solid var(--input-border)',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              color: 'var(--text-primary)',
-              fontSize: '0.875rem',
-              minWidth: '280px',
-            }}
-          >
-            <option value="">All Assistants</option>
-            {assistants.map(a => (
-              <option key={a.Id} value={a.Id}>
-                {a.Name} ({a.Id.substring(0, 8)}...)
-              </option>
+        <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload Document</button>
+      </div>
+      <div className="filter-bar">
+        <label className="filter-label">
+          Bucket:
+          <select value={bucketFilter} onChange={(e) => setBucketFilter(e.target.value)}>
+            <option value="">All Buckets</option>
+            {buckets.map((b) => (
+              <option key={b.Name} value={b.Name}>{b.Name}</option>
             ))}
           </select>
-          <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload Document</button>
-        </div>
+        </label>
+        <label className="filter-label">
+          Collection:
+          <select value={collectionFilter} onChange={(e) => setCollectionFilter(e.target.value)}>
+            <option value="">All Collections</option>
+            {collections.map((c) => (
+              <option key={c.Id || c.GUID} value={c.Id || c.GUID}>{c.Name || c.Id || c.GUID}</option>
+            ))}
+          </select>
+        </label>
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} />
-      {showUpload && <DocumentUploadModal assistantId={assistantFilter} onUpload={handleUpload} onClose={() => setShowUpload(false)} />}
+      {showUpload && <DocumentUploadModal ingestionRules={ingestionRules} onUpload={handleUpload} onClose={() => setShowUpload(false)} />}
       {showJson && <JsonViewModal title="Document JSON" data={showJson} onClose={() => setShowJson(null)} />}
-      {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
+      {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}
+      {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
     </div>
   );

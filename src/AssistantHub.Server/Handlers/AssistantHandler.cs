@@ -291,7 +291,6 @@ namespace AssistantHub.Server.Handlers
 
                 // Cascading deletes
                 await Database.AssistantSettings.DeleteByAssistantIdAsync(assistantId).ConfigureAwait(false);
-                await Database.AssistantDocument.DeleteByAssistantIdAsync(assistantId).ConfigureAwait(false);
                 await Database.AssistantFeedback.DeleteByAssistantIdAsync(assistantId).ConfigureAwait(false);
 
                 await Database.Assistant.DeleteAsync(assistantId).ConfigureAwait(false);

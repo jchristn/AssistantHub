@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import ActionMenu from '../components/ActionMenu';
+import Tooltip from '../components/Tooltip';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import DirectoryFormModal from '../components/modals/DirectoryFormModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -158,7 +159,7 @@ function ObjectsView() {
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Bucket:</label>
+        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', marginRight: '0.5rem' }}><Tooltip text="S3-compatible storage bucket to browse">Bucket:</Tooltip></label>
         <select
           value={selectedBucket}
           onChange={(e) => { setSelectedBucket(e.target.value); setPrefix(''); }}
@@ -173,6 +174,23 @@ function ObjectsView() {
         <div className="data-table-container">
           <div className="data-table-toolbar">
             <div className="data-table-toolbar-left">
+              <button
+                className={`refresh-btn ${refreshState}`}
+                onClick={handleRefresh}
+                disabled={refreshState === 'spinning'}
+                title="Refresh"
+              >
+                {refreshState === 'done' ? (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3,8 7,12 13,4" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 8A6 6 0 1 1 10 2.5" />
+                    <polyline points="14,2 14,6 10,6" />
+                  </svg>
+                )}
+              </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
                 {breadcrumbs().map((crumb, i) => (
                   <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -192,14 +210,6 @@ function ObjectsView() {
                 {uploading ? 'Uploading...' : 'Upload Files'}
               </button>
               <button className="btn btn-primary btn-sm" onClick={() => setShowCreateDir(true)}>Create Directory</button>
-              <button
-                className={`refresh-btn ${refreshState === 'spinning' ? 'spinning' : ''} ${refreshState === 'done' ? 'done' : ''}`}
-                onClick={handleRefresh}
-                disabled={refreshState === 'spinning'}
-                title="Refresh"
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              </button>
             </div>
           </div>
 
@@ -211,9 +221,9 @@ function ObjectsView() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Size</th>
-                  <th>Last Modified</th>
+                  <th><Tooltip text="File or folder name within the bucket">Name</Tooltip></th>
+                  <th><Tooltip text="File size of the object">Size</Tooltip></th>
+                  <th><Tooltip text="Date and time the object was last updated">Last Modified</Tooltip></th>
                   <th className="actions-cell"></th>
                 </tr>
               </thead>

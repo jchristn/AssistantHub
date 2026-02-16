@@ -30,7 +30,7 @@ namespace AssistantHub.Core.Settings
         /// <summary>
         /// Access key for the RecallDb service.
         /// </summary>
-        public string AccessKey { get; set; } = "";
+        public string AccessKey { get; set; } = "recalldbadmin";
 
         #endregion
 

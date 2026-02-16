@@ -1,18 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
+import Tooltip from '../components/Tooltip';
 import AlertModal from '../components/AlertModal';
 
 function AssistantSettingsView() {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [assistants, setAssistants] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
   const [dirty, setDirty] = useState(false);
+
+  const loadCollections = useCallback(async () => {
+    try {
+      const result = await api.getCollections({ maxResults: 1000 });
+      const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+      setCollections(items);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
+  }, [serverUrl, credential]);
 
   const loadAssistants = useCallback(async () => {
     try {
@@ -28,7 +40,7 @@ function AssistantSettingsView() {
     }
   }, [serverUrl, credential]);
 
-  useEffect(() => { loadAssistants(); }, [loadAssistants]);
+  useEffect(() => { loadAssistants(); loadCollections(); }, [loadAssistants, loadCollections]);
 
   const loadSettings = useCallback(async (id) => {
     if (!id) { setSettings(null); return; }
@@ -41,18 +53,18 @@ function AssistantSettingsView() {
         SystemPrompt: result?.SystemPrompt || 'You are a helpful assistant. Use the provided context to answer questions accurately.',
         MaxTokens: result?.MaxTokens || 4096,
         ContextWindow: result?.ContextWindow || 8192,
-        Model: result?.Model || 'gpt-4o',
+        Model: result?.Model || 'gemma3:4b',
         EnableRag: result?.EnableRag ?? false,
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
-        InferenceProvider: result?.InferenceProvider || 'OpenAI',
-        InferenceEndpoint: result?.InferenceEndpoint || '',
+        InferenceProvider: result?.InferenceProvider || 'Ollama',
+        InferenceEndpoint: result?.InferenceEndpoint || 'http://ollama:11434',
         InferenceApiKey: result?.InferenceApiKey || '',
         Title: result?.Title || '',
         LogoUrl: result?.LogoUrl || '',
         FaviconUrl: result?.FaviconUrl || '',
-        Streaming: result?.Streaming ?? false,
+        Streaming: result?.Streaming ?? true,
       });
       setDirty(false);
     } catch (err) {
@@ -104,7 +116,7 @@ function AssistantSettingsView() {
       </div>
       <div className="settings-view">
         <div className="form-group">
-          <label className="form-label">Select Assistant</label>
+          <label className="form-label"><Tooltip text="Choose which assistant's settings to configure">Select Assistant</Tooltip></label>
           <select
             className="form-input"
             value={selectedId}
@@ -131,16 +143,16 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">Appearance</h3>
               <div className="form-group">
-                <label className="form-label">Title</label>
+                <label className="form-label"><Tooltip text="Heading displayed at the top of the chat window">Title</Tooltip></label>
                 <input className="form-input" type="text" value={settings.Title} onChange={(e) => handleChange('Title', e.target.value)} placeholder="Heading shown on the chat window" />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Logo URL</label>
+                  <label className="form-label"><Tooltip text="URL of the image shown in the chat header (max 192x192)">Logo URL</Tooltip></label>
                   <input className="form-input" type="text" value={settings.LogoUrl} onChange={(e) => handleChange('LogoUrl', e.target.value)} placeholder="Image URL for chat logo (max 192x192)" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Favicon URL</label>
+                  <label className="form-label"><Tooltip text="URL of the icon shown in the browser tab">Favicon URL</Tooltip></label>
                   <input className="form-input" type="text" value={settings.FaviconUrl} onChange={(e) => handleChange('FaviconUrl', e.target.value)} placeholder="Image URL for browser tab favicon" />
                 </div>
               </div>
@@ -149,40 +161,40 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">Model Configuration</h3>
               <div className="form-group">
-                <label className="form-label">Inference Provider</label>
+                <label className="form-label"><Tooltip text="AI service backend (OpenAI or Ollama)">Inference Provider</Tooltip></label>
                 <select className="form-input" value={settings.InferenceProvider} onChange={(e) => handleChange('InferenceProvider', e.target.value)}>
                   <option value="OpenAI">OpenAI</option>
                   <option value="Ollama">Ollama</option>
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Model</label>
+                <label className="form-label"><Tooltip text="Model name to use for generating responses">Model</Tooltip></label>
                 <input className="form-input" type="text" value={settings.Model} onChange={(e) => handleChange('Model', e.target.value)} />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Temperature <span className="range-value">{settings.Temperature}</span></label>
+                  <label className="form-label"><Tooltip text="Controls randomness: lower values are more focused, higher values are more creative (0-2)">Temperature</Tooltip> <span className="range-value">{settings.Temperature}</span></label>
                   <input type="range" min="0" max="2" step="0.1" value={settings.Temperature} onChange={(e) => handleChange('Temperature', parseFloat(e.target.value))} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Top P <span className="range-value">{settings.TopP}</span></label>
+                  <label className="form-label"><Tooltip text="Nucleus sampling: limits token selection to a cumulative probability threshold (0-1)">Top P</Tooltip> <span className="range-value">{settings.TopP}</span></label>
                   <input type="range" min="0" max="1" step="0.05" value={settings.TopP} onChange={(e) => handleChange('TopP', parseFloat(e.target.value))} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Max Tokens</label>
+                  <label className="form-label"><Tooltip text="Maximum number of tokens the model can generate per response">Max Tokens</Tooltip></label>
                   <input className="form-input" type="number" value={settings.MaxTokens} onChange={(e) => handleChange('MaxTokens', parseInt(e.target.value) || 0)} min="1" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Context Window</label>
+                  <label className="form-label"><Tooltip text="Maximum number of tokens available for input context and conversation history">Context Window</Tooltip></label>
                   <input className="form-input" type="number" value={settings.ContextWindow} onChange={(e) => handleChange('ContextWindow', parseInt(e.target.value) || 0)} min="1" />
                 </div>
               </div>
               <div className="form-group form-toggle">
                 <label>
                   <input type="checkbox" checked={settings.Streaming} onChange={(e) => handleChange('Streaming', e.target.checked)} />
-                  Streaming
+                  <Tooltip text="Enable real-time token-by-token response streaming">Streaming</Tooltip>
                 </label>
               </div>
             </div>
@@ -190,6 +202,7 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">System Prompt</h3>
               <div className="form-group">
+                <label className="form-label"><Tooltip text="Instructions that define the assistant's behavior and personality">System Prompt</Tooltip></label>
                 <textarea className="form-input" value={settings.SystemPrompt} onChange={(e) => handleChange('SystemPrompt', e.target.value)} rows={6} />
               </div>
             </div>
@@ -199,22 +212,27 @@ function AssistantSettingsView() {
               <div className="form-group form-toggle">
                 <label>
                   <input type="checkbox" checked={settings.EnableRag} onChange={(e) => handleChange('EnableRag', e.target.checked)} />
-                  Enable RAG
+                  <Tooltip text="Enable Retrieval-Augmented Generation to use documents as context">Enable RAG</Tooltip>
                 </label>
               </div>
               {settings.EnableRag && (
                 <>
                   <div className="form-group">
-                    <label className="form-label">Collection ID (RecallDB)</label>
-                    <input className="form-input" type="text" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)} />
+                    <label className="form-label"><Tooltip text="Vector collection to search for relevant document chunks">Collection ID</Tooltip></label>
+                    <select className="form-input" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)}>
+                      <option value="">-- Select a collection --</option>
+                      {collections.map(c => (
+                        <option key={c.Id} value={c.Id}>{c.Name || c.Id}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label className="form-label">Retrieval Top K</label>
+                      <label className="form-label"><Tooltip text="Number of most relevant document chunks to retrieve per query">Retrieval Top K</Tooltip></label>
                       <input className="form-input" type="number" value={settings.RetrievalTopK} onChange={(e) => handleChange('RetrievalTopK', parseInt(e.target.value) || 1)} min="1" />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Score Threshold <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
+                      <label className="form-label"><Tooltip text="Minimum similarity score for retrieved chunks to be included (0-1)">Score Threshold</Tooltip> <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
                       <input type="range" min="0" max="1" step="0.05" value={settings.RetrievalScoreThreshold} onChange={(e) => handleChange('RetrievalScoreThreshold', parseFloat(e.target.value))} />
                     </div>
                   </div>
@@ -225,11 +243,11 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">Inference Endpoint</h3>
               <div className="form-group">
-                <label className="form-label">Endpoint URL</label>
+                <label className="form-label"><Tooltip text="Custom inference API endpoint; leave blank to use server default">Endpoint URL</Tooltip></label>
                 <input className="form-input" type="text" value={settings.InferenceEndpoint} onChange={(e) => handleChange('InferenceEndpoint', e.target.value)} placeholder="Leave blank to use server default" />
               </div>
               <div className="form-group">
-                <label className="form-label">API Key</label>
+                <label className="form-label"><Tooltip text="Authentication key for the inference endpoint; leave blank to use server default">API Key</Tooltip></label>
                 <input className="form-input" type="password" value={settings.InferenceApiKey} onChange={(e) => handleChange('InferenceApiKey', e.target.value)} placeholder="Leave blank to use server default" />
               </div>
             </div>

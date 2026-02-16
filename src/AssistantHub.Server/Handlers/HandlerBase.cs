@@ -41,6 +41,9 @@ namespace AssistantHub.Server.Handlers
         /// <summary>Inference service instance.</summary>
         protected readonly InferenceService Inference;
 
+        /// <summary>Processing log service instance.</summary>
+        protected readonly ProcessingLogService ProcessingLog;
+
         /// <summary>
         /// Instantiate.
         /// </summary>
@@ -52,6 +55,7 @@ namespace AssistantHub.Server.Handlers
         /// <param name="ingestion">Ingestion service.</param>
         /// <param name="retrieval">Retrieval service.</param>
         /// <param name="inference">Inference service.</param>
+        /// <param name="processingLog">Processing log service.</param>
         protected HandlerBase(
             DatabaseDriverBase database,
             LoggingModule logging,
@@ -60,7 +64,8 @@ namespace AssistantHub.Server.Handlers
             StorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
-            InferenceService inference)
+            InferenceService inference,
+            ProcessingLogService processingLog = null)
         {
             Database = database ?? throw new ArgumentNullException(nameof(database));
             Logging = logging ?? throw new ArgumentNullException(nameof(logging));
@@ -70,6 +75,7 @@ namespace AssistantHub.Server.Handlers
             Ingestion = ingestion;
             Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             Inference = inference ?? throw new ArgumentNullException(nameof(inference));
+            ProcessingLog = processingLog;
         }
 
         /// <summary>
@@ -144,6 +150,18 @@ namespace AssistantHub.Server.Handlers
             if (!String.IsNullOrEmpty(assistantIdFilter))
             {
                 query.AssistantIdFilter = assistantIdFilter;
+            }
+
+            string bucketNameFilter = ctx.Request.Query.Elements.Get("bucketName");
+            if (!String.IsNullOrEmpty(bucketNameFilter))
+            {
+                query.BucketNameFilter = bucketNameFilter;
+            }
+
+            string collectionIdFilter = ctx.Request.Query.Elements.Get("collectionId");
+            if (!String.IsNullOrEmpty(collectionIdFilter))
+            {
+                query.CollectionIdFilter = collectionIdFilter;
             }
 
             return query;

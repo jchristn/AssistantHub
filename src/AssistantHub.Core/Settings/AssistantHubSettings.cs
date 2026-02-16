@@ -81,6 +81,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _Logging = value; }
         }
 
+        /// <summary>
+        /// Per-document processing log settings.
+        /// </summary>
+        public ProcessingLogSettings ProcessingLog
+        {
+            get => _ProcessingLog;
+            set { if (value != null) _ProcessingLog = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -93,6 +102,7 @@ namespace AssistantHub.Core.Settings
         private InferenceSettings _Inference = new InferenceSettings();
         private RecallDbSettings _RecallDb = new RecallDbSettings();
         private LoggingSettings _Logging = new LoggingSettings();
+        private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
 
         #endregion
 

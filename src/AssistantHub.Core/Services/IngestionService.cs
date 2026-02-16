@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -33,6 +34,7 @@ namespace AssistantHub.Core.Services
         private ChunkingSettings _ChunkingSettings = null;
         private RecallDbSettings _RecallDbSettings = null;
         private LoggingModule _Logging = null;
+        private ProcessingLogService _ProcessingLog = null;
         private HttpClient _HttpClient = null;
 
         private JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
@@ -55,13 +57,15 @@ namespace AssistantHub.Core.Services
         /// <param name="chunkingSettings">Chunking service settings.</param>
         /// <param name="recallDbSettings">RecallDb service settings.</param>
         /// <param name="logging">Logging module.</param>
+        /// <param name="processingLog">Optional processing log service.</param>
         public IngestionService(
             DatabaseDriverBase database,
             StorageService storage,
             DocumentAtomSettings documentAtomSettings,
             ChunkingSettings chunkingSettings,
             RecallDbSettings recallDbSettings,
-            LoggingModule logging)
+            LoggingModule logging,
+            ProcessingLogService processingLog = null)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Storage = storage ?? throw new ArgumentNullException(nameof(storage));
@@ -69,6 +73,7 @@ namespace AssistantHub.Core.Services
             _ChunkingSettings = chunkingSettings ?? throw new ArgumentNullException(nameof(chunkingSettings));
             _RecallDbSettings = recallDbSettings ?? throw new ArgumentNullException(nameof(recallDbSettings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
+            _ProcessingLog = processingLog;
             _HttpClient = new HttpClient();
         }
 
@@ -86,6 +91,8 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrEmpty(documentId)) throw new ArgumentNullException(nameof(documentId));
 
+            Stopwatch pipelineSw = Stopwatch.StartNew();
+
             _Logging.Info(_Header + "starting ingestion pipeline for document " + documentId);
 
             try
@@ -98,95 +105,242 @@ namespace AssistantHub.Core.Services
                     return;
                 }
 
+                // Pipeline start log
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline started for document " + documentId + ", filename: " + (document.OriginalFilename ?? "unknown")).ConfigureAwait(false);
+
+                // Step 1b: Load ingestion rule if set
+                IngestionRule rule = null;
+                if (!String.IsNullOrEmpty(document.IngestionRuleId))
+                {
+                    rule = await _Database.IngestionRule.ReadAsync(document.IngestionRuleId, token).ConfigureAwait(false);
+                    if (rule != null)
+                        _Logging.Debug(_Header + "using ingestion rule " + rule.Id + " (" + rule.Name + ")");
+                }
+
+                if (_ProcessingLog != null)
+                {
+                    if (rule != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Ingestion rule loaded: " + rule.Id + " (" + rule.Name + ")").ConfigureAwait(false);
+                    else
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Ingestion rule loaded: no rule").ConfigureAwait(false);
+                }
+
                 // Step 2: Update status to TypeDetecting
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetecting, "Detecting document type.", token).ConfigureAwait(false);
 
-                // Step 3: Download file bytes from S3
-                byte[] fileBytes = await _Storage.DownloadAsync(document.S3Key, token).ConfigureAwait(false);
+                // Step 3: Download file bytes from S3 (bucket-aware)
+                Stopwatch downloadSw = _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "File download from S3").ConfigureAwait(false) : null;
+
+                byte[] fileBytes;
+                if (!String.IsNullOrEmpty(document.BucketName))
+                    fileBytes = await _Storage.DownloadAsync(document.BucketName, document.S3Key, token).ConfigureAwait(false);
+                else
+                    fileBytes = await _Storage.DownloadAsync(document.S3Key, token).ConfigureAwait(false);
+
                 if (fileBytes == null || fileBytes.Length == 0)
                 {
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "File data is empty or could not be downloaded").ConfigureAwait(false);
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "File data is empty or could not be downloaded.", token).ConfigureAwait(false);
                     return;
                 }
 
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "File download from S3", "bucket: " + (document.BucketName ?? "default") + ", key: " + document.S3Key + ", " + fileBytes.Length + " bytes", downloadSw).ConfigureAwait(false);
+
                 _Logging.Debug(_Header + "downloaded " + fileBytes.Length + " bytes for document " + documentId);
 
                 // Step 4: Call DocumentAtom type detection
-                string detectedType = await DetectDocumentTypeAsync(fileBytes, document.OriginalFilename, token).ConfigureAwait(false);
+                Stopwatch typeDetectSw = _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Type detection").ConfigureAwait(false) : null;
+
+                string detectedType = await DetectDocumentTypeAsync(documentId, fileBytes, document.OriginalFilename, token).ConfigureAwait(false);
 
                 // Step 5: Check if type is unknown
                 if (String.IsNullOrEmpty(detectedType) || String.Equals(detectedType, "unknown", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Type detection failed — could not detect document type").ConfigureAwait(false);
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetectionFailed, "Document type could not be detected.", token).ConfigureAwait(false);
                     _Logging.Warn(_Header + "type detection failed for document " + documentId);
                     return;
                 }
+
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "Type detection", "detected type: " + detectedType, typeDetectSw).ConfigureAwait(false);
 
                 // Step 6: Update status to TypeDetectionSuccess, then Processing
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetectionSuccess, "Detected type: " + detectedType, token).ConfigureAwait(false);
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Processing, "Processing document content.", token).ConfigureAwait(false);
 
                 // Step 7: Call DocumentAtom processing endpoint
-                string extractedContent = await ProcessDocumentContentAsync(fileBytes, detectedType, document.OriginalFilename, token).ConfigureAwait(false);
+                Stopwatch extractSw = _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Atom extraction").ConfigureAwait(false) : null;
+
+                string extractedContent = await ProcessDocumentContentAsync(documentId, fileBytes, detectedType, document.OriginalFilename, token).ConfigureAwait(false);
                 if (String.IsNullOrEmpty(extractedContent))
                 {
+                    if (_ProcessingLog != null)
+                    {
+                        extractSw?.Stop();
+                        string elapsedStr = extractSw != null ? " in " + extractSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms" : "";
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Atom extraction failed" + elapsedStr + " — no content returned").ConfigureAwait(false);
+                    }
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Failed to extract content from document.", token).ConfigureAwait(false);
                     return;
                 }
+
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "Atom extraction", extractedContent.Length + " characters extracted", extractSw).ConfigureAwait(false);
 
                 _Logging.Debug(_Header + "extracted " + extractedContent.Length + " characters from document " + documentId);
 
                 // Step 8: Update status to ProcessingChunks
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.ProcessingChunks, "Chunking and embedding content.", token).ConfigureAwait(false);
 
-                // Step 9: Call Partio chunking service
-                List<ChunkWithEmbedding> chunks = await ChunkAndEmbedContentAsync(extractedContent, token).ConfigureAwait(false);
+                // Step 9: Merge labels and tags from rule + document
+                List<string> mergedLabels = MergeLabels(rule, document);
+                Dictionary<string, string> mergedTags = MergeTags(rule, document);
+
+                // Step 10: Call Partio chunking service with rule config
+                if (_ProcessingLog != null)
+                {
+                    string chunkParams = "strategy: " + (rule?.Chunking?.Strategy ?? "default");
+                    if (rule?.Chunking != null)
+                    {
+                        chunkParams += ", tokenCount: " + rule.Chunking.FixedTokenCount
+                            + ", overlapCount: " + rule.Chunking.OverlapCount;
+                        if (!String.IsNullOrEmpty(rule.Chunking.OverlapStrategy))
+                            chunkParams += ", overlapStrategy: " + rule.Chunking.OverlapStrategy;
+                    }
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Chunking started — " + chunkParams).ConfigureAwait(false);
+                }
+
+                Stopwatch chunkSw = Stopwatch.StartNew();
+
+                List<ChunkWithEmbedding> chunks = await ChunkAndEmbedContentAsync(documentId, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
                 if (chunks == null || chunks.Count == 0)
                 {
+                    chunkSw.Stop();
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms — no chunks returned").ConfigureAwait(false);
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Failed to chunk document content.", token).ConfigureAwait(false);
                     return;
                 }
 
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "Chunking", chunks.Count + " chunks generated", chunkSw).ConfigureAwait(false);
+
                 _Logging.Debug(_Header + "generated " + chunks.Count + " chunks for document " + documentId);
 
-                // Step 10: Update status to StoringEmbeddings
+                // Step 11: Update status to StoringEmbeddings
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.StoringEmbeddings, "Storing " + chunks.Count + " embeddings.", token).ConfigureAwait(false);
 
-                // Step 11: Store each chunk+embedding in RecallDB
-                AssistantDocument refreshedDocument = await _Database.AssistantDocument.ReadAsync(documentId, token).ConfigureAwait(false);
-                string collectionId = null;
-                if (refreshedDocument != null)
-                {
-                    AssistantSettings assistantSettings = await _Database.AssistantSettings.ReadAsync(refreshedDocument.AssistantId, token).ConfigureAwait(false);
-                    if (assistantSettings != null)
-                    {
-                        collectionId = assistantSettings.CollectionId;
-                    }
-                }
+                // Step 12: Determine collection ID
+                string collectionId = document.CollectionId;
 
                 if (String.IsNullOrEmpty(collectionId))
                 {
-                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "No collection identifier configured for this assistant.", token).ConfigureAwait(false);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "No collection identifier configured").ConfigureAwait(false);
+                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "No collection identifier configured.", token).ConfigureAwait(false);
                     return;
                 }
 
-                int storedCount = 0;
-                foreach (ChunkWithEmbedding chunk in chunks)
+                // Step 12b: Ensure collection exists in RecallDB
+                bool collectionReady = await EnsureCollectionExistsAsync(collectionId, token).ConfigureAwait(false);
+                if (!collectionReady)
                 {
-                    bool stored = await StoreEmbeddingAsync(collectionId, documentId, chunk, token).ConfigureAwait(false);
-                    if (stored) storedCount++;
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "RecallDB collection " + collectionId + " could not be found or created").ConfigureAwait(false);
+                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "RecallDB collection not available.", token).ConfigureAwait(false);
+                    return;
                 }
+
+                // Step 13: Store each chunk+embedding in RecallDB and capture record IDs
+                if (_ProcessingLog != null)
+                {
+                    string embedInfo = "model: " + (rule?.Embedding?.Model ?? "default");
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + embedInfo + ", " + chunks.Count + " chunks to store").ConfigureAwait(false);
+                }
+
+                Stopwatch storeSw = Stopwatch.StartNew();
+                int storedCount = 0;
+                List<string> chunkRecordIds = new List<string>();
+
+                for (int i = 0; i < chunks.Count; i++)
+                {
+                    ChunkWithEmbedding chunk = chunks[i];
+                    string recordId = await StoreEmbeddingAsync(collectionId, documentId, chunk, i, token).ConfigureAwait(false);
+                    if (!String.IsNullOrEmpty(recordId))
+                    {
+                        storedCount++;
+                        chunkRecordIds.Add(recordId);
+                    }
+                }
+
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "Embedding storage", storedCount + "/" + chunks.Count + " stored", storeSw).ConfigureAwait(false);
 
                 _Logging.Info(_Header + "stored " + storedCount + "/" + chunks.Count + " embeddings for document " + documentId);
 
-                // Step 12: Update status to Completed
+                // Step 14: Persist chunk record IDs on the document
+                if (chunkRecordIds.Count > 0)
+                {
+                    string chunkRecordIdsJson = JsonSerializer.Serialize(chunkRecordIds, _JsonOptions);
+                    await _Database.AssistantDocument.UpdateChunkRecordIdsAsync(documentId, chunkRecordIdsJson, token).ConfigureAwait(false);
+                }
+
+                // Step 15: Update status to Completed
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Completed, "Ingestion complete. " + storedCount + " chunks stored.", token).ConfigureAwait(false);
                 _Logging.Info(_Header + "ingestion pipeline completed for document " + documentId);
+
+                pipelineSw.Stop();
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline complete — total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "exception during ingestion of document " + documentId + ": " + e.Message);
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Ingestion failed: " + e.Message, token).ConfigureAwait(false);
+
+                pipelineSw.Stop();
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "ERROR", "Pipeline failed — " + e.Message + " — total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Delete a single embedding record from a RecallDB collection.
+        /// </summary>
+        /// <param name="collectionId">Collection identifier.</param>
+        /// <param name="recordId">Record identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public async Task DeleteEmbeddingAsync(string collectionId, string recordId, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
+            if (String.IsNullOrEmpty(recordId)) throw new ArgumentNullException(nameof(recordId));
+
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/documents/" + recordId;
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, url))
+            {
+                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
+                {
+                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
+                }
+
+                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    _Logging.Warn(_Header + "RecallDB delete returned " + (int)response.StatusCode + " for record " + recordId + ": " + responseBody);
+                }
+                else
+                {
+                    _Logging.Debug(_Header + "deleted embedding record " + recordId + " from collection " + collectionId);
+                }
             }
         }
 
@@ -211,21 +365,19 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Detect the type of a document using the DocumentAtom service.
         /// </summary>
+        /// <param name="documentId">Document identifier for logging.</param>
         /// <param name="fileBytes">Raw file bytes.</param>
         /// <param name="filename">Original filename.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Detected document type string.</returns>
-        private async Task<string> DetectDocumentTypeAsync(byte[] fileBytes, string filename, CancellationToken token)
+        private async Task<string> DetectDocumentTypeAsync(string documentId, byte[] fileBytes, string filename, CancellationToken token)
         {
             string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + "/typedetect";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                MultipartFormDataContent formData = new MultipartFormDataContent();
-                ByteArrayContent fileContent = new ByteArrayContent(fileBytes);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                formData.Add(fileContent, "file", filename ?? "document");
-                request.Content = formData;
+                request.Content = new ByteArrayContent(fileBytes);
+                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
                 if (!String.IsNullOrEmpty(_DocumentAtomSettings.AccessKey))
                 {
@@ -238,8 +390,14 @@ namespace AssistantHub.Core.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     _Logging.Warn(_Header + "type detection returned " + (int)response.StatusCode + ": " + responseBody);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Type detection API returned HTTP " + (int)response.StatusCode + ": " + responseBody).ConfigureAwait(false);
                     return null;
                 }
+
+                _Logging.Debug(_Header + "type detection response for document " + documentId + ": " + responseBody);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Type detection response: " + responseBody).ConfigureAwait(false);
 
                 TypeDetectResponse typeResult = JsonSerializer.Deserialize<TypeDetectResponse>(responseBody, _JsonOptions);
                 return typeResult?.Type;
@@ -249,23 +407,29 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Process document content using the DocumentAtom service.
         /// </summary>
+        /// <param name="documentId">Document identifier for logging.</param>
         /// <param name="fileBytes">Raw file bytes.</param>
         /// <param name="documentType">Detected document type.</param>
         /// <param name="filename">Original filename.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Extracted text content.</returns>
-        private async Task<string> ProcessDocumentContentAsync(byte[] fileBytes, string documentType, string filename, CancellationToken token)
+        private async Task<string> ProcessDocumentContentAsync(string documentId, byte[] fileBytes, string documentType, string filename, CancellationToken token)
         {
-            string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + "/process";
+            string atomPath = GetAtomPath(documentType);
+            if (String.IsNullOrEmpty(atomPath))
+            {
+                _Logging.Warn(_Header + "no atom endpoint for document type: " + documentType);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "ERROR", "No atom endpoint for document type: " + documentType).ConfigureAwait(false);
+                return null;
+            }
+
+            string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + atomPath;
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                MultipartFormDataContent formData = new MultipartFormDataContent();
-                ByteArrayContent fileContent = new ByteArrayContent(fileBytes);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                formData.Add(fileContent, "file", filename ?? "document");
-                formData.Add(new StringContent(documentType), "type");
-                request.Content = formData;
+                request.Content = new ByteArrayContent(fileBytes);
+                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
                 if (!String.IsNullOrEmpty(_DocumentAtomSettings.AccessKey))
                 {
@@ -278,41 +442,148 @@ namespace AssistantHub.Core.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     _Logging.Warn(_Header + "document processing returned " + (int)response.StatusCode + ": " + responseBody);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Atom extraction API returned HTTP " + (int)response.StatusCode + ": " + responseBody).ConfigureAwait(false);
                     return null;
                 }
 
-                ProcessResponse processResult = JsonSerializer.Deserialize<ProcessResponse>(responseBody, _JsonOptions);
-                return processResult?.Content;
+                _Logging.Debug(_Header + "atom extraction response for document " + documentId + ": " + responseBody.Length + " characters");
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom extraction response: " + responseBody.Length + " characters").ConfigureAwait(false);
+
+                List<AtomResponse> atoms = JsonSerializer.Deserialize<List<AtomResponse>>(responseBody, _JsonOptions);
+                if (atoms == null || atoms.Count == 0)
+                    return null;
+
+                StringBuilder sb = new StringBuilder();
+                foreach (AtomResponse atom in atoms)
+                {
+                    if (!String.IsNullOrEmpty(atom.Text))
+                    {
+                        if (sb.Length > 0) sb.Append(Environment.NewLine);
+                        sb.Append(atom.Text);
+                    }
+                }
+
+                return sb.Length > 0 ? sb.ToString() : null;
+            }
+        }
+
+        /// <summary>
+        /// Map a detected document type to the corresponding DocumentAtom atom endpoint path.
+        /// </summary>
+        private static string GetAtomPath(string documentType)
+        {
+            if (String.IsNullOrEmpty(documentType)) return null;
+
+            switch (documentType.ToLowerInvariant())
+            {
+                case "csv": return "/atom/csv";
+                case "xlsx":
+                case "xls": return "/atom/excel";
+                case "html": return "/atom/html";
+                case "json": return "/atom/json";
+                case "markdown": return "/atom/markdown";
+                case "pdf": return "/atom/pdf";
+                case "png":
+                case "jpeg":
+                case "gif":
+                case "tiff":
+                case "bmp":
+                case "webp":
+                case "ico": return "/atom/png";
+                case "pptx":
+                case "ppt": return "/atom/powerpoint";
+                case "rtf": return "/atom/rtf";
+                case "text":
+                case "tsv": return "/atom/text";
+                case "docx":
+                case "doc": return "/atom/word";
+                case "xml":
+                case "svg":
+                case "gpx": return "/atom/xml";
+                default: return null;
             }
         }
 
         /// <summary>
         /// Chunk and embed document content using the Partio chunking service.
         /// </summary>
+        /// <param name="documentId">Document identifier for logging.</param>
         /// <param name="content">Extracted text content.</param>
+        /// <param name="rule">Optional ingestion rule with chunking/embedding config.</param>
+        /// <param name="labels">Merged labels.</param>
+        /// <param name="tags">Merged tags.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>List of chunks with their embeddings.</returns>
-        private async Task<List<ChunkWithEmbedding>> ChunkAndEmbedContentAsync(string content, CancellationToken token)
+        private async Task<List<ChunkWithEmbedding>> ChunkAndEmbedContentAsync(
+            string documentId,
+            string content,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags,
+            CancellationToken token)
         {
             string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                object requestBody = new { Text = content };
+                // Build SemanticCellRequest body
+                Dictionary<string, object> requestBody = new Dictionary<string, object>();
+                requestBody["Type"] = "Text";
+                requestBody["Text"] = content;
+
+                if (rule?.Chunking != null)
+                {
+                    Dictionary<string, object> chunkConfig = new Dictionary<string, object>();
+                    chunkConfig["Strategy"] = rule.Chunking.Strategy ?? "FixedTokenCount";
+                    chunkConfig["FixedTokenCount"] = rule.Chunking.FixedTokenCount;
+                    chunkConfig["OverlapCount"] = rule.Chunking.OverlapCount;
+                    if (rule.Chunking.OverlapPercentage.HasValue)
+                        chunkConfig["OverlapPercentage"] = rule.Chunking.OverlapPercentage.Value;
+                    if (!String.IsNullOrEmpty(rule.Chunking.OverlapStrategy))
+                        chunkConfig["OverlapStrategy"] = rule.Chunking.OverlapStrategy;
+                    chunkConfig["RowGroupSize"] = rule.Chunking.RowGroupSize;
+                    if (!String.IsNullOrEmpty(rule.Chunking.ContextPrefix))
+                        chunkConfig["ContextPrefix"] = rule.Chunking.ContextPrefix;
+                    if (!String.IsNullOrEmpty(rule.Chunking.RegexPattern))
+                        chunkConfig["RegexPattern"] = rule.Chunking.RegexPattern;
+                    requestBody["ChunkingConfiguration"] = chunkConfig;
+                }
+
+                if (rule?.Embedding != null)
+                {
+                    Dictionary<string, object> embedConfig = new Dictionary<string, object>();
+                    if (!String.IsNullOrEmpty(rule.Embedding.Model))
+                        embedConfig["Model"] = rule.Embedding.Model;
+                    embedConfig["L2Normalization"] = rule.Embedding.L2Normalization;
+                    requestBody["EmbeddingConfiguration"] = embedConfig;
+                }
+
+                if (labels != null && labels.Count > 0)
+                    requestBody["Labels"] = labels;
+
+                if (tags != null && tags.Count > 0)
+                    requestBody["Tags"] = tags;
+
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
                 {
-                    request.Headers.Add("x-api-key", _ChunkingSettings.AccessKey);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
                 }
 
+                Stopwatch apiSw = Stopwatch.StartNew();
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                apiSw.Stop();
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "chunking service returned " + (int)response.StatusCode + ": " + responseBody);
+                    _Logging.Warn(_Header + "chunking service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking API returned HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody).ConfigureAwait(false);
                     return null;
                 }
 
@@ -322,16 +593,47 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Check that a RecallDB collection exists via HEAD.
+        /// Collections must be created via the dashboard/RecallDB before ingestion.
+        /// </summary>
+        private async Task<bool> EnsureCollectionExistsAsync(string collectionId, CancellationToken token)
+        {
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId;
+
+            try
+            {
+                using (HttpRequestMessage headReq = new HttpRequestMessage(HttpMethod.Head, url))
+                {
+                    if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
+                        headReq.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
+
+                    HttpResponseMessage headResp = await _HttpClient.SendAsync(headReq, token).ConfigureAwait(false);
+                    if (headResp.IsSuccessStatusCode)
+                        return true;
+
+                    _Logging.Warn(_Header + "collection " + collectionId + " not found in RecallDB (HTTP " + (int)headResp.StatusCode + ")");
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception checking collection " + collectionId + ": " + e.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Store a single chunk embedding in RecallDB.
         /// </summary>
         /// <param name="collectionId">Collection identifier.</param>
         /// <param name="documentId">Source document identifier.</param>
         /// <param name="chunk">Chunk with embedding data.</param>
+        /// <param name="chunkIndex">Zero-based chunk position within the document.</param>
         /// <param name="token">Cancellation token.</param>
-        /// <returns>True if the embedding was stored successfully.</returns>
-        private async Task<bool> StoreEmbeddingAsync(string collectionId, string documentId, ChunkWithEmbedding chunk, CancellationToken token)
+        /// <returns>Document key if stored successfully, null otherwise.</returns>
+        private async Task<string> StoreEmbeddingAsync(string collectionId, string documentId, ChunkWithEmbedding chunk, int chunkIndex, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/collections/" + collectionId + "/documents";
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/documents";
 
             try
             {
@@ -339,13 +641,11 @@ namespace AssistantHub.Core.Services
                 {
                     object requestBody = new
                     {
-                        Content = chunk.Content,
+                        Content = chunk.Text,
                         Embeddings = chunk.Embeddings,
-                        Metadata = new
-                        {
-                            SourceDocumentId = documentId,
-                            ChunkIndex = chunk.Index
-                        }
+                        DocumentId = documentId,
+                        Position = chunkIndex,
+                        ContentType = "Text"
                     };
 
                     string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
@@ -353,26 +653,96 @@ namespace AssistantHub.Core.Services
 
                     if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
                     {
-                        request.Headers.Add("x-api-key", _RecallDbSettings.AccessKey);
+                        request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
                     }
 
                     HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                         _Logging.Warn(_Header + "RecallDB store returned " + (int)response.StatusCode + ": " + responseBody);
-                        return false;
+                        if (_ProcessingLog != null)
+                            await _ProcessingLog.LogAsync(documentId, "ERROR", "RecallDB store API returned HTTP " + (int)response.StatusCode + " for chunk " + chunkIndex + ": " + responseBody).ConfigureAwait(false);
+                        return null;
                     }
 
-                    return true;
+                    // Parse response to extract the document key
+                    try
+                    {
+                        RecallDbStoreResponse storeResult = JsonSerializer.Deserialize<RecallDbStoreResponse>(responseBody, _JsonOptions);
+                        return storeResult?.DocumentKey;
+                    }
+                    catch
+                    {
+                        _Logging.Debug(_Header + "could not parse RecallDB store response");
+                        return null;
+                    }
                 }
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "exception storing embedding: " + e.Message);
-                return false;
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "ERROR", "RecallDB store exception for chunk " + chunkIndex + ": " + e.Message).ConfigureAwait(false);
+                return null;
             }
+        }
+
+        /// <summary>
+        /// Merge labels from ingestion rule and document.
+        /// Document labels are appended to rule labels.
+        /// </summary>
+        private List<string> MergeLabels(IngestionRule rule, AssistantDocument document)
+        {
+            List<string> merged = new List<string>();
+
+            if (rule?.Labels != null)
+                merged.AddRange(rule.Labels);
+
+            if (!String.IsNullOrEmpty(document.Labels))
+            {
+                try
+                {
+                    List<string> docLabels = JsonSerializer.Deserialize<List<string>>(document.Labels, _JsonOptions);
+                    if (docLabels != null)
+                        merged.AddRange(docLabels);
+                }
+                catch { }
+            }
+
+            return merged.Count > 0 ? merged : null;
+        }
+
+        /// <summary>
+        /// Merge tags from ingestion rule and document.
+        /// Document tags override rule tags for the same key.
+        /// </summary>
+        private Dictionary<string, string> MergeTags(IngestionRule rule, AssistantDocument document)
+        {
+            Dictionary<string, string> merged = new Dictionary<string, string>();
+
+            if (rule?.Tags != null)
+            {
+                foreach (KeyValuePair<string, string> kvp in rule.Tags)
+                    merged[kvp.Key] = kvp.Value;
+            }
+
+            if (!String.IsNullOrEmpty(document.Tags))
+            {
+                try
+                {
+                    Dictionary<string, string> docTags = JsonSerializer.Deserialize<Dictionary<string, string>>(document.Tags, _JsonOptions);
+                    if (docTags != null)
+                    {
+                        foreach (KeyValuePair<string, string> kvp in docTags)
+                            merged[kvp.Key] = kvp.Value;
+                    }
+                }
+                catch { }
+            }
+
+            return merged.Count > 0 ? merged : null;
         }
 
         #endregion
@@ -391,14 +761,14 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
-        /// Processing response from DocumentAtom.
+        /// Atom response from DocumentAtom.
         /// </summary>
-        private class ProcessResponse
+        private class AtomResponse
         {
             /// <summary>
-            /// Extracted text content.
+            /// Text content of the atom.
             /// </summary>
-            public string Content { get; set; } = null;
+            public string Text { get; set; } = null;
         }
 
         /// <summary>
@@ -418,19 +788,25 @@ namespace AssistantHub.Core.Services
         private class ChunkWithEmbedding
         {
             /// <summary>
-            /// Chunk index.
-            /// </summary>
-            public int Index { get; set; } = 0;
-
-            /// <summary>
             /// Text content of the chunk.
             /// </summary>
-            public string Content { get; set; } = null;
+            public string Text { get; set; } = null;
 
             /// <summary>
             /// Embedding vector for the chunk.
             /// </summary>
-            public List<double> Embeddings { get; set; } = null;
+            public List<float> Embeddings { get; set; } = null;
+        }
+
+        /// <summary>
+        /// Response from RecallDB when storing a document/embedding.
+        /// </summary>
+        private class RecallDbStoreResponse
+        {
+            /// <summary>
+            /// Document key (unique identifier within the collection).
+            /// </summary>
+            public string DocumentKey { get; set; } = null;
         }
 
         #endregion

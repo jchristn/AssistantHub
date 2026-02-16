@@ -19,8 +19,8 @@ function BucketsView() {
   const [refresh, setRefresh] = useState(0);
 
   const columns = [
-    { key: 'Name', label: 'Name', filterable: true },
-    { key: 'CreationDate', label: 'Created', render: (row) => row.CreationDate ? new Date(row.CreationDate).toLocaleString() : '' },
+    { key: 'Name', label: 'Name', tooltip: 'Name of the S3-compatible storage bucket', filterable: true },
+    { key: 'CreationDate', label: 'Created', tooltip: 'Date and time the bucket was created', render: (row) => row.CreationDate ? new Date(row.CreationDate).toLocaleString() : '' },
   ];
 
   const fetchData = useCallback(async (params) => {

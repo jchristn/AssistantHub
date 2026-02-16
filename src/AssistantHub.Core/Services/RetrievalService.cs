@@ -166,7 +166,7 @@ namespace AssistantHub.Core.Services
         /// <returns>List of search results.</returns>
         private async Task<List<SearchResult>> SearchRecallDbAsync(string collectionId, List<double> embeddings, int topK, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/collections/" + collectionId + "/search";
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/search";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -181,7 +181,7 @@ namespace AssistantHub.Core.Services
 
                 if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
                 {
-                    request.Headers.Add("x-api-key", _RecallDbSettings.AccessKey);
+                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
                 }
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);

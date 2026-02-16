@@ -1,7 +1,5 @@
 namespace AssistantHub.Core.Database.Sqlite.Queries
 {
-    using System;
-
     /// <summary>
     /// SQLite table creation queries.
     /// </summary>
@@ -67,7 +65,6 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "); " +
                 "CREATE TABLE IF NOT EXISTS assistant_documents (" +
                 "  id TEXT PRIMARY KEY, " +
-                "  assistant_id TEXT NOT NULL, " +
                 "  name TEXT NOT NULL, " +
                 "  original_filename TEXT, " +
                 "  content_type TEXT DEFAULT 'application/octet-stream', " +
@@ -75,6 +72,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  s3_key TEXT, " +
                 "  status TEXT NOT NULL DEFAULT 'Pending', " +
                 "  status_message TEXT, " +
+                "  ingestion_rule_id TEXT, " +
+                "  bucket_name TEXT, " +
+                "  collection_id TEXT, " +
+                "  labels_json TEXT, " +
+                "  tags_json TEXT, " +
+                "  chunk_record_ids TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -86,6 +89,21 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  rating TEXT NOT NULL DEFAULT 'ThumbsUp', " +
                 "  feedback_text TEXT, " +
                 "  message_history TEXT, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS ingestion_rules (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  name TEXT NOT NULL, " +
+                "  description TEXT, " +
+                "  bucket TEXT NOT NULL, " +
+                "  collection_name TEXT NOT NULL, " +
+                "  collection_id TEXT, " +
+                "  labels_json TEXT, " +
+                "  tags_json TEXT, " +
+                "  atomization_json TEXT, " +
+                "  chunking_json TEXT, " +
+                "  embedding_json TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); ";
@@ -102,9 +120,11 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_credentials_user_id ON credentials (user_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistants_user_id ON assistants (user_id); " +
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_assistant_settings_assistant_id ON assistant_settings (assistant_id); " +
-                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_assistant_id ON assistant_documents (assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_documents_status ON assistant_documents (status); " +
-                "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id); ";
+                "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON ingestion_rules (name); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id); ";
         }
+
     }
 }

@@ -51,7 +51,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  system_prompt TEXT, " +
             "  max_tokens INTEGER NOT NULL DEFAULT 4096, " +
             "  context_window INTEGER NOT NULL DEFAULT 8192, " +
-            "  model TEXT, " +
+            "  model TEXT NOT NULL DEFAULT 'gpt-4o', " +
             "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
             "  collection_id TEXT, " +
             "  retrieval_top_k INTEGER NOT NULL DEFAULT 5, " +
@@ -70,14 +70,19 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +
             "  id TEXT PRIMARY KEY, " +
-            "  assistant_id TEXT NOT NULL, " +
             "  name TEXT NOT NULL, " +
             "  original_filename TEXT, " +
-            "  content_type TEXT, " +
+            "  content_type TEXT DEFAULT 'application/octet-stream', " +
             "  size_bytes INTEGER NOT NULL DEFAULT 0, " +
             "  s3_key TEXT, " +
             "  status TEXT NOT NULL DEFAULT 'Pending', " +
             "  status_message TEXT, " +
+            "  ingestion_rule_id TEXT, " +
+            "  bucket_name TEXT, " +
+            "  collection_id TEXT, " +
+            "  labels_json TEXT, " +
+            "  tags_json TEXT, " +
+            "  chunk_record_ids TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -91,6 +96,23 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  rating TEXT NOT NULL DEFAULT 'ThumbsUp', " +
             "  feedback_text TEXT, " +
             "  message_history TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateIngestionRulesTable =
+            "CREATE TABLE IF NOT EXISTS ingestion_rules (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  name TEXT NOT NULL, " +
+            "  description TEXT, " +
+            "  bucket TEXT NOT NULL, " +
+            "  collection_name TEXT NOT NULL, " +
+            "  collection_id TEXT, " +
+            "  labels_json TEXT, " +
+            "  tags_json TEXT, " +
+            "  atomization_json TEXT, " +
+            "  chunking_json TEXT, " +
+            "  embedding_json TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -114,11 +136,14 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateAssistantSettingsAssistantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_settings_assistant_id ON assistant_settings (assistant_id)";
 
-        internal static string CreateAssistantDocumentsAssistantIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_assistant_id ON assistant_documents (assistant_id)";
-
         internal static string CreateAssistantFeedbackAssistantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id)";
+
+        internal static string CreateIngestionRulesNameIndex =
+            "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON ingestion_rules (name)";
+
+        internal static string CreateAssistantDocumentsIngestionRuleIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id)";
 
         #endregion
     }

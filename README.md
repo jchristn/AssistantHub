@@ -10,6 +10,7 @@ AssistantHub is a self-hosted RAG (Retrieval-Augmented Generation) data and chat
 
 - **Assistants** -- Create and manage multiple AI assistants, each with their own configuration, personality, and knowledge base.
 - **Documents** -- Upload documents (PDF, text, HTML, and more) to build a knowledge base for each assistant. Documents are automatically chunked, embedded, and indexed.
+- **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Embeddings** -- Leverages pgvector and RecallDb for vector storage and similarity search, enabling accurate context retrieval from your document corpus.
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (OpenAI, Ollama).
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
@@ -176,6 +177,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Bucket Objects (admin)| `GET/DELETE /v1.0/buckets/{name}/objects`, `GET .../metadata`, `GET .../download` |
 | Collections (admin)   | `PUT/GET /v1.0/collections`, `GET/PUT/DELETE/HEAD /v1.0/collections/{id}` |
 | Collection Records    | `GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` |
+| Ingestion Rules       | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` |
 | Assistants            | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` |
 | Assistant Settings    | `GET/PUT /v1.0/assistants/{id}/settings`                  |
 | Documents             | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}` |
@@ -227,11 +229,13 @@ For complete endpoint documentation including request/response schemas and examp
 ```
 
 **Data flow for document ingestion:**
-1. User uploads a document via the API or dashboard.
-2. The document is stored in S3-compatible object storage.
-3. DocumentAtom extracts text content from the document.
-4. Partio splits the text into overlapping chunks.
-5. Chunks are embedded and stored in RecallDb (backed by pgvector).
+1. User uploads a document via the API or dashboard, selecting an ingestion rule.
+2. The ingestion rule determines the target S3 bucket, RecallDB collection, and processing configuration.
+3. The document is stored in the rule's S3 bucket.
+4. DocumentAtom extracts text content from the document.
+5. Partio splits the text into chunks using the rule's chunking configuration, and computes embeddings.
+6. Chunks and embeddings are stored in the rule's RecallDB collection.
+7. Chunk record IDs are saved on the document for later cleanup on deletion.
 
 **Data flow for chat:**
 1. User sends a message to the chat endpoint.

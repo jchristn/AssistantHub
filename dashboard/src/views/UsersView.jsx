@@ -21,12 +21,12 @@ function UsersView() {
   const [refresh, setRefresh] = useState(0);
 
   const columns = [
-    { key: 'Id', label: 'ID', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
-    { key: 'Email', label: 'Email', filterable: true },
-    { key: 'FirstName', label: 'First Name', filterable: true },
-    { key: 'LastName', label: 'Last Name', filterable: true },
-    { key: 'IsAdmin', label: 'Admin', render: (row) => row.IsAdmin ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
-    { key: 'Active', label: 'Status', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
+    { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this user account', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    { key: 'Email', label: 'Email', tooltip: 'Email address used for login and notifications', filterable: true },
+    { key: 'FirstName', label: 'First Name', tooltip: "User's given name", filterable: true },
+    { key: 'LastName', label: 'Last Name', tooltip: "User's family name", filterable: true },
+    { key: 'IsAdmin', label: 'Admin', tooltip: 'Whether this user has administrator privileges', render: (row) => row.IsAdmin ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
+    { key: 'Active', label: 'Status', tooltip: 'Whether this user account is currently active', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
   ];
 
   const fetchData = useCallback(async (params) => {

@@ -21,6 +21,7 @@ export class ApiClient {
     const response = await fetch(`${this.serverUrl}${path}`, options);
 
     if (response.status === 204 || response.headers.get('content-length') === '0') {
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
       return { success: true, statusCode: response.status };
     }
 
@@ -29,6 +30,12 @@ export class ApiClient {
     }
 
     const data = await response.json();
+
+    if (!response.ok) {
+      const message = data?.Message || data?.message || data?.Detail || `Request failed with status ${response.status}`;
+      throw new Error(message);
+    }
+
     if (Array.isArray(data)) return data;
     return { ...data, statusCode: response.status };
   }
@@ -107,10 +114,18 @@ export class ApiClient {
   getAssistantSettings(assistantId) { return this.request('GET', `/v1.0/assistants/${assistantId}/settings`); }
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
 
+  // Ingestion Rules
+  createIngestionRule(rule) { return this.request('PUT', '/v1.0/ingestion-rules', rule); }
+  getIngestionRules(params) { return this.request('GET', '/v1.0/ingestion-rules' + this.buildQuery(params)); }
+  getIngestionRule(id) { return this.request('GET', `/v1.0/ingestion-rules/${id}`); }
+  updateIngestionRule(id, rule) { return this.request('PUT', `/v1.0/ingestion-rules/${id}`, rule); }
+  deleteIngestionRule(id) { return this.request('DELETE', `/v1.0/ingestion-rules/${id}`); }
+
   // Documents
   uploadDocument(doc) { return this.request('PUT', '/v1.0/documents', doc); }
   getDocuments(params) { return this.request('GET', '/v1.0/documents' + this.buildQuery(params)); }
   getDocument(id) { return this.request('GET', `/v1.0/documents/${id}`); }
+  getDocumentProcessingLog(id) { return this.request('GET', `/v1.0/documents/${id}/processing-log`); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
 
   // Feedback
@@ -216,6 +231,8 @@ export class ApiClient {
     if (params.continuationToken) parts.push(`continuationToken=${params.continuationToken}`);
     if (params.ordering) parts.push(`ordering=${params.ordering}`);
     if (params.assistantId) parts.push(`assistantId=${params.assistantId}`);
+    if (params.bucketName) parts.push(`bucketName=${encodeURIComponent(params.bucketName)}`);
+    if (params.collectionId) parts.push(`collectionId=${encodeURIComponent(params.collectionId)}`);
     return parts.length > 0 ? '?' + parts.join('&') : '';
   }
 }

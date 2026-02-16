@@ -58,7 +58,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 system_prompt NVARCHAR(MAX) NULL,
                 max_tokens INT NOT NULL DEFAULT 4096,
                 context_window INT NOT NULL DEFAULT 8192,
-                model NVARCHAR(MAX) NULL,
+                model NVARCHAR(MAX) NOT NULL DEFAULT 'gpt-4o',
                 enable_rag BIT NOT NULL DEFAULT 0,
                 collection_id NVARCHAR(256) NULL,
                 retrieval_top_k INT NOT NULL DEFAULT 5,
@@ -79,14 +79,19 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')
             CREATE TABLE assistant_documents (
                 id NVARCHAR(256) NOT NULL,
-                assistant_id NVARCHAR(256) NOT NULL,
                 name NVARCHAR(MAX) NOT NULL,
                 original_filename NVARCHAR(MAX) NULL,
-                content_type NVARCHAR(MAX) NULL,
+                content_type NVARCHAR(MAX) NULL DEFAULT 'application/octet-stream',
                 size_bytes BIGINT NOT NULL DEFAULT 0,
                 s3_key NVARCHAR(MAX) NULL,
                 status NVARCHAR(MAX) NOT NULL DEFAULT 'Pending',
                 status_message NVARCHAR(MAX) NULL,
+                ingestion_rule_id NVARCHAR(256) NULL,
+                bucket_name NVARCHAR(MAX) NULL,
+                collection_id NVARCHAR(MAX) NULL,
+                labels_json NVARCHAR(MAX) NULL,
+                tags_json NVARCHAR(MAX) NULL,
+                chunk_record_ids NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_documents PRIMARY KEY (id)
@@ -105,6 +110,25 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_feedback PRIMARY KEY (id)
+            );";
+
+        internal static readonly string CreateIngestionRulesTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ingestion_rules')
+            CREATE TABLE ingestion_rules (
+                id NVARCHAR(256) NOT NULL,
+                name NVARCHAR(MAX) NOT NULL,
+                description NVARCHAR(MAX) NULL,
+                bucket NVARCHAR(MAX) NOT NULL,
+                collection_name NVARCHAR(MAX) NOT NULL,
+                collection_id NVARCHAR(MAX) NULL,
+                labels_json NVARCHAR(MAX) NULL,
+                tags_json NVARCHAR(MAX) NULL,
+                atomization_json NVARCHAR(MAX) NULL,
+                chunking_json NVARCHAR(MAX) NULL,
+                embedding_json NVARCHAR(MAX) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_ingestion_rules PRIMARY KEY (id)
             );";
 
         #endregion
@@ -131,13 +155,17 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_settings_assistant_id')
             CREATE INDEX idx_assistant_settings_assistant_id ON assistant_settings (assistant_id);";
 
-        internal static readonly string CreateAssistantDocumentsAssistantIdIndex =
-            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_assistant_id')
-            CREATE INDEX idx_assistant_documents_assistant_id ON assistant_documents (assistant_id);";
-
         internal static readonly string CreateAssistantFeedbackAssistantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_feedback_assistant_id')
             CREATE INDEX idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id);";
+
+        internal static readonly string CreateIngestionRulesNameIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ingestion_rules_name')
+            CREATE INDEX idx_ingestion_rules_name ON ingestion_rules (name);";
+
+        internal static readonly string CreateAssistantDocumentsIngestionRuleIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_ingestion_rule_id')
+            CREATE INDEX idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id);";
 
         #endregion
     }

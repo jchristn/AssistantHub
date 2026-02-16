@@ -71,6 +71,15 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate an ingestion rule identifier.
+        /// </summary>
+        /// <returns>Ingestion rule identifier.</returns>
+        public static string NewIngestionRuleId()
+        {
+            return _Generator.GenerateKSortable(Constants.IngestionRuleIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a chat completion identifier.
         /// </summary>
         /// <returns>Chat completion identifier.</returns>

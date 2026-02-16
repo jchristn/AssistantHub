@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
+import Tooltip from '../components/Tooltip';
 import CopyableId from '../components/CopyableId';
 import FeedbackViewModal from '../components/modals/FeedbackViewModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
@@ -35,11 +36,11 @@ function FeedbackView() {
   }, [serverUrl, credential]);
 
   const columns = [
-    { key: 'Id', label: 'ID', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
-    { key: 'AssistantId', label: 'Assistant ID', render: (row) => <CopyableId id={row.AssistantId} /> },
-    { key: 'Rating', label: 'Rating', render: (row) => row.Rating === 'ThumbsUp' ? '\uD83D\uDC4D' : '\uD83D\uDC4E' },
-    { key: 'UserMessage', label: 'User Message', filterable: true, render: (row) => row.UserMessage ? (row.UserMessage.length > 80 ? row.UserMessage.substring(0, 80) + '...' : row.UserMessage) : '' },
-    { key: 'CreatedUtc', label: 'Created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
+    { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this feedback entry', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    { key: 'AssistantId', label: 'Assistant ID', tooltip: 'The assistant that received this feedback', render: (row) => <CopyableId id={row.AssistantId} /> },
+    { key: 'Rating', label: 'Rating', tooltip: "User's thumbs up or thumbs down rating", render: (row) => row.Rating === 'ThumbsUp' ? '\uD83D\uDC4D' : '\uD83D\uDC4E' },
+    { key: 'UserMessage', label: 'User Message', tooltip: 'The message the user sent before giving feedback', filterable: true, render: (row) => row.UserMessage ? (row.UserMessage.length > 80 ? row.UserMessage.substring(0, 80) + '...' : row.UserMessage) : '' },
+    { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the feedback was submitted', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
   const fetchData = useCallback(async (params) => {
@@ -79,6 +80,7 @@ function FeedbackView() {
           <p className="content-subtitle">Review user feedback and ratings for assistant conversations.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}><Tooltip text="Filter feedback by a specific assistant">Assistant:</Tooltip></label>
           <select
             value={assistantFilter}
             onChange={handleFilterChange}

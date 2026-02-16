@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Pagination from './Pagination';
 import ActionMenu from './ActionMenu';
+import Tooltip from './Tooltip';
 
 function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters }) {
   const [allData, setAllData] = useState([]);
@@ -124,7 +125,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
               {columns.map((col) => (
                 <th key={col.key} onClick={() => handleSort(col.key)}>
                   <span className="th-content">
-                    {col.label}
+                    <Tooltip text={col.tooltip}>{col.label}</Tooltip>
                     {sortKey === col.key && (
                       <span className="sort-indicator">
                         {sortDirection === 'asc' ? (

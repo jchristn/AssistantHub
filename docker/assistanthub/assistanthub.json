@@ -14,7 +14,7 @@
     "Password": ""
   },
   "S3": {
-    "Region": "us-west-1",
+    "Region": "USWest1",
     "BucketName": "default",
     "AccessKey": "default",
     "SecretKey": "default",
@@ -29,7 +29,7 @@
   "Chunking": {
     "Endpoint": "http://partio-server:8400",
     "AccessKey": "default",
-    "EndpointId": "default"
+    "EndpointId": "ep_H1mXwgHrESmsnaY0t0BvwDc6MYj399Eim1cE7DHMqrwJw"
   },
   "Inference": {
     "Provider": "Ollama",
@@ -40,7 +40,11 @@
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
     "TenantId": "default",
-    "AccessKey": "default"
+    "AccessKey": "recalldbadmin"
+  },
+  "ProcessingLog": {
+    "Directory": "./processing-logs/",
+    "RetentionDays": 30
   },
   "Logging": {
     "ConsoleLogging": true,

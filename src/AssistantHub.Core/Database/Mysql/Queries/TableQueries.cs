@@ -54,12 +54,12 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `system_prompt` TEXT, " +
             "  `max_tokens` INT NOT NULL DEFAULT 4096, " +
             "  `context_window` INT NOT NULL DEFAULT 8192, " +
-            "  `model` TEXT, " +
+            "  `model` TEXT NOT NULL DEFAULT 'gpt-4o', " +
             "  `enable_rag` TINYINT NOT NULL DEFAULT 0, " +
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 5, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.7, " +
-            "  `inference_provider` TEXT NOT NULL, " +
+            "  `inference_provider` TEXT NOT NULL DEFAULT 'OpenAI', " +
             "  `inference_endpoint` TEXT, " +
             "  `inference_api_key` TEXT, " +
             "  `title` TEXT, " +
@@ -74,14 +74,19 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
-            "  `assistant_id` VARCHAR(256) NOT NULL, " +
             "  `name` TEXT NOT NULL, " +
             "  `original_filename` TEXT, " +
-            "  `content_type` TEXT, " +
+            "  `content_type` TEXT DEFAULT 'application/octet-stream', " +
             "  `size_bytes` BIGINT NOT NULL DEFAULT 0, " +
             "  `s3_key` TEXT, " +
             "  `status` TEXT NOT NULL DEFAULT 'Pending', " +
             "  `status_message` TEXT, " +
+            "  `ingestion_rule_id` TEXT, " +
+            "  `bucket_name` TEXT, " +
+            "  `collection_id` TEXT, " +
+            "  `labels_json` TEXT, " +
+            "  `tags_json` TEXT, " +
+            "  `chunk_record_ids` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -96,6 +101,24 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `rating` TEXT NOT NULL DEFAULT 'ThumbsUp', " +
             "  `feedback_text` TEXT, " +
             "  `message_history` LONGTEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
+        internal static string CreateIngestionRulesTable =
+            "CREATE TABLE IF NOT EXISTS `ingestion_rules` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `name` TEXT NOT NULL, " +
+            "  `description` TEXT, " +
+            "  `bucket` TEXT NOT NULL, " +
+            "  `collection_name` TEXT NOT NULL, " +
+            "  `collection_id` TEXT, " +
+            "  `labels_json` TEXT, " +
+            "  `tags_json` TEXT, " +
+            "  `atomization_json` TEXT, " +
+            "  `chunking_json` TEXT, " +
+            "  `embedding_json` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -120,11 +143,14 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateAssistantSettingsAssistantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_settings_assistant_id ON `assistant_settings` (`assistant_id`)";
 
-        internal static string CreateAssistantDocumentsAssistantIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_assistant_id ON `assistant_documents` (`assistant_id`)";
-
         internal static string CreateAssistantFeedbackAssistantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON `assistant_feedback` (`assistant_id`)";
+
+        internal static string CreateIngestionRulesNameIndex =
+            "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON `ingestion_rules` (`name`(191))";
+
+        internal static string CreateAssistantDocumentsIngestionRuleIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON `assistant_documents` (`ingestion_rule_id`(191))";
 
         #endregion
     }

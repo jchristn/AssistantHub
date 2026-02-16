@@ -14,6 +14,7 @@ import RecordsView from '../views/RecordsView';
 import ModelsView from '../views/ModelsView';
 import ConfigurationView from '../views/ConfigurationView';
 import AssistantSettingsView from '../views/AssistantSettingsView';
+import IngestionRulesView from '../views/IngestionRulesView';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
@@ -35,6 +36,7 @@ function Dashboard() {
             {isAdmin && <Route path="/records" element={<RecordsView />} />}
             <Route path="/assistants" element={<AssistantsView />} />
             <Route path="/assistant-settings" element={<AssistantSettingsView />} />
+            {isAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
             <Route path="/documents" element={<DocumentsView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/models" element={<ModelsView />} />

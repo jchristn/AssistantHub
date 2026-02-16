@@ -55,11 +55,10 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
 
             string query =
                 "INSERT INTO assistant_documents " +
-                "(id, assistant_id, name, original_filename, content_type, size_bytes, s3_key, " +
-                "status, status_message, created_utc, last_update_utc) " +
+                "(id, name, original_filename, content_type, size_bytes, s3_key, " +
+                "status, status_message, ingestion_rule_id, bucket_name, collection_id, labels_json, tags_json, chunk_record_ids, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(document.Id) + "', " +
-                "'" + _Driver.Sanitize(document.AssistantId) + "', " +
                 "'" + _Driver.Sanitize(document.Name) + "', " +
                 _Driver.FormatNullableString(document.OriginalFilename) + ", " +
                 _Driver.FormatNullableString(document.ContentType) + ", " +
@@ -67,6 +66,12 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(document.S3Key) + ", " +
                 "'" + _Driver.Sanitize(document.Status.ToString()) + "', " +
                 _Driver.FormatNullableString(document.StatusMessage) + ", " +
+                _Driver.FormatNullableString(document.IngestionRuleId) + ", " +
+                _Driver.FormatNullableString(document.BucketName) + ", " +
+                _Driver.FormatNullableString(document.CollectionId) + ", " +
+                _Driver.FormatNullableString(document.Labels) + ", " +
+                _Driver.FormatNullableString(document.Tags) + ", " +
+                _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
                 "'" + _Driver.FormatDateTime(document.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(document.LastUpdateUtc) + "'" +
                 ")";
@@ -96,7 +101,6 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
 
             string query =
                 "UPDATE assistant_documents SET " +
-                "assistant_id = '" + _Driver.Sanitize(document.AssistantId) + "', " +
                 "name = '" + _Driver.Sanitize(document.Name) + "', " +
                 "original_filename = " + _Driver.FormatNullableString(document.OriginalFilename) + ", " +
                 "content_type = " + _Driver.FormatNullableString(document.ContentType) + ", " +
@@ -104,6 +108,12 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "s3_key = " + _Driver.FormatNullableString(document.S3Key) + ", " +
                 "status = '" + _Driver.Sanitize(document.Status.ToString()) + "', " +
                 "status_message = " + _Driver.FormatNullableString(document.StatusMessage) + ", " +
+                "ingestion_rule_id = " + _Driver.FormatNullableString(document.IngestionRuleId) + ", " +
+                "bucket_name = " + _Driver.FormatNullableString(document.BucketName) + ", " +
+                "collection_id = " + _Driver.FormatNullableString(document.CollectionId) + ", " +
+                "labels_json = " + _Driver.FormatNullableString(document.Labels) + ", " +
+                "tags_json = " + _Driver.FormatNullableString(document.Tags) + ", " +
+                "chunk_record_ids = " + _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(document.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(document.Id) + "'";
 
@@ -166,8 +176,13 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 : "ORDER BY created_utc ASC";
 
             string whereClause = "";
-            if (!String.IsNullOrEmpty(query.AssistantIdFilter))
-                whereClause = "WHERE assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "' ";
+            List<string> conditions = new List<string>();
+            if (!String.IsNullOrEmpty(query.BucketNameFilter))
+                conditions.Add("bucket_name = '" + _Driver.Sanitize(query.BucketNameFilter) + "'");
+            if (!String.IsNullOrEmpty(query.CollectionIdFilter))
+                conditions.Add("collection_id = '" + _Driver.Sanitize(query.CollectionIdFilter) + "'");
+            if (conditions.Count > 0)
+                whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
 
             string countQuery = "SELECT COUNT(*) AS cnt FROM assistant_documents " + whereClause;
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);
@@ -211,11 +226,16 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
         }
 
         /// <inheritdoc />
-        public async Task DeleteByAssistantIdAsync(string assistantId, CancellationToken token = default)
+        public async Task UpdateChunkRecordIdsAsync(string id, string chunkRecordIdsJson, CancellationToken token = default)
         {
-            if (String.IsNullOrEmpty(assistantId)) throw new ArgumentNullException(nameof(assistantId));
+            if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
 
-            string query = "DELETE FROM assistant_documents WHERE assistant_id = '" + _Driver.Sanitize(assistantId) + "'";
+            string query =
+                "UPDATE assistant_documents SET " +
+                "chunk_record_ids = " + _Driver.FormatNullableString(chunkRecordIdsJson) + ", " +
+                "last_update_utc = '" + DateTime.UtcNow.ToString("o") + "' " +
+                "WHERE id = '" + _Driver.Sanitize(id) + "'";
+
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
         }
 

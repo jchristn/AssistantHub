@@ -4,6 +4,7 @@ import { ApiClient } from '../utils/api';
 import Pagination from '../components/Pagination';
 import ActionMenu from '../components/ActionMenu';
 import CopyableId from '../components/CopyableId';
+import Tooltip from '../components/Tooltip';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import RecordFormModal from '../components/modals/RecordFormModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -25,6 +26,7 @@ function RecordsView() {
   const [alert, setAlert] = useState(null);
   const [refreshState, setRefreshState] = useState('idle');
   const [showCreateRecord, setShowCreateRecord] = useState(false);
+  const [documentKeyFilter, setDocumentKeyFilter] = useState('');
   const refreshTimerRef = useRef(null);
 
   useEffect(() => {
@@ -94,9 +96,20 @@ function RecordsView() {
     }
   };
 
+  const filteredData = documentKeyFilter
+    ? data.filter(row => row.DocumentKey && row.DocumentKey === documentKeyFilter)
+    : data;
+
+  const documentKeys = [...new Set(data.map(row => row.DocumentKey).filter(Boolean))].sort();
+
   const columns = [
-    { key: 'GUID', label: 'ID', render: (row) => <CopyableId id={row.GUID} /> },
-    { key: 'CreatedUtc', label: 'Created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
+    { key: 'GUID', label: 'ID', tooltip: 'Unique identifier for this vector record', render: (row) => <CopyableId id={row.GUID} /> },
+    { key: 'DocumentKey', label: 'Document Key', tooltip: 'Key linking this record to its source document' },
+    { key: 'ContentLength', label: 'Content Length', tooltip: 'Length of the text content in characters' },
+    { key: 'Position', label: 'Position', tooltip: 'Position or chunk index within the source document' },
+    { key: 'ContentType', label: 'Content Type', tooltip: 'Type of content (e.g. Text, Code, Table)' },
+    { key: 'Embeddings', label: 'Embeddings', tooltip: 'Dimensionality of the embedding vector', render: (row) => Array.isArray(row.Embeddings) ? row.Embeddings.length : '' },
+    { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the record was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
   return (
@@ -108,16 +121,29 @@ function RecordsView() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Collection:</label>
-        <select
-          value={selectedCollection}
-          onChange={(e) => { setSelectedCollection(e.target.value); setCurrentPage(1); }}
-          style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--input-border)', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.875rem', minWidth: '300px' }}
-        >
-          <option value="">Select a collection...</option>
-          {collections.map(c => <option key={c.GUID || c.Id} value={c.GUID || c.Id}>{c.Name || c.GUID || c.Id}</option>)}
-        </select>
+      <div className="filter-bar">
+        <label className="filter-label">
+          <Tooltip text="Vector collection to browse records from">Collection:</Tooltip>
+          <select
+            value={selectedCollection}
+            onChange={(e) => { setSelectedCollection(e.target.value); setDocumentKeyFilter(''); setCurrentPage(1); }}
+          >
+            <option value="">Select a collection...</option>
+            {collections.map(c => <option key={c.GUID || c.Id} value={c.GUID || c.Id}>{c.Name || c.GUID || c.Id}</option>)}
+          </select>
+        </label>
+        {selectedCollection && (
+          <label className="filter-label">
+            <Tooltip text="Filter records by document key">Document:</Tooltip>
+            <select
+              value={documentKeyFilter}
+              onChange={(e) => { setDocumentKeyFilter(e.target.value); setCurrentPage(1); }}
+            >
+              <option value="">All Documents</option>
+              {documentKeys.map(key => <option key={key} value={key}>{key}</option>)}
+            </select>
+          </label>
+        )}
       </div>
 
       {selectedCollection && (
@@ -139,20 +165,20 @@ function RecordsView() {
           />
           {loading ? (
             <div className="loading"><div className="spinner" /></div>
-          ) : data.length === 0 ? (
-            <div className="empty-state"><p>No records found in this collection.</p></div>
+          ) : filteredData.length === 0 ? (
+            <div className="empty-state"><p>{documentKeyFilter ? 'No records match the selected document filter.' : 'No records found in this collection.'}</p></div>
           ) : (
             <table className="data-table">
               <thead>
                 <tr>
                   {columns.map((col) => (
-                    <th key={col.key}>{col.label}</th>
+                    <th key={col.key}>{col.tooltip ? <Tooltip text={col.tooltip}>{col.label}</Tooltip> : col.label}</th>
                   ))}
                   <th className="actions-cell"></th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => (
+                {filteredData.map((row, idx) => (
                   <tr key={row.GUID || idx}>
                     {columns.map((col) => (
                       <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>

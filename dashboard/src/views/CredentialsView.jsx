@@ -23,11 +23,11 @@ function CredentialsView() {
   const initialFilters = location.state?.initialFilters;
 
   const columns = [
-    { key: 'Id', label: 'ID', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
-    { key: 'Name', label: 'Name', filterable: true },
-    { key: 'UserId', label: 'User ID', filterable: true, render: (row) => <CopyableId id={row.UserId} /> },
-    { key: 'BearerToken', label: 'Bearer Token', render: (row) => row.BearerToken ? <CopyableId id={row.BearerToken} /> : <span className="status-badge info">Hidden</span> },
-    { key: 'Active', label: 'Status', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
+    { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this credential', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    { key: 'Name', label: 'Name', tooltip: 'Display name for this credential', filterable: true },
+    { key: 'UserId', label: 'User ID', tooltip: 'The user account this credential belongs to', filterable: true, render: (row) => <CopyableId id={row.UserId} /> },
+    { key: 'BearerToken', label: 'Bearer Token', tooltip: 'Authentication token used for API access', render: (row) => row.BearerToken ? <CopyableId id={row.BearerToken} /> : <span className="status-badge info">Hidden</span> },
+    { key: 'Active', label: 'Status', tooltip: 'Whether this credential is currently active', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
   ];
 
   const fetchData = useCallback(async (params) => {

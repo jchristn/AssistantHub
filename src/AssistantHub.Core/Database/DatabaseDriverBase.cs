@@ -44,6 +44,11 @@ namespace AssistantHub.Core.Database
         /// </summary>
         public IAssistantFeedbackMethods AssistantFeedback { get; protected set; }
 
+        /// <summary>
+        /// Ingestion rule methods.
+        /// </summary>
+        public IIngestionRuleMethods IngestionRule { get; protected set; }
+
         #endregion
 
         #region Constructors-and-Factories

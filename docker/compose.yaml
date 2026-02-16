@@ -181,9 +181,10 @@ services:
       - sh
       - -c
       - |
-        if [ ! -f /data/assistanthub.db ]; then
+        mkdir -p /data/data
+        if [ ! -f /data/data/assistanthub.db ]; then
           apk add --no-cache sqlite > /dev/null 2>&1
-          sqlite3 /data/assistanthub.db "VACUUM;"
+          sqlite3 /data/data/assistanthub.db "VACUUM;"
           echo "Created new assistanthub.db"
         else
           echo "assistanthub.db already exists, skipping"
@@ -197,7 +198,7 @@ services:
       - "8800:8800"
     volumes:
       - ./assistanthub/assistanthub.json:/app/assistanthub.json
-      - ./assistanthub/assistanthub.db:/app/assistanthub.db
+      - ./assistanthub/data/:/app/data/
       - ./assistanthub/logs/:/app/logs/
       - ./assistanthub/processing-logs/:/app/processing-logs/
     depends_on:

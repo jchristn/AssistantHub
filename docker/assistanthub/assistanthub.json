@@ -6,7 +6,7 @@
   },
   "Database": {
     "Type": "Sqlite",
-    "Filename": "assistanthub.db",
+    "Filename": "./data/assistanthub.db",
     "Hostname": "",
     "Port": 0,
     "DatabaseName": "",

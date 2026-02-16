@@ -57,6 +57,7 @@ namespace AssistantHub.Server
             await InitializeDatabaseAsync();
             await InitializeFirstRunAsync();
             InitializeServices();
+            await ValidateConnectivityAsync();
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
             InitializeWebserver();
@@ -280,6 +281,77 @@ namespace AssistantHub.Server
             _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging);
             _Inference = new InferenceService(_Settings.Inference, _Logging);
             _Logging.Info(_Header + "services initialized");
+        }
+
+        private static async Task ValidateConnectivityAsync()
+        {
+            _Logging.Info(_Header + "validating connectivity to subordinate services");
+
+            bool allSucceeded = true;
+
+            using (HttpClient http = new HttpClient())
+            {
+                http.Timeout = TimeSpan.FromSeconds(10);
+
+                // S3 (Less3) - HEAD request matching Docker healthcheck pattern
+                allSucceeded &= await CheckServiceAsync(http, "S3 (Less3)",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.S3.EndpointUrl.TrimEnd('/') + "/");
+
+                // DocumentAtom - HEAD request
+                allSucceeded &= await CheckServiceAsync(http, "DocumentAtom",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.DocumentAtom.Endpoint.TrimEnd('/') + "/");
+
+                // Chunking (Partio) - HEAD request
+                allSucceeded &= await CheckServiceAsync(http, "Chunking (Partio)",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.Chunking.Endpoint.TrimEnd('/') + "/");
+
+                // Inference (Ollama) - GET request
+                allSucceeded &= await CheckServiceAsync(http, "Inference (Ollama)",
+                    System.Net.Http.HttpMethod.Get,
+                    _Settings.Inference.Endpoint.TrimEnd('/') + "/");
+
+                // RecallDb - HEAD request
+                allSucceeded &= await CheckServiceAsync(http, "RecallDb",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.RecallDb.Endpoint.TrimEnd('/') + "/");
+            }
+
+            if (!allSucceeded)
+            {
+                _Logging.Warn(_Header + "one or more subordinate services are unreachable, aborting startup");
+                throw new Exception("One or more subordinate services are unreachable. Check logs for details.");
+            }
+
+            _Logging.Info(_Header + "all subordinate services are reachable");
+        }
+
+        private static async Task<bool> CheckServiceAsync(HttpClient http, string serviceName, System.Net.Http.HttpMethod method, string url)
+        {
+            try
+            {
+                using (HttpRequestMessage req = new HttpRequestMessage(method, url))
+                {
+                    HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        _Logging.Info(_Header + serviceName + " reachable at " + url + " (HTTP " + (int)resp.StatusCode + ")");
+                        return true;
+                    }
+                    else
+                    {
+                        _Logging.Warn(_Header + serviceName + " returned HTTP " + (int)resp.StatusCode + " at " + url);
+                        return false;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + serviceName + " unreachable at " + url + ": " + e.Message);
+                return false;
+            }
         }
 
         private static void StartProcessingLogCleanup()

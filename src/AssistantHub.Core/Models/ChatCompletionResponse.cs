@@ -49,5 +49,42 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("status")]
         public string Status { get; set; } = null;
+
+        /// <summary>
+        /// Retrieval telemetry (extension for RAG diagnostics).
+        /// </summary>
+        [JsonPropertyName("retrieval")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ChatCompletionRetrieval Retrieval { get; set; } = null;
+    }
+
+    /// <summary>
+    /// Retrieval telemetry included in chat completion responses.
+    /// </summary>
+    public class ChatCompletionRetrieval
+    {
+        /// <summary>
+        /// The collection that was searched.
+        /// </summary>
+        [JsonPropertyName("collection_id")]
+        public string CollectionId { get; set; } = null;
+
+        /// <summary>
+        /// Duration of the retrieval operation in milliseconds.
+        /// </summary>
+        [JsonPropertyName("duration_ms")]
+        public double DurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Number of context chunks retrieved (after score filtering).
+        /// </summary>
+        [JsonPropertyName("chunks_returned")]
+        public int ChunksReturned { get; set; } = 0;
+
+        /// <summary>
+        /// The retrieved context chunks with source identification.
+        /// </summary>
+        [JsonPropertyName("chunks")]
+        public List<RetrievalChunk> Chunks { get; set; } = null;
     }
 }

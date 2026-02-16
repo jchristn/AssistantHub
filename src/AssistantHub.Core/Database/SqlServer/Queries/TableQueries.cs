@@ -144,6 +144,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 retrieval_duration_ms FLOAT NOT NULL DEFAULT 0,
                 retrieval_context NVARCHAR(MAX) NULL,
                 prompt_sent_utc NVARCHAR(64) NULL,
+                prompt_tokens INT NOT NULL DEFAULT 0,
                 time_to_first_token_ms FLOAT NOT NULL DEFAULT 0,
                 time_to_last_token_ms FLOAT NOT NULL DEFAULT 0,
                 assistant_response NVARCHAR(MAX) NULL,

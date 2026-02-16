@@ -3,11 +3,13 @@ namespace AssistantHub.Core.Services
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
+    using System.Net.Http.Headers;
     using System.Text;
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
 
@@ -65,13 +67,13 @@ namespace AssistantHub.Core.Services
         /// <param name="topK">Number of top results to retrieve.</param>
         /// <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
         /// <param name="token">Cancellation token.</param>
-        /// <returns>List of content strings from matching document chunks.</returns>
-        public async Task<List<string>> RetrieveAsync(string collectionId, string query, int topK, double scoreThreshold, CancellationToken token = default)
+        /// <returns>List of retrieval chunks with source identification and scoring.</returns>
+        public async Task<List<RetrievalChunk>> RetrieveAsync(string collectionId, string query, int topK, double scoreThreshold, CancellationToken token = default)
         {
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
 
-            List<string> results = new List<string>();
+            List<RetrievalChunk> results = new List<RetrievalChunk>();
 
             try
             {
@@ -95,14 +97,19 @@ namespace AssistantHub.Core.Services
 
                 _Logging.Debug(_Header + "received " + searchResults.Count + " results from RecallDB");
 
-                // Step 3: Filter by score threshold and collect content
+                // Step 3: Filter by score threshold and collect results with source info
                 foreach (SearchResult result in searchResults)
                 {
                     if (result.Score >= scoreThreshold)
                     {
                         if (!String.IsNullOrEmpty(result.Content))
                         {
-                            results.Add(result.Content);
+                            results.Add(new RetrievalChunk
+                            {
+                                DocumentId = result.DocumentId,
+                                Score = Math.Round(result.Score, 6),
+                                Content = result.Content
+                            });
                         }
                     }
                 }
@@ -129,17 +136,17 @@ namespace AssistantHub.Core.Services
         /// <returns>Embedding vector.</returns>
         private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/embeddings";
+            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                object requestBody = new { Text = query };
+                object requestBody = new { Type = "Text", Text = query };
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
                 {
-                    request.Headers.Add("x-api-key", _ChunkingSettings.AccessKey);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
                 }
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
@@ -151,8 +158,13 @@ namespace AssistantHub.Core.Services
                     return null;
                 }
 
-                EmbeddingResponse embeddingResult = JsonSerializer.Deserialize<EmbeddingResponse>(responseBody, _JsonOptions);
-                return embeddingResult?.Embeddings;
+                ProcessResponse processResult = JsonSerializer.Deserialize<ProcessResponse>(responseBody, _JsonOptions);
+                if (processResult?.Chunks != null && processResult.Chunks.Count > 0)
+                {
+                    return processResult.Chunks[0].Embeddings;
+                }
+
+                return null;
             }
         }
 
@@ -172,8 +184,12 @@ namespace AssistantHub.Core.Services
             {
                 object requestBody = new
                 {
-                    Embeddings = embeddings,
-                    TopK = topK
+                    Vector = new
+                    {
+                        SearchType = "CosineSimilarity",
+                        Embeddings = embeddings
+                    },
+                    MaxResults = topK
                 };
 
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
@@ -203,10 +219,26 @@ namespace AssistantHub.Core.Services
         #region Private-Classes
 
         /// <summary>
-        /// Embedding response from the Partio service.
+        /// Process response from the Partio service.
         /// </summary>
-        private class EmbeddingResponse
+        private class ProcessResponse
         {
+            /// <summary>
+            /// Chunks with embeddings.
+            /// </summary>
+            public List<ProcessChunk> Chunks { get; set; } = null;
+        }
+
+        /// <summary>
+        /// A single chunk from the Partio process response.
+        /// </summary>
+        private class ProcessChunk
+        {
+            /// <summary>
+            /// Chunk text content.
+            /// </summary>
+            public string Text { get; set; } = null;
+
             /// <summary>
             /// Embedding vector.
             /// </summary>
@@ -229,6 +261,11 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private class SearchResult
         {
+            /// <summary>
+            /// Document identifier (maps to AssistantDocument.Id).
+            /// </summary>
+            public string DocumentId { get; set; } = null;
+
             /// <summary>
             /// Similarity score.
             /// </summary>

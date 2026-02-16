@@ -118,6 +118,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  retrieval_context TEXT, " +
                 "  prompt_sent_utc TEXT, " +
+                "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
                 "  time_to_first_token_ms REAL NOT NULL DEFAULT 0, " +
                 "  time_to_last_token_ms REAL NOT NULL DEFAULT 0, " +
                 "  assistant_response TEXT, " +

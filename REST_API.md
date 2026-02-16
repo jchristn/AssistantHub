@@ -1342,6 +1342,7 @@ Retrieve a single chat history record by ID.
   "RetrievalDurationMs": 45.23,
   "RetrievalContext": "Chunk 1: To reset your password...",
   "PromptSentUtc": "2025-01-01T12:00:00.150Z",
+  "PromptTokens": 1250,
   "TimeToFirstTokenMs": 120.50,
   "TimeToLastTokenMs": 890.75,
   "AssistantResponse": "To reset your password, navigate to Settings > Security...",
@@ -1364,6 +1365,7 @@ Retrieve a single chat history record by ID.
 | `RetrievalDurationMs`  | double   | RAG retrieval duration in milliseconds.                      |
 | `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
 | `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
+| `PromptTokens`         | int      | Estimated prompt token count sent to the model.              |
 | `TimeToFirstTokenMs`   | double   | Time to first token from the model in milliseconds.          |
 | `TimeToLastTokenMs`    | double   | Time to last token from the model in milliseconds.           |
 | `AssistantResponse`    | string   | The assistant's full response text.                          |

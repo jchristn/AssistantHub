@@ -2892,6 +2892,36 @@
             Optional status message (extension for compaction notifications).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Retrieval">
+            <summary>
+            Retrieval telemetry (extension for RAG diagnostics).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionRetrieval">
+            <summary>
+            Retrieval telemetry included in chat completion responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.CollectionId">
+            <summary>
+            The collection that was searched.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.DurationMs">
+            <summary>
+            Duration of the retrieval operation in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.ChunksReturned">
+            <summary>
+            Number of context chunks retrieved (after score filtering).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
+            <summary>
+            The retrieved context chunks with source identification.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
             <summary>
             OpenAI-compatible token usage information.
@@ -2970,6 +3000,11 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.PromptSentUtc">
             <summary>
             UTC timestamp when the prompt was sent to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.PromptTokens">
+            <summary>
+            Estimated prompt token count sent to the model.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToFirstTokenMs">
@@ -3531,6 +3566,26 @@
         <member name="P:AssistantHub.Core.Models.PullProgress.StartedUtc">
             <summary>
             When the pull operation started (UTC).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RetrievalChunk">
+            <summary>
+            A retrieved chunk with source identification and scoring.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.DocumentId">
+            <summary>
+            The document identifier from RecallDB (maps to AssistantDocument.Id).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Score">
+            <summary>
+            Cosine similarity score (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Content">
+            <summary>
+            Text content of the matching chunk.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
@@ -4130,7 +4185,7 @@
             <param name="topK">Number of top results to retrieve.</param>
             <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
             <param name="token">Cancellation token.</param>
-            <returns>List of content strings from matching document chunks.</returns>
+            <returns>List of retrieval chunks with source identification and scoring.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken)">
             <summary>
@@ -4150,12 +4205,27 @@
             <param name="token">Cancellation token.</param>
             <returns>List of search results.</returns>
         </member>
-        <member name="T:AssistantHub.Core.Services.RetrievalService.EmbeddingResponse">
+        <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
             <summary>
-            Embedding response from the Partio service.
+            Process response from the Partio service.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.EmbeddingResponse.Embeddings">
+        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessResponse.Chunks">
+            <summary>
+            Chunks with embeddings.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessChunk">
+            <summary>
+            A single chunk from the Partio process response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Text">
+            <summary>
+            Chunk text content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Embeddings">
             <summary>
             Embedding vector.
             </summary>
@@ -4173,6 +4243,11 @@
         <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResult">
             <summary>
             A single search result from RecallDB.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.DocumentId">
+            <summary>
+            Document identifier (maps to AssistantDocument.Id).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Score">

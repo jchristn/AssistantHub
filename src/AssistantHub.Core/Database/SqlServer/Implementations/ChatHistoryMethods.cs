@@ -56,7 +56,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "INSERT INTO chat_history " +
                 "(id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
                 "retrieval_start_utc, retrieval_duration_ms, retrieval_context, " +
-                "prompt_sent_utc, time_to_first_token_ms, time_to_last_token_ms, " +
+                "prompt_sent_utc, prompt_tokens, time_to_first_token_ms, time_to_last_token_ms, " +
                 "assistant_response, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(history.Id) + "', " +
@@ -69,6 +69,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatDouble(history.RetrievalDurationMs) + ", " +
                 _Driver.FormatNullableString(history.RetrievalContext) + ", " +
                 _Driver.FormatNullableDateTime(history.PromptSentUtc) + ", " +
+                history.PromptTokens + ", " +
                 _Driver.FormatDouble(history.TimeToFirstTokenMs) + ", " +
                 _Driver.FormatDouble(history.TimeToLastTokenMs) + ", " +
                 _Driver.FormatNullableString(history.AssistantResponse) + ", " +

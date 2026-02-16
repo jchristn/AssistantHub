@@ -136,6 +136,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `retrieval_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `retrieval_context` LONGTEXT, " +
             "  `prompt_sent_utc` TEXT, " +
+            "  `prompt_tokens` INT NOT NULL DEFAULT 0, " +
             "  `time_to_first_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `time_to_last_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `assistant_response` LONGTEXT, " +

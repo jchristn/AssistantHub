@@ -74,6 +74,11 @@ namespace AssistantHub.Core.Models
         public DateTime? PromptSentUtc { get; set; } = null;
 
         /// <summary>
+        /// Estimated prompt token count sent to the model.
+        /// </summary>
+        public int PromptTokens { get; set; } = 0;
+
+        /// <summary>
         /// Time to first token from the model in milliseconds.
         /// </summary>
         public double TimeToFirstTokenMs { get; set; } = 0;
@@ -136,6 +141,7 @@ namespace AssistantHub.Core.Models
             obj.RetrievalDurationMs = DataTableHelper.GetDoubleValue(row, "retrieval_duration_ms");
             obj.RetrievalContext = DataTableHelper.GetStringValue(row, "retrieval_context");
             obj.PromptSentUtc = DataTableHelper.GetNullableDateTimeValue(row, "prompt_sent_utc");
+            obj.PromptTokens = DataTableHelper.GetIntValue(row, "prompt_tokens");
             obj.TimeToFirstTokenMs = DataTableHelper.GetDoubleValue(row, "time_to_first_token_ms");
             obj.TimeToLastTokenMs = DataTableHelper.GetDoubleValue(row, "time_to_last_token_ms");
             obj.AssistantResponse = DataTableHelper.GetStringValue(row, "assistant_response");

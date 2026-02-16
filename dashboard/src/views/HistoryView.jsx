@@ -41,6 +41,7 @@ function HistoryView() {
     { key: 'ThreadId', label: 'Thread ID', tooltip: 'Conversation thread identifier', render: (row) => <CopyableId id={row.ThreadId} /> },
     { key: 'AssistantId', label: 'Assistant ID', tooltip: 'The assistant for this conversation', render: (row) => <CopyableId id={row.AssistantId} /> },
     { key: 'UserMessage', label: 'User Message', tooltip: 'The message the user sent', filterable: true, render: (row) => row.UserMessage ? (row.UserMessage.length > 80 ? row.UserMessage.substring(0, 80) + '...' : row.UserMessage) : '' },
+    { key: 'PromptTokens', label: 'Prompt Tokens', tooltip: 'Estimated number of tokens in the prompt sent to the model', render: (row) => row.PromptTokens > 0 ? `~${row.PromptTokens.toLocaleString()}` : '' },
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the entry was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 

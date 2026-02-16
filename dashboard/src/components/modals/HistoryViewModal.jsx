@@ -86,7 +86,44 @@ function HistoryViewModal({ history, onClose }) {
                 {history.RetrievalStartUtc ? new Date(history.RetrievalStartUtc).toLocaleString() : 'N/A'}
               </span>
             </div>
-            <div className="json-view" style={{ maxHeight: '200px' }}>{history.RetrievalContext || '(no context retrieved)'}</div>
+            {(() => {
+              if (!history.RetrievalContext) return <div className="json-view">(no context retrieved)</div>;
+              let chunks;
+              try { chunks = JSON.parse(history.RetrievalContext); } catch { chunks = null; }
+              if (!Array.isArray(chunks)) {
+                return <div className="json-view" style={{ maxHeight: '200px' }}>{history.RetrievalContext}</div>;
+              }
+              return chunks.map((chunk, idx) => (
+                <div key={idx} style={{
+                  border: '1px solid var(--border-color, #e0e0e0)',
+                  borderRadius: 'var(--radius-sm, 4px)',
+                  padding: '0.75rem',
+                  marginBottom: '0.5rem',
+                  background: 'var(--bg-secondary)',
+                }}>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div>
+                      <span style={metricLabelStyle}>Chunk {idx + 1}</span>
+                    </div>
+                    {chunk.score != null && (
+                      <div>
+                        <span style={metricLabelStyle}>Score </span>
+                        <span style={metricStyle}>{chunk.score.toFixed(4)}</span>
+                      </div>
+                    )}
+                    {chunk.document_id && (
+                      <div>
+                        <span style={metricLabelStyle}>Source </span>
+                        <CopyableId id={chunk.document_id} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="json-view" style={{ maxHeight: '150px', fontSize: '0.8rem' }}>
+                    {chunk.content || '(empty)'}
+                  </div>
+                </div>
+              ));
+            })()}
           </>
         )}
       </div>
@@ -98,6 +135,12 @@ function HistoryViewModal({ history, onClose }) {
             <div style={metricLabelStyle}><Tooltip text="Timestamp when the assembled prompt was sent to the model">Prompt Sent</Tooltip></div>
             <span style={timestampStyle}>
               {history.PromptSentUtc ? new Date(history.PromptSentUtc).toLocaleString() : 'N/A'}
+            </span>
+          </div>
+          <div>
+            <div style={metricLabelStyle}><Tooltip text="Estimated number of tokens in the prompt sent to the model (system message + RAG context + conversation history)">Prompt Tokens</Tooltip></div>
+            <span style={metricStyle}>
+              {history.PromptTokens > 0 ? `~${history.PromptTokens.toLocaleString()}` : 'N/A'}
             </span>
           </div>
           <div>

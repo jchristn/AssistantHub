@@ -566,13 +566,58 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                DeleteObjectRequest request = new DeleteObjectRequest
+                if (key.EndsWith("/"))
                 {
-                    BucketName = bucketName,
-                    Key = key
-                };
+                    // Folder deletion: list and delete all child objects under this prefix
+                    string continuationToken = null;
+                    do
+                    {
+                        ListObjectsV2Request listRequest = new ListObjectsV2Request
+                        {
+                            BucketName = bucketName,
+                            Prefix = key,
+                            ContinuationToken = continuationToken,
+                            MaxKeys = 1000
+                        };
 
-                await _S3Client.DeleteObjectAsync(request).ConfigureAwait(false);
+                        ListObjectsV2Response listResponse = await _S3Client.ListObjectsV2Async(listRequest).ConfigureAwait(false);
+
+                        if (listResponse.S3Objects != null)
+                        {
+                            foreach (S3Object obj in listResponse.S3Objects)
+                            {
+                                await _S3Client.DeleteObjectAsync(new DeleteObjectRequest
+                                {
+                                    BucketName = bucketName,
+                                    Key = obj.Key
+                                }).ConfigureAwait(false);
+                            }
+                        }
+
+                        continuationToken = listResponse.IsTruncated ? listResponse.NextContinuationToken : null;
+                    } while (continuationToken != null);
+
+                    // Attempt to delete the folder marker object itself (ignore 404)
+                    try
+                    {
+                        await _S3Client.DeleteObjectAsync(new DeleteObjectRequest
+                        {
+                            BucketName = bucketName,
+                            Key = key
+                        }).ConfigureAwait(false);
+                    }
+                    catch (AmazonS3Exception) { }
+                }
+                else
+                {
+                    DeleteObjectRequest request = new DeleteObjectRequest
+                    {
+                        BucketName = bucketName,
+                        Key = key
+                    };
+
+                    await _S3Client.DeleteObjectAsync(request).ConfigureAwait(false);
+                }
 
                 ctx.Response.StatusCode = 204;
                 await ctx.Response.Send().ConfigureAwait(false);

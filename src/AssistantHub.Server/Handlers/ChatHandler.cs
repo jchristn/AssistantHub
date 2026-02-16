@@ -174,7 +174,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 // Retrieve relevant context from the vector database
-                List<string> contextChunks = new List<string>();
+                List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
                 DateTime? retrievalStartUtc = null;
                 double retrievalDurationMs = 0;
                 if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
@@ -182,7 +182,7 @@ namespace AssistantHub.Server.Handlers
                     retrievalStartUtc = DateTime.UtcNow;
                     Stopwatch retrievalSw = Stopwatch.StartNew();
 
-                    List<string> retrievedChunks = await Retrieval.RetrieveAsync(
+                    List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
                         settings.CollectionId,
                         lastUserMessage,
                         settings.RetrievalTopK,
@@ -191,11 +191,14 @@ namespace AssistantHub.Server.Handlers
                     retrievalSw.Stop();
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
 
-                    if (retrievedChunks != null)
+                    if (retrieved != null)
                     {
-                        contextChunks.AddRange(retrievedChunks);
+                        retrievalChunks.AddRange(retrieved);
                     }
                 }
+
+                // Extract content strings for system message building
+                List<string> contextChunks = retrievalChunks.Select(c => c.Content).ToList();
 
                 // Build message list
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
@@ -236,24 +239,29 @@ namespace AssistantHub.Server.Handlers
                 messages = await CompactIfNeeded(messages, settings, model, inferenceEndpoint, inferenceApiKey,
                     settings.Streaming ? ctx : null).ConfigureAwait(false);
 
+                int promptTokenEstimate = EstimateTokenCount(messages);
+                Logging.Info(_Header + "sending " + messages.Count + " messages, ~" + promptTokenEstimate + " tokens to " + model);
+
                 DateTime promptSentUtc = DateTime.UtcNow;
                 Stopwatch inferenceSw = Stopwatch.StartNew();
 
-                string retrievalContextText = contextChunks.Count > 0 ? String.Join("\n---\n", contextChunks) : null;
+                string retrievalContextText = retrievalChunks.Count > 0 ? Serializer.SerializeJson(retrievalChunks, true) : null;
 
                 if (settings.Streaming)
                 {
                     await HandleStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
-                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, promptSentUtc, inferenceSw).ConfigureAwait(false);
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
+                        promptTokenEstimate).ConfigureAwait(false);
                 }
                 else
                 {
                     await HandleNonStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
-                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, promptSentUtc, inferenceSw).ConfigureAwait(false);
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
+                        promptTokenEstimate).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -433,10 +441,10 @@ namespace AssistantHub.Server.Handlers
                 List<string> contextChunks = new List<string>();
                 if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
                 {
-                    List<string> retrievedChunks = await Retrieval.RetrieveAsync(
+                    List<RetrievalChunk> retrievedChunks = await Retrieval.RetrieveAsync(
                         settings.CollectionId, lastUserMessage,
                         settings.RetrievalTopK, settings.RetrievalScoreThreshold).ConfigureAwait(false);
-                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks);
+                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.Content));
                 }
 
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
@@ -543,9 +551,21 @@ namespace AssistantHub.Server.Handlers
                     {
                         items.Add(new
                         {
+                            Id = h.Id,
+                            ThreadId = h.ThreadId,
+                            AssistantId = h.AssistantId,
+                            CollectionId = h.CollectionId,
+                            UserMessageUtc = h.UserMessageUtc,
                             UserMessage = h.UserMessage,
+                            RetrievalStartUtc = h.RetrievalStartUtc,
+                            RetrievalDurationMs = h.RetrievalDurationMs,
+                            RetrievalContext = h.RetrievalContext,
+                            PromptSentUtc = h.PromptSentUtc,
+                            PromptTokens = h.PromptTokens,
+                            TimeToFirstTokenMs = h.TimeToFirstTokenMs,
+                            TimeToLastTokenMs = h.TimeToLastTokenMs,
                             AssistantResponse = h.AssistantResponse,
-                            UserMessageUtc = h.UserMessageUtc
+                            CreatedUtc = h.CreatedUtc
                         });
                     }
                 }
@@ -583,8 +603,10 @@ namespace AssistantHub.Server.Handlers
             DateTime? retrievalStartUtc = null,
             double retrievalDurationMs = 0,
             string retrievalContext = null,
+            List<RetrievalChunk> retrievalChunks = null,
             DateTime? promptSentUtc = null,
-            Stopwatch inferenceSw = null)
+            Stopwatch inferenceSw = null,
+            int promptTokens = 0)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -599,7 +621,7 @@ namespace AssistantHub.Server.Handlers
 
             if (inferenceResult != null && inferenceResult.Success && !String.IsNullOrEmpty(inferenceResult.Content))
             {
-                int promptTokens = EstimateTokenCount(messages);
+                int responsePromptTokens = EstimateTokenCount(messages);
                 int completionTokens = EstimateTokenCount(inferenceResult.Content);
 
                 ChatCompletionResponse response = new ChatCompletionResponse
@@ -619,11 +641,18 @@ namespace AssistantHub.Server.Handlers
                     },
                     Usage = new ChatCompletionUsage
                     {
-                        PromptTokens = promptTokens,
+                        PromptTokens = responsePromptTokens,
                         CompletionTokens = completionTokens,
-                        TotalTokens = promptTokens + completionTokens,
+                        TotalTokens = responsePromptTokens + completionTokens,
                         ContextWindow = settings.ContextWindow
-                    }
+                    },
+                    Retrieval = settings.EnableRag ? new ChatCompletionRetrieval
+                    {
+                        CollectionId = collectionId,
+                        DurationMs = retrievalDurationMs,
+                        ChunksReturned = retrievalChunks?.Count ?? 0,
+                        Chunks = retrievalChunks ?? new List<RetrievalChunk>()
+                    } : null
                 };
 
                 ctx.Response.StatusCode = 200;
@@ -636,7 +665,7 @@ namespace AssistantHub.Server.Handlers
                     _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
                         userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContext,
-                        promptSentUtc, timeToLastTokenMs, timeToLastTokenMs,
+                        promptSentUtc, promptTokens, timeToLastTokenMs, timeToLastTokenMs,
                         inferenceResult.Content);
                 }
             }
@@ -668,8 +697,10 @@ namespace AssistantHub.Server.Handlers
             DateTime? retrievalStartUtc = null,
             double retrievalDurationMs = 0,
             string retrievalContext = null,
+            List<RetrievalChunk> retrievalChunks = null,
             DateTime? promptSentUtc = null,
-            Stopwatch inferenceSw = null)
+            Stopwatch inferenceSw = null,
+            int promptTokens = 0)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -744,7 +775,7 @@ namespace AssistantHub.Server.Handlers
                         _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
                             userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                             retrievalStartUtc, retrievalDurationMs, retrievalContext,
-                            promptSentUtc, timeToFirstTokenMs, timeToLastTokenMs,
+                            promptSentUtc, promptTokens, timeToFirstTokenMs, timeToLastTokenMs,
                             fullContent);
                     }
 
@@ -772,7 +803,14 @@ namespace AssistantHub.Server.Handlers
                             CompletionTokens = finishCompletionTokens,
                             TotalTokens = finishPromptTokens + finishCompletionTokens,
                             ContextWindow = settings.ContextWindow
-                        }
+                        },
+                        Retrieval = settings.EnableRag ? new ChatCompletionRetrieval
+                        {
+                            CollectionId = collectionId,
+                            DurationMs = retrievalDurationMs,
+                            ChunksReturned = retrievalChunks?.Count ?? 0,
+                            Chunks = retrievalChunks ?? new List<RetrievalChunk>()
+                        } : null
                     };
                     await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
 
@@ -951,7 +989,7 @@ namespace AssistantHub.Server.Handlers
             string threadId, string assistantId, string collectionId,
             DateTime userMessageUtc, string userMessage,
             DateTime? retrievalStartUtc, double retrievalDurationMs, string retrievalContext,
-            DateTime? promptSentUtc, double timeToFirstTokenMs, double timeToLastTokenMs,
+            DateTime? promptSentUtc, int promptTokens, double timeToFirstTokenMs, double timeToLastTokenMs,
             string assistantResponse)
         {
             try
@@ -967,6 +1005,7 @@ namespace AssistantHub.Server.Handlers
                 history.RetrievalDurationMs = retrievalDurationMs;
                 history.RetrievalContext = retrievalContext;
                 history.PromptSentUtc = promptSentUtc;
+                history.PromptTokens = promptTokens;
                 history.TimeToFirstTokenMs = timeToFirstTokenMs;
                 history.TimeToLastTokenMs = timeToLastTokenMs;
                 history.AssistantResponse = assistantResponse;

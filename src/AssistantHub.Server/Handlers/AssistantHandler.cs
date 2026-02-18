@@ -78,6 +78,27 @@ namespace AssistantHub.Server.Handlers
                 settings.AssistantId = assistant.Id;
                 settings.CreatedUtc = DateTime.UtcNow;
                 settings.LastUpdateUtc = DateTime.UtcNow;
+
+                // Enable RAG with the first available collection if one exists
+                try
+                {
+                    EnumerationQuery ruleQuery = new EnumerationQuery { MaxResults = 1 };
+                    EnumerationResult<IngestionRule> rules = await Database.IngestionRule.EnumerateAsync(ruleQuery).ConfigureAwait(false);
+                    if (rules != null && rules.Objects != null && rules.Objects.Count > 0)
+                    {
+                        string collectionId = rules.Objects[0].CollectionId;
+                        if (!String.IsNullOrEmpty(collectionId))
+                        {
+                            settings.EnableRag = true;
+                            settings.CollectionId = collectionId;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Warn(_Header + "unable to auto-assign RAG collection: " + ex.Message);
+                }
+
                 await Database.AssistantSettings.CreateAsync(settings).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 201;

@@ -74,7 +74,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Model name or identifier.
         /// </summary>
-        public string Model { get; set; } = "gpt-4o";
+        public string Model { get; set; } = "gemma3:4b";
 
         /// <summary>
         /// Whether RAG retrieval is enabled.
@@ -107,12 +107,12 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Inference provider type.
         /// </summary>
-        public InferenceProviderEnum InferenceProvider { get; set; } = InferenceProviderEnum.OpenAI;
+        public InferenceProviderEnum InferenceProvider { get; set; } = InferenceProviderEnum.Ollama;
 
         /// <summary>
         /// Inference provider endpoint URL.
         /// </summary>
-        public string InferenceEndpoint { get; set; } = null;
+        public string InferenceEndpoint { get; set; } = "http://ollama:11434";
 
         /// <summary>
         /// Inference provider API key.
@@ -137,7 +137,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Whether to enable SSE streaming for chat responses.
         /// </summary>
-        public bool Streaming { get; set; } = false;
+        public bool Streaming { get; set; } = true;
 
         /// <summary>
         /// Timestamp when the record was created in UTC.
@@ -159,8 +159,8 @@ namespace AssistantHub.Core.Models
         private double _TopP = 1.0;
         private int _MaxTokens = 4096;
         private int _ContextWindow = 8192;
-        private int _RetrievalTopK = 5;
-        private double _RetrievalScoreThreshold = 0.7;
+        private int _RetrievalTopK = 10;
+        private double _RetrievalScoreThreshold = 0.3;
 
         #endregion
 
@@ -192,15 +192,15 @@ namespace AssistantHub.Core.Models
             obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
-            obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 5);
-            obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.7);
-            obj.InferenceProvider = DataTableHelper.GetEnumValue<InferenceProviderEnum>(row, "inference_provider", InferenceProviderEnum.OpenAI);
+            obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
+            obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
+            obj.InferenceProvider = DataTableHelper.GetEnumValue<InferenceProviderEnum>(row, "inference_provider", InferenceProviderEnum.Ollama);
             obj.InferenceEndpoint = DataTableHelper.GetStringValue(row, "inference_endpoint");
             obj.InferenceApiKey = DataTableHelper.GetStringValue(row, "inference_api_key");
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");
-            obj.Streaming = DataTableHelper.GetBooleanValue(row, "streaming", false);
+            obj.Streaming = DataTableHelper.GetBooleanValue(row, "streaming", true);
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

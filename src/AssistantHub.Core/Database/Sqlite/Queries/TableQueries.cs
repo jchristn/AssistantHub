@@ -48,18 +48,18 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  system_prompt TEXT, " +
                 "  max_tokens INTEGER NOT NULL DEFAULT 4096, " +
                 "  context_window INTEGER NOT NULL DEFAULT 8192, " +
-                "  model TEXT NOT NULL DEFAULT 'gpt-4o', " +
+                "  model TEXT NOT NULL DEFAULT 'gemma3:4b', " +
                 "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
                 "  collection_id TEXT, " +
-                "  retrieval_top_k INTEGER NOT NULL DEFAULT 5, " +
-                "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.7, " +
-                "  inference_provider TEXT NOT NULL DEFAULT 'OpenAI', " +
+                "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
+                "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +
+                "  inference_provider TEXT NOT NULL DEFAULT 'Ollama', " +
                 "  inference_endpoint TEXT, " +
                 "  inference_api_key TEXT, " +
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
                 "  favicon_url TEXT, " +
-                "  streaming INTEGER NOT NULL DEFAULT 0, " +
+                "  streaming INTEGER NOT NULL DEFAULT 1, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +

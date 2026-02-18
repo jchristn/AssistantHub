@@ -54,18 +54,18 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `system_prompt` TEXT, " +
             "  `max_tokens` INT NOT NULL DEFAULT 4096, " +
             "  `context_window` INT NOT NULL DEFAULT 8192, " +
-            "  `model` TEXT NOT NULL DEFAULT 'gpt-4o', " +
+            "  `model` TEXT NOT NULL DEFAULT 'gemma3:4b', " +
             "  `enable_rag` TINYINT NOT NULL DEFAULT 0, " +
             "  `collection_id` VARCHAR(256), " +
-            "  `retrieval_top_k` INT NOT NULL DEFAULT 5, " +
-            "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.7, " +
-            "  `inference_provider` TEXT NOT NULL DEFAULT 'OpenAI', " +
+            "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
+            "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
+            "  `inference_provider` TEXT NOT NULL DEFAULT 'Ollama', " +
             "  `inference_endpoint` TEXT, " +
             "  `inference_api_key` TEXT, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
-            "  `streaming` TINYINT NOT NULL DEFAULT 0, " +
+            "  `streaming` TINYINT NOT NULL DEFAULT 1, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +

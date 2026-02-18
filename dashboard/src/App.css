@@ -665,7 +665,7 @@ body {
 }
 
 .modal-container.extra-wide {
-  max-width: 1080px;
+  max-width: 1400px;
 }
 
 .modal-header {
@@ -1983,4 +1983,164 @@ body {
 [data-theme="dark"] .chat-system-message {
   background: var(--bg-secondary);
   border-color: var(--border-color);
+}
+
+/* Documents View - Drag & Drop */
+.documents-view {
+  position: relative;
+}
+
+.documents-view.drag-over::after {
+  content: 'Drop files here to upload';
+  position: absolute;
+  inset: 0;
+  background: rgba(67, 97, 238, 0.08);
+  border: 2px dashed var(--accent-color);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Upload Progress Panel */
+.upload-progress-panel {
+  position: fixed;
+  bottom: 0;
+  right: 24px;
+  width: 380px;
+  max-height: 360px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: var(--shadow-lg);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  transition: max-height 0.2s ease;
+}
+
+.upload-progress-panel.collapsed {
+  max-height: 42px;
+  overflow: hidden;
+}
+
+.upload-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.upload-progress-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.upload-progress-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.125rem 0.25rem;
+  line-height: 1;
+}
+
+.upload-progress-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.upload-progress-item {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.upload-progress-item:last-child {
+  border-bottom: none;
+}
+
+.upload-progress-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-progress-filename {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-progress-percent {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  width: 36px;
+  text-align: right;
+}
+
+.upload-progress-bar-track {
+  width: 80px;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.upload-progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+.upload-progress-bar-fill.complete {
+  background: var(--success-color);
+}
+
+.upload-progress-bar-fill.error {
+  background: var(--danger-color);
+}
+
+.upload-progress-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  padding: 0 0.125rem;
+  flex-shrink: 0;
+}
+
+.upload-progress-dismiss:hover {
+  color: var(--text-primary);
+}
+
+.upload-progress-error {
+  font-size: 0.75rem;
+  color: var(--danger-color);
+  margin-top: 0.25rem;
+  padding-left: 0;
 }

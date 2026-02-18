@@ -29,7 +29,7 @@
   "Chunking": {
     "Endpoint": "http://partio-server:8400",
     "AccessKey": "default",
-    "EndpointId": "ep_H1mXwgHrESmsnaY0t0BvwDc6MYj399Eim1cE7DHMqrwJw"
+    "EndpointId": "ep_xRuezoahg0uLsKpRNPyjA49sU6mmyyUS2UrvAy5GfSAGN"
   },
   "Inference": {
     "Provider": "Ollama",

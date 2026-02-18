@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -8,6 +8,10 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import ProcessingLogModal from '../components/modals/ProcessingLogModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import DropRuleModal from '../components/DropRuleModal';
+import UploadProgressPanel from '../components/UploadProgressPanel';
+import { useUploadQueue } from '../hooks/useUploadQueue';
+import { extractFilesFromDrop } from '../utils/fileDropUtils';
 
 function formatFileSize(bytes) {
   if (bytes == null) return '';
@@ -40,6 +44,25 @@ function DocumentsView() {
   const [collections, setCollections] = useState([]);
   const [bucketFilter, setBucketFilter] = useState('');
   const [collectionFilter, setCollectionFilter] = useState('');
+
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [pendingDropFiles, setPendingDropFiles] = useState(null);
+  const dragCounter = useRef(0);
+
+  const { records, enqueueFiles, dismissRecord } = useUploadQueue(api);
+  const prevCompletedCount = useRef(0);
+
+  // Auto-refresh table when uploads complete
+  useEffect(() => {
+    const completedCount = records.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s === 'completed' || s === 'indexed' || s === 'active';
+    }).length;
+    if (completedCount > prevCompletedCount.current) {
+      setRefresh(r => r + 1);
+    }
+    prevCompletedCount.current = completedCount;
+  }, [records]);
 
   useEffect(() => {
     (async () => {
@@ -145,8 +168,55 @@ function DocumentsView() {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (dragCounter.current === 1) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragOver(false);
+    const files = await extractFilesFromDrop(e.dataTransfer);
+    if (files.length > 0) {
+      setPendingDropFiles(files);
+    }
+  };
+
+  const handleDropConfirm = (ruleId, labels, tags) => {
+    if (pendingDropFiles) {
+      enqueueFiles(pendingDropFiles, ruleId, labels, tags);
+    }
+    setPendingDropFiles(null);
+  };
+
   return (
-    <div>
+    <div
+      className={`documents-view ${isDragOver ? 'drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="content-header">
         <div>
           <h1 className="content-title">Documents</h1>
@@ -180,6 +250,15 @@ function DocumentsView() {
       {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
+      {pendingDropFiles && (
+        <DropRuleModal
+          fileCount={pendingDropFiles.length}
+          ingestionRules={ingestionRules}
+          onConfirm={handleDropConfirm}
+          onClose={() => setPendingDropFiles(null)}
+        />
+      )}
+      <UploadProgressPanel records={records} onDismiss={dismissRecord} />
     </div>
   );
 }

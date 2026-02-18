@@ -219,6 +219,8 @@ services:
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"
+    volumes:
+      - ./dashboard-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - assistanthub-server
     restart: unless-stopped

@@ -35,3 +35,8 @@ logs/
 # Data
 *.db
 *.sqlite
+
+# Factory defaults (override *.db exclusion)
+!docker/factory/*.db
+!docker/factory/*.db-shm
+!docker/factory/*.db-wal

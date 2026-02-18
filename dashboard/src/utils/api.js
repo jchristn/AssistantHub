@@ -29,6 +29,23 @@ export class ApiClient {
       return { success: response.ok, statusCode: response.status };
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json') && !contentType.includes('text/json')) {
+      const text = await response.text();
+      if (!response.ok) {
+        if (response.status === 413) throw new Error('Request payload too large. Try a smaller file.');
+        throw new Error(`Server returned ${response.status}: non-JSON response`);
+      }
+      // Try parsing anyway in case content-type header is missing
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed;
+        return { ...parsed, statusCode: response.status };
+      } catch {
+        throw new Error(`Server returned unexpected non-JSON response (${response.status})`);
+      }
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

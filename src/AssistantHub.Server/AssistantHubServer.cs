@@ -218,6 +218,7 @@ namespace AssistantHub.Server
             defaultRule.Description = "Default ingestion rule";
             defaultRule.Bucket = "default";
             defaultRule.CollectionName = "default";
+            defaultRule.CollectionId = "default";
             defaultRule.Chunking = new IngestionChunkingConfig();
             defaultRule.Embedding = new IngestionEmbeddingConfig();
             defaultRule.CreatedUtc = DateTime.UtcNow;

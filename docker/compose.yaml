@@ -49,7 +49,7 @@ services:
   # --- Document Processing (DocumentAtom) ---
 
   documentatom-server:
-    image: jchristn77/documentatom:latest
+    image: jchristn77/documentatom:v3.0.0
     container_name: assistanthub-documentatom
     ports:
       - "8301:8000"
@@ -67,7 +67,7 @@ services:
     restart: unless-stopped
 
   documentatom-dashboard:
-    image: jchristn77/documentatom-ui:latest
+    image: jchristn77/documentatom-ui:v3.0.0
     container_name: assistanthub-documentatom-ui
     ports:
       - "8302:3000"

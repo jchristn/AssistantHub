@@ -428,8 +428,15 @@ namespace AssistantHub.Core.Services
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                request.Content = new ByteArrayContent(fileBytes);
-                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                // v3.0.0: Send JSON envelope with base64-encoded data
+                object atomRequest = new
+                {
+                    Settings = (object)null,
+                    Data = Convert.ToBase64String(fileBytes)
+                };
+
+                string requestJson = JsonSerializer.Serialize(atomRequest, _JsonOptions);
+                request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
                 if (!String.IsNullOrEmpty(_DocumentAtomSettings.AccessKey))
                 {

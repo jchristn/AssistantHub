@@ -788,12 +788,21 @@
 				{
 					"name": "List Embedding Endpoints",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"maxResults\": 1000\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/enumerate",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding"]
+							"path": ["v1.0", "endpoints", "embedding", "enumerate"]
 						}
 					}
 				},
@@ -925,12 +934,21 @@
 				{
 					"name": "List Completion Endpoints",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"maxResults\": 1000\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/enumerate",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion"]
+							"path": ["v1.0", "endpoints", "completion", "enumerate"]
 						}
 					}
 				},

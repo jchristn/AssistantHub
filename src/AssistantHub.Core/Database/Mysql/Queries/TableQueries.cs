@@ -59,9 +59,8 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
-            "  `inference_provider` TEXT NOT NULL DEFAULT 'Ollama', " +
-            "  `inference_endpoint` TEXT, " +
-            "  `inference_api_key` TEXT, " +
+            "  `inference_endpoint_id` TEXT, " +
+            "  `embedding_endpoint_id` TEXT, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +

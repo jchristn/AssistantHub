@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const { login, theme, toggleTheme } = useAuth();
-  const [serverUrl, setServerUrl] = useState(() => localStorage.getItem('ah_serverUrl') || 'http://localhost:8800');
+  const [serverUrl, setServerUrl] = useState(() => localStorage.getItem('ah_serverUrl') || window.ASSISTANTHUB_SERVER_URL || 'http://localhost:8801');
   const [authMode, setAuthMode] = useState('bearer'); // 'email' or 'bearer'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

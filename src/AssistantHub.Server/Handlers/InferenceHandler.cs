@@ -7,6 +7,8 @@ namespace AssistantHub.Server.Handlers
     using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Net.Http;
+    using System.Text.Json.Serialization;
     using System.Web;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -319,11 +321,46 @@ namespace AssistantHub.Server.Handlers
 
             InferenceSettings tempSettings = new InferenceSettings
             {
-                Provider = assistantSettings.InferenceProvider,
-                Endpoint = !String.IsNullOrEmpty(assistantSettings.InferenceEndpoint) ? assistantSettings.InferenceEndpoint : Settings.Inference.Endpoint,
-                ApiKey = !String.IsNullOrEmpty(assistantSettings.InferenceApiKey) ? assistantSettings.InferenceApiKey : Settings.Inference.ApiKey,
+                Provider = Settings.Inference.Provider,
+                Endpoint = Settings.Inference.Endpoint,
+                ApiKey = Settings.Inference.ApiKey,
                 DefaultModel = !String.IsNullOrEmpty(assistantSettings.Model) ? assistantSettings.Model : Settings.Inference.DefaultModel
             };
+
+            if (!String.IsNullOrEmpty(assistantSettings.InferenceEndpointId))
+            {
+                try
+                {
+                    string url = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + assistantSettings.InferenceEndpointId;
+                    using (HttpClient client = new HttpClient())
+                    {
+                        if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
+                            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+
+                        HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+                            JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body, jsonOpts);
+
+                            string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
+                            if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                                tempSettings.Provider = Enums.InferenceProviderEnum.OpenAI;
+
+                            string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
+                            if (!String.IsNullOrEmpty(epUrl)) tempSettings.Endpoint = epUrl;
+
+                            string apiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
+                            if (!String.IsNullOrEmpty(apiKey)) tempSettings.ApiKey = apiKey;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Warn(_Header + "failed to resolve completion endpoint: " + ex.Message);
+                }
+            }
 
             return new InferenceService(tempSettings, Logging);
         }

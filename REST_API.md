@@ -985,15 +985,21 @@ Create a new embedding endpoint.
 - `403` -- Not an admin user.
 - `502` -- Partio service unavailable.
 
-### GET /v1.0/endpoints/embedding
+### POST /v1.0/endpoints/embedding/enumerate
 
-List all embedding endpoints with pagination.
+List all embedding endpoints.
 
 **Auth:** Required (admin only)
 
-**Query Parameters:** See [Pagination](#pagination).
+**Request Body:**
 
-**Response (200 OK):** Paginated envelope containing embedding endpoint objects.
+```json
+{
+  "maxResults": 1000
+}
+```
+
+**Response (200 OK):** Standard `EnumerationResult` envelope containing embedding endpoint objects.
 
 ### GET /v1.0/endpoints/embedding/{endpointId}
 
@@ -1082,15 +1088,21 @@ Create a new completion endpoint.
 - `403` -- Not an admin user.
 - `502` -- Partio service unavailable.
 
-### GET /v1.0/endpoints/completion
+### POST /v1.0/endpoints/completion/enumerate
 
-List all completion endpoints with pagination.
+List all completion endpoints.
 
 **Auth:** Required (admin only)
 
-**Query Parameters:** See [Pagination](#pagination).
+**Request Body:**
 
-**Response (200 OK):** Paginated envelope containing completion endpoint objects.
+```json
+{
+  "maxResults": 1000
+}
+```
+
+**Response (200 OK):** Standard `EnumerationResult` envelope containing completion endpoint objects.
 
 ### GET /v1.0/endpoints/completion/{endpointId}
 
@@ -1289,9 +1301,8 @@ Retrieve settings for an assistant.
   "CollectionId": "collection-uuid",
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
-  "InferenceProvider": "OpenAI",
-  "InferenceEndpoint": null,
-  "InferenceApiKey": null,
+  "InferenceEndpointId": null,
+  "EmbeddingEndpointId": null,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -1314,9 +1325,8 @@ Retrieve settings for an assistant.
 | `CollectionId`             | string | RecallDb collection ID for document retrieval.                              |
 | `RetrievalTopK`            | int    | Number of top document chunks to retrieve.                                  |
 | `RetrievalScoreThreshold`  | double | Minimum similarity score threshold (0.0 to 1.0).                           |
-| `InferenceProvider`        | string | LLM provider: `OpenAI` or `Ollama`.                                        |
-| `InferenceEndpoint`        | string | Custom endpoint URL (overrides global setting if set).                      |
-| `InferenceApiKey`          | string | Custom API key (overrides global setting if set).                           |
+| `InferenceEndpointId`      | string | Managed completion endpoint ID for inference (overrides global setting).    |
+| `EmbeddingEndpointId`      | string | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `Title`                    | string | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
@@ -1346,9 +1356,8 @@ Create or update settings for an assistant. If settings already exist, they are 
   "CollectionId": "my-collection-id",
   "RetrievalTopK": 10,
   "RetrievalScoreThreshold": 0.6,
-  "InferenceProvider": "OpenAI",
-  "InferenceEndpoint": null,
-  "InferenceApiKey": null,
+  "InferenceEndpointId": null,
+  "EmbeddingEndpointId": null,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",

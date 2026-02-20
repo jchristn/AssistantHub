@@ -9,6 +9,8 @@ function AssistantSettingsView() {
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [assistants, setAssistants] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
+  const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,22 @@ function AssistantSettingsView() {
     }
   }, [serverUrl, credential]);
 
-  useEffect(() => { loadAssistants(); loadCollections(); }, [loadAssistants, loadCollections]);
+  const loadEndpoints = useCallback(async () => {
+    try {
+      const [completionResult, embeddingResult] = await Promise.all([
+        api.enumerateCompletionEndpoints({ maxResults: 1000 }),
+        api.enumerateEmbeddingEndpoints({ maxResults: 1000 })
+      ]);
+      const completionItems = (completionResult && completionResult.Objects) ? completionResult.Objects : Array.isArray(completionResult) ? completionResult : [];
+      const embeddingItems = (embeddingResult && embeddingResult.Objects) ? embeddingResult.Objects : Array.isArray(embeddingResult) ? embeddingResult : [];
+      setInferenceEndpoints(completionItems);
+      setEmbeddingEndpoints(embeddingItems);
+    } catch (err) {
+      console.error('Failed to load endpoints:', err);
+    }
+  }, [serverUrl, credential]);
+
+  useEffect(() => { loadAssistants(); loadCollections(); loadEndpoints(); }, [loadAssistants, loadCollections, loadEndpoints]);
 
   const loadSettings = useCallback(async (id) => {
     if (!id) { setSettings(null); return; }
@@ -58,9 +75,8 @@ function AssistantSettingsView() {
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
-        InferenceProvider: result?.InferenceProvider || 'Ollama',
-        InferenceEndpoint: result?.InferenceEndpoint || 'http://ollama:11434',
-        InferenceApiKey: result?.InferenceApiKey || '',
+        InferenceEndpointId: result?.InferenceEndpointId || '',
+        EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         Title: result?.Title || '',
         LogoUrl: result?.LogoUrl || '',
         FaviconUrl: result?.FaviconUrl || '',
@@ -161,13 +177,6 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">Model Configuration</h3>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="AI service backend (OpenAI or Ollama)">Inference Provider</Tooltip></label>
-                <select className="form-input" value={settings.InferenceProvider} onChange={(e) => handleChange('InferenceProvider', e.target.value)}>
-                  <option value="OpenAI">OpenAI</option>
-                  <option value="Ollama">Ollama</option>
-                </select>
-              </div>
-              <div className="form-group">
                 <label className="form-label"><Tooltip text="Model name to use for generating responses">Model</Tooltip></label>
                 <input className="form-input" type="text" value={settings.Model} onChange={(e) => handleChange('Model', e.target.value)} />
               </div>
@@ -241,14 +250,24 @@ function AssistantSettingsView() {
             </div>
 
             <div className="settings-section">
-              <h3 className="settings-section-title">Inference Endpoint</h3>
+              <h3 className="settings-section-title">Endpoints</h3>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="Custom inference API endpoint; leave blank to use server default">Endpoint URL</Tooltip></label>
-                <input className="form-input" type="text" value={settings.InferenceEndpoint} onChange={(e) => handleChange('InferenceEndpoint', e.target.value)} placeholder="Leave blank to use server default" />
+                <label className="form-label"><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+                  <option value="">-- Use server default --</option>
+                  {(inferenceEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="Authentication key for the inference endpoint; leave blank to use server default">API Key</Tooltip></label>
-                <input className="form-input" type="password" value={settings.InferenceApiKey} onChange={(e) => handleChange('InferenceApiKey', e.target.value)} placeholder="Leave blank to use server default" />
+                <label className="form-label"><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
+                  <option value="">-- Use server default --</option>
+                  {(embeddingEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

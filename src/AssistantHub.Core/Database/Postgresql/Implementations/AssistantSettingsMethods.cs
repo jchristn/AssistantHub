@@ -53,7 +53,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "model, enable_rag, collection_id, retrieval_top_k, retrieval_score_threshold, " +
-                "inference_provider, inference_endpoint, inference_api_key, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
+                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -67,9 +67,8 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 assistantSettings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
-                "'" + _Driver.Sanitize(assistantSettings.InferenceProvider.ToString()) + "', " +
-                _Driver.FormatNullableString(assistantSettings.InferenceEndpoint) + ", " +
-                _Driver.FormatNullableString(assistantSettings.InferenceApiKey) + ", " +
+                _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +
                 _Driver.FormatNullableString(assistantSettings.FaviconUrl) + ", " +
@@ -126,9 +125,8 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "collection_id = " + _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 "retrieval_top_k = " + assistantSettings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
-                "inference_provider = '" + _Driver.Sanitize(assistantSettings.InferenceProvider.ToString()) + "', " +
-                "inference_endpoint = " + _Driver.FormatNullableString(assistantSettings.InferenceEndpoint) + ", " +
-                "inference_api_key = " + _Driver.FormatNullableString(assistantSettings.InferenceApiKey) + ", " +
+                "inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
+                "embedding_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 "title = " + _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 "logo_url = " + _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +
                 "favicon_url = " + _Driver.FormatNullableString(assistantSettings.FaviconUrl) + ", " +

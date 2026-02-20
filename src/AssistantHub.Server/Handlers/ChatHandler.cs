@@ -7,6 +7,7 @@ namespace AssistantHub.Server.Handlers
     using System.Linq;
     using System.Text;
     using System.Text.Json;
+    using System.Net.Http;
     using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -186,7 +187,9 @@ namespace AssistantHub.Server.Handlers
                         settings.CollectionId,
                         lastUserMessage,
                         settings.RetrievalTopK,
-                        settings.RetrievalScoreThreshold).ConfigureAwait(false);
+                        settings.RetrievalScoreThreshold,
+                        default,
+                        settings.EmbeddingEndpointId).ConfigureAwait(false);
 
                     retrievalSw.Stop();
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
@@ -232,11 +235,25 @@ namespace AssistantHub.Server.Handlers
                 double temperature = chatReq.Temperature ?? settings.Temperature;
                 double topP = chatReq.TopP ?? settings.TopP;
                 int maxTokens = chatReq.MaxTokens ?? settings.MaxTokens;
-                string inferenceEndpoint = !String.IsNullOrEmpty(settings.InferenceEndpoint) ? settings.InferenceEndpoint : Settings.Inference.Endpoint;
-                string inferenceApiKey = !String.IsNullOrEmpty(settings.InferenceApiKey) ? settings.InferenceApiKey : Settings.Inference.ApiKey;
+
+                // Resolve inference endpoint details
+                Enums.InferenceProviderEnum inferenceProvider = Settings.Inference.Provider;
+                string inferenceEndpoint = Settings.Inference.Endpoint;
+                string inferenceApiKey = Settings.Inference.ApiKey;
+
+                if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                {
+                    var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    if (resolved != null)
+                    {
+                        inferenceProvider = resolved.Value.Provider;
+                        inferenceEndpoint = resolved.Value.Endpoint;
+                        inferenceApiKey = resolved.Value.ApiKey;
+                    }
+                }
 
                 // Conversation compaction
-                messages = await CompactIfNeeded(messages, settings, model, inferenceEndpoint, inferenceApiKey,
+                messages = await CompactIfNeeded(messages, settings, inferenceProvider, model, inferenceEndpoint, inferenceApiKey,
                     settings.Streaming ? ctx : null).ConfigureAwait(false);
 
                 int promptTokenEstimate = EstimateTokenCount(messages);
@@ -250,7 +267,7 @@ namespace AssistantHub.Server.Handlers
                 if (settings.Streaming)
                 {
                     await HandleStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
-                        settings, inferenceEndpoint, inferenceApiKey,
+                        settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate).ConfigureAwait(false);
@@ -258,7 +275,7 @@ namespace AssistantHub.Server.Handlers
                 else
                 {
                     await HandleNonStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
-                        settings, inferenceEndpoint, inferenceApiKey,
+                        settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate).ConfigureAwait(false);
@@ -443,7 +460,9 @@ namespace AssistantHub.Server.Handlers
                 {
                     List<RetrievalChunk> retrievedChunks = await Retrieval.RetrieveAsync(
                         settings.CollectionId, lastUserMessage,
-                        settings.RetrievalTopK, settings.RetrievalScoreThreshold).ConfigureAwait(false);
+                        settings.RetrievalTopK, settings.RetrievalScoreThreshold,
+                        default,
+                        settings.EmbeddingEndpointId).ConfigureAwait(false);
                     if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.Content));
                 }
 
@@ -472,11 +491,25 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
-                string inferenceEndpoint = !String.IsNullOrEmpty(settings.InferenceEndpoint) ? settings.InferenceEndpoint : Settings.Inference.Endpoint;
-                string inferenceApiKey = !String.IsNullOrEmpty(settings.InferenceApiKey) ? settings.InferenceApiKey : Settings.Inference.ApiKey;
+
+                // Resolve inference endpoint details
+                Enums.InferenceProviderEnum compactInferenceProvider = Settings.Inference.Provider;
+                string inferenceEndpoint = Settings.Inference.Endpoint;
+                string inferenceApiKey = Settings.Inference.ApiKey;
+
+                if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                {
+                    var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    if (resolved != null)
+                    {
+                        compactInferenceProvider = resolved.Value.Provider;
+                        inferenceEndpoint = resolved.Value.Endpoint;
+                        inferenceApiKey = resolved.Value.ApiKey;
+                    }
+                }
 
                 // Force compaction
-                messages = await CompactIfNeeded(messages, settings, model, inferenceEndpoint, inferenceApiKey, null, force: true).ConfigureAwait(false);
+                messages = await CompactIfNeeded(messages, settings, compactInferenceProvider, model, inferenceEndpoint, inferenceApiKey, null, force: true).ConfigureAwait(false);
 
                 // Filter out system messages for the response
                 List<ChatCompletionMessage> responseMessages = messages
@@ -593,6 +626,7 @@ namespace AssistantHub.Server.Handlers
             double temperature,
             double topP,
             AssistantSettings settings,
+            Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
             string threadId = null,
@@ -610,7 +644,7 @@ namespace AssistantHub.Server.Handlers
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
-                settings.InferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+                inferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
 
             double timeToLastTokenMs = 0;
             if (inferenceSw != null)
@@ -687,6 +721,7 @@ namespace AssistantHub.Server.Handlers
             double temperature,
             double topP,
             AssistantSettings settings,
+            Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
             string threadId = null,
@@ -734,7 +769,7 @@ namespace AssistantHub.Server.Handlers
             // Stream the inference response
             await Inference.GenerateResponseStreamingAsync(
                 messages, model, maxTokens, temperature, topP,
-                settings.InferenceProvider, inferenceEndpoint, inferenceApiKey,
+                inferenceProvider, inferenceEndpoint, inferenceApiKey,
                 onDelta: async (deltaContent) =>
                 {
                     if (!firstTokenCaptured && inferenceSw != null)
@@ -838,6 +873,7 @@ namespace AssistantHub.Server.Handlers
         private async Task<List<ChatCompletionMessage>> CompactIfNeeded(
             List<ChatCompletionMessage> messages,
             AssistantSettings settings,
+            Enums.InferenceProviderEnum inferenceProvider,
             string model,
             string inferenceEndpoint,
             string inferenceApiKey,
@@ -951,7 +987,7 @@ namespace AssistantHub.Server.Handlers
 
                 InferenceResult summaryResult = await Inference.GenerateResponseAsync(
                     summaryMessages, model, 1024, 0.3, 1.0,
-                    settings.InferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+                    inferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
 
                 if (summaryResult == null || !summaryResult.Success || String.IsNullOrEmpty(summaryResult.Content))
                 {
@@ -1015,6 +1051,58 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "failed to write chat history: " + e.Message);
+            }
+        }
+
+        private struct ResolvedEndpoint
+        {
+            public Enums.InferenceProviderEnum Provider;
+            public string Endpoint;
+            public string ApiKey;
+        }
+
+        private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)
+        {
+            try
+            {
+                string url = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
+                using (HttpClient client = new HttpClient())
+                {
+                    if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
+                    {
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                    }
+
+                    HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Logging.Warn(_Header + "failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);
+                        return null;
+                    }
+
+                    string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body, _SseJsonOptions);
+
+                    string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
+                    string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
+                    string apiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
+
+                    Enums.InferenceProviderEnum provider = Enums.InferenceProviderEnum.Ollama;
+                    if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                        provider = Enums.InferenceProviderEnum.OpenAI;
+
+                    return new ResolvedEndpoint
+                    {
+                        Provider = provider,
+                        Endpoint = epUrl ?? Settings.Inference.Endpoint,
+                        ApiKey = apiKey ?? Settings.Inference.ApiKey
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception resolving completion endpoint " + endpointId + ": " + e.Message);
+                return null;
             }
         }
 

@@ -998,15 +998,19 @@
           "409": { "$ref": "#/components/responses/Conflict" }
         }
       },
-      "get": {
+    },
+    "/v1.0/endpoints/embedding/enumerate": {
+      "post": {
         "tags": ["Embedding Endpoints"],
         "summary": "List embedding endpoints",
         "description": "Proxy to Partio. Enumerate embedding endpoints. Requires admin access.",
-        "parameters": [
-          { "$ref": "#/components/parameters/maxResults" },
-          { "$ref": "#/components/parameters/continuationToken" },
-          { "$ref": "#/components/parameters/ordering" }
-        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnumerationRequest" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Paginated list of embedding endpoints",
@@ -1154,15 +1158,19 @@
           "409": { "$ref": "#/components/responses/Conflict" }
         }
       },
-      "get": {
+    },
+    "/v1.0/endpoints/completion/enumerate": {
+      "post": {
         "tags": ["Completion Endpoints"],
         "summary": "List completion endpoints",
         "description": "Proxy to Partio. Enumerate completion endpoints. Requires admin access.",
-        "parameters": [
-          { "$ref": "#/components/parameters/maxResults" },
-          { "$ref": "#/components/parameters/continuationToken" },
-          { "$ref": "#/components/parameters/ordering" }
-        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnumerationRequest" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Paginated list of completion endpoints",
@@ -2242,6 +2250,13 @@
           "TotalMs": { "type": "number", "format": "double" }
         }
       },
+      "EnumerationRequest": {
+        "type": "object",
+        "description": "Request body for enumeration endpoints.",
+        "properties": {
+          "maxResults": { "type": "integer", "default": 100, "description": "Maximum number of results to return." }
+        }
+      },
       "AuthenticateRequest": {
         "type": "object",
         "description": "Authentication request. Provide either Email+Password or BearerToken.",
@@ -2321,9 +2336,8 @@
           "CollectionId": { "type": "string", "nullable": true, "description": "Collection ID for RAG retrieval." },
           "RetrievalTopK": { "type": "integer", "default": 10, "minimum": 1, "description": "Number of top results to retrieve." },
           "RetrievalScoreThreshold": { "type": "number", "format": "double", "default": 0.3, "minimum": 0, "maximum": 1.0, "description": "Minimum retrieval score threshold." },
-          "InferenceProvider": { "type": "string", "enum": ["Ollama", "OpenAI"], "default": "Ollama", "description": "Inference provider type." },
-          "InferenceEndpoint": { "type": "string", "default": "http://ollama:11434", "description": "Inference provider URL." },
-          "InferenceApiKey": { "type": "string", "nullable": true, "description": "Inference provider API key." },
+          "InferenceEndpointId": { "type": "string", "nullable": true, "description": "Managed completion endpoint ID for inference (overrides global setting)." },
+          "EmbeddingEndpointId": { "type": "string", "nullable": true, "description": "Managed embedding endpoint ID for RAG retrieval (overrides global setting)." },
           "Title": { "type": "string", "nullable": true, "description": "Chat window heading." },
           "LogoUrl": { "type": "string", "nullable": true, "description": "Logo image URL (max 192x192)." },
           "FaviconUrl": { "type": "string", "nullable": true, "description": "Favicon URL." },

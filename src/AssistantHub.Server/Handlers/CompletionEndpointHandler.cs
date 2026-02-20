@@ -1,8 +1,10 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -106,7 +108,16 @@ namespace AssistantHub.Server.Handlers
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(respBody).ConfigureAwait(false);
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    string converted = ConvertPartioEnvelopeToEnumerationResult(respBody);
+                    await ctx.Response.Send(converted).ConfigureAwait(false);
+                }
+                else
+                {
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
+                }
             }
             catch (Exception e)
             {
@@ -270,6 +281,38 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send().ConfigureAwait(false);
             }
         }
+        #region Private-Methods
+
+        /// <summary>
+        /// Convert Partio's envelope format { Data, TotalCount, HasMore } to
+        /// AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
+        /// </summary>
+        private string ConvertPartioEnvelopeToEnumerationResult(string partioJson)
+        {
+            using JsonDocument doc = JsonDocument.Parse(partioJson);
+            JsonElement root = doc.RootElement;
+
+            JsonElement data = root.TryGetProperty("Data", out JsonElement d) ? d : default;
+            long totalCount = root.TryGetProperty("TotalCount", out JsonElement tc) && tc.ValueKind == JsonValueKind.Number ? tc.GetInt64() : 0;
+            bool hasMore = root.TryGetProperty("HasMore", out JsonElement hm) && hm.ValueKind == JsonValueKind.True;
+
+            int objectCount = data.ValueKind == JsonValueKind.Array ? data.GetArrayLength() : 0;
+            string objectsJson = data.ValueKind == JsonValueKind.Array ? data.GetRawText() : "[]";
+
+            return "{" +
+                "\"Success\":true," +
+                "\"MaxResults\":" + (objectCount > 0 ? objectCount : 100) + "," +
+                "\"TotalRecords\":" + totalCount + "," +
+                "\"RecordsRemaining\":" + (hasMore ? Math.Max(totalCount - objectCount, 0) : 0) + "," +
+                "\"ContinuationToken\":null," +
+                "\"EndOfResults\":" + (!hasMore ? "true" : "false") + "," +
+                "\"Objects\":" + objectsJson + "," +
+                "\"TotalMs\":0" +
+                "}";
+        }
+
+        #endregion
+
         /// <summary>
         /// GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
         /// </summary>

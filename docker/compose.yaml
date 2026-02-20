@@ -41,6 +41,8 @@ services:
       - "8001:3000"
     stdin_open: true
     tty: true
+    environment:
+      - LESS3_SERVER_URL=http://assistanthub-less3:8000
     depends_on:
       less3:
         condition: service_healthy
@@ -73,6 +75,8 @@ services:
       - "8302:3000"
     stdin_open: true
     tty: true
+    environment:
+      - DOCUMENTATOM_SERVER_URL=http://assistanthub-documentatom:8000
     depends_on:
       documentatom-server:
         condition: service_healthy
@@ -100,7 +104,7 @@ services:
     ports:
       - "8322:8401"
     environment:
-      - PARTIO_SERVER_URL=http://localhost:8321
+      - PARTIO_SERVER_URL=http://assistanthub-partio-server:8400
     depends_on:
       - partio-server
     restart: unless-stopped
@@ -167,6 +171,8 @@ services:
     container_name: assistanthub-recalldb-dashboard
     ports:
       - "8402:8601"
+    environment:
+      RECALLDB_SERVER_URL: "http://assistanthub-recalldb-server:8600"
     depends_on:
       recalldb-server:
         condition: service_healthy
@@ -221,6 +227,8 @@ services:
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"
+    environment:
+      - ASSISTANTHUB_SERVER_URL=http://assistanthub-server:8800
     volumes:
       - ./dashboard-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

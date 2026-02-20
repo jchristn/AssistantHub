@@ -8,6 +8,8 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [collections, setCollections] = useState([]);
+  const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
+  const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
   const [form, setForm] = useState({
     Temperature: settings?.Temperature ?? 0.7,
     TopP: settings?.TopP ?? 1.0,
@@ -18,9 +20,8 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
     CollectionId: settings?.CollectionId || '',
     RetrievalTopK: settings?.RetrievalTopK || 5,
     RetrievalScoreThreshold: settings?.RetrievalScoreThreshold ?? 0.7,
-    InferenceProvider: settings?.InferenceProvider || 'Ollama',
-    InferenceEndpoint: settings?.InferenceEndpoint || 'http://ollama:11434',
-    InferenceApiKey: settings?.InferenceApiKey || '',
+    InferenceEndpointId: settings?.InferenceEndpointId || '',
+    EmbeddingEndpointId: settings?.EmbeddingEndpointId || '',
     Streaming: settings?.Streaming ?? true
   });
   const [saving, setSaving] = useState(false);
@@ -35,7 +36,22 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
     }
   }, [serverUrl, credential]);
 
-  useEffect(() => { loadCollections(); }, [loadCollections]);
+  const loadEndpoints = useCallback(async () => {
+    try {
+      const [completionResult, embeddingResult] = await Promise.all([
+        api.enumerateCompletionEndpoints({ maxResults: 1000 }),
+        api.enumerateEmbeddingEndpoints({ maxResults: 1000 })
+      ]);
+      const completionItems = (completionResult && completionResult.Objects) ? completionResult.Objects : Array.isArray(completionResult) ? completionResult : [];
+      const embeddingItems = (embeddingResult && embeddingResult.Objects) ? embeddingResult.Objects : Array.isArray(embeddingResult) ? embeddingResult : [];
+      setInferenceEndpoints(completionItems);
+      setEmbeddingEndpoints(embeddingItems);
+    } catch (err) {
+      console.error('Failed to load endpoints:', err);
+    }
+  }, [serverUrl, credential]);
+
+  useEffect(() => { loadCollections(); loadEndpoints(); }, [loadCollections, loadEndpoints]);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -107,19 +123,22 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
         </div>
       </div>
       <div className="form-group">
-        <label><Tooltip text="API provider type for the inference backend">Inference Provider</Tooltip></label>
-        <select value={form.InferenceProvider} onChange={(e) => handleChange('InferenceProvider', e.target.value)}>
-          <option value="OpenAI">OpenAI</option>
-          <option value="Ollama">Ollama</option>
+        <label><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
+        <select value={form.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+          <option value="">-- Use server default --</option>
+          {(inferenceEndpoints || []).map(ep => (
+            <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+          ))}
         </select>
       </div>
       <div className="form-group">
-        <label><Tooltip text="Base URL of the inference API server. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
-        <input type="text" value={form.InferenceEndpoint} onChange={(e) => handleChange('InferenceEndpoint', e.target.value)} placeholder="Leave blank to use server default" />
-      </div>
-      <div className="form-group">
-        <label><Tooltip text="API key for authenticating with the inference endpoint. Leave blank to use the server default">Inference API Key</Tooltip></label>
-        <input type="password" value={form.InferenceApiKey} onChange={(e) => handleChange('InferenceApiKey', e.target.value)} placeholder="Leave blank to use server default" />
+        <label><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
+        <select value={form.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
+          <option value="">-- Use server default --</option>
+          {(embeddingEndpoints || []).map(ep => (
+            <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+          ))}
+        </select>
       </div>
       <div className="form-group form-toggle">
         <label>

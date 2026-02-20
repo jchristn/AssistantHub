@@ -408,6 +408,12 @@
             HEAD /v1.0/endpoints/completion/{endpointId} - Check completion endpoint existence.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
+            <summary>
+            Convert Partio's envelope format { Data, TotalCount, HasMore } to
+            AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
@@ -580,6 +586,12 @@
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.HeadEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/endpoints/embedding/{endpointId} - Check embedding endpoint existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
+            <summary>
+            Convert Partio's envelope format { Data, TotalCount, HasMore } to
+            AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">

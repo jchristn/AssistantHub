@@ -56,9 +56,8 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  collection_id TEXT, " +
             "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
             "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.3, " +
-            "  inference_provider TEXT NOT NULL DEFAULT 'Ollama', " +
-            "  inference_endpoint TEXT, " +
-            "  inference_api_key TEXT, " +
+            "  inference_endpoint_id TEXT, " +
+            "  embedding_endpoint_id TEXT, " +
             "  title TEXT, " +
             "  logo_url TEXT, " +
             "  favicon_url TEXT, " +

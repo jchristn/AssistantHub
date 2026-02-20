@@ -68,7 +68,7 @@ namespace AssistantHub.Core.Services
         /// <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>List of retrieval chunks with source identification and scoring.</returns>
-        public async Task<List<RetrievalChunk>> RetrieveAsync(string collectionId, string query, int topK, double scoreThreshold, CancellationToken token = default)
+        public async Task<List<RetrievalChunk>> RetrieveAsync(string collectionId, string query, int topK, double scoreThreshold, CancellationToken token = default, string embeddingEndpointId = null)
         {
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
@@ -78,7 +78,7 @@ namespace AssistantHub.Core.Services
             try
             {
                 // Step 1: Embed the query using the Partio chunking service
-                List<double> queryEmbeddings = await EmbedQueryAsync(query, token).ConfigureAwait(false);
+                List<double> queryEmbeddings = await EmbedQueryAsync(query, token, embeddingEndpointId).ConfigureAwait(false);
                 if (queryEmbeddings == null || queryEmbeddings.Count == 0)
                 {
                     _Logging.Warn(_Header + "failed to generate embeddings for query");
@@ -134,17 +134,18 @@ namespace AssistantHub.Core.Services
         /// <param name="query">Query text.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Embedding vector.</returns>
-        private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token)
+        private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token, string embeddingEndpointId = null)
         {
             string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
+                string effectiveEndpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
                 object requestBody = new
                 {
                     Type = "Text",
                     Text = query,
-                    EmbeddingConfiguration = new { EmbeddingEndpointId = _ChunkingSettings.EndpointId }
+                    EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
                 };
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");

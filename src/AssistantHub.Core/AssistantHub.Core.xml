@@ -2087,6 +2087,11 @@
             Processing chunks.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Summarizing">
+            <summary>
+            Summarizing.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.StoringEmbeddings">
             <summary>
             Storing embeddings.
@@ -2145,6 +2150,21 @@
         <member name="F:AssistantHub.Core.Enums.InferenceProviderEnum.Ollama">
             <summary>
             Ollama.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.SummarizationOrderEnum">
+            <summary>
+            Summarization traversal order.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.SummarizationOrderEnum.BottomUp">
+            <summary>
+            Bottom-up traversal.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.SummarizationOrderEnum.TopDown">
+            <summary>
+            Top-down traversal.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
@@ -2665,19 +2685,14 @@
             Minimum score threshold for retrieval results (0.0 to 1.0).
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceProvider">
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpointId">
             <summary>
-            Inference provider type.
+            Completion endpoint identifier (references a managed Partio completion endpoint).
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpoint">
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingEndpointId">
             <summary>
-            Inference provider endpoint URL.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceApiKey">
-            <summary>
-            Inference provider API key.
+            Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Title">
@@ -3416,6 +3431,11 @@
             Embedding configuration for an ingestion rule.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.EmbeddingEndpointId">
+            <summary>
+            ID of the embedding endpoint to use.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.Model">
             <summary>
             Embedding model name.
@@ -3530,7 +3550,7 @@
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.Order">
             <summary>
-            Traversal order for summarization: "TopDown" or "BottomUp".
+            Traversal order for summarization.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.SummarizationPrompt">
@@ -4233,7 +4253,7 @@
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String)">
             <summary>
             Retrieve relevant document chunks for a given query.
             </summary>
@@ -4244,7 +4264,7 @@
             <param name="token">Cancellation token.</param>
             <returns>List of retrieval chunks with source identification and scoring.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken,System.String)">
             <summary>
             Embed a query string using the Partio chunking service.
             </summary>

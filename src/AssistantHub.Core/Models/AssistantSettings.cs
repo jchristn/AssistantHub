@@ -2,7 +2,6 @@ namespace AssistantHub.Core.Models
 {
     using System;
     using System.Data;
-    using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
 
     /// <summary>
@@ -105,19 +104,14 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
-        /// Inference provider type.
+        /// Completion endpoint identifier (references a managed Partio completion endpoint).
         /// </summary>
-        public InferenceProviderEnum InferenceProvider { get; set; } = InferenceProviderEnum.Ollama;
+        public string InferenceEndpointId { get; set; } = null;
 
         /// <summary>
-        /// Inference provider endpoint URL.
+        /// Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
         /// </summary>
-        public string InferenceEndpoint { get; set; } = "http://ollama:11434";
-
-        /// <summary>
-        /// Inference provider API key.
-        /// </summary>
-        public string InferenceApiKey { get; set; } = null;
+        public string EmbeddingEndpointId { get; set; } = null;
 
         /// <summary>
         /// Title displayed as the heading on the chat window.
@@ -194,9 +188,8 @@ namespace AssistantHub.Core.Models
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
-            obj.InferenceProvider = DataTableHelper.GetEnumValue<InferenceProviderEnum>(row, "inference_provider", InferenceProviderEnum.Ollama);
-            obj.InferenceEndpoint = DataTableHelper.GetStringValue(row, "inference_endpoint");
-            obj.InferenceApiKey = DataTableHelper.GetStringValue(row, "inference_api_key");
+            obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
+            obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");

@@ -17,6 +17,8 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Collections (Admin Only)](#collections-admin-only)
 - [Collection Records (Admin Only)](#collection-records-admin-only)
 - [Ingestion Rules](#ingestion-rules)
+- [Embedding Endpoints (Admin Only)](#embedding-endpoints-admin-only)
+- [Completion Endpoints (Admin Only)](#completion-endpoints-admin-only)
 - [Assistants](#assistants)
 - [Assistant Settings](#assistant-settings)
 - [Documents](#documents)
@@ -784,7 +786,7 @@ Delete a record from a collection.
 
 ## Ingestion Rules
 
-Ingestion rules define how documents are processed, chunked, and embedded. Each rule specifies a target S3 bucket and RecallDB collection, along with optional chunking and embedding configuration.
+Ingestion rules define how documents are processed, summarized, chunked, and embedded. Each rule specifies a target S3 bucket and RecallDB collection, along with optional summarization, chunking, and embedding configuration.
 
 ### PUT /v1.0/ingestion-rules
 
@@ -799,9 +801,21 @@ Create a new ingestion rule.
   "Name": "Knowledge Base Documents",
   "Description": "Process PDF and text documents for the support knowledge base.",
   "Bucket": "kb-documents",
-  "Collection": "collection-uuid-here",
+  "CollectionName": "my-collection",
+  "CollectionId": "collection-uuid-here",
   "Labels": ["support", "knowledge-base"],
   "Tags": { "department": "engineering", "priority": "high" },
+  "Summarization": {
+    "CompletionEndpointId": "endpoint-uuid-here",
+    "Order": "PreChunking",
+    "SummarizationPrompt": "Summarize the following text concisely.",
+    "MaxSummaryTokens": 1024,
+    "MinCellLength": 1,
+    "MaxParallelTasks": 4,
+    "MaxRetriesPerSummary": 3,
+    "MaxRetries": 3,
+    "TimeoutMs": 300000
+  },
   "Chunking": {
     "Strategy": "FixedTokenCount",
     "FixedTokenCount": 256,
@@ -819,6 +833,20 @@ Create a new ingestion rule.
 }
 ```
 
+**Summarization Configuration (optional):**
+
+| Field                    | Type    | Default      | Description                                                      |
+|--------------------------|---------|--------------|------------------------------------------------------------------|
+| `CompletionEndpointId`   | string  | null         | ID of the completion endpoint to use for summarization.          |
+| `Order`                  | string  | PreChunking  | When to summarize: `PreChunking` or `PostChunking`.              |
+| `SummarizationPrompt`    | string  | null         | Custom prompt for the summarization model.                       |
+| `MaxSummaryTokens`       | int     | 1024         | Maximum tokens for each summary response.                        |
+| `MinCellLength`          | int     | 1            | Minimum cell text length to trigger summarization.               |
+| `MaxParallelTasks`       | int     | 4            | Maximum concurrent summarization tasks.                          |
+| `MaxRetriesPerSummary`   | int     | 3            | Retries per individual summary request.                          |
+| `MaxRetries`             | int     | 3            | Total retries across the summarization pipeline.                 |
+| `TimeoutMs`              | int     | 300000       | Timeout in milliseconds for the summarization pipeline.          |
+
 **Response (201 Created):**
 
 ```json
@@ -827,9 +855,21 @@ Create a new ingestion rule.
   "Name": "Knowledge Base Documents",
   "Description": "Process PDF and text documents for the support knowledge base.",
   "Bucket": "kb-documents",
-  "Collection": "collection-uuid-here",
+  "CollectionName": "my-collection",
+  "CollectionId": "collection-uuid-here",
   "Labels": ["support", "knowledge-base"],
   "Tags": { "department": "engineering", "priority": "high" },
+  "Summarization": {
+    "CompletionEndpointId": "endpoint-uuid-here",
+    "Order": "PreChunking",
+    "SummarizationPrompt": "Summarize the following text concisely.",
+    "MaxSummaryTokens": 1024,
+    "MinCellLength": 1,
+    "MaxParallelTasks": 4,
+    "MaxRetriesPerSummary": 3,
+    "MaxRetries": 3,
+    "TimeoutMs": 300000
+  },
   "Chunking": {
     "Strategy": "FixedTokenCount",
     "FixedTokenCount": 256,
@@ -850,7 +890,7 @@ Create a new ingestion rule.
 ```
 
 **Error Responses:**
-- `400` -- Name is required.
+- `400` -- Name is required; or summarization configuration is invalid.
 - `403` -- Not an admin user.
 
 ### GET /v1.0/ingestion-rules
@@ -909,6 +949,199 @@ Check whether an ingestion rule exists.
 **Response:**
 - `200 OK` -- Ingestion rule exists.
 - `404 Not Found` -- Ingestion rule does not exist.
+
+---
+
+## Embedding Endpoints (Admin Only)
+
+Manage embedding endpoints on the Partio chunking service. These endpoints define which embedding model and API to use for vectorizing document chunks. All routes are proxied to Partio.
+
+### PUT /v1.0/endpoints/embedding
+
+Create a new embedding endpoint.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Model": "all-MiniLM-L6-v2",
+  "Endpoint": "http://localhost:11434",
+  "ApiFormat": "Ollama",
+  "ApiKey": null,
+  "Active": true,
+  "HealthCheck": {
+    "IntervalMs": 30000,
+    "TimeoutMs": 5000,
+    "UnhealthyThreshold": 3
+  }
+}
+```
+
+**Response:** The created endpoint object (proxied from Partio).
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `502` -- Partio service unavailable.
+
+### GET /v1.0/endpoints/embedding
+
+List all embedding endpoints with pagination.
+
+**Auth:** Required (admin only)
+
+**Query Parameters:** See [Pagination](#pagination).
+
+**Response (200 OK):** Paginated envelope containing embedding endpoint objects.
+
+### GET /v1.0/endpoints/embedding/{endpointId}
+
+Retrieve a single embedding endpoint by ID.
+
+**Auth:** Required (admin only)
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### PUT /v1.0/endpoints/embedding/{endpointId}
+
+Update an existing embedding endpoint.
+
+**Auth:** Required (admin only)
+
+**Request Body:** Same format as create.
+
+**Response (200 OK):** The updated endpoint object.
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### DELETE /v1.0/endpoints/embedding/{endpointId}
+
+Delete an embedding endpoint.
+
+**Auth:** Required (admin only)
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### HEAD /v1.0/endpoints/embedding/{endpointId}
+
+Check whether an embedding endpoint exists.
+
+**Auth:** Required (admin only)
+
+**Response:**
+- `200 OK` -- Endpoint exists.
+- `404 Not Found` -- Endpoint does not exist.
+
+### GET /v1.0/endpoints/embedding/{endpointId}/health
+
+Check the health of an embedding endpoint.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):** Health status from Partio.
+
+---
+
+## Completion Endpoints (Admin Only)
+
+Manage completion (inference) endpoints on the Partio service. These endpoints define which LLM and API to use for summarization during document ingestion. All routes are proxied to Partio.
+
+### PUT /v1.0/endpoints/completion
+
+Create a new completion endpoint.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Name": "GPT-4o Summarizer",
+  "Model": "gpt-4o",
+  "Endpoint": "https://api.openai.com/v1",
+  "ApiFormat": "OpenAI",
+  "ApiKey": "sk-...",
+  "Active": true,
+  "HealthCheck": {
+    "IntervalMs": 30000,
+    "TimeoutMs": 5000,
+    "UnhealthyThreshold": 3
+  }
+}
+```
+
+**Response:** The created endpoint object (proxied from Partio).
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `502` -- Partio service unavailable.
+
+### GET /v1.0/endpoints/completion
+
+List all completion endpoints with pagination.
+
+**Auth:** Required (admin only)
+
+**Query Parameters:** See [Pagination](#pagination).
+
+**Response (200 OK):** Paginated envelope containing completion endpoint objects.
+
+### GET /v1.0/endpoints/completion/{endpointId}
+
+Retrieve a single completion endpoint by ID.
+
+**Auth:** Required (admin only)
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### PUT /v1.0/endpoints/completion/{endpointId}
+
+Update an existing completion endpoint.
+
+**Auth:** Required (admin only)
+
+**Request Body:** Same format as create.
+
+**Response (200 OK):** The updated endpoint object.
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### DELETE /v1.0/endpoints/completion/{endpointId}
+
+Delete a completion endpoint.
+
+**Auth:** Required (admin only)
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `404` -- Endpoint not found.
+
+### HEAD /v1.0/endpoints/completion/{endpointId}
+
+Check whether a completion endpoint exists.
+
+**Auth:** Required (admin only)
+
+**Response:**
+- `200 OK` -- Endpoint exists.
+- `404 Not Found` -- Endpoint does not exist.
+
+### GET /v1.0/endpoints/completion/{endpointId}/health
+
+Check the health of a completion endpoint.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):** Health status from Partio.
 
 ---
 

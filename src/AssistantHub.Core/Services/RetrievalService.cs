@@ -136,11 +136,16 @@ namespace AssistantHub.Core.Services
         /// <returns>Embedding vector.</returns>
         private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/process";
+            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                object requestBody = new { Type = "Text", Text = query };
+                object requestBody = new
+                {
+                    Type = "Text",
+                    Text = query,
+                    EmbeddingConfiguration = new { EmbeddingEndpointId = _ChunkingSettings.EndpointId }
+                };
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -219,14 +224,15 @@ namespace AssistantHub.Core.Services
         #region Private-Classes
 
         /// <summary>
-        /// Process response from the Partio service.
+        /// Process response from the Partio v0.2.0 service.
         /// </summary>
         private class ProcessResponse
         {
-            /// <summary>
-            /// Chunks with embeddings.
-            /// </summary>
+            public Guid GUID { get; set; }
+            public string Type { get; set; } = null;
+            public string Text { get; set; } = null;
             public List<ProcessChunk> Chunks { get; set; } = null;
+            public List<ProcessResponse> Children { get; set; } = null;
         }
 
         /// <summary>
@@ -234,14 +240,8 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private class ProcessChunk
         {
-            /// <summary>
-            /// Chunk text content.
-            /// </summary>
+            public Guid CellGUID { get; set; }
             public string Text { get; set; } = null;
-
-            /// <summary>
-            /// Embedding vector.
-            /// </summary>
             public List<double> Embeddings { get; set; } = null;
         }
 

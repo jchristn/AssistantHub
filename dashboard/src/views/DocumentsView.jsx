@@ -12,6 +12,7 @@ import DropRuleModal from '../components/DropRuleModal';
 import UploadProgressPanel from '../components/UploadProgressPanel';
 import { useUploadQueue } from '../hooks/useUploadQueue';
 import { extractFilesFromDrop } from '../utils/fileDropUtils';
+import Tooltip from '../components/Tooltip';
 
 function formatFileSize(bytes) {
   if (bytes == null) return '';
@@ -226,7 +227,7 @@ function DocumentsView() {
       </div>
       <div className="filter-bar">
         <label className="filter-label">
-          Bucket:
+          <Tooltip text="Filter documents by storage bucket">Bucket:</Tooltip>
           <select value={bucketFilter} onChange={(e) => setBucketFilter(e.target.value)}>
             <option value="">All Buckets</option>
             {buckets.map((b) => (
@@ -235,7 +236,7 @@ function DocumentsView() {
           </select>
         </label>
         <label className="filter-label">
-          Collection:
+          <Tooltip text="Filter documents by vector collection">Collection:</Tooltip>
           <select value={collectionFilter} onChange={(e) => setCollectionFilter(e.target.value)}>
             <option value="">All Collections</option>
             {collections.map((c) => (

@@ -131,6 +131,20 @@ export class ApiClient {
   getAssistantSettings(assistantId) { return this.request('GET', `/v1.0/assistants/${assistantId}/settings`); }
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
 
+  // Embedding Endpoints
+  createEmbeddingEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/embedding', endpoint); }
+  enumerateEmbeddingEndpoints(params) { return this.request('POST', '/v1.0/endpoints/embedding/enumerate', params || {}); }
+  getEmbeddingEndpoint(id) { return this.request('GET', `/v1.0/endpoints/embedding/${id}`); }
+  updateEmbeddingEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/embedding/${id}`, endpoint); }
+  deleteEmbeddingEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/embedding/${id}`); }
+
+  // Completion Endpoints
+  createCompletionEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/completion', endpoint); }
+  enumerateCompletionEndpoints(params) { return this.request('POST', '/v1.0/endpoints/completion/enumerate', params || {}); }
+  getCompletionEndpoint(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}`); }
+  updateCompletionEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/completion/${id}`, endpoint); }
+  deleteCompletionEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/completion/${id}`); }
+
   // Ingestion Rules
   createIngestionRule(rule) { return this.request('PUT', '/v1.0/ingestion-rules', rule); }
   getIngestionRules(params) { return this.request('GET', '/v1.0/ingestion-rules' + this.buildQuery(params)); }

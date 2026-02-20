@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function ConfigurationFormModal({ api, onSave, onClose }) {
   const [form, setForm] = useState(null);
@@ -50,9 +51,9 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
     }
   };
 
-  const renderTextField = (section, field, label, type = 'text') => (
+  const renderTextField = (section, field, label, type = 'text', tooltip = '') => (
     <div className="form-group" key={field}>
-      <label>{label}</label>
+      <label>{tooltip ? <Tooltip text={tooltip}>{label}</Tooltip> : label}</label>
       <input
         type={type}
         value={form[section]?.[field] ?? ''}
@@ -61,7 +62,7 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
     </div>
   );
 
-  const renderToggle = (section, field, label) => (
+  const renderToggle = (section, field, label, tooltip = '') => (
     <div className="form-group" key={field}>
       <div className="form-toggle">
         <label className="toggle-switch">
@@ -72,14 +73,14 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
           />
           <span className="toggle-slider"></span>
         </label>
-        <span>{label}</span>
+        <span>{tooltip ? <Tooltip text={tooltip}>{label}</Tooltip> : label}</span>
       </div>
     </div>
   );
 
-  const renderSelect = (section, field, label, options) => (
+  const renderSelect = (section, field, label, options, tooltip = '') => (
     <div className="form-group" key={field}>
-      <label>{label}</label>
+      <label>{tooltip ? <Tooltip text={tooltip}>{label}</Tooltip> : label}</label>
       <select
         value={form[section]?.[field] ?? ''}
         onChange={(e) => handleChange(section, field, e.target.value)}
@@ -133,75 +134,75 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
       <form onSubmit={handleSubmit}>
         {renderSection('Webserver', 'Webserver', <>
           <div className="form-row">
-            {renderTextField('Webserver', 'Hostname', 'Hostname')}
-            {renderTextField('Webserver', 'Port', 'Port', 'number')}
+            {renderTextField('Webserver', 'Hostname', 'Hostname', 'text', 'Hostname or IP address the webserver listens on')}
+            {renderTextField('Webserver', 'Port', 'Port', 'number', 'TCP port number for the webserver')}
           </div>
-          {renderToggle('Webserver', 'Ssl', 'SSL')}
+          {renderToggle('Webserver', 'Ssl', 'SSL', 'Enable HTTPS/SSL encryption for the webserver')}
         </>)}
 
         {renderSection('Database', 'Database', <>
-          {renderSelect('Database', 'Type', 'Type', ['Sqlite', 'Postgresql', 'SqlServer', 'Mysql'])}
-          {renderTextField('Database', 'Filename', 'Filename')}
+          {renderSelect('Database', 'Type', 'Type', ['Sqlite', 'Postgresql', 'SqlServer', 'Mysql'], 'Database engine type to use for persistent storage')}
+          {renderTextField('Database', 'Filename', 'Filename', 'text', 'File path for the SQLite database file')}
           <div className="form-row">
-            {renderTextField('Database', 'Hostname', 'Hostname')}
-            {renderTextField('Database', 'Port', 'Port', 'number')}
+            {renderTextField('Database', 'Hostname', 'Hostname', 'text', 'Hostname or IP address of the database server')}
+            {renderTextField('Database', 'Port', 'Port', 'number', 'TCP port number for the database server')}
           </div>
-          {renderTextField('Database', 'DatabaseName', 'Database Name')}
+          {renderTextField('Database', 'DatabaseName', 'Database Name', 'text', 'Name of the database to connect to')}
           <div className="form-row">
-            {renderTextField('Database', 'Username', 'Username')}
-            {renderTextField('Database', 'Password', 'Password')}
+            {renderTextField('Database', 'Username', 'Username', 'text', 'Username for database authentication')}
+            {renderTextField('Database', 'Password', 'Password', 'text', 'Password for database authentication')}
           </div>
-          {renderTextField('Database', 'Schema', 'Schema')}
-          {renderToggle('Database', 'RequireEncryption', 'Require Encryption')}
-          {renderToggle('Database', 'LogQueries', 'Log Queries')}
+          {renderTextField('Database', 'Schema', 'Schema', 'text', 'Database schema to use for tables')}
+          {renderToggle('Database', 'RequireEncryption', 'Require Encryption', 'Require encrypted connections to the database server')}
+          {renderToggle('Database', 'LogQueries', 'Log Queries', 'Log all SQL queries for debugging purposes')}
         </>)}
 
         {renderSection('S3 Storage', 'S3', <>
           <div className="form-row">
-            {renderTextField('S3', 'Region', 'Region')}
-            {renderTextField('S3', 'BucketName', 'Bucket Name')}
+            {renderTextField('S3', 'Region', 'Region', 'text', 'AWS region or S3-compatible region identifier')}
+            {renderTextField('S3', 'BucketName', 'Bucket Name', 'text', 'Default S3 bucket name for document storage')}
           </div>
           <div className="form-row">
-            {renderTextField('S3', 'AccessKey', 'Access Key')}
-            {renderTextField('S3', 'SecretKey', 'Secret Key')}
+            {renderTextField('S3', 'AccessKey', 'Access Key', 'text', 'Access key ID for S3 authentication')}
+            {renderTextField('S3', 'SecretKey', 'Secret Key', 'text', 'Secret access key for S3 authentication')}
           </div>
-          {renderTextField('S3', 'EndpointUrl', 'Endpoint URL')}
-          {renderToggle('S3', 'UseSsl', 'Use SSL')}
-          {renderTextField('S3', 'BaseUrl', 'Base URL')}
+          {renderTextField('S3', 'EndpointUrl', 'Endpoint URL', 'text', 'Custom S3-compatible endpoint URL (e.g. MinIO)')}
+          {renderToggle('S3', 'UseSsl', 'Use SSL', 'Use HTTPS for S3 connections')}
+          {renderTextField('S3', 'BaseUrl', 'Base URL', 'text', 'Public base URL for accessing stored objects')}
         </>)}
 
         {renderSection('DocumentAtom', 'DocumentAtom', <>
-          {renderTextField('DocumentAtom', 'Endpoint', 'Endpoint')}
-          {renderTextField('DocumentAtom', 'AccessKey', 'Access Key')}
+          {renderTextField('DocumentAtom', 'Endpoint', 'Endpoint', 'text', 'URL of the DocumentAtom service for document parsing')}
+          {renderTextField('DocumentAtom', 'AccessKey', 'Access Key', 'text', 'Authentication key for the DocumentAtom service')}
         </>)}
 
         {renderSection('Chunking', 'Chunking', <>
-          {renderTextField('Chunking', 'Endpoint', 'Endpoint')}
-          {renderTextField('Chunking', 'AccessKey', 'Access Key')}
-          {renderTextField('Chunking', 'EndpointId', 'Endpoint ID')}
+          {renderTextField('Chunking', 'Endpoint', 'Endpoint', 'text', 'URL of the chunking service endpoint')}
+          {renderTextField('Chunking', 'AccessKey', 'Access Key', 'text', 'Authentication key for the chunking service')}
+          {renderTextField('Chunking', 'EndpointId', 'Endpoint ID', 'text', 'Identifier for the specific chunking endpoint to use')}
         </>)}
 
         {renderSection('Inference', 'Inference', <>
-          {renderSelect('Inference', 'Provider', 'Provider', ['OpenAI', 'Ollama'])}
-          {renderTextField('Inference', 'Endpoint', 'Endpoint')}
-          {renderTextField('Inference', 'ApiKey', 'API Key')}
-          {renderTextField('Inference', 'DefaultModel', 'Default Model')}
+          {renderSelect('Inference', 'Provider', 'Provider', ['OpenAI', 'Ollama'], 'Default AI inference provider for the system')}
+          {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
+          {renderTextField('Inference', 'ApiKey', 'API Key', 'text', 'Default API key for inference authentication')}
+          {renderTextField('Inference', 'DefaultModel', 'Default Model', 'text', 'Default model name used for inference requests')}
         </>)}
 
         {renderSection('RecallDb', 'RecallDb', <>
-          {renderTextField('RecallDb', 'Endpoint', 'Endpoint')}
-          {renderTextField('RecallDb', 'TenantId', 'Tenant ID')}
-          {renderTextField('RecallDb', 'AccessKey', 'Access Key')}
+          {renderTextField('RecallDb', 'Endpoint', 'Endpoint', 'text', 'URL of the RecallDB vector database endpoint')}
+          {renderTextField('RecallDb', 'TenantId', 'Tenant ID', 'text', 'Tenant identifier for multi-tenant RecallDB deployments')}
+          {renderTextField('RecallDb', 'AccessKey', 'Access Key', 'text', 'Authentication key for RecallDB access')}
         </>)}
 
         {renderSection('Logging', 'Logging', <>
-          {renderToggle('Logging', 'ConsoleLogging', 'Console Logging')}
-          {renderToggle('Logging', 'EnableColors', 'Enable Colors')}
-          {renderToggle('Logging', 'FileLogging', 'File Logging')}
-          {renderTextField('Logging', 'LogDirectory', 'Log Directory')}
-          {renderTextField('Logging', 'LogFilename', 'Log Filename')}
-          {renderToggle('Logging', 'IncludeDateInFilename', 'Include Date in Filename')}
-          {renderTextField('Logging', 'MinimumSeverity', 'Minimum Severity (0-7)', 'number')}
+          {renderToggle('Logging', 'ConsoleLogging', 'Console Logging', 'Output log messages to the console')}
+          {renderToggle('Logging', 'EnableColors', 'Enable Colors', 'Use colored output for console log messages')}
+          {renderToggle('Logging', 'FileLogging', 'File Logging', 'Write log messages to a file on disk')}
+          {renderTextField('Logging', 'LogDirectory', 'Log Directory', 'text', 'Directory path where log files are stored')}
+          {renderTextField('Logging', 'LogFilename', 'Log Filename', 'text', 'Base filename for log files')}
+          {renderToggle('Logging', 'IncludeDateInFilename', 'Include Date in Filename', 'Append the current date to log filenames for daily rotation')}
+          {renderTextField('Logging', 'MinimumSeverity', 'Minimum Severity (0-7)', 'number', 'Minimum log level to record (0=Trace, 7=Fatal)')}
         </>)}
       </form>
     </Modal>

@@ -3481,6 +3481,11 @@
             Atomization configuration (placeholder).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Summarization">
+            <summary>
+            Summarization configuration.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.IngestionRule.Chunking">
             <summary>
             Chunking configuration.
@@ -3512,6 +3517,68 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>IngestionRule instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionSummarizationConfig">
+            <summary>
+            Summarization configuration for an ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.CompletionEndpointId">
+            <summary>
+            ID of a Partio completion endpoint used for summarization.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.Order">
+            <summary>
+            Traversal order for summarization: "TopDown" or "BottomUp".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.SummarizationPrompt">
+            <summary>
+            Custom prompt template for summarization. Null uses Partio default.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxSummaryTokens">
+            <summary>
+            Maximum number of tokens for each summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MinCellLength">
+            <summary>
+            Minimum cell content length (in characters) to trigger summarization.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxParallelTasks">
+            <summary>
+            Maximum number of parallel summarization tasks.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetriesPerSummary">
+            <summary>
+            Maximum retry attempts for an individual cell.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetries">
+            <summary>
+            Global failure limit across all cells (circuit breaker).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.TimeoutMs">
+            <summary>
+            Timeout in milliseconds for each summarization request.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionSummarizationConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionSummarizationConfig.Validate(AssistantHub.Core.Models.IngestionSummarizationConfig)">
+            <summary>
+            Validate the summarization configuration.
+            </summary>
+            <param name="config">Configuration to validate.</param>
+            <returns>List of validation error messages (empty if valid).</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.PullProgress">
             <summary>
@@ -4027,13 +4094,18 @@
             <param name="token">Cancellation token.</param>
             <returns>List of chunks with their embeddings.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.FlattenChunks(AssistantHub.Core.Services.IngestionService.SemanticCellResponse)">
+            <summary>
+            Recursively flatten all chunks from a SemanticCellResponse hierarchy.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Check that a RecallDB collection exists via HEAD.
             Collections must be created via the dashboard/RecallDB before ingestion.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding,System.Int32,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkResult,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
@@ -4076,29 +4148,14 @@
             Text content of the atom.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkingResponse">
+        <member name="T:AssistantHub.Core.Services.IngestionService.SemanticCellResponse">
             <summary>
-            Chunking response from the Partio service.
+            Semantic cell response from the Partio v0.2.0 service.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkingResponse.Chunks">
+        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkResult">
             <summary>
-            List of chunks with embeddings.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding">
-            <summary>
-            A single chunk with its embedding vector.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Text">
-            <summary>
-            Text content of the chunk.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Embeddings">
-            <summary>
-            Embedding vector for the chunk.
+            A single chunk result from Partio v0.2.0.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse">
@@ -4207,27 +4264,12 @@
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
             <summary>
-            Process response from the Partio service.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessResponse.Chunks">
-            <summary>
-            Chunks with embeddings.
+            Process response from the Partio v0.2.0 service.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessChunk">
             <summary>
             A single chunk from the Partio process response.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Text">
-            <summary>
-            Chunk text content.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Embeddings">
-            <summary>
-            Embedding vector.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResponse">

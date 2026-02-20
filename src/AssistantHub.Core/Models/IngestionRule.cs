@@ -75,6 +75,11 @@ namespace AssistantHub.Core.Models
         public Dictionary<string, object> Atomization { get; set; } = null;
 
         /// <summary>
+        /// Summarization configuration.
+        /// </summary>
+        public IngestionSummarizationConfig Summarization { get; set; } = null;
+
+        /// <summary>
         /// Chunking configuration.
         /// </summary>
         public IngestionChunkingConfig Chunking { get; set; } = null;
@@ -153,6 +158,13 @@ namespace AssistantHub.Core.Models
             if (!String.IsNullOrEmpty(atomizationJson))
             {
                 try { obj.Atomization = JsonSerializer.Deserialize<Dictionary<string, object>>(atomizationJson, _JsonOptions); }
+                catch { }
+            }
+
+            string summarizationJson = DataTableHelper.GetStringValue(row, "summarization_json");
+            if (!String.IsNullOrEmpty(summarizationJson))
+            {
+                try { obj.Summarization = JsonSerializer.Deserialize<IngestionSummarizationConfig>(summarizationJson, _JsonOptions); }
                 catch { }
             }
 

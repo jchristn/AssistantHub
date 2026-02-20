@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function UserFormModal({ user, onSave, onClose }) {
   const isEdit = !!user;
@@ -41,20 +42,20 @@ function UserFormModal({ user, onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Email</label>
+          <label><Tooltip text="Email address used for login and notifications">Email</Tooltip></label>
           <input type="email" value={form.Email} onChange={(e) => handleChange('Email', e.target.value)} required />
         </div>
         <div className="form-group">
-          <label>Password {isEdit && '(leave blank to keep current)'}</label>
+          <label><Tooltip text="Password for user authentication">Password</Tooltip> {isEdit && '(leave blank to keep current)'}</label>
           <input type="password" value={form.Password} onChange={(e) => handleChange('Password', e.target.value)} {...(!isEdit ? { required: true } : {})} />
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label>First Name</label>
+            <label><Tooltip text="User's given name">First Name</Tooltip></label>
             <input type="text" value={form.FirstName} onChange={(e) => handleChange('FirstName', e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Last Name</label>
+            <label><Tooltip text="User's family name">Last Name</Tooltip></label>
             <input type="text" value={form.LastName} onChange={(e) => handleChange('LastName', e.target.value)} />
           </div>
         </div>
@@ -64,7 +65,7 @@ function UserFormModal({ user, onSave, onClose }) {
               <input type="checkbox" checked={form.IsAdmin} onChange={(e) => handleChange('IsAdmin', e.target.checked)} />
               <span className="toggle-slider"></span>
             </label>
-            <span>Administrator</span>
+            <span><Tooltip text="Grant this user full administrative privileges">Administrator</Tooltip></span>
           </div>
         </div>
         {isEdit && (
@@ -74,7 +75,7 @@ function UserFormModal({ user, onSave, onClose }) {
                 <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
                 <span className="toggle-slider"></span>
               </label>
-              <span>Active</span>
+              <span><Tooltip text="Whether this user account is currently active and can log in">Active</Tooltip></span>
             </div>
           </div>
         )}

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function DocumentUploadModal({ ingestionRules, onUpload, onClose }) {
   const rules = ingestionRules || [];
@@ -89,7 +90,7 @@ function DocumentUploadModal({ ingestionRules, onUpload, onClose }) {
       </>
     }>
       <div className="form-group">
-        <label>Ingestion Rule</label>
+        <label><Tooltip text="Ingestion rule that defines how this document will be processed, chunked, and embedded">Ingestion Rule</Tooltip></label>
         <select value={ruleId} onChange={(e) => setRuleId(e.target.value)} required>
           <option value="">Select an ingestion rule...</option>
           {rules.map(r => (
@@ -98,11 +99,11 @@ function DocumentUploadModal({ ingestionRules, onUpload, onClose }) {
         </select>
       </div>
       <div className="form-group">
-        <label>Document Name</label>
+        <label><Tooltip text="Display name for the uploaded document. Defaults to the filename if not specified">Document Name</Tooltip></label>
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter document name" />
       </div>
       <div className="form-group">
-        <label>File</label>
+        <label><Tooltip text="Document file to upload for ingestion">File</Tooltip></label>
         <input ref={fileRef} type="file" onChange={handleFileChange} />
       </div>
       {file && (
@@ -113,7 +114,7 @@ function DocumentUploadModal({ ingestionRules, onUpload, onClose }) {
         </div>
       )}
       <div className="form-group">
-        <label>Labels</label>
+        <label><Tooltip text="Optional labels for categorizing and filtering this document">Labels</Tooltip></label>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input type="text" value={labelInput} onChange={(e) => setLabelInput(e.target.value)}
             placeholder="Add a label" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLabel(); } }} style={{ flex: 1 }} />
@@ -131,7 +132,7 @@ function DocumentUploadModal({ ingestionRules, onUpload, onClose }) {
         )}
       </div>
       <div className="form-group">
-        <label>Tags</label>
+        <label><Tooltip text="Optional key-value metadata tags for this document">Tags</Tooltip></label>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input type="text" value={tagKey} onChange={(e) => setTagKey(e.target.value)} placeholder="Key" style={{ flex: 1 }}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }} />

@@ -10,7 +10,9 @@ AssistantHub is a self-hosted RAG (Retrieval-Augmented Generation) data and chat
 
 - **Assistants** -- Create and manage multiple AI assistants, each with their own configuration, personality, and knowledge base.
 - **Documents** -- Upload documents (PDF, text, HTML, and more) to build a knowledge base for each assistant. Documents are automatically chunked, embedded, and indexed.
-- **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
+- **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
+- **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
+- **Endpoint Management** -- Manage embedding and completion (inference) endpoints on the Partio service directly from the dashboard or API.
 - **Embeddings** -- Leverages pgvector and RecallDb for vector storage and similarity search, enabling accurate context retrieval from your document corpus.
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (OpenAI, Ollama).
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
@@ -178,6 +180,8 @@ For complete endpoint documentation including request/response schemas and examp
 | Collections (admin)   | `PUT/GET /v1.0/collections`, `GET/PUT/DELETE/HEAD /v1.0/collections/{id}` |
 | Collection Records    | `GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` |
 | Ingestion Rules       | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` |
+| Embedding Endpoints   | `PUT/GET /v1.0/endpoints/embedding`, `GET/PUT/DELETE/HEAD /v1.0/endpoints/embedding/{id}`, `GET .../health` |
+| Completion Endpoints  | `PUT/GET /v1.0/endpoints/completion`, `GET/PUT/DELETE/HEAD /v1.0/endpoints/completion/{id}`, `GET .../health` |
 | Assistants            | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` |
 | Assistant Settings    | `GET/PUT /v1.0/assistants/{id}/settings`                  |
 | Documents             | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}` |
@@ -233,9 +237,10 @@ For complete endpoint documentation including request/response schemas and examp
 2. The ingestion rule determines the target S3 bucket, RecallDB collection, and processing configuration.
 3. The document is stored in the rule's S3 bucket.
 4. DocumentAtom extracts text content from the document.
-5. Partio splits the text into chunks using the rule's chunking configuration, and computes embeddings.
-6. Chunks and embeddings are stored in the rule's RecallDB collection.
-7. Chunk record IDs are saved on the document for later cleanup on deletion.
+5. If summarization is configured, Partio summarizes document cells using the specified completion endpoint (before or after chunking, per the rule's `Order` setting).
+6. Partio splits the text into chunks using the rule's chunking configuration, and computes embeddings.
+7. Chunks and embeddings are stored in the rule's RecallDB collection.
+8. Chunk record IDs are saved on the document for later cleanup on deletion.
 
 **Data flow for chat:**
 1. User sends a message to the chat endpoint.

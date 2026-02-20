@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 const STRATEGY_OPTIONS = [
   'FixedTokenCount',
@@ -22,6 +23,25 @@ const OVERLAP_STRATEGY_OPTIONS = [
   'SemanticBoundaryAware'
 ];
 
+const DEFAULT_SUMMARIZATION_PROMPT =
+  'Summarize the following content in at most {tokens} tokens.\n\n' +
+  'Content:\n{content}\n\n' +
+  'Context:\n{context}';
+
+const defaultSummarization = {
+  CompletionEndpointId: '',
+  Order: 'BottomUp',
+  SummarizationPrompt: DEFAULT_SUMMARIZATION_PROMPT,
+  MaxSummaryTokens: 1024,
+  MinCellLength: 128,
+  MaxParallelTasks: 4,
+  MaxRetriesPerSummary: 3,
+  MaxRetries: 9,
+  TimeoutMs: 30000
+};
+
+const SUMMARIZATION_ORDER_OPTIONS = ['BottomUp', 'TopDown'];
+
 const defaultChunking = {
   Strategy: 'FixedTokenCount',
   FixedTokenCount: 256,
@@ -34,11 +54,12 @@ const defaultChunking = {
 };
 
 const defaultEmbedding = {
+  EmbeddingEndpointId: '',
   Model: '',
   L2Normalization: false
 };
 
-function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose }) {
+function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
   const isEdit = !!rule;
 
   const [form, setForm] = useState({
@@ -49,19 +70,29 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
     CollectionName: rule?.CollectionName || '',
     Labels: rule?.Labels ? [...rule.Labels] : [],
     Tags: rule?.Tags ? { ...rule.Tags } : {},
+    Summarization: rule?.Summarization ? { ...defaultSummarization, ...rule.Summarization } : { ...defaultSummarization },
     Chunking: rule?.Chunking ? { ...defaultChunking, ...rule.Chunking } : { ...defaultChunking },
     Embedding: rule?.Embedding ? { ...defaultEmbedding, ...rule.Embedding } : { ...defaultEmbedding }
   });
 
   const [saving, setSaving] = useState(false);
+  const [summarizationEnabled, setSummarizationEnabled] = useState(!!rule?.Summarization);
   const [labelInput, setLabelInput] = useState('');
   const [tagKeyInput, setTagKeyInput] = useState('');
   const [tagValueInput, setTagValueInput] = useState('');
+  const [summarizationOpen, setSummarizationOpen] = useState(false);
   const [chunkingOpen, setChunkingOpen] = useState(false);
   const [embeddingOpen, setEmbeddingOpen] = useState(false);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSummarizationChange = (field, value) => {
+    setForm(prev => ({
+      ...prev,
+      Summarization: { ...prev.Summarization, [field]: value }
+    }));
   };
 
   const handleChunkingChange = (field, value) => {
@@ -127,6 +158,17 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
         CollectionName: form.CollectionName,
         Labels: form.Labels,
         Tags: form.Tags,
+        Summarization: summarizationEnabled ? {
+          CompletionEndpointId: form.Summarization.CompletionEndpointId || undefined,
+          Order: form.Summarization.Order || 'BottomUp',
+          SummarizationPrompt: form.Summarization.SummarizationPrompt || undefined,
+          MaxSummaryTokens: parseInt(form.Summarization.MaxSummaryTokens) || 1024,
+          MinCellLength: parseInt(form.Summarization.MinCellLength) || 128,
+          MaxParallelTasks: parseInt(form.Summarization.MaxParallelTasks) || 4,
+          MaxRetriesPerSummary: parseInt(form.Summarization.MaxRetriesPerSummary) || 3,
+          MaxRetries: parseInt(form.Summarization.MaxRetries) || 9,
+          TimeoutMs: parseInt(form.Summarization.TimeoutMs) || 30000
+        } : null,
         Chunking: {
           Strategy: form.Chunking.Strategy,
           FixedTokenCount: parseInt(form.Chunking.FixedTokenCount) || 256,
@@ -138,6 +180,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
           RegexPattern: form.Chunking.RegexPattern || undefined
         },
         Embedding: {
+          EmbeddingEndpointId: form.Embedding.EmbeddingEndpointId || undefined,
           Model: form.Embedding.Model || undefined,
           L2Normalization: form.Embedding.L2Normalization
         }
@@ -190,7 +233,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
       <form onSubmit={handleSubmit}>
         {/* Name */}
         <div className="form-group">
-          <label>Name</label>
+          <label><Tooltip text="Display name for this ingestion rule">Name</Tooltip></label>
           <input
             type="text"
             value={form.Name}
@@ -201,7 +244,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
 
         {/* Description */}
         <div className="form-group">
-          <label>Description</label>
+          <label><Tooltip text="Optional description of what this ingestion rule does">Description</Tooltip></label>
           <textarea
             value={form.Description}
             onChange={(e) => handleChange('Description', e.target.value)}
@@ -211,7 +254,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
 
         {/* Bucket */}
         <div className="form-group">
-          <label>Bucket</label>
+          <label><Tooltip text="Source S3 storage bucket that this rule monitors for new documents">Bucket</Tooltip></label>
           <select
             value={form.Bucket}
             onChange={(e) => handleChange('Bucket', e.target.value)}
@@ -226,7 +269,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
 
         {/* Collection */}
         <div className="form-group">
-          <label>Collection</label>
+          <label><Tooltip text="Target vector collection where processed document chunks and embeddings are stored">Collection</Tooltip></label>
           <select
             value={form.CollectionId}
             onChange={(e) => {
@@ -249,7 +292,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
 
         {/* Labels */}
         <div className="form-group">
-          <label>Labels</label>
+          <label><Tooltip text="Labels applied to all documents ingested by this rule, useful for filtering and organization">Labels</Tooltip></label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
@@ -280,7 +323,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
 
         {/* Tags */}
         <div className="form-group">
-          <label>Tags</label>
+          <label><Tooltip text="Key-value metadata tags applied to all documents ingested by this rule">Tags</Tooltip></label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="text"
@@ -315,6 +358,133 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
           )}
         </div>
 
+        {/* Summarization (collapsible) */}
+        <div className="form-group">
+          <button
+            type="button"
+            style={collapsibleButtonStyle}
+            onClick={() => setSummarizationOpen(prev => !prev)}
+          >
+            {summarizationOpen ? '\u25BE' : '\u25B8'} Summarization
+          </button>
+          {summarizationOpen && (
+            <div style={{ marginTop: '0.5rem' }}>
+              <div className="form-group">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label style={{ margin: 0 }}><Tooltip text="Enable or disable summarization for documents processed by this rule">Enabled</Tooltip></label>
+                  <label className="toggle-switch" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={summarizationEnabled}
+                      onChange={(e) => setSummarizationEnabled(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              {summarizationEnabled && (
+              <>
+              <div className="form-group">
+                <label><Tooltip text="Inference endpoint used to generate summaries via completion API">Inference Endpoint</Tooltip></label>
+                <select
+                  value={form.Summarization.CompletionEndpointId}
+                  onChange={(e) => handleSummarizationChange('CompletionEndpointId', e.target.value)}
+                >
+                  <option value="">-- Select Inference Endpoint --</option>
+                  {(inferenceEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Summarization strategy: BottomUp processes from leaf nodes to root (child summaries inform parent), TopDown processes from root to leaves (parent context informs children)">Strategy</Tooltip></label>
+                <select
+                  value={form.Summarization.Order}
+                  onChange={(e) => handleSummarizationChange('Order', e.target.value)}
+                >
+                  {SUMMARIZATION_ORDER_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Prompt template sent to the inference endpoint. Supports placeholders: {tokens} (max summary token count), {content} (the text to summarize), {context} (surrounding context from parent or child cells)">Summarization Prompt</Tooltip></label>
+                <textarea
+                  value={form.Summarization.SummarizationPrompt}
+                  onChange={(e) => handleSummarizationChange('SummarizationPrompt', e.target.value)}
+                  rows={4}
+                  placeholder="Custom prompt template for summarization"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Maximum number of tokens the model should produce for each summary (minimum 128)">Max Summary Tokens</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.MaxSummaryTokens}
+                  onChange={(e) => handleSummarizationChange('MaxSummaryTokens', e.target.value)}
+                  min="128"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Minimum character length a cell must have before summarization is attempted. Cells shorter than this are skipped (minimum 0)">Min Cell Length</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.MinCellLength}
+                  onChange={(e) => handleSummarizationChange('MinCellLength', e.target.value)}
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Maximum number of summarization requests that can run concurrently (minimum 1)">Max Parallel Tasks</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.MaxParallelTasks}
+                  onChange={(e) => handleSummarizationChange('MaxParallelTasks', e.target.value)}
+                  min="1"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Maximum number of retry attempts for a single cell's summarization request before giving up on that cell">Max Retries Per Summary</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.MaxRetriesPerSummary}
+                  onChange={(e) => handleSummarizationChange('MaxRetriesPerSummary', e.target.value)}
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Global failure counter upper limit across all cells. When this many total failures are reached, the entire summarization job is aborted (circuit breaker)">Max Retries</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.MaxRetries}
+                  onChange={(e) => handleSummarizationChange('MaxRetries', e.target.value)}
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Timeout in milliseconds for each individual summarization request to the inference endpoint (minimum 100)">Timeout (ms)</Tooltip></label>
+                <input
+                  type="number"
+                  value={form.Summarization.TimeoutMs}
+                  onChange={(e) => handleSummarizationChange('TimeoutMs', e.target.value)}
+                  min="100"
+                  step="1000"
+                />
+              </div>
+              </>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Chunking (collapsible) */}
         <div className="form-group">
           <button
@@ -327,7 +497,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
           {chunkingOpen && (
             <div style={{ marginTop: '0.5rem' }}>
               <div className="form-group">
-                <label>Strategy</label>
+                <label><Tooltip text="Algorithm used to split document content into chunks for embedding">Strategy</Tooltip></label>
                 <select
                   value={form.Chunking.Strategy}
                   onChange={(e) => handleChunkingChange('Strategy', e.target.value)}
@@ -339,7 +509,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Fixed Token Count</label>
+                <label><Tooltip text="Number of tokens per chunk when using the FixedTokenCount strategy">Fixed Token Count</Tooltip></label>
                 <input
                   type="number"
                   value={form.Chunking.FixedTokenCount}
@@ -349,7 +519,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Overlap Count</label>
+                <label><Tooltip text="Number of tokens to overlap between consecutive chunks for context continuity">Overlap Count</Tooltip></label>
                 <input
                   type="number"
                   value={form.Chunking.OverlapCount}
@@ -359,7 +529,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Overlap Percentage</label>
+                <label><Tooltip text="Percentage of chunk size to overlap between consecutive chunks (0.0 to 1.0). Alternative to Overlap Count">Overlap Percentage</Tooltip></label>
                 <input
                   type="number"
                   value={form.Chunking.OverlapPercentage}
@@ -372,7 +542,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Overlap Strategy</label>
+                <label><Tooltip text="Strategy for determining overlap boundaries between chunks">Overlap Strategy</Tooltip></label>
                 <select
                   value={form.Chunking.OverlapStrategy}
                   onChange={(e) => handleChunkingChange('OverlapStrategy', e.target.value)}
@@ -384,7 +554,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Row Group Size</label>
+                <label><Tooltip text="Number of rows to group together when using RowGroupWithHeaders chunking strategy">Row Group Size</Tooltip></label>
                 <input
                   type="number"
                   value={form.Chunking.RowGroupSize}
@@ -394,7 +564,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Context Prefix</label>
+                <label><Tooltip text="Optional text prepended to each chunk to provide additional context">Context Prefix</Tooltip></label>
                 <input
                   type="text"
                   value={form.Chunking.ContextPrefix}
@@ -404,7 +574,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
               </div>
 
               <div className="form-group">
-                <label>Regex Pattern</label>
+                <label><Tooltip text="Regular expression pattern used to split content when using the RegexBased chunking strategy">Regex Pattern</Tooltip></label>
                 <input
                   type="text"
                   value={form.Chunking.RegexPattern}
@@ -428,7 +598,20 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
           {embeddingOpen && (
             <div style={{ marginTop: '0.5rem' }}>
               <div className="form-group">
-                <label>Model</label>
+                <label><Tooltip text="Embedding endpoint used to generate vector embeddings for document chunks">Embedding Endpoint</Tooltip></label>
+                <select
+                  value={form.Embedding.EmbeddingEndpointId}
+                  onChange={(e) => handleEmbeddingChange('EmbeddingEndpointId', e.target.value)}
+                >
+                  <option value="">-- Select Embedding Endpoint --</option>
+                  {(embeddingEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label><Tooltip text="Optional model name override for the embedding endpoint">Model</Tooltip></label>
                 <input
                   type="text"
                   value={form.Embedding.Model}
@@ -447,7 +630,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, onSave, onClose })
                     />
                     <span className="toggle-slider"></span>
                   </label>
-                  <span>L2 Normalization</span>
+                  <span><Tooltip text="Apply L2 normalization to embedding vectors, normalizing them to unit length for cosine similarity comparisons">L2 Normalization</Tooltip></span>
                 </div>
               </div>
             </div>

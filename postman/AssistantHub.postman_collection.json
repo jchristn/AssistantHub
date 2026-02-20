@@ -1,0 +1,1812 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "AssistantHub",
+		"description": "Comprehensive API collection for AssistantHub REST API.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{bearerToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8800",
+			"type": "string"
+		},
+		{
+			"key": "bearerToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "GET /",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": ["{{baseUrl}}"],
+							"path": [""]
+						}
+					}
+				},
+				{
+					"name": "HEAD /",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": ["{{baseUrl}}"],
+							"path": [""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "POST /v1.0/authenticate",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Email\": \"admin@example.com\",\n\t\"Password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/authenticate",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "authenticate"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"password123\",\n\t\"Active\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users"]
+						}
+					}
+				},
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "user-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"newpassword123\",\n\t\"Active\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "user-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "user-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check User Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "user-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Credentials",
+			"item": [
+				{
+					"name": "Create Credential",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My API Key\",\n\t\"Description\": \"API key for external service\",\n\t\"ApiKey\": \"sk-abc123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials"]
+						}
+					}
+				},
+				{
+					"name": "List Credentials",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials"]
+						}
+					}
+				},
+				{
+					"name": "Get Credential",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials", ":credentialId"],
+							"variable": [
+								{
+									"key": "credentialId",
+									"value": "credential-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Credential",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My API Key (Updated)\",\n\t\"Description\": \"Updated API key\",\n\t\"ApiKey\": \"sk-xyz789\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials", ":credentialId"],
+							"variable": [
+								{
+									"key": "credentialId",
+									"value": "credential-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Credential",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials", ":credentialId"],
+							"variable": [
+								{
+									"key": "credentialId",
+									"value": "credential-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Credential Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "credentials", ":credentialId"],
+							"variable": [
+								{
+									"key": "credentialId",
+									"value": "credential-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Buckets",
+			"item": [
+				{
+					"name": "Create Bucket",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"my-bucket\",\n\t\"Description\": \"A storage bucket\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets"]
+						}
+					}
+				},
+				{
+					"name": "List Buckets",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets"]
+						}
+					}
+				},
+				{
+					"name": "Get Bucket",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Bucket",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Bucket Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Bucket Objects",
+			"item": [
+				{
+					"name": "List Objects",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Object Metadata",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/metadata",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects", "metadata"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Write Object",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Key\": \"path/to/object.txt\",\n\t\"ContentType\": \"text/plain\",\n\t\"Data\": \"Base64EncodedDataHere\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Object",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download Object",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects", "download"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Upload Object",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/upload",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "buckets", ":name", "objects", "upload"],
+							"variable": [
+								{
+									"key": "name",
+									"value": "my-bucket"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Collections",
+			"item": [
+				{
+					"name": "Create Collection",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"my-collection\",\n\t\"Description\": \"A vector collection\",\n\t\"EmbeddingEndpointId\": \"endpoint-guid-here\",\n\t\"MaxResults\": 10,\n\t\"MinScore\": 0.5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections"]
+						}
+					}
+				},
+				{
+					"name": "List Collections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections"]
+						}
+					}
+				},
+				{
+					"name": "Get Collection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Collection",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"my-collection-updated\",\n\t\"Description\": \"Updated vector collection\",\n\t\"EmbeddingEndpointId\": \"endpoint-guid-here\",\n\t\"MaxResults\": 20,\n\t\"MinScore\": 0.6\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Collection",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Collection Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Collection Records",
+			"item": [
+				{
+					"name": "Create Record",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Content\": \"This is a record to be stored in the collection.\",\n\t\"Metadata\": {\n\t\t\"source\": \"manual\",\n\t\t\"category\": \"example\"\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "records"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "List Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "records"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Record",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/:recordId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "records", ":recordId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								},
+								{
+									"key": "recordId",
+									"value": "record-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Record",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/:recordId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "records", ":recordId"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								},
+								{
+									"key": "recordId",
+									"value": "record-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Embedding Endpoints",
+			"item": [
+				{
+					"name": "Create Embedding Endpoint",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Description\": \"Embedding endpoint for vector generation\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 16\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding"]
+						}
+					}
+				},
+				{
+					"name": "List Embedding Endpoints",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding"]
+						}
+					}
+				},
+				{
+					"name": "Get Embedding Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Embedding Endpoint",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Description\": \"Updated embedding endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 32\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Embedding Endpoint",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Embedding Endpoint Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Embedding Endpoint Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId", "health"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Completion Endpoints",
+			"item": [
+				{
+					"name": "Create Completion Endpoint",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Description\": \"Completion endpoint for chat\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 4096,\n\t\"Temperature\": 0.7\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion"]
+						}
+					}
+				},
+				{
+					"name": "List Completion Endpoints",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion"]
+						}
+					}
+				},
+				{
+					"name": "Get Completion Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Completion Endpoint",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Description\": \"Updated completion endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"Temperature\": 0.8\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Completion Endpoint",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Completion Endpoint Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Completion Endpoint Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId", "health"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Ingestion Rules",
+			"item": [
+				{
+					"name": "Create Ingestion Rule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Ingestion Rule\",\n\t\"Description\": \"Ingestion rule with summarization\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"PreChunking\",\n\t\t\"SummarizationPrompt\": \"Summarize the following text concisely.\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 1,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 3,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules"]
+						}
+					}
+				},
+				{
+					"name": "List Ingestion Rules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules"]
+						}
+					}
+				},
+				{
+					"name": "Get Ingestion Rule",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"variable": [
+								{
+									"key": "ruleId",
+									"value": "rule-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Ingestion Rule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Ingestion Rule (Updated)\",\n\t\"Description\": \"Updated ingestion rule\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"PreChunking\",\n\t\t\"SummarizationPrompt\": \"Provide a brief summary of the following content.\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 1,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 3,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"variable": [
+								{
+									"key": "ruleId",
+									"value": "rule-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Ingestion Rule",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"variable": [
+								{
+									"key": "ruleId",
+									"value": "rule-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Ingestion Rule Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"variable": [
+								{
+									"key": "ruleId",
+									"value": "rule-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Assistants",
+			"item": [
+				{
+					"name": "Create Assistant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Assistant\",\n\t\"Description\": \"A helpful AI assistant\",\n\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\"CollectionIds\": [\"collection-guid-here\"],\n\t\"SystemPrompt\": \"You are a helpful assistant.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants"]
+						}
+					}
+				},
+				{
+					"name": "List Assistants",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants"]
+						}
+					}
+				},
+				{
+					"name": "Get Assistant",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Assistant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Assistant (Updated)\",\n\t\"Description\": \"An updated helpful AI assistant\",\n\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\"CollectionIds\": [\"collection-guid-here\"],\n\t\"SystemPrompt\": \"You are an updated helpful assistant.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Assistant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Assistant Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Assistant Settings",
+			"item": [
+				{
+					"name": "Get Assistant Settings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "settings"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Assistant Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "settings"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Create Document",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"example-document.pdf\",\n\t\"Description\": \"An example document\",\n\t\"BucketName\": \"my-bucket\",\n\t\"ObjectKey\": \"path/to/document.pdf\",\n\t\"CollectionId\": \"collection-guid-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents"]
+						}
+					}
+				},
+				{
+					"name": "List Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents"]
+						}
+					}
+				},
+				{
+					"name": "Get Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", ":documentId"],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", ":documentId"],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Document Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", ":documentId"],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Document Processing Log",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/:documentId/processing-log",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", ":documentId", "processing-log"],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Feedback",
+			"item": [
+				{
+					"name": "List Feedback",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/feedback",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "feedback"]
+						}
+					}
+				},
+				{
+					"name": "Get Feedback",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/feedback/:feedbackId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "feedback", ":feedbackId"],
+							"variable": [
+								{
+									"key": "feedbackId",
+									"value": "feedback-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Feedback",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/feedback/:feedbackId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "feedback", ":feedbackId"],
+							"variable": [
+								{
+									"key": "feedbackId",
+									"value": "feedback-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "History",
+			"item": [
+				{
+					"name": "List History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/history",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "history"]
+						}
+					}
+				},
+				{
+					"name": "Get History Entry",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/history/:historyId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "history", ":historyId"],
+							"variable": [
+								{
+									"key": "historyId",
+									"value": "history-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete History Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/history/:historyId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "history", ":historyId"],
+							"variable": [
+								{
+									"key": "historyId",
+									"value": "history-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Threads",
+			"item": [
+				{
+					"name": "List Threads",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/threads",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "threads"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Models",
+			"item": [
+				{
+					"name": "List Models",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/models",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "models"]
+						}
+					}
+				},
+				{
+					"name": "Pull Model",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"ModelName\": \"llama3\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/models/pull",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "models", "pull"]
+						}
+					}
+				},
+				{
+					"name": "Get Pull Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/models/pull/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "models", "pull", "status"]
+						}
+					}
+				},
+				{
+					"name": "Delete Model",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/models/:modelName",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "models", ":modelName"],
+							"variable": [
+								{
+									"key": "modelName",
+									"value": "llama3"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Get Configuration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/configuration",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "configuration"]
+						}
+					}
+				},
+				{
+					"name": "Update Configuration",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Key\": \"setting-name\",\n\t\"Value\": \"setting-value\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/configuration",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "configuration"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Public",
+			"item": [
+				{
+					"name": "Get Public Assistant",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/public",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "public"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Thread",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/threads",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "threads"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Chat",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Message\": \"Hello, can you help me?\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "chat"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Submit Feedback",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Rating\": 5,\n\t\"Comment\": \"Very helpful response!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/feedback",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "feedback"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Compact Thread",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/compact",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "compact"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

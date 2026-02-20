@@ -111,6 +111,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  labels_json TEXT, " +
             "  tags_json TEXT, " +
             "  atomization_json TEXT, " +
+            "  summarization_json TEXT, " +
             "  chunking_json TEXT, " +
             "  embedding_json TEXT, " +
             "  created_utc TEXT NOT NULL, " +

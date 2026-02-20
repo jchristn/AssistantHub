@@ -195,13 +195,31 @@ namespace AssistantHub.Core.Services
                 _Logging.Debug(_Header + "extracted " + extractedContent.Length + " characters from document " + documentId);
 
                 // Step 8: Update status to ProcessingChunks
-                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.ProcessingChunks, "Chunking and embedding content.", token).ConfigureAwait(false);
+                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.ProcessingChunks, "Processing content.", token).ConfigureAwait(false);
 
                 // Step 9: Merge labels and tags from rule + document
                 List<string> mergedLabels = MergeLabels(rule, document);
                 Dictionary<string, string> mergedTags = MergeTags(rule, document);
 
-                // Step 10: Call Partio chunking service with rule config
+                // Step 10: Call Partio processing service with rule config
+                bool hasSummarization = rule?.Summarization != null;
+
+                if (hasSummarization)
+                {
+                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Summarizing, "Summarizing document content.", token).ConfigureAwait(false);
+
+                    if (_ProcessingLog != null)
+                    {
+                        string sumParams = "order: " + rule.Summarization.Order.ToString()
+                            + ", completionEndpoint: " + rule.Summarization.CompletionEndpointId
+                            + ", maxTokens: " + rule.Summarization.MaxSummaryTokens
+                            + ", minCellLength: " + rule.Summarization.MinCellLength
+                            + ", maxParallelTasks: " + rule.Summarization.MaxParallelTasks
+                            + ", timeoutMs: " + rule.Summarization.TimeoutMs;
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization enabled — " + sumParams).ConfigureAwait(false);
+                    }
+                }
+
                 if (_ProcessingLog != null)
                 {
                     string chunkParams = "strategy: " + (rule?.Chunking?.Strategy ?? "default");
@@ -212,20 +230,31 @@ namespace AssistantHub.Core.Services
                         if (!String.IsNullOrEmpty(rule.Chunking.OverlapStrategy))
                             chunkParams += ", overlapStrategy: " + rule.Chunking.OverlapStrategy;
                     }
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Chunking started — " + chunkParams).ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Processing started — " + chunkParams).ConfigureAwait(false);
                 }
 
+                Stopwatch summarizeSw = hasSummarization && _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Summarization").ConfigureAwait(false) : null;
                 Stopwatch chunkSw = Stopwatch.StartNew();
 
-                List<ChunkWithEmbedding> chunks = await ChunkAndEmbedContentAsync(documentId, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
+                List<ChunkResult> chunks = await ChunkAndEmbedContentAsync(documentId, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
                 if (chunks == null || chunks.Count == 0)
                 {
                     chunkSw.Stop();
-                    if (_ProcessingLog != null)
+                    if (hasSummarization && _ProcessingLog != null)
+                    {
+                        summarizeSw?.Stop();
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Summarization and chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms — no chunks returned").ConfigureAwait(false);
+                    }
+                    else if (_ProcessingLog != null)
+                    {
                         await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms — no chunks returned").ConfigureAwait(false);
+                    }
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Failed to chunk document content.", token).ConfigureAwait(false);
                     return;
                 }
+
+                if (hasSummarization && _ProcessingLog != null)
+                    await _ProcessingLog.LogStepCompleteAsync(documentId, "Summarization", "summarization complete, " + chunks.Count + " chunks generated", summarizeSw).ConfigureAwait(false);
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Chunking", chunks.Count + " chunks generated", chunkSw).ConfigureAwait(false);
@@ -269,7 +298,7 @@ namespace AssistantHub.Core.Services
 
                 for (int i = 0; i < chunks.Count; i++)
                 {
-                    ChunkWithEmbedding chunk = chunks[i];
+                    ChunkResult chunk = chunks[i];
                     string recordId = await StoreEmbeddingAsync(collectionId, documentId, chunk, i, token).ConfigureAwait(false);
                     if (!String.IsNullOrEmpty(recordId))
                     {
@@ -523,7 +552,7 @@ namespace AssistantHub.Core.Services
         /// <param name="tags">Merged tags.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>List of chunks with their embeddings.</returns>
-        private async Task<List<ChunkWithEmbedding>> ChunkAndEmbedContentAsync(
+        private async Task<List<ChunkResult>> ChunkAndEmbedContentAsync(
             string documentId,
             string content,
             IngestionRule rule,
@@ -531,7 +560,7 @@ namespace AssistantHub.Core.Services
             Dictionary<string, string> tags,
             CancellationToken token)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/process";
+            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -539,6 +568,36 @@ namespace AssistantHub.Core.Services
                 Dictionary<string, object> requestBody = new Dictionary<string, object>();
                 requestBody["Type"] = "Text";
                 requestBody["Text"] = content;
+
+                // EmbeddingConfiguration with endpoint ID
+                Dictionary<string, object> embedConfig = new Dictionary<string, object>();
+                embedConfig["EmbeddingEndpointId"] = _ChunkingSettings.EndpointId;
+
+                if (rule?.Embedding != null)
+                {
+                    if (!String.IsNullOrEmpty(rule.Embedding.Model))
+                        embedConfig["Model"] = rule.Embedding.Model;
+                    embedConfig["L2Normalization"] = rule.Embedding.L2Normalization;
+                }
+
+                requestBody["EmbeddingConfiguration"] = embedConfig;
+
+                // SummarizationConfiguration (optional)
+                if (rule?.Summarization != null)
+                {
+                    Dictionary<string, object> sumConfig = new Dictionary<string, object>();
+                    sumConfig["CompletionEndpointId"] = rule.Summarization.CompletionEndpointId;
+                    sumConfig["Order"] = rule.Summarization.Order.ToString();
+                    sumConfig["MaxSummaryTokens"] = rule.Summarization.MaxSummaryTokens;
+                    sumConfig["MinCellLength"] = rule.Summarization.MinCellLength;
+                    sumConfig["MaxParallelTasks"] = rule.Summarization.MaxParallelTasks;
+                    sumConfig["MaxRetriesPerSummary"] = rule.Summarization.MaxRetriesPerSummary;
+                    sumConfig["MaxRetries"] = rule.Summarization.MaxRetries;
+                    sumConfig["TimeoutMs"] = rule.Summarization.TimeoutMs;
+                    if (!String.IsNullOrEmpty(rule.Summarization.SummarizationPrompt))
+                        sumConfig["SummarizationPrompt"] = rule.Summarization.SummarizationPrompt;
+                    requestBody["SummarizationConfiguration"] = sumConfig;
+                }
 
                 if (rule?.Chunking != null)
                 {
@@ -556,15 +615,6 @@ namespace AssistantHub.Core.Services
                     if (!String.IsNullOrEmpty(rule.Chunking.RegexPattern))
                         chunkConfig["RegexPattern"] = rule.Chunking.RegexPattern;
                     requestBody["ChunkingConfiguration"] = chunkConfig;
-                }
-
-                if (rule?.Embedding != null)
-                {
-                    Dictionary<string, object> embedConfig = new Dictionary<string, object>();
-                    if (!String.IsNullOrEmpty(rule.Embedding.Model))
-                        embedConfig["Model"] = rule.Embedding.Model;
-                    embedConfig["L2Normalization"] = rule.Embedding.L2Normalization;
-                    requestBody["EmbeddingConfiguration"] = embedConfig;
                 }
 
                 if (labels != null && labels.Count > 0)
@@ -588,15 +638,32 @@ namespace AssistantHub.Core.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "chunking service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
+                    _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
                     if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking API returned HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody).ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Processing API returned HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody).ConfigureAwait(false);
                     return null;
                 }
 
-                ChunkingResponse chunkResult = JsonSerializer.Deserialize<ChunkingResponse>(responseBody, _JsonOptions);
-                return chunkResult?.Chunks;
+                SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
+                if (cellResult == null) return null;
+                return FlattenChunks(cellResult);
             }
+        }
+
+        /// <summary>
+        /// Recursively flatten all chunks from a SemanticCellResponse hierarchy.
+        /// </summary>
+        private List<ChunkResult> FlattenChunks(SemanticCellResponse cell)
+        {
+            List<ChunkResult> all = new List<ChunkResult>();
+            if (cell.Chunks != null)
+                all.AddRange(cell.Chunks);
+            if (cell.Children != null)
+            {
+                foreach (SemanticCellResponse child in cell.Children)
+                    all.AddRange(FlattenChunks(child));
+            }
+            return all;
         }
 
         /// <summary>
@@ -638,7 +705,7 @@ namespace AssistantHub.Core.Services
         /// <param name="chunkIndex">Zero-based chunk position within the document.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Document key if stored successfully, null otherwise.</returns>
-        private async Task<string> StoreEmbeddingAsync(string collectionId, string documentId, ChunkWithEmbedding chunk, int chunkIndex, CancellationToken token)
+        private async Task<string> StoreEmbeddingAsync(string collectionId, string documentId, ChunkResult chunk, int chunkIndex, CancellationToken token)
         {
             string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/documents";
 
@@ -779,29 +846,27 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
-        /// Chunking response from the Partio service.
+        /// Semantic cell response from the Partio v0.2.0 service.
         /// </summary>
-        private class ChunkingResponse
+        private class SemanticCellResponse
         {
-            /// <summary>
-            /// List of chunks with embeddings.
-            /// </summary>
-            public List<ChunkWithEmbedding> Chunks { get; set; } = null;
+            public Guid GUID { get; set; }
+            public Guid? ParentGUID { get; set; }
+            public string Type { get; set; } = null;
+            public string Text { get; set; } = null;
+            public List<ChunkResult> Chunks { get; set; } = null;
+            public List<SemanticCellResponse> Children { get; set; } = null;
         }
 
         /// <summary>
-        /// A single chunk with its embedding vector.
+        /// A single chunk result from Partio v0.2.0.
         /// </summary>
-        private class ChunkWithEmbedding
+        private class ChunkResult
         {
-            /// <summary>
-            /// Text content of the chunk.
-            /// </summary>
+            public Guid CellGUID { get; set; }
             public string Text { get; set; } = null;
-
-            /// <summary>
-            /// Embedding vector for the chunk.
-            /// </summary>
+            public List<string> Labels { get; set; } = null;
+            public Dictionary<string, string> Tags { get; set; } = null;
             public List<float> Embeddings { get; set; } = null;
         }
 

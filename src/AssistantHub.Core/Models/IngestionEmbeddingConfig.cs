@@ -10,6 +10,11 @@ namespace AssistantHub.Core.Models
         #region Public-Members
 
         /// <summary>
+        /// ID of the embedding endpoint to use.
+        /// </summary>
+        public string EmbeddingEndpointId { get; set; } = null;
+
+        /// <summary>
         /// Embedding model name.
         /// </summary>
         public string Model { get; set; } = null;

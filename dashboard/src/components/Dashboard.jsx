@@ -16,6 +16,8 @@ import ModelsView from '../views/ModelsView';
 import ConfigurationView from '../views/ConfigurationView';
 import AssistantSettingsView from '../views/AssistantSettingsView';
 import IngestionRulesView from '../views/IngestionRulesView';
+import EmbeddingEndpointsView from '../views/EmbeddingEndpointsView';
+import InferenceEndpointsView from '../views/InferenceEndpointsView';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
@@ -37,6 +39,8 @@ function Dashboard() {
             {isAdmin && <Route path="/records" element={<RecordsView />} />}
             <Route path="/assistants" element={<AssistantsView />} />
             <Route path="/assistant-settings" element={<AssistantSettingsView />} />
+            {isAdmin && <Route path="/endpoints/embedding" element={<EmbeddingEndpointsView />} />}
+            {isAdmin && <Route path="/endpoints/inference" element={<InferenceEndpointsView />} />}
             {isAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
             <Route path="/documents" element={<DocumentsView />} />
             <Route path="/feedback" element={<FeedbackView />} />

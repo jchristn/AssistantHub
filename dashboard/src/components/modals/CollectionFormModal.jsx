@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function CollectionFormModal({ collection, onSave, onClose }) {
   const isEdit = !!collection;
@@ -38,15 +39,15 @@ function CollectionFormModal({ collection, onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Name</label>
+          <label><Tooltip text="Display name for the vector collection">Name</Tooltip></label>
           <input type="text" value={form.Name} onChange={(e) => handleChange('Name', e.target.value)} required />
         </div>
         <div className="form-group">
-          <label>Description</label>
+          <label><Tooltip text="Optional description of the collection's contents or purpose">Description</Tooltip></label>
           <input type="text" value={form.Description} onChange={(e) => handleChange('Description', e.target.value)} />
         </div>
         <div className="form-group">
-          <label>Dimensionality</label>
+          <label><Tooltip text="Number of dimensions for embedding vectors. Must match the output size of your embedding model. Cannot be changed after creation">Dimensionality</Tooltip></label>
           <input type="number" value={form.Dimensionality} onChange={(e) => handleChange('Dimensionality', parseInt(e.target.value) || 1)} min="1" disabled={isEdit} />
         </div>
         {isEdit && (
@@ -56,7 +57,7 @@ function CollectionFormModal({ collection, onSave, onClose }) {
                 <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
                 <span className="toggle-slider"></span>
               </label>
-              <span>Active</span>
+              <span><Tooltip text="Whether this collection is active and available for queries">Active</Tooltip></span>
             </div>
           </div>
         )}

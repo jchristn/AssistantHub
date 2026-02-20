@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 import CopyableId from '../CopyableId';
 
 function CredentialFormModal({ credential, onSave, onClose }) {
@@ -53,11 +54,11 @@ function CredentialFormModal({ credential, onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Name</label>
+          <label><Tooltip text="Descriptive name for this API credential">Name</Tooltip></label>
           <input type="text" value={form.Name} onChange={(e) => handleChange('Name', e.target.value)} />
         </div>
         <div className="form-group">
-          <label>User ID</label>
+          <label><Tooltip text="User account this credential is associated with">User ID</Tooltip></label>
           <input type="text" value={form.UserId} onChange={(e) => handleChange('UserId', e.target.value)} required disabled={isEdit} />
         </div>
         {isEdit && (
@@ -67,7 +68,7 @@ function CredentialFormModal({ credential, onSave, onClose }) {
                 <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
                 <span className="toggle-slider"></span>
               </label>
-              <span>Active</span>
+              <span><Tooltip text="Whether this credential can be used for API authentication">Active</Tooltip></span>
             </div>
           </div>
         )}

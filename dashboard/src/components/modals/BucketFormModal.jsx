@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function BucketFormModal({ onSave, onClose }) {
   const [form, setForm] = useState({ Name: '' });
@@ -26,7 +27,7 @@ function BucketFormModal({ onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Name</label>
+          <label><Tooltip text="Unique name for the S3 storage bucket. Lowercase letters, numbers, and hyphens only">Name</Tooltip></label>
           <input type="text" value={form.Name} onChange={(e) => setForm({ Name: e.target.value })} required />
           <small style={{ color: '#888', marginTop: '4px', display: 'block' }}>Lowercase letters, numbers, and hyphens only. No spaces.</small>
         </div>

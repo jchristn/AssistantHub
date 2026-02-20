@@ -1,6 +1,7 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -69,6 +70,18 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Name is required."))).ConfigureAwait(false);
                     return;
+                }
+
+                if (rule.Summarization != null)
+                {
+                    List<string> errors = IngestionSummarizationConfig.Validate(rule.Summarization);
+                    if (errors.Count > 0)
+                    {
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                        return;
+                    }
                 }
 
                 rule.Id = IdGenerator.NewIngestionRuleId();
@@ -201,6 +214,18 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
                     return;
+                }
+
+                if (updated.Summarization != null)
+                {
+                    List<string> errors = IngestionSummarizationConfig.Validate(updated.Summarization);
+                    if (errors.Count > 0)
+                    {
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                        return;
+                    }
                 }
 
                 updated.Id = ruleId;

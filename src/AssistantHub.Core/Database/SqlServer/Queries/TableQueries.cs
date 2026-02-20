@@ -124,6 +124,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 atomization_json NVARCHAR(MAX) NULL,
+                summarization_json NVARCHAR(MAX) NULL,
                 chunking_json NVARCHAR(MAX) NULL,
                 embedding_json NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,

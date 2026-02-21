@@ -15,11 +15,6 @@ namespace AssistantHub.Core.Models
         public string EmbeddingEndpointId { get; set; } = null;
 
         /// <summary>
-        /// Embedding model name.
-        /// </summary>
-        public string Model { get; set; } = null;
-
-        /// <summary>
         /// Whether to apply L2 normalization to embeddings.
         /// </summary>
         public bool L2Normalization { get; set; } = false;

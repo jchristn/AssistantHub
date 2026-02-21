@@ -54,7 +54,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Timeout in milliseconds for each summarization request.
         /// </summary>
-        public int TimeoutMs { get; set; } = 30000;
+        public int TimeoutMs { get; set; } = 300000;
 
         #endregion
 

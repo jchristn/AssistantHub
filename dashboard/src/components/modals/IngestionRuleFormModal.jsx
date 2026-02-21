@@ -55,7 +55,6 @@ const defaultChunking = {
 
 const defaultEmbedding = {
   EmbeddingEndpointId: '',
-  Model: '',
   L2Normalization: false
 };
 
@@ -181,7 +180,6 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
         },
         Embedding: {
           EmbeddingEndpointId: form.Embedding.EmbeddingEndpointId || undefined,
-          Model: form.Embedding.Model || undefined,
           L2Normalization: form.Embedding.L2Normalization
         }
       };
@@ -608,16 +606,6 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
                     <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label><Tooltip text="Optional model name override for the embedding endpoint">Model</Tooltip></label>
-                <input
-                  type="text"
-                  value={form.Embedding.Model}
-                  onChange={(e) => handleEmbeddingChange('Model', e.target.value)}
-                  placeholder="Optional"
-                />
               </div>
 
               <div className="form-group">

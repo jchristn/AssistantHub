@@ -668,6 +668,11 @@ body {
   max-width: 1400px;
 }
 
+.modal-container.wizard-upload {
+  max-width: 1080px;
+  max-height: 95vh;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

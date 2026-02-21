@@ -4,6 +4,18 @@ import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Modal from './Modal';
 
+const INGESTION_STATUS_PERCENT = {
+  uploading: 10, uploaded: 15, typedetecting: 25, typedetectionsuccess: 30,
+  processing: 40, processingchunks: 55, summarizing: 60,
+  storingembeddings: 80, completed: 100, indexed: 100, active: 100, failed: 100, error: 100,
+};
+
+function isIngestionFinalStatus(s) {
+  if (!s) return false;
+  const low = s.toLowerCase();
+  return low === 'completed' || low === 'indexed' || low === 'active' || low === 'failed' || low === 'error';
+}
+
 const STEP_DEFS = [
   { key: 'embedding',   title: 'Embedding Endpoint' },
   { key: 'inference',    title: 'Inference Endpoint' },
@@ -33,13 +45,64 @@ function SetupWizard({ onClose }) {
   const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
   const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
 
-  // For step 7 file upload
+  // For step 6 file upload and ingestion tracking
   const [file, setFile] = useState(null);
   const [ingestionRules, setIngestionRules] = useState([]);
+  const [uploadedDocId, setUploadedDocId] = useState(null);
+  const [ingestionStatus, setIngestionStatus] = useState(null);
+  const [ingestionPercent, setIngestionPercent] = useState(0);
+  const [ingestionLog, setIngestionLog] = useState(null);
+  const [ingestionDone, setIngestionDone] = useState(false);
+  const [ingestionError, setIngestionError] = useState(null);
+  const pollRef = useRef(null);
 
   const current = STEP_DEFS[step];
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback((docId) => {
+    stopPolling();
+    const poll = async () => {
+      try {
+        const [doc, logResult] = await Promise.all([
+          api.getDocument(docId),
+          api.getDocumentProcessingLog(docId),
+        ]);
+        if (doc) {
+          const status = doc.Status || '';
+          const pct = INGESTION_STATUS_PERCENT[status.toLowerCase()] ?? 10;
+          setIngestionStatus(status);
+          setIngestionPercent(pct);
+          if (isIngestionFinalStatus(status)) {
+            stopPolling();
+            setIngestionDone(true);
+            setSaving(false);
+            const low = status.toLowerCase();
+            if (low === 'failed' || low === 'error') {
+              setIngestionError(doc.StatusMessage || doc.ErrorMessage || 'Processing failed');
+            }
+          }
+        }
+        if (logResult?.Log) {
+          setIngestionLog(logResult.Log);
+        }
+      } catch { /* polling error, retry next tick */ }
+    };
+    poll();
+    pollRef.current = setInterval(poll, 3000);
+  }, [api, stopPolling]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => stopPolling();
+  }, [stopPolling]);
 
   const loadExisting = useCallback(async () => {
     setLoading(true);
@@ -112,8 +175,15 @@ function SetupWizard({ onClose }) {
     setForm({});
     setFile(null);
     setError('');
+    setUploadedDocId(null);
+    setIngestionStatus(null);
+    setIngestionPercent(0);
+    setIngestionLog(null);
+    setIngestionDone(false);
+    setIngestionError(null);
+    stopPolling();
     if (step <= 6) loadExisting();
-  }, [step, loadExisting]);
+  }, [step, loadExisting, stopPolling]);
 
   // Pre-populate settings form when entering step 5
   useEffect(() => {
@@ -122,6 +192,7 @@ function SetupWizard({ onClose }) {
         Model: 'gemma3:4b',
         Temperature: 0.7,
         SystemPrompt: 'You are a helpful assistant. Use the provided context to answer questions accurately.',
+        EnableRag: true,
         CollectionId: createdItems.collection || '',
         InferenceEndpointId: createdItems.inference || '',
         EmbeddingEndpointId: createdItems.embedding || '',
@@ -203,6 +274,7 @@ function SetupWizard({ onClose }) {
         Model: form.Model || 'gemma3:4b',
         Temperature: parseFloat(form.Temperature) || 0.7,
         SystemPrompt: form.SystemPrompt || '',
+        EnableRag: form.EnableRag ?? true,
         CollectionId: form.CollectionId || '',
         InferenceEndpointId: form.InferenceEndpointId || '',
         EmbeddingEndpointId: form.EmbeddingEndpointId || '',
@@ -219,6 +291,12 @@ function SetupWizard({ onClose }) {
     if (!file || !form.IngestionRuleId) return;
     setSaving(true);
     setError('');
+    setUploadedDocId(null);
+    setIngestionStatus(null);
+    setIngestionPercent(0);
+    setIngestionLog(null);
+    setIngestionDone(false);
+    setIngestionError(null);
     try {
       const reader = new FileReader();
       const base64Content = await new Promise((resolve, reject) => {
@@ -227,15 +305,23 @@ function SetupWizard({ onClose }) {
         reader.readAsDataURL(file);
       });
 
-      await api.uploadDocument({
+      const result = await api.uploadDocument({
         IngestionRuleId: form.IngestionRuleId,
         Name: file.name,
         OriginalFilename: file.name,
         ContentType: file.type || 'application/octet-stream',
         Base64Content: base64Content,
       });
-      setSaving(false);
-      setStep(step + 1);
+      const docId = result?.Id || result?.GUID || result?.id;
+      if (docId) {
+        setUploadedDocId(docId);
+        setIngestionStatus('Uploaded');
+        setIngestionPercent(15);
+        startPolling(docId);
+      } else {
+        setSaving(false);
+        setStep(step + 1);
+      }
     } catch (err) {
       setError(err.message);
       setSaving(false);
@@ -444,31 +530,86 @@ function SetupWizard({ onClose }) {
     </div>
   );
 
-  const renderUploadForm = () => (
-    <div className="wizard-step-form">
-      <div className="form-group">
-        <label>Ingestion Rule</label>
-        <select value={form.IngestionRuleId || ''} onChange={e => setField('IngestionRuleId', e.target.value)}>
-          <option value="">Select an ingestion rule...</option>
-          {ingestionRules.map(r => (
-            <option key={r.Id} value={r.Id}>{r.Name} ({r.Id.substring(0, 12)}...)</option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>File</label>
-        <input type="file" onChange={e => setFile(e.target.files[0] || null)} />
-      </div>
-      {file && (
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+  const renderUploadForm = () => {
+    // Show progress tracking after upload has started
+    if (uploadedDocId) {
+      const isError = ingestionError != null;
+      const isComplete = ingestionDone && !isError;
+      return (
+        <div className="wizard-step-form">
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+              <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{file?.name || 'Document'}</span>
+              <span style={{ fontSize: '0.8125rem', color: isError ? 'var(--danger-color)' : isComplete ? 'var(--success-color)' : 'var(--text-secondary)' }}>
+                {isError ? 'Failed' : isComplete ? 'Completed' : (ingestionStatus || 'Processing...')} — {ingestionPercent}%
+              </span>
+            </div>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{
+                width: `${ingestionPercent}%`,
+                height: '100%',
+                background: isError ? 'var(--danger-color)' : isComplete ? 'var(--success-color)' : 'var(--primary-color)',
+                borderRadius: '3px',
+                transition: 'width 0.5s ease',
+              }} />
+            </div>
+          </div>
+          {isError && (
+            <div style={{ color: 'var(--danger-color)', fontSize: '0.8125rem', marginBottom: '0.75rem', padding: '0.5rem', background: 'rgba(220,53,69,0.1)', borderRadius: 'var(--radius-sm)' }}>
+              {ingestionError}
+            </div>
+          )}
+          {ingestionLog && (
+            <div>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 500, marginBottom: '0.25rem', display: 'block' }}>Processing Log</label>
+              <pre style={{
+                background: 'var(--bg-secondary, #1a1a2e)',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                overflow: 'auto',
+                maxHeight: '250px',
+                fontSize: '0.75rem',
+                lineHeight: '1.4',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>{ingestionLog}</pre>
+            </div>
+          )}
+          {!ingestionDone && (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+              Please wait while the document is being processed...
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="wizard-step-form">
+        <div className="form-group">
+          <label>Ingestion Rule</label>
+          <select value={form.IngestionRuleId || ''} onChange={e => setField('IngestionRuleId', e.target.value)}>
+            <option value="">Select an ingestion rule...</option>
+            {ingestionRules.map(r => (
+              <option key={r.Id} value={r.Id}>{r.Name} ({r.Id.substring(0, 12)}...)</option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label>File</label>
+          <input type="file" onChange={e => setFile(e.target.files[0] || null)} />
+        </div>
+        {file && (
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+            Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+          </p>
+        )}
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+          You can skip this step and upload documents later from the Documents page.
         </p>
-      )}
-      <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-        You can skip this step and upload documents later from the Documents page.
-      </p>
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderLaunchStep = () => (
     <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -520,9 +661,19 @@ function SetupWizard({ onClose }) {
       primaryLabel = saving ? 'Saving...' : 'Save & Continue';
       primaryDisabled = saving;
     } else if (step === 6) {
-      primaryAction = handleUpload;
-      primaryLabel = saving ? 'Uploading...' : 'Upload & Continue';
-      primaryDisabled = saving || (!file || !form.IngestionRuleId);
+      if (ingestionDone) {
+        primaryAction = () => { stopPolling(); setStep(step + 1); };
+        primaryLabel = 'Continue';
+        primaryDisabled = false;
+      } else if (uploadedDocId) {
+        primaryAction = null;
+        primaryLabel = 'Processing...';
+        primaryDisabled = true;
+      } else {
+        primaryAction = handleUpload;
+        primaryLabel = saving ? 'Uploading...' : 'Upload & Ingest';
+        primaryDisabled = saving || (!file || !form.IngestionRuleId);
+      }
     }
 
     return (
@@ -530,9 +681,9 @@ function SetupWizard({ onClose }) {
         <button className="btn btn-ghost btn-sm" onClick={handleSkip}>Skip Wizard</button>
         <div style={{ flex: 1 }} />
         {canGoBack && (
-          <button className="btn btn-secondary" onClick={() => setStep(step - 1)} disabled={saving}>Previous</button>
+          <button className="btn btn-secondary" onClick={() => setStep(step - 1)} disabled={saving || (uploadedDocId && !ingestionDone)}>Previous</button>
         )}
-        {step === 6 && (
+        {step === 6 && !uploadedDocId && (
           <button className="btn btn-secondary" onClick={() => setStep(step + 1)}>Skip Step</button>
         )}
         <button className="btn btn-primary" onClick={primaryAction} disabled={primaryDisabled}>
@@ -552,6 +703,7 @@ function SetupWizard({ onClose }) {
       }
       onClose={handleSkip}
       wide
+      className={step === 6 ? 'wizard-upload' : undefined}
       footer={renderFooter()}
     >
       {error && (

@@ -827,7 +827,7 @@ Create a new ingestion rule.
     "RegexPattern": null
   },
   "Embedding": {
-    "Model": null,
+    "EmbeddingEndpointId": null,
     "L2Normalization": false
   }
 }
@@ -881,7 +881,7 @@ Create a new ingestion rule.
     "RegexPattern": null
   },
   "Embedding": {
-    "Model": null,
+    "EmbeddingEndpointId": null,
     "L2Normalization": false
   },
   "CreatedUtc": "2025-01-01T00:00:00Z",

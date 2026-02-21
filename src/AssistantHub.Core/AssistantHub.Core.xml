@@ -3436,11 +3436,6 @@
             ID of the embedding endpoint to use.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.Model">
-            <summary>
-            Embedding model name.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.L2Normalization">
             <summary>
             Whether to apply L2 normalization to embeddings.
@@ -4135,6 +4130,15 @@
             <param name="chunkIndex">Zero-based chunk position within the document.</param>
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resolve endpoint details (model, URL) from Partio for logging.
+            </summary>
+            <param name="endpointType">"completion" or "embedding".</param>
+            <param name="endpointId">Endpoint identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Human-readable endpoint info string, or null on failure.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
             <summary>

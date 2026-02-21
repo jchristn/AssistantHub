@@ -204,6 +204,26 @@ namespace AssistantHub.Core.Services
                 // Step 10: Call Partio processing service with rule config
                 bool hasSummarization = rule?.Summarization != null;
 
+                // Resolve and log endpoint details
+                if (_ProcessingLog != null)
+                {
+                    // Log Partio service URL
+                    string partioUrl = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Partio service URL: " + partioUrl).ConfigureAwait(false);
+
+                    // Resolve and log embedding endpoint
+                    string embEndpointId = rule?.Embedding?.EmbeddingEndpointId ?? _ChunkingSettings.EndpointId;
+                    string embEndpointInfo = await ResolveEndpointInfoAsync("embedding", embEndpointId, token).ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding endpoint: " + embEndpointId + (embEndpointInfo != null ? " — " + embEndpointInfo : "")).ConfigureAwait(false);
+
+                    // Resolve and log completion endpoint if summarization is enabled
+                    if (hasSummarization && !String.IsNullOrEmpty(rule.Summarization.CompletionEndpointId))
+                    {
+                        string compEndpointInfo = await ResolveEndpointInfoAsync("completion", rule.Summarization.CompletionEndpointId, token).ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Completion endpoint: " + rule.Summarization.CompletionEndpointId + (compEndpointInfo != null ? " — " + compEndpointInfo : "")).ConfigureAwait(false);
+                    }
+                }
+
                 if (hasSummarization)
                 {
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Summarizing, "Summarizing document content.", token).ConfigureAwait(false);
@@ -288,8 +308,7 @@ namespace AssistantHub.Core.Services
                 // Step 13: Store each chunk+embedding in RecallDB and capture record IDs
                 if (_ProcessingLog != null)
                 {
-                    string embedInfo = "model: " + (rule?.Embedding?.Model ?? "default");
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + embedInfo + ", " + chunks.Count + " chunks to store").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + chunks.Count + " chunks to store").ConfigureAwait(false);
                 }
 
                 Stopwatch storeSw = Stopwatch.StartNew();
@@ -305,6 +324,9 @@ namespace AssistantHub.Core.Services
                         storedCount++;
                         chunkRecordIds.Add(recordId);
                     }
+
+                    if (_ProcessingLog != null && (i + 1) % 10 == 0)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage progress: [" + (i + 1) + "/" + chunks.Count + "] chunks stored").ConfigureAwait(false);
                 }
 
                 if (_ProcessingLog != null)
@@ -491,13 +513,20 @@ namespace AssistantHub.Core.Services
                 if (atoms == null || atoms.Count == 0)
                     return null;
 
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Atoms extracted: " + atoms.Count + " atom(s)").ConfigureAwait(false);
+
                 StringBuilder sb = new StringBuilder();
+                int atomIndex = 0;
                 foreach (AtomResponse atom in atoms)
                 {
+                    atomIndex++;
                     if (!String.IsNullOrEmpty(atom.Text))
                     {
                         if (sb.Length > 0) sb.Append(Environment.NewLine);
                         sb.Append(atom.Text);
+                        if (_ProcessingLog != null)
+                            await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom [" + atomIndex + "/" + atoms.Count + "] — " + atom.Text.Length + " characters").ConfigureAwait(false);
                     }
                 }
 
@@ -575,8 +604,8 @@ namespace AssistantHub.Core.Services
 
                 if (rule?.Embedding != null)
                 {
-                    if (!String.IsNullOrEmpty(rule.Embedding.Model))
-                        embedConfig["Model"] = rule.Embedding.Model;
+                    if (!String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
+                        embedConfig["EmbeddingEndpointId"] = rule.Embedding.EmbeddingEndpointId;
                     embedConfig["L2Normalization"] = rule.Embedding.L2Normalization;
                 }
 
@@ -759,6 +788,60 @@ namespace AssistantHub.Core.Services
                 _Logging.Warn(_Header + "exception storing embedding: " + e.Message);
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogAsync(documentId, "ERROR", "RecallDB store exception for chunk " + chunkIndex + ": " + e.Message).ConfigureAwait(false);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Resolve endpoint details (model, URL) from Partio for logging.
+        /// </summary>
+        /// <param name="endpointType">"completion" or "embedding".</param>
+        /// <param name="endpointId">Endpoint identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Human-readable endpoint info string, or null on failure.</returns>
+        private async Task<string> ResolveEndpointInfoAsync(string endpointType, string endpointId, CancellationToken token)
+        {
+            if (String.IsNullOrEmpty(endpointId)) return null;
+
+            try
+            {
+                string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + endpointType + "/" + endpointId;
+
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
+
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                        return null;
+
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    using (JsonDocument doc = JsonDocument.Parse(responseBody))
+                    {
+                        JsonElement root = doc.RootElement;
+                        string model = null;
+                        string endpoint = null;
+                        string name = null;
+
+                        if (root.TryGetProperty("Model", out JsonElement modelEl))
+                            model = modelEl.GetString();
+                        if (root.TryGetProperty("Endpoint", out JsonElement endpointEl))
+                            endpoint = endpointEl.GetString();
+                        if (root.TryGetProperty("Name", out JsonElement nameEl))
+                            name = nameEl.GetString();
+
+                        List<string> parts = new List<string>();
+                        if (!String.IsNullOrEmpty(name)) parts.Add("name: " + name);
+                        if (!String.IsNullOrEmpty(model)) parts.Add("model: " + model);
+                        if (!String.IsNullOrEmpty(endpoint)) parts.Add("url: " + endpoint);
+                        return parts.Count > 0 ? String.Join(", ", parts) : null;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Debug(_Header + "could not resolve " + endpointType + " endpoint " + endpointId + ": " + e.Message);
                 return null;
             }
         }

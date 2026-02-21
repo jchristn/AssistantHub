@@ -297,8 +297,8 @@ embedConfig["EmbeddingEndpointId"] = _ChunkingSettings.EndpointId;
 
 if (rule?.Embedding != null)
 {
-    if (!String.IsNullOrEmpty(rule.Embedding.Model))
-        embedConfig["Model"] = rule.Embedding.Model;
+    if (!String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
+        embedConfig["EmbeddingEndpointId"] = rule.Embedding.EmbeddingEndpointId;
     embedConfig["L2Normalization"] = rule.Embedding.L2Normalization;
 }
 
@@ -1257,7 +1257,7 @@ There is no auto-migration mechanism. Breaking changes are acceptable. The facto
     "OverlapCount": 32
   },
   "Embedding": {
-    "Model": null,
+    "EmbeddingEndpointId": null,
     "L2Normalization": false
   }
 }

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import Tour from './Tour';
+import SetupWizard from './SetupWizard';
 import UsersView from '../views/UsersView';
 import CredentialsView from '../views/CredentialsView';
 import AssistantsView from '../views/AssistantsView';
@@ -22,10 +24,28 @@ import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
   const { isAdmin } = useAuth();
+  const [showTour, setShowTour] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('ah_tourCompleted')) {
+      setShowTour(true);
+    }
+  }, []);
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+    if (isAdmin && !localStorage.getItem('ah_wizardCompleted')) {
+      setShowWizard(true);
+    }
+  };
 
   return (
     <div className="dashboard">
-      <Sidebar />
+      <Sidebar
+        onStartTour={() => setShowTour(true)}
+        onStartWizard={() => setShowWizard(true)}
+      />
       <div className="main-content">
         <Topbar />
         <div className="content-area">
@@ -51,6 +71,8 @@ function Dashboard() {
           </Routes>
         </div>
       </div>
+      {showTour && <Tour onComplete={handleTourComplete} />}
+      {showWizard && <SetupWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }

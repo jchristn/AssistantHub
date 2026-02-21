@@ -2,20 +2,26 @@ import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 
-const API_FORMAT_OPTIONS = ['Ollama', 'OpenAI', 'Bedrock', 'Cohere'];
+const API_FORMAT_OPTIONS = ['Ollama', 'OpenAI'];
 const HEALTH_CHECK_METHOD_OPTIONS = ['GET', 'POST', 'HEAD'];
 
 const defaultHealthCheck = {
   HealthCheckEnabled: true,
   HealthCheckUrl: '',
   HealthCheckMethod: 'GET',
-  HealthCheckIntervalMs: 30000,
+  HealthCheckIntervalMs: 5000,
   HealthCheckTimeoutMs: 5000,
   HealthCheckExpectedStatusCode: 200,
-  HealthyThreshold: 3,
-  UnhealthyThreshold: 3,
+  HealthyThreshold: 2,
+  UnhealthyThreshold: 2,
   HealthCheckUseAuth: false
 };
+
+function getDefaultHealthCheckUrl(apiFormat) {
+  if (apiFormat === 'OpenAI') return '/v1/models';
+  if (apiFormat === 'Ollama') return '/api/tags';
+  return '';
+}
 
 function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
   const isEdit = !!endpoint;
@@ -24,11 +30,11 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
     Name: endpoint?.Name || '',
     Model: endpoint?.Model || '',
     Endpoint: endpoint?.Endpoint || '',
-    ApiFormat: endpoint?.ApiFormat || '',
+    ApiFormat: endpoint?.ApiFormat || 'Ollama',
     ApiKey: endpoint?.ApiKey || '',
     Active: endpoint?.Active !== undefined ? endpoint.Active : true,
     HealthCheckEnabled: endpoint?.HealthCheckEnabled !== undefined ? endpoint.HealthCheckEnabled : defaultHealthCheck.HealthCheckEnabled,
-    HealthCheckUrl: endpoint?.HealthCheckUrl || defaultHealthCheck.HealthCheckUrl,
+    HealthCheckUrl: endpoint?.HealthCheckUrl || getDefaultHealthCheckUrl(endpoint?.ApiFormat || 'Ollama'),
     HealthCheckMethod: endpoint?.HealthCheckMethod || defaultHealthCheck.HealthCheckMethod,
     HealthCheckIntervalMs: endpoint?.HealthCheckIntervalMs !== undefined ? endpoint.HealthCheckIntervalMs : defaultHealthCheck.HealthCheckIntervalMs,
     HealthCheckTimeoutMs: endpoint?.HealthCheckTimeoutMs !== undefined ? endpoint.HealthCheckTimeoutMs : defaultHealthCheck.HealthCheckTimeoutMs,
@@ -42,7 +48,16 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
   const [healthCheckOpen, setHealthCheckOpen] = useState(false);
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'ApiFormat') {
+        const oldDefault = getDefaultHealthCheckUrl(prev.ApiFormat);
+        if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefault) {
+          updated.HealthCheckUrl = getDefaultHealthCheckUrl(value);
+        }
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -137,7 +152,7 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
 
         {/* ApiFormat */}
         <div className="form-group">
-          <label><Tooltip text="API format used by the inference endpoint (Ollama, OpenAI, Bedrock, or Cohere)">Format</Tooltip></label>
+          <label><Tooltip text="API format used by the inference endpoint (Ollama or OpenAI)">Format</Tooltip></label>
           <select
             value={form.ApiFormat}
             onChange={(e) => handleChange('ApiFormat', e.target.value)}

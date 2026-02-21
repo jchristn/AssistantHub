@@ -1,6 +1,7 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
     using System.Text.Json;
@@ -55,7 +56,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = ctx.Request.DataAsString;
+                string body = InjectTenantId(ctx.Request.DataAsString);
                 string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding";
 
                 HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, partioUrl);
@@ -281,6 +282,27 @@ namespace AssistantHub.Server.Handlers
             }
         }
         #region Private-Methods
+
+        /// <summary>
+        /// Inject the default TenantId into a JSON request body if not already present.
+        /// Partio requires a TenantId to scope endpoints to the correct tenant.
+        /// </summary>
+        private string InjectTenantId(string body)
+        {
+            if (String.IsNullOrEmpty(body)) return "{\"TenantId\":\"default\"}";
+
+            using JsonDocument doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("TenantId", out JsonElement tid) &&
+                tid.ValueKind == JsonValueKind.String &&
+                !String.IsNullOrEmpty(tid.GetString()))
+            {
+                return body;
+            }
+
+            var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
+            dict["TenantId"] = JsonSerializer.Deserialize<JsonElement>("\"default\"");
+            return JsonSerializer.Serialize(dict);
+        }
 
         /// <summary>
         /// Convert Partio's envelope format { Data, TotalCount, HasMore } to

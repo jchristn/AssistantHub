@@ -408,6 +408,12 @@
             HEAD /v1.0/endpoints/completion/{endpointId} - Check completion endpoint existence.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.InjectTenantId(System.String)">
+            <summary>
+            Inject the default TenantId into a JSON request body if not already present.
+            Partio requires a TenantId to scope endpoints to the correct tenant.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
             <summary>
             Convert Partio's envelope format { Data, TotalCount, HasMore } to
@@ -586,6 +592,12 @@
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.HeadEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/endpoints/embedding/{endpointId} - Check embedding endpoint existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.InjectTenantId(System.String)">
+            <summary>
+            Inject the default TenantId into a JSON request body if not already present.
+            Partio requires a TenantId to scope endpoints to the correct tenant.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">

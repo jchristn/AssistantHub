@@ -847,6 +847,19 @@ Create a new ingestion rule.
 | `MaxRetries`             | int     | 3            | Total retries across the summarization pipeline.                 |
 | `TimeoutMs`              | int     | 300000       | Timeout in milliseconds for the summarization pipeline.          |
 
+**Chunking Configuration (optional):**
+
+| Field               | Type    | Default         | Description                                                                                                  |
+|---------------------|---------|-----------------|--------------------------------------------------------------------------------------------------------------|
+| `Strategy`          | string  | FixedTokenCount | Chunking strategy: `None`, `FixedTokenCount`, `SentenceBased`, `ParagraphBased`, `RegexBased`, `WholeList`, `ListEntry`, `Row`, `RowWithHeaders`, `RowGroupWithHeaders`, `KeyValuePairs`, `WholeTable`. When set to `None`, chunking is skipped and the entire document is treated as a single chunk. |
+| `FixedTokenCount`   | int     | 256             | Tokens per chunk (FixedTokenCount strategy). Minimum: 1.                                                     |
+| `OverlapCount`      | int     | 0               | Number of overlapping tokens between consecutive chunks.                                                     |
+| `OverlapPercentage` | double? | null            | Overlap as a fraction of chunk size (0.0–1.0). Alternative to OverlapCount.                                  |
+| `OverlapStrategy`   | string  | null            | Overlap boundary strategy: `SlidingWindow`, `SentenceBoundaryAware`, or `SemanticBoundaryAware`.             |
+| `RowGroupSize`      | int     | 5               | Rows per group for `RowGroupWithHeaders` strategy. Minimum: 1.                                               |
+| `ContextPrefix`     | string  | null            | Optional text prepended to each chunk for additional context.                                                |
+| `RegexPattern`      | string  | null            | Regex pattern for the `RegexBased` strategy.                                                                 |
+
 **Response (201 Created):**
 
 ```json
@@ -1301,11 +1314,18 @@ Retrieve settings for an assistant.
   "CollectionId": "collection-uuid",
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
-  "InferenceEndpointId": null,
-  "EmbeddingEndpointId": null,
+  "SearchMode": "Hybrid",
+  "TextWeight": 0.3,
+  "FullTextSearchType": "TsRank",
+  "FullTextLanguage": "english",
+  "FullTextNormalization": 32,
+  "FullTextMinimumScore": null,
+  "InferenceEndpointId": "ep_abc123...",
+  "EmbeddingEndpointId": "ep_def456...",
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
+  "Streaming": true,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -1313,24 +1333,30 @@ Retrieve settings for an assistant.
 
 **Field Descriptions:**
 
-| Field                      | Type   | Description                                                                 |
-|----------------------------|--------|-----------------------------------------------------------------------------|
-| `Temperature`              | double | Sampling temperature (0.0 to 2.0).                                          |
-| `TopP`                     | double | Top-p nucleus sampling (0.0 to 1.0).                                        |
-| `SystemPrompt`             | string | System prompt sent to the LLM.                                              |
-| `MaxTokens`                | int    | Maximum tokens to generate in a response.                                   |
-| `ContextWindow`            | int    | Context window size in tokens.                                              |
-| `Model`                    | string | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
-| `EnableRag`                | bool   | Enable RAG retrieval for chat. Default `false`.                             |
-| `CollectionId`             | string | RecallDb collection ID for document retrieval.                              |
-| `RetrievalTopK`            | int    | Number of top document chunks to retrieve.                                  |
-| `RetrievalScoreThreshold`  | double | Minimum similarity score threshold (0.0 to 1.0).                           |
-| `InferenceEndpointId`      | string | Managed completion endpoint ID for inference (overrides global setting).    |
-| `EmbeddingEndpointId`      | string | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
-| `Title`                    | string | Title displayed as the heading on the chat window. Null uses assistant name.|
-| `LogoUrl`                  | string | URL for the logo image in the chat window (max 192x192). Null uses default.|
-| `FaviconUrl`               | string | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
-| `Streaming`                | bool   | Enable SSE streaming for chat responses. Default `false`.                   |
+| Field                      | Type    | Description                                                                 |
+|----------------------------|---------|-----------------------------------------------------------------------------|
+| `Temperature`              | double  | Sampling temperature (0.0 to 2.0).                                          |
+| `TopP`                     | double  | Top-p nucleus sampling (0.0 to 1.0).                                        |
+| `SystemPrompt`             | string  | System prompt sent to the LLM.                                              |
+| `MaxTokens`                | int     | Maximum tokens to generate in a response.                                   |
+| `ContextWindow`            | int     | Context window size in tokens.                                              |
+| `Model`                    | string  | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
+| `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
+| `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
+| `RetrievalTopK`            | int     | Number of top document chunks to retrieve.                                  |
+| `RetrievalScoreThreshold`  | double  | Minimum similarity score threshold (0.0 to 1.0).                           |
+| `SearchMode`               | string  | Search mode for RAG retrieval: `Vector` (semantic similarity), `FullText` (keyword matching), or `Hybrid` (both combined). Default `Vector`. |
+| `TextWeight`               | double  | Weight of full-text score in hybrid mode (0.0 to 1.0). Formula: `Score = (1 - TextWeight) * vectorScore + TextWeight * textScore`. Default `0.3`. |
+| `FullTextSearchType`       | string  | Full-text ranking function: `TsRank` (term frequency) or `TsRankCd` (cover density, rewards term proximity). Default `TsRank`. |
+| `FullTextLanguage`         | string  | PostgreSQL text search language for stemming and stop words. Values: `english`, `simple`, `spanish`, `french`, `german`. Default `english`. |
+| `FullTextNormalization`    | int     | Score normalization bitmask. `32` = normalized 0-1 (recommended). `0` = raw scores. Default `32`. |
+| `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
+| `InferenceEndpointId`      | string  | Managed completion endpoint ID for inference (overrides global setting).    |
+| `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
+| `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
+| `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
+| `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
+| `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `false`.                   |
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -1356,6 +1382,12 @@ Create or update settings for an assistant. If settings already exist, they are 
   "CollectionId": "my-collection-id",
   "RetrievalTopK": 10,
   "RetrievalScoreThreshold": 0.6,
+  "SearchMode": "Hybrid",
+  "TextWeight": 0.3,
+  "FullTextSearchType": "TsRank",
+  "FullTextLanguage": "english",
+  "FullTextNormalization": 32,
+  "FullTextMinimumScore": null,
   "InferenceEndpointId": null,
   "EmbeddingEndpointId": null,
   "Title": "My Support Bot",

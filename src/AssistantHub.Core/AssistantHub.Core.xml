@@ -2224,6 +2224,14 @@
             <param name="defaultValue">Default value.</param>
             <returns>Double value.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetNullableDoubleValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a nullable double value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Nullable double value.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetDateTimeValue(System.Data.DataRow,System.String)">
             <summary>
             Get a DateTime value from a data row.
@@ -2683,6 +2691,40 @@
         <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalScoreThreshold">
             <summary>
             Minimum score threshold for retrieval results (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SearchMode">
+            <summary>
+            Search mode for retrieval: Vector, FullText, or Hybrid.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.TextWeight">
+            <summary>
+            Weight of full-text score in hybrid mode (0.0 to 1.0).
+            Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
+            Only applies when SearchMode is "Hybrid".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextSearchType">
+            <summary>
+            Full-text ranking function: "TsRank" (term frequency) or "TsRankCd" (cover density, rewards proximity).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextLanguage">
+            <summary>
+            PostgreSQL text search language configuration.
+            Controls stemming and stop words.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextNormalization">
+            <summary>
+            Full-text score normalization bitmask. 32 = normalized 0-1 (recommended for hybrid).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextMinimumScore">
+            <summary>
+            Minimum full-text score threshold. Documents with TextScore below this are excluded.
+            Null means no threshold.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpointId">
@@ -3383,22 +3425,29 @@
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.Strategy">
             <summary>
-            Chunking strategy (e.g. FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
+            Chunking strategy (e.g. None, FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
+            When set to "None", chunking is skipped and the entire document content is treated as a single chunk.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.FixedTokenCount">
             <summary>
             Fixed token count per chunk.
+            Default: 256. Minimum: 1.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapCount">
             <summary>
             Number of overlapping tokens between chunks.
+            Default: 0. Minimum: 0.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapPercentage">
             <summary>
-            Overlap percentage between chunks (0-1).
+            Overlap percentage between chunks.
+            Default: null. Minimum: 0.0. Maximum: 1.0.
+            Values outside the range are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapStrategy">
@@ -3409,6 +3458,8 @@
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.RowGroupSize">
             <summary>
             Number of rows per group for row-based chunking.
+            Default: 5. Minimum: 1.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.ContextPrefix">
@@ -3425,6 +3476,13 @@
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionChunkingConfig.Validate(AssistantHub.Core.Models.IngestionChunkingConfig)">
+            <summary>
+            Validate the chunking configuration.
+            </summary>
+            <param name="config">Configuration to validate.</param>
+            <returns>List of validation error messages (empty if valid).</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.IngestionEmbeddingConfig">
             <summary>
@@ -3556,31 +3614,43 @@
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxSummaryTokens">
             <summary>
             Maximum number of tokens for each summary.
+            Default: 1024. Minimum: 128.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MinCellLength">
             <summary>
             Minimum cell content length (in characters) to trigger summarization.
+            Default: 128. Minimum: 0.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxParallelTasks">
             <summary>
             Maximum number of parallel summarization tasks.
+            Default: 1. Minimum: 1.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetriesPerSummary">
             <summary>
             Maximum retry attempts for an individual cell.
+            Default: 3. Minimum: 0.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetries">
             <summary>
             Global failure limit across all cells (circuit breaker).
+            Default: 9. Minimum: 0.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.TimeoutMs">
             <summary>
             Timeout in milliseconds for each summarization request.
+            Default: 300000. Minimum: 100.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.IngestionSummarizationConfig.#ctor">
@@ -3665,9 +3735,49 @@
             Cosine similarity score (0.0 to 1.0).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.TextScore">
+            <summary>
+            Full-text relevance score component (null in vector-only mode).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.Content">
             <summary>
             Text content of the matching chunk.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RetrievalSearchOptions">
+            <summary>
+            Search options for retrieval queries supporting vector, full-text, and hybrid modes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.SearchMode">
+            <summary>
+            Search mode: Vector, FullText, or Hybrid.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.TextWeight">
+            <summary>
+            Weight of full-text score in hybrid mode (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextSearchType">
+            <summary>
+            Full-text ranking function: TsRank or TsRankCd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextLanguage">
+            <summary>
+            PostgreSQL text search language configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextNormalization">
+            <summary>
+            Full-text score normalization bitmask.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextMinimumScore">
+            <summary>
+            Minimum full-text score threshold. Null means no threshold.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
@@ -4114,6 +4224,12 @@
             Recursively flatten all chunks from a SemanticCellResponse hierarchy.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <summary>
+            Compute embedding vector for a single piece of text using the Partio embedding endpoint.
+            Used when chunking strategy is "None" to embed the whole document as a single chunk.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Check that a RecallDB collection exists via HEAD.
@@ -4257,7 +4373,7 @@
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Retrieve relevant document chunks for a given query.
             </summary>
@@ -4266,7 +4382,19 @@
             <param name="topK">Number of top results to retrieve.</param>
             <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
             <param name="token">Cancellation token.</param>
+            <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
+            <param name="searchOptions">Search mode and full-text options.</param>
             <returns>List of retrieval chunks with source identification and scoring.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.BuildSearchBody(System.String,System.Collections.Generic.List{System.Double},System.Int32,AssistantHub.Core.Models.RetrievalSearchOptions)">
+            <summary>
+            Build the RecallDB search request body based on search mode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ExecuteSearchAsync(System.String,System.Object,System.Threading.CancellationToken)">
+            <summary>
+            Execute a search request against RecallDB.
+            </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken,System.String)">
             <summary>
@@ -4274,17 +4402,8 @@
             </summary>
             <param name="query">Query text.</param>
             <param name="token">Cancellation token.</param>
+            <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
             <returns>Embedding vector.</returns>
-        </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.SearchRecallDbAsync(System.String,System.Collections.Generic.List{System.Double},System.Int32,System.Threading.CancellationToken)">
-            <summary>
-            Search RecallDB for similar documents.
-            </summary>
-            <param name="collectionId">Collection identifier.</param>
-            <param name="embeddings">Query embedding vector.</param>
-            <param name="topK">Number of top results to retrieve.</param>
-            <param name="token">Cancellation token.</param>
-            <returns>List of search results.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
             <summary>
@@ -4319,6 +4438,11 @@
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Score">
             <summary>
             Similarity score.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.TextScore">
+            <summary>
+            Full-text relevance score (null in vector-only mode).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Content">

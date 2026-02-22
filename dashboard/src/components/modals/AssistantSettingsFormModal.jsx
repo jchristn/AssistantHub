@@ -20,6 +20,12 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
     CollectionId: settings?.CollectionId || '',
     RetrievalTopK: settings?.RetrievalTopK || 5,
     RetrievalScoreThreshold: settings?.RetrievalScoreThreshold ?? 0.7,
+    SearchMode: settings?.SearchMode || 'Vector',
+    TextWeight: settings?.TextWeight ?? 0.3,
+    FullTextSearchType: settings?.FullTextSearchType || 'TsRank',
+    FullTextLanguage: settings?.FullTextLanguage || 'english',
+    FullTextNormalization: settings?.FullTextNormalization ?? 32,
+    FullTextMinimumScore: settings?.FullTextMinimumScore ?? '',
     InferenceEndpointId: settings?.InferenceEndpointId || '',
     EmbeddingEndpointId: settings?.EmbeddingEndpointId || '',
     Streaming: settings?.Streaming ?? true
@@ -60,7 +66,15 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await onSave(form);
+      const payload = {
+        ...form,
+        TextWeight: parseFloat(form.TextWeight) || 0.3,
+        FullTextNormalization: parseInt(form.FullTextNormalization) || 32,
+        FullTextMinimumScore: form.FullTextMinimumScore === '' || form.FullTextMinimumScore === null
+          ? null
+          : parseFloat(form.FullTextMinimumScore)
+      };
+      await onSave(payload);
     } finally {
       setSaving(false);
     }
@@ -123,20 +137,63 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
         </div>
       </div>
       <div className="form-group">
-        <label><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
-        <select value={form.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
-          <option value="">-- Use server default --</option>
-          {(inferenceEndpoints || []).map(ep => (
-            <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
-          ))}
+        <label><Tooltip text="How documents are retrieved: Vector (semantic similarity), FullText (keyword matching), or Hybrid (both combined)">Search Mode</Tooltip></label>
+        <select value={form.SearchMode} onChange={(e) => handleChange('SearchMode', e.target.value)}>
+          <option value="Vector">Vector</option>
+          <option value="FullText">FullText</option>
+          <option value="Hybrid">Hybrid</option>
         </select>
       </div>
+      {form.SearchMode === 'Hybrid' && (
+        <div className="form-group">
+          <label><Tooltip text="Balance between vector and text scoring in hybrid mode. 0.0 = pure vector, 1.0 = pure text. Recommended: 0.3 for quality embeddings">Text Weight</Tooltip> <span className="range-value">{form.TextWeight}</span></label>
+          <input type="range" min="0" max="1" step="0.05" value={form.TextWeight} onChange={(e) => handleChange('TextWeight', parseFloat(e.target.value))} />
+        </div>
+      )}
+      {(form.SearchMode === 'FullText' || form.SearchMode === 'Hybrid') && (
+        <>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="TsRank: standard term frequency scoring. TsRankCd: cover density, rewards terms appearing close together">Full-Text Ranking</Tooltip></label>
+              <select value={form.FullTextSearchType} onChange={(e) => handleChange('FullTextSearchType', e.target.value)}>
+                <option value="TsRank">TsRank</option>
+                <option value="TsRankCd">TsRankCd</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label><Tooltip text="Text search language for stemming and stop words. Use 'simple' to disable stemming">Language</Tooltip></label>
+              <select value={form.FullTextLanguage} onChange={(e) => handleChange('FullTextLanguage', e.target.value)}>
+                <option value="english">english</option>
+                <option value="simple">simple</option>
+                <option value="spanish">spanish</option>
+                <option value="french">french</option>
+                <option value="german">german</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label><Tooltip text="Documents with text relevance below this threshold are excluded. Leave empty for no threshold">Minimum Text Score</Tooltip></label>
+            <input type="number" min="0" max="1" step="0.05" value={form.FullTextMinimumScore} onChange={(e) => handleChange('FullTextMinimumScore', e.target.value)} placeholder="Optional (0.0-1.0)" />
+          </div>
+        </>
+      )}
+      {form.SearchMode !== 'FullText' && (
       <div className="form-group">
         <label><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
         <select value={form.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
           <option value="">-- Use server default --</option>
           {(embeddingEndpoints || []).map(ep => (
             <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+          ))}
+        </select>
+      </div>
+      )}
+      <div className="form-group">
+        <label><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
+        <select value={form.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+          <option value="">-- Use server default --</option>
+          {(inferenceEndpoints || []).map(ep => (
+            <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
           ))}
         </select>
       </div>

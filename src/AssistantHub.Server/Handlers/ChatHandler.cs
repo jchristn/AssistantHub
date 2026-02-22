@@ -189,7 +189,16 @@ namespace AssistantHub.Server.Handlers
                         settings.RetrievalTopK,
                         settings.RetrievalScoreThreshold,
                         default,
-                        settings.EmbeddingEndpointId).ConfigureAwait(false);
+                        settings.EmbeddingEndpointId,
+                        new RetrievalSearchOptions
+                        {
+                            SearchMode = settings.SearchMode,
+                            TextWeight = settings.TextWeight,
+                            FullTextSearchType = settings.FullTextSearchType,
+                            FullTextLanguage = settings.FullTextLanguage,
+                            FullTextNormalization = settings.FullTextNormalization,
+                            FullTextMinimumScore = settings.FullTextMinimumScore
+                        }).ConfigureAwait(false);
 
                     retrievalSw.Stop();
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
@@ -462,7 +471,16 @@ namespace AssistantHub.Server.Handlers
                         settings.CollectionId, lastUserMessage,
                         settings.RetrievalTopK, settings.RetrievalScoreThreshold,
                         default,
-                        settings.EmbeddingEndpointId).ConfigureAwait(false);
+                        settings.EmbeddingEndpointId,
+                        new RetrievalSearchOptions
+                        {
+                            SearchMode = settings.SearchMode,
+                            TextWeight = settings.TextWeight,
+                            FullTextSearchType = settings.FullTextSearchType,
+                            FullTextLanguage = settings.FullTextLanguage,
+                            FullTextNormalization = settings.FullTextNormalization,
+                            FullTextMinimumScore = settings.FullTextMinimumScore
+                        }).ConfigureAwait(false);
                     if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.Content));
                 }
 

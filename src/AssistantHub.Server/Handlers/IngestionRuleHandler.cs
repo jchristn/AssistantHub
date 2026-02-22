@@ -84,6 +84,18 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                if (rule.Chunking != null)
+                {
+                    List<string> errors = IngestionChunkingConfig.Validate(rule.Chunking);
+                    if (errors.Count > 0)
+                    {
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
                 rule.Id = IdGenerator.NewIngestionRuleId();
                 rule.CreatedUtc = DateTime.UtcNow;
                 rule.LastUpdateUtc = DateTime.UtcNow;
@@ -219,6 +231,18 @@ namespace AssistantHub.Server.Handlers
                 if (updated.Summarization != null)
                 {
                     List<string> errors = IngestionSummarizationConfig.Validate(updated.Summarization);
+                    if (errors.Count > 0)
+                    {
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
+                if (updated.Chunking != null)
+                {
+                    List<string> errors = IngestionChunkingConfig.Validate(updated.Chunking);
                     if (errors.Count > 0)
                     {
                         ctx.Response.StatusCode = 400;

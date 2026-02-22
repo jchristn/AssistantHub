@@ -104,6 +104,20 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Get a nullable double value from a data row.
+        /// </summary>
+        /// <param name="row">Data row.</param>
+        /// <param name="columnName">Column name.</param>
+        /// <returns>Nullable double value.</returns>
+        public static double? GetNullableDoubleValue(DataRow row, string columnName)
+        {
+            string val = GetStringValue(row, columnName);
+            if (String.IsNullOrEmpty(val)) return null;
+            if (Double.TryParse(val, CultureInfo.InvariantCulture, out double result)) return result;
+            return null;
+        }
+
+        /// <summary>
         /// Get a DateTime value from a data row.
         /// </summary>
         /// <param name="row">Data row.</param>

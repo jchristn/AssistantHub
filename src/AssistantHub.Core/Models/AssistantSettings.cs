@@ -104,6 +104,40 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Search mode for retrieval: Vector, FullText, or Hybrid.
+        /// </summary>
+        public string SearchMode { get; set; } = "Vector";
+
+        /// <summary>
+        /// Weight of full-text score in hybrid mode (0.0 to 1.0).
+        /// Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
+        /// Only applies when SearchMode is "Hybrid".
+        /// </summary>
+        public double TextWeight { get; set; } = 0.3;
+
+        /// <summary>
+        /// Full-text ranking function: "TsRank" (term frequency) or "TsRankCd" (cover density, rewards proximity).
+        /// </summary>
+        public string FullTextSearchType { get; set; } = "TsRank";
+
+        /// <summary>
+        /// PostgreSQL text search language configuration.
+        /// Controls stemming and stop words.
+        /// </summary>
+        public string FullTextLanguage { get; set; } = "english";
+
+        /// <summary>
+        /// Full-text score normalization bitmask. 32 = normalized 0-1 (recommended for hybrid).
+        /// </summary>
+        public int FullTextNormalization { get; set; } = 32;
+
+        /// <summary>
+        /// Minimum full-text score threshold. Documents with TextScore below this are excluded.
+        /// Null means no threshold.
+        /// </summary>
+        public double? FullTextMinimumScore { get; set; } = null;
+
+        /// <summary>
         /// Completion endpoint identifier (references a managed Partio completion endpoint).
         /// </summary>
         public string InferenceEndpointId { get; set; } = null;
@@ -188,6 +222,12 @@ namespace AssistantHub.Core.Models
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
+            obj.SearchMode = DataTableHelper.GetStringValue(row, "search_mode") ?? "Vector";
+            obj.TextWeight = DataTableHelper.GetDoubleValue(row, "text_weight", 0.3);
+            obj.FullTextSearchType = DataTableHelper.GetStringValue(row, "fulltext_search_type") ?? "TsRank";
+            obj.FullTextLanguage = DataTableHelper.GetStringValue(row, "fulltext_language") ?? "english";
+            obj.FullTextNormalization = DataTableHelper.GetIntValue(row, "fulltext_normalization", 32);
+            obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
             obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.Title = DataTableHelper.GetStringValue(row, "title");

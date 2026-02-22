@@ -3,6 +3,7 @@ import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 
 const STRATEGY_OPTIONS = [
+  'None',
   'FixedTokenCount',
   'SentenceBased',
   'ParagraphBased',

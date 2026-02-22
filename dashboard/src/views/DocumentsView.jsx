@@ -118,34 +118,10 @@ function DocumentsView() {
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];
 
-  const handleUpload = async (docData) => {
-    try {
-      const { file, ...metadata } = docData;
-
-      const reader = new FileReader();
-      const base64Content = await new Promise((resolve, reject) => {
-        reader.onload = () => {
-          const base64 = reader.result.split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const uploadPayload = {
-        ...metadata,
-        Base64Content: base64Content,
-      };
-
-      const result = await api.uploadDocument(uploadPayload);
-      if (result && result.statusCode && result.statusCode >= 400) {
-        throw new Error(result.ErrorMessage || 'Upload failed');
-      }
-      setShowUpload(false);
-      setRefresh(r => r + 1);
-    } catch (err) {
-      setAlert({ title: 'Upload Error', message: err.message || 'Failed to upload document' });
-    }
+  const handleUpload = (docData) => {
+    const { file, IngestionRuleId, Labels, Tags } = docData;
+    enqueueFiles([file], IngestionRuleId, Labels || [], Tags || {});
+    setShowUpload(false);
   };
 
   const handleDelete = async () => {

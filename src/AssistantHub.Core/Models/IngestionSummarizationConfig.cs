@@ -26,35 +26,83 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string SummarizationPrompt { get; set; } = null;
 
+        private int _maxSummaryTokens = 1024;
+
         /// <summary>
         /// Maximum number of tokens for each summary.
+        /// Default: 1024. Minimum: 128.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int MaxSummaryTokens { get; set; } = 1024;
+        public int MaxSummaryTokens
+        {
+            get => _maxSummaryTokens;
+            set => _maxSummaryTokens = Math.Max(128, value);
+        }
+
+        private int _minCellLength = 128;
 
         /// <summary>
         /// Minimum cell content length (in characters) to trigger summarization.
+        /// Default: 128. Minimum: 0.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int MinCellLength { get; set; } = 128;
+        public int MinCellLength
+        {
+            get => _minCellLength;
+            set => _minCellLength = Math.Max(0, value);
+        }
+
+        private int _maxParallelTasks = 1;
 
         /// <summary>
         /// Maximum number of parallel summarization tasks.
+        /// Default: 1. Minimum: 1.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int MaxParallelTasks { get; set; } = 4;
+        public int MaxParallelTasks
+        {
+            get => _maxParallelTasks;
+            set => _maxParallelTasks = Math.Max(1, value);
+        }
+
+        private int _maxRetriesPerSummary = 3;
 
         /// <summary>
         /// Maximum retry attempts for an individual cell.
+        /// Default: 3. Minimum: 0.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int MaxRetriesPerSummary { get; set; } = 3;
+        public int MaxRetriesPerSummary
+        {
+            get => _maxRetriesPerSummary;
+            set => _maxRetriesPerSummary = Math.Max(0, value);
+        }
+
+        private int _maxRetries = 9;
 
         /// <summary>
         /// Global failure limit across all cells (circuit breaker).
+        /// Default: 9. Minimum: 0.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int MaxRetries { get; set; } = 9;
+        public int MaxRetries
+        {
+            get => _maxRetries;
+            set => _maxRetries = Math.Max(0, value);
+        }
+
+        private int _timeoutMs = 300000;
 
         /// <summary>
         /// Timeout in milliseconds for each summarization request.
+        /// Default: 300000. Minimum: 100.
+        /// Values below the minimum are clamped.
         /// </summary>
-        public int TimeoutMs { get; set; } = 300000;
+        public int TimeoutMs
+        {
+            get => _timeoutMs;
+            set => _timeoutMs = Math.Max(100, value);
+        }
 
         #endregion
 
@@ -79,24 +127,6 @@ namespace AssistantHub.Core.Models
 
             if (String.IsNullOrWhiteSpace(config.CompletionEndpointId))
                 errors.Add("CompletionEndpointId is required when summarization is enabled.");
-
-            if (config.MaxSummaryTokens < 128)
-                errors.Add("MaxSummaryTokens must be >= 128.");
-
-            if (config.MinCellLength < 0)
-                errors.Add("MinCellLength must be >= 0.");
-
-            if (config.MaxParallelTasks < 1)
-                errors.Add("MaxParallelTasks must be >= 1.");
-
-            if (config.MaxRetriesPerSummary < 0)
-                errors.Add("MaxRetriesPerSummary must be >= 0.");
-
-            if (config.MaxRetries < 0)
-                errors.Add("MaxRetries must be >= 0.");
-
-            if (config.TimeoutMs < 100)
-                errors.Add("TimeoutMs must be >= 100.");
 
             if (!String.IsNullOrEmpty(config.SummarizationPrompt))
             {

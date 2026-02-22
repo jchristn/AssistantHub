@@ -13,7 +13,7 @@ AssistantHub is a self-hosted RAG (Retrieval-Augmented Generation) data and chat
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
 - **Endpoint Management** -- Manage embedding and completion (inference) endpoints on the Partio service directly from the dashboard or API.
-- **Embeddings** -- Leverages pgvector and RecallDb for vector storage and similarity search, enabling accurate context retrieval from your document corpus.
+- **Search** -- Leverages pgvector and RecallDb for vector, full-text, and hybrid search. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (OpenAI, Ollama).
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- User and credential management with admin and standard user roles. Each user owns their own assistants and documents.
@@ -40,7 +40,7 @@ This starts all services:
 | documentatom-dashboard | 8302  | Document processing dashboard      |
 | partio-server          | 8321  | Partitioning/chunking service      |
 | partio-dashboard       | 8322  | Partitioning dashboard             |
-| recalldb-server        | 8401  | Vector database service            |
+| recalldb-server        | 8401  | Vector and full-text search service |
 | recalldb-dashboard     | 8402  | Vector database dashboard          |
 | assistanthub-server    | 8800  | AssistantHub REST API              |
 | assistanthub-dashboard | 8801  | AssistantHub management dashboard  |
@@ -244,7 +244,7 @@ For complete endpoint documentation including request/response schemas and examp
 
 **Data flow for chat:**
 1. User sends a message to the chat endpoint.
-2. The server queries RecallDb for relevant document chunks using vector similarity search.
+2. The server queries RecallDb for relevant document chunks using the assistant's configured search mode (vector, full-text, or hybrid).
 3. Retrieved chunks are assembled into context.
 4. The context and user message are sent to the configured LLM (OpenAI or Ollama).
 5. The LLM response and source references are returned to the user.

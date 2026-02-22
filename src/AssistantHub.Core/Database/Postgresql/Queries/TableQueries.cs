@@ -56,6 +56,12 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  collection_id TEXT, " +
             "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
             "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.3, " +
+            "  search_mode TEXT DEFAULT 'Vector', " +
+            "  text_weight DOUBLE PRECISION DEFAULT 0.3, " +
+            "  fulltext_search_type TEXT DEFAULT 'TsRank', " +
+            "  fulltext_language TEXT DEFAULT 'english', " +
+            "  fulltext_normalization INTEGER DEFAULT 32, " +
+            "  fulltext_minimum_score DOUBLE PRECISION DEFAULT NULL, " +
             "  inference_endpoint_id TEXT, " +
             "  embedding_endpoint_id TEXT, " +
             "  title TEXT, " +

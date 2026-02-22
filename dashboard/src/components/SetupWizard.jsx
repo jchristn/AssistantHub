@@ -55,6 +55,9 @@ function SetupWizard({ onClose }) {
   const [ingestionDone, setIngestionDone] = useState(false);
   const [ingestionError, setIngestionError] = useState(null);
   const pollRef = useRef(null);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const countdownRef = useRef(null);
 
   const current = STEP_DEFS[step];
 
@@ -65,16 +68,24 @@ function SetupWizard({ onClose }) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setCountdown(null);
   }, []);
 
   const startPolling = useCallback((docId) => {
     stopPolling();
+    const POLL_INTERVAL = 3000;
     const poll = async () => {
       try {
         const [doc, logResult] = await Promise.all([
           api.getDocument(docId),
           api.getDocumentProcessingLog(docId),
         ]);
+        setLastRefreshed(new Date());
+        setCountdown(POLL_INTERVAL / 1000);
         if (doc) {
           const status = doc.Status || '';
           const pct = INGESTION_STATUS_PERCENT[status.toLowerCase()] ?? 10;
@@ -96,7 +107,10 @@ function SetupWizard({ onClose }) {
       } catch { /* polling error, retry next tick */ }
     };
     poll();
-    pollRef.current = setInterval(poll, 3000);
+    pollRef.current = setInterval(poll, POLL_INTERVAL);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => (prev != null && prev > 1) ? prev - 1 : POLL_INTERVAL / 1000);
+    }, 1000);
   }, [api, stopPolling]);
 
   // Cleanup polling on unmount
@@ -181,6 +195,8 @@ function SetupWizard({ onClose }) {
     setIngestionLog(null);
     setIngestionDone(false);
     setIngestionError(null);
+    setLastRefreshed(null);
+    setCountdown(null);
     stopPolling();
     if (step <= 6) loadExisting();
   }, [step, loadExisting, stopPolling]);
@@ -561,7 +577,19 @@ function SetupWizard({ onClose }) {
           )}
           {ingestionLog && (
             <div>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 500, marginBottom: '0.25rem', display: 'block' }}>Processing Log</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 500 }}>Processing Log</label>
+                {lastRefreshed && !ingestionDone && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Updated {lastRefreshed.toLocaleTimeString()} · next in {countdown ?? '—'}s
+                  </span>
+                )}
+                {lastRefreshed && ingestionDone && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Updated {lastRefreshed.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
               <pre style={{
                 background: 'var(--bg-secondary, #1a1a2e)',
                 padding: '0.75rem',

@@ -3,6 +3,7 @@ namespace AssistantHub.Core.Services
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -202,7 +203,28 @@ namespace AssistantHub.Core.Services
                 Dictionary<string, string> mergedTags = MergeTags(rule, document);
 
                 // Step 10: Call Partio processing service with rule config
-                bool hasSummarization = rule?.Summarization != null;
+                bool hasSummarization = false;
+
+                // Determine if summarization is enabled and has required fields
+                if (rule == null)
+                {
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — no ingestion rule assigned").ConfigureAwait(false);
+                }
+                else if (rule.Summarization == null)
+                {
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — summarization configuration is null in rule \"" + rule.Name + "\"").ConfigureAwait(false);
+                }
+                else if (String.IsNullOrWhiteSpace(rule.Summarization.CompletionEndpointId))
+                {
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — CompletionEndpointId is not set in summarization configuration").ConfigureAwait(false);
+                }
+                else
+                {
+                    hasSummarization = true;
+                }
 
                 // Resolve and log endpoint details
                 if (_ProcessingLog != null)
@@ -217,7 +239,7 @@ namespace AssistantHub.Core.Services
                     await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding endpoint: " + embEndpointId + (embEndpointInfo != null ? " — " + embEndpointInfo : "")).ConfigureAwait(false);
 
                     // Resolve and log completion endpoint if summarization is enabled
-                    if (hasSummarization && !String.IsNullOrEmpty(rule.Summarization.CompletionEndpointId))
+                    if (hasSummarization)
                     {
                         string compEndpointInfo = await ResolveEndpointInfoAsync("completion", rule.Summarization.CompletionEndpointId, token).ConfigureAwait(false);
                         await _ProcessingLog.LogAsync(documentId, "INFO", "Completion endpoint: " + rule.Summarization.CompletionEndpointId + (compEndpointInfo != null ? " — " + compEndpointInfo : "")).ConfigureAwait(false);
@@ -589,6 +611,29 @@ namespace AssistantHub.Core.Services
             Dictionary<string, string> tags,
             CancellationToken token)
         {
+            // When strategy is "None", skip Partio chunking entirely and produce a single chunk
+            if (rule?.Chunking != null
+                && !String.IsNullOrEmpty(rule.Chunking.Strategy)
+                && rule.Chunking.Strategy.Equals("None", StringComparison.OrdinalIgnoreCase))
+            {
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Chunking strategy is None — skipping chunking, treating entire content as a single chunk").ConfigureAwait(false);
+
+                // Compute embeddings for the single chunk via Partio /v1.0/embed
+                List<float> embeddings = await ComputeEmbeddingAsync(content, rule, token).ConfigureAwait(false);
+
+                ChunkResult singleChunk = new ChunkResult
+                {
+                    CellGUID = Guid.NewGuid(),
+                    Text = content,
+                    Labels = labels,
+                    Tags = tags?.ToDictionary(kv => kv.Key, kv => kv.Value),
+                    Embeddings = embeddings
+                };
+
+                return new List<ChunkResult> { singleChunk };
+            }
+
             string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
@@ -693,6 +738,66 @@ namespace AssistantHub.Core.Services
                     all.AddRange(FlattenChunks(child));
             }
             return all;
+        }
+
+        /// <summary>
+        /// Compute embedding vector for a single piece of text using the Partio embedding endpoint.
+        /// Used when chunking strategy is "None" to embed the whole document as a single chunk.
+        /// </summary>
+        private async Task<List<float>> ComputeEmbeddingAsync(string text, IngestionRule rule, CancellationToken token)
+        {
+            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/embed";
+
+            try
+            {
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+                {
+                    Dictionary<string, object> requestBody = new Dictionary<string, object>();
+                    requestBody["Text"] = text;
+
+                    string endpointId = _ChunkingSettings.EndpointId;
+                    if (rule?.Embedding != null && !String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
+                        endpointId = rule.Embedding.EmbeddingEndpointId;
+                    requestBody["EmbeddingEndpointId"] = endpointId;
+
+                    if (rule?.Embedding != null)
+                        requestBody["L2Normalization"] = rule.Embedding.L2Normalization;
+
+                    string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
+
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "embedding service returned " + (int)response.StatusCode + ": " + responseBody);
+                        return null;
+                    }
+
+                    // Partio returns { "Embeddings": [float, ...] }
+                    using (JsonDocument doc = JsonDocument.Parse(responseBody))
+                    {
+                        if (doc.RootElement.TryGetProperty("Embeddings", out JsonElement embArr) && embArr.ValueKind == JsonValueKind.Array)
+                        {
+                            List<float> embeddings = new List<float>();
+                            foreach (JsonElement el in embArr.EnumerateArray())
+                                embeddings.Add(el.GetSingle());
+                            return embeddings;
+                        }
+                    }
+
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception computing embedding: " + e.Message);
+                return null;
+            }
         }
 
         /// <summary>

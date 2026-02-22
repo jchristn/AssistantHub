@@ -53,6 +53,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "model, enable_rag, collection_id, retrieval_top_k, retrieval_score_threshold, " +
+                "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(settings.Id) + "', " +
@@ -67,6 +68,12 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 settings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +
+                _Driver.FormatNullableString(settings.SearchMode) + ", " +
+                _Driver.FormatDouble(settings.TextWeight) + ", " +
+                _Driver.FormatNullableString(settings.FullTextSearchType) + ", " +
+                _Driver.FormatNullableString(settings.FullTextLanguage) + ", " +
+                settings.FullTextNormalization + ", " +
+                (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.Title) + ", " +
@@ -124,6 +131,12 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "collection_id = " + _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 "retrieval_top_k = " + settings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +
+                "search_mode = " + _Driver.FormatNullableString(settings.SearchMode) + ", " +
+                "text_weight = " + _Driver.FormatDouble(settings.TextWeight) + ", " +
+                "fulltext_search_type = " + _Driver.FormatNullableString(settings.FullTextSearchType) + ", " +
+                "fulltext_language = " + _Driver.FormatNullableString(settings.FullTextLanguage) + ", " +
+                "fulltext_normalization = " + settings.FullTextNormalization + ", " +
+                "fulltext_minimum_score = " + (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 "inference_endpoint_id = " + _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 "title = " + _Driver.FormatNullableString(settings.Title) + ", " +

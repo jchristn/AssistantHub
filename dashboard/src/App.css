@@ -2013,12 +2013,13 @@ body {
 }
 
 /* Upload Progress Panel */
+/* Upload / Ingestion Progress Panel */
 .upload-progress-panel {
   position: fixed;
   bottom: 0;
   right: 24px;
-  width: 380px;
-  max-height: 360px;
+  width: min(1140px, calc(100vw - 300px));
+  max-height: 520px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-bottom: none;
@@ -2065,12 +2066,60 @@ body {
 }
 
 .upload-progress-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.upload-progress-table-header {
+  display: flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.upload-progress-list {
   overflow-y: auto;
   flex: 1;
-  padding: 0.5rem 0;
+  max-height: 420px; /* ~10 rows */
+}
+
+.upload-progress-col-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-progress-col-step {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.upload-progress-col-progress {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-progress-col-action {
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
 }
 
 .upload-progress-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-light);
 }
@@ -2079,20 +2128,29 @@ body {
   border-bottom: none;
 }
 
-.upload-progress-item-main {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .upload-progress-filename {
-  flex: 1;
-  min-width: 0;
   font-size: 0.8125rem;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.upload-progress-step {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.upload-progress-step.step-active {
+  color: var(--accent-color);
+}
+
+.upload-progress-step.step-complete {
+  color: var(--success-color);
+}
+
+.upload-progress-step.step-error {
+  color: var(--danger-color);
 }
 
 .upload-progress-percent {
@@ -2102,15 +2160,16 @@ body {
   white-space: nowrap;
   width: 36px;
   text-align: right;
+  flex-shrink: 0;
 }
 
 .upload-progress-bar-track {
-  width: 80px;
+  flex: 1;
   height: 6px;
   background: var(--bg-tertiary);
   border-radius: 3px;
   overflow: hidden;
-  flex-shrink: 0;
+  min-width: 60px;
 }
 
 .upload-progress-bar-fill {
@@ -2136,7 +2195,6 @@ body {
   line-height: 1;
   color: var(--text-secondary);
   padding: 0 0.125rem;
-  flex-shrink: 0;
 }
 
 .upload-progress-dismiss:hover {
@@ -2144,6 +2202,7 @@ body {
 }
 
 .upload-progress-error {
+  width: 100%;
   font-size: 0.75rem;
   color: var(--danger-color);
   margin-top: 0.25rem;
@@ -2208,7 +2267,12 @@ body {
   box-shadow: var(--shadow-lg);
   padding: 3.75rem 3rem 2.25rem;
   text-align: center;
-  animation: tour-fade-in 0.3s ease;
+  animation: tour-welcome-fade-in 0.3s ease;
+}
+
+@keyframes tour-welcome-fade-in {
+  from { opacity: 0; transform: translate(-50%, -50%) translateY(4px); }
+  to { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
 }
 
 .tour-welcome-logo {
@@ -2225,7 +2289,7 @@ body {
 }
 
 .tour-welcome-desc {
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   color: var(--text-secondary);
   line-height: 1.7;
   margin: 0;

@@ -53,6 +53,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  collection_id TEXT, " +
                 "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
                 "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +
+                "  search_mode TEXT DEFAULT 'Vector', " +
+                "  text_weight REAL DEFAULT 0.3, " +
+                "  fulltext_search_type TEXT DEFAULT 'TsRank', " +
+                "  fulltext_language TEXT DEFAULT 'english', " +
+                "  fulltext_normalization INTEGER DEFAULT 32, " +
+                "  fulltext_minimum_score REAL DEFAULT NULL, " +
                 "  inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  title TEXT, " +

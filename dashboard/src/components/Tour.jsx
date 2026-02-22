@@ -98,7 +98,6 @@ function Tour({ onComplete }) {
           zIndex: 9999, width: 660,
         }}>
           <img src={logoSrc} alt="AssistantHub" className="tour-welcome-logo" />
-          <h2 className="tour-welcome-title">Welcome to AssistantHub</h2>
           <p className="tour-welcome-desc">
             AssistantHub is your platform for building intelligent, document-aware AI assistants.
             Upload documents, create knowledgebases, and deploy conversational assistants that answer

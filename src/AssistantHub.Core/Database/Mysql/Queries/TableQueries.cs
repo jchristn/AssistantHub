@@ -59,6 +59,12 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
+            "  `search_mode` TEXT DEFAULT 'Vector', " +
+            "  `text_weight` DOUBLE DEFAULT 0.3, " +
+            "  `fulltext_search_type` TEXT DEFAULT 'TsRank', " +
+            "  `fulltext_language` TEXT DEFAULT 'english', " +
+            "  `fulltext_normalization` INT DEFAULT 32, " +
+            "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
             "  `inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `title` TEXT, " +

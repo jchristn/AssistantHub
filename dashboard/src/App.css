@@ -2379,3 +2379,246 @@ body {
   height: 14px;
   flex-shrink: 0;
 }
+
+/* ===== History Detail Modal ===== */
+
+.history-ids-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 0.5rem 0 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.history-id-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.history-id-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.history-section {
+  margin-bottom: 1rem;
+}
+
+.history-section-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-section-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.history-toggle-icon {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.history-section-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: monospace;
+  padding: 0.1rem 0.5rem;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary);
+}
+
+.history-section-meta {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* Timing waterfall */
+.history-timing-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+}
+
+.history-timing-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-timing-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.history-timing-bar-track {
+  height: 16px;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.history-timing-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.history-timing-value {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: monospace;
+  color: var(--text-primary);
+}
+
+/* Summary metrics */
+.history-metrics-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 0.5rem 0 0;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+}
+
+.history-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.history-metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.history-metric-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: monospace;
+  color: var(--text-primary);
+  padding: 0.15rem 0.5rem;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  border-radius: var(--radius-sm, 4px);
+}
+
+.history-metric-timestamp {
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+/* Messages grid */
+.history-messages-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 800px) {
+  .history-messages-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.history-message-panel {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+}
+
+.history-message-heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.history-message-ts {
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.history-message-body {
+  max-height: 200px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* Retrieval chunks */
+.history-retrieval-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-chunk-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 4px);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.history-chunk-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+}
+
+.history-chunk-num {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-chunk-score {
+  font-family: monospace;
+  color: var(--text-secondary);
+}
+
+.history-chunk-source {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.history-chunk-content {
+  max-height: 150px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+}

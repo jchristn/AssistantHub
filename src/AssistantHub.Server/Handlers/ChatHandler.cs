@@ -250,9 +250,14 @@ namespace AssistantHub.Server.Handlers
                 string inferenceEndpoint = Settings.Inference.Endpoint;
                 string inferenceApiKey = Settings.Inference.ApiKey;
 
+                double endpointResolutionMs = 0;
                 if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                 {
+                    Stopwatch endpointSw = Stopwatch.StartNew();
                     var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    endpointSw.Stop();
+                    endpointResolutionMs = Math.Round(endpointSw.Elapsed.TotalMilliseconds, 2);
+                    Logging.Info(_Header + "endpoint resolution took " + endpointResolutionMs + " ms");
                     if (resolved != null)
                     {
                         inferenceProvider = resolved.Value.Provider;
@@ -262,8 +267,12 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 // Conversation compaction
+                Stopwatch compactionSw = Stopwatch.StartNew();
                 messages = await CompactIfNeeded(messages, settings, inferenceProvider, model, inferenceEndpoint, inferenceApiKey,
                     settings.Streaming ? ctx : null).ConfigureAwait(false);
+                compactionSw.Stop();
+                double compactionMs = Math.Round(compactionSw.Elapsed.TotalMilliseconds, 2);
+                Logging.Info(_Header + "compaction phase took " + compactionMs + " ms");
 
                 int promptTokenEstimate = EstimateTokenCount(messages);
                 Logging.Info(_Header + "sending " + messages.Count + " messages, ~" + promptTokenEstimate + " tokens to " + model);
@@ -279,7 +288,7 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
-                        promptTokenEstimate).ConfigureAwait(false);
+                        promptTokenEstimate, endpointResolutionMs, compactionMs).ConfigureAwait(false);
                 }
                 else
                 {
@@ -287,7 +296,7 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
-                        promptTokenEstimate).ConfigureAwait(false);
+                        promptTokenEstimate, endpointResolutionMs, compactionMs).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -559,6 +568,136 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/generate - Lightweight inference-only endpoint.
+        /// Skips RAG retrieval, compaction, system prompt injection, and chat history persistence.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PostGenerateAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = ctx.Request.DataAsString;
+                ChatCompletionRequest chatReq = Serializer.DeserializeJson<ChatCompletionRequest>(body);
+                if (chatReq == null || chatReq.Messages == null || chatReq.Messages.Count == 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "At least one message is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Resolve parameters (request overrides fall back to settings)
+                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
+                double temperature = chatReq.Temperature ?? settings.Temperature;
+                double topP = chatReq.TopP ?? settings.TopP;
+                int maxTokens = chatReq.MaxTokens ?? settings.MaxTokens;
+
+                // Resolve inference endpoint details
+                Enums.InferenceProviderEnum inferenceProvider = Settings.Inference.Provider;
+                string inferenceEndpoint = Settings.Inference.Endpoint;
+                string inferenceApiKey = Settings.Inference.ApiKey;
+
+                if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                {
+                    var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    if (resolved != null)
+                    {
+                        inferenceProvider = resolved.Value.Provider;
+                        inferenceEndpoint = resolved.Value.Endpoint;
+                        inferenceApiKey = resolved.Value.ApiKey;
+                    }
+                }
+
+                // Pass messages as-is — no RAG, no system prompt injection, no compaction
+                List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
+
+                Logging.Info(_Header + "generate: sending " + messages.Count + " messages to " + model);
+
+                InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
+                    messages, model, maxTokens, temperature, topP,
+                    inferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+
+                if (inferenceResult != null && inferenceResult.Success && !String.IsNullOrEmpty(inferenceResult.Content))
+                {
+                    int promptTokens = EstimateTokenCount(messages);
+                    int completionTokens = EstimateTokenCount(inferenceResult.Content);
+
+                    ChatCompletionResponse response = new ChatCompletionResponse
+                    {
+                        Id = IdGenerator.NewChatCompletionId(),
+                        Object = "chat.completion",
+                        Created = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                        Model = model,
+                        Choices = new List<ChatCompletionChoice>
+                        {
+                            new ChatCompletionChoice
+                            {
+                                Index = 0,
+                                Message = new ChatCompletionMessage { Role = "assistant", Content = inferenceResult.Content },
+                                FinishReason = "stop"
+                            }
+                        },
+                        Usage = new ChatCompletionUsage
+                        {
+                            PromptTokens = promptTokens,
+                            CompletionTokens = completionTokens,
+                            TotalTokens = promptTokens + completionTokens,
+                            ContextWindow = settings.ContextWindow
+                        }
+                    };
+
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(response)).ConfigureAwait(false);
+                }
+                else
+                {
+                    ctx.Response.StatusCode = 502;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                        Enums.ApiErrorEnum.InternalError, null,
+                        inferenceResult?.ErrorMessage ?? "Inference failed."))).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PostGenerateAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
@@ -658,7 +797,9 @@ namespace AssistantHub.Server.Handlers
             List<RetrievalChunk> retrievalChunks = null,
             DateTime? promptSentUtc = null,
             Stopwatch inferenceSw = null,
-            int promptTokens = 0)
+            int promptTokens = 0,
+            double endpointResolutionMs = 0,
+            double compactionMs = 0)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -717,7 +858,9 @@ namespace AssistantHub.Server.Handlers
                     _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
                         userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContext,
-                        promptSentUtc, promptTokens, timeToLastTokenMs, timeToLastTokenMs,
+                        promptSentUtc, promptTokens,
+                        endpointResolutionMs, compactionMs, 0,
+                        timeToLastTokenMs, timeToLastTokenMs,
                         inferenceResult.Content);
                 }
             }
@@ -753,11 +896,14 @@ namespace AssistantHub.Server.Handlers
             List<RetrievalChunk> retrievalChunks = null,
             DateTime? promptSentUtc = null,
             Stopwatch inferenceSw = null,
-            int promptTokens = 0)
+            int promptTokens = 0,
+            double endpointResolutionMs = 0,
+            double compactionMs = 0)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             double timeToFirstTokenMs = 0;
+            double inferenceConnectionMs = 0;
             bool firstTokenCaptured = false;
 
             ctx.Response.StatusCode = 200;
@@ -822,13 +968,17 @@ namespace AssistantHub.Server.Handlers
                         timeToLastTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
                     }
 
+                    Logging.Info(_Header + "inference timing: connection=" + inferenceConnectionMs + "ms, TTFT=" + timeToFirstTokenMs + "ms, TTLT=" + timeToLastTokenMs + "ms");
+
                     // Fire-and-forget chat history write
                     if (!String.IsNullOrEmpty(threadId))
                     {
                         _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
                             userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                             retrievalStartUtc, retrievalDurationMs, retrievalContext,
-                            promptSentUtc, promptTokens, timeToFirstTokenMs, timeToLastTokenMs,
+                            promptSentUtc, promptTokens,
+                            endpointResolutionMs, compactionMs, inferenceConnectionMs,
+                            timeToFirstTokenMs, timeToLastTokenMs,
                             fullContent);
                     }
 
@@ -877,6 +1027,14 @@ namespace AssistantHub.Server.Handlers
                     // Send error as a final chunk
                     byte[] errorBytes = Encoding.UTF8.GetBytes("data: [DONE]\n\n");
                     await ctx.Response.SendChunk(errorBytes, true).ConfigureAwait(false);
+                },
+                onConnectionEstablished: () =>
+                {
+                    if (inferenceSw != null)
+                    {
+                        inferenceConnectionMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                        Logging.Info(_Header + "inference connection established in " + inferenceConnectionMs + " ms");
+                    }
                 }).ConfigureAwait(false);
         }
 
@@ -1043,7 +1201,9 @@ namespace AssistantHub.Server.Handlers
             string threadId, string assistantId, string collectionId,
             DateTime userMessageUtc, string userMessage,
             DateTime? retrievalStartUtc, double retrievalDurationMs, string retrievalContext,
-            DateTime? promptSentUtc, int promptTokens, double timeToFirstTokenMs, double timeToLastTokenMs,
+            DateTime? promptSentUtc, int promptTokens,
+            double endpointResolutionDurationMs, double compactionDurationMs, double inferenceConnectionDurationMs,
+            double timeToFirstTokenMs, double timeToLastTokenMs,
             string assistantResponse)
         {
             try
@@ -1060,6 +1220,9 @@ namespace AssistantHub.Server.Handlers
                 history.RetrievalContext = retrievalContext;
                 history.PromptSentUtc = promptSentUtc;
                 history.PromptTokens = promptTokens;
+                history.EndpointResolutionDurationMs = endpointResolutionDurationMs;
+                history.CompactionDurationMs = compactionDurationMs;
+                history.InferenceConnectionDurationMs = inferenceConnectionDurationMs;
                 history.TimeToFirstTokenMs = timeToFirstTokenMs;
                 history.TimeToLastTokenMs = timeToLastTokenMs;
                 history.AssistantResponse = assistantResponse;

@@ -188,6 +188,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Feedback              | `GET /v1.0/feedback`, `GET/DELETE /v1.0/feedback/{id}`    |
 | Models                | `GET /v1.0/models`, `POST /v1.0/models/pull`              |
 | Public Chat           | `POST /v1.0/assistants/{id}/chat`                         |
+| Public Generate       | `POST /v1.0/assistants/{id}/generate`                     |
 | Public Feedback       | `POST /v1.0/assistants/{id}/feedback`                     |
 | Public Info           | `GET /v1.0/assistants/{id}/public`                        |
 

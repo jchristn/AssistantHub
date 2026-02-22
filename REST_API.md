@@ -27,6 +27,11 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Threads (Authenticated)](#threads-authenticated)
 - [Models](#models)
 - [Public Endpoints](#public-endpoints)
+  - [Public Info](#get-v10assistantsassistantidpublic)
+  - [Create Thread](#post-v10assistantsassistantidthreads)
+  - [Chat](#post-v10assistantsassistantidchat)
+  - [Generate](#post-v10assistantsassistantidgenerate)
+  - [Feedback](#post-v10assistantsassistantidfeedback)
 - [Configuration: ChatHistory Settings](#configuration-chathistory-settings)
 
 ---
@@ -1617,6 +1622,9 @@ Retrieve a single chat history record by ID.
   "RetrievalContext": "Chunk 1: To reset your password...",
   "PromptSentUtc": "2025-01-01T12:00:00.150Z",
   "PromptTokens": 1250,
+  "EndpointResolutionDurationMs": 45.12,
+  "CompactionDurationMs": 0,
+  "InferenceConnectionDurationMs": 850.00,
   "TimeToFirstTokenMs": 120.50,
   "TimeToLastTokenMs": 890.75,
   "AssistantResponse": "To reset your password, navigate to Settings > Security...",
@@ -1640,6 +1648,9 @@ Retrieve a single chat history record by ID.
 | `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
 | `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
 | `PromptTokens`         | int      | Estimated prompt token count sent to the model.              |
+| `EndpointResolutionDurationMs` | double | Time to resolve inference endpoint via Partio (ms). 0 if not configured. |
+| `CompactionDurationMs` | double   | Time spent in conversation compaction (ms). 0 if skipped.    |
+| `InferenceConnectionDurationMs` | double | Time from HTTP request sent to response headers received (ms). Includes network latency and model loading. |
 | `TimeToFirstTokenMs`   | double   | Time to first token from the model in milliseconds.          |
 | `TimeToLastTokenMs`    | double   | Time to last token from the model in milliseconds.           |
 | `AssistantResponse`    | string   | The assistant's full response text.                          |
@@ -1905,6 +1916,68 @@ data: {"id":"chatcmpl-abc123...","object":"chat.completion.chunk","created":1700
 data: {"id":"chatcmpl-abc123...","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
 
 data: [DONE]
+```
+
+**Error Responses:**
+- `400` -- At least one message is required.
+- `404` -- Assistant not found or not active.
+- `500` -- Assistant settings not configured.
+- `502` -- Inference failed.
+
+### POST /v1.0/assistants/{assistantId}/generate
+
+Lightweight inference-only endpoint. Sends messages directly to the configured LLM without RAG retrieval, system prompt injection, conversation compaction, or chat history persistence. Useful for auxiliary tasks like title generation where the full chat pipeline is unnecessary.
+
+**Auth:** None
+
+**Request Body:**
+
+```json
+{
+  "model": "gpt-4o",
+  "messages": [
+    { "role": "user", "content": "What is the capital of France?" },
+    { "role": "assistant", "content": "The capital of France is Paris." },
+    { "role": "user", "content": "Generate a short title (max 6 words) for this conversation. Reply with ONLY the title text, nothing else." }
+  ],
+  "temperature": 0.7,
+  "top_p": 1.0,
+  "max_tokens": 4096
+}
+```
+
+| Field         | Type   | Required | Description                                                    |
+|---------------|--------|----------|----------------------------------------------------------------|
+| `model`       | string | No       | Model override (falls back to assistant settings).             |
+| `messages`    | array  | Yes      | Array of message objects with `role` and `content`.            |
+| `temperature` | double | No       | Sampling temperature override (0.0-2.0).                       |
+| `top_p`       | double | No       | Top-p override (0.0-1.0).                                      |
+| `max_tokens`  | int    | No       | Max tokens override.                                           |
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "chatcmpl-abc123...",
+  "object": "chat.completion",
+  "created": 1700000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "European Capital Cities"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 5,
+    "total_tokens": 55
+  }
+}
 ```
 
 **Error Responses:**

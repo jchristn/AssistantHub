@@ -136,6 +136,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  retrieval_context TEXT, " +
             "  prompt_sent_utc TEXT, " +
             "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
+            "  endpoint_resolution_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  compaction_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  inference_connection_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  time_to_first_token_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  time_to_last_token_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  assistant_response TEXT, " +

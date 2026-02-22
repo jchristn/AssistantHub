@@ -79,6 +79,22 @@ namespace AssistantHub.Core.Models
         public int PromptTokens { get; set; } = 0;
 
         /// <summary>
+        /// Duration of endpoint resolution in milliseconds (HTTP GET to Partio for endpoint details).
+        /// </summary>
+        public double EndpointResolutionDurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Duration of conversation compaction in milliseconds (0 if skipped).
+        /// </summary>
+        public double CompactionDurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Time from sending the HTTP request to receiving response headers in milliseconds.
+        /// Measures network latency and model loading time, separate from prompt processing.
+        /// </summary>
+        public double InferenceConnectionDurationMs { get; set; } = 0;
+
+        /// <summary>
         /// Time to first token from the model in milliseconds.
         /// </summary>
         public double TimeToFirstTokenMs { get; set; } = 0;
@@ -142,6 +158,9 @@ namespace AssistantHub.Core.Models
             obj.RetrievalContext = DataTableHelper.GetStringValue(row, "retrieval_context");
             obj.PromptSentUtc = DataTableHelper.GetNullableDateTimeValue(row, "prompt_sent_utc");
             obj.PromptTokens = DataTableHelper.GetIntValue(row, "prompt_tokens");
+            obj.EndpointResolutionDurationMs = DataTableHelper.GetDoubleValue(row, "endpoint_resolution_duration_ms");
+            obj.CompactionDurationMs = DataTableHelper.GetDoubleValue(row, "compaction_duration_ms");
+            obj.InferenceConnectionDurationMs = DataTableHelper.GetDoubleValue(row, "inference_connection_duration_ms");
             obj.TimeToFirstTokenMs = DataTableHelper.GetDoubleValue(row, "time_to_first_token_ms");
             obj.TimeToLastTokenMs = DataTableHelper.GetDoubleValue(row, "time_to_last_token_ms");
             obj.AssistantResponse = DataTableHelper.GetStringValue(row, "assistant_response");

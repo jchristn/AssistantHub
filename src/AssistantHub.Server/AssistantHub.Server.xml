@@ -284,6 +284,13 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostGenerateAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/generate - Lightweight inference-only endpoint.
+            Skips RAG retrieval, compaction, system prompt injection, and chat history persistence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetThreadHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.

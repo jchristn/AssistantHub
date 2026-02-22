@@ -899,6 +899,23 @@ compactedMessages.Add(lastUserMessage);
 
 **Source:** `ChatHandler.HandleStreamingResponse()` / `HandleNonStreamingResponse()` and `InferenceService`
 
+### Timing Measurements
+
+The following timing measurements are captured during the chat pipeline and persisted to `chat_history`:
+
+| Measurement | Field | What It Measures |
+|---|---|---|
+| Endpoint Resolution | `endpoint_resolution_duration_ms` | HTTP GET to Partio to resolve inference endpoint details (only when `InferenceEndpointId` is configured) |
+| Compaction | `compaction_duration_ms` | Time spent in `CompactIfNeeded` — may include a full LLM summarization call if context window is exceeded |
+| Inference Connection | `inference_connection_duration_ms` | Time from `HttpClient.SendAsync` to receiving response headers — network latency + model loading |
+| Time to First Token | `time_to_first_token_ms` | Time from `inferenceSw.Start()` to first `onDelta` callback — includes connection + prompt processing |
+| Time to Last Token | `time_to_last_token_ms` | Time from `inferenceSw.Start()` to stream completion — total inference duration |
+| Retrieval Duration | `retrieval_duration_ms` | Time spent in the retrieval phase (Phase 5) |
+
+**Derived metrics** (computed in the dashboard, not stored):
+- **Prompt Processing** = TTFT - Connection time (time the model spent processing the prompt)
+- **Token Generation** = TTLT - TTFT (streaming generation phase)
+
 ### Step 7.0: Pre-Inference Metrics
 
 ```csharp
@@ -1370,6 +1387,9 @@ history.RetrievalDurationMs = retrievalDurationMs;   // e.g. 23.5
 history.RetrievalContext = retrievalContext;          // JSON string of RetrievalChunk[]
 history.PromptSentUtc = promptSentUtc;               // DateTime when inference started
 history.PromptTokens = promptTokens;                 // Estimated token count
+history.EndpointResolutionDurationMs = endpointResolutionMs; // e.g. 45.12 (Partio HTTP GET)
+history.CompactionDurationMs = compactionMs;         // e.g. 3200.50 (may involve LLM call)
+history.InferenceConnectionDurationMs = inferenceConnectionMs; // e.g. 850.00 (HTTP connect + model load)
 history.TimeToFirstTokenMs = timeToFirstTokenMs;     // e.g. 150.32
 history.TimeToLastTokenMs = timeToLastTokenMs;       // e.g. 2345.67
 history.AssistantResponse = assistantResponse;       // "The capital of France is Paris."
@@ -1508,21 +1528,22 @@ setLoading(false);
 
 #### Step 9.6: Auto-Generate Chat Title (After First Response)
 
-If this is the first successful response in the conversation, the frontend automatically generates a title:
+If this is the first successful response in the conversation, the frontend automatically generates a title using the lightweight `/generate` endpoint:
 
 ---
 
 #### OUTBOUND API CALL #8: Title Generation
 
 ```
-POST {serverUrl}/v1.0/assistants/{assistantId}/chat
+POST {serverUrl}/v1.0/assistants/{assistantId}/generate
 ```
+
+**Source:** `dashboard/src/utils/api.js` — `ApiClient.generate()`
 
 **Request:**
 ```http
-POST /v1.0/assistants/asst_abc123/chat HTTP/1.1
+POST /v1.0/assistants/asst_abc123/generate HTTP/1.1
 Content-Type: application/json
-X-Thread-ID: thr_xK9mR2pL4qN7vB3wY5sT8
 
 {
   "messages": [
@@ -1533,7 +1554,7 @@ X-Thread-ID: thr_xK9mR2pL4qN7vB3wY5sT8
 }
 ```
 
-This triggers the **exact same server-side flow** (Phases 3-8) again, resulting in a short title like "European Capital Cities".
+**Note:** This uses the `/generate` endpoint instead of `/chat`. The `/generate` endpoint skips RAG retrieval, system prompt injection, conversation compaction, and chat history persistence — it only performs inference. This avoids the overhead of Phases 4-6 and Phase 8 for a simple title generation prompt, resulting in a short title like "European Capital Cities".
 
 ---
 
@@ -1616,8 +1637,11 @@ Browser                  Nginx:8801          AssistantHub:8800        Partio:840
   │  Update context usage   │                      │                      │                        │                       │
   │                         │                      │                      │                        │                       │
   │  [TITLE GENERATION]     │                      │                      │                        │                       │
-  ├─POST /chat (title)─────►├─────────────────────►│  (same full flow     │                        │                       │
-  │                         │                      │   repeats for title) │                        │                       │
+  ├─POST /generate (title)─►├─────────────────────►│  (inference only,    │                        │                       │
+  │                         │                      │   no RAG/compact/    │                        │                       │
+  │                         │                      │   history)           │                        │                       │
+  │                         │                      ├─POST /api/chat──────┼────────────────────────┼──────────────────────►│
+  │                         │                      │◄─{title response}───┼────────────────────────┼───────────────────────┤
   │◄─response───────────────┤◄─────────────────────┤                      │                        │                       │
   │                         │                      │                      │                        │                       │
 ```
@@ -1637,7 +1661,7 @@ Browser                  Nginx:8801          AssistantHub:8800        Partio:840
 | 6 | Server → Ollama | `POST` | `http://ollama:11434/api/chat` (summarize) | If compaction needed | Yes |
 | 7 | Server → Ollama | `POST` | `http://ollama:11434/api/chat` (stream) | Always (main inference) | Yes (streaming) |
 | 8 | Server → SQLite | INSERT | `chat_history` table | After response complete | No (fire-and-forget) |
-| 9 | Browser → Server | `POST` | `/v1.0/assistants/{id}/chat` (title) | After first response | No (background) |
+| 9 | Browser → Server | `POST` | `/v1.0/assistants/{id}/generate` (title) | After first response | No (background) |
 
 ---
 

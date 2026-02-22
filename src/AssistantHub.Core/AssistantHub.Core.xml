@@ -3064,6 +3064,22 @@
             Estimated prompt token count sent to the model.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.EndpointResolutionDurationMs">
+            <summary>
+            Duration of endpoint resolution in milliseconds (HTTP GET to Partio for endpoint details).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CompactionDurationMs">
+            <summary>
+            Duration of conversation compaction in milliseconds (0 if skipped).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.InferenceConnectionDurationMs">
+            <summary>
+            Time from sending the HTTP request to receiving response headers in milliseconds.
+            Measures network latency and model loading time, separate from prompt processing.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToFirstTokenMs">
             <summary>
             Time to first token from the model in milliseconds.
@@ -3966,7 +3982,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Inference result containing the response or error details.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Threading.CancellationToken)">
             <summary>
             Generate a streaming response from a language model using a multi-message conversation.
             </summary>

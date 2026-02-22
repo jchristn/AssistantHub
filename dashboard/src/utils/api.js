@@ -285,6 +285,16 @@ export class ApiClient {
     };
   }
 
+  // Generate (unauthenticated) - lightweight inference-only, no RAG/compaction/history
+  static async generate(serverUrl, assistantId, messages) {
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
+    });
+    return response.json();
+  }
+
   // Compact (unauthenticated) - force conversation compaction
   static async compact(serverUrl, assistantId, messages, threadId) {
     const headers = { 'Content-Type': 'application/json' };

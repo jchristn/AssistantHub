@@ -448,6 +448,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onDelta,
             Func<string, Task> onComplete,
             Func<string, Task> onError,
+            Action onConnectionEstablished = null,
             CancellationToken token = default)
         {
             if (messages == null || messages.Count == 0) throw new ArgumentNullException(nameof(messages));
@@ -468,13 +469,13 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.OpenAI:
                         await GenerateOpenAIStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, onDelta, onComplete, onError, token).ConfigureAwait(false);
+                            effectiveEndpoint, effectiveApiKey, onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
                             messages, effectiveModel, effectiveEndpoint,
-                            onDelta, onComplete, onError, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
                         break;
 
                     default:
@@ -868,6 +869,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onDelta,
             Func<string, Task> onComplete,
             Func<string, Task> onError,
+            Action onConnectionEstablished,
             CancellationToken token)
         {
             string url = endpoint.TrimEnd('/') + "/chat/completions";
@@ -902,6 +904,8 @@ namespace AssistantHub.Core.Services
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
+                    onConnectionEstablished?.Invoke();
+
                     if (!response.IsSuccessStatusCode)
                     {
                         string errorBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -969,6 +973,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onDelta,
             Func<string, Task> onComplete,
             Func<string, Task> onError,
+            Action onConnectionEstablished,
             CancellationToken token)
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
@@ -995,6 +1000,8 @@ namespace AssistantHub.Core.Services
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
+                    onConnectionEstablished?.Invoke();
+
                     if (!response.IsSuccessStatusCode)
                     {
                         string errorBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);

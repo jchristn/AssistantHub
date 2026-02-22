@@ -1622,6 +1622,9 @@ Retrieve a single chat history record by ID.
   "RetrievalContext": "Chunk 1: To reset your password...",
   "PromptSentUtc": "2025-01-01T12:00:00.150Z",
   "PromptTokens": 1250,
+  "CompletionTokens": 87,
+  "TokensPerSecondOverall": 97.65,
+  "TokensPerSecondGeneration": 145.00,
   "EndpointResolutionDurationMs": 45.12,
   "CompactionDurationMs": 0,
   "InferenceConnectionDurationMs": 850.00,
@@ -1648,6 +1651,9 @@ Retrieve a single chat history record by ID.
 | `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
 | `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
 | `PromptTokens`         | int      | Estimated prompt token count sent to the model.              |
+| `CompletionTokens`     | int      | Estimated completion token count from the model's response.  |
+| `TokensPerSecondOverall` | double | Tokens per second (overall): CompletionTokens / (TimeToLastTokenMs / 1000). End-to-end throughput from prompt sent to last token. |
+| `TokensPerSecondGeneration` | double | Tokens per second (generation only): CompletionTokens / ((TimeToLastTokenMs - TimeToFirstTokenMs) / 1000). Pure generation throughput excluding prompt processing. |
 | `EndpointResolutionDurationMs` | double | Time to resolve inference endpoint via Partio (ms). 0 if not configured. |
 | `CompactionDurationMs` | double   | Time spent in conversation compaction (ms). 0 if skipped.    |
 | `InferenceConnectionDurationMs` | double | Time from HTTP request sent to response headers received (ms). Includes network latency and model loading. |

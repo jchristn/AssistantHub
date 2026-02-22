@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 
-function Modal({ title, onClose, children, footer, wide, extraWide, className }) {
+function Modal({ title, onClose, children, footer, wide, extraWide, fullscreen, className }) {
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Escape') onClose();
   }, [onClose]);
@@ -16,7 +16,7 @@ function Modal({ title, onClose, children, footer, wide, extraWide, className })
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className={`modal-container ${extraWide ? 'extra-wide' : wide ? 'wide' : ''}${className ? ' ' + className : ''}`}>
+      <div className={`modal-container ${fullscreen ? 'fullscreen' : extraWide ? 'extra-wide' : wide ? 'wide' : ''}${className ? ' ' + className : ''}`}>
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
           <button className="modal-close" onClick={onClose}>&times;</button>

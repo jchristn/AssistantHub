@@ -28,6 +28,23 @@ namespace AssistantHub.Server.Handlers
     {
         private static readonly string _Header = "[ChatHandler] ";
 
+        private static readonly string _RetrievalGatePrompt =
+            "You are a retrieval classifier. Given a conversation and the user's latest message, " +
+            "decide whether answering the latest message requires searching an external knowledge base " +
+            "for new information, or whether the answer can be constructed entirely from the existing " +
+            "conversation context.\n\n" +
+            "Respond with exactly one word: RETRIEVE or SKIP\n\n" +
+            "Rules:\n" +
+            "- RETRIEVE: The user is asking about new topics, new entities, new data points, " +
+            "or information not already present in the conversation.\n" +
+            "- SKIP: The user is asking to reformat, reorder, summarize, compare, explain, " +
+            "or otherwise manipulate information already provided in the conversation. " +
+            "Also SKIP for greetings, meta-questions about the conversation, or clarifications " +
+            "about previously retrieved content.\n\n" +
+            "Conversation context (last few turns):\n{recentMessages}\n\n" +
+            "Latest user message:\n{lastUserMessage}\n\n" +
+            "Decision:";
+
         private static readonly JsonSerializerOptions _SseJsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -174,11 +191,109 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                // Retrieval gate: determine if retrieval is needed
+                string retrievalGateDecision = null;
+                double retrievalGateDurationMs = 0;
+                bool shouldRetrieve = true;
+
+                if (settings.EnableRag && settings.EnableRetrievalGate
+                    && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+                {
+                    // Count user messages to detect first turn
+                    int userMessageCount = chatReq.Messages.Count(m =>
+                        String.Equals(m.Role, "user", StringComparison.OrdinalIgnoreCase));
+
+                    if (userMessageCount > 1)
+                    {
+                        // Build recent context for the gate prompt (last 6 messages, truncated)
+                        // Truncate each message to keep the gate prompt small — the gate only needs
+                        // to understand what topics were discussed, not read full document content.
+                        const int maxCharsPerMessage = 200;
+                        int recentCount = Math.Min(chatReq.Messages.Count, 6);
+                        int startIndex = chatReq.Messages.Count - recentCount;
+                        StringBuilder recentMessages = new StringBuilder();
+                        for (int i = startIndex; i < chatReq.Messages.Count; i++)
+                        {
+                            if (chatReq.Messages[i] == chatReq.Messages.Last() &&
+                                String.Equals(chatReq.Messages[i].Role, "user", StringComparison.OrdinalIgnoreCase))
+                                continue; // Exclude the latest user message (it goes separately)
+                            string content = chatReq.Messages[i].Content ?? "";
+                            if (content.Length > maxCharsPerMessage)
+                                content = content.Substring(0, maxCharsPerMessage) + "...";
+                            recentMessages.AppendLine(chatReq.Messages[i].Role + ": " + content);
+                        }
+
+                        string gatePrompt = _RetrievalGatePrompt
+                            .Replace("{recentMessages}", recentMessages.ToString())
+                            .Replace("{lastUserMessage}", lastUserMessage);
+
+                        // Resolve inference endpoint for the gate call (same as chat completion)
+                        Enums.InferenceProviderEnum gateProvider = Settings.Inference.Provider;
+                        string gateEndpoint = Settings.Inference.Endpoint;
+                        string gateApiKey = Settings.Inference.ApiKey;
+
+                        if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                        {
+                            var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                            if (resolved != null)
+                            {
+                                gateProvider = resolved.Value.Provider;
+                                gateEndpoint = resolved.Value.Endpoint;
+                                gateApiKey = resolved.Value.ApiKey;
+                            }
+                        }
+
+                        string gateModel = settings.Model;
+                        List<ChatCompletionMessage> gateMessages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "system", Content = gatePrompt }
+                        };
+
+                        Stopwatch gateSw = Stopwatch.StartNew();
+                        try
+                        {
+                            InferenceResult gateResult = await Inference.GenerateResponseAsync(
+                                gateMessages, gateModel, 3, 0.0, 1.0,
+                                gateProvider, gateEndpoint, gateApiKey).ConfigureAwait(false);
+
+                            gateSw.Stop();
+                            retrievalGateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
+
+                            if (gateResult != null && gateResult.Success && !String.IsNullOrEmpty(gateResult.Content))
+                            {
+                                string decision = gateResult.Content.Trim().ToUpperInvariant();
+                                if (decision.Contains("SKIP"))
+                                {
+                                    retrievalGateDecision = "SKIP";
+                                    shouldRetrieve = false;
+                                }
+                                else
+                                {
+                                    retrievalGateDecision = "RETRIEVE";
+                                }
+                            }
+                            else
+                            {
+                                retrievalGateDecision = "RETRIEVE";
+                            }
+                        }
+                        catch (Exception gateEx)
+                        {
+                            gateSw.Stop();
+                            retrievalGateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
+                            retrievalGateDecision = "RETRIEVE";
+                            Logging.Warn(_Header + "retrieval gate failed, defaulting to RETRIEVE: " + gateEx.Message);
+                        }
+
+                        Logging.Info(_Header + "retrieval gate decision: " + retrievalGateDecision + " (" + retrievalGateDurationMs + " ms)");
+                    }
+                }
+
                 // Retrieve relevant context from the vector database
                 List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
                 DateTime? retrievalStartUtc = null;
                 double retrievalDurationMs = 0;
-                if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+                if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage) && shouldRetrieve)
                 {
                     retrievalStartUtc = DateTime.UtcNow;
                     Stopwatch retrievalSw = Stopwatch.StartNew();
@@ -288,7 +403,8 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
-                        promptTokenEstimate, endpointResolutionMs, compactionMs).ConfigureAwait(false);
+                        promptTokenEstimate, endpointResolutionMs, compactionMs,
+                        retrievalGateDecision, retrievalGateDurationMs).ConfigureAwait(false);
                 }
                 else
                 {
@@ -296,7 +412,8 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
-                        promptTokenEstimate, endpointResolutionMs, compactionMs).ConfigureAwait(false);
+                        promptTokenEstimate, endpointResolutionMs, compactionMs,
+                        retrievalGateDecision, retrievalGateDurationMs).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -749,9 +866,14 @@ namespace AssistantHub.Server.Handlers
                             UserMessage = h.UserMessage,
                             RetrievalStartUtc = h.RetrievalStartUtc,
                             RetrievalDurationMs = h.RetrievalDurationMs,
+                            RetrievalGateDecision = h.RetrievalGateDecision,
+                            RetrievalGateDurationMs = h.RetrievalGateDurationMs,
                             RetrievalContext = h.RetrievalContext,
                             PromptSentUtc = h.PromptSentUtc,
                             PromptTokens = h.PromptTokens,
+                            CompletionTokens = h.CompletionTokens,
+                            TokensPerSecondOverall = h.TokensPerSecondOverall,
+                            TokensPerSecondGeneration = h.TokensPerSecondGeneration,
                             TimeToFirstTokenMs = h.TimeToFirstTokenMs,
                             TimeToLastTokenMs = h.TimeToLastTokenMs,
                             AssistantResponse = h.AssistantResponse,
@@ -799,7 +921,9 @@ namespace AssistantHub.Server.Handlers
             Stopwatch inferenceSw = null,
             int promptTokens = 0,
             double endpointResolutionMs = 0,
-            double compactionMs = 0)
+            double compactionMs = 0,
+            string retrievalGateDecision = null,
+            double retrievalGateDurationMs = 0)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -861,7 +985,9 @@ namespace AssistantHub.Server.Handlers
                         promptSentUtc, promptTokens,
                         endpointResolutionMs, compactionMs, 0,
                         timeToLastTokenMs, timeToLastTokenMs,
-                        inferenceResult.Content);
+                        inferenceResult.Content,
+                        completionTokens,
+                        retrievalGateDecision, retrievalGateDurationMs);
                 }
             }
             else
@@ -898,7 +1024,9 @@ namespace AssistantHub.Server.Handlers
             Stopwatch inferenceSw = null,
             int promptTokens = 0,
             double endpointResolutionMs = 0,
-            double compactionMs = 0)
+            double compactionMs = 0,
+            string retrievalGateDecision = null,
+            double retrievalGateDurationMs = 0)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -970,6 +1098,10 @@ namespace AssistantHub.Server.Handlers
 
                     Logging.Info(_Header + "inference timing: connection=" + inferenceConnectionMs + "ms, TTFT=" + timeToFirstTokenMs + "ms, TTLT=" + timeToLastTokenMs + "ms");
 
+                    // Send finish chunk with usage
+                    int finishPromptTokens = EstimateTokenCount(messages);
+                    int finishCompletionTokens = EstimateTokenCount(fullContent);
+
                     // Fire-and-forget chat history write
                     if (!String.IsNullOrEmpty(threadId))
                     {
@@ -979,12 +1111,10 @@ namespace AssistantHub.Server.Handlers
                             promptSentUtc, promptTokens,
                             endpointResolutionMs, compactionMs, inferenceConnectionMs,
                             timeToFirstTokenMs, timeToLastTokenMs,
-                            fullContent);
+                            fullContent,
+                            finishCompletionTokens,
+                            retrievalGateDecision, retrievalGateDurationMs);
                     }
-
-                    // Send finish chunk with usage
-                    int finishPromptTokens = EstimateTokenCount(messages);
-                    int finishCompletionTokens = EstimateTokenCount(fullContent);
                     ChatCompletionResponse finishChunk = new ChatCompletionResponse
                     {
                         Id = completionId,
@@ -1204,7 +1334,9 @@ namespace AssistantHub.Server.Handlers
             DateTime? promptSentUtc, int promptTokens,
             double endpointResolutionDurationMs, double compactionDurationMs, double inferenceConnectionDurationMs,
             double timeToFirstTokenMs, double timeToLastTokenMs,
-            string assistantResponse)
+            string assistantResponse,
+            int completionTokens = 0,
+            string retrievalGateDecision = null, double retrievalGateDurationMs = 0)
         {
             try
             {
@@ -1217,6 +1349,8 @@ namespace AssistantHub.Server.Handlers
                 history.UserMessage = userMessage;
                 history.RetrievalStartUtc = retrievalStartUtc;
                 history.RetrievalDurationMs = retrievalDurationMs;
+                history.RetrievalGateDecision = retrievalGateDecision;
+                history.RetrievalGateDurationMs = retrievalGateDurationMs;
                 history.RetrievalContext = retrievalContext;
                 history.PromptSentUtc = promptSentUtc;
                 history.PromptTokens = promptTokens;
@@ -1226,6 +1360,17 @@ namespace AssistantHub.Server.Handlers
                 history.TimeToFirstTokenMs = timeToFirstTokenMs;
                 history.TimeToLastTokenMs = timeToLastTokenMs;
                 history.AssistantResponse = assistantResponse;
+
+                history.CompletionTokens = completionTokens;
+
+                // Compute tokens per second (overall): completion tokens / TTLT in seconds
+                if (completionTokens > 0 && timeToLastTokenMs > 0)
+                    history.TokensPerSecondOverall = Math.Round(completionTokens / (timeToLastTokenMs / 1000.0), 2);
+
+                // Compute tokens per second (generation only): completion tokens / (TTLT - TTFT) in seconds
+                double generationMs = timeToLastTokenMs - timeToFirstTokenMs;
+                if (completionTokens > 0 && generationMs > 0)
+                    history.TokensPerSecondGeneration = Math.Round(completionTokens / (generationMs / 1000.0), 2);
 
                 await Database.ChatHistory.CreateAsync(history).ConfigureAwait(false);
             }

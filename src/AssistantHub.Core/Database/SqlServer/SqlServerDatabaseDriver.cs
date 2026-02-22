@@ -90,6 +90,20 @@ namespace AssistantHub.Core.Database.SqlServer
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
+
+            // Auto-migration: add columns that may not exist in older databases
+            string[] migrations = new string[]
+            {
+                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'completion_tokens') ALTER TABLE chat_history ADD completion_tokens INT NOT NULL DEFAULT 0;",
+                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'tokens_per_second_overall') ALTER TABLE chat_history ADD tokens_per_second_overall FLOAT NOT NULL DEFAULT 0;",
+                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'tokens_per_second_generation') ALTER TABLE chat_history ADD tokens_per_second_generation FLOAT NOT NULL DEFAULT 0;"
+            };
+
+            foreach (string migration in migrations)
+            {
+                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
+                catch (Exception) { /* Column already exists */ }
+            }
         }
 
         /// <inheritdoc />

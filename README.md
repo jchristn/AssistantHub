@@ -1,7 +1,8 @@
 # AssistantHub
 
 <p align="center">
-  <img src="assets/logo.png" alt="AssistantHub Logo" width="256">
+  <img src="assets/logo-new-grey-outline-trans.png" alt="AssistantHub Logo" width="192"><br>
+  <strong>AssistantHub</strong>
 </p>
 
 AssistantHub is a self-hosted RAG (Retrieval-Augmented Generation) data and chatbot platform. It enables you to create AI assistants that can answer questions based on your uploaded documents, powered by vector embeddings and large language models.

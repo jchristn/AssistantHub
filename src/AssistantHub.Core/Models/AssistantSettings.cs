@@ -81,6 +81,13 @@ namespace AssistantHub.Core.Models
         public bool EnableRag { get; set; } = false;
 
         /// <summary>
+        /// Whether the LLM-based retrieval gate is enabled.
+        /// When enabled, an LLM call classifies whether each user message requires
+        /// new retrieval or can be answered from existing conversation context.
+        /// </summary>
+        public bool EnableRetrievalGate { get; set; } = false;
+
+        /// <summary>
         /// Collection identifier for document retrieval.
         /// </summary>
         public string CollectionId { get; set; } = null;
@@ -219,6 +226,7 @@ namespace AssistantHub.Core.Models
             obj.ContextWindow = DataTableHelper.GetIntValue(row, "context_window", 8192);
             obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
+            obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);

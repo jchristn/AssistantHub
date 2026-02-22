@@ -56,6 +56,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `context_window` INT NOT NULL DEFAULT 8192, " +
             "  `model` TEXT NOT NULL DEFAULT 'gemma3:4b', " +
             "  `enable_rag` TINYINT NOT NULL DEFAULT 0, " +
+            "  `enable_retrieval_gate` TINYINT NOT NULL DEFAULT 0, " +
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
@@ -140,6 +141,8 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `user_message` LONGTEXT, " +
             "  `retrieval_start_utc` TEXT, " +
             "  `retrieval_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `retrieval_gate_decision` TEXT, " +
+            "  `retrieval_gate_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `retrieval_context` LONGTEXT, " +
             "  `prompt_sent_utc` TEXT, " +
             "  `prompt_tokens` INT NOT NULL DEFAULT 0, " +
@@ -148,6 +151,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `inference_connection_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `time_to_first_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `time_to_last_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `completion_tokens` INT NOT NULL DEFAULT 0, " +
+            "  `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0, " +
             "  `assistant_response` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +

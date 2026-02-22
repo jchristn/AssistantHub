@@ -246,6 +246,12 @@ function AssistantSettingsView() {
               </div>
               {settings.EnableRag && (
                 <>
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableRetrievalGate} onChange={(e) => handleChange('EnableRetrievalGate', e.target.checked)} />
+                      <Tooltip text="Use an LLM call to classify whether each message requires new retrieval or can be answered from existing conversation context. Skips retrieval for follow-up questions about already-retrieved data.">Enable Retrieval Gate</Tooltip>
+                    </label>
+                  </div>
                   <div className="form-group">
                     <label className="form-label"><Tooltip text="Vector collection to search for relevant document chunks">Collection ID</Tooltip></label>
                     <select className="form-input" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)}>

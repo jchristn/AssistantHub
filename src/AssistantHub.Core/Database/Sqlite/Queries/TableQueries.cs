@@ -50,6 +50,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  context_window INTEGER NOT NULL DEFAULT 8192, " +
                 "  model TEXT NOT NULL DEFAULT 'gemma3:4b', " +
                 "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
+                "  enable_retrieval_gate INTEGER NOT NULL DEFAULT 0, " +
                 "  collection_id TEXT, " +
                 "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
                 "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +
@@ -122,6 +123,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  user_message TEXT, " +
                 "  retrieval_start_utc TEXT, " +
                 "  retrieval_duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  retrieval_gate_decision TEXT, " +
+                "  retrieval_gate_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  retrieval_context TEXT, " +
                 "  prompt_sent_utc TEXT, " +
                 "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
@@ -130,6 +133,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  inference_connection_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  time_to_first_token_ms REAL NOT NULL DEFAULT 0, " +
                 "  time_to_last_token_ms REAL NOT NULL DEFAULT 0, " +
+                "  completion_tokens INTEGER NOT NULL DEFAULT 0, " +
+                "  tokens_per_second_overall REAL NOT NULL DEFAULT 0, " +
+                "  tokens_per_second_generation REAL NOT NULL DEFAULT 0, " +
                 "  assistant_response TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +

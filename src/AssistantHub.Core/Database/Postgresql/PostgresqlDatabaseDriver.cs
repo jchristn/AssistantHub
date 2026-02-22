@@ -83,6 +83,21 @@ namespace AssistantHub.Core.Database.Postgresql
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
+
+            // Auto-migration: add columns that may not exist in older databases
+            string[] migrations = new string[]
+            {
+                "ALTER TABLE chat_history ADD COLUMN completion_tokens INTEGER NOT NULL DEFAULT 0",
+                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_overall DOUBLE PRECISION NOT NULL DEFAULT 0",
+                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_generation DOUBLE PRECISION NOT NULL DEFAULT 0"
+            };
+
+            foreach (string migration in migrations)
+            {
+                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
+                catch (Exception) { /* Column already exists */ }
+            }
+
             _Logging.Info("PostgreSQL database initialized successfully");
         }
 

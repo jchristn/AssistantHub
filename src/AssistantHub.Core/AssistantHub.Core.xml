@@ -2678,6 +2678,13 @@
             Whether RAG retrieval is enabled.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableRetrievalGate">
+            <summary>
+            Whether the LLM-based retrieval gate is enabled.
+            When enabled, an LLM call classifies whether each user message requires
+            new retrieval or can be answered from existing conversation context.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
             <summary>
             Collection identifier for document retrieval.
@@ -3049,6 +3056,16 @@
             Duration of retrieval in milliseconds.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalGateDecision">
+            <summary>
+            Retrieval gate decision: "RETRIEVE", "SKIP", or null (gate disabled).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalGateDurationMs">
+            <summary>
+            Duration of the retrieval gate LLM call in milliseconds.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
             <summary>
             Text retrieved from the vector database.
@@ -3088,6 +3105,23 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToLastTokenMs">
             <summary>
             Time to last token from the model in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CompletionTokens">
+            <summary>
+            Estimated completion (response) token count from the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TokensPerSecondOverall">
+            <summary>
+            Tokens per second (overall): CompletionTokens / (TimeToLastTokenMs / 1000).
+            Measures end-to-end generation throughput from prompt sent to last token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TokensPerSecondGeneration">
+            <summary>
+            Tokens per second (generation only): CompletionTokens / ((TimeToLastTokenMs - TimeToFirstTokenMs) / 1000).
+            Measures pure token generation throughput excluding prompt processing.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantResponse">

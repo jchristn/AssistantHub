@@ -47,7 +47,7 @@ function Login() {
       </button>
       <div className="login-container">
         <div className="login-logo">
-          <img src={theme === 'dark' ? '/logo-white.png' : '/logo-black.png'} alt="AssistantHub" />
+          <img src="/logo-new-full.png" alt="AssistantHub" />
         </div>
         <h2 className="login-title">Sign In</h2>
         {error && <div className="login-error">{error}</div>}

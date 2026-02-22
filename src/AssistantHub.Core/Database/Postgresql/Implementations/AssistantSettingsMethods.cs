@@ -52,7 +52,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
             string query =
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
-                "model, enable_rag, collection_id, retrieval_top_k, retrieval_score_threshold, " +
+                "model, enable_rag, enable_retrieval_gate, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
@@ -65,6 +65,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 assistantSettings.ContextWindow + ", " +
                 _Driver.FormatNullableString(assistantSettings.Model) + ", " +
                 (assistantSettings.EnableRag ? 1 : 0) + ", " +
+                (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 assistantSettings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
@@ -129,6 +130,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "context_window = " + assistantSettings.ContextWindow + ", " +
                 "model = " + _Driver.FormatNullableString(assistantSettings.Model) + ", " +
                 "enable_rag = " + (assistantSettings.EnableRag ? 1 : 0) + ", " +
+                "enable_retrieval_gate = " + (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
                 "collection_id = " + _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 "retrieval_top_k = " + assistantSettings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +

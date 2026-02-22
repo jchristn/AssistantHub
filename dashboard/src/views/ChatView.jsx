@@ -498,7 +498,7 @@ function ChatView() {
     },
   };
 
-  const logoSrc = assistant?.LogoUrl || '/logo-no-text.png';
+  const logoSrc = assistant?.LogoUrl || '/logo-new.png';
   const chatTitle = assistant?.Title || assistant?.Name || 'AssistantHub';
 
   if (error) {
@@ -506,7 +506,7 @@ function ChatView() {
       <div className="chat-page">
         <div className="chat-header">
           <div className="chat-header-inner">
-            <img src="/logo-no-text.png" alt="AssistantHub" className="chat-header-logo" />
+            <img src="/logo-new.png" alt="AssistantHub" className="chat-header-logo" />
             <span className="chat-header-title">AssistantHub</span>
           </div>
         </div>
@@ -531,7 +531,7 @@ function ChatView() {
             src={logoSrc}
             alt={chatTitle}
             className="chat-header-logo"
-            onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+            onError={(e) => { e.target.src = '/logo-new.png'; }}
           />
           <div className="chat-header-info">
             <div className="chat-header-title">{chatName || chatTitle}</div>
@@ -559,7 +559,7 @@ function ChatView() {
                   src={logoSrc}
                   alt=""
                   className="chat-empty-logo"
-                  onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                  onError={(e) => { e.target.src = '/logo-new.png'; }}
                 />
               </div>
               <h2>How can I help you today?</h2>
@@ -590,7 +590,7 @@ function ChatView() {
                     <img
                       src={logoSrc}
                       alt=""
-                      onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                      onError={(e) => { e.target.src = '/logo-new.png'; }}
                     />
                   </div>
                 )}
@@ -651,7 +651,7 @@ function ChatView() {
                 <img
                   src={logoSrc}
                   alt=""
-                  onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                  onError={(e) => { e.target.src = '/logo-new.png'; }}
                 />
               </div>
               <div className="chat-message-content-wrap">

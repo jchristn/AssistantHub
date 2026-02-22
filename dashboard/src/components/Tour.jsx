@@ -33,7 +33,7 @@ const SPOTLIGHT_STEPS = [
 ];
 
 function Tour({ onComplete }) {
-  const { isAdmin, theme } = useAuth();
+  const { isAdmin } = useAuth();
   const spotlightSteps = SPOTLIGHT_STEPS.filter(s => !s.adminOnly || isAdmin);
   const totalSteps = 1 + spotlightSteps.length; // welcome + spotlight steps
 
@@ -83,7 +83,7 @@ function Tour({ onComplete }) {
     onComplete();
   };
 
-  const logoSrc = theme === 'dark' ? '/logo-white.png' : '/logo-black.png';
+  const logoSrc = '/logo-new-full.png';
 
   // Welcome screen (step 0)
   if (isWelcome) {

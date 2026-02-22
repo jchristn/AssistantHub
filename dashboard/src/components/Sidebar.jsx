@@ -10,7 +10,7 @@ const TOUR_TARGETS = {
 };
 
 function Sidebar({ onStartTour, onStartWizard }) {
-  const { isAdmin, theme } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,7 +57,7 @@ function Sidebar({ onStartTour, onStartWizard }) {
     },
   ];
 
-  const logoSrc = theme === 'dark' ? '/logo-white.png' : '/logo-black.png';
+  const logoSrc = '/logo-new-full.png';
 
   return (
     <nav className="sidebar">

@@ -3,6 +3,11 @@ import Modal from '../Modal';
 import CopyableId from '../CopyableId';
 import Tooltip from '../Tooltip';
 
+function formatTps(tps) {
+  if (!tps || tps <= 0 || !isFinite(tps)) return 'N/A';
+  return tps.toFixed(1) + ' tok/s';
+}
+
 function formatMs(ms) {
   if (!ms || ms <= 0) return 'N/A';
   if (ms < 1000) return ms.toFixed(1) + ' ms';
@@ -42,6 +47,7 @@ function HistoryViewModal({ history, onClose }) {
 
   // Compute total pipeline duration for proportional bars
   const totalPipelineMs =
+    (history.RetrievalGateDurationMs || 0) +
     (history.RetrievalDurationMs || 0) +
     (history.EndpointResolutionDurationMs || 0) +
     (history.CompactionDurationMs || 0) +
@@ -59,8 +65,21 @@ function HistoryViewModal({ history, onClose }) {
       ? Math.max(0, history.TimeToLastTokenMs - history.TimeToFirstTokenMs)
       : 0;
 
+  // Use backend-stored TPS if available, otherwise compute from raw fields
+  const overallTps = history.TokensPerSecondOverall > 0
+    ? history.TokensPerSecondOverall
+    : (history.CompletionTokens > 0 && history.TimeToLastTokenMs > 0
+        ? (history.CompletionTokens / (history.TimeToLastTokenMs / 1000))
+        : 0);
+
+  const generationTps = history.TokensPerSecondGeneration > 0
+    ? history.TokensPerSecondGeneration
+    : (history.CompletionTokens > 0 && tokenGenMs > 0
+        ? (history.CompletionTokens / (tokenGenMs / 1000))
+        : 0);
+
   return (
-    <Modal title="History Details" onClose={onClose} extraWide footer={
+    <Modal title="History Details" onClose={onClose} fullscreen footer={
       <button className="btn btn-secondary" onClick={onClose}>Close</button>
     }>
       {/* === Identifiers row === */}
@@ -91,6 +110,13 @@ function HistoryViewModal({ history, onClose }) {
           <Tooltip text="End-to-end timing breakdown for this chat turn">Performance Timing</Tooltip>
         </div>
         <div className="history-timing-container">
+          <TimingBar
+            label="Retrieval Gate"
+            tooltip={'LLM-based retrieval gate — classifies whether retrieval is needed or can be skipped' + (history.RetrievalGateDecision ? '. Decision: ' + history.RetrievalGateDecision : '')}
+            durationMs={history.RetrievalGateDurationMs}
+            totalMs={totalPipelineMs}
+            color="var(--timing-gate, #a9e34b)"
+          />
           <TimingBar
             label="Retrieval"
             tooltip="Time spent searching the document collection for relevant context"
@@ -148,6 +174,26 @@ function HistoryViewModal({ history, onClose }) {
           <div className="history-metric">
             <span className="history-metric-label"><Tooltip text="Estimated number of tokens in the prompt (system + RAG context + conversation)">Prompt Tokens</Tooltip></span>
             <span className="history-metric-value">{history.PromptTokens > 0 ? `~${history.PromptTokens.toLocaleString()}` : 'N/A'}</span>
+          </div>
+          <div className="history-metric">
+            <span className="history-metric-label">
+              <Tooltip text="Estimated completion tokens in the assistant's response">Completion Tokens</Tooltip>
+            </span>
+            <span className="history-metric-value">
+              {history.CompletionTokens > 0 ? `~${history.CompletionTokens.toLocaleString()}` : 'N/A'}
+            </span>
+          </div>
+          <div className="history-metric">
+            <span className="history-metric-label">
+              <Tooltip text="Tokens per second — completion tokens divided by total time from prompt sent to last token (TTLT)">TPS (Overall)</Tooltip>
+            </span>
+            <span className="history-metric-value">{formatTps(overallTps)}</span>
+          </div>
+          <div className="history-metric">
+            <span className="history-metric-label">
+              <Tooltip text="Tokens per second — completion tokens divided by generation time (first token to last token)">TPS (Generation)</Tooltip>
+            </span>
+            <span className="history-metric-value">{formatTps(generationTps)}</span>
           </div>
           <div className="history-metric">
             <span className="history-metric-label"><Tooltip text="Timestamp when the assembled prompt was sent to the inference endpoint">Prompt Sent</Tooltip></span>

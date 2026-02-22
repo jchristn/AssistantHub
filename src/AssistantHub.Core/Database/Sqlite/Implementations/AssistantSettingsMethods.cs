@@ -60,7 +60,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
             string query =
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, model, " +
-                "enable_rag, collection_id, retrieval_top_k, retrieval_score_threshold, " +
+                "enable_rag, enable_retrieval_gate, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
@@ -73,6 +73,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 settings.ContextWindow + ", " +
                 _Driver.FormatNullableString(settings.Model) + ", " +
                 (settings.EnableRag ? 1 : 0) + ", " +
+                (settings.EnableRetrievalGate ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 settings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +
@@ -139,6 +140,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "context_window = " + settings.ContextWindow + ", " +
                 "model = " + _Driver.FormatNullableString(settings.Model) + ", " +
                 "enable_rag = " + (settings.EnableRag ? 1 : 0) + ", " +
+                "enable_retrieval_gate = " + (settings.EnableRetrievalGate ? 1 : 0) + ", " +
                 "collection_id = " + _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 "retrieval_top_k = " + settings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +

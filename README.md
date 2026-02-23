@@ -2,13 +2,12 @@
 
 <p align="center">
   <img src="assets/logo-new-full.png" alt="AssistantHub Logo" width="192"><br>
-  <strong>AssistantHub</strong><br><br>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/.NET-10.0-purple.svg" alt=".NET 10.0">
   <img src="https://img.shields.io/badge/Docker-Compose-2496ed.svg" alt="Docker Compose">
 </p>
 
-AssistantHub is a self-hosted RAG (Retrieval-Augmented Generation) data and chatbot platform. It enables you to create AI assistants that can answer questions grounded in your uploaded documents, powered by vector embeddings, hybrid search, and large language models. Upload PDFs, text files, HTML, and more -- AssistantHub automatically extracts content, summarizes, chunks, generates embeddings, and makes it searchable. Your assistants retrieve relevant context at query time and generate accurate, citation-ready responses.
+**AssistantHub** is a self-hosted RAG (Retrieval-Augmented Generation) data and chatbot platform. It enables you to create AI assistants that can answer questions grounded in your uploaded documents, powered by vector embeddings, hybrid search, and large language models. Upload PDFs, text files, HTML, and more -- AssistantHub automatically extracts content, summarizes, chunks, generates embeddings, and makes it searchable. Your assistants retrieve relevant context at query time and generate accurate, citation-ready responses.
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
@@ -364,10 +363,11 @@ For complete endpoint documentation including request/response schemas and examp
 
 ---
 
-## Issues and Feedback
+## Issues, Feedback, and Improvements
 
 - **Bug Reports and Feature Requests** -- Use the [Issues](../../issues) tab to report bugs or request new features.
 - **Questions and Discussion** -- Use the [Discussions](../../discussions) tab for general questions, ideas, and community feedback.
+- **Improvements** -- We are happy to accept pull requests, please keep them focused and short
 
 ---
 

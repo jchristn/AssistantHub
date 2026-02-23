@@ -590,8 +590,13 @@ namespace AssistantHub.Core.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "OpenAI API returned " + (int)response.StatusCode + ": " + responseBody);
-                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode + ": " + responseBody);
+                    _Logging.Warn(
+                        _Header +
+                        "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
+                        "| URL           : " + url + Environment.NewLine +
+                        "| Bearer token  : " + apiKey + Environment.NewLine +
+                        "| Response body : " + Environment.NewLine + responseBody);
+                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode);
                 }
 
                 OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
@@ -667,8 +672,13 @@ namespace AssistantHub.Core.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "Ollama API returned " + (int)response.StatusCode + ": " + responseBody);
-                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode + ": " + responseBody);
+                    _Logging.Warn(
+                        _Header + 
+                        "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine + 
+                        "| URL           : " + url + Environment.NewLine +
+                        "| Bearer token  : " + apiKey + Environment.NewLine + 
+                        "| Response body : " + Environment.NewLine + responseBody);
+                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode);
                 }
 
                 OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);

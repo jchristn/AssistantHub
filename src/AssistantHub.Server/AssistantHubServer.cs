@@ -425,6 +425,8 @@ namespace AssistantHub.Server
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
             IngestionRuleHandler ingestionRuleHandler = new IngestionRuleHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            EmbeddingEndpointHandler embeddingEndpointHandler = new EmbeddingEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            CompletionEndpointHandler completionEndpointHandler = new CompletionEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             FeedbackHandler feedbackHandler = new FeedbackHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             HistoryHandler historyHandler = new HistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             InferenceHandler inferenceHandler = new InferenceHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
@@ -438,6 +440,7 @@ namespace AssistantHub.Server
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat", chatHandler.PostChatAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/feedback", chatHandler.PostFeedbackAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/compact", chatHandler.PostCompactAsync);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/generate", chatHandler.PostGenerateAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/threads", chatHandler.PostCreateThreadAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/threads/{threadId}/history", chatHandler.GetThreadHistoryAsync);
 
@@ -508,6 +511,24 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.PutIngestionRuleByIdAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.DeleteIngestionRuleAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.HeadIngestionRuleAsync);
+
+            // Authenticated routes - Embedding Endpoints (admin only, proxied to Partio)
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding", embeddingEndpointHandler.CreateEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/enumerate", embeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.DeleteEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.HeadEmbeddingEndpointAsync);
+
+            // Authenticated routes - Completion Endpoints (admin only, proxied to Partio)
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion", completionEndpointHandler.CreateCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/enumerate", completionEndpointHandler.EnumerateCompletionEndpointsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.DeleteCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.HeadCompletionEndpointAsync);
 
             // Authenticated routes - Documents
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents", documentHandler.PutDocumentAsync);

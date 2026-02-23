@@ -67,28 +67,66 @@ namespace AssistantHub.Core.Services
         /// <param name="topK">Number of top results to retrieve.</param>
         /// <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
         /// <param name="token">Cancellation token.</param>
+        /// <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
+        /// <param name="searchOptions">Search mode and full-text options.</param>
         /// <returns>List of retrieval chunks with source identification and scoring.</returns>
-        public async Task<List<RetrievalChunk>> RetrieveAsync(string collectionId, string query, int topK, double scoreThreshold, CancellationToken token = default)
+        public async Task<List<RetrievalChunk>> RetrieveAsync(
+            string collectionId,
+            string query,
+            int topK,
+            double scoreThreshold,
+            CancellationToken token = default,
+            string embeddingEndpointId = null,
+            RetrievalSearchOptions searchOptions = null)
         {
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
+
+            if (searchOptions == null) searchOptions = new RetrievalSearchOptions();
 
             List<RetrievalChunk> results = new List<RetrievalChunk>();
 
             try
             {
-                // Step 1: Embed the query using the Partio chunking service
-                List<double> queryEmbeddings = await EmbedQueryAsync(query, token).ConfigureAwait(false);
-                if (queryEmbeddings == null || queryEmbeddings.Count == 0)
+                // Step 1: Embed the query (skip for FullText-only mode)
+                List<double> queryEmbeddings = null;
+
+                if (!searchOptions.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
                 {
-                    _Logging.Warn(_Header + "failed to generate embeddings for query");
-                    return results;
+                    queryEmbeddings = await EmbedQueryAsync(query, token, embeddingEndpointId).ConfigureAwait(false);
+                    if (queryEmbeddings == null || queryEmbeddings.Count == 0)
+                    {
+                        _Logging.Warn(_Header + "failed to generate embeddings for query");
+                        return results;
+                    }
+
+                    _Logging.Debug(_Header + "generated " + queryEmbeddings.Count + "-dimensional embedding for query");
+                }
+                else
+                {
+                    _Logging.Debug(_Header + "FullText mode: skipping embedding step");
                 }
 
-                _Logging.Debug(_Header + "generated " + queryEmbeddings.Count + "-dimensional embedding for query");
+                // Step 2: Build search request body based on search mode
+                object searchBody = BuildSearchBody(query, queryEmbeddings, topK, searchOptions);
 
-                // Step 2: Search RecallDB with the embeddings
-                List<SearchResult> searchResults = await SearchRecallDbAsync(collectionId, queryEmbeddings, topK, token).ConfigureAwait(false);
+                // Step 3: Execute search against RecallDB
+                List<SearchResult> searchResults = await ExecuteSearchAsync(collectionId, searchBody, token).ConfigureAwait(false);
+
+                // Step 3.5: Hybrid fallback to vector-only if 0 results
+                if (searchOptions.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)
+                    && (searchResults == null || searchResults.Count == 0)
+                    && queryEmbeddings != null)
+                {
+                    _Logging.Info(_Header + "hybrid search returned 0 results, falling back to vector-only");
+                    object vectorOnlyBody = new
+                    {
+                        Vector = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
+                        MaxResults = topK
+                    };
+                    searchResults = await ExecuteSearchAsync(collectionId, vectorOnlyBody, token).ConfigureAwait(false);
+                }
+
                 if (searchResults == null || searchResults.Count == 0)
                 {
                     _Logging.Debug(_Header + "no search results returned from RecallDB");
@@ -97,7 +135,7 @@ namespace AssistantHub.Core.Services
 
                 _Logging.Debug(_Header + "received " + searchResults.Count + " results from RecallDB");
 
-                // Step 3: Filter by score threshold and collect results with source info
+                // Step 4: Filter by score threshold and collect results with source info
                 foreach (SearchResult result in searchResults)
                 {
                     if (result.Score >= scoreThreshold)
@@ -108,6 +146,7 @@ namespace AssistantHub.Core.Services
                             {
                                 DocumentId = result.DocumentId,
                                 Score = Math.Round(result.Score, 6),
+                                TextScore = result.TextScore.HasValue ? Math.Round(result.TextScore.Value, 6) : null,
                                 Content = result.Content
                             });
                         }
@@ -129,18 +168,112 @@ namespace AssistantHub.Core.Services
         #region Private-Methods
 
         /// <summary>
+        /// Build the RecallDB search request body based on search mode.
+        /// </summary>
+        private object BuildSearchBody(string query, List<double> embeddings, int topK, RetrievalSearchOptions options)
+        {
+            if (options.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
+            {
+                return new
+                {
+                    FullText = new
+                    {
+                        Query = query,
+                        SearchType = options.FullTextSearchType,
+                        Language = options.FullTextLanguage,
+                        Normalization = options.FullTextNormalization,
+                        MinimumScore = options.FullTextMinimumScore
+                    },
+                    MaxResults = topK
+                };
+            }
+            else if (options.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase))
+            {
+                return new
+                {
+                    Vector = new
+                    {
+                        SearchType = "CosineSimilarity",
+                        Embeddings = embeddings
+                    },
+                    FullText = new
+                    {
+                        Query = query,
+                        SearchType = options.FullTextSearchType,
+                        Language = options.FullTextLanguage,
+                        Normalization = options.FullTextNormalization,
+                        TextWeight = options.TextWeight,
+                        MinimumScore = options.FullTextMinimumScore
+                    },
+                    MaxResults = topK
+                };
+            }
+            else
+            {
+                // Vector mode (default)
+                return new
+                {
+                    Vector = new
+                    {
+                        SearchType = "CosineSimilarity",
+                        Embeddings = embeddings
+                    },
+                    MaxResults = topK
+                };
+            }
+        }
+
+        /// <summary>
+        /// Execute a search request against RecallDB.
+        /// </summary>
+        private async Task<List<SearchResult>> ExecuteSearchAsync(string collectionId, object requestBody, CancellationToken token)
+        {
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/search";
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
+                {
+                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
+                }
+
+                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _Logging.Warn(_Header + "RecallDB search returned " + (int)response.StatusCode + ": " + responseBody);
+                    return null;
+                }
+
+                SearchResponse searchResult = JsonSerializer.Deserialize<SearchResponse>(responseBody, _JsonOptions);
+                return searchResult?.Documents;
+            }
+        }
+
+        /// <summary>
         /// Embed a query string using the Partio chunking service.
         /// </summary>
         /// <param name="query">Query text.</param>
         /// <param name="token">Cancellation token.</param>
+        /// <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
         /// <returns>Embedding vector.</returns>
-        private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token)
+        private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token, string embeddingEndpointId = null)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + _ChunkingSettings.EndpointId + "/process";
+            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-                object requestBody = new { Type = "Text", Text = query };
+                string effectiveEndpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
+                object requestBody = new
+                {
+                    Type = "Text",
+                    Text = query,
+                    EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
+                };
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -168,65 +301,20 @@ namespace AssistantHub.Core.Services
             }
         }
 
-        /// <summary>
-        /// Search RecallDB for similar documents.
-        /// </summary>
-        /// <param name="collectionId">Collection identifier.</param>
-        /// <param name="embeddings">Query embedding vector.</param>
-        /// <param name="topK">Number of top results to retrieve.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>List of search results.</returns>
-        private async Task<List<SearchResult>> SearchRecallDbAsync(string collectionId, List<double> embeddings, int topK, CancellationToken token)
-        {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/search";
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
-                object requestBody = new
-                {
-                    Vector = new
-                    {
-                        SearchType = "CosineSimilarity",
-                        Embeddings = embeddings
-                    },
-                    MaxResults = topK
-                };
-
-                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                {
-                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(_Header + "RecallDB search returned " + (int)response.StatusCode + ": " + responseBody);
-                    return null;
-                }
-
-                SearchResponse searchResult = JsonSerializer.Deserialize<SearchResponse>(responseBody, _JsonOptions);
-                return searchResult?.Documents;
-            }
-        }
-
         #endregion
 
         #region Private-Classes
 
         /// <summary>
-        /// Process response from the Partio service.
+        /// Process response from the Partio v0.2.0 service.
         /// </summary>
         private class ProcessResponse
         {
-            /// <summary>
-            /// Chunks with embeddings.
-            /// </summary>
+            public Guid GUID { get; set; }
+            public string Type { get; set; } = null;
+            public string Text { get; set; } = null;
             public List<ProcessChunk> Chunks { get; set; } = null;
+            public List<ProcessResponse> Children { get; set; } = null;
         }
 
         /// <summary>
@@ -234,14 +322,8 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private class ProcessChunk
         {
-            /// <summary>
-            /// Chunk text content.
-            /// </summary>
+            public Guid CellGUID { get; set; }
             public string Text { get; set; } = null;
-
-            /// <summary>
-            /// Embedding vector.
-            /// </summary>
             public List<double> Embeddings { get; set; } = null;
         }
 
@@ -270,6 +352,11 @@ namespace AssistantHub.Core.Services
             /// Similarity score.
             /// </summary>
             public double Score { get; set; } = 0;
+
+            /// <summary>
+            /// Full-text relevance score (null in vector-only mode).
+            /// </summary>
+            public double? TextScore { get; set; }
 
             /// <summary>
             /// Text content of the matching chunk.

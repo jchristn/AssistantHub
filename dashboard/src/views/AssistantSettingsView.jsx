@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Tooltip from '../components/Tooltip';
@@ -6,9 +7,12 @@ import AlertModal from '../components/AlertModal';
 
 function AssistantSettingsView() {
   const { serverUrl, credential } = useAuth();
+  const [searchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [assistants, setAssistants] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
+  const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,16 +35,35 @@ function AssistantSettingsView() {
       const result = await api.getAssistants({ maxResults: 1000 });
       const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
       setAssistants(items);
-      if (items.length === 1) {
+      const paramId = searchParams.get('assistantId');
+      if (paramId && items.some(a => a.Id === paramId)) {
+        setSelectedId(paramId);
+        loadSettings(paramId);
+      } else if (items.length === 1) {
         setSelectedId(items[0].Id);
         loadSettings(items[0].Id);
       }
     } catch (err) {
       console.error('Failed to load assistants:', err);
     }
+  }, [serverUrl, credential, searchParams]);
+
+  const loadEndpoints = useCallback(async () => {
+    try {
+      const [completionResult, embeddingResult] = await Promise.all([
+        api.enumerateCompletionEndpoints({ maxResults: 1000 }),
+        api.enumerateEmbeddingEndpoints({ maxResults: 1000 })
+      ]);
+      const completionItems = (completionResult && completionResult.Objects) ? completionResult.Objects : Array.isArray(completionResult) ? completionResult : [];
+      const embeddingItems = (embeddingResult && embeddingResult.Objects) ? embeddingResult.Objects : Array.isArray(embeddingResult) ? embeddingResult : [];
+      setInferenceEndpoints(completionItems);
+      setEmbeddingEndpoints(embeddingItems);
+    } catch (err) {
+      console.error('Failed to load endpoints:', err);
+    }
   }, [serverUrl, credential]);
 
-  useEffect(() => { loadAssistants(); loadCollections(); }, [loadAssistants, loadCollections]);
+  useEffect(() => { loadAssistants(); loadCollections(); loadEndpoints(); }, [loadAssistants, loadCollections, loadEndpoints]);
 
   const loadSettings = useCallback(async (id) => {
     if (!id) { setSettings(null); return; }
@@ -58,9 +81,14 @@ function AssistantSettingsView() {
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
-        InferenceProvider: result?.InferenceProvider || 'Ollama',
-        InferenceEndpoint: result?.InferenceEndpoint || 'http://ollama:11434',
-        InferenceApiKey: result?.InferenceApiKey || '',
+        SearchMode: result?.SearchMode || 'Vector',
+        TextWeight: result?.TextWeight ?? 0.3,
+        FullTextSearchType: result?.FullTextSearchType || 'TsRank',
+        FullTextLanguage: result?.FullTextLanguage || 'english',
+        FullTextNormalization: result?.FullTextNormalization ?? 32,
+        FullTextMinimumScore: result?.FullTextMinimumScore ?? '',
+        InferenceEndpointId: result?.InferenceEndpointId || '',
+        EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         Title: result?.Title || '',
         LogoUrl: result?.LogoUrl || '',
         FaviconUrl: result?.FaviconUrl || '',
@@ -90,7 +118,15 @@ function AssistantSettingsView() {
     if (!selectedId || !settings) return;
     setSaving(true);
     try {
-      await api.updateAssistantSettings(selectedId, settings);
+      const payload = {
+        ...settings,
+        TextWeight: parseFloat(settings.TextWeight) || 0.3,
+        FullTextNormalization: parseInt(settings.FullTextNormalization) || 32,
+        FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
+          ? null
+          : parseFloat(settings.FullTextMinimumScore)
+      };
+      await api.updateAssistantSettings(selectedId, payload);
       setDirty(false);
       setAlert({ title: 'Success', message: 'Settings saved successfully.' });
     } catch (err) {
@@ -161,13 +197,6 @@ function AssistantSettingsView() {
             <div className="settings-section">
               <h3 className="settings-section-title">Model Configuration</h3>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="AI service backend (OpenAI or Ollama)">Inference Provider</Tooltip></label>
-                <select className="form-input" value={settings.InferenceProvider} onChange={(e) => handleChange('InferenceProvider', e.target.value)}>
-                  <option value="OpenAI">OpenAI</option>
-                  <option value="Ollama">Ollama</option>
-                </select>
-              </div>
-              <div className="form-group">
                 <label className="form-label"><Tooltip text="Model name to use for generating responses">Model</Tooltip></label>
                 <input className="form-input" type="text" value={settings.Model} onChange={(e) => handleChange('Model', e.target.value)} />
               </div>
@@ -217,6 +246,12 @@ function AssistantSettingsView() {
               </div>
               {settings.EnableRag && (
                 <>
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableRetrievalGate} onChange={(e) => handleChange('EnableRetrievalGate', e.target.checked)} />
+                      <Tooltip text="Use an LLM call to classify whether each message requires new retrieval or can be answered from existing conversation context. Skips retrieval for follow-up questions about already-retrieved data.">Enable Retrieval Gate</Tooltip>
+                    </label>
+                  </div>
                   <div className="form-group">
                     <label className="form-label"><Tooltip text="Vector collection to search for relevant document chunks">Collection ID</Tooltip></label>
                     <select className="form-input" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)}>
@@ -236,20 +271,73 @@ function AssistantSettingsView() {
                       <input type="range" min="0" max="1" step="0.05" value={settings.RetrievalScoreThreshold} onChange={(e) => handleChange('RetrievalScoreThreshold', parseFloat(e.target.value))} />
                     </div>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label"><Tooltip text="How documents are retrieved: Vector (semantic similarity), FullText (keyword matching), or Hybrid (both combined)">Search Mode</Tooltip></label>
+                    <select className="form-input" value={settings.SearchMode} onChange={(e) => handleChange('SearchMode', e.target.value)}>
+                      <option value="Vector">Vector</option>
+                      <option value="FullText">FullText</option>
+                      <option value="Hybrid">Hybrid</option>
+                    </select>
+                  </div>
+                  {settings.SearchMode === 'Hybrid' && (
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="Balance between vector and text scoring in hybrid mode. 0.0 = pure vector, 1.0 = pure text. Recommended: 0.3 for quality embeddings">Text Weight</Tooltip> <span className="range-value">{settings.TextWeight}</span></label>
+                      <input type="range" min="0" max="1" step="0.05" value={settings.TextWeight} onChange={(e) => handleChange('TextWeight', parseFloat(e.target.value))} />
+                    </div>
+                  )}
+                  {(settings.SearchMode === 'FullText' || settings.SearchMode === 'Hybrid') && (
+                    <>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="TsRank: standard term frequency scoring. TsRankCd: cover density, rewards terms appearing close together">Full-Text Ranking</Tooltip></label>
+                          <select className="form-input" value={settings.FullTextSearchType} onChange={(e) => handleChange('FullTextSearchType', e.target.value)}>
+                            <option value="TsRank">TsRank</option>
+                            <option value="TsRankCd">TsRankCd</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Text search language for stemming and stop words. Use 'simple' to disable stemming">Language</Tooltip></label>
+                          <select className="form-input" value={settings.FullTextLanguage} onChange={(e) => handleChange('FullTextLanguage', e.target.value)}>
+                            <option value="english">english</option>
+                            <option value="simple">simple</option>
+                            <option value="spanish">spanish</option>
+                            <option value="french">french</option>
+                            <option value="german">german</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="Documents with text relevance below this threshold are excluded. Leave empty for no threshold">Minimum Text Score</Tooltip></label>
+                        <input className="form-input" type="number" min="0" max="1" step="0.05" value={settings.FullTextMinimumScore} onChange={(e) => handleChange('FullTextMinimumScore', e.target.value)} placeholder="Optional (0.0-1.0)" />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
 
             <div className="settings-section">
-              <h3 className="settings-section-title">Inference Endpoint</h3>
+              <h3 className="settings-section-title">Endpoints</h3>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="Custom inference API endpoint; leave blank to use server default">Endpoint URL</Tooltip></label>
-                <input className="form-input" type="text" value={settings.InferenceEndpoint} onChange={(e) => handleChange('InferenceEndpoint', e.target.value)} placeholder="Leave blank to use server default" />
+                <label className="form-label"><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+                  <option value="">-- Use server default --</option>
+                  {(inferenceEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                  ))}
+                </select>
               </div>
+              {(!settings || settings.SearchMode !== 'FullText') && (
               <div className="form-group">
-                <label className="form-label"><Tooltip text="Authentication key for the inference endpoint; leave blank to use server default">API Key</Tooltip></label>
-                <input className="form-input" type="password" value={settings.InferenceApiKey} onChange={(e) => handleChange('InferenceApiKey', e.target.value)} placeholder="Leave blank to use server default" />
+                <label className="form-label"><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
+                  <option value="">-- Use server default --</option>
+                  {(embeddingEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+                  ))}
+                </select>
               </div>
+              )}
             </div>
 
             <div className="settings-actions">

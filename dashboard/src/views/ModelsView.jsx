@@ -176,7 +176,7 @@ function ModelsView() {
       </div>
       <div className="filter-bar">
         <label className="filter-label">
-          Assistant:
+          <Tooltip text="Filter models by assistant assignment">Assistant:</Tooltip>
           <select value={selectedAssistantId} onChange={(e) => setSelectedAssistantId(e.target.value)}>
             <option value="">System default</option>
             {assistants.map((a) => (

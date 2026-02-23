@@ -54,14 +54,20 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `system_prompt` TEXT, " +
             "  `max_tokens` INT NOT NULL DEFAULT 4096, " +
             "  `context_window` INT NOT NULL DEFAULT 8192, " +
-            "  `model` TEXT NOT NULL DEFAULT 'gemma3:4b', " +
+            "  `model` VARCHAR(64) NOT NULL DEFAULT 'gemma3:4b', " +
             "  `enable_rag` TINYINT NOT NULL DEFAULT 0, " +
+            "  `enable_retrieval_gate` TINYINT NOT NULL DEFAULT 0, " +
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
-            "  `inference_provider` TEXT NOT NULL DEFAULT 'Ollama', " +
-            "  `inference_endpoint` TEXT, " +
-            "  `inference_api_key` TEXT, " +
+            "  `search_mode` VARCHAR(32) DEFAULT 'Vector', " +
+            "  `text_weight` DOUBLE DEFAULT 0.3, " +
+            "  `fulltext_search_type` VARCHAR(32) DEFAULT 'TsRank', " +
+            "  `fulltext_language` VARCHAR(32) DEFAULT 'english', " +
+            "  `fulltext_normalization` INT DEFAULT 32, " +
+            "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
+            "  `inference_endpoint_id` TEXT, " +
+            "  `embedding_endpoint_id` TEXT, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
@@ -76,10 +82,10 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `id` VARCHAR(256) NOT NULL, " +
             "  `name` TEXT NOT NULL, " +
             "  `original_filename` TEXT, " +
-            "  `content_type` TEXT DEFAULT 'application/octet-stream', " +
+            "  `content_type` VARCHAR(128) DEFAULT 'application/octet-stream', " +
             "  `size_bytes` BIGINT NOT NULL DEFAULT 0, " +
             "  `s3_key` TEXT, " +
-            "  `status` TEXT NOT NULL DEFAULT 'Pending', " +
+            "  `status` VARCHAR(32) NOT NULL DEFAULT 'Pending', " +
             "  `status_message` TEXT, " +
             "  `ingestion_rule_id` TEXT, " +
             "  `bucket_name` TEXT, " +
@@ -98,7 +104,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `assistant_id` VARCHAR(256) NOT NULL, " +
             "  `user_message` TEXT, " +
             "  `assistant_response` TEXT, " +
-            "  `rating` TEXT NOT NULL DEFAULT 'ThumbsUp', " +
+            "  `rating` VARCHAR(32) NOT NULL DEFAULT 'ThumbsUp', " +
             "  `feedback_text` TEXT, " +
             "  `message_history` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
@@ -117,6 +123,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `labels_json` TEXT, " +
             "  `tags_json` TEXT, " +
             "  `atomization_json` TEXT, " +
+            "  `summarization_json` TEXT, " +
             "  `chunking_json` TEXT, " +
             "  `embedding_json` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
@@ -134,11 +141,19 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `user_message` LONGTEXT, " +
             "  `retrieval_start_utc` TEXT, " +
             "  `retrieval_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `retrieval_gate_decision` TEXT, " +
+            "  `retrieval_gate_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `retrieval_context` LONGTEXT, " +
             "  `prompt_sent_utc` TEXT, " +
             "  `prompt_tokens` INT NOT NULL DEFAULT 0, " +
+            "  `endpoint_resolution_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `compaction_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `inference_connection_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `time_to_first_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `time_to_last_token_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `completion_tokens` INT NOT NULL DEFAULT 0, " +
+            "  `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0, " +
             "  `assistant_response` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
@@ -150,37 +165,37 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         #region Indices
 
         internal static string CreateUsersEmailIndex =
-            "CREATE INDEX IF NOT EXISTS idx_users_email ON `users` (`email`)";
+            "CREATE INDEX idx_users_email ON `users` (`email`)";
 
         internal static string CreateCredentialsUserIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_credentials_user_id ON `credentials` (`user_id`)";
+            "CREATE INDEX idx_credentials_user_id ON `credentials` (`user_id`)";
 
         internal static string CreateCredentialsBearerTokenIndex =
-            "CREATE INDEX IF NOT EXISTS idx_credentials_bearer_token ON `credentials` (`bearer_token`)";
+            "CREATE INDEX idx_credentials_bearer_token ON `credentials` (`bearer_token`)";
 
         internal static string CreateAssistantsUserIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistants_user_id ON `assistants` (`user_id`)";
+            "CREATE INDEX idx_assistants_user_id ON `assistants` (`user_id`)";
 
         internal static string CreateAssistantSettingsAssistantIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistant_settings_assistant_id ON `assistant_settings` (`assistant_id`)";
+            "CREATE INDEX idx_assistant_settings_assistant_id ON `assistant_settings` (`assistant_id`)";
 
         internal static string CreateAssistantFeedbackAssistantIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON `assistant_feedback` (`assistant_id`)";
+            "CREATE INDEX idx_assistant_feedback_assistant_id ON `assistant_feedback` (`assistant_id`)";
 
         internal static string CreateIngestionRulesNameIndex =
-            "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON `ingestion_rules` (`name`(191))";
+            "CREATE INDEX idx_ingestion_rules_name ON `ingestion_rules` (`name`(191))";
 
         internal static string CreateAssistantDocumentsIngestionRuleIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_ingestion_rule_id ON `assistant_documents` (`ingestion_rule_id`(191))";
+            "CREATE INDEX idx_assistant_documents_ingestion_rule_id ON `assistant_documents` (`ingestion_rule_id`(191))";
 
         internal static string CreateChatHistoryAssistantIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_chat_history_assistant_id ON `chat_history` (`assistant_id`)";
+            "CREATE INDEX idx_chat_history_assistant_id ON `chat_history` (`assistant_id`)";
 
         internal static string CreateChatHistoryThreadIdIndex =
-            "CREATE INDEX IF NOT EXISTS idx_chat_history_thread_id ON `chat_history` (`thread_id`)";
+            "CREATE INDEX idx_chat_history_thread_id ON `chat_history` (`thread_id`)";
 
         internal static string CreateChatHistoryCreatedUtcIndex =
-            "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON `chat_history` (`created_utc`(191))";
+            "CREATE INDEX idx_chat_history_created_utc ON `chat_history` (`created_utc`(191))";
 
         #endregion
     }

@@ -66,7 +66,7 @@ namespace AssistantHub.Core.Database.Mysql
         /// <inheritdoc />
         public override async Task InitializeAsync(CancellationToken token = default)
         {
-            List<string> queries = new List<string>
+            List<string> tableQueries = new List<string>
             {
                 TableQueries.CreateUsersTable,
                 TableQueries.CreateCredentialsTable,
@@ -75,6 +75,15 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
+                TableQueries.CreateChatHistoryTable
+            };
+
+            await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
+
+            // MySQL does not support CREATE INDEX IF NOT EXISTS;
+            // create indices individually and ignore duplicate key errors
+            string[] indexQueries = new string[]
+            {
                 TableQueries.CreateUsersEmailIndex,
                 TableQueries.CreateCredentialsUserIdIndex,
                 TableQueries.CreateCredentialsBearerTokenIndex,
@@ -83,13 +92,30 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateAssistantFeedbackAssistantIdIndex,
                 TableQueries.CreateIngestionRulesNameIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
-                TableQueries.CreateChatHistoryTable,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex
             };
 
-            await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
+            foreach (string indexQuery in indexQueries)
+            {
+                try { await ExecuteQueryAsync(indexQuery, false, token).ConfigureAwait(false); }
+                catch (Exception) { /* Index already exists */ }
+            }
+
+            // Auto-migration: add columns that may not exist in older databases
+            string[] migrations = new string[]
+            {
+                "ALTER TABLE `chat_history` ADD COLUMN `completion_tokens` INT NOT NULL DEFAULT 0",
+                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0",
+                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0"
+            };
+
+            foreach (string migration in migrations)
+            {
+                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
+                catch (Exception) { /* Column already exists */ }
+            }
 
             _Logging.Info("MySQL database initialized successfully");
         }

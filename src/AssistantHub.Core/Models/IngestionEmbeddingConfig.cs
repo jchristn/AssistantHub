@@ -10,9 +10,9 @@ namespace AssistantHub.Core.Models
         #region Public-Members
 
         /// <summary>
-        /// Embedding model name.
+        /// ID of the embedding endpoint to use.
         /// </summary>
-        public string Model { get; set; } = null;
+        public string EmbeddingEndpointId { get; set; } = null;
 
         /// <summary>
         /// Whether to apply L2 normalization to embeddings.

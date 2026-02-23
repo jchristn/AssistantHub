@@ -20,6 +20,12 @@ namespace AssistantHub.Core.Models
         public double Score { get; set; } = 0;
 
         /// <summary>
+        /// Full-text relevance score component (null in vector-only mode).
+        /// </summary>
+        [JsonPropertyName("text_score")]
+        public double? TextScore { get; set; }
+
+        /// <summary>
         /// Text content of the matching chunk.
         /// </summary>
         [JsonPropertyName("content")]

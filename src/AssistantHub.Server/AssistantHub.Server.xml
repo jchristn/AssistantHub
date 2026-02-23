@@ -284,6 +284,13 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostGenerateAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/generate - Lightweight inference-only endpoint.
+            Skips RAG retrieval, compaction, system prompt injection, and chat history persistence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetThreadHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.
@@ -367,6 +374,63 @@
             PUT /v1.0/collections/{collectionId}/records - Create a new record (document) in a collection.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.CompletionEndpointHandler">
+            <summary>
+            Handles completion endpoint CRUD routes by proxying to Partio (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.CreateCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/endpoints/completion - Create a new completion endpoint.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.EnumerateCompletionEndpointsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/completion/enumerate - List completion endpoints.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/completion/{endpointId} - Get completion endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.UpdateCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/endpoints/completion/{endpointId} - Update completion endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.DeleteCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/endpoints/completion/{endpointId} - Delete completion endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.HeadCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/endpoints/completion/{endpointId} - Check completion endpoint existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.InjectTenantId(System.String)">
+            <summary>
+            Inject the default TenantId into a JSON request body if not already present.
+            Partio requires a TenantId to scope endpoints to the correct tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
+            <summary>
+            Convert Partio's envelope format { Data, TotalCount, HasMore } to
+            AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
+            </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.ConfigurationHandler">
             <summary>
@@ -496,6 +560,63 @@
             GET /v1.0/documents/{documentId}/processing-log - Get processing log for a document.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.EmbeddingEndpointHandler">
+            <summary>
+            Handles embedding endpoint CRUD routes by proxying to Partio (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.CreateEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/endpoints/embedding - Create a new embedding endpoint.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/embedding/enumerate - List embedding endpoints.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/embedding/{endpointId} - Get embedding endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.UpdateEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/endpoints/embedding/{endpointId} - Update embedding endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.DeleteEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/endpoints/embedding/{endpointId} - Delete embedding endpoint by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.HeadEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/endpoints/embedding/{endpointId} - Check embedding endpoint existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.InjectTenantId(System.String)">
+            <summary>
+            Inject the default TenantId into a JSON request body if not already present.
+            Partio requires a TenantId to scope endpoints to the correct tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
+            <summary>
+            Convert Partio's envelope format { Data, TotalCount, HasMore } to
+            AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/embedding/{endpointId}/health - Get embedding endpoint health.
+            </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.FeedbackHandler">
             <summary>

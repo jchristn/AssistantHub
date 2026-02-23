@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function DirectoryFormModal({ onSave, onClose }) {
   const [name, setName] = useState('');
@@ -35,7 +36,7 @@ function DirectoryFormModal({ onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Directory Name</label>
+          <label><Tooltip text="Name for the directory to create. No slashes allowed">Directory Name</Tooltip></label>
           <input
             type="text"
             value={name}

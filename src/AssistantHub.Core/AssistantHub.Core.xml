@@ -2087,6 +2087,11 @@
             Processing chunks.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.Summarizing">
+            <summary>
+            Summarizing.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.StoringEmbeddings">
             <summary>
             Storing embeddings.
@@ -2147,6 +2152,21 @@
             Ollama.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Enums.SummarizationOrderEnum">
+            <summary>
+            Summarization traversal order.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.SummarizationOrderEnum.BottomUp">
+            <summary>
+            Bottom-up traversal.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.SummarizationOrderEnum.TopDown">
+            <summary>
+            Top-down traversal.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
             <summary>
             Helper class for extracting typed values from DataRow objects.
@@ -2203,6 +2223,14 @@
             <param name="columnName">Column name.</param>
             <param name="defaultValue">Default value.</param>
             <returns>Double value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetNullableDoubleValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a nullable double value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Nullable double value.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetDateTimeValue(System.Data.DataRow,System.String)">
             <summary>
@@ -2650,6 +2678,13 @@
             Whether RAG retrieval is enabled.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableRetrievalGate">
+            <summary>
+            Whether the LLM-based retrieval gate is enabled.
+            When enabled, an LLM call classifies whether each user message requires
+            new retrieval or can be answered from existing conversation context.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
             <summary>
             Collection identifier for document retrieval.
@@ -2665,19 +2700,48 @@
             Minimum score threshold for retrieval results (0.0 to 1.0).
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceProvider">
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SearchMode">
             <summary>
-            Inference provider type.
+            Search mode for retrieval: Vector, FullText, or Hybrid.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpoint">
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.TextWeight">
             <summary>
-            Inference provider endpoint URL.
+            Weight of full-text score in hybrid mode (0.0 to 1.0).
+            Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
+            Only applies when SearchMode is "Hybrid".
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceApiKey">
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextSearchType">
             <summary>
-            Inference provider API key.
+            Full-text ranking function: "TsRank" (term frequency) or "TsRankCd" (cover density, rewards proximity).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextLanguage">
+            <summary>
+            PostgreSQL text search language configuration.
+            Controls stemming and stop words.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextNormalization">
+            <summary>
+            Full-text score normalization bitmask. 32 = normalized 0-1 (recommended for hybrid).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextMinimumScore">
+            <summary>
+            Minimum full-text score threshold. Documents with TextScore below this are excluded.
+            Null means no threshold.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpointId">
+            <summary>
+            Completion endpoint identifier (references a managed Partio completion endpoint).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingEndpointId">
+            <summary>
+            Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Title">
@@ -2992,6 +3056,16 @@
             Duration of retrieval in milliseconds.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalGateDecision">
+            <summary>
+            Retrieval gate decision: "RETRIEVE", "SKIP", or null (gate disabled).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalGateDurationMs">
+            <summary>
+            Duration of the retrieval gate LLM call in milliseconds.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
             <summary>
             Text retrieved from the vector database.
@@ -3007,6 +3081,22 @@
             Estimated prompt token count sent to the model.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.EndpointResolutionDurationMs">
+            <summary>
+            Duration of endpoint resolution in milliseconds (HTTP GET to Partio for endpoint details).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CompactionDurationMs">
+            <summary>
+            Duration of conversation compaction in milliseconds (0 if skipped).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.InferenceConnectionDurationMs">
+            <summary>
+            Time from sending the HTTP request to receiving response headers in milliseconds.
+            Measures network latency and model loading time, separate from prompt processing.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToFirstTokenMs">
             <summary>
             Time to first token from the model in milliseconds.
@@ -3015,6 +3105,23 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.TimeToLastTokenMs">
             <summary>
             Time to last token from the model in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.CompletionTokens">
+            <summary>
+            Estimated completion (response) token count from the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TokensPerSecondOverall">
+            <summary>
+            Tokens per second (overall): CompletionTokens / (TimeToLastTokenMs / 1000).
+            Measures end-to-end generation throughput from prompt sent to last token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TokensPerSecondGeneration">
+            <summary>
+            Tokens per second (generation only): CompletionTokens / ((TimeToLastTokenMs - TimeToFirstTokenMs) / 1000).
+            Measures pure token generation throughput excluding prompt processing.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantResponse">
@@ -3368,22 +3475,29 @@
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.Strategy">
             <summary>
-            Chunking strategy (e.g. FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
+            Chunking strategy (e.g. None, FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
+            When set to "None", chunking is skipped and the entire document content is treated as a single chunk.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.FixedTokenCount">
             <summary>
             Fixed token count per chunk.
+            Default: 256. Minimum: 1.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapCount">
             <summary>
             Number of overlapping tokens between chunks.
+            Default: 0. Minimum: 0.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapPercentage">
             <summary>
-            Overlap percentage between chunks (0-1).
+            Overlap percentage between chunks.
+            Default: null. Minimum: 0.0. Maximum: 1.0.
+            Values outside the range are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.OverlapStrategy">
@@ -3394,6 +3508,8 @@
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.RowGroupSize">
             <summary>
             Number of rows per group for row-based chunking.
+            Default: 5. Minimum: 1.
+            Values below the minimum are clamped.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.ContextPrefix">
@@ -3411,14 +3527,21 @@
             Instantiate.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Models.IngestionChunkingConfig.Validate(AssistantHub.Core.Models.IngestionChunkingConfig)">
+            <summary>
+            Validate the chunking configuration.
+            </summary>
+            <param name="config">Configuration to validate.</param>
+            <returns>List of validation error messages (empty if valid).</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.IngestionEmbeddingConfig">
             <summary>
             Embedding configuration for an ingestion rule.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.Model">
+        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.EmbeddingEndpointId">
             <summary>
-            Embedding model name.
+            ID of the embedding endpoint to use.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.L2Normalization">
@@ -3481,6 +3604,11 @@
             Atomization configuration (placeholder).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Summarization">
+            <summary>
+            Summarization configuration.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.IngestionRule.Chunking">
             <summary>
             Chunking configuration.
@@ -3512,6 +3640,80 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>IngestionRule instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionSummarizationConfig">
+            <summary>
+            Summarization configuration for an ingestion rule.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.CompletionEndpointId">
+            <summary>
+            ID of a Partio completion endpoint used for summarization.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.Order">
+            <summary>
+            Traversal order for summarization.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.SummarizationPrompt">
+            <summary>
+            Custom prompt template for summarization. Null uses Partio default.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxSummaryTokens">
+            <summary>
+            Maximum number of tokens for each summary.
+            Default: 1024. Minimum: 128.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MinCellLength">
+            <summary>
+            Minimum cell content length (in characters) to trigger summarization.
+            Default: 128. Minimum: 0.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxParallelTasks">
+            <summary>
+            Maximum number of parallel summarization tasks.
+            Default: 1. Minimum: 1.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetriesPerSummary">
+            <summary>
+            Maximum retry attempts for an individual cell.
+            Default: 3. Minimum: 0.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.MaxRetries">
+            <summary>
+            Global failure limit across all cells (circuit breaker).
+            Default: 9. Minimum: 0.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionSummarizationConfig.TimeoutMs">
+            <summary>
+            Timeout in milliseconds for each summarization request.
+            Default: 300000. Minimum: 100.
+            Values below the minimum are clamped.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionSummarizationConfig.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionSummarizationConfig.Validate(AssistantHub.Core.Models.IngestionSummarizationConfig)">
+            <summary>
+            Validate the summarization configuration.
+            </summary>
+            <param name="config">Configuration to validate.</param>
+            <returns>List of validation error messages (empty if valid).</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.PullProgress">
             <summary>
@@ -3583,9 +3785,49 @@
             Cosine similarity score (0.0 to 1.0).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.TextScore">
+            <summary>
+            Full-text relevance score component (null in vector-only mode).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.Content">
             <summary>
             Text content of the matching chunk.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RetrievalSearchOptions">
+            <summary>
+            Search options for retrieval queries supporting vector, full-text, and hybrid modes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.SearchMode">
+            <summary>
+            Search mode: Vector, FullText, or Hybrid.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.TextWeight">
+            <summary>
+            Weight of full-text score in hybrid mode (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextSearchType">
+            <summary>
+            Full-text ranking function: TsRank or TsRankCd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextLanguage">
+            <summary>
+            PostgreSQL text search language configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextNormalization">
+            <summary>
+            Full-text score normalization bitmask.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextMinimumScore">
+            <summary>
+            Minimum full-text score threshold. Null means no threshold.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
@@ -3774,7 +4016,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Inference result containing the response or error details.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Threading.CancellationToken)">
             <summary>
             Generate a streaming response from a language model using a multi-message conversation.
             </summary>
@@ -3814,7 +4056,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Assistant response content.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.Threading.CancellationToken)">
             <summary>
             Generate a response using the Ollama chat API.
             </summary>
@@ -4027,13 +4269,24 @@
             <param name="token">Cancellation token.</param>
             <returns>List of chunks with their embeddings.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.FlattenChunks(AssistantHub.Core.Services.IngestionService.SemanticCellResponse)">
+            <summary>
+            Recursively flatten all chunks from a SemanticCellResponse hierarchy.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+            <summary>
+            Compute embedding vector for a single piece of text using the Partio embedding endpoint.
+            Used when chunking strategy is "None" to embed the whole document as a single chunk.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Check that a RecallDB collection exists via HEAD.
             Collections must be created via the dashboard/RecallDB before ingestion.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding,System.Int32,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkResult,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
@@ -4043,6 +4296,15 @@
             <param name="chunkIndex">Zero-based chunk position within the document.</param>
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resolve endpoint details (model, URL) from Partio for logging.
+            </summary>
+            <param name="endpointType">"completion" or "embedding".</param>
+            <param name="endpointId">Endpoint identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Human-readable endpoint info string, or null on failure.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
             <summary>
@@ -4076,29 +4338,14 @@
             Text content of the atom.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkingResponse">
+        <member name="T:AssistantHub.Core.Services.IngestionService.SemanticCellResponse">
             <summary>
-            Chunking response from the Partio service.
+            Semantic cell response from the Partio v0.2.0 service.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkingResponse.Chunks">
+        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkResult">
             <summary>
-            List of chunks with embeddings.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding">
-            <summary>
-            A single chunk with its embedding vector.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Text">
-            <summary>
-            Text content of the chunk.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.ChunkWithEmbedding.Embeddings">
-            <summary>
-            Embedding vector for the chunk.
+            A single chunk result from Partio v0.2.0.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse">
@@ -4176,7 +4423,7 @@
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Retrieve relevant document chunks for a given query.
             </summary>
@@ -4185,49 +4432,37 @@
             <param name="topK">Number of top results to retrieve.</param>
             <param name="scoreThreshold">Minimum score threshold for results (0.0 to 1.0).</param>
             <param name="token">Cancellation token.</param>
+            <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
+            <param name="searchOptions">Search mode and full-text options.</param>
             <returns>List of retrieval chunks with source identification and scoring.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.BuildSearchBody(System.String,System.Collections.Generic.List{System.Double},System.Int32,AssistantHub.Core.Models.RetrievalSearchOptions)">
+            <summary>
+            Build the RecallDB search request body based on search mode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ExecuteSearchAsync(System.String,System.Object,System.Threading.CancellationToken)">
+            <summary>
+            Execute a search request against RecallDB.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken,System.String)">
             <summary>
             Embed a query string using the Partio chunking service.
             </summary>
             <param name="query">Query text.</param>
             <param name="token">Cancellation token.</param>
+            <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
             <returns>Embedding vector.</returns>
-        </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.SearchRecallDbAsync(System.String,System.Collections.Generic.List{System.Double},System.Int32,System.Threading.CancellationToken)">
-            <summary>
-            Search RecallDB for similar documents.
-            </summary>
-            <param name="collectionId">Collection identifier.</param>
-            <param name="embeddings">Query embedding vector.</param>
-            <param name="topK">Number of top results to retrieve.</param>
-            <param name="token">Cancellation token.</param>
-            <returns>List of search results.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
             <summary>
-            Process response from the Partio service.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessResponse.Chunks">
-            <summary>
-            Chunks with embeddings.
+            Process response from the Partio v0.2.0 service.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessChunk">
             <summary>
             A single chunk from the Partio process response.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Text">
-            <summary>
-            Chunk text content.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.ProcessChunk.Embeddings">
-            <summary>
-            Embedding vector.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResponse">
@@ -4253,6 +4488,11 @@
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Score">
             <summary>
             Similarity score.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.TextScore">
+            <summary>
+            Full-text relevance score (null in vector-only mode).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Content">

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 const STATUS_PERCENT = {
   uploading: 10,
+  uploaded: 15,
   typedetecting: 25,
   processing: 40,
+  summarizing: 50,
   processingchunks: 60,
   storingembeddings: 80,
   completed: 100,
@@ -13,9 +15,30 @@ const STATUS_PERCENT = {
   error: 100,
 };
 
+const STATUS_LABEL = {
+  queued: 'Queued',
+  uploading: 'Uploading',
+  uploaded: 'Uploaded',
+  typedetecting: 'Detecting type',
+  processing: 'Processing',
+  summarizing: 'Summarizing',
+  processingchunks: 'Chunking',
+  storingembeddings: 'Storing embeddings',
+  completed: 'Completed',
+  indexed: 'Completed',
+  active: 'Completed',
+  failed: 'Failed',
+  error: 'Error',
+};
+
 function statusToPercent(status) {
   if (!status) return 0;
   return STATUS_PERCENT[status.toLowerCase()] ?? 10;
+}
+
+function statusToLabel(status) {
+  if (!status) return '';
+  return STATUS_LABEL[status.toLowerCase()] ?? status;
 }
 
 function isFinalStatus(status) {
@@ -52,7 +75,8 @@ export function useUploadQueue(api) {
         if (!doc) return;
         const status = doc.Status || '';
         const percent = statusToPercent(status);
-        const patch = { status, percentage: percent };
+        const stepLabel = statusToLabel(status);
+        const patch = { status, percentage: percent, stepLabel };
         if (isFinalStatus(status)) {
           clearInterval(timer);
           delete pollTimers.current[id];
@@ -73,7 +97,7 @@ export function useUploadQueue(api) {
 
   const processOne = useCallback(async (item) => {
     const { id, file, ruleId, labels, tags } = item;
-    updateRecord(id, { status: 'Uploading', percentage: 10 });
+    updateRecord(id, { status: 'Uploading', percentage: 10, stepLabel: 'Uploading' });
     try {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -98,15 +122,15 @@ export function useUploadQueue(api) {
       }
       const serverDocId = result?.Id || result?.GUID || result?.id;
       if (serverDocId) {
-        updateRecord(id, { serverDocId, status: 'Uploaded', percentage: 15 });
+        updateRecord(id, { serverDocId, status: 'Uploaded', percentage: 15, stepLabel: 'Uploaded' });
         pollDocument(id, serverDocId);
       } else {
-        updateRecord(id, { status: 'Completed', percentage: 100, completedAt: Date.now() });
+        updateRecord(id, { status: 'Completed', percentage: 100, stepLabel: 'Completed', completedAt: Date.now() });
         activeCount.current = Math.max(0, activeCount.current - 1);
         processQueue();
       }
     } catch (err) {
-      updateRecord(id, { status: 'Failed', percentage: 100, error: err.message || 'Upload failed', completedAt: Date.now() });
+      updateRecord(id, { status: 'Failed', percentage: 100, stepLabel: 'Failed', error: err.message || 'Upload failed', completedAt: Date.now() });
       activeCount.current = Math.max(0, activeCount.current - 1);
       processQueue();
     }
@@ -123,7 +147,7 @@ export function useUploadQueue(api) {
   const enqueueFiles = useCallback((files, ruleId, labels, tags) => {
     const newRecords = files.map(file => {
       const id = nextId++;
-      return { id, fileName: file.name, status: 'Queued', serverDocId: null, percentage: 0, error: null, completedAt: null, _file: file, _ruleId: ruleId, _labels: labels, _tags: tags };
+      return { id, fileName: file.name, status: 'Queued', stepLabel: 'Queued', serverDocId: null, percentage: 0, error: null, completedAt: null, _file: file, _ruleId: ruleId, _labels: labels, _tags: tags };
     });
 
     setRecords(prev => [...prev, ...newRecords.map(({ _file, _ruleId, _labels, _tags, ...r }) => r)]);

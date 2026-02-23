@@ -58,6 +58,12 @@ namespace AssistantHub.Core.Enums
         ProcessingChunks,
 
         /// <summary>
+        /// Summarizing.
+        /// </summary>
+        [EnumMember(Value = "Summarizing")]
+        Summarizing,
+
+        /// <summary>
         /// Storing embeddings.
         /// </summary>
         [EnumMember(Value = "StoringEmbeddings")]

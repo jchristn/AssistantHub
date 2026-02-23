@@ -53,12 +53,18 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  context_window INTEGER NOT NULL DEFAULT 8192, " +
             "  model TEXT NOT NULL DEFAULT 'gemma3:4b', " +
             "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
+            "  enable_retrieval_gate INTEGER NOT NULL DEFAULT 0, " +
             "  collection_id TEXT, " +
             "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
             "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.3, " +
-            "  inference_provider TEXT NOT NULL DEFAULT 'Ollama', " +
-            "  inference_endpoint TEXT, " +
-            "  inference_api_key TEXT, " +
+            "  search_mode TEXT DEFAULT 'Vector', " +
+            "  text_weight DOUBLE PRECISION DEFAULT 0.3, " +
+            "  fulltext_search_type TEXT DEFAULT 'TsRank', " +
+            "  fulltext_language TEXT DEFAULT 'english', " +
+            "  fulltext_normalization INTEGER DEFAULT 32, " +
+            "  fulltext_minimum_score DOUBLE PRECISION DEFAULT NULL, " +
+            "  inference_endpoint_id TEXT, " +
+            "  embedding_endpoint_id TEXT, " +
             "  title TEXT, " +
             "  logo_url TEXT, " +
             "  favicon_url TEXT, " +
@@ -111,6 +117,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  labels_json TEXT, " +
             "  tags_json TEXT, " +
             "  atomization_json TEXT, " +
+            "  summarization_json TEXT, " +
             "  chunking_json TEXT, " +
             "  embedding_json TEXT, " +
             "  created_utc TEXT NOT NULL, " +
@@ -127,11 +134,19 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  user_message TEXT, " +
             "  retrieval_start_utc TEXT, " +
             "  retrieval_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  retrieval_gate_decision TEXT, " +
+            "  retrieval_gate_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  retrieval_context TEXT, " +
             "  prompt_sent_utc TEXT, " +
             "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
+            "  endpoint_resolution_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  compaction_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  inference_connection_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  time_to_first_token_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  time_to_last_token_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  completion_tokens INTEGER NOT NULL DEFAULT 0, " +
+            "  tokens_per_second_overall DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  tokens_per_second_generation DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  assistant_response TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +

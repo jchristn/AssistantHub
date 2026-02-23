@@ -19,6 +19,8 @@ function IngestionRulesView() {
   const [refresh, setRefresh] = useState(0);
   const [buckets, setBuckets] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
+  const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
 
   useEffect(() => {
     const loadLookups = async () => {
@@ -30,6 +32,14 @@ function IngestionRulesView() {
         const collectionsResult = await api.getCollections({ maxResults: 1000 });
         const collectionItems = (collectionsResult && collectionsResult.Objects) ? collectionsResult.Objects : Array.isArray(collectionsResult) ? collectionsResult : [];
         setCollections(collectionItems);
+
+        const inferenceResult = await api.enumerateCompletionEndpoints({ maxResults: 1000 });
+        const inferenceItems = (inferenceResult && inferenceResult.Objects) ? inferenceResult.Objects : Array.isArray(inferenceResult) ? inferenceResult : [];
+        setInferenceEndpoints(inferenceItems);
+
+        const embeddingResult = await api.enumerateEmbeddingEndpoints({ maxResults: 1000 });
+        const embeddingItems = (embeddingResult && embeddingResult.Objects) ? embeddingResult.Objects : Array.isArray(embeddingResult) ? embeddingResult : [];
+        setEmbeddingEndpoints(embeddingItems);
       } catch (err) {
         setAlert({ title: 'Error', message: err.message || 'Failed to load buckets or collections' });
       }
@@ -42,6 +52,7 @@ function IngestionRulesView() {
     { key: 'Name', label: 'Name', tooltip: 'Display name for this ingestion rule', filterable: true },
     { key: 'Bucket', label: 'Bucket', tooltip: 'Source storage bucket that this rule monitors', filterable: true },
     { key: 'CollectionName', label: 'Collection', tooltip: 'Target vector collection for processed documents', filterable: true },
+    { key: 'Summarization', label: 'Summarization', tooltip: 'Whether summarization is configured for this rule', render: (row) => row.Summarization ? 'Enabled' : 'Disabled' },
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the rule was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
@@ -101,7 +112,7 @@ function IngestionRulesView() {
         <button className="btn btn-primary" onClick={() => { setEditRule(null); setShowForm(true); }}>Create Ingestion Rule</button>
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
-      {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
+      {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
       {showJson && <JsonViewModal title="Ingestion Rule JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Ingestion Rule" message={`Are you sure you want to delete ingestion rule "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

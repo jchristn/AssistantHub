@@ -60,7 +60,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
 
             string query =
                 "INSERT INTO ingestion_rules " +
-                "(id, name, description, bucket, collection_name, collection_id, labels_json, tags_json, atomization_json, chunking_json, embedding_json, created_utc, last_update_utc) " +
+                "(id, name, description, bucket, collection_name, collection_id, labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(rule.Id) + "', " +
                 "'" + _Driver.Sanitize(rule.Name) + "', " +
@@ -71,6 +71,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
+                _Driver.FormatNullableString(Serializer.SerializeJson(rule.Summarization)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Chunking)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Embedding)) + ", " +
                 "'" + _Driver.FormatDateTime(rule.CreatedUtc) + "', " +
@@ -110,6 +111,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "labels_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 "atomization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
+                "summarization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Summarization)) + ", " +
                 "chunking_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Chunking)) + ", " +
                 "embedding_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Embedding)) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(rule.LastUpdateUtc) + "' " +

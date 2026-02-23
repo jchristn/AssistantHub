@@ -1,0 +1,2654 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AssistantHub REST API",
+    "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8800",
+      "description": "Local development server"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    { "name": "Health", "description": "Health check endpoints" },
+    { "name": "Authentication", "description": "User authentication" },
+    { "name": "Users", "description": "User management (Admin)" },
+    { "name": "Credentials", "description": "API credential management (Admin)" },
+    { "name": "Buckets", "description": "S3 bucket management (Admin)" },
+    { "name": "Bucket Objects", "description": "S3 bucket object operations (Admin)" },
+    { "name": "Collections", "description": "RecallDB collection management (Admin)" },
+    { "name": "Collection Records", "description": "RecallDB collection record operations (Admin)" },
+    { "name": "Ingestion Rules", "description": "Ingestion rule management" },
+    { "name": "Embedding Endpoints", "description": "Partio embedding endpoint proxy (Admin)" },
+    { "name": "Completion Endpoints", "description": "Partio completion endpoint proxy (Admin)" },
+    { "name": "Assistants", "description": "Assistant management" },
+    { "name": "Assistant Settings", "description": "Assistant configuration settings" },
+    { "name": "Documents", "description": "Document management and ingestion" },
+    { "name": "Feedback", "description": "Assistant feedback records (Auth)" },
+    { "name": "History", "description": "Chat history records (Auth)" },
+    { "name": "Threads", "description": "Conversation thread listing (Auth)" },
+    { "name": "Models", "description": "Inference model management" },
+    { "name": "Configuration", "description": "Application configuration (Admin)" },
+    { "name": "Public", "description": "Public assistant endpoints (no auth required)" }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Returns product name, version, and timestamp.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Product": { "type": "string", "example": "AssistantHub" },
+                    "Version": { "type": "string", "example": "1.0.0" },
+                    "Timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": ["Health"],
+        "summary": "Health check (HEAD)",
+        "description": "Returns 200 if the service is running.",
+        "security": [],
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/v1.0/authenticate": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Authenticate a user",
+        "description": "Authenticate via email/password or bearer token.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthenticateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthenticateResult" }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/users": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Create a user",
+        "description": "Create a new user record. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserMaster" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserMaster" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Users"],
+        "summary": "List users",
+        "description": "Enumerate user records. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/UserMaster" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/users/{userId}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get a user",
+        "description": "Retrieve a user by ID. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/userId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "User record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserMaster" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update a user",
+        "description": "Update an existing user. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/userId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserMaster" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserMaster" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete a user",
+        "description": "Delete a user by ID. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/userId" }
+        ],
+        "responses": {
+          "204": { "description": "User deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Users"],
+        "summary": "Check user existence",
+        "description": "Returns 200 if the user exists, 404 otherwise. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/userId" }
+        ],
+        "responses": {
+          "200": { "description": "User exists" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/v1.0/credentials": {
+      "put": {
+        "tags": ["Credentials"],
+        "summary": "Create a credential",
+        "description": "Create a new API credential. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Credential" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credential created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Credential" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Credentials"],
+        "summary": "List credentials",
+        "description": "Enumerate API credentials. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Credential" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/credentials/{credentialId}": {
+      "get": {
+        "tags": ["Credentials"],
+        "summary": "Get a credential",
+        "parameters": [
+          { "$ref": "#/components/parameters/credentialId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credential record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Credential" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Credentials"],
+        "summary": "Update a credential",
+        "parameters": [
+          { "$ref": "#/components/parameters/credentialId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Credential" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credential updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Credential" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Credentials"],
+        "summary": "Delete a credential",
+        "parameters": [
+          { "$ref": "#/components/parameters/credentialId" }
+        ],
+        "responses": {
+          "204": { "description": "Credential deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Credentials"],
+        "summary": "Check credential existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/credentialId" }
+        ],
+        "responses": {
+          "200": { "description": "Credential exists" },
+          "404": { "description": "Credential not found" }
+        }
+      }
+    },
+    "/v1.0/buckets": {
+      "put": {
+        "tags": ["Buckets"],
+        "summary": "Create a bucket",
+        "description": "Create a new S3 bucket. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Name": { "type": "string", "description": "Bucket name" }
+                },
+                "required": ["Name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Bucket created" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Buckets"],
+        "summary": "List buckets",
+        "description": "Enumerate S3 buckets. Requires admin access.",
+        "responses": {
+          "200": {
+            "description": "List of bucket names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/buckets/{name}": {
+      "get": {
+        "tags": ["Buckets"],
+        "summary": "Get bucket metadata",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bucket metadata",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Buckets"],
+        "summary": "Delete a bucket",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" }
+        ],
+        "responses": {
+          "204": { "description": "Bucket deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Buckets"],
+        "summary": "Check bucket existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" }
+        ],
+        "responses": {
+          "200": { "description": "Bucket exists" },
+          "404": { "description": "Bucket not found" }
+        }
+      }
+    },
+    "/v1.0/buckets/{name}/objects": {
+      "get": {
+        "tags": ["Bucket Objects"],
+        "summary": "List objects in a bucket",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "object" }
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Bucket Objects"],
+        "summary": "Write an object to a bucket",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Key": { "type": "string", "description": "Object key" },
+                  "ContentType": { "type": "string" },
+                  "Data": { "type": "string", "format": "byte", "description": "Base64-encoded data" }
+                },
+                "required": ["Key"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Object written" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Bucket Objects"],
+        "summary": "Delete an object from a bucket",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object key to delete"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Object deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/buckets/{name}/objects/metadata": {
+      "get": {
+        "tags": ["Bucket Objects"],
+        "summary": "Get object metadata",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object metadata",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/buckets/{name}/objects/download": {
+      "get": {
+        "tags": ["Bucket Objects"],
+        "summary": "Download an object",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object data",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/buckets/{name}/objects/upload": {
+      "post": {
+        "tags": ["Bucket Objects"],
+        "summary": "Upload an object to a bucket",
+        "parameters": [
+          { "$ref": "#/components/parameters/bucketName" },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Object key"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": { "type": "string", "format": "binary" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Object uploaded" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/collections": {
+      "put": {
+        "tags": ["Collections"],
+        "summary": "Create a collection",
+        "description": "Create a new RecallDB collection. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Name": { "type": "string", "description": "Collection display name" }
+                },
+                "required": ["Name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection created",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Collections"],
+        "summary": "List collections",
+        "description": "Enumerate RecallDB collections. Requires admin access.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of collections",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/collections/{collectionId}": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "Get a collection",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection details",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Collections"],
+        "summary": "Update a collection",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection updated",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Collections"],
+        "summary": "Delete a collection",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" }
+        ],
+        "responses": {
+          "204": { "description": "Collection deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Collections"],
+        "summary": "Check collection existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" }
+        ],
+        "responses": {
+          "200": { "description": "Collection exists" },
+          "404": { "description": "Collection not found" }
+        }
+      }
+    },
+    "/v1.0/collections/{collectionId}/records": {
+      "put": {
+        "tags": ["Collection Records"],
+        "summary": "Create a record in a collection",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Record created",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "get": {
+        "tags": ["Collection Records"],
+        "summary": "List records in a collection",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" },
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of records",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/collections/{collectionId}/records/{recordId}": {
+      "get": {
+        "tags": ["Collection Records"],
+        "summary": "Get a record",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" },
+          { "$ref": "#/components/parameters/recordId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record details",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Collection Records"],
+        "summary": "Delete a record",
+        "parameters": [
+          { "$ref": "#/components/parameters/collectionId" },
+          { "$ref": "#/components/parameters/recordId" }
+        ],
+        "responses": {
+          "204": { "description": "Record deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/ingestion-rules": {
+      "put": {
+        "tags": ["Ingestion Rules"],
+        "summary": "Create an ingestion rule",
+        "description": "Create a new ingestion rule defining how documents are summarized, chunked, and embedded.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IngestionRule" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ingestion rule created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IngestionRule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Ingestion Rules"],
+        "summary": "List ingestion rules",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of ingestion rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/IngestionRule" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/ingestion-rules/{ruleId}": {
+      "get": {
+        "tags": ["Ingestion Rules"],
+        "summary": "Get an ingestion rule",
+        "parameters": [
+          { "$ref": "#/components/parameters/ruleId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ingestion rule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IngestionRule" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Ingestion Rules"],
+        "summary": "Update an ingestion rule",
+        "parameters": [
+          { "$ref": "#/components/parameters/ruleId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IngestionRule" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ingestion rule updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IngestionRule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Ingestion Rules"],
+        "summary": "Delete an ingestion rule",
+        "parameters": [
+          { "$ref": "#/components/parameters/ruleId" }
+        ],
+        "responses": {
+          "204": { "description": "Ingestion rule deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Ingestion Rules"],
+        "summary": "Check ingestion rule existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/ruleId" }
+        ],
+        "responses": {
+          "200": { "description": "Ingestion rule exists" },
+          "404": { "description": "Ingestion rule not found" }
+        }
+      }
+    },
+    "/v1.0/endpoints/embedding": {
+      "put": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Create an embedding endpoint",
+        "description": "Proxy to Partio. Create a new embedding endpoint. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Embedding endpoint created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+    },
+    "/v1.0/endpoints/embedding/enumerate": {
+      "post": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "List embedding endpoints",
+        "description": "Proxy to Partio. Enumerate embedding endpoints. Requires admin access.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnumerationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paginated list of embedding endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/endpoints/embedding/{endpointId}": {
+      "get": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Get an embedding endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Embedding endpoint",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Update an embedding endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Embedding endpoint updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EmbeddingEndpoint" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Delete an embedding endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "204": { "description": "Embedding endpoint deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Check embedding endpoint existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": { "description": "Embedding endpoint exists" },
+          "404": { "description": "Embedding endpoint not found" }
+        }
+      }
+    },
+    "/v1.0/endpoints/embedding/{endpointId}/health": {
+      "get": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Get embedding endpoint health",
+        "description": "Returns health status of the embedding endpoint.",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/endpoints/completion": {
+      "put": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Create a completion endpoint",
+        "description": "Proxy to Partio. Create a new completion endpoint. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompletionEndpoint" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completion endpoint created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CompletionEndpoint" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+    },
+    "/v1.0/endpoints/completion/enumerate": {
+      "post": {
+        "tags": ["Completion Endpoints"],
+        "summary": "List completion endpoints",
+        "description": "Proxy to Partio. Enumerate completion endpoints. Requires admin access.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EnumerationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paginated list of completion endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/CompletionEndpoint" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/endpoints/completion/{endpointId}": {
+      "get": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Get a completion endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Completion endpoint",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CompletionEndpoint" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Update a completion endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompletionEndpoint" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completion endpoint updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CompletionEndpoint" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Delete a completion endpoint",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "204": { "description": "Completion endpoint deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Check completion endpoint existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": { "description": "Completion endpoint exists" },
+          "404": { "description": "Completion endpoint not found" }
+        }
+      }
+    },
+    "/v1.0/endpoints/completion/{endpointId}/health": {
+      "get": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Get completion endpoint health",
+        "description": "Returns health status of the completion endpoint.",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants": {
+      "put": {
+        "tags": ["Assistants"],
+        "summary": "Create an assistant",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Assistant" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assistant created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Assistant" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Assistants"],
+        "summary": "List assistants",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of assistants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Assistant" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}": {
+      "get": {
+        "tags": ["Assistants"],
+        "summary": "Get an assistant",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistant record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Assistant" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Assistants"],
+        "summary": "Update an assistant",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Assistant" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assistant updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Assistant" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Assistants"],
+        "summary": "Delete an assistant",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "204": { "description": "Assistant deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Assistants"],
+        "summary": "Check assistant existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "200": { "description": "Assistant exists" },
+          "404": { "description": "Assistant not found" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/settings": {
+      "get": {
+        "tags": ["Assistant Settings"],
+        "summary": "Get assistant settings",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistant settings",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantSettings" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Assistant Settings"],
+        "summary": "Update assistant settings",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssistantSettings" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantSettings" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/documents": {
+      "put": {
+        "tags": ["Documents"],
+        "summary": "Create a document record",
+        "description": "Create a document metadata record. Upload content separately.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssistantDocument" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantDocument" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "get": {
+        "tags": ["Documents"],
+        "summary": "List documents",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" },
+          {
+            "name": "bucketName",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by bucket name"
+          },
+          {
+            "name": "collectionId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by collection ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/AssistantDocument" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/documents/{documentId}": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "Get a document",
+        "parameters": [
+          { "$ref": "#/components/parameters/documentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantDocument" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Documents"],
+        "summary": "Delete a document",
+        "parameters": [
+          { "$ref": "#/components/parameters/documentId" }
+        ],
+        "responses": {
+          "204": { "description": "Document deleted" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "head": {
+        "tags": ["Documents"],
+        "summary": "Check document existence",
+        "parameters": [
+          { "$ref": "#/components/parameters/documentId" }
+        ],
+        "responses": {
+          "200": { "description": "Document exists" },
+          "404": { "description": "Document not found" }
+        }
+      }
+    },
+    "/v1.0/documents/{documentId}/processing-log": {
+      "get": {
+        "tags": ["Documents"],
+        "summary": "Get document processing log",
+        "description": "Returns the processing log entries for a document.",
+        "parameters": [
+          { "$ref": "#/components/parameters/documentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Processing log entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "Timestamp": { "type": "string", "format": "date-time" },
+                      "Level": { "type": "string" },
+                      "Message": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/feedback": {
+      "get": {
+        "tags": ["Feedback"],
+        "summary": "List feedback",
+        "description": "Enumerate assistant feedback records.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" },
+          {
+            "name": "assistantId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by assistant ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of feedback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/AssistantFeedback" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/feedback/{feedbackId}": {
+      "get": {
+        "tags": ["Feedback"],
+        "summary": "Get a feedback record",
+        "parameters": [
+          { "$ref": "#/components/parameters/feedbackId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feedback record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantFeedback" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Feedback"],
+        "summary": "Delete a feedback record",
+        "parameters": [
+          { "$ref": "#/components/parameters/feedbackId" }
+        ],
+        "responses": {
+          "204": { "description": "Feedback deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/history": {
+      "get": {
+        "tags": ["History"],
+        "summary": "List chat history",
+        "description": "Enumerate chat history records.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" },
+          {
+            "name": "assistantId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by assistant ID"
+          },
+          {
+            "name": "threadId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by thread ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of history records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/ChatHistory" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/history/{historyId}": {
+      "get": {
+        "tags": ["History"],
+        "summary": "Get a history record",
+        "parameters": [
+          { "$ref": "#/components/parameters/historyId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat history record",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChatHistory" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["History"],
+        "summary": "Delete a history record",
+        "parameters": [
+          { "$ref": "#/components/parameters/historyId" }
+        ],
+        "responses": {
+          "204": { "description": "History record deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/threads": {
+      "get": {
+        "tags": ["Threads"],
+        "summary": "List conversation threads",
+        "description": "Enumerate distinct thread IDs.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" },
+          {
+            "name": "assistantId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by assistant ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of threads",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/models": {
+      "get": {
+        "tags": ["Models"],
+        "summary": "List available models",
+        "description": "Returns models available on the configured inference provider.",
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/InferenceModel" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1.0/models/pull": {
+      "post": {
+        "tags": ["Models"],
+        "summary": "Pull a model",
+        "description": "Initiate a model pull operation (Ollama only).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ModelName": { "type": "string", "description": "Name of the model to pull" }
+                },
+                "required": ["ModelName"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Pull initiated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1.0/models/pull/status": {
+      "get": {
+        "tags": ["Models"],
+        "summary": "Get model pull status",
+        "description": "Returns the progress of the current model pull operation.",
+        "responses": {
+          "200": {
+            "description": "Pull progress",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PullProgress" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/models/{modelName}": {
+      "delete": {
+        "tags": ["Models"],
+        "summary": "Delete a model",
+        "description": "Delete a model from the inference provider.",
+        "parameters": [
+          {
+            "name": "modelName",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Model name"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Model deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1.0/configuration": {
+      "get": {
+        "tags": ["Configuration"],
+        "summary": "Get application configuration",
+        "description": "Returns the current application configuration. Requires admin access.",
+        "responses": {
+          "200": {
+            "description": "Application configuration",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "put": {
+        "tags": ["Configuration"],
+        "summary": "Update application configuration",
+        "description": "Update the application configuration. Requires admin access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updated",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/public": {
+      "get": {
+        "tags": ["Public"],
+        "summary": "Get public assistant info",
+        "description": "Returns publicly available assistant information. No authentication required.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public assistant info",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/threads": {
+      "post": {
+        "tags": ["Public"],
+        "summary": "Create a new thread",
+        "description": "Create a new conversation thread for the assistant. No authentication required.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ThreadId": { "type": "string", "description": "New thread identifier" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/chat": {
+      "post": {
+        "tags": ["Public"],
+        "summary": "Send a chat message",
+        "description": "Send a message to the assistant and receive a response. Supports SSE streaming. No authentication required.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChatRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat response (or SSE stream)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChatResult" }
+              },
+              "text/event-stream": {
+                "schema": { "type": "string", "description": "Server-sent events stream" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/feedback": {
+      "post": {
+        "tags": ["Public"],
+        "summary": "Submit feedback",
+        "description": "Submit feedback for an assistant response. No authentication required.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FeedbackRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feedback submitted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AssistantFeedback" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/compact": {
+      "post": {
+        "tags": ["Public"],
+        "summary": "Compact thread history",
+        "description": "Compact conversation history for a thread. No authentication required.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ThreadId": { "type": "string", "description": "Thread ID to compact" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Thread history compacted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Bearer token authentication via the Authorization header."
+      }
+    },
+    "parameters": {
+      "maxResults": {
+        "name": "maxResults",
+        "in": "query",
+        "schema": { "type": "integer", "default": 100, "minimum": 1, "maximum": 1000 },
+        "description": "Maximum number of results to return."
+      },
+      "continuationToken": {
+        "name": "continuationToken",
+        "in": "query",
+        "schema": { "type": "string" },
+        "description": "Token for retrieving the next page of results."
+      },
+      "ordering": {
+        "name": "ordering",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["CreatedDescending", "CreatedAscending"],
+          "default": "CreatedDescending"
+        },
+        "description": "Sort order for results."
+      },
+      "userId": {
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "User identifier (prefix: usr_)"
+      },
+      "credentialId": {
+        "name": "credentialId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Credential identifier (prefix: cred_)"
+      },
+      "bucketName": {
+        "name": "name",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "S3 bucket name"
+      },
+      "collectionId": {
+        "name": "collectionId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "RecallDB collection identifier"
+      },
+      "recordId": {
+        "name": "recordId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Collection record identifier"
+      },
+      "ruleId": {
+        "name": "ruleId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Ingestion rule identifier (prefix: irule_)"
+      },
+      "endpointId": {
+        "name": "endpointId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Partio endpoint identifier"
+      },
+      "assistantId": {
+        "name": "assistantId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Assistant identifier (prefix: asst_)"
+      },
+      "documentId": {
+        "name": "documentId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Document identifier (prefix: adoc_)"
+      },
+      "feedbackId": {
+        "name": "feedbackId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Feedback identifier (prefix: afb_)"
+      },
+      "historyId": {
+        "name": "historyId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Chat history identifier (prefix: chist_)"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authorization failed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Resource already exists",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiErrorResponse" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiErrorResponse": {
+        "type": "object",
+        "description": "Standard error response.",
+        "properties": {
+          "Error": {
+            "type": "string",
+            "description": "Error type.",
+            "enum": ["AuthenticationFailed", "AuthorizationFailed", "BadRequest", "NotFound", "Conflict", "InternalError"]
+          },
+          "Message": { "type": "string", "description": "Human-readable error message." },
+          "StatusCode": { "type": "integer", "description": "HTTP status code." },
+          "Context": { "type": "string", "nullable": true, "description": "Additional error context." },
+          "Description": { "type": "string", "nullable": true, "description": "Additional error description." }
+        }
+      },
+      "EnumerationResult": {
+        "type": "object",
+        "description": "Paginated response envelope.",
+        "properties": {
+          "Success": { "type": "boolean" },
+          "MaxResults": { "type": "integer" },
+          "TotalRecords": { "type": "integer", "format": "int64" },
+          "RecordsRemaining": { "type": "integer", "format": "int64" },
+          "ContinuationToken": { "type": "string", "nullable": true },
+          "EndOfResults": { "type": "boolean" },
+          "Objects": { "type": "array", "items": {} },
+          "TotalMs": { "type": "number", "format": "double" }
+        }
+      },
+      "EnumerationRequest": {
+        "type": "object",
+        "description": "Request body for enumeration endpoints.",
+        "properties": {
+          "maxResults": { "type": "integer", "default": 100, "description": "Maximum number of results to return." }
+        }
+      },
+      "AuthenticateRequest": {
+        "type": "object",
+        "description": "Authentication request. Provide either Email+Password or BearerToken.",
+        "properties": {
+          "Email": { "type": "string", "nullable": true, "description": "Email address." },
+          "Password": { "type": "string", "nullable": true, "description": "Plain-text password." },
+          "BearerToken": { "type": "string", "nullable": true, "description": "Bearer token." }
+        }
+      },
+      "AuthenticateResult": {
+        "type": "object",
+        "description": "Authentication result.",
+        "properties": {
+          "Success": { "type": "boolean" },
+          "User": { "$ref": "#/components/schemas/UserMaster" },
+          "Credential": { "$ref": "#/components/schemas/Credential" },
+          "ErrorMessage": { "type": "string", "nullable": true }
+        }
+      },
+      "UserMaster": {
+        "type": "object",
+        "description": "User record.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: usr_)." },
+          "Email": { "type": "string", "description": "Email address." },
+          "PasswordSha256": { "type": "string", "nullable": true, "description": "SHA-256 password hash." },
+          "FirstName": { "type": "string", "nullable": true },
+          "LastName": { "type": "string", "nullable": true },
+          "IsAdmin": { "type": "boolean", "default": false },
+          "Active": { "type": "boolean", "default": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["Email"]
+      },
+      "Credential": {
+        "type": "object",
+        "description": "API credential record.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: cred_)." },
+          "UserId": { "type": "string", "description": "Owning user ID." },
+          "Name": { "type": "string", "description": "Display name." },
+          "BearerToken": { "type": "string", "description": "Bearer token value." },
+          "Active": { "type": "boolean", "default": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["UserId"]
+      },
+      "Assistant": {
+        "type": "object",
+        "description": "Assistant record.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: asst_)." },
+          "UserId": { "type": "string", "description": "Owning user ID." },
+          "Name": { "type": "string", "description": "Display name." },
+          "Description": { "type": "string", "nullable": true },
+          "Active": { "type": "boolean", "default": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["UserId", "Name"]
+      },
+      "AssistantSettings": {
+        "type": "object",
+        "description": "Assistant configuration settings.",
+        "properties": {
+          "Id": { "type": "string", "description": "Settings identifier (prefix: aset_)." },
+          "AssistantId": { "type": "string", "description": "Associated assistant ID." },
+          "Temperature": { "type": "number", "format": "double", "default": 0.7, "minimum": 0, "maximum": 2.0, "description": "Sampling temperature." },
+          "TopP": { "type": "number", "format": "double", "default": 1.0, "minimum": 0, "maximum": 1.0, "description": "Nucleus sampling parameter." },
+          "SystemPrompt": { "type": "string", "description": "System prompt for the model." },
+          "MaxTokens": { "type": "integer", "default": 4096, "minimum": 1, "description": "Maximum tokens to generate." },
+          "ContextWindow": { "type": "integer", "default": 8192, "minimum": 1, "description": "Context window size." },
+          "Model": { "type": "string", "default": "gemma3:4b", "description": "Model name." },
+          "EnableRag": { "type": "boolean", "default": false, "description": "Enable RAG retrieval." },
+          "CollectionId": { "type": "string", "nullable": true, "description": "Collection ID for RAG retrieval." },
+          "RetrievalTopK": { "type": "integer", "default": 10, "minimum": 1, "description": "Number of top results to retrieve." },
+          "RetrievalScoreThreshold": { "type": "number", "format": "double", "default": 0.3, "minimum": 0, "maximum": 1.0, "description": "Minimum retrieval score threshold." },
+          "InferenceEndpointId": { "type": "string", "nullable": true, "description": "Managed completion endpoint ID for inference (overrides global setting)." },
+          "EmbeddingEndpointId": { "type": "string", "nullable": true, "description": "Managed embedding endpoint ID for RAG retrieval (overrides global setting)." },
+          "Title": { "type": "string", "nullable": true, "description": "Chat window heading." },
+          "LogoUrl": { "type": "string", "nullable": true, "description": "Logo image URL (max 192x192)." },
+          "FaviconUrl": { "type": "string", "nullable": true, "description": "Favicon URL." },
+          "Streaming": { "type": "boolean", "default": true, "description": "Enable SSE streaming." },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["AssistantId"]
+      },
+      "IngestionRule": {
+        "type": "object",
+        "description": "Ingestion rule defining how documents are processed, summarized, chunked, and embedded.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: irule_)." },
+          "Name": { "type": "string", "description": "Display name." },
+          "Description": { "type": "string", "nullable": true },
+          "Bucket": { "type": "string", "description": "S3 bucket name for document storage." },
+          "CollectionName": { "type": "string", "description": "RecallDB collection display name." },
+          "CollectionId": { "type": "string", "nullable": true, "description": "RecallDB collection GUID." },
+          "Labels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "nullable": true,
+            "description": "Labels applied to ingested documents."
+          },
+          "Tags": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "nullable": true,
+            "description": "Tags applied to ingested documents."
+          },
+          "Atomization": {
+            "type": "object",
+            "nullable": true,
+            "description": "Atomization configuration (reserved)."
+          },
+          "Summarization": {
+            "$ref": "#/components/schemas/IngestionSummarizationConfig"
+          },
+          "Chunking": {
+            "$ref": "#/components/schemas/IngestionChunkingConfig"
+          },
+          "Embedding": {
+            "$ref": "#/components/schemas/IngestionEmbeddingConfig"
+          },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["Name", "Bucket", "CollectionName"]
+      },
+      "IngestionSummarizationConfig": {
+        "type": "object",
+        "nullable": true,
+        "description": "Summarization configuration. When present, documents are summarized before chunking. Pipeline order: Summarize -> Chunk -> Embed.",
+        "properties": {
+          "CompletionEndpointId": { "type": "string", "description": "ID of a Partio completion endpoint for summarization." },
+          "Order": {
+            "type": "string",
+            "enum": ["TopDown", "BottomUp"],
+            "default": "BottomUp",
+            "description": "Traversal order. TopDown: root-to-leaves. BottomUp: leaves-to-root."
+          },
+          "SummarizationPrompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Custom prompt template. Supports {content}, {tokens}, {context} placeholders. Null uses Partio default."
+          },
+          "MaxSummaryTokens": { "type": "integer", "default": 1024, "minimum": 128, "description": "Maximum tokens per summary." },
+          "MinCellLength": { "type": "integer", "default": 128, "minimum": 0, "description": "Minimum cell content length (chars) to trigger summarization." },
+          "MaxParallelTasks": { "type": "integer", "default": 4, "minimum": 1, "description": "Maximum parallel summarization tasks." },
+          "MaxRetriesPerSummary": { "type": "integer", "default": 3, "minimum": 0, "description": "Max retry attempts per cell." },
+          "MaxRetries": { "type": "integer", "default": 9, "minimum": 0, "description": "Global failure limit (circuit breaker)." },
+          "TimeoutMs": { "type": "integer", "default": 30000, "minimum": 100, "description": "Timeout per summarization request (ms)." }
+        },
+        "required": ["CompletionEndpointId"]
+      },
+      "IngestionChunkingConfig": {
+        "type": "object",
+        "nullable": true,
+        "description": "Chunking configuration for an ingestion rule.",
+        "properties": {
+          "Strategy": {
+            "type": "string",
+            "default": "FixedTokenCount",
+            "description": "Chunking strategy (FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.)."
+          },
+          "FixedTokenCount": { "type": "integer", "default": 256, "description": "Tokens per chunk when using FixedTokenCount strategy." },
+          "OverlapCount": { "type": "integer", "default": 0, "description": "Overlapping tokens between chunks." },
+          "OverlapPercentage": { "type": "number", "format": "double", "nullable": true, "description": "Overlap percentage (0-1)." },
+          "OverlapStrategy": { "type": "string", "nullable": true, "description": "Overlap strategy (SlidingWindow, SentenceBoundaryAware, SemanticBoundaryAware)." },
+          "RowGroupSize": { "type": "integer", "default": 5, "description": "Rows per group for row-based chunking." },
+          "ContextPrefix": { "type": "string", "nullable": true, "description": "Context prefix prepended to each chunk." },
+          "RegexPattern": { "type": "string", "nullable": true, "description": "Regex pattern for regex-based chunking." }
+        }
+      },
+      "IngestionEmbeddingConfig": {
+        "type": "object",
+        "nullable": true,
+        "description": "Embedding configuration for an ingestion rule.",
+        "properties": {
+          "Model": { "type": "string", "nullable": true, "description": "Embedding model name override." },
+          "L2Normalization": { "type": "boolean", "default": false, "description": "Apply L2 normalization to embeddings." }
+        }
+      },
+      "AssistantDocument": {
+        "type": "object",
+        "description": "Document record.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: adoc_)." },
+          "Name": { "type": "string", "description": "Display name." },
+          "OriginalFilename": { "type": "string", "nullable": true, "description": "Original uploaded filename." },
+          "ContentType": { "type": "string", "default": "application/octet-stream", "description": "MIME content type." },
+          "SizeBytes": { "type": "integer", "format": "int64", "description": "Document size in bytes." },
+          "S3Key": { "type": "string", "nullable": true, "description": "S3 object key." },
+          "Status": {
+            "type": "string",
+            "enum": ["Pending", "Processing", "Completed", "Failed"],
+            "description": "Processing status."
+          },
+          "StatusMessage": { "type": "string", "nullable": true, "description": "Additional status details." },
+          "IngestionRuleId": { "type": "string", "nullable": true, "description": "Ingestion rule ID used to process this document." },
+          "BucketName": { "type": "string", "nullable": true, "description": "S3 bucket name." },
+          "CollectionId": { "type": "string", "nullable": true, "description": "RecallDB collection ID." },
+          "Labels": { "type": "string", "nullable": true, "description": "Labels (JSON string)." },
+          "Tags": { "type": "string", "nullable": true, "description": "Tags (JSON string)." },
+          "ChunkRecordIds": { "type": "string", "nullable": true, "description": "Chunk record IDs in RecallDB (JSON array)." },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["Name"]
+      },
+      "AssistantFeedback": {
+        "type": "object",
+        "description": "Feedback record for an assistant response.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: afb_)." },
+          "AssistantId": { "type": "string", "description": "Associated assistant ID." },
+          "UserMessage": { "type": "string", "nullable": true, "description": "User message that prompted the response." },
+          "AssistantResponse": { "type": "string", "nullable": true, "description": "Assistant response that was rated." },
+          "Rating": { "type": "string", "enum": ["ThumbsUp", "ThumbsDown"], "description": "Feedback rating." },
+          "FeedbackText": { "type": "string", "nullable": true, "description": "Free-text feedback." },
+          "MessageHistory": { "type": "string", "nullable": true, "description": "Full message history (JSON)." },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["AssistantId"]
+      },
+      "FeedbackRequest": {
+        "type": "object",
+        "description": "Request body for submitting feedback.",
+        "properties": {
+          "AssistantId": { "type": "string", "description": "Assistant ID." },
+          "UserMessage": { "type": "string", "nullable": true },
+          "AssistantResponse": { "type": "string", "nullable": true },
+          "Rating": { "type": "string", "enum": ["ThumbsUp", "ThumbsDown"], "default": "ThumbsUp" },
+          "FeedbackText": { "type": "string", "nullable": true },
+          "MessageHistory": { "type": "string", "nullable": true }
+        },
+        "required": ["AssistantId"]
+      },
+      "ChatRequest": {
+        "type": "object",
+        "description": "Chat message request.",
+        "properties": {
+          "AssistantId": { "type": "string", "description": "Target assistant ID." },
+          "Message": { "type": "string", "description": "User message content." }
+        },
+        "required": ["AssistantId", "Message"]
+      },
+      "ChatResult": {
+        "type": "object",
+        "description": "Chat response.",
+        "properties": {
+          "Success": { "type": "boolean" },
+          "AssistantId": { "type": "string", "nullable": true },
+          "UserMessage": { "type": "string", "nullable": true },
+          "AssistantResponse": { "type": "string", "nullable": true },
+          "Sources": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Source references."
+          },
+          "ErrorMessage": { "type": "string", "nullable": true }
+        }
+      },
+      "ChatHistory": {
+        "type": "object",
+        "description": "Chat history record for a single conversation turn.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: chist_)." },
+          "ThreadId": { "type": "string", "description": "Thread identifier (prefix: thr_)." },
+          "AssistantId": { "type": "string", "description": "Associated assistant ID." },
+          "CollectionId": { "type": "string", "nullable": true },
+          "UserMessageUtc": { "type": "string", "format": "date-time" },
+          "UserMessage": { "type": "string", "nullable": true },
+          "RetrievalStartUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "RetrievalDurationMs": { "type": "number", "format": "double" },
+          "RetrievalContext": { "type": "string", "nullable": true },
+          "PromptSentUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "PromptTokens": { "type": "integer" },
+          "CompletionTokens": { "type": "integer", "default": 0, "description": "Estimated completion token count from the model's response." },
+          "TokensPerSecondOverall": { "type": "number", "format": "double", "default": 0, "description": "Tokens per second (overall): CompletionTokens / (TimeToLastTokenMs / 1000)." },
+          "TokensPerSecondGeneration": { "type": "number", "format": "double", "default": 0, "description": "Tokens per second (generation only): CompletionTokens / ((TimeToLastTokenMs - TimeToFirstTokenMs) / 1000)." },
+          "TimeToFirstTokenMs": { "type": "number", "format": "double" },
+          "TimeToLastTokenMs": { "type": "number", "format": "double" },
+          "AssistantResponse": { "type": "string", "nullable": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["ThreadId", "AssistantId"]
+      },
+      "InferenceModel": {
+        "type": "object",
+        "description": "Model available on the inference provider.",
+        "properties": {
+          "Name": { "type": "string", "description": "Model name (e.g. gemma3:4b)." },
+          "SizeBytes": { "type": "integer", "format": "int64", "description": "Size on disk in bytes." },
+          "ModifiedUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "OwnedBy": { "type": "string", "nullable": true, "description": "Model owner (OpenAI only)." },
+          "PullSupported": { "type": "boolean", "description": "Whether the provider supports pulling models." }
+        }
+      },
+      "PullProgress": {
+        "type": "object",
+        "description": "Model pull operation progress.",
+        "properties": {
+          "ModelName": { "type": "string", "nullable": true },
+          "Status": { "type": "string", "nullable": true, "description": "Current status message." },
+          "Digest": { "type": "string", "nullable": true, "description": "Digest of current layer." },
+          "TotalBytes": { "type": "integer", "format": "int64" },
+          "CompletedBytes": { "type": "integer", "format": "int64" },
+          "PercentComplete": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "IsComplete": { "type": "boolean" },
+          "HasError": { "type": "boolean" },
+          "ErrorMessage": { "type": "string", "nullable": true },
+          "StartedUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EmbeddingEndpoint": {
+        "type": "object",
+        "description": "Partio embedding endpoint configuration.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique endpoint identifier." },
+          "TenantId": { "type": "string", "nullable": true, "description": "Tenant identifier (assigned by Partio)." },
+          "Model": { "type": "string", "description": "Model name (e.g. all-minilm)." },
+          "Endpoint": { "type": "string", "description": "Target API URL (e.g. http://ollama:11434)." },
+          "ApiFormat": { "type": "string", "description": "API format (e.g. Ollama)." },
+          "ApiKey": { "type": "string", "nullable": true, "description": "API key for the endpoint." },
+          "Active": { "type": "boolean", "default": true },
+          "EnableRequestHistory": { "type": "boolean", "default": true },
+          "HealthCheckEnabled": { "type": "boolean", "default": false },
+          "HealthCheckUrl": { "type": "string", "nullable": true },
+          "HealthCheckMethod": { "type": "string", "default": "GET" },
+          "HealthCheckIntervalMs": { "type": "integer", "default": 5000 },
+          "HealthCheckTimeoutMs": { "type": "integer", "default": 2000 },
+          "HealthCheckExpectedStatusCode": { "type": "integer", "default": 200 },
+          "HealthyThreshold": { "type": "integer", "default": 3 },
+          "UnhealthyThreshold": { "type": "integer", "default": 3 },
+          "HealthCheckUseAuth": { "type": "boolean", "default": false },
+          "Labels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "nullable": true
+          },
+          "Tags": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "nullable": true
+          },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["Model", "Endpoint", "ApiFormat"]
+      },
+      "CompletionEndpoint": {
+        "type": "object",
+        "description": "Partio completion endpoint configuration.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique endpoint identifier." },
+          "TenantId": { "type": "string", "nullable": true, "description": "Tenant identifier (assigned by Partio)." },
+          "Name": { "type": "string", "nullable": true, "description": "Human-readable endpoint name." },
+          "Model": { "type": "string", "description": "Model name." },
+          "Endpoint": { "type": "string", "description": "Target API URL." },
+          "ApiFormat": { "type": "string", "description": "API format (e.g. Ollama)." },
+          "ApiKey": { "type": "string", "nullable": true, "description": "API key for the endpoint." },
+          "Active": { "type": "boolean", "default": true },
+          "EnableRequestHistory": { "type": "boolean", "default": true },
+          "HealthCheckEnabled": { "type": "boolean", "default": true },
+          "HealthCheckUrl": { "type": "string", "nullable": true },
+          "HealthCheckMethod": { "type": "string", "default": "GET" },
+          "HealthCheckIntervalMs": { "type": "integer", "default": 30000 },
+          "HealthCheckTimeoutMs": { "type": "integer", "default": 5000 },
+          "HealthCheckExpectedStatusCode": { "type": "integer", "default": 200 },
+          "HealthyThreshold": { "type": "integer", "default": 3 },
+          "UnhealthyThreshold": { "type": "integer", "default": 3 },
+          "HealthCheckUseAuth": { "type": "boolean", "default": false },
+          "Labels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "nullable": true
+          },
+          "Tags": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "nullable": true
+          },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["Model", "Endpoint", "ApiFormat"]
+      }
+    }
+  }
+}

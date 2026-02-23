@@ -5,7 +5,7 @@ function Topbar() {
   const { serverUrl, user, isAdmin, theme, toggleTheme, logout } = useAuth();
 
   return (
-    <div className="topbar">
+    <div className="topbar" data-tour-target="topbar-misc">
       <div className="topbar-left">
         <span className="topbar-badge server">{serverUrl}</span>
         {isAdmin && <span className="topbar-badge admin">Admin</span>}

@@ -1,6 +1,9 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Net.Http;
+    using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -97,6 +100,72 @@ namespace AssistantHub.Server.Handlers
                 catch (Exception ex)
                 {
                     Logging.Warn(_Header + "unable to auto-assign RAG collection: " + ex.Message);
+                }
+
+                // Auto-assign first available inference endpoint
+                try
+                {
+                    string completionUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/enumerate";
+                    using (HttpClient client = new HttpClient())
+                    {
+                        if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
+                            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+
+                        var enumBody = new { MaxResults = 1 };
+                        var content = new StringContent(
+                            JsonSerializer.Serialize(enumBody),
+                            Encoding.UTF8, "application/json");
+                        var response = await client.PostAsync(completionUrl, content).ConfigureAwait(false);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            var result = JsonSerializer.Deserialize<JsonElement>(respBody);
+                            if (result.TryGetProperty("Objects", out var objects) && objects.GetArrayLength() > 0)
+                            {
+                                string endpointId = objects[0].GetProperty("Id").GetString();
+                                if (!String.IsNullOrEmpty(endpointId))
+                                    settings.InferenceEndpointId = endpointId;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Warn(_Header + "unable to auto-assign inference endpoint: " + ex.Message);
+                }
+
+                // Auto-assign first available embedding endpoint
+                try
+                {
+                    string embeddingUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/enumerate";
+                    using (HttpClient client = new HttpClient())
+                    {
+                        if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
+                            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+
+                        var enumBody = new { MaxResults = 1 };
+                        var content = new StringContent(
+                            JsonSerializer.Serialize(enumBody),
+                            Encoding.UTF8, "application/json");
+                        var response = await client.PostAsync(embeddingUrl, content).ConfigureAwait(false);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            var result = JsonSerializer.Deserialize<JsonElement>(respBody);
+                            if (result.TryGetProperty("Objects", out var objects) && objects.GetArrayLength() > 0)
+                            {
+                                string endpointId = objects[0].GetProperty("Id").GetString();
+                                if (!String.IsNullOrEmpty(endpointId))
+                                    settings.EmbeddingEndpointId = endpointId;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Warn(_Header + "unable to auto-assign embedding endpoint: " + ex.Message);
                 }
 
                 await Database.AssistantSettings.CreateAsync(settings).ConfigureAwait(false);

@@ -2,7 +2,6 @@ namespace AssistantHub.Core.Models
 {
     using System;
     using System.Data;
-    using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
 
     /// <summary>
@@ -82,6 +81,13 @@ namespace AssistantHub.Core.Models
         public bool EnableRag { get; set; } = false;
 
         /// <summary>
+        /// Whether the LLM-based retrieval gate is enabled.
+        /// When enabled, an LLM call classifies whether each user message requires
+        /// new retrieval or can be answered from existing conversation context.
+        /// </summary>
+        public bool EnableRetrievalGate { get; set; } = false;
+
+        /// <summary>
         /// Collection identifier for document retrieval.
         /// </summary>
         public string CollectionId { get; set; } = null;
@@ -105,19 +111,48 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
-        /// Inference provider type.
+        /// Search mode for retrieval: Vector, FullText, or Hybrid.
         /// </summary>
-        public InferenceProviderEnum InferenceProvider { get; set; } = InferenceProviderEnum.Ollama;
+        public string SearchMode { get; set; } = "Vector";
 
         /// <summary>
-        /// Inference provider endpoint URL.
+        /// Weight of full-text score in hybrid mode (0.0 to 1.0).
+        /// Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
+        /// Only applies when SearchMode is "Hybrid".
         /// </summary>
-        public string InferenceEndpoint { get; set; } = "http://ollama:11434";
+        public double TextWeight { get; set; } = 0.3;
 
         /// <summary>
-        /// Inference provider API key.
+        /// Full-text ranking function: "TsRank" (term frequency) or "TsRankCd" (cover density, rewards proximity).
         /// </summary>
-        public string InferenceApiKey { get; set; } = null;
+        public string FullTextSearchType { get; set; } = "TsRank";
+
+        /// <summary>
+        /// PostgreSQL text search language configuration.
+        /// Controls stemming and stop words.
+        /// </summary>
+        public string FullTextLanguage { get; set; } = "english";
+
+        /// <summary>
+        /// Full-text score normalization bitmask. 32 = normalized 0-1 (recommended for hybrid).
+        /// </summary>
+        public int FullTextNormalization { get; set; } = 32;
+
+        /// <summary>
+        /// Minimum full-text score threshold. Documents with TextScore below this are excluded.
+        /// Null means no threshold.
+        /// </summary>
+        public double? FullTextMinimumScore { get; set; } = null;
+
+        /// <summary>
+        /// Completion endpoint identifier (references a managed Partio completion endpoint).
+        /// </summary>
+        public string InferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
+        /// </summary>
+        public string EmbeddingEndpointId { get; set; } = null;
 
         /// <summary>
         /// Title displayed as the heading on the chat window.
@@ -191,12 +226,18 @@ namespace AssistantHub.Core.Models
             obj.ContextWindow = DataTableHelper.GetIntValue(row, "context_window", 8192);
             obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
+            obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
-            obj.InferenceProvider = DataTableHelper.GetEnumValue<InferenceProviderEnum>(row, "inference_provider", InferenceProviderEnum.Ollama);
-            obj.InferenceEndpoint = DataTableHelper.GetStringValue(row, "inference_endpoint");
-            obj.InferenceApiKey = DataTableHelper.GetStringValue(row, "inference_api_key");
+            obj.SearchMode = DataTableHelper.GetStringValue(row, "search_mode") ?? "Vector";
+            obj.TextWeight = DataTableHelper.GetDoubleValue(row, "text_weight", 0.3);
+            obj.FullTextSearchType = DataTableHelper.GetStringValue(row, "fulltext_search_type") ?? "TsRank";
+            obj.FullTextLanguage = DataTableHelper.GetStringValue(row, "fulltext_language") ?? "english";
+            obj.FullTextNormalization = DataTableHelper.GetIntValue(row, "fulltext_normalization", 32);
+            obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
+            obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
+            obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");

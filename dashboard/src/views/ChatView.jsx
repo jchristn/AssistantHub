@@ -122,6 +122,13 @@ function ChatView() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Focus textarea when loading completes
+  useEffect(() => {
+    if (!loading && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [loading]);
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -139,7 +146,7 @@ function ChatView() {
           content: 'Generate a short title (max 6 words) for this conversation. Reply with ONLY the title text, nothing else.'
         }
       ];
-      const result = await ApiClient.chat(serverUrl, assistantId, titleMessages);
+      const result = await ApiClient.generate(serverUrl, assistantId, titleMessages);
       if (result.choices && result.choices.length > 0) {
         const title = result.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
         setChatName(title);
@@ -219,7 +226,7 @@ function ChatView() {
   };
 
   const handleHelp = () => {
-    const helpText = `| Command | Description |\n|---------|-------------|\n| \`/clear\` | Clear all messages and reset the conversation |\n| \`/compact\` | Summarize and compact the conversation to save tokens |\n| \`/context\` | Display current context information |\n| \`/help\` | Show this help message |`;
+    const helpText = `| Command | Description |\n|---------|-------------|\n| \`/clear\` | Clear all messages and reset the conversation |\n| \`/compact\` | Summarize and compact the conversation to save tokens |\n| \`/context\` | Display current context information |\n| \`/?\` or \`/help\` | Show this help message |`;
     setMessages(prev => [...prev, { role: 'system', content: helpText, isSystem: true }]);
   };
 
@@ -242,6 +249,7 @@ function ChatView() {
           handleContext();
           return;
         case '/help':
+        case '/?':
           handleHelp();
           return;
         default:
@@ -343,6 +351,34 @@ function ChatView() {
           setMessages(current => { generateChatTitle(current); return current; });
         } else if (compactionDetected) {
           setMessages(current => { generateChatTitle(current); return current; });
+        }
+      }
+
+      // Pre-emptive compaction: if nearing context limit, compact now to avoid
+      // a blocking summarization call on the next chat request.
+      if (hadSuccess && result.usage && result.usage.context_window > 0) {
+        const usageRatio = (result.usage.total_tokens || 0) / result.usage.context_window;
+        if (usageRatio >= 0.75) {
+          const assistantContent = result.choices[0].message.content;
+          const messagesForCompaction = [...chatMessages, { role: 'assistant', content: assistantContent }];
+          if (messagesForCompaction.length >= 3) {
+            try {
+              const compactResult = await ApiClient.compact(serverUrl, assistantId, messagesForCompaction, currentThreadId);
+              if (compactResult.messages) {
+                setMessages(compactResult.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content })));
+                setMessages(prev => [...prev, {
+                  role: 'system',
+                  content: 'Conversation automatically compacted to free up context space.',
+                  isSystem: true
+                }]);
+              }
+              if (compactResult.usage) {
+                setContextUsage(compactResult.usage);
+              }
+            } catch (compactErr) {
+              console.error('Pre-emptive compaction failed:', compactErr);
+            }
+          }
         }
       }
     } catch (err) {
@@ -462,7 +498,7 @@ function ChatView() {
     },
   };
 
-  const logoSrc = assistant?.LogoUrl || '/logo-no-text.png';
+  const logoSrc = assistant?.LogoUrl || '/logo-new.png';
   const chatTitle = assistant?.Title || assistant?.Name || 'AssistantHub';
 
   if (error) {
@@ -470,7 +506,7 @@ function ChatView() {
       <div className="chat-page">
         <div className="chat-header">
           <div className="chat-header-inner">
-            <img src="/logo-no-text.png" alt="AssistantHub" className="chat-header-logo" />
+            <img src="/logo-new.png" alt="AssistantHub" className="chat-header-logo" />
             <span className="chat-header-title">AssistantHub</span>
           </div>
         </div>
@@ -495,7 +531,7 @@ function ChatView() {
             src={logoSrc}
             alt={chatTitle}
             className="chat-header-logo"
-            onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+            onError={(e) => { e.target.src = '/logo-new.png'; }}
           />
           <div className="chat-header-info">
             <div className="chat-header-title">{chatName || chatTitle}</div>
@@ -523,7 +559,7 @@ function ChatView() {
                   src={logoSrc}
                   alt=""
                   className="chat-empty-logo"
-                  onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                  onError={(e) => { e.target.src = '/logo-new.png'; }}
                 />
               </div>
               <h2>How can I help you today?</h2>
@@ -554,7 +590,7 @@ function ChatView() {
                     <img
                       src={logoSrc}
                       alt=""
-                      onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                      onError={(e) => { e.target.src = '/logo-new.png'; }}
                     />
                   </div>
                 )}
@@ -615,7 +651,7 @@ function ChatView() {
                 <img
                   src={logoSrc}
                   alt=""
-                  onError={(e) => { e.target.src = '/logo-no-text.png'; }}
+                  onError={(e) => { e.target.src = '/logo-new.png'; }}
                 />
               </div>
               <div className="chat-message-content-wrap">

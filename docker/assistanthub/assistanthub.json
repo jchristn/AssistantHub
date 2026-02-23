@@ -28,7 +28,7 @@
   },
   "Chunking": {
     "Endpoint": "http://partio-server:8400",
-    "AccessKey": "default",
+    "AccessKey": "partioadmin",
     "EndpointId": "ep_xRuezoahg0uLsKpRNPyjA49sU6mmyyUS2UrvAy5GfSAGN"
   },
   "Inference": {

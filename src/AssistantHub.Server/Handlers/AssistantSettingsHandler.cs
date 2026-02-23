@@ -1,6 +1,7 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -151,6 +152,26 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
                     return;
+                }
+
+                // Validate search mode fields
+                string[] validSearchModes = { "Vector", "FullText", "Hybrid" };
+                if (!String.IsNullOrEmpty(updated.SearchMode) &&
+                    !validSearchModes.Contains(updated.SearchMode, StringComparer.OrdinalIgnoreCase))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "SearchMode must be Vector, FullText, or Hybrid."))).ConfigureAwait(false);
+                    return;
+                }
+
+                updated.TextWeight = Math.Clamp(updated.TextWeight, 0.0, 1.0);
+
+                string[] validSearchTypes = { "TsRank", "TsRankCd" };
+                if (!String.IsNullOrEmpty(updated.FullTextSearchType) &&
+                    !validSearchTypes.Contains(updated.FullTextSearchType, StringComparer.OrdinalIgnoreCase))
+                {
+                    updated.FullTextSearchType = "TsRank";
                 }
 
                 AssistantSettings existing = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 function AssistantFormModal({ assistant, onSave, onClose }) {
   const isEdit = !!assistant;
@@ -37,11 +38,11 @@ function AssistantFormModal({ assistant, onSave, onClose }) {
     }>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Name</label>
+          <label><Tooltip text="Display name for the assistant shown to users">Name</Tooltip></label>
           <input type="text" value={form.Name} onChange={(e) => handleChange('Name', e.target.value)} required />
         </div>
         <div className="form-group">
-          <label>Description</label>
+          <label><Tooltip text="Optional description of the assistant's purpose and capabilities">Description</Tooltip></label>
           <textarea value={form.Description} onChange={(e) => handleChange('Description', e.target.value)} rows={3} />
         </div>
         {isEdit && (
@@ -51,7 +52,7 @@ function AssistantFormModal({ assistant, onSave, onClose }) {
                 <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
                 <span className="toggle-slider"></span>
               </label>
-              <span>Active</span>
+              <span><Tooltip text="Whether this assistant is active and available for use">Active</Tooltip></span>
             </div>
           </div>
         )}

@@ -137,7 +137,7 @@ In the `Inference` section, change the `Endpoint` from the container hostname to
 - **Ollama on the same machine (Linux without Docker Desktop):** Use `http://172.17.0.1:11434` (the default Docker bridge gateway), or run the compose stack with `network_mode: host`. You may also need to set `OLLAMA_HOST=0.0.0.0` in your Ollama configuration so it listens on all interfaces.
 - **Ollama on another machine:** Use that machine's IP or hostname, e.g. `http://192.168.1.50:11434`. Ensure the Ollama port is accessible from the Docker network.
 
-> **Note:** You will also need to update the Partio embedding and completion endpoint configurations to point to your Ollama instance. This can be done through the Partio dashboard at [http://localhost:8322](http://localhost:8322) after startup.
+> **Important:** After startup, you must also update the Partio embedding and completion endpoint configurations to point to your Ollama instance. Open the Partio dashboard at [http://localhost:8322](http://localhost:8322), navigate to the embedding and completion endpoints, and change the Ollama URL from `http://ollama:11434` to match the endpoint you configured above (e.g. `http://host.docker.internal:11434`). Without this step, document ingestion (embeddings) and summarization will fail.
 
 **3. Start the stack:**
 

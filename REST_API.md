@@ -31,7 +31,9 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
   - [Create Thread](#post-v10assistantsassistantidthreads)
   - [Chat](#post-v10assistantsassistantidchat)
   - [Generate](#post-v10assistantsassistantidgenerate)
+  - [Compact](#post-v10assistantsassistantidcompact)
   - [Feedback](#post-v10assistantsassistantidfeedback)
+- [Configuration (Admin Only)](#configuration-admin-only)
 - [Configuration: ChatHistory Settings](#configuration-chathistory-settings)
 
 ---
@@ -631,6 +633,33 @@ Delete an object from a bucket.
 **Error Responses:**
 - `400` -- Key is required.
 - `404` -- Object not found.
+
+### POST /v1.0/buckets/{name}/objects/upload
+
+Upload a file to a bucket. Sends raw binary content in the request body.
+
+**Auth:** Required (admin only)
+
+**Query Parameters:**
+
+| Parameter | Type   | Required | Description                    |
+|-----------|--------|----------|--------------------------------|
+| `key`     | string | Yes      | The S3 key path for the file.  |
+
+**Request Body:** Raw binary file content. Set the `Content-Type` header to the file's MIME type.
+
+**Response (201 Created):**
+
+```json
+{
+  "Key": "documents/guide.pdf",
+  "Size": 1048576
+}
+```
+
+**Error Responses:**
+- `400` -- Key is required.
+- `404` -- Bucket not found.
 
 ### GET /v1.0/buckets/{name}/objects/download
 
@@ -1316,6 +1345,7 @@ Retrieve settings for an assistant.
   "ContextWindow": 8192,
   "Model": "gpt-4o",
   "EnableRag": false,
+  "EnableRetrievalGate": false,
   "CollectionId": "collection-uuid",
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
@@ -1347,6 +1377,7 @@ Retrieve settings for an assistant.
 | `ContextWindow`            | int     | Context window size in tokens.                                              |
 | `Model`                    | string  | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
+| `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
 | `RetrievalTopK`            | int     | Number of top document chunks to retrieve.                                  |
 | `RetrievalScoreThreshold`  | double  | Minimum similarity score threshold (0.0 to 1.0).                           |
@@ -1361,7 +1392,7 @@ Retrieve settings for an assistant.
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
-| `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `false`.                   |
+| `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `true`.                    |
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -1384,6 +1415,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "ContextWindow": 8192,
   "Model": "gpt-4o",
   "EnableRag": false,
+  "EnableRetrievalGate": false,
   "CollectionId": "my-collection-id",
   "RetrievalTopK": 10,
   "RetrievalScoreThreshold": 0.6,
@@ -1398,7 +1430,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
-  "Streaming": false
+  "Streaming": true
 }
 ```
 
@@ -1524,6 +1556,24 @@ Delete a document, its S3 object, and all associated RecallDB embeddings.
 **Error Responses:**
 - `404` -- Document not found.
 
+### GET /v1.0/documents/{documentId}/processing-log
+
+Retrieve the processing log for a document. The log contains details from the ingestion pipeline (text extraction, chunking, embedding) for debugging and monitoring.
+
+**Auth:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "DocumentId": "adoc_abc123...",
+  "Log": "2026-01-01T12:00:00Z [INFO] Starting document processing...\n2026-01-01T12:00:01Z [INFO] Text extraction complete: 15 cells...\n..."
+}
+```
+
+**Error Responses:**
+- `404` -- Document not found.
+
 ### HEAD /v1.0/documents/{documentId}
 
 Check whether a document exists.
@@ -1619,6 +1669,8 @@ Retrieve a single chat history record by ID.
   "UserMessage": "How do I reset my password?",
   "RetrievalStartUtc": "2025-01-01T12:00:00.100Z",
   "RetrievalDurationMs": 45.23,
+  "RetrievalGateDecision": "RETRIEVE",
+  "RetrievalGateDurationMs": 120.50,
   "RetrievalContext": "Chunk 1: To reset your password...",
   "PromptSentUtc": "2025-01-01T12:00:00.150Z",
   "PromptTokens": 1250,
@@ -1648,6 +1700,8 @@ Retrieve a single chat history record by ID.
 | `UserMessage`          | string   | The user's message text.                                     |
 | `RetrievalStartUtc`    | datetime | UTC timestamp when RAG retrieval started (null if no RAG).   |
 | `RetrievalDurationMs`  | double   | RAG retrieval duration in milliseconds.                      |
+| `RetrievalGateDecision`| string   | Retrieval gate decision: `RETRIEVE`, `SKIP`, or null (gate disabled). |
+| `RetrievalGateDurationMs` | double | Duration of the retrieval gate LLM call in milliseconds.    |
 | `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
 | `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
 | `PromptTokens`         | int      | Estimated prompt token count sent to the model.              |
@@ -1762,30 +1816,59 @@ Pull (download) a model on the configured inference provider. Only supported for
 }
 ```
 
-**Response (200 OK -- Success):**
+**Response (202 Accepted):**
 
 ```json
 {
-  "Success": true,
-  "Name": "gemma3:4b",
-  "Message": "Model pull completed successfully."
+  "ModelName": "gemma3:4b",
+  "Status": "starting"
 }
 ```
 
-**Response (200 OK -- Failure):**
-
-```json
-{
-  "Success": false,
-  "Name": "gemma3:4b",
-  "Message": "Model pull failed."
-}
-```
+The pull operation runs asynchronously. Use `GET /v1.0/models/pull/status` to poll for progress.
 
 **Error Responses:**
 - `400` -- Model name is required, or pull is not supported by the configured provider.
 - `403` -- Not an admin user.
 - `500` -- Internal error.
+
+### GET /v1.0/models/pull/status
+
+Poll the status of a model pull operation.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):**
+
+```json
+{
+  "ModelName": "gemma3:4b",
+  "Status": "downloading",
+  "StartedUtc": "2026-01-01T12:00:00Z",
+  "IsComplete": false,
+  "HasError": false,
+  "ErrorMessage": null,
+  "CurrentStep": "pulling manifest",
+  "TotalSize": 3300000000,
+  "CompletedSize": 1200000000
+}
+```
+
+| Field           | Type     | Description                                         |
+|-----------------|----------|-----------------------------------------------------|
+| `ModelName`     | string   | Name of the model being pulled.                     |
+| `Status`        | string   | Current status of the pull operation.               |
+| `StartedUtc`    | datetime | UTC timestamp when the pull started.                |
+| `IsComplete`    | bool     | Whether the pull has finished.                      |
+| `HasError`      | bool     | Whether the pull encountered an error.              |
+| `ErrorMessage`  | string   | Error details if `HasError` is true; null otherwise.|
+| `CurrentStep`   | string   | Current step in the pull process (null if idle).    |
+| `TotalSize`     | long?    | Total download size in bytes (null if unknown).     |
+| `CompletedSize` | long?    | Bytes downloaded so far (null if unknown).          |
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- No pull operation in progress.
 
 ---
 
@@ -1992,6 +2075,58 @@ Lightweight inference-only endpoint. Sends messages directly to the configured L
 - `500` -- Assistant settings not configured.
 - `502` -- Inference failed.
 
+### POST /v1.0/assistants/{assistantId}/compact
+
+Force conversation compaction. Summarizes the provided message history into a shorter form to free up context window space. Useful for long conversations where the client wants to explicitly trigger compaction rather than waiting for automatic compaction during chat.
+
+**Auth:** None
+
+**Request Body:**
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "What is machine learning?" },
+    { "role": "assistant", "content": "Machine learning is a subset of artificial intelligence..." },
+    { "role": "user", "content": "How does supervised learning work?" },
+    { "role": "assistant", "content": "Supervised learning uses labeled training data..." }
+  ],
+  "model": "gemma3:4b",
+  "temperature": 0.7,
+  "max_tokens": 4096
+}
+```
+
+| Field         | Type   | Required | Description                                                    |
+|---------------|--------|----------|----------------------------------------------------------------|
+| `messages`    | array  | Yes      | Array of message objects with `role` and `content`.            |
+| `model`       | string | No       | Model override (falls back to assistant settings).             |
+| `temperature` | double | No       | Sampling temperature override (0.0-2.0).                       |
+| `top_p`       | double | No       | Top-p override (0.0-1.0).                                      |
+| `max_tokens`  | int    | No       | Max tokens override.                                           |
+
+**Response (200 OK):**
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "What is machine learning?" },
+    { "role": "assistant", "content": "Previous conversation summary: We discussed machine learning fundamentals and supervised learning techniques..." }
+  ],
+  "usage": {
+    "promptTokens": 250,
+    "totalTokens": 350,
+    "contextWindow": 8192
+  }
+}
+```
+
+**Error Responses:**
+- `400` -- At least one message is required.
+- `404` -- Assistant not found or not active.
+- `500` -- Assistant settings not configured.
+- `502` -- Inference failed during compaction.
+
 ### POST /v1.0/assistants/{assistantId}/feedback
 
 Submit feedback for an assistant response.
@@ -2032,6 +2167,34 @@ Submit feedback for an assistant response.
 **Error Responses:**
 - `400` -- Invalid request body.
 - `404` -- Assistant not found or not active.
+
+---
+
+## Configuration (Admin Only)
+
+Manage server configuration at runtime. Changes are persisted to the `assistanthub.json` settings file on disk.
+
+### GET /v1.0/configuration
+
+Retrieve the current server configuration.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `ProcessingLog`, `ChatHistory`, and `Logging`.
+
+### PUT /v1.0/configuration
+
+Update the server configuration. The updated settings are saved to disk.
+
+**Auth:** Required (admin only)
+
+**Request Body:** A full or partial `AssistantHubSettings` object. See the [Configuration](#configuration) section in the README for the complete schema.
+
+**Response (200 OK):** The updated `AssistantHubSettings` object.
+
+**Error Responses:**
+- `400` -- Invalid request body.
+- `403` -- Not an admin user.
 
 ---
 

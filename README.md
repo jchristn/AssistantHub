@@ -84,6 +84,68 @@ The Docker Compose stack orchestrates the following services:
 | **recalldb-server** | 8401 | Vector and full-text search database. Wraps pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
 | **recalldb-dashboard** | 8402 | Web-based management UI for RecallDB. Allows direct browsing of collections, records, and search testing. |
 
+### Using an External Ollama Instance
+
+If you already have Ollama running on your host machine or on another server, you can skip the containerized Ollama and point AssistantHub at your existing instance instead.
+
+**1. Comment out the Ollama service in `docker/compose.yaml`:**
+
+Comment out (or remove) the `ollama` service and its volume:
+
+```yaml
+services:
+
+  # --- Infrastructure ---
+
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   environment:
+  #     OLLAMA_NUM_PARALLEL: "4"
+  #     OLLAMA_MAX_LOADED_MODELS: "4"
+  #   volumes:
+  #     - ollama-models:/root/.ollama
+  #   restart: unless-stopped
+```
+
+Also comment out the `ollama-models` volume at the bottom of the file:
+
+```yaml
+volumes:
+  pgvector-data:
+  # ollama-models:
+```
+
+And remove `- ollama` from the `partio-server` service's `depends_on` list.
+
+**2. Update `docker/assistanthub/assistanthub.json` to point to your Ollama instance:**
+
+In the `Inference` section, change the `Endpoint` from the container hostname to your Ollama instance's address:
+
+```json
+"Inference": {
+  "Provider": "Ollama",
+  "Endpoint": "http://host.docker.internal:11434",
+  "ApiKey": "default",
+  "DefaultModel": "gemma3:4b"
+}
+```
+
+- **Ollama on the same machine (Docker Desktop):** Use `http://host.docker.internal:11434`. The special hostname `host.docker.internal` resolves to your host machine from inside Docker containers. Do **not** use `localhost` -- inside a container, `localhost` refers to the container itself, not your host machine.
+- **Ollama on the same machine (Linux without Docker Desktop):** Use `http://172.17.0.1:11434` (the default Docker bridge gateway), or run the compose stack with `network_mode: host`. You may also need to set `OLLAMA_HOST=0.0.0.0` in your Ollama configuration so it listens on all interfaces.
+- **Ollama on another machine:** Use that machine's IP or hostname, e.g. `http://192.168.1.50:11434`. Ensure the Ollama port is accessible from the Docker network.
+
+> **Note:** You will also need to update the Partio embedding and completion endpoint configurations to point to your Ollama instance. This can be done through the Partio dashboard at [http://localhost:8322](http://localhost:8322) after startup.
+
+**3. Start the stack:**
+
+```bash
+cd docker
+docker compose up -d
+```
+
 ### Dashboards
 
 | Dashboard | URL | Default Credentials |

@@ -17,9 +17,20 @@ const defaultHealthCheck = {
   HealthCheckUseAuth: false
 };
 
-function getDefaultHealthCheckUrl(apiFormat) {
-  if (apiFormat === 'OpenAI') return '/v1/models';
-  if (apiFormat === 'Ollama') return '/api/tags';
+function isAbsoluteUrl(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getDefaultHealthCheckUrl(endpoint, apiFormat) {
+  const base = (endpoint || '').replace(/\/+$/, '');
+  if (!base) return '';
+  if (apiFormat === 'OpenAI') return base + '/v1/models';
+  if (apiFormat === 'Ollama') return base + '/api/tags';
   return '';
 }
 
@@ -34,7 +45,7 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
     ApiKey: endpoint?.ApiKey || '',
     Active: endpoint?.Active !== undefined ? endpoint.Active : true,
     HealthCheckEnabled: endpoint?.HealthCheckEnabled !== undefined ? endpoint.HealthCheckEnabled : defaultHealthCheck.HealthCheckEnabled,
-    HealthCheckUrl: endpoint?.HealthCheckUrl || getDefaultHealthCheckUrl(endpoint?.ApiFormat || 'Ollama'),
+    HealthCheckUrl: endpoint?.HealthCheckUrl || getDefaultHealthCheckUrl(endpoint?.Endpoint, endpoint?.ApiFormat || 'Ollama'),
     HealthCheckMethod: endpoint?.HealthCheckMethod || defaultHealthCheck.HealthCheckMethod,
     HealthCheckIntervalMs: endpoint?.HealthCheckIntervalMs !== undefined ? endpoint.HealthCheckIntervalMs : defaultHealthCheck.HealthCheckIntervalMs,
     HealthCheckTimeoutMs: endpoint?.HealthCheckTimeoutMs !== undefined ? endpoint.HealthCheckTimeoutMs : defaultHealthCheck.HealthCheckTimeoutMs,
@@ -50,15 +61,19 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
   const handleChange = (field, value) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      if (field === 'ApiFormat') {
-        const oldDefault = getDefaultHealthCheckUrl(prev.ApiFormat);
+      if (field === 'ApiFormat' || field === 'Endpoint') {
+        const ep = field === 'Endpoint' ? value : prev.Endpoint;
+        const fmt = field === 'ApiFormat' ? value : prev.ApiFormat;
+        const oldDefault = getDefaultHealthCheckUrl(prev.Endpoint, prev.ApiFormat);
         if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefault) {
-          updated.HealthCheckUrl = getDefaultHealthCheckUrl(value);
+          updated.HealthCheckUrl = getDefaultHealthCheckUrl(ep, fmt);
         }
       }
       return updated;
     });
   };
+
+  const healthCheckUrlInvalid = form.HealthCheckUrl && !isAbsoluteUrl(form.HealthCheckUrl);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,7 +124,7 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={saving || !form.Model.trim() || !form.Endpoint.trim() || !form.ApiFormat}
+            disabled={saving || !form.Model.trim() || !form.Endpoint.trim() || !form.ApiFormat || healthCheckUrlInvalid}
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -217,13 +232,18 @@ function InferenceEndpointFormModal({ endpoint, onSave, onClose }) {
               </div>
 
               <div className="form-group">
-                <label><Tooltip text="URL to send health check requests to. Defaults to the endpoint URL if not specified">Health Check URL</Tooltip></label>
+                <label><Tooltip text="Full URL to send health check requests to (e.g. http://ollama:11434/api/tags). Must be an absolute URL, not a relative path.">Health Check URL</Tooltip></label>
                 <input
                   type="text"
                   value={form.HealthCheckUrl}
                   onChange={(e) => handleChange('HealthCheckUrl', e.target.value)}
-                  placeholder="Optional"
+                  placeholder="e.g. http://ollama:11434/api/tags"
                 />
+                {healthCheckUrlInvalid && (
+                  <small style={{ color: 'var(--danger, #e74c3c)', marginTop: '0.25rem', display: 'block' }}>
+                    Must be a full URL starting with http:// or https://
+                  </small>
+                )}
               </div>
 
               <div className="form-group">

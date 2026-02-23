@@ -181,7 +181,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string body = ctx.Request.DataAsString;
+                string body = InjectTenantId(ctx.Request.DataAsString);
                 string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
 
                 HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, partioUrl);

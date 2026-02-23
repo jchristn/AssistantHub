@@ -190,8 +190,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
             }
 
             long nextSkip = skip + maxResults;
-            ret.RecordsRemaining = totalRecords - nextSkip;
-            if (ret.RecordsRemaining < 0) ret.RecordsRemaining = 0;
+            ret.RecordsRemaining = Math.Max(0, totalRecords - nextSkip);
 
             if (nextSkip < totalRecords)
             {

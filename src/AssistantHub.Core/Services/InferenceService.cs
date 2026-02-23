@@ -349,6 +349,9 @@ namespace AssistantHub.Core.Services
                             fullSystemMessage,
                             userMessage,
                             effectiveModel,
+                            maxTokens,
+                            temperature,
+                            topP,
                             effectiveEndpoint,
                             token).ConfigureAwait(false);
 
@@ -407,7 +410,8 @@ namespace AssistantHub.Core.Services
 
                     case InferenceProviderEnum.Ollama:
                         return await GenerateOllamaResponseFromMessagesAsync(
-                            messages, effectiveModel, effectiveEndpoint, token).ConfigureAwait(false);
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint, token).ConfigureAwait(false);
 
                     default:
                         _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
@@ -474,7 +478,8 @@ namespace AssistantHub.Core.Services
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
-                            messages, effectiveModel, effectiveEndpoint,
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint,
                             onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
                         break;
 
@@ -615,6 +620,9 @@ namespace AssistantHub.Core.Services
             string systemMessage,
             string userMessage,
             string model,
+            int maxTokens,
+            double temperature,
+            double topP,
             string endpoint,
             CancellationToken token)
         {
@@ -628,7 +636,13 @@ namespace AssistantHub.Core.Services
             {
                 model = model,
                 messages = messages,
-                stream = false
+                stream = false,
+                options = new
+                {
+                    temperature = temperature,
+                    top_p = topP,
+                    num_predict = maxTokens
+                }
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
@@ -811,6 +825,9 @@ namespace AssistantHub.Core.Services
         private async Task<InferenceResult> GenerateOllamaResponseFromMessagesAsync(
             List<ChatCompletionMessage> messages,
             string model,
+            int maxTokens,
+            double temperature,
+            double topP,
             string endpoint,
             CancellationToken token)
         {
@@ -826,7 +843,13 @@ namespace AssistantHub.Core.Services
             {
                 model = model,
                 messages = msgObjects,
-                stream = false
+                stream = false,
+                options = new
+                {
+                    temperature = temperature,
+                    top_p = topP,
+                    num_predict = maxTokens
+                }
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
@@ -969,6 +992,9 @@ namespace AssistantHub.Core.Services
         private async Task GenerateOllamaStreamingAsync(
             List<ChatCompletionMessage> messages,
             string model,
+            int maxTokens,
+            double temperature,
+            double topP,
             string endpoint,
             Func<string, Task> onDelta,
             Func<string, Task> onComplete,
@@ -988,7 +1014,13 @@ namespace AssistantHub.Core.Services
             {
                 model = model,
                 messages = msgObjects,
-                stream = true
+                stream = true,
+                options = new
+                {
+                    temperature = temperature,
+                    top_p = topP,
+                    num_predict = maxTokens
+                }
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);

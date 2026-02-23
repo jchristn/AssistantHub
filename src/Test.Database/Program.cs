@@ -15,6 +15,7 @@ namespace Test.Database
     {
         public static async Task<int> Main(string[] args)
         {
+            bool noCleanup = HasArgument(args, "--no-cleanup");
             DatabaseSettings settings = ParseArguments(args);
             if (settings == null) return 1;
 
@@ -83,6 +84,40 @@ namespace Test.Database
 
             totalStopwatch.Stop();
             runner.PrintSummary(totalStopwatch.Elapsed.TotalMilliseconds);
+
+            // Cleanup: delete all test data in dependency order
+            if (!noCleanup)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Cleaning up test data...");
+
+                // Delete in dependency order: child tables first, then parent tables
+                string[] cleanupTables = new string[]
+                {
+                    "chat_history",
+                    "assistant_feedback",
+                    "assistant_settings",
+                    "assistant_documents",
+                    "ingestion_rules",
+                    "credentials",
+                    "assistants",
+                    "users"
+                };
+
+                foreach (string table in cleanupTables)
+                {
+                    try
+                    {
+                        await driver.ExecuteQueryAsync("DELETE FROM " + table, true, token);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"  Warning: failed to clean up {table}: {ex.Message}");
+                    }
+                }
+
+                Console.WriteLine("Cleanup complete.");
+            }
 
             // cleanup SQLite test file
             if (settings.Type == DatabaseTypeEnum.Sqlite && File.Exists(settings.Filename))
@@ -161,6 +196,10 @@ namespace Test.Database
                         settings.Filename = args[++i];
                         break;
 
+                    case "--no-cleanup":
+                        // handled separately before ParseArguments
+                        break;
+
                     case "--help":
                     case "-h":
                         PrintUsage();
@@ -236,6 +275,9 @@ namespace Test.Database
             Console.WriteLine();
             Console.WriteLine("SQLite options:");
             Console.WriteLine("  --filename <file>   SQLite database file path (default: auto-generated temp file)");
+            Console.WriteLine();
+            Console.WriteLine("Other options:");
+            Console.WriteLine("  --no-cleanup        Do not delete test records after tests complete");
             Console.WriteLine();
             Console.WriteLine("Default ports by database type:");
             Console.WriteLine("  PostgreSQL:  5432");

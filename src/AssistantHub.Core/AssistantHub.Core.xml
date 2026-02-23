@@ -4056,7 +4056,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Assistant response content.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.Threading.CancellationToken)">
             <summary>
             Generate a response using the Ollama chat API.
             </summary>

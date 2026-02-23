@@ -905,12 +905,12 @@ The following timing measurements are captured during the chat pipeline and pers
 
 | Measurement | Field | What It Measures |
 |---|---|---|
+| Retrieval Duration | `retrieval_duration_ms` | Time spent in the retrieval phase (Phase 4) |
 | Endpoint Resolution | `endpoint_resolution_duration_ms` | HTTP GET to Partio to resolve inference endpoint details (only when `InferenceEndpointId` is configured) |
 | Compaction | `compaction_duration_ms` | Time spent in `CompactIfNeeded` — may include a full LLM summarization call if context window is exceeded |
 | Inference Connection | `inference_connection_duration_ms` | Time from `HttpClient.SendAsync` to receiving response headers — network latency + model loading |
 | Time to First Token | `time_to_first_token_ms` | Time from `inferenceSw.Start()` to first `onDelta` callback — includes connection + prompt processing |
 | Time to Last Token | `time_to_last_token_ms` | Time from `inferenceSw.Start()` to stream completion — total inference duration |
-| Retrieval Duration | `retrieval_duration_ms` | Time spent in the retrieval phase (Phase 5) |
 
 **Derived metrics** (computed in the dashboard, not stored):
 - **Prompt Processing** = TTFT - Connection time (time the model spent processing the prompt)

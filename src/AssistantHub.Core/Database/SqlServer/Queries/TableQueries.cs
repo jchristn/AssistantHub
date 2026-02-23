@@ -122,7 +122,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ingestion_rules')
             CREATE TABLE ingestion_rules (
                 id NVARCHAR(256) NOT NULL,
-                name NVARCHAR(MAX) NOT NULL,
+                name NVARCHAR(256) NOT NULL,
                 description NVARCHAR(MAX) NULL,
                 bucket NVARCHAR(MAX) NOT NULL,
                 collection_name NVARCHAR(MAX) NOT NULL,

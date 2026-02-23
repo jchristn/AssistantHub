@@ -1,7 +1,7 @@
 # AssistantHub
 
 <p align="center">
-  <img src="assets/logo-new-grey-outline-trans.png" alt="AssistantHub Logo" width="192"><br>
+  <img src="assets/logo-new-full.png" alt="AssistantHub Logo" width="192"><br>
   <strong>AssistantHub</strong><br><br>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/.NET-10.0-purple.svg" alt=".NET 10.0">

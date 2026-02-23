@@ -307,17 +307,20 @@ namespace AssistantHub.Server
                 // Chunking (Partio) - HEAD request
                 allSucceeded &= await CheckServiceAsync(http, "Chunking (Partio)",
                     System.Net.Http.HttpMethod.Head,
-                    _Settings.Chunking.Endpoint.TrimEnd('/') + "/");
+                    _Settings.Chunking.Endpoint.TrimEnd('/') + "/",
+                    bearerToken: _Settings.Chunking.AccessKey);
 
                 // Inference (Ollama) - GET request
                 allSucceeded &= await CheckServiceAsync(http, "Inference (Ollama)",
                     System.Net.Http.HttpMethod.Get,
-                    _Settings.Inference.Endpoint.TrimEnd('/') + "/");
+                    _Settings.Inference.Endpoint.TrimEnd('/') + "/",
+                    bearerToken: _Settings.Inference.ApiKey);
 
                 // RecallDb - HEAD request
                 allSucceeded &= await CheckServiceAsync(http, "RecallDb",
                     System.Net.Http.HttpMethod.Head,
-                    _Settings.RecallDb.Endpoint.TrimEnd('/') + "/");
+                    _Settings.RecallDb.Endpoint.TrimEnd('/') + "/",
+                    bearerToken: _Settings.RecallDb.AccessKey);
             }
 
             if (!allSucceeded)
@@ -329,12 +332,15 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "all subordinate services are reachable");
         }
 
-        private static async Task<bool> CheckServiceAsync(HttpClient http, string serviceName, System.Net.Http.HttpMethod method, string url)
+        private static async Task<bool> CheckServiceAsync(HttpClient http, string serviceName, System.Net.Http.HttpMethod method, string url, string bearerToken = null)
         {
             try
             {
                 using (HttpRequestMessage req = new HttpRequestMessage(method, url))
                 {
+                    if (!String.IsNullOrEmpty(bearerToken))
+                        req.Headers.Add("Authorization", "Bearer " + bearerToken);
+
                     HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
                     if (resp.IsSuccessStatusCode)
                     {

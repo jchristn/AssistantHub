@@ -353,6 +353,7 @@ namespace AssistantHub.Core.Services
                             temperature,
                             topP,
                             effectiveEndpoint,
+                            effectiveApiKey,
                             token).ConfigureAwait(false);
 
                     default:
@@ -613,7 +614,11 @@ namespace AssistantHub.Core.Services
         /// <param name="systemMessage">Full system message with context.</param>
         /// <param name="userMessage">User message.</param>
         /// <param name="model">Model name.</param>
+        /// <param name="maxTokens">Maximum number of tokens to generate.</param>
+        /// <param name="temperature">Temperature.</param>
+        /// <param name="topP">Top-P.</param>
         /// <param name="endpoint">Ollama endpoint URL.</param>
+        /// <param name="apiKey">API key.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Assistant response content.</returns>
         private async Task<InferenceResult> GenerateOllamaResponseAsync(
@@ -624,6 +629,7 @@ namespace AssistantHub.Core.Services
             double temperature,
             double topP,
             string endpoint,
+            string apiKey,
             CancellationToken token)
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
@@ -650,6 +656,11 @@ namespace AssistantHub.Core.Services
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (!String.IsNullOrEmpty(apiKey))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                }
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);

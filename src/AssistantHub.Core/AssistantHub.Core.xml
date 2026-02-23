@@ -4056,14 +4056,18 @@
             <param name="token">Cancellation token.</param>
             <returns>Assistant response content.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Generate a response using the Ollama chat API.
             </summary>
             <param name="systemMessage">Full system message with context.</param>
             <param name="userMessage">User message.</param>
             <param name="model">Model name.</param>
+            <param name="maxTokens">Maximum number of tokens to generate.</param>
+            <param name="temperature">Temperature.</param>
+            <param name="topP">Top-P.</param>
             <param name="endpoint">Ollama endpoint URL.</param>
+            <param name="apiKey">API key.</param>
             <param name="token">Cancellation token.</param>
             <returns>Assistant response content.</returns>
         </member>

@@ -137,9 +137,31 @@ In the `Inference` section, change the `Endpoint` from the container hostname to
 - **Ollama on the same machine (Linux without Docker Desktop):** Use `http://172.17.0.1:11434` (the default Docker bridge gateway), or run the compose stack with `network_mode: host`. You may also need to set `OLLAMA_HOST=0.0.0.0` in your Ollama configuration so it listens on all interfaces.
 - **Ollama on another machine:** Use that machine's IP or hostname, e.g. `http://192.168.1.50:11434`. Ensure the Ollama port is accessible from the Docker network.
 
-> **Important:** After startup, you must also update the Partio embedding and completion endpoint configurations to point to your Ollama instance. Open the Partio dashboard at [http://localhost:8322](http://localhost:8322), navigate to the embedding and completion endpoints, and change the Ollama URL from `http://ollama:11434` to match the endpoint you configured above (e.g. `http://host.docker.internal:11434`). Without this step, document ingestion (embeddings) and summarization will fail.
+**3. Update `docker/partio/partio.json` to point to your Ollama instance:**
 
-**3. Start the stack:**
+In the `DefaultEmbeddingEndpoints` section, change the `Endpoint` from the container hostname to match the address you used above:
+
+```json
+"DefaultEmbeddingEndpoints": [
+  {
+    "Model": "all-minilm",
+    "Endpoint": "http://host.docker.internal:11434",
+    "ApiFormat": "Ollama",
+    "ApiKey": null
+  }
+]
+```
+
+**4. Update embedding and completion endpoints in the Partio dashboard:**
+
+After startup, open the Partio dashboard at [http://localhost:8322](http://localhost:8322) and update **both** the embedding endpoints and completion endpoints to point to your Ollama instance:
+
+- Change the **Endpoint** URL from `http://ollama:11434` to your instance's address (e.g. `http://host.docker.internal:11434`).
+- Change the **Health Check URL** from a relative path (`/api/tags`) to a **fully-qualified URL** (e.g. `http://host.docker.internal:11434/api/tags`). Health checks using relative paths will fail with an "invalid request URI" error.
+
+Without these changes, document ingestion (embeddings) and chat completions will fail.
+
+**5. Start the stack:**
 
 ```bash
 cd docker

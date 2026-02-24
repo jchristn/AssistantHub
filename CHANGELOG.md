@@ -19,6 +19,8 @@
 - **Multi-tenant user management** -- Admin and standard user roles with per-user assistant ownership
 - **Multiple database backends** -- SQLite (default), PostgreSQL, SQL Server, and MySQL for the application database
 - **One-command Docker deployment** -- Fully orchestrated Docker Compose stack with health checks, dependency ordering, and persistent volumes
+- **Citation metadata in chat responses** -- When enabled per-assistant, the system instructs the model to cite source documents using bracket notation [1], [2] and returns a structured `citations` object in the response mapping references to source document names, IDs, relevance scores, and text excerpts
+- **Citation document linking** -- Configurable `CitationLinkMode` setting (`None`, `Authenticated`, `Public`) that populates `download_url` on citation sources. Public mode generates presigned S3 URLs with 7-day expiration. Citation cards in the dashboard are clickable when a download URL is available
 
 ## Previous Versions
 

@@ -57,6 +57,8 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `model` VARCHAR(64) NOT NULL DEFAULT 'gemma3:4b', " +
             "  `enable_rag` TINYINT NOT NULL DEFAULT 0, " +
             "  `enable_retrieval_gate` TINYINT NOT NULL DEFAULT 0, " +
+            "  `enable_citations` TINYINT NOT NULL DEFAULT 0, " +
+            "  `citation_link_mode` VARCHAR(32) DEFAULT 'None', " +
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +

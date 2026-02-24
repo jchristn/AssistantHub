@@ -51,6 +51,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  model TEXT NOT NULL DEFAULT 'gemma3:4b', " +
                 "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
                 "  enable_retrieval_gate INTEGER NOT NULL DEFAULT 0, " +
+                "  enable_citations INTEGER NOT NULL DEFAULT 0, " +
+                "  citation_link_mode TEXT DEFAULT 'None', " +
                 "  collection_id TEXT, " +
                 "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
                 "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +

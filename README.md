@@ -32,6 +32,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Multi-tenant user management** -- Admin and standard user roles with per-user assistant ownership
 - **Multiple database backends** -- SQLite (default), PostgreSQL, SQL Server, and MySQL for the application database
 - **One-command Docker deployment** -- Fully orchestrated Docker Compose stack with health checks, dependency ordering, and persistent volumes
+- Citation metadata in chat completion responses with source attribution
 
 ---
 
@@ -49,6 +50,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- User and credential management with admin and standard user roles. Each user owns their own assistants and documents.
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
+- **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 
 ---
 

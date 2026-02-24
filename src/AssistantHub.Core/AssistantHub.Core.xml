@@ -2176,6 +2176,20 @@
             Top-down traversal.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Helpers.CitationExtractor">
+            <summary>
+            Extracts bracket-notation citation references from model response text.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.CitationExtractor.Extract(System.Collections.Generic.List{AssistantHub.Core.Models.CitationSource},System.String)">
+            <summary>
+            Build a ChatCompletionCitations object from the source manifest
+            and the model's response text.
+            </summary>
+            <param name="sources">The citation source manifest built during context injection.</param>
+            <param name="responseText">The completed model response text.</param>
+            <returns>A populated ChatCompletionCitations object.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
             <summary>
             Helper class for extracting typed values from DataRow objects.
@@ -2694,6 +2708,20 @@
             new retrieval or can be answered from existing conversation context.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableCitations">
+            <summary>
+            Whether to include citation metadata in chat completion responses.
+            When enabled, retrieved context chunks are indexed in the system prompt
+            and the model is instructed to cite sources using bracket notation [1], [2], etc.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.CitationLinkMode">
+            <summary>
+            Controls document download linking in citation cards.
+            Values: "None" (display-only), "Authenticated" (requires bearer token),
+            "Public" (presigned S3 URL with time-limited access).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
             <summary>
             Collection identifier for document retrieval.
@@ -2970,6 +2998,12 @@
             Retrieval telemetry (extension for RAG diagnostics).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Citations">
+            <summary>
+            Citation metadata linking response claims to source documents.
+            Populated only when EnableCitations is true and RAG is active.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionRetrieval">
             <summary>
             Retrieval telemetry included in chat completion responses.
@@ -2993,6 +3027,66 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
             <summary>
             The retrieved context chunks with source identification.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionCitations">
+            <summary>
+            Citation metadata included in chat completion responses.
+            Contains a manifest of all source documents provided as context
+            and the indices the model actually referenced in its answer.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.Sources">
+            <summary>
+            Source documents provided as context to the model, indexed starting at 1.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.ReferencedIndices">
+            <summary>
+            Indices from Sources that the model actually cited in its response.
+            Validated against the source manifest (invalid indices are excluded).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CitationSource">
+            <summary>
+            A single source document in the citation manifest.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Index">
+            <summary>
+            1-based index matching the bracket notation [N] used in the response text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentId">
+            <summary>
+            The document identifier (maps to AssistantDocument.Id).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentName">
+            <summary>
+            Display name of the source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.ContentType">
+            <summary>
+            MIME content type of the source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Score">
+            <summary>
+            Retrieval relevance score (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Excerpt">
+            <summary>
+            Text excerpt from the retrieved chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DownloadUrl">
+            <summary>
+            Download URL for the source document.
+            Populated based on CitationLinkMode: null for "None",
+            relative path for "Authenticated", presigned S3 URL for "Public".
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
@@ -4043,12 +4137,14 @@
             <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
             <param name="token">Cancellation token.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String})">
+        <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String},System.Boolean,System.Collections.Generic.List{System.String})">
             <summary>
             Build the full system message including context chunks.
             </summary>
             <param name="systemPrompt">Base system prompt.</param>
             <param name="contextChunks">List of context chunks.</param>
+            <param name="enableCitations">Whether to use indexed citation format.</param>
+            <param name="chunkLabels">Source labels for each chunk when citations are enabled.</param>
             <returns>Complete system message with context.</returns>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse.Models">
@@ -4513,6 +4609,15 @@
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>True if the object exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.GeneratePresignedUrl(System.String,System.String,System.TimeSpan)">
+            <summary>
+            Generate a presigned URL for downloading an object from a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
+            <param name="key">Object key.</param>
+            <param name="expiration">How long the URL remains valid.</param>
+            <returns>Presigned URL string.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.StorageService.GetClientForBucket(System.String)">
             <summary>

@@ -327,6 +327,75 @@ namespace AssistantHub.Server.Handlers
                 // Extract content strings for system message building
                 List<string> contextChunks = retrievalChunks.Select(c => c.Content).ToList();
 
+                // Resolve document names for citation labels
+                List<string> chunkLabels = null;
+                List<CitationSource> citationSources = null;
+
+                if (settings.EnableCitations && settings.EnableRag && retrievalChunks.Count > 0)
+                {
+                    chunkLabels = new List<string>();
+                    citationSources = new List<CitationSource>();
+                    int citationIndex = 1;
+
+                    foreach (RetrievalChunk chunk in retrievalChunks)
+                    {
+                        string docName = "Unknown Document";
+                        string contentType = null;
+                        AssistantDocument doc = null;
+
+                        if (!String.IsNullOrEmpty(chunk.DocumentId))
+                        {
+                            doc = await Database.AssistantDocument.ReadAsync(chunk.DocumentId).ConfigureAwait(false);
+                            if (doc != null)
+                            {
+                                docName = doc.Name ?? doc.OriginalFilename ?? "Unknown Document";
+                                contentType = doc.ContentType;
+                            }
+                        }
+
+                        chunkLabels.Add("(Source: \"" + docName + "\")");
+
+                        string downloadUrl = null;
+                        if (!String.IsNullOrEmpty(chunk.DocumentId))
+                        {
+                            if (String.Equals(settings.CitationLinkMode, "Authenticated", StringComparison.OrdinalIgnoreCase))
+                            {
+                                downloadUrl = "/v1.0/documents/" + chunk.DocumentId + "/download";
+                            }
+                            else if (String.Equals(settings.CitationLinkMode, "Public", StringComparison.OrdinalIgnoreCase))
+                            {
+                                try
+                                {
+                                    if (doc != null && !String.IsNullOrEmpty(doc.S3Key))
+                                    {
+                                        downloadUrl = Storage.GeneratePresignedUrl(
+                                            doc.BucketName,
+                                            doc.S3Key,
+                                            TimeSpan.FromDays(7));
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Warn(_Header + "failed to generate presigned URL for document " + chunk.DocumentId + ": " + ex.Message);
+                                }
+                            }
+                        }
+
+                        citationSources.Add(new CitationSource
+                        {
+                            Index = citationIndex,
+                            DocumentId = chunk.DocumentId,
+                            DocumentName = docName,
+                            ContentType = contentType,
+                            Score = chunk.Score,
+                            Excerpt = chunk.Content?.Length > 200 ? chunk.Content.Substring(0, 200) + "..." : chunk.Content,
+                            DownloadUrl = downloadUrl
+                        });
+
+                        citationIndex++;
+                    }
+                }
+
                 // Build message list
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
 
@@ -334,7 +403,9 @@ namespace AssistantHub.Server.Handlers
                 bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
                 if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
                 {
-                    string fullSystemMessage = Inference.BuildSystemMessage(settings.SystemPrompt, contextChunks);
+                    string fullSystemMessage = Inference.BuildSystemMessage(
+                        settings.SystemPrompt, contextChunks,
+                        settings.EnableCitations, chunkLabels);
                     messages.Insert(0, new ChatCompletionMessage { Role = "system", Content = fullSystemMessage });
                 }
                 else if (hasSystemMessage && contextChunks.Count > 0)
@@ -347,7 +418,9 @@ namespace AssistantHub.Server.Handlers
                             messages[i] = new ChatCompletionMessage
                             {
                                 Role = "system",
-                                Content = Inference.BuildSystemMessage(messages[i].Content, contextChunks)
+                                Content = Inference.BuildSystemMessage(
+                                    messages[i].Content, contextChunks,
+                                    settings.EnableCitations, chunkLabels)
                             };
                             break;
                         }
@@ -404,7 +477,7 @@ namespace AssistantHub.Server.Handlers
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
-                        retrievalGateDecision, retrievalGateDurationMs).ConfigureAwait(false);
+                        retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
                 }
                 else
                 {
@@ -413,7 +486,7 @@ namespace AssistantHub.Server.Handlers
                         threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
-                        retrievalGateDecision, retrievalGateDurationMs).ConfigureAwait(false);
+                        retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -923,7 +996,8 @@ namespace AssistantHub.Server.Handlers
             double endpointResolutionMs = 0,
             double compactionMs = 0,
             string retrievalGateDecision = null,
-            double retrievalGateDurationMs = 0)
+            double retrievalGateDurationMs = 0,
+            List<CitationSource> citationSources = null)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -969,7 +1043,10 @@ namespace AssistantHub.Server.Handlers
                         DurationMs = retrievalDurationMs,
                         ChunksReturned = retrievalChunks?.Count ?? 0,
                         Chunks = retrievalChunks ?? new List<RetrievalChunk>()
-                    } : null
+                    } : null,
+                    Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
+                        ? CitationExtractor.Extract(citationSources, inferenceResult.Content)
+                        : null
                 };
 
                 ctx.Response.StatusCode = 200;
@@ -1026,7 +1103,8 @@ namespace AssistantHub.Server.Handlers
             double endpointResolutionMs = 0,
             double compactionMs = 0,
             string retrievalGateDecision = null,
-            double retrievalGateDurationMs = 0)
+            double retrievalGateDurationMs = 0,
+            List<CitationSource> citationSources = null)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -1143,7 +1221,10 @@ namespace AssistantHub.Server.Handlers
                             DurationMs = retrievalDurationMs,
                             ChunksReturned = retrievalChunks?.Count ?? 0,
                             Chunks = retrievalChunks ?? new List<RetrievalChunk>()
-                        } : null
+                        } : null,
+                        Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
+                            ? CitationExtractor.Extract(citationSources, fullContent)
+                            : null
                     };
                     await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
 

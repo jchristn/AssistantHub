@@ -235,6 +235,7 @@ export class ApiClient {
     let buffer = '';
     let status = null;
     let usage = null;
+    let citations = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -255,6 +256,11 @@ export class ApiClient {
           // Capture usage data when present
           if (chunk.usage) {
             usage = chunk.usage;
+          }
+
+          // Capture citations from finish chunk
+          if (chunk.citations) {
+            citations = chunk.citations;
           }
 
           // Surface status messages (e.g. "Compacting the conversation...")
@@ -281,7 +287,8 @@ export class ApiClient {
         message: { role: 'assistant', content: fullContent },
         finish_reason: 'stop'
       }],
-      usage
+      usage,
+      citations
     };
   }
 

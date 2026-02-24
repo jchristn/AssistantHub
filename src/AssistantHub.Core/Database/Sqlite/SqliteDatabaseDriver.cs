@@ -84,7 +84,9 @@ namespace AssistantHub.Core.Database.Sqlite
             {
                 "ALTER TABLE chat_history ADD COLUMN completion_tokens INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE chat_history ADD COLUMN tokens_per_second_overall REAL NOT NULL DEFAULT 0;",
-                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_generation REAL NOT NULL DEFAULT 0;"
+                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_generation REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE assistant_settings ADD COLUMN enable_citations INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE assistant_settings ADD COLUMN citation_link_mode TEXT DEFAULT 'None';"
             };
 
             foreach (string migration in migrations)

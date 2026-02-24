@@ -28,7 +28,9 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
     FullTextMinimumScore: settings?.FullTextMinimumScore ?? '',
     InferenceEndpointId: settings?.InferenceEndpointId || '',
     EmbeddingEndpointId: settings?.EmbeddingEndpointId || '',
-    Streaming: settings?.Streaming ?? true
+    Streaming: settings?.Streaming ?? true,
+    EnableCitations: settings?.EnableCitations ?? false,
+    CitationLinkMode: settings?.CitationLinkMode || 'None'
   });
   const [saving, setSaving] = useState(false);
 
@@ -203,6 +205,22 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
           <Tooltip text="Enable streaming responses for real-time token-by-token output">Streaming</Tooltip>
         </label>
       </div>
+      <div className="form-group form-toggle">
+        <label>
+          <input type="checkbox" checked={form.EnableCitations} onChange={(e) => handleChange('EnableCitations', e.target.checked)} />
+          <Tooltip text="Include citation metadata linking response claims to source documents">Include Citations</Tooltip>
+        </label>
+      </div>
+      {form.EnableCitations && (
+        <div className="form-group">
+          <label><Tooltip text="Controls document download linking in citation cards. None: display-only. Authenticated: requires bearer token. Public: presigned S3 URL.">Citation Link Mode</Tooltip></label>
+          <select value={form.CitationLinkMode} onChange={(e) => handleChange('CitationLinkMode', e.target.value)}>
+            <option value="None">None (display only)</option>
+            <option value="Authenticated">Authenticated (bearer token required)</option>
+            <option value="Public">Public (presigned S3 URL)</option>
+          </select>
+        </div>
+      )}
     </Modal>
   );
 }

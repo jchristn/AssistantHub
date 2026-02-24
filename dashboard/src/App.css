@@ -1990,6 +1990,75 @@ body {
 
 /* (chat-status-right is defined above with chat-status-bar) */
 
+/* Citation cards */
+.chat-citations {
+  margin-top: 6px;
+  padding: 0 4px;
+}
+
+.chat-citations-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary, #888);
+  margin-bottom: 4px;
+}
+
+.chat-citations-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chat-citation-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-citation, rgba(74, 144, 226, 0.1));
+  border: 1px solid var(--border-citation, rgba(74, 144, 226, 0.25));
+  font-size: 0.75rem;
+  cursor: default;
+  max-width: 220px;
+}
+
+.chat-citation-index {
+  font-weight: 600;
+  color: var(--text-citation-index, #4a90e2);
+  flex-shrink: 0;
+}
+
+.chat-citation-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary, #333);
+}
+
+.chat-citation-score {
+  flex-shrink: 0;
+  color: var(--text-tertiary, #888);
+  font-size: 0.65rem;
+}
+
+.chat-citation-clickable {
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chat-citation-clickable:hover {
+  background: var(--bg-citation-hover, rgba(74, 144, 226, 0.2));
+  border-color: var(--border-citation-hover, rgba(74, 144, 226, 0.5));
+}
+
+.chat-citation-clickable .chat-citation-name {
+  text-decoration: underline;
+  text-decoration-color: var(--text-citation-index, #4a90e2);
+  text-underline-offset: 2px;
+}
+
 /* Dark theme variants */
 [data-theme="dark"] .chat-system-message {
   background: var(--bg-secondary);

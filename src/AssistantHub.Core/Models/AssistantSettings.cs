@@ -88,6 +88,20 @@ namespace AssistantHub.Core.Models
         public bool EnableRetrievalGate { get; set; } = false;
 
         /// <summary>
+        /// Whether to include citation metadata in chat completion responses.
+        /// When enabled, retrieved context chunks are indexed in the system prompt
+        /// and the model is instructed to cite sources using bracket notation [1], [2], etc.
+        /// </summary>
+        public bool EnableCitations { get; set; } = false;
+
+        /// <summary>
+        /// Controls document download linking in citation cards.
+        /// Values: "None" (display-only), "Authenticated" (requires bearer token),
+        /// "Public" (presigned S3 URL with time-limited access).
+        /// </summary>
+        public string CitationLinkMode { get; set; } = "None";
+
+        /// <summary>
         /// Collection identifier for document retrieval.
         /// </summary>
         public string CollectionId { get; set; } = null;
@@ -227,6 +241,8 @@ namespace AssistantHub.Core.Models
             obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
             obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
+            obj.EnableCitations = DataTableHelper.GetBooleanValue(row, "enable_citations", false);
+            obj.CitationLinkMode = DataTableHelper.GetStringValue(row, "citation_link_mode") ?? "None";
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);

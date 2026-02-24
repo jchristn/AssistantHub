@@ -108,7 +108,9 @@ namespace AssistantHub.Core.Database.Mysql
             {
                 "ALTER TABLE `chat_history` ADD COLUMN `completion_tokens` INT NOT NULL DEFAULT 0",
                 "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0",
-                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0"
+                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0",
+                "ALTER TABLE `assistant_settings` ADD COLUMN `enable_citations` TINYINT NOT NULL DEFAULT 0",
+                "ALTER TABLE `assistant_settings` ADD COLUMN `citation_link_mode` VARCHAR(32) DEFAULT 'None'"
             };
 
             foreach (string migration in migrations)

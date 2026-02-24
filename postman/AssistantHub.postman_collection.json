@@ -1324,7 +1324,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\"\n}"
+							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -1761,7 +1761,39 @@
 									"value": "assistant-guid-here"
 								}
 							]
-						}
+						},
+						"description": "Send a chat message. When EnableCitations is true in assistant settings and RAG is active, the response includes a citations object with source documents and referenced indices."
+					}
+				},
+				{
+					"name": "Chat (with citations)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Message\": \"What does the document say about revenue?\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "chat"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						},
+						"description": "Requires EnableCitations: true in assistant settings. Response will include a citations object when RAG is active and the model references source documents."
 					}
 				},
 				{

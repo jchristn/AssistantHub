@@ -543,6 +543,12 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DownloadDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/documents/{documentId}/download - Download document content from S3.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DeleteDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             DELETE /v1.0/documents/{documentId} - Delete document, S3 object, and RecallDB embeddings.

@@ -314,7 +314,8 @@ function ChatView() {
           updated[streamingIndex] = {
             ...updated[streamingIndex],
             isStreaming: false,
-            content: result.choices[0].message.content
+            content: result.choices[0].message.content,
+            citations: result.citations || null
           };
           return updated;
         });
@@ -322,7 +323,8 @@ function ChatView() {
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: result.choices[0].message.content,
-          userMessage: userMessage
+          userMessage: userMessage,
+          citations: result.citations || null
         }]);
       } else if (result.Error) {
         setMessages(prev => [...prev, {
@@ -609,6 +611,45 @@ function ChatView() {
                       <div className="chat-user-text">{msg.content}</div>
                     )}
                   </div>
+                  {msg.citations && msg.citations.sources && msg.citations.referenced_indices?.length > 0 && (
+                    <div className="chat-citations">
+                      <div className="chat-citations-label">Sources</div>
+                      <div className="chat-citations-list">
+                        {msg.citations.sources
+                          .filter(s => msg.citations.referenced_indices.includes(s.index))
+                          .map((source) => (
+                            source.download_url ? (
+                              <a
+                                key={source.index}
+                                className="chat-citation-card chat-citation-clickable"
+                                href={source.download_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={source.excerpt}
+                              >
+                                <span className="chat-citation-index">[{source.index}]</span>
+                                <span className="chat-citation-name">
+                                  {source.document_name}
+                                </span>
+                                <span className="chat-citation-score">
+                                  {Math.round(source.score * 100)}%
+                                </span>
+                              </a>
+                            ) : (
+                              <div key={source.index} className="chat-citation-card" title={source.excerpt}>
+                                <span className="chat-citation-index">[{source.index}]</span>
+                                <span className="chat-citation-name">
+                                  {source.document_name}
+                                </span>
+                                <span className="chat-citation-score">
+                                  {Math.round(source.score * 100)}%
+                                </span>
+                              </div>
+                            )
+                          ))}
+                      </div>
+                    </div>
+                  )}
                   {msg.role === 'assistant' && !msg.isError && (
                     <div className="chat-message-actions">
                       <button

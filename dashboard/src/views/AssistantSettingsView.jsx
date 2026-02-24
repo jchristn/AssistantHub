@@ -78,6 +78,9 @@ function AssistantSettingsView() {
         ContextWindow: result?.ContextWindow || 8192,
         Model: result?.Model || 'gemma3:4b',
         EnableRag: result?.EnableRag ?? false,
+        EnableRetrievalGate: result?.EnableRetrievalGate ?? false,
+        EnableCitations: result?.EnableCitations ?? false,
+        CitationLinkMode: result?.CitationLinkMode || 'None',
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
@@ -252,6 +255,22 @@ function AssistantSettingsView() {
                       <Tooltip text="Use an LLM call to classify whether each message requires new retrieval or can be answered from existing conversation context. Skips retrieval for follow-up questions about already-retrieved data.">Enable Retrieval Gate</Tooltip>
                     </label>
                   </div>
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableCitations} onChange={(e) => handleChange('EnableCitations', e.target.checked)} />
+                      <Tooltip text="Include citation metadata in chat responses. When enabled, the model is instructed to cite source documents using bracket notation [1], [2], and the response includes a citations object mapping references to source documents.">Include Citations</Tooltip>
+                    </label>
+                  </div>
+                  {settings.EnableCitations && (
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="Controls document download linking in citation cards. None: display-only. Authenticated: requires bearer token. Public: presigned S3 URL with time-limited access.">Citation Link Mode</Tooltip></label>
+                      <select className="form-input" value={settings.CitationLinkMode} onChange={(e) => handleChange('CitationLinkMode', e.target.value)}>
+                        <option value="None">None (display only)</option>
+                        <option value="Authenticated">Authenticated (bearer token required)</option>
+                        <option value="Public">Public (presigned S3 URL)</option>
+                      </select>
+                    </div>
+                  )}
                   <div className="form-group">
                     <label className="form-label"><Tooltip text="Vector collection to search for relevant document chunks">Collection ID</Tooltip></label>
                     <select className="form-input" value={settings.CollectionId} onChange={(e) => handleChange('CollectionId', e.target.value)}>

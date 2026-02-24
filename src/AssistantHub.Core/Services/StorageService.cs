@@ -4,6 +4,8 @@ namespace AssistantHub.Core.Services
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
+    using Amazon.S3;
+    using Amazon.S3.Model;
     using AssistantHub.Core.Settings;
     using Blobject.AmazonS3;
     using Blobject.Core;
@@ -175,6 +177,44 @@ namespace AssistantHub.Core.Services
             bool exists = await _Client.ExistsAsync(key, token).ConfigureAwait(false);
             _Logging.Debug(_Header + "exists check for " + key + ": " + exists);
             return exists;
+        }
+
+        /// <summary>
+        /// Generate a presigned URL for downloading an object from a specific S3 bucket.
+        /// </summary>
+        /// <param name="bucketName">Bucket name.</param>
+        /// <param name="key">Object key.</param>
+        /// <param name="expiration">How long the URL remains valid.</param>
+        /// <returns>Presigned URL string.</returns>
+        public string GeneratePresignedUrl(string bucketName, string key, TimeSpan expiration)
+        {
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (String.IsNullOrEmpty(bucketName)) bucketName = _Settings.BucketName;
+
+            _Logging.Debug(_Header + "generating presigned URL for " + key + " in bucket " + bucketName + " (expires in " + expiration.TotalDays + " days)");
+
+            AmazonS3Config s3Config = new AmazonS3Config
+            {
+                ServiceURL = _Settings.EndpointUrl,
+                ForcePathStyle = true
+            };
+
+            using AmazonS3Client s3Client = new AmazonS3Client(
+                _Settings.AccessKey,
+                _Settings.SecretKey,
+                s3Config);
+
+            GetPreSignedUrlRequest request = new GetPreSignedUrlRequest
+            {
+                BucketName = bucketName,
+                Key = key,
+                Verb = HttpVerb.GET,
+                Expires = DateTime.UtcNow.Add(expiration)
+            };
+
+            string url = s3Client.GetPreSignedURL(request);
+            _Logging.Debug(_Header + "presigned URL generated for " + key);
+            return url;
         }
 
         #endregion

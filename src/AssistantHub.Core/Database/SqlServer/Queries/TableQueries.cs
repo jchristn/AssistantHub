@@ -61,6 +61,8 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 model NVARCHAR(MAX) NOT NULL DEFAULT 'gemma3:4b',
                 enable_rag BIT NOT NULL DEFAULT 0,
                 enable_retrieval_gate BIT NOT NULL DEFAULT 0,
+                enable_citations BIT NOT NULL DEFAULT 0,
+                citation_link_mode NVARCHAR(32) NOT NULL DEFAULT 'None',
                 collection_id NVARCHAR(256) NULL,
                 retrieval_top_k INT NOT NULL DEFAULT 10,
                 retrieval_score_threshold FLOAT NOT NULL DEFAULT 0.3,

@@ -267,6 +267,66 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// GET /v1.0/documents/{documentId}/download - Download document content from S3.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task DownloadDocumentAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (String.IsNullOrEmpty(doc.S3Key) || String.IsNullOrEmpty(doc.BucketName))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                byte[] data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                if (data == null || data.Length == 0)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string filename = doc.OriginalFilename ?? doc.Name ?? "document";
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = doc.ContentType ?? "application/octet-stream";
+                ctx.Response.Headers.Add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+                await ctx.Response.Send(data).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in DownloadDocumentAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// DELETE /v1.0/documents/{documentId} - Delete document, S3 object, and RecallDB embeddings.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>

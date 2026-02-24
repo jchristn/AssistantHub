@@ -503,8 +503,14 @@ namespace AssistantHub.Core.Services
         /// </summary>
         /// <param name="systemPrompt">Base system prompt.</param>
         /// <param name="contextChunks">List of context chunks.</param>
+        /// <param name="enableCitations">Whether to use indexed citation format.</param>
+        /// <param name="chunkLabels">Source labels for each chunk when citations are enabled.</param>
         /// <returns>Complete system message with context.</returns>
-        public string BuildSystemMessage(string systemPrompt, List<string> contextChunks)
+        public string BuildSystemMessage(
+            string systemPrompt,
+            List<string> contextChunks,
+            bool enableCitations = false,
+            List<string> chunkLabels = null)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -517,17 +523,38 @@ namespace AssistantHub.Core.Services
             {
                 sb.AppendLine();
                 sb.AppendLine();
-                sb.AppendLine("Use the following context to answer the user's question:");
-                sb.AppendLine();
-                sb.AppendLine("Context:");
 
-                foreach (string chunk in contextChunks)
+                if (enableCitations && chunkLabels != null && chunkLabels.Count == contextChunks.Count)
                 {
-                    sb.AppendLine("---");
-                    sb.AppendLine(chunk);
-                }
+                    sb.AppendLine("Use the following numbered sources to answer the user's question.");
+                    sb.AppendLine("When your answer uses information from a source, cite it using bracket notation like [1], [2], etc.");
+                    sb.AppendLine("You may cite multiple sources for a single claim like [1][3].");
+                    sb.AppendLine("Only cite sources that you actually use. Do not fabricate citations.");
+                    sb.AppendLine();
+                    sb.AppendLine("Sources:");
 
-                sb.AppendLine("---");
+                    for (int i = 0; i < contextChunks.Count; i++)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("[" + (i + 1) + "] " + chunkLabels[i]);
+                        sb.AppendLine(contextChunks[i]);
+                    }
+                }
+                else
+                {
+                    // Original behavior when citations are disabled
+                    sb.AppendLine("Use the following context to answer the user's question:");
+                    sb.AppendLine();
+                    sb.AppendLine("Context:");
+
+                    foreach (string chunk in contextChunks)
+                    {
+                        sb.AppendLine("---");
+                        sb.AppendLine(chunk);
+                    }
+
+                    sb.AppendLine("---");
+                }
             }
 
             return sb.ToString();

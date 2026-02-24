@@ -1378,6 +1378,8 @@ Retrieve settings for an assistant.
 | `Model`                    | string  | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
 | `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
+| `EnableCitations`          | bool    | Include citation metadata in chat responses. Requires `EnableRag` to also be `true`. Default `false`. |
+| `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token), `Public` (presigned S3 URL with 7-day expiration). Default `None`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
 | `RetrievalTopK`            | int     | Number of top document chunks to retrieve.                                  |
 | `RetrievalScoreThreshold`  | double  | Minimum similarity score threshold (0.0 to 1.0).                           |
@@ -1416,6 +1418,8 @@ Create or update settings for an assistant. If settings already exist, they are 
   "Model": "gpt-4o",
   "EnableRag": false,
   "EnableRetrievalGate": false,
+  "EnableCitations": false,
+  "CitationLinkMode": "None",
   "CollectionId": "my-collection-id",
   "RetrievalTopK": 10,
   "RetrievalScoreThreshold": 0.6,
@@ -1583,6 +1587,17 @@ Check whether a document exists.
 **Response:**
 - `200 OK` -- Document exists.
 - `404 Not Found` -- Document does not exist.
+
+### GET /v1.0/documents/{documentId}/download
+
+Download the original document file from S3 storage.
+
+**Auth:** Required
+
+**Response:**
+- `200 OK` -- File data with `Content-Type` from the document record and `Content-Disposition: attachment; filename="<original filename>"`.
+- `404 Not Found` -- Document does not exist.
+- `500 Internal Server Error` -- Failed to download from storage.
 
 ---
 
@@ -1991,6 +2006,14 @@ When the conversation history approaches the context window limit, older message
 }
 ```
 
+The response may also include `retrieval` (when RAG is enabled) and `citations` (when citations are enabled) fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `citations` | object \| null | Citation metadata (only when `EnableCitations` is true and RAG is active) |
+| `citations.sources` | array | Source documents provided as context, each with `index`, `document_id`, `document_name`, `content_type`, `score`, `excerpt`, `download_url` |
+| `citations.referenced_indices` | array of int | 1-based indices from `sources` that the model actually cited in its response |
+
 **Streaming Response (200 OK, `Content-Type: text/event-stream`):**
 
 When `Streaming` is enabled in assistant settings, the response is an SSE stream:
@@ -2006,6 +2029,44 @@ data: {"id":"chatcmpl-abc123...","object":"chat.completion.chunk","created":1700
 
 data: [DONE]
 ```
+
+The final chunk (with `finish_reason: "stop"`) includes `usage`, `retrieval` (if RAG enabled),
+and `citations` (if citations enabled) fields.
+
+#### Citations
+
+When `EnableCitations` is `true` (and RAG is active), the system:
+
+1. Labels each retrieved context chunk with a bracket index `[1]`, `[2]`, etc. and its source document name
+2. Instructs the model to cite sources using bracket notation
+3. After inference, scans the response for bracket references and validates them against the source manifest
+4. Returns a `citations` object with the full source manifest and the validated referenced indices
+
+**Example response fragment:**
+```json
+{
+  "citations": {
+    "sources": [
+      {
+        "index": 1,
+        "document_id": "adoc_abc123",
+        "document_name": "Q3 Earnings Report.pdf",
+        "content_type": "application/pdf",
+        "score": 0.87,
+        "excerpt": "Revenue grew 15% year-over-year to $4.2B...",
+        "download_url": "https://s3.example.com/bucket/key?X-Amz-Signature=..."
+      }
+    ],
+    "referenced_indices": [1]
+  }
+}
+```
+
+**Notes:**
+- `referenced_indices` only contains indices that appear as `[N]` in the response text AND exist in the source manifest
+- Invalid references (e.g., `[99]` when only 3 sources exist) are silently dropped
+- `sources` always contains all retrieved chunks, not just the ones that were cited
+- `download_url` is populated based on `CitationLinkMode`: `null` for `None`, a relative path `/v1.0/documents/{id}/download` for `Authenticated`, or a presigned S3 URL (7-day expiration) for `Public`
 
 **Error Responses:**
 - `400` -- At least one message is required.

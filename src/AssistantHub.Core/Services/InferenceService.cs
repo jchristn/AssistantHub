@@ -412,7 +412,7 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.Ollama:
                         return await GenerateOllamaResponseFromMessagesAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, token).ConfigureAwait(false);
+                            effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
 
                     default:
                         _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
@@ -440,6 +440,7 @@ namespace AssistantHub.Core.Services
         /// <param name="onDelta">Callback invoked for each content delta.</param>
         /// <param name="onComplete">Callback invoked when generation is complete, with the full accumulated content.</param>
         /// <param name="onError">Callback invoked on error.</param>
+        /// <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
         /// <param name="token">Cancellation token.</param>
         public async Task GenerateResponseStreamingAsync(
             List<ChatCompletionMessage> messages,
@@ -474,13 +475,14 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.OpenAI:
                         await GenerateOpenAIStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
+                            effectiveEndpoint, effectiveApiKey, 
+                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint,
+                            effectiveEndpoint, effectiveApiKey,
                             onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
                         break;
 
@@ -535,19 +537,6 @@ namespace AssistantHub.Core.Services
 
         #region Private-Methods
 
-        /// <summary>
-        /// Generate a response using the OpenAI-compatible chat completions API.
-        /// </summary>
-        /// <param name="systemMessage">Full system message with context.</param>
-        /// <param name="userMessage">User message.</param>
-        /// <param name="model">Model name.</param>
-        /// <param name="maxTokens">Maximum tokens to generate.</param>
-        /// <param name="temperature">Sampling temperature.</param>
-        /// <param name="topP">Top-p nucleus sampling.</param>
-        /// <param name="endpoint">API endpoint URL.</param>
-        /// <param name="apiKey">API key.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>Assistant response content.</returns>
         private async Task<InferenceResult> GenerateOpenAIResponseAsync(
             string systemMessage,
             string userMessage,
@@ -613,19 +602,6 @@ namespace AssistantHub.Core.Services
             }
         }
 
-        /// <summary>
-        /// Generate a response using the Ollama chat API.
-        /// </summary>
-        /// <param name="systemMessage">Full system message with context.</param>
-        /// <param name="userMessage">User message.</param>
-        /// <param name="model">Model name.</param>
-        /// <param name="maxTokens">Maximum number of tokens to generate.</param>
-        /// <param name="temperature">Temperature.</param>
-        /// <param name="topP">Top-P.</param>
-        /// <param name="endpoint">Ollama endpoint URL.</param>
-        /// <param name="apiKey">API key.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>Assistant response content.</returns>
         private async Task<InferenceResult> GenerateOllamaResponseAsync(
             string systemMessage,
             string userMessage,
@@ -825,8 +801,13 @@ namespace AssistantHub.Core.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "OpenAI API returned " + (int)response.StatusCode + ": " + responseBody);
-                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode + ": " + responseBody);
+                    _Logging.Warn(
+                        _Header +
+                        "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
+                        "| URL           : " + url + Environment.NewLine +
+                        "| Bearer token  : " + apiKey + Environment.NewLine +
+                        "| Response body : " + Environment.NewLine + responseBody);
+                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode);
                 }
 
                 OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
@@ -850,6 +831,7 @@ namespace AssistantHub.Core.Services
             double temperature,
             double topP,
             string endpoint,
+            string apiKey,
             CancellationToken token)
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
@@ -879,13 +861,23 @@ namespace AssistantHub.Core.Services
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
+                if (!String.IsNullOrEmpty(apiKey))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                }
+
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _Logging.Warn(_Header + "Ollama API returned " + (int)response.StatusCode + ": " + responseBody);
-                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode + ": " + responseBody);
+                    _Logging.Warn(
+                        _Header +
+                        "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
+                        "| URL           : " + url + Environment.NewLine +
+                        "| Bearer token  : " + apiKey + Environment.NewLine +
+                        "| Response body : " + Environment.NewLine + responseBody);
+                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode);
                 }
 
                 OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);
@@ -953,7 +945,13 @@ namespace AssistantHub.Core.Services
                     if (!response.IsSuccessStatusCode)
                     {
                         string errorBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                        _Logging.Warn(_Header + "OpenAI streaming returned " + (int)response.StatusCode + ": " + errorBody);
+                        _Logging.Warn(
+                            _Header +
+                            "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + errorBody);
+                        _Logging.Warn(_Header + "OpenAI streaming returned " + (int)response.StatusCode);
                         await onError("OpenAI API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
                         return;
                     }
@@ -1017,6 +1015,7 @@ namespace AssistantHub.Core.Services
             double temperature,
             double topP,
             string endpoint,
+            string apiKey,
             Func<string, Task> onDelta,
             Func<string, Task> onComplete,
             Func<string, Task> onError,
@@ -1051,6 +1050,11 @@ namespace AssistantHub.Core.Services
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
+                if (!String.IsNullOrEmpty(apiKey))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                }
+
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     onConnectionEstablished?.Invoke();
@@ -1058,7 +1062,13 @@ namespace AssistantHub.Core.Services
                     if (!response.IsSuccessStatusCode)
                     {
                         string errorBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                        _Logging.Warn(_Header + "Ollama streaming returned " + (int)response.StatusCode + ": " + errorBody);
+                        _Logging.Warn(
+                            _Header +
+                            "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + errorBody);
+                        _Logging.Warn(_Header + "Ollama streaming returned " + (int)response.StatusCode);
                         await onError("Ollama API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
                         return;
                     }
@@ -1119,9 +1129,6 @@ namespace AssistantHub.Core.Services
             public long Completed { get; set; } = 0;
         }
 
-        /// <summary>
-        /// Ollama tags response.
-        /// </summary>
         private class OllamaTagsResponse
         {
             /// <summary>
@@ -1130,9 +1137,6 @@ namespace AssistantHub.Core.Services
             public List<OllamaModelEntry> Models { get; set; } = null;
         }
 
-        /// <summary>
-        /// Ollama model entry.
-        /// </summary>
         private class OllamaModelEntry
         {
             /// <summary>
@@ -1152,9 +1156,6 @@ namespace AssistantHub.Core.Services
             public DateTime? ModifiedAt { get; set; } = null;
         }
 
-        /// <summary>
-        /// OpenAI models list response.
-        /// </summary>
         private class OpenAIModelsResponse
         {
             /// <summary>
@@ -1163,9 +1164,6 @@ namespace AssistantHub.Core.Services
             public List<OpenAIModelEntry> Data { get; set; } = null;
         }
 
-        /// <summary>
-        /// OpenAI model entry.
-        /// </summary>
         private class OpenAIModelEntry
         {
             /// <summary>
@@ -1185,9 +1183,6 @@ namespace AssistantHub.Core.Services
             public string OwnedBy { get; set; } = null;
         }
 
-        /// <summary>
-        /// OpenAI chat completion response.
-        /// </summary>
         private class OpenAIChatResponse
         {
             /// <summary>
@@ -1196,9 +1191,6 @@ namespace AssistantHub.Core.Services
             public List<OpenAIChoice> Choices { get; set; } = null;
         }
 
-        /// <summary>
-        /// OpenAI chat completion choice.
-        /// </summary>
         private class OpenAIChoice
         {
             /// <summary>
@@ -1207,9 +1199,6 @@ namespace AssistantHub.Core.Services
             public OpenAIMessage Message { get; set; } = null;
         }
 
-        /// <summary>
-        /// OpenAI chat message.
-        /// </summary>
         private class OpenAIMessage
         {
             /// <summary>
@@ -1223,9 +1212,6 @@ namespace AssistantHub.Core.Services
             public string Content { get; set; } = null;
         }
 
-        /// <summary>
-        /// Ollama chat response.
-        /// </summary>
         private class OllamaChatResponse
         {
             /// <summary>
@@ -1234,9 +1220,6 @@ namespace AssistantHub.Core.Services
             public OllamaMessage Message { get; set; } = null;
         }
 
-        /// <summary>
-        /// Ollama chat message.
-        /// </summary>
         private class OllamaMessage
         {
             /// <summary>

@@ -1395,6 +1395,15 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update chunk record IDs.
+            </summary>
+            <param name="id">ID.</param>
+            <param name="chunkRecordIdsJson">Chunk record IDs in JSON form.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods">
             <summary>
             SQLite assistant feedback methods implementation.
@@ -4031,6 +4040,7 @@
             <param name="onDelta">Callback invoked for each content delta.</param>
             <param name="onComplete">Callback invoked when generation is complete, with the full accumulated content.</param>
             <param name="onError">Callback invoked on error.</param>
+            <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
             <param name="token">Cancellation token.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String})">
@@ -4041,49 +4051,9 @@
             <param name="contextChunks">List of context chunks.</param>
             <returns>Complete system message with context.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOpenAIResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.String,System.Threading.CancellationToken)">
-            <summary>
-            Generate a response using the OpenAI-compatible chat completions API.
-            </summary>
-            <param name="systemMessage">Full system message with context.</param>
-            <param name="userMessage">User message.</param>
-            <param name="model">Model name.</param>
-            <param name="maxTokens">Maximum tokens to generate.</param>
-            <param name="temperature">Sampling temperature.</param>
-            <param name="topP">Top-p nucleus sampling.</param>
-            <param name="endpoint">API endpoint URL.</param>
-            <param name="apiKey">API key.</param>
-            <param name="token">Cancellation token.</param>
-            <returns>Assistant response content.</returns>
-        </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateOllamaResponseAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Double,System.String,System.String,System.Threading.CancellationToken)">
-            <summary>
-            Generate a response using the Ollama chat API.
-            </summary>
-            <param name="systemMessage">Full system message with context.</param>
-            <param name="userMessage">User message.</param>
-            <param name="model">Model name.</param>
-            <param name="maxTokens">Maximum number of tokens to generate.</param>
-            <param name="temperature">Temperature.</param>
-            <param name="topP">Top-P.</param>
-            <param name="endpoint">Ollama endpoint URL.</param>
-            <param name="apiKey">API key.</param>
-            <param name="token">Cancellation token.</param>
-            <returns>Assistant response content.</returns>
-        </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse">
-            <summary>
-            Ollama tags response.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse.Models">
             <summary>
             List of models.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaModelEntry">
-            <summary>
-            Ollama model entry.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.Name">
@@ -4101,19 +4071,9 @@
             Last modified timestamp.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse">
-            <summary>
-            OpenAI models list response.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse.Data">
             <summary>
             List of model entries.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry">
-            <summary>
-            OpenAI model entry.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Id">
@@ -4131,29 +4091,14 @@
             Model owner.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse">
-            <summary>
-            OpenAI chat completion response.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Choices">
             <summary>
             Response choices.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIChoice">
-            <summary>
-            OpenAI chat completion choice.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChoice.Message">
             <summary>
             Message in the choice.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OpenAIMessage">
-            <summary>
-            OpenAI chat message.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIMessage.Role">
@@ -4166,19 +4111,9 @@
             Message content.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaChatResponse">
-            <summary>
-            Ollama chat response.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OllamaChatResponse.Message">
             <summary>
             Response message.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.InferenceService.OllamaMessage">
-            <summary>
-            Ollama chat message.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OllamaMessage.Role">

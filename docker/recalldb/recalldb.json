@@ -20,7 +20,14 @@
     "MinimumSeverity": 0,
     "LogDirectory": "./logs/",
     "LogFilename": "recalldb.log",
-    "Servers": []
+    "FileLogging": true,
+    "IncludeDateInFilename": true,
+    "Servers": [
+      {
+        "Hostname": "127.0.0.1",
+        "Port": 514
+      }
+    ]
   },
   "Debug": {
     "Authentication": false,

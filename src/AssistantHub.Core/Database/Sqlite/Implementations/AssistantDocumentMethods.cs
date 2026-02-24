@@ -233,6 +233,13 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
             return ret;
         }
 
+        /// <summary>
+        /// Update chunk record IDs.
+        /// </summary>
+        /// <param name="id">ID.</param>
+        /// <param name="chunkRecordIdsJson">Chunk record IDs in JSON form.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
         public async Task UpdateChunkRecordIdsAsync(string id, string chunkRecordIdsJson, CancellationToken token = default)
         {
             if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));

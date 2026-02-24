@@ -172,6 +172,7 @@ services:
       RECALLDB_DB_PASS: password
     volumes:
       - ./recalldb/recalldb.json:/app/recalldb.json:ro
+      - ./recalldb/logs/:/app/logs/
     depends_on:
       recalldb-init:
         condition: service_completed_successfully

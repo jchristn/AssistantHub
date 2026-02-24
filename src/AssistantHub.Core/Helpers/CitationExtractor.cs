@@ -11,7 +11,7 @@ namespace AssistantHub.Core.Helpers
     public static class CitationExtractor
     {
         private static readonly Regex CitationPattern = new Regex(
-            @"\[(\d+)\]",
+            @"\\?\[(\d+)\\?\]",
             RegexOptions.Compiled);
 
         /// <summary>

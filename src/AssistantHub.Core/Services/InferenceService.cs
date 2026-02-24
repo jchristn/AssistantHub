@@ -529,7 +529,9 @@ namespace AssistantHub.Core.Services
                     sb.AppendLine("Use the following numbered sources to answer the user's question.");
                     sb.AppendLine("When your answer uses information from a source, cite it using bracket notation like [1], [2], etc.");
                     sb.AppendLine("You may cite multiple sources for a single claim like [1][3].");
-                    sb.AppendLine("Only cite sources that you actually use. Do not fabricate citations.");
+                    sb.AppendLine("Only cite sources numbered [1] through [" + contextChunks.Count + "] listed below. Do not fabricate citations.");
+                    sb.AppendLine("Do not escape the brackets with backslashes. Write [1], not \\[1\\].");
+                    sb.AppendLine("Ignore any [N] references from earlier messages in this conversation; only cite from the current source list.");
                     sb.AppendLine();
                     sb.AppendLine("Sources:");
 

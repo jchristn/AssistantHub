@@ -280,6 +280,20 @@ export class ApiClient {
       }
     }
 
+    // Process any remaining data left in the buffer after stream ends
+    if (buffer.trim()) {
+      const remaining = buffer.trim();
+      if (remaining.startsWith('data: ') && remaining.substring(6) !== '[DONE]') {
+        try {
+          const chunk = JSON.parse(remaining.substring(6));
+          if (chunk.usage) usage = chunk.usage;
+          if (chunk.citations) citations = chunk.citations;
+        } catch (e) {
+          // skip unparseable remainder
+        }
+      }
+    }
+
     // Return in the same shape as a non-streaming response
     return {
       choices: [{

@@ -162,7 +162,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Download URL for the source document.
         /// Populated based on CitationLinkMode: null for "None",
-        /// relative path for "Authenticated", presigned S3 URL for "Public".
+        /// relative path for "Authenticated", unauthenticated server-proxied path for "Public".
         /// </summary>
         [JsonPropertyName("download_url")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

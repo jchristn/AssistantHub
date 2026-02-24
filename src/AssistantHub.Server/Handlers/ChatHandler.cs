@@ -364,20 +364,7 @@ namespace AssistantHub.Server.Handlers
                             }
                             else if (String.Equals(settings.CitationLinkMode, "Public", StringComparison.OrdinalIgnoreCase))
                             {
-                                try
-                                {
-                                    if (doc != null && !String.IsNullOrEmpty(doc.S3Key))
-                                    {
-                                        downloadUrl = Storage.GeneratePresignedUrl(
-                                            doc.BucketName,
-                                            doc.S3Key,
-                                            TimeSpan.FromDays(7));
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logging.Warn(_Header + "failed to generate presigned URL for document " + chunk.DocumentId + ": " + ex.Message);
-                                }
+                                downloadUrl = "/v1.0/assistants/" + assistantId + "/documents/" + chunk.DocumentId + "/download";
                             }
                         }
 
@@ -962,6 +949,87 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetThreadHistoryAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/documents/{documentId}/download - Public document download.
+        /// Only available when the assistant's CitationLinkMode is "Public".
+        /// Proxies the file from S3 storage through the server.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetPublicDocumentDownloadAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(assistantId) || String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null || !String.Equals(settings.CitationLinkMode, "Public", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (String.IsNullOrEmpty(doc.S3Key) || String.IsNullOrEmpty(doc.BucketName))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                byte[] data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                if (data == null || data.Length == 0)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                string filename = doc.OriginalFilename ?? doc.Name ?? "document";
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = doc.ContentType ?? "application/octet-stream";
+                ctx.Response.Headers.Add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+                await ctx.Response.Send(data).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetPublicDocumentDownloadAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);

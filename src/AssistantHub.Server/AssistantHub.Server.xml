@@ -297,6 +297,14 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetPublicDocumentDownloadAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/documents/{documentId}/download - Public document download.
+            Only available when the assistant's CitationLinkMode is "Public".
+            Proxies the file from S3 storage through the server.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.CollectionHandler">
             <summary>
             Handles collection CRUD routes by proxying to RecallDB (admin only).

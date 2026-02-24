@@ -2719,7 +2719,7 @@
             <summary>
             Controls document download linking in citation cards.
             Values: "None" (display-only), "Authenticated" (requires bearer token),
-            "Public" (presigned S3 URL with time-limited access).
+            "Public" (unauthenticated server-proxied download).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
@@ -3086,7 +3086,7 @@
             <summary>
             Download URL for the source document.
             Populated based on CitationLinkMode: null for "None",
-            relative path for "Authenticated", presigned S3 URL for "Public".
+            relative path for "Authenticated", unauthenticated server-proxied path for "Public".
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
@@ -4609,15 +4609,6 @@
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>True if the object exists.</returns>
-        </member>
-        <member name="M:AssistantHub.Core.Services.StorageService.GeneratePresignedUrl(System.String,System.String,System.TimeSpan)">
-            <summary>
-            Generate a presigned URL for downloading an object from a specific S3 bucket.
-            </summary>
-            <param name="bucketName">Bucket name.</param>
-            <param name="key">Object key.</param>
-            <param name="expiration">How long the URL remains valid.</param>
-            <returns>Presigned URL string.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.StorageService.GetClientForBucket(System.String)">
             <summary>

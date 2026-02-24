@@ -213,11 +213,11 @@ function AssistantSettingsFormModal({ settings, onSave, onClose }) {
       </div>
       {form.EnableCitations && (
         <div className="form-group">
-          <label><Tooltip text="Controls document download linking in citation cards. None: display-only. Authenticated: requires bearer token. Public: presigned S3 URL.">Citation Link Mode</Tooltip></label>
+          <label><Tooltip text="Controls document download linking in citation cards. None: display-only. Authenticated: requires bearer token. Public: unauthenticated server-proxied download.">Citation Link Mode</Tooltip></label>
           <select value={form.CitationLinkMode} onChange={(e) => handleChange('CitationLinkMode', e.target.value)}>
             <option value="None">None (display only)</option>
             <option value="Authenticated">Authenticated (bearer token required)</option>
-            <option value="Public">Public (presigned S3 URL)</option>
+            <option value="Public">Public (no authentication required)</option>
           </select>
         </div>
       )}

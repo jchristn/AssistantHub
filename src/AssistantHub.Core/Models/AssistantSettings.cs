@@ -97,7 +97,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Controls document download linking in citation cards.
         /// Values: "None" (display-only), "Authenticated" (requires bearer token),
-        /// "Public" (presigned S3 URL with time-limited access).
+        /// "Public" (unauthenticated server-proxied download).
         /// </summary>
         public string CitationLinkMode { get; set; } = "None";
 

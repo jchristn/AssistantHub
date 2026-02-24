@@ -1379,7 +1379,7 @@ Retrieve settings for an assistant.
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
 | `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
 | `EnableCitations`          | bool    | Include citation metadata in chat responses. Requires `EnableRag` to also be `true`. Default `false`. |
-| `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token), `Public` (presigned S3 URL with 7-day expiration). Default `None`. |
+| `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token via `/v1.0/documents/{id}/download`), `Public` (unauthenticated server-proxied download via `/v1.0/assistants/{assistantId}/documents/{id}/download`). Default `None`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
 | `RetrievalTopK`            | int     | Number of top document chunks to retrieve.                                  |
 | `RetrievalScoreThreshold`  | double  | Minimum similarity score threshold (0.0 to 1.0).                           |
@@ -2054,7 +2054,7 @@ When `EnableCitations` is `true` (and RAG is active), the system:
         "content_type": "application/pdf",
         "score": 0.87,
         "excerpt": "Revenue grew 15% year-over-year to $4.2B...",
-        "download_url": "https://s3.example.com/bucket/key?X-Amz-Signature=..."
+        "download_url": "/v1.0/assistants/asst_abc123/documents/adoc_abc123/download"
       }
     ],
     "referenced_indices": [1]
@@ -2066,7 +2066,7 @@ When `EnableCitations` is `true` (and RAG is active), the system:
 - `referenced_indices` only contains indices that appear as `[N]` in the response text AND exist in the source manifest
 - Invalid references (e.g., `[99]` when only 3 sources exist) are silently dropped
 - `sources` always contains all retrieved chunks, not just the ones that were cited
-- `download_url` is populated based on `CitationLinkMode`: `null` for `None`, a relative path `/v1.0/documents/{id}/download` for `Authenticated`, or a presigned S3 URL (7-day expiration) for `Public`
+- `download_url` is populated based on `CitationLinkMode`: `null` for `None`, `/v1.0/documents/{id}/download` (authenticated) for `Authenticated`, or `/v1.0/assistants/{assistantId}/documents/{id}/download` (unauthenticated, server-proxied) for `Public`
 
 **Error Responses:**
 - `400` -- At least one message is required.
@@ -2135,6 +2135,18 @@ Lightweight inference-only endpoint. Sends messages directly to the configured L
 - `404` -- Assistant not found or not active.
 - `500` -- Assistant settings not configured.
 - `502` -- Inference failed.
+
+### GET /v1.0/assistants/{assistantId}/documents/{documentId}/download
+
+Public document download endpoint for citation linking. Proxies the file from S3 storage through the server. Only available when the assistant's `CitationLinkMode` is `Public`.
+
+**Auth:** None (gated by `CitationLinkMode` setting)
+
+**Response:**
+- `200 OK` -- File data with `Content-Type` from the document record and `Content-Disposition: attachment; filename="<original filename>"`.
+- `403 Forbidden` -- Assistant's `CitationLinkMode` is not `Public`.
+- `404 Not Found` -- Assistant, document, or S3 object does not exist.
+- `500 Internal Server Error` -- Failed to download from storage.
 
 ### POST /v1.0/assistants/{assistantId}/compact
 

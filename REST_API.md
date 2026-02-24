@@ -1355,6 +1355,7 @@ Retrieve settings for an assistant.
   "FullTextLanguage": "english",
   "FullTextNormalization": 32,
   "FullTextMinimumScore": null,
+  "RetrievalIncludeNeighbors": 0,
   "InferenceEndpointId": "ep_abc123...",
   "EmbeddingEndpointId": "ep_def456...",
   "Title": "My Support Bot",
@@ -1389,6 +1390,7 @@ Retrieve settings for an assistant.
 | `FullTextLanguage`         | string  | PostgreSQL text search language for stemming and stop words. Values: `english`, `simple`, `spanish`, `french`, `german`. Default `english`. |
 | `FullTextNormalization`    | int     | Score normalization bitmask. `32` = normalized 0-1 (recommended). `0` = raw scores. Default `32`. |
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
+| `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
 | `InferenceEndpointId`      | string  | Managed completion endpoint ID for inference (overrides global setting).    |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
@@ -1429,6 +1431,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "FullTextLanguage": "english",
   "FullTextNormalization": 32,
   "FullTextMinimumScore": null,
+  "RetrievalIncludeNeighbors": 2,
   "InferenceEndpointId": null,
   "EmbeddingEndpointId": null,
   "Title": "My Support Bot",

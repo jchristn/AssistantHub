@@ -54,6 +54,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "model, enable_rag, enable_retrieval_gate, enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
+                "retrieval_include_neighbors, " +
                 "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
@@ -77,6 +78,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.FullTextLanguage) + ", " +
                 assistantSettings.FullTextNormalization + ", " +
                 (assistantSettings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(assistantSettings.FullTextMinimumScore.Value) : "NULL") + ", " +
+                assistantSettings.RetrievalIncludeNeighbors + ", " +
                 _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.Title) + ", " +
@@ -144,6 +146,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "fulltext_language = " + _Driver.FormatNullableString(assistantSettings.FullTextLanguage) + ", " +
                 "fulltext_normalization = " + assistantSettings.FullTextNormalization + ", " +
                 "fulltext_minimum_score = " + (assistantSettings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(assistantSettings.FullTextMinimumScore.Value) : "NULL") + ", " +
+                "retrieval_include_neighbors = " + assistantSettings.RetrievalIncludeNeighbors + ", " +
                 "inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 "title = " + _Driver.FormatNullableString(assistantSettings.Title) + ", " +

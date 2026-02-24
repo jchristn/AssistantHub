@@ -1324,7 +1324,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\"\n}"
+							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",

@@ -68,6 +68,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `fulltext_language` VARCHAR(32) DEFAULT 'english', " +
             "  `fulltext_normalization` INT DEFAULT 32, " +
             "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
+            "  `retrieval_include_neighbors` INT NOT NULL DEFAULT 0, " +
             "  `inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `title` TEXT, " +

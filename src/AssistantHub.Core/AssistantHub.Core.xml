@@ -2771,6 +2771,13 @@
             Null means no threshold.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalIncludeNeighbors">
+            <summary>
+            Number of neighboring chunks to retrieve before and after each matched chunk (0-10).
+            When set, each search result from RecallDB includes up to N chunks before and N chunks
+            after the matched position within the same document. 0 means no neighbors.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpointId">
             <summary>
             Completion endpoint identifier (references a managed Partio completion endpoint).
@@ -3898,6 +3905,24 @@
             Text content of the matching chunk.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Position">
+            <summary>
+            Positional index of this chunk within its source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Neighbors">
+            <summary>
+            Neighboring chunks surrounding this match in positional order.
+            Populated when IncludeNeighbors is specified. Null when not requested.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.MergedContent">
+            <summary>
+            Returns the matched chunk's content with neighbor content merged in positional order.
+            Neighbors before the match are prepended; neighbors after are appended.
+            Falls back to Content when no neighbors are present.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.RetrievalSearchOptions">
             <summary>
             Search options for retrieval queries supporting vector, full-text, and hybrid modes.
@@ -3931,6 +3956,12 @@
         <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextMinimumScore">
             <summary>
             Minimum full-text score threshold. Null means no threshold.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.IncludeNeighbors">
+            <summary>
+            Number of neighboring chunks to include before and after each matched chunk (0-10).
+            Passed to RecallDB as IncludeNeighbors on the search query.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
@@ -4533,6 +4564,17 @@
         <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Content">
             <summary>
             Text content of the matching chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Position">
+            <summary>
+            Positional index of this chunk within its source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Neighbors">
+            <summary>
+            Neighboring chunks surrounding this match in positional order.
+            Populated when IncludeNeighbors is specified on the search query.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.StorageService">

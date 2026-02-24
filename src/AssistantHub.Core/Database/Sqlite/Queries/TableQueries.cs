@@ -62,6 +62,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  fulltext_language TEXT DEFAULT 'english', " +
                 "  fulltext_normalization INTEGER DEFAULT 32, " +
                 "  fulltext_minimum_score REAL DEFAULT NULL, " +
+                "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
                 "  inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  title TEXT, " +

@@ -54,6 +54,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "model, enable_rag, enable_retrieval_gate, enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
+                "retrieval_include_neighbors, " +
                 "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(settings.Id) + "', " +
@@ -77,6 +78,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatNullableString(settings.FullTextLanguage) + ", " +
                 settings.FullTextNormalization + ", " +
                 (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
+                settings.RetrievalIncludeNeighbors + ", " +
                 _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.Title) + ", " +
@@ -143,6 +145,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "fulltext_language = " + _Driver.FormatNullableString(settings.FullTextLanguage) + ", " +
                 "fulltext_normalization = " + settings.FullTextNormalization + ", " +
                 "fulltext_minimum_score = " + (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
+                "retrieval_include_neighbors = " + settings.RetrievalIncludeNeighbors + ", " +
                 "inference_endpoint_id = " + _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 "title = " + _Driver.FormatNullableString(settings.Title) + ", " +

@@ -84,6 +84,7 @@ function AssistantSettingsView() {
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
+        RetrievalIncludeNeighbors: result?.RetrievalIncludeNeighbors ?? 0,
         SearchMode: result?.SearchMode || 'Vector',
         TextWeight: result?.TextWeight ?? 0.3,
         FullTextSearchType: result?.FullTextSearchType || 'TsRank',
@@ -288,6 +289,10 @@ function AssistantSettingsView() {
                     <div className="form-group">
                       <label className="form-label"><Tooltip text="Minimum similarity score for retrieved chunks to be included (0-1)">Score Threshold</Tooltip> <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
                       <input type="range" min="0" max="1" step="0.05" value={settings.RetrievalScoreThreshold} onChange={(e) => handleChange('RetrievalScoreThreshold', parseFloat(e.target.value))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="Number of neighboring chunks to retrieve before and after each matched chunk (0-10). Provides surrounding context for each match. 0 means no neighbors.">Include Neighbors</Tooltip></label>
+                      <input className="form-input" type="number" min="0" max="10" value={settings.RetrievalIncludeNeighbors} onChange={(e) => handleChange('RetrievalIncludeNeighbors', parseInt(e.target.value) || 0)} placeholder="0" />
                     </div>
                   </div>
                   <div className="form-group">

@@ -312,7 +312,8 @@ namespace AssistantHub.Server.Handlers
                             FullTextSearchType = settings.FullTextSearchType,
                             FullTextLanguage = settings.FullTextLanguage,
                             FullTextNormalization = settings.FullTextNormalization,
-                            FullTextMinimumScore = settings.FullTextMinimumScore
+                            FullTextMinimumScore = settings.FullTextMinimumScore,
+                            IncludeNeighbors = settings.RetrievalIncludeNeighbors
                         }).ConfigureAwait(false);
 
                     retrievalSw.Stop();
@@ -324,8 +325,8 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                // Extract content strings for system message building
-                List<string> contextChunks = retrievalChunks.Select(c => c.Content).ToList();
+                // Extract content strings for system message building (merged with neighbors when present)
+                List<string> contextChunks = retrievalChunks.Select(c => c.MergedContent).ToList();
 
                 // Resolve document names for citation labels
                 List<string> chunkLabels = null;
@@ -665,9 +666,10 @@ namespace AssistantHub.Server.Handlers
                             FullTextSearchType = settings.FullTextSearchType,
                             FullTextLanguage = settings.FullTextLanguage,
                             FullTextNormalization = settings.FullTextNormalization,
-                            FullTextMinimumScore = settings.FullTextMinimumScore
+                            FullTextMinimumScore = settings.FullTextMinimumScore,
+                            IncludeNeighbors = settings.RetrievalIncludeNeighbors
                         }).ConfigureAwait(false);
-                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.Content));
+                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.MergedContent));
                 }
 
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);

@@ -72,6 +72,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 fulltext_language NVARCHAR(MAX) NULL DEFAULT 'english',
                 fulltext_normalization INT NULL DEFAULT 32,
                 fulltext_minimum_score FLOAT NULL,
+                retrieval_include_neighbors INT NOT NULL DEFAULT 0,
                 inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
                 title NVARCHAR(MAX) NULL,

@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -122,7 +123,8 @@ namespace AssistantHub.Core.Services
                     object vectorOnlyBody = new
                     {
                         Vector = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
-                        MaxResults = topK
+                        MaxResults = topK,
+                        IncludeNeighbors = searchOptions.IncludeNeighbors > 0 ? searchOptions.IncludeNeighbors : (int?)null
                     };
                     searchResults = await ExecuteSearchAsync(collectionId, vectorOnlyBody, token).ConfigureAwait(false);
                 }
@@ -147,7 +149,14 @@ namespace AssistantHub.Core.Services
                                 DocumentId = result.DocumentId,
                                 Score = Math.Round(result.Score, 6),
                                 TextScore = result.TextScore.HasValue ? Math.Round(result.TextScore.Value, 6) : null,
-                                Content = result.Content
+                                Content = result.Content,
+                                Position = result.Position,
+                                Neighbors = result.Neighbors?.Select(n => new RetrievalChunk
+                                {
+                                    DocumentId = n.DocumentId,
+                                    Content = n.Content,
+                                    Position = n.Position
+                                }).ToList()
                             });
                         }
                     }
@@ -172,6 +181,8 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private object BuildSearchBody(string query, List<double> embeddings, int topK, RetrievalSearchOptions options)
         {
+            int? includeNeighbors = options.IncludeNeighbors > 0 ? options.IncludeNeighbors : null;
+
             if (options.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
             {
                 return new
@@ -184,7 +195,8 @@ namespace AssistantHub.Core.Services
                         Normalization = options.FullTextNormalization,
                         MinimumScore = options.FullTextMinimumScore
                     },
-                    MaxResults = topK
+                    MaxResults = topK,
+                    IncludeNeighbors = includeNeighbors
                 };
             }
             else if (options.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase))
@@ -205,7 +217,8 @@ namespace AssistantHub.Core.Services
                         TextWeight = options.TextWeight,
                         MinimumScore = options.FullTextMinimumScore
                     },
-                    MaxResults = topK
+                    MaxResults = topK,
+                    IncludeNeighbors = includeNeighbors
                 };
             }
             else
@@ -218,7 +231,8 @@ namespace AssistantHub.Core.Services
                         SearchType = "CosineSimilarity",
                         Embeddings = embeddings
                     },
-                    MaxResults = topK
+                    MaxResults = topK,
+                    IncludeNeighbors = includeNeighbors
                 };
             }
         }
@@ -362,6 +376,17 @@ namespace AssistantHub.Core.Services
             /// Text content of the matching chunk.
             /// </summary>
             public string Content { get; set; } = null;
+
+            /// <summary>
+            /// Positional index of this chunk within its source document.
+            /// </summary>
+            public int? Position { get; set; } = null;
+
+            /// <summary>
+            /// Neighboring chunks surrounding this match in positional order.
+            /// Populated when IncludeNeighbors is specified on the search query.
+            /// </summary>
+            public List<SearchResult> Neighbors { get; set; } = null;
         }
 
         #endregion

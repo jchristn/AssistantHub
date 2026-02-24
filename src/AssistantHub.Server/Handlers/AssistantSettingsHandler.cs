@@ -166,6 +166,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 updated.TextWeight = Math.Clamp(updated.TextWeight, 0.0, 1.0);
+                updated.RetrievalIncludeNeighbors = Math.Clamp(updated.RetrievalIncludeNeighbors, 0, 10);
 
                 string[] validSearchTypes = { "TsRank", "TsRankCd" };
                 if (!String.IsNullOrEmpty(updated.FullTextSearchType) &&

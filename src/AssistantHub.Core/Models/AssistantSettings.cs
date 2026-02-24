@@ -159,6 +159,17 @@ namespace AssistantHub.Core.Models
         public double? FullTextMinimumScore { get; set; } = null;
 
         /// <summary>
+        /// Number of neighboring chunks to retrieve before and after each matched chunk (0-10).
+        /// When set, each search result from RecallDB includes up to N chunks before and N chunks
+        /// after the matched position within the same document. 0 means no neighbors.
+        /// </summary>
+        public int RetrievalIncludeNeighbors
+        {
+            get => _RetrievalIncludeNeighbors;
+            set => _RetrievalIncludeNeighbors = Math.Clamp(value, 0, 10);
+        }
+
+        /// <summary>
         /// Completion endpoint identifier (references a managed Partio completion endpoint).
         /// </summary>
         public string InferenceEndpointId { get; set; } = null;
@@ -210,6 +221,7 @@ namespace AssistantHub.Core.Models
         private int _ContextWindow = 8192;
         private int _RetrievalTopK = 10;
         private double _RetrievalScoreThreshold = 0.3;
+        private int _RetrievalIncludeNeighbors = 0;
 
         #endregion
 
@@ -252,6 +264,7 @@ namespace AssistantHub.Core.Models
             obj.FullTextLanguage = DataTableHelper.GetStringValue(row, "fulltext_language") ?? "english";
             obj.FullTextNormalization = DataTableHelper.GetIntValue(row, "fulltext_normalization", 32);
             obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
+            obj.RetrievalIncludeNeighbors = DataTableHelper.GetIntValue(row, "retrieval_include_neighbors", 0);
             obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.Title = DataTableHelper.GetStringValue(row, "title");

@@ -34,5 +34,11 @@ namespace AssistantHub.Core.Models
         /// Minimum full-text score threshold. Null means no threshold.
         /// </summary>
         public double? FullTextMinimumScore { get; set; } = null;
+
+        /// <summary>
+        /// Number of neighboring chunks to include before and after each matched chunk (0-10).
+        /// Passed to RecallDB as IncludeNeighbors on the search query.
+        /// </summary>
+        public int IncludeNeighbors { get; set; } = 0;
     }
 }

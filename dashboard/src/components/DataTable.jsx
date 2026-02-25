@@ -6,7 +6,7 @@ import Tooltip from './Tooltip';
 function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [refreshState, setRefreshState] = useState('idle');
   const [filters, setFilters] = useState(initialFilters || {});

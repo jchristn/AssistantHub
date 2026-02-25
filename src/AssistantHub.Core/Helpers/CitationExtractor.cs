@@ -53,9 +53,14 @@ namespace AssistantHub.Core.Helpers
             else
             {
                 // Model did not produce any inline citation markers.
-                // Fall back to referencing all sources so the UI can still
-                // display them, and flag this as auto-populated for diagnostics.
-                citations.ReferencedIndices = sources.Select(s => s.Index).ToList();
+                // Fall back to referencing one source per unique document so the
+                // UI can still display them without duplicates, and flag this as
+                // auto-populated for diagnostics.
+                citations.ReferencedIndices = sources
+                    .GroupBy(s => s.DocumentId)
+                    .Select(g => g.OrderByDescending(s => s.Score).First().Index)
+                    .OrderBy(i => i)
+                    .ToList();
                 citations.AutoPopulated = true;
             }
 

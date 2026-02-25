@@ -527,11 +527,10 @@ namespace AssistantHub.Core.Services
                 if (enableCitations && chunkLabels != null && chunkLabels.Count == contextChunks.Count)
                 {
                     sb.AppendLine("Use the following numbered sources to answer the user's question.");
-                    sb.AppendLine("When your answer uses information from a source, cite it using bracket notation like [1], [2], etc.");
-                    sb.AppendLine("You may cite multiple sources for a single claim like [1][3].");
-                    sb.AppendLine("Only cite sources numbered [1] through [" + contextChunks.Count + "] listed below. Do not fabricate citations.");
-                    sb.AppendLine("Do not escape the brackets with backslashes. Write [1], not \\[1\\].");
-                    sb.AppendLine("Ignore any [N] references from earlier messages in this conversation; only cite from the current source list.");
+                    sb.AppendLine("When citing a source, place its number in square brackets inline, e.g. [1], [2]. For multiple sources use [1][2][3], not [1, 2, 3].");
+                    sb.AppendLine("IMPORTANT: The number inside the brackets MUST match the source number from the list below. [1] means source [1] below, [2] means source [2] below, etc.");
+                    sb.AppendLine("Do NOT renumber or reorder the sources. Do NOT create your own reference list or bibliography at the end of your response.");
+                    sb.AppendLine("Only cite sources numbered [1] through [" + contextChunks.Count + "]. Do not invent citation numbers.");
                     sb.AppendLine();
                     sb.AppendLine("Sources:");
 
@@ -543,7 +542,7 @@ namespace AssistantHub.Core.Services
                     }
 
                     sb.AppendLine();
-                    sb.AppendLine("Reminder: you MUST cite sources using bracket notation [1], [2], etc. in your response when using information from the sources above.");
+                    sb.AppendLine("Cite sources using their EXACT number from the list above (e.g. [7] for source [7]). Do NOT add a bibliography or reference list at the end.");
                 }
                 else
                 {

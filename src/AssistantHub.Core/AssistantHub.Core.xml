@@ -2451,6 +2451,26 @@
             Extracts bracket-notation citation references from model response text.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.CitationPattern">
+            <summary>
+            Matches bracket-notation citations including comma-separated forms.
+            Handles: [1], [2, 3], [1, 2, 3], \[1\], [8, 9, 10], etc.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.NumberPattern">
+            <summary>
+            Extracts individual numbers from a comma-separated capture group.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.TrailingBibliographyPattern">
+            <summary>
+            Matches a trailing bibliography/reference list that some models generate.
+            Detects blocks like:
+              [1] Document Name (Page 20)
+              [2] Document Name (Page 54)
+            at the end of the response, optionally preceded by a heading.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.CitationExtractor.Extract(System.Collections.Generic.List{AssistantHub.Core.Models.CitationSource},System.String)">
             <summary>
             Build a ChatCompletionCitations object from the source manifest
@@ -2459,6 +2479,14 @@
             <param name="sources">The citation source manifest built during context injection.</param>
             <param name="responseText">The completed model response text.</param>
             <returns>A populated ChatCompletionCitations object.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.CitationExtractor.StripBibliography(System.String)">
+            <summary>
+            Remove any trailing model-generated bibliography/reference list from the response text.
+            This is used to clean the response before sending it to the client.
+            </summary>
+            <param name="responseText">The raw model response text.</param>
+            <returns>The response text with any trailing bibliography removed.</returns>
         </member>
         <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
             <summary>

@@ -17,10 +17,13 @@ namespace Test.Database.Tests
 
             string createdId = null;
 
+            string tenantId = TenantTests.TestTenantId;
+
             await runner.RunTestAsync("User.Create", async ct =>
             {
                 UserMaster user = new UserMaster
                 {
+                    TenantId = tenantId,
                     Email = "testuser@example.com",
                     FirstName = "Test",
                     LastName = "User",
@@ -38,6 +41,7 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("User", created.LastName, "LastName");
                 AssertHelper.AreEqual(false, created.IsAdmin, "IsAdmin");
                 AssertHelper.AreEqual(true, created.Active, "Active");
+                AssertHelper.AreEqual(tenantId, created.TenantId, "TenantId");
                 AssertHelper.IsNotNull(created.PasswordSha256, "PasswordSha256");
                 AssertHelper.IsTrue(created.VerifyPassword("TestPassword123!"), "VerifyPassword should succeed");
                 AssertHelper.DateTimeRecent(created.CreatedUtc, "CreatedUtc");
@@ -49,26 +53,35 @@ namespace Test.Database.Tests
             {
                 UserMaster admin = new UserMaster
                 {
+                    TenantId = tenantId,
                     Email = "admin@example.com",
                     FirstName = "Admin",
                     LastName = "Boss",
                     IsAdmin = true,
+                    IsTenantAdmin = true,
                     Active = true
                 };
                 admin.SetPassword("AdminPass!");
 
                 UserMaster created = await driver.User.CreateAsync(admin, ct);
                 AssertHelper.IsNotNull(created, "created admin");
-                AssertHelper.AreEqual(true, created.IsAdmin, "IsAdmin");
+                AssertHelper.AreEqual(true, created.IsAdmin, "IsAdmin (global admin)");
+                AssertHelper.AreEqual(true, created.IsTenantAdmin, "IsTenantAdmin");
                 AssertHelper.AreEqual("admin@example.com", created.Email, "Email");
                 AssertHelper.AreEqual("Admin", created.FirstName, "FirstName");
                 AssertHelper.AreEqual("Boss", created.LastName, "LastName");
+
+                // Re-read to verify persistence
+                UserMaster read = await driver.User.ReadAsync(created.Id, ct);
+                AssertHelper.AreEqual(true, read.IsAdmin, "IsAdmin after re-read");
+                AssertHelper.AreEqual(true, read.IsTenantAdmin, "IsTenantAdmin after re-read");
             }, token);
 
             await runner.RunTestAsync("User.Create_NullableFields", async ct =>
             {
                 UserMaster user = new UserMaster
                 {
+                    TenantId = tenantId,
                     Email = "minimal@example.com"
                 };
 
@@ -101,7 +114,7 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("User.ReadByEmail", async ct =>
             {
-                UserMaster read = await driver.User.ReadByEmailAsync("testuser@example.com", ct);
+                UserMaster read = await driver.User.ReadByEmailAsync(tenantId, "testuser@example.com", ct);
                 AssertHelper.IsNotNull(read, "read user by email");
                 AssertHelper.AreEqual(createdId, read.Id, "Id");
                 AssertHelper.AreEqual("testuser@example.com", read.Email, "Email");
@@ -109,7 +122,7 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("User.ReadByEmail_NotFound", async ct =>
             {
-                UserMaster read = await driver.User.ReadByEmailAsync("nonexistent@example.com", ct);
+                UserMaster read = await driver.User.ReadByEmailAsync(tenantId, "nonexistent@example.com", ct);
                 AssertHelper.IsNull(read, "non-existent user by email");
             }, token);
 
@@ -171,7 +184,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("User.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 10 };
-                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(query, ct);
+                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "enumeration success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 3, "objects count");
@@ -181,7 +194,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("User.Enumerate_Pagination_Page1", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(query, ct);
+                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "page 1 result");
                 AssertHelper.AreEqual(1, result.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(result.EndOfResults, "page 1 should not be end");
@@ -192,14 +205,14 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("User.Enumerate_Pagination_Page2", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<UserMaster> r1 = await driver.User.EnumerateAsync(q1, ct);
+                EnumerationResult<UserMaster> r1 = await driver.User.EnumerateAsync(tenantId, q1, ct);
 
                 EnumerationQuery q2 = new EnumerationQuery
                 {
                     MaxResults = 1,
                     ContinuationToken = r1.ContinuationToken
                 };
-                EnumerationResult<UserMaster> r2 = await driver.User.EnumerateAsync(q2, ct);
+                EnumerationResult<UserMaster> r2 = await driver.User.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.IsNotNull(r2, "page 2 result");
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "page 2 should have different user");
@@ -212,7 +225,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     Ordering = EnumerationOrderEnum.CreatedAscending
                 };
-                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(query, ct);
+                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "ascending result count");
                 for (int i = 1; i < result.Objects.Count; i++)
                 {
@@ -229,7 +242,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     Ordering = EnumerationOrderEnum.CreatedDescending
                 };
-                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(query, ct);
+                EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "descending result count");
                 for (int i = 1; i < result.Objects.Count; i++)
                 {
@@ -251,7 +264,7 @@ namespace Test.Database.Tests
                         MaxResults = 1,
                         ContinuationToken = continuationToken
                     };
-                    EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(query, ct);
+                    EnumerationResult<UserMaster> result = await driver.User.EnumerateAsync(tenantId, query, ct);
                     allUsers.AddRange(result.Objects);
                     if (result.EndOfResults) break;
                     continuationToken = result.ContinuationToken;
@@ -263,7 +276,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("User.Delete", async ct =>
             {
                 // create a user specifically for deletion
-                UserMaster user = new UserMaster { Email = "delete-me@example.com" };
+                UserMaster user = new UserMaster { TenantId = tenantId, Email = "delete-me@example.com" };
                 UserMaster created = await driver.User.CreateAsync(user, ct);
                 string deleteId = created.Id;
 

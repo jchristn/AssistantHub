@@ -72,6 +72,7 @@ namespace AssistantHub.Core.Services
         /// <param name="searchOptions">Search mode and full-text options.</param>
         /// <returns>List of retrieval chunks with source identification and scoring.</returns>
         public async Task<List<RetrievalChunk>> RetrieveAsync(
+            string tenantId,
             string collectionId,
             string query,
             int topK,
@@ -112,7 +113,7 @@ namespace AssistantHub.Core.Services
                 object searchBody = BuildSearchBody(query, queryEmbeddings, topK, searchOptions);
 
                 // Step 3: Execute search against RecallDB
-                List<SearchResult> searchResults = await ExecuteSearchAsync(collectionId, searchBody, token).ConfigureAwait(false);
+                List<SearchResult> searchResults = await ExecuteSearchAsync(tenantId, collectionId, searchBody, token).ConfigureAwait(false);
 
                 // Step 3.5: Hybrid fallback to vector-only if 0 results
                 if (searchOptions.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)
@@ -126,7 +127,7 @@ namespace AssistantHub.Core.Services
                         MaxResults = topK,
                         IncludeNeighbors = searchOptions.IncludeNeighbors > 0 ? searchOptions.IncludeNeighbors : (int?)null
                     };
-                    searchResults = await ExecuteSearchAsync(collectionId, vectorOnlyBody, token).ConfigureAwait(false);
+                    searchResults = await ExecuteSearchAsync(tenantId, collectionId, vectorOnlyBody, token).ConfigureAwait(false);
                 }
 
                 if (searchResults == null || searchResults.Count == 0)
@@ -240,9 +241,9 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Execute a search request against RecallDB.
         /// </summary>
-        private async Task<List<SearchResult>> ExecuteSearchAsync(string collectionId, object requestBody, CancellationToken token)
+        private async Task<List<SearchResult>> ExecuteSearchAsync(string tenantId, string collectionId, object requestBody, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/search";
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/search";
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {

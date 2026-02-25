@@ -32,7 +32,7 @@ function getStatusBadgeClass(status) {
 }
 
 function DocumentsView() {
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showUpload, setShowUpload] = useState(false);
   const [showJson, setShowJson] = useState(null);
@@ -97,6 +97,7 @@ function DocumentsView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this document', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Name', label: 'Name', tooltip: 'Display name assigned to this document', filterable: true },
     { key: 'OriginalFilename', label: 'Filename', tooltip: 'Original filename when the document was uploaded', filterable: true },
     { key: 'ContentType', label: 'Content Type', tooltip: 'MIME type of the document (e.g. application/pdf)', filterable: true },

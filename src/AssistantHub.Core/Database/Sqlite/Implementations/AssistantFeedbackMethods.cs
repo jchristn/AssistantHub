@@ -59,10 +59,11 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "INSERT INTO assistant_feedback " +
-                "(id, assistant_id, user_message, assistant_response, rating, feedback_text, message_history, " +
+                "(id, tenant_id, assistant_id, user_message, assistant_response, rating, feedback_text, message_history, " +
                 "created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(feedback.Id) + "', " +
+                "'" + _Driver.Sanitize(feedback.TenantId) + "', " +
                 "'" + _Driver.Sanitize(feedback.AssistantId) + "', " +
                 _Driver.FormatNullableString(feedback.UserMessage) + ", " +
                 _Driver.FormatNullableString(feedback.AssistantResponse) + ", " +
@@ -102,8 +103,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             EnumerationResult<AssistantFeedback> ret = new EnumerationResult<AssistantFeedback>();
@@ -125,13 +127,12 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                     break;
             }
 
-            string whereClause = "";
-            string whereClauseCount = "";
+            List<string> conditions = new List<string>();
+            conditions.Add("tenant_id = '" + _Driver.Sanitize(tenantId) + "'");
             if (!String.IsNullOrEmpty(query.AssistantIdFilter))
-            {
-                whereClause = "WHERE assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "' ";
-                whereClauseCount = whereClause;
-            }
+                conditions.Add("assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "'");
+
+            string whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
 
             string selectQuery =
                 "SELECT * FROM assistant_feedback " +
@@ -140,7 +141,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "LIMIT " + query.MaxResults + " OFFSET " + skip + ";";
 
             string countQuery =
-                "SELECT COUNT(*) AS cnt FROM assistant_feedback " + whereClauseCount + ";";
+                "SELECT COUNT(*) AS cnt FROM assistant_feedback " + whereClause + ";";
 
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);
             if (countResult != null && countResult.Rows.Count > 0)

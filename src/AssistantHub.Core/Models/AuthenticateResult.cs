@@ -27,6 +27,26 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string ErrorMessage { get; set; } = null;
 
+        /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId { get; set; } = null;
+
+        /// <summary>
+        /// Tenant name.
+        /// </summary>
+        public string TenantName { get; set; } = null;
+
+        /// <summary>
+        /// Whether the user is a global admin.
+        /// </summary>
+        public bool IsGlobalAdmin { get; set; } = false;
+
+        /// <summary>
+        /// Whether the user is a tenant admin.
+        /// </summary>
+        public bool IsTenantAdmin { get; set; } = false;
+
         #endregion
 
         #region Private-Members

@@ -27,6 +27,15 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<IngestionRule> ReadAsync(string id, CancellationToken token = default);
 
         /// <summary>
+        /// Read an ingestion rule record by tenant and name.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="name">Ingestion rule name.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Ingestion rule record.</returns>
+        Task<IngestionRule> ReadByNameAsync(string tenantId, string name, CancellationToken token = default);
+
+        /// <summary>
         /// Update an ingestion rule record.
         /// </summary>
         /// <param name="rule">Ingestion rule record.</param>
@@ -51,11 +60,12 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<bool> ExistsAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate ingestion rule records.
+        /// Enumerate ingestion rule records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing ingestion rule records.</returns>
-        Task<EnumerationResult<IngestionRule>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<IngestionRule>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
     }
 }

@@ -53,9 +53,10 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
 
             string query =
                 "INSERT INTO assistant_feedback " +
-                "(id, assistant_id, user_message, assistant_response, rating, feedback_text, message_history, created_utc, last_update_utc) " +
+                "(id, tenant_id, assistant_id, user_message, assistant_response, rating, feedback_text, message_history, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(feedback.Id) + "', " +
+                "'" + _Driver.Sanitize(feedback.TenantId) + "', " +
                 "'" + _Driver.Sanitize(feedback.AssistantId) + "', " +
                 _Driver.FormatNullableString(feedback.UserMessage) + ", " +
                 _Driver.FormatNullableString(feedback.AssistantResponse) + ", " +
@@ -92,8 +93,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             Stopwatch sw = Stopwatch.StartNew();
@@ -109,9 +111,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 ? "ORDER BY created_utc ASC"
                 : "ORDER BY created_utc DESC";
 
-            string whereClause = "";
+            string whereClause = "WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' ";
             if (!String.IsNullOrEmpty(query.AssistantIdFilter))
-                whereClause = "WHERE assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "' ";
+                whereClause += "AND assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "' ";
 
             string countQuery = "SELECT COUNT(*) AS cnt FROM assistant_feedback " + whereClause + ";";
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);

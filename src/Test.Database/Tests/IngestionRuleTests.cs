@@ -15,12 +15,14 @@ namespace Test.Database.Tests
             Console.WriteLine();
             Console.WriteLine("--- IngestionRule Tests ---");
 
+            string tenantId = TenantTests.TestTenantId;
             string createdId = null;
 
             await runner.RunTestAsync("IngestionRule.Create", async ct =>
             {
                 IngestionRule rule = new IngestionRule
                 {
+                    TenantId = tenantId,
                     Name = "Test Ingestion Rule",
                     Description = "A rule for testing ingestion",
                     Bucket = "ingest-bucket",
@@ -105,6 +107,7 @@ namespace Test.Database.Tests
             {
                 IngestionRule rule = new IngestionRule
                 {
+                    TenantId = tenantId,
                     Name = "Minimal Rule",
                     Bucket = "min-bucket",
                     CollectionName = "min-collection"
@@ -206,7 +209,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("IngestionRule.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<IngestionRule> result = await driver.IngestionRule.EnumerateAsync(query, ct);
+                EnumerationResult<IngestionRule> result = await driver.IngestionRule.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "objects count");
@@ -215,12 +218,12 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("IngestionRule.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<IngestionRule> r1 = await driver.IngestionRule.EnumerateAsync(q1, ct);
+                EnumerationResult<IngestionRule> r1 = await driver.IngestionRule.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<IngestionRule> r2 = await driver.IngestionRule.EnumerateAsync(q2, ct);
+                EnumerationResult<IngestionRule> r2 = await driver.IngestionRule.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
             }, token);
 
@@ -228,6 +231,7 @@ namespace Test.Database.Tests
             {
                 IngestionRule rule = await driver.IngestionRule.CreateAsync(new IngestionRule
                 {
+                    TenantId = tenantId,
                     Name = "Delete Me Rule",
                     Bucket = "del-bucket",
                     CollectionName = "del-collection"

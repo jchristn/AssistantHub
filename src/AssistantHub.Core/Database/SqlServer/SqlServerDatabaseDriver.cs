@@ -49,6 +49,7 @@ namespace AssistantHub.Core.Database.SqlServer
                 "TrustServerCertificate=True;" +
                 "Encrypt=" + _Settings.RequireEncryption.ToString();
 
+            Tenant = new TenantMethods(this, _Settings, _Logging);
             User = new UserMethods(this, _Settings, _Logging);
             Credential = new CredentialMethods(this, _Settings, _Logging);
             Assistant = new AssistantMethods(this, _Settings, _Logging);
@@ -68,6 +69,7 @@ namespace AssistantHub.Core.Database.SqlServer
         {
             List<string> queries = new List<string>
             {
+                TableQueries.CreateTenantsTable,
                 TableQueries.CreateUsersTable,
                 TableQueries.CreateCredentialsTable,
                 TableQueries.CreateAssistantsTable,
@@ -75,37 +77,31 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
+                TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateTenantsNameIndex,
+                TableQueries.CreateTenantsCreatedUtcIndex,
                 TableQueries.CreateUsersEmailIndex,
+                TableQueries.CreateUsersTenantIdIndex,
+                TableQueries.CreateUsersTenantEmailIndex,
                 TableQueries.CreateCredentialsUserIdIndex,
                 TableQueries.CreateCredentialsBearerTokenIndex,
+                TableQueries.CreateCredentialsTenantIdIndex,
                 TableQueries.CreateAssistantsUserIdIndex,
+                TableQueries.CreateAssistantsTenantIdIndex,
                 TableQueries.CreateAssistantSettingsAssistantIdIndex,
-                TableQueries.CreateAssistantFeedbackAssistantIdIndex,
-                TableQueries.CreateIngestionRulesNameIndex,
+                TableQueries.CreateAssistantDocumentsTenantIdIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
-                TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateAssistantFeedbackAssistantIdIndex,
+                TableQueries.CreateAssistantFeedbackTenantIdIndex,
+                TableQueries.CreateIngestionRulesNameIndex,
+                TableQueries.CreateIngestionRulesTenantIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
-                TableQueries.CreateChatHistoryCreatedUtcIndex
+                TableQueries.CreateChatHistoryCreatedUtcIndex,
+                TableQueries.CreateChatHistoryTenantIdIndex
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
-
-            // Auto-migration: add columns that may not exist in older databases
-            string[] migrations = new string[]
-            {
-                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'completion_tokens') ALTER TABLE chat_history ADD completion_tokens INT NOT NULL DEFAULT 0;",
-                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'tokens_per_second_overall') ALTER TABLE chat_history ADD tokens_per_second_overall FLOAT NOT NULL DEFAULT 0;",
-                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('chat_history') AND name = 'tokens_per_second_generation') ALTER TABLE chat_history ADD tokens_per_second_generation FLOAT NOT NULL DEFAULT 0;",
-                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('assistant_settings') AND name = 'enable_citations') ALTER TABLE assistant_settings ADD enable_citations BIT NOT NULL DEFAULT 0;",
-                "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('assistant_settings') AND name = 'citation_link_mode') ALTER TABLE assistant_settings ADD citation_link_mode NVARCHAR(32) NOT NULL DEFAULT 'None';"
-            };
-
-            foreach (string migration in migrations)
-            {
-                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
-                catch (Exception) { /* Column already exists */ }
-            }
         }
 
         /// <inheritdoc />

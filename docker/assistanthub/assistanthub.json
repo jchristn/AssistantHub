@@ -39,8 +39,14 @@
   },
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
-    "TenantId": "default",
     "AccessKey": "recalldbadmin"
+  },
+  "AdminApiKeys": [
+    "changeme"
+  ],
+  "DefaultTenant": {
+    "Id": "default",
+    "Name": "Default"
   },
   "ProcessingLog": {
     "Directory": "./processing-logs/",

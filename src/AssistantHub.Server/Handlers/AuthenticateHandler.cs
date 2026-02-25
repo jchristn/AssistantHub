@@ -71,7 +71,7 @@ namespace AssistantHub.Server.Handlers
                 }
                 else if (!String.IsNullOrEmpty(req.Email) && !String.IsNullOrEmpty(req.Password))
                 {
-                    result = await Authentication.AuthenticateByEmailPasswordAsync(req.Email, req.Password).ConfigureAwait(false);
+                    result = await Authentication.AuthenticateByEmailPasswordAsync(req.TenantId, req.Email, req.Password).ConfigureAwait(false);
                 }
                 else
                 {

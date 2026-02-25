@@ -10,10 +10,11 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Error Responses](#error-responses)
 - [Pagination](#pagination)
 - [Health](#health)
+- [Tenants (Global Admin Only)](#tenants-global-admin-only)
 - [Users (Admin Only)](#users-admin-only)
 - [Credentials (Admin Only)](#credentials-admin-only)
-- [Buckets (Admin Only)](#buckets-admin-only)
-- [Bucket Objects (Admin Only)](#bucket-objects-admin-only)
+- [Buckets (Tenant-Scoped)](#buckets-tenant-scoped)
+- [Bucket Objects (Tenant-Scoped)](#bucket-objects-tenant-scoped)
 - [Collections (Admin Only)](#collections-admin-only)
 - [Collection Records (Admin Only)](#collection-records-admin-only)
 - [Ingestion Rules](#ingestion-rules)
@@ -51,6 +52,14 @@ Alternatively, the token can be passed as a `token` query parameter:
 ```
 GET /v1.0/assistants?token=<token>
 ```
+
+### Authorization Tiers
+
+| Role | How to Authenticate | Scope |
+|------|-------------------|-------|
+| **Global Admin** | Admin API key (from `AdminApiKeys` config), or any user with `IsAdmin=true` | All tenants — can manage tenants, users, and all resources |
+| **Tenant Admin** | User with `IsTenantAdmin=true` | Single tenant — can manage users, credentials, assistants, ingestion rules within their tenant |
+| **Tenant User** | Standard user | Single tenant — can create/manage own assistants and documents |
 
 ### POST /v1.0/authenticate
 
@@ -98,9 +107,15 @@ Authenticate using email/password or a bearer token. This endpoint is **unauthen
     "CreatedUtc": "2025-01-01T00:00:00Z",
     "LastUpdateUtc": "2025-01-01T00:00:00Z"
   },
+  "TenantId": "ten_abc123...",
+  "TenantName": "Default",
+  "IsGlobalAdmin": true,
+  "IsTenantAdmin": true,
   "ErrorMessage": null
 }
 ```
+
+`IsGlobalAdmin` is `true` when the user has `IsAdmin=true` or when authenticating with an admin API key. For admin API key authentication, `User` and `Credential` will be `null`.
 
 **Response (401 Unauthorized):**
 
@@ -195,6 +210,139 @@ Returns 200 OK with no body. Useful for health checks. **Unauthenticated.**
 
 ---
 
+## Tenants (Global Admin Only)
+
+All tenant endpoints require global admin authentication (admin API key or user with `IsAdmin=true`).
+
+### PUT /v1.0/tenants
+
+Create and provision a new tenant. Auto-creates a RecallDB tenant, default S3 bucket, admin user, credential, and ingestion rule.
+
+**Auth:** Required (global admin only)
+
+**Request Body:**
+
+```json
+{
+  "Name": "Acme Corp",
+  "Active": true
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "Tenant": {
+    "Id": "ten_abc123...",
+    "Name": "Acme Corp",
+    "Active": true,
+    "IsProtected": false,
+    "CreatedUtc": "2025-01-01T00:00:00Z",
+    "LastUpdateUtc": "2025-01-01T00:00:00Z"
+  },
+  "User": {
+    "Id": "usr_abc123...",
+    "TenantId": "ten_abc123...",
+    "Email": "admin@acme-corp",
+    "IsAdmin": false,
+    "IsTenantAdmin": true,
+    "Active": true,
+    "IsProtected": true
+  },
+  "Credential": {
+    "Id": "cred_abc123...",
+    "TenantId": "ten_abc123...",
+    "UserId": "usr_abc123...",
+    "Name": "Default admin credential",
+    "BearerToken": "auto-generated-64-char-token",
+    "Active": true,
+    "IsProtected": true
+  },
+  "RecallDbTenantGuid": "guid...",
+  "CollectionGuid": "guid...",
+  "BucketName": "ten_abc123_default",
+  "IngestionRuleId": "ir_abc123..."
+}
+```
+
+### GET /v1.0/tenants
+
+List all tenants with pagination.
+
+**Auth:** Required (global admin only)
+
+**Query Parameters:** See [Pagination](#pagination).
+
+**Response (200 OK):** Paginated envelope containing `TenantMetadata` objects.
+
+### GET /v1.0/tenants/{tenantId}
+
+Retrieve a single tenant by ID.
+
+**Auth:** Required (global admin only)
+
+**Response (200 OK):**
+
+```json
+{
+  "Id": "ten_abc123...",
+  "Name": "Acme Corp",
+  "Active": true,
+  "IsProtected": false,
+  "CreatedUtc": "2025-01-01T00:00:00Z",
+  "LastUpdateUtc": "2025-01-01T00:00:00Z"
+}
+```
+
+**Error Responses:**
+- `404` -- Tenant not found.
+
+### PUT /v1.0/tenants/{tenantId}
+
+Update an existing tenant.
+
+**Auth:** Required (global admin only)
+
+**Request Body:**
+
+```json
+{
+  "Name": "Acme Corp Updated",
+  "Active": true,
+  "IsProtected": false
+}
+```
+
+**Response (200 OK):** The updated `TenantMetadata` object.
+
+**Error Responses:**
+- `404` -- Tenant not found.
+
+### DELETE /v1.0/tenants/{tenantId}
+
+Delete a tenant and deprovision all associated resources (users, credentials, assistants, documents, S3 buckets, RecallDB tenant).
+
+**Auth:** Required (global admin only)
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `403` -- Tenant is protected. Deactivate by setting `Active` to `false` instead.
+- `404` -- Tenant not found.
+
+### HEAD /v1.0/tenants/{tenantId}
+
+Check whether a tenant exists.
+
+**Auth:** Required (global admin only)
+
+**Response:**
+- `200 OK` -- Tenant exists.
+- `404 Not Found` -- Tenant does not exist.
+
+---
+
 ## Users (Admin Only)
 
 All user endpoints require authentication with an admin bearer token. Non-admin users receive `403 Forbidden`.
@@ -214,7 +362,8 @@ Create a new user.
   "FirstName": "Jane",
   "LastName": "Doe",
   "IsAdmin": false,
-  "Active": true
+  "Active": true,
+  "IsProtected": false
 }
 ```
 
@@ -229,6 +378,7 @@ Create a new user.
   "LastName": "Doe",
   "IsAdmin": false,
   "Active": true,
+  "IsProtected": false,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -265,6 +415,7 @@ Retrieve a single user by ID.
   "LastName": "User",
   "IsAdmin": true,
   "Active": true,
+  "IsProtected": true,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -287,7 +438,8 @@ Update an existing user. The `Id` and `CreatedUtc` fields are preserved from the
   "FirstName": "Jane",
   "LastName": "Smith",
   "IsAdmin": false,
-  "Active": true
+  "Active": true,
+  "IsProtected": false
 }
 ```
 
@@ -305,6 +457,7 @@ Delete a user and all associated credentials (cascading delete).
 **Response:** `204 No Content`
 
 **Error Responses:**
+- `403` -- User is protected. Deactivate by setting `Active` to `false` instead.
 - `404` -- User not found.
 
 ### HEAD /v1.0/users/{userId}
@@ -335,7 +488,8 @@ Create a new API credential. The `Id` and `BearerToken` are auto-generated by th
 {
   "UserId": "usr_abc123...",
   "Name": "My API Key",
-  "Active": true
+  "Active": true,
+  "IsProtected": false
 }
 ```
 
@@ -348,6 +502,7 @@ Create a new API credential. The `Id` and `BearerToken` are auto-generated by th
   "Name": "My API Key",
   "BearerToken": "auto-generated-64-char-token",
   "Active": true,
+  "IsProtected": false,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -382,6 +537,7 @@ Retrieve a single credential by ID.
   "Name": "My API Key",
   "BearerToken": "abc123...",
   "Active": true,
+  "IsProtected": false,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -401,7 +557,8 @@ Update an existing credential. The `Id`, `UserId`, and `BearerToken` fields are 
 ```json
 {
   "Name": "Renamed API Key",
-  "Active": false
+  "Active": false,
+  "IsProtected": false
 }
 ```
 
@@ -419,6 +576,7 @@ Delete a credential.
 **Response:** `204 No Content`
 
 **Error Responses:**
+- `403` -- Credential is protected. Deactivate by setting `Active` to `false` instead.
 - `404` -- Credential not found.
 
 ### HEAD /v1.0/credentials/{credentialId}
@@ -433,9 +591,9 @@ Check whether a credential exists.
 
 ---
 
-## Buckets (Admin Only)
+## Buckets (Tenant-Scoped)
 
-All bucket endpoints require authentication with an admin bearer token. Buckets are managed on the configured S3-compatible storage server (Less3).
+Bucket endpoints are tenant-scoped. Non-global-admin users can only access buckets prefixed with their tenant ID (`{tenantId}_`). Bucket creation and deletion require admin privileges. Buckets are managed on the configured S3-compatible storage server (Less3).
 
 ### PUT /v1.0/buckets
 
@@ -522,9 +680,9 @@ Check whether a bucket exists.
 
 ---
 
-## Bucket Objects (Admin Only)
+## Bucket Objects (Tenant-Scoped)
 
-Manage objects within S3-compatible storage buckets. Object keys may contain path separators (`/`) and are passed as query parameters.
+Manage objects within S3-compatible storage buckets. Object keys may contain path separators (`/`) and are passed as query parameters. Non-global-admin users can only access objects in buckets prefixed with their tenant ID.
 
 ### GET /v1.0/buckets/{name}/objects
 

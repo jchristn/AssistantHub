@@ -114,6 +114,87 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// Get the AuthContext from the request metadata.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <returns>AuthContext or null.</returns>
+        protected AuthContext GetAuthContext(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            var metadata = GetMetadata(ctx);
+            if (metadata.ContainsKey("authContext"))
+                return (AuthContext)metadata["authContext"];
+            return null;
+        }
+
+        /// <summary>
+        /// Require any authenticated user. Returns AuthContext or sends 401.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <returns>AuthContext or null if 401 was sent.</returns>
+        protected AuthContext RequireAuth(HttpContextBase ctx)
+        {
+            AuthContext auth = GetAuthContext(ctx);
+            if (auth == null || !auth.IsAuthenticated)
+                return null;
+            return auth;
+        }
+
+        /// <summary>
+        /// Require global admin. Returns AuthContext or null (caller should send 403).
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <returns>AuthContext if global admin, null otherwise.</returns>
+        protected AuthContext RequireGlobalAdmin(HttpContextBase ctx)
+        {
+            AuthContext auth = RequireAuth(ctx);
+            if (auth == null) return null;
+            if (!auth.IsGlobalAdmin) return null;
+            return auth;
+        }
+
+        /// <summary>
+        /// Require global admin or tenant admin. Returns AuthContext or null.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <returns>AuthContext if admin, null otherwise.</returns>
+        protected AuthContext RequireAdmin(HttpContextBase ctx)
+        {
+            AuthContext auth = RequireAuth(ctx);
+            if (auth == null) return null;
+            if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin) return null;
+            return auth;
+        }
+
+        /// <summary>
+        /// Validate that the caller can access the given tenant.
+        /// Global admins can access any tenant. Non-global-admins can only access their own.
+        /// </summary>
+        /// <param name="auth">Auth context.</param>
+        /// <param name="tenantId">Tenant ID to check.</param>
+        /// <returns>True if access is allowed.</returns>
+        protected bool ValidateTenantAccess(AuthContext auth, string tenantId)
+        {
+            if (auth == null) return false;
+            if (auth.IsGlobalAdmin) return true;
+            return String.Equals(auth.TenantId, tenantId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Enforce that a loaded record belongs to the caller's tenant.
+        /// Global admins bypass this check.
+        /// </summary>
+        /// <param name="auth">Auth context.</param>
+        /// <param name="recordTenantId">Tenant ID on the record.</param>
+        /// <returns>True if ownership is valid.</returns>
+        protected bool EnforceTenantOwnership(AuthContext auth, string recordTenantId)
+        {
+            if (auth == null) return false;
+            if (auth.IsGlobalAdmin) return true;
+            return String.Equals(auth.TenantId, recordTenantId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Build an enumeration query from request query parameters.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>

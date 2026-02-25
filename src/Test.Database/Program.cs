@@ -65,6 +65,7 @@ namespace Test.Database
 
             try
             {
+                await TenantTests.RunAllAsync(driver, runner, token);
                 await UserTests.RunAllAsync(driver, runner, token);
                 await CredentialTests.RunAllAsync(driver, runner, token);
                 await AssistantTests.RunAllAsync(driver, runner, token);
@@ -101,7 +102,8 @@ namespace Test.Database
                     "ingestion_rules",
                     "credentials",
                     "assistants",
-                    "users"
+                    "users",
+                    "tenants"
                 };
 
                 foreach (string table in cleanupTables)

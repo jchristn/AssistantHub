@@ -11,7 +11,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
 function AssistantsView() {
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const navigate = useNavigate();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +25,7 @@ function AssistantsView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this assistant', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Name', label: 'Name', tooltip: 'Display name used to identify this assistant', filterable: true },
     { key: 'Description', label: 'Description', tooltip: "Brief summary of the assistant's purpose", filterable: true, render: (row) => row.Description ? (row.Description.length > 50 ? row.Description.substring(0, 50) + '...' : row.Description) : '' },
     { key: 'Active', label: 'Status', tooltip: 'Whether this assistant is currently active and available', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },

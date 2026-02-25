@@ -11,7 +11,7 @@ import AlertModal from '../components/AlertModal';
 
 function UsersView() {
   const navigate = useNavigate();
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, tenantId, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState(null);
@@ -22,30 +22,34 @@ function UsersView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this user account', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Tenant this user belongs to', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Email', label: 'Email', tooltip: 'Email address used for login and notifications', filterable: true },
     { key: 'FirstName', label: 'First Name', tooltip: "User's given name", filterable: true },
     { key: 'LastName', label: 'Last Name', tooltip: "User's family name", filterable: true },
     { key: 'IsAdmin', label: 'Admin', tooltip: 'Whether this user has administrator privileges', render: (row) => row.IsAdmin ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
+    { key: 'IsTenantAdmin', label: 'Tenant Admin', tooltip: 'Whether this user has tenant administrator privileges', render: (row) => row.IsTenantAdmin ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
     { key: 'Active', label: 'Status', tooltip: 'Whether this user account is currently active', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
+    { key: 'IsProtected', label: 'Protected', tooltip: 'Protected records cannot be deleted', render: (row) => row.IsProtected ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
   ];
 
   const fetchData = useCallback(async (params) => {
-    return await api.getUsers(params);
-  }, [serverUrl, credential]);
+    return await api.getUsers(tenantId, params);
+  }, [serverUrl, credential, tenantId]);
 
   const getRowActions = (row) => [
     { label: 'View Credentials', onClick: () => navigate('/credentials', { state: { initialFilters: { UserId: row.Id } } }) },
     { label: 'Edit', onClick: () => { setEditUser(row); setShowForm(true); } },
     { label: 'View JSON', onClick: () => setShowJson(row) },
-    { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
+    ...(!row.IsProtected ? [{ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) }] : []),
   ];
 
   const handleSave = async (data) => {
     try {
+      const tid = data.TenantId || tenantId;
       if (editUser) {
-        await api.updateUser(editUser.Id, data);
+        await api.updateUser(tid, editUser.Id, data);
       } else {
-        await api.createUser(data);
+        await api.createUser(data, tid);
       }
       setShowForm(false);
       setEditUser(null);
@@ -57,7 +61,8 @@ function UsersView() {
 
   const handleDelete = async () => {
     try {
-      await api.deleteUser(deleteTarget.Id);
+      const tid = deleteTarget.TenantId || tenantId;
+      await api.deleteUser(tid, deleteTarget.Id);
       setDeleteTarget(null);
       setRefresh(r => r + 1);
     } catch (err) {
@@ -68,7 +73,7 @@ function UsersView() {
   const handleBulkDelete = async (ids) => {
     try {
       for (const id of ids) {
-        await api.deleteUser(id);
+        await api.deleteUser(tenantId, id);
       }
       setRefresh(r => r + 1);
     } catch (err) {

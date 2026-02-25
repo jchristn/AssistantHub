@@ -17,6 +17,15 @@ namespace AssistantHub.Core.Helpers
         #region Public-Methods
 
         /// <summary>
+        /// Generate a tenant identifier.
+        /// </summary>
+        /// <returns>Tenant identifier.</returns>
+        public static string NewTenantId()
+        {
+            return _Generator.GenerateKSortable(Constants.TenantIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a user identifier.
         /// </summary>
         /// <returns>User identifier.</returns>

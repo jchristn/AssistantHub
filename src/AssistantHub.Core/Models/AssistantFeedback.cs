@@ -22,6 +22,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// Assistant identifier to which this feedback belongs.
         /// </summary>
         public string AssistantId
@@ -70,6 +79,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewAssistantFeedbackId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _AssistantId = "asst_placeholder";
 
         #endregion
@@ -93,6 +103,7 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             AssistantFeedback obj = new AssistantFeedback();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.AssistantId = DataTableHelper.GetStringValue(row, "assistant_id");
             obj.UserMessage = DataTableHelper.GetStringValue(row, "user_message");
             obj.AssistantResponse = DataTableHelper.GetStringValue(row, "assistant_response");

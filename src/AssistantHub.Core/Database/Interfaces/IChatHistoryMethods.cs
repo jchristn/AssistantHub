@@ -35,12 +35,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task DeleteAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate chat history records.
+        /// Enumerate chat history records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing chat history records.</returns>
-        Task<EnumerationResult<ChatHistory>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<ChatHistory>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
         /// Delete all chat history records belonging to an assistant.

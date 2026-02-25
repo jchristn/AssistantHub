@@ -191,7 +191,6 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
 
         {renderSection('RecallDb', 'RecallDb', <>
           {renderTextField('RecallDb', 'Endpoint', 'Endpoint', 'text', 'URL of the RecallDB vector database endpoint')}
-          {renderTextField('RecallDb', 'TenantId', 'Tenant ID', 'text', 'Tenant identifier for multi-tenant RecallDB deployments')}
           {renderTextField('RecallDb', 'AccessKey', 'Access Key', 'text', 'Authentication key for RecallDB access')}
         </>)}
 

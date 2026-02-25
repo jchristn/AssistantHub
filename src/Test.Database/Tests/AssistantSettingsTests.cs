@@ -14,8 +14,9 @@ namespace Test.Database.Tests
             Console.WriteLine();
             Console.WriteLine("--- AssistantSettings Tests ---");
 
-            UserMaster user = await driver.User.CreateAsync(new UserMaster { Email = "aset-owner@example.com" }, token);
-            Assistant asst = await driver.Assistant.CreateAsync(new Assistant { UserId = user.Id, Name = "Settings Test Asst" }, token);
+            string tenantId = TenantTests.TestTenantId;
+            UserMaster user = await driver.User.CreateAsync(new UserMaster { TenantId = tenantId, Email = "aset-owner@example.com" }, token);
+            Assistant asst = await driver.Assistant.CreateAsync(new Assistant { TenantId = tenantId, UserId = user.Id, Name = "Settings Test Asst" }, token);
             string assistantId = asst.Id;
             string createdId = null;
 

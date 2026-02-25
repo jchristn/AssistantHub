@@ -22,6 +22,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// Display name for the document.
         /// </summary>
         public string Name
@@ -109,6 +118,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewAssistantDocumentId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _Name = "Untitled Document";
         private long _SizeBytes = 0;
 
@@ -133,6 +143,7 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             AssistantDocument obj = new AssistantDocument();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.Name = DataTableHelper.GetStringValue(row, "name");
             obj.OriginalFilename = DataTableHelper.GetStringValue(row, "original_filename");
             obj.ContentType = DataTableHelper.GetStringValue(row, "content_type");

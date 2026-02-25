@@ -15,7 +15,8 @@ namespace Test.Database.Tests
             Console.WriteLine();
             Console.WriteLine("--- Assistant Tests ---");
 
-            UserMaster user = await driver.User.CreateAsync(new UserMaster { Email = "asst-owner@example.com" }, token);
+            string tenantId = TenantTests.TestTenantId;
+            UserMaster user = await driver.User.CreateAsync(new UserMaster { TenantId = tenantId, Email = "asst-owner@example.com" }, token);
             string userId = user.Id;
             string createdId = null;
 
@@ -23,6 +24,7 @@ namespace Test.Database.Tests
             {
                 Assistant asst = new Assistant
                 {
+                    TenantId = tenantId,
                     UserId = userId,
                     Name = "Test Assistant",
                     Description = "A test assistant for unit testing",
@@ -46,6 +48,7 @@ namespace Test.Database.Tests
             {
                 Assistant asst = new Assistant
                 {
+                    TenantId = tenantId,
                     UserId = userId,
                     Name = "No Description Assistant"
                 };
@@ -121,7 +124,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Assistant.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(query, ct);
+                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "objects count");
@@ -131,12 +134,12 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Assistant.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<Assistant> r1 = await driver.Assistant.EnumerateAsync(q1, ct);
+                EnumerationResult<Assistant> r1 = await driver.Assistant.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<Assistant> r2 = await driver.Assistant.EnumerateAsync(q2, ct);
+                EnumerationResult<Assistant> r2 = await driver.Assistant.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "different pages different items");
             }, token);
@@ -144,7 +147,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Assistant.Enumerate_Ascending", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100, Ordering = EnumerationOrderEnum.CreatedAscending };
-                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(query, ct);
+                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(tenantId, query, ct);
                 for (int i = 1; i < result.Objects.Count; i++)
                     AssertHelper.IsTrue(result.Objects[i].CreatedUtc >= result.Objects[i - 1].CreatedUtc, $"ascending order at {i}");
             }, token);
@@ -152,14 +155,14 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Assistant.Enumerate_Descending", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100, Ordering = EnumerationOrderEnum.CreatedDescending };
-                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(query, ct);
+                EnumerationResult<Assistant> result = await driver.Assistant.EnumerateAsync(tenantId, query, ct);
                 for (int i = 1; i < result.Objects.Count; i++)
                     AssertHelper.IsTrue(result.Objects[i].CreatedUtc <= result.Objects[i - 1].CreatedUtc, $"descending order at {i}");
             }, token);
 
             await runner.RunTestAsync("Assistant.Delete", async ct =>
             {
-                Assistant asst = new Assistant { UserId = userId, Name = "Delete Me" };
+                Assistant asst = new Assistant { TenantId = tenantId, UserId = userId, Name = "Delete Me" };
                 Assistant created = await driver.Assistant.CreateAsync(asst, ct);
 
                 await driver.Assistant.DeleteAsync(created.Id, ct);

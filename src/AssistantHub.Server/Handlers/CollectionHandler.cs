@@ -56,7 +56,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -65,7 +66,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(null));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(auth.TenantId, null));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
                 if (!String.IsNullOrEmpty(body))
                     req.Content = new StringContent(body, Encoding.UTF8, "application/json");
@@ -96,7 +97,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -107,7 +109,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbUrl("enumerate"));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbUrl(auth.TenantId, "enumerate"));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
                 req.Content = new StringContent(enumerateBody, Encoding.UTF8, "application/json");
 
@@ -137,7 +139,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -154,7 +157,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbUrl(collectionId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbUrl(auth.TenantId, collectionId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
@@ -183,7 +186,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -201,7 +205,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(collectionId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(auth.TenantId, collectionId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
                 if (!String.IsNullOrEmpty(body))
                     req.Content = new StringContent(body, Encoding.UTF8, "application/json");
@@ -232,7 +236,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -249,7 +254,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbUrl(collectionId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbUrl(auth.TenantId, collectionId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
@@ -285,7 +290,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     await ctx.Response.Send().ConfigureAwait(false);
@@ -300,7 +306,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Head, BuildRecallDbUrl(collectionId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Head, BuildRecallDbUrl(auth.TenantId, collectionId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
@@ -328,7 +334,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -348,7 +355,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentUrl(collectionId, "enumerate"));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, "enumerate"));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
                 req.Content = new StringContent(enumerateBody, Encoding.UTF8, "application/json");
 
@@ -378,7 +385,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -396,7 +404,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentUrl(collectionId, recordId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, recordId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
@@ -425,7 +433,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -443,7 +452,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentUrl(collectionId, recordId));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, recordId));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
@@ -479,7 +488,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -497,7 +507,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentUrl(collectionId, null));
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, null));
                 req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
                 if (!String.IsNullOrEmpty(body))
                     req.Content = new StringContent(body, Encoding.UTF8, "application/json");
@@ -522,19 +532,19 @@ namespace AssistantHub.Server.Handlers
 
         #region Private-Methods
 
-        private string BuildRecallDbUrl(string path)
+        private string BuildRecallDbUrl(string tenantId, string path)
         {
             string baseUrl = Settings.RecallDb.Endpoint.TrimEnd('/');
-            string url = baseUrl + "/v1.0/tenants/" + Settings.RecallDb.TenantId + "/collections";
+            string url = baseUrl + "/v1.0/tenants/" + tenantId + "/collections";
             if (!String.IsNullOrEmpty(path))
                 url += "/" + path;
             return url;
         }
 
-        private string BuildRecallDbDocumentUrl(string collectionId, string path)
+        private string BuildRecallDbDocumentUrl(string tenantId, string collectionId, string path)
         {
             string baseUrl = Settings.RecallDb.Endpoint.TrimEnd('/');
-            string url = baseUrl + "/v1.0/tenants/" + Settings.RecallDb.TenantId + "/collections/" + collectionId + "/documents";
+            string url = baseUrl + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
             if (!String.IsNullOrEmpty(path))
                 url += "/" + path;
             return url;

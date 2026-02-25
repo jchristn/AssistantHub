@@ -23,6 +23,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// Display name for the ingestion rule.
         /// </summary>
         public string Name
@@ -104,6 +113,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewIngestionRuleId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _Name = "Untitled Rule";
         private string _Bucket = "default";
         private string _CollectionName = "default";
@@ -134,6 +144,7 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             IngestionRule obj = new IngestionRule();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.Name = DataTableHelper.GetStringValue(row, "name");
             obj.Description = DataTableHelper.GetStringValue(row, "description");
             obj.Bucket = DataTableHelper.GetStringValue(row, "bucket");

@@ -103,7 +103,7 @@ echo "        Restored partio.db"
 # Clear object storage
 # -------------------------------------------------------------------------
 echo "[4/6] Clearing object storage..."
-rm -rf "$DOCKER_DIR/less3/disk/default/Objects/"*
+rm -rf "$DOCKER_DIR/less3/disk/"*/Objects/*
 rm -rf "$DOCKER_DIR/less3/temp/"*
 echo "        Cleared Less3 objects and temp files"
 
@@ -113,7 +113,7 @@ echo "        Cleared Less3 objects and temp files"
 echo "[5/6] Clearing logs and history..."
 
 rm -f "$DOCKER_DIR/assistanthub/logs/"*
-rm -f "$DOCKER_DIR/assistanthub/processing-logs/"*
+rm -rf "$DOCKER_DIR/assistanthub/processing-logs/"*
 echo "        Cleared AssistantHub logs and processing logs"
 
 rm -f "$DOCKER_DIR/less3/logs/"*

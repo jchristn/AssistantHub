@@ -8,7 +8,8 @@ function CredentialFormModal({ credential, onSave, onClose }) {
   const [form, setForm] = useState({
     Name: credential?.Name || 'Default credential',
     UserId: credential?.UserId || '',
-    Active: credential?.Active !== undefined ? credential.Active : true
+    Active: credential?.Active !== undefined ? credential.Active : true,
+    IsProtected: credential?.IsProtected !== undefined ? credential.IsProtected : false
   });
   const [saving, setSaving] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
@@ -62,15 +63,26 @@ function CredentialFormModal({ credential, onSave, onClose }) {
           <input type="text" value={form.UserId} onChange={(e) => handleChange('UserId', e.target.value)} required disabled={isEdit} />
         </div>
         {isEdit && (
-          <div className="form-group">
-            <div className="form-toggle">
-              <label className="toggle-switch">
-                <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
-                <span className="toggle-slider"></span>
-              </label>
-              <span><Tooltip text="Whether this credential can be used for API authentication">Active</Tooltip></span>
+          <>
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Whether this credential can be used for API authentication">Active</Tooltip></span>
+              </div>
             </div>
-          </div>
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={form.IsProtected} onChange={(e) => handleChange('IsProtected', e.target.checked)} />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Protected records cannot be deleted">Protected</Tooltip></span>
+              </div>
+            </div>
+          </>
         )}
       </form>
     </Modal>

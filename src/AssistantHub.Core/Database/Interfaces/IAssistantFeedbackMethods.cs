@@ -35,12 +35,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task DeleteAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate assistant feedback records.
+        /// Enumerate assistant feedback records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing assistant feedback records.</returns>
-        Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<AssistantFeedback>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
         /// Delete all assistant feedback records belonging to an assistant.

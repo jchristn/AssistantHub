@@ -57,20 +57,30 @@ export class ApiClient {
     return { ...data, statusCode: response.status };
   }
 
-  // Users
-  createUser(user) { return this.request('PUT', '/v1.0/users', user); }
-  getUsers(params) { return this.request('GET', '/v1.0/users' + this.buildQuery(params)); }
-  getUser(id) { return this.request('GET', `/v1.0/users/${id}`); }
-  updateUser(id, user) { return this.request('PUT', `/v1.0/users/${id}`, user); }
-  deleteUser(id) { return this.request('DELETE', `/v1.0/users/${id}`); }
-  headUser(id) { return this.request('HEAD', `/v1.0/users/${id}`); }
+  // Tenants
+  createTenant(tenant) { return this.request('PUT', '/v1.0/tenants', tenant); }
+  getTenants(params) { return this.request('GET', '/v1.0/tenants' + this.buildQuery(params)); }
+  getTenant(id) { return this.request('GET', `/v1.0/tenants/${id}`); }
+  updateTenant(id, tenant) { return this.request('PUT', `/v1.0/tenants/${id}`, tenant); }
+  deleteTenant(id) { return this.request('DELETE', `/v1.0/tenants/${id}`); }
 
-  // Credentials
-  createCredential(cred) { return this.request('PUT', '/v1.0/credentials', cred); }
-  getCredentials(params) { return this.request('GET', '/v1.0/credentials' + this.buildQuery(params)); }
-  getCredential(id) { return this.request('GET', `/v1.0/credentials/${id}`); }
-  updateCredential(id, cred) { return this.request('PUT', `/v1.0/credentials/${id}`, cred); }
-  deleteCredential(id) { return this.request('DELETE', `/v1.0/credentials/${id}`); }
+  // WhoAmI
+  whoami() { return this.request('GET', '/v1.0/whoami'); }
+
+  // Users (tenant-scoped)
+  createUser(user, tenantId) { return this.request('PUT', `/v1.0/tenants/${tenantId}/users`, user); }
+  getUsers(tenantId, params) { return this.request('GET', `/v1.0/tenants/${tenantId}/users` + this.buildQuery(params)); }
+  getUser(tenantId, id) { return this.request('GET', `/v1.0/tenants/${tenantId}/users/${id}`); }
+  updateUser(tenantId, id, user) { return this.request('PUT', `/v1.0/tenants/${tenantId}/users/${id}`, user); }
+  deleteUser(tenantId, id) { return this.request('DELETE', `/v1.0/tenants/${tenantId}/users/${id}`); }
+  headUser(tenantId, id) { return this.request('HEAD', `/v1.0/tenants/${tenantId}/users/${id}`); }
+
+  // Credentials (tenant-scoped)
+  createCredential(cred, tenantId) { return this.request('PUT', `/v1.0/tenants/${tenantId}/credentials`, cred); }
+  getCredentials(tenantId, params) { return this.request('GET', `/v1.0/tenants/${tenantId}/credentials` + this.buildQuery(params)); }
+  getCredential(tenantId, id) { return this.request('GET', `/v1.0/tenants/${tenantId}/credentials/${id}`); }
+  updateCredential(tenantId, id, cred) { return this.request('PUT', `/v1.0/tenants/${tenantId}/credentials/${id}`, cred); }
+  deleteCredential(tenantId, id) { return this.request('DELETE', `/v1.0/tenants/${tenantId}/credentials/${id}`); }
 
   // Buckets
   createBucket(bucket) { return this.request('PUT', '/v1.0/buckets', bucket); }

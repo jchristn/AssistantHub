@@ -54,7 +54,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
 
             string query =
                 "INSERT INTO chat_history " +
-                "(id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
+                "(id, tenant_id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
                 "retrieval_start_utc, retrieval_duration_ms, retrieval_gate_decision, retrieval_gate_duration_ms, retrieval_context, " +
                 "prompt_sent_utc, prompt_tokens, " +
                 "endpoint_resolution_duration_ms, compaction_duration_ms, inference_connection_duration_ms, " +
@@ -63,6 +63,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "assistant_response, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(history.Id) + "', " +
+                "'" + _Driver.Sanitize(history.TenantId) + "', " +
                 "'" + _Driver.Sanitize(history.ThreadId) + "', " +
                 "'" + _Driver.Sanitize(history.AssistantId) + "', " +
                 _Driver.FormatNullableString(history.CollectionId) + ", " +
@@ -114,8 +115,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<ChatHistory>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<ChatHistory>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             Stopwatch sw = Stopwatch.StartNew();
@@ -132,12 +134,13 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 : "ORDER BY created_utc DESC";
 
             List<string> conditions = new List<string>();
+            conditions.Add("tenant_id = '" + _Driver.Sanitize(tenantId) + "'");
             if (!String.IsNullOrEmpty(query.AssistantIdFilter))
                 conditions.Add("assistant_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "'");
             if (!String.IsNullOrEmpty(query.ThreadIdFilter))
                 conditions.Add("thread_id = '" + _Driver.Sanitize(query.ThreadIdFilter) + "'");
 
-            string whereClause = conditions.Count > 0 ? "WHERE " + String.Join(" AND ", conditions) + " " : "";
+            string whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
 
             string countQuery = "SELECT COUNT(*) AS cnt FROM chat_history " + whereClause + ";";
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);

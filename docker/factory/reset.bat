@@ -99,7 +99,9 @@ REM -------------------------------------------------------------------------
 REM Clear object storage
 REM -------------------------------------------------------------------------
 echo [4/6] Clearing object storage...
-del /q "%DOCKER_DIR%less3\disk\default\Objects\*" 2>nul
+for /d %%d in ("%DOCKER_DIR%less3\disk\*") do (
+    if exist "%%d\Objects" rd /s /q "%%d\Objects" 2>nul && mkdir "%%d\Objects" 2>nul
+)
 del /q "%DOCKER_DIR%less3\temp\*" 2>nul
 echo         Cleared Less3 objects and temp files
 
@@ -109,7 +111,8 @@ REM -------------------------------------------------------------------------
 echo [5/6] Clearing logs and history...
 
 del /q "%DOCKER_DIR%assistanthub\logs\*" 2>nul
-del /q "%DOCKER_DIR%assistanthub\processing-logs\*" 2>nul
+rd /s /q "%DOCKER_DIR%assistanthub\processing-logs" 2>nul
+mkdir "%DOCKER_DIR%assistanthub\processing-logs" 2>nul
 echo         Cleared AssistantHub logs and processing logs
 
 del /q "%DOCKER_DIR%less3\logs\*" 2>nul

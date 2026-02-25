@@ -1,6 +1,7 @@
 namespace AssistantHub.Core.Settings
 {
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// AssistantHub settings.
@@ -8,6 +9,20 @@ namespace AssistantHub.Core.Settings
     public class AssistantHubSettings
     {
         #region Public-Members
+
+        /// <summary>
+        /// List of global admin API keys.
+        /// </summary>
+        public List<string> AdminApiKeys { get; set; } = new List<string> { "assistanthubadmin" };
+
+        /// <summary>
+        /// Default tenant settings for first-run provisioning.
+        /// </summary>
+        public DefaultTenantSettings DefaultTenant
+        {
+            get => _DefaultTenant;
+            set { if (value != null) _DefaultTenant = value; }
+        }
 
         /// <summary>
         /// Webserver settings.
@@ -113,6 +128,7 @@ namespace AssistantHub.Core.Settings
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();
+        private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
 
         #endregion
 

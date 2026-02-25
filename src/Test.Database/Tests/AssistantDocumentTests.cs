@@ -15,12 +15,14 @@ namespace Test.Database.Tests
             Console.WriteLine();
             Console.WriteLine("--- AssistantDocument Tests ---");
 
+            string tenantId = TenantTests.TestTenantId;
             string createdId = null;
 
             await runner.RunTestAsync("AssistantDocument.Create", async ct =>
             {
                 AssistantDocument doc = new AssistantDocument
                 {
+                    TenantId = tenantId,
                     Name = "Test Document",
                     OriginalFilename = "test-file.pdf",
                     ContentType = "application/pdf",
@@ -60,7 +62,7 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("AssistantDocument.Create_Minimal", async ct =>
             {
-                AssistantDocument doc = new AssistantDocument { Name = "Minimal Doc" };
+                AssistantDocument doc = new AssistantDocument { TenantId = tenantId, Name = "Minimal Doc" };
 
                 AssistantDocument created = await driver.AssistantDocument.CreateAsync(doc, ct);
                 AssertHelper.IsNotNull(created, "created minimal doc");
@@ -161,7 +163,7 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("AssistantDocument.UpdateStatus_AllStatuses", async ct =>
             {
-                AssistantDocument doc = await driver.AssistantDocument.CreateAsync(new AssistantDocument { Name = "Status Cycle Doc" }, ct);
+                AssistantDocument doc = await driver.AssistantDocument.CreateAsync(new AssistantDocument { TenantId = tenantId, Name = "Status Cycle Doc" }, ct);
                 DocumentStatusEnum[] statuses = new[]
                 {
                     DocumentStatusEnum.Uploading,
@@ -197,7 +199,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("AssistantDocument.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(query, ct);
+                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "objects count");
@@ -206,12 +208,12 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("AssistantDocument.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<AssistantDocument> r1 = await driver.AssistantDocument.EnumerateAsync(q1, ct);
+                EnumerationResult<AssistantDocument> r1 = await driver.AssistantDocument.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<AssistantDocument> r2 = await driver.AssistantDocument.EnumerateAsync(q2, ct);
+                EnumerationResult<AssistantDocument> r2 = await driver.AssistantDocument.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "different docs on different pages");
             }, token);
@@ -223,7 +225,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     BucketNameFilter = "test-bucket"
                 };
-                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(query, ct);
+                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "filtered result");
                 foreach (AssistantDocument doc in result.Objects)
                     AssertHelper.AreEqual("test-bucket", doc.BucketName, "BucketName filter");
@@ -236,7 +238,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     CollectionIdFilter = "col_abc_123"
                 };
-                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(query, ct);
+                EnumerationResult<AssistantDocument> result = await driver.AssistantDocument.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "filtered result");
                 foreach (AssistantDocument doc in result.Objects)
                     AssertHelper.AreEqual("col_abc_123", doc.CollectionId, "CollectionId filter");
@@ -244,7 +246,7 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("AssistantDocument.Delete", async ct =>
             {
-                AssistantDocument doc = await driver.AssistantDocument.CreateAsync(new AssistantDocument { Name = "Delete Me Doc" }, ct);
+                AssistantDocument doc = await driver.AssistantDocument.CreateAsync(new AssistantDocument { TenantId = tenantId, Name = "Delete Me Doc" }, ct);
                 await driver.AssistantDocument.DeleteAsync(doc.Id, ct);
 
                 AssistantDocument read = await driver.AssistantDocument.ReadAsync(doc.Id, ct);

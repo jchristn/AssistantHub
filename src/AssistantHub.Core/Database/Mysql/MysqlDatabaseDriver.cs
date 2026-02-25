@@ -49,6 +49,7 @@ namespace AssistantHub.Core.Database.Mysql
                 "Pwd=" + _Settings.Password + ";" +
                 "SslMode=" + (_Settings.RequireEncryption ? "Required" : "none");
 
+            Tenant = new TenantMethods(this, _Settings, _Logging);
             User = new UserMethods(this, _Settings, _Logging);
             Credential = new CredentialMethods(this, _Settings, _Logging);
             Assistant = new AssistantMethods(this, _Settings, _Logging);
@@ -68,6 +69,7 @@ namespace AssistantHub.Core.Database.Mysql
         {
             List<string> tableQueries = new List<string>
             {
+                TableQueries.CreateTenantsTable,
                 TableQueries.CreateUsersTable,
                 TableQueries.CreateCredentialsTable,
                 TableQueries.CreateAssistantsTable,
@@ -84,39 +86,33 @@ namespace AssistantHub.Core.Database.Mysql
             // create indices individually and ignore duplicate key errors
             string[] indexQueries = new string[]
             {
+                TableQueries.CreateTenantsNameIndex,
+                TableQueries.CreateTenantsCreatedUtcIndex,
                 TableQueries.CreateUsersEmailIndex,
+                TableQueries.CreateUsersTenantIdIndex,
+                TableQueries.CreateUsersTenantEmailIndex,
                 TableQueries.CreateCredentialsUserIdIndex,
                 TableQueries.CreateCredentialsBearerTokenIndex,
+                TableQueries.CreateCredentialsTenantIdIndex,
                 TableQueries.CreateAssistantsUserIdIndex,
+                TableQueries.CreateAssistantsTenantIdIndex,
                 TableQueries.CreateAssistantSettingsAssistantIdIndex,
                 TableQueries.CreateAssistantFeedbackAssistantIdIndex,
+                TableQueries.CreateAssistantFeedbackTenantIdIndex,
                 TableQueries.CreateIngestionRulesNameIndex,
+                TableQueries.CreateIngestionRulesTenantIdIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
+                TableQueries.CreateAssistantDocumentsTenantIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
-                TableQueries.CreateChatHistoryCreatedUtcIndex
+                TableQueries.CreateChatHistoryCreatedUtcIndex,
+                TableQueries.CreateChatHistoryTenantIdIndex
             };
 
             foreach (string indexQuery in indexQueries)
             {
                 try { await ExecuteQueryAsync(indexQuery, false, token).ConfigureAwait(false); }
                 catch (Exception) { /* Index already exists */ }
-            }
-
-            // Auto-migration: add columns that may not exist in older databases
-            string[] migrations = new string[]
-            {
-                "ALTER TABLE `chat_history` ADD COLUMN `completion_tokens` INT NOT NULL DEFAULT 0",
-                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0",
-                "ALTER TABLE `chat_history` ADD COLUMN `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0",
-                "ALTER TABLE `assistant_settings` ADD COLUMN `enable_citations` TINYINT NOT NULL DEFAULT 0",
-                "ALTER TABLE `assistant_settings` ADD COLUMN `citation_link_mode` VARCHAR(32) DEFAULT 'None'"
-            };
-
-            foreach (string migration in migrations)
-            {
-                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
-                catch (Exception) { /* Column already exists */ }
             }
 
             _Logging.Info("MySQL database initialized successfully");

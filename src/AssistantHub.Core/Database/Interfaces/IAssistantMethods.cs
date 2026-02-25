@@ -51,12 +51,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<bool> ExistsAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate assistant records.
+        /// Enumerate assistant records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing assistant records.</returns>
-        Task<EnumerationResult<Assistant>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<Assistant>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
         /// Get the count of assistant records.

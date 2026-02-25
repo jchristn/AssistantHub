@@ -106,9 +106,11 @@ namespace AssistantHub.Core.Services
                     return;
                 }
 
+                string tenantId = document.TenantId;
+
                 // Pipeline start log
                 if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline started for document " + documentId + ", filename: " + (document.OriginalFilename ?? "unknown")).ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline started for document " + documentId + ", filename: " + (document.OriginalFilename ?? "unknown"), tenantId).ConfigureAwait(false);
 
                 // Step 1b: Load ingestion rule if set
                 IngestionRule rule = null;
@@ -318,7 +320,7 @@ namespace AssistantHub.Core.Services
                 }
 
                 // Step 12b: Ensure collection exists in RecallDB
-                bool collectionReady = await EnsureCollectionExistsAsync(collectionId, token).ConfigureAwait(false);
+                bool collectionReady = await EnsureCollectionExistsAsync(document.TenantId, collectionId, token).ConfigureAwait(false);
                 if (!collectionReady)
                 {
                     if (_ProcessingLog != null)
@@ -340,7 +342,7 @@ namespace AssistantHub.Core.Services
                 for (int i = 0; i < chunks.Count; i++)
                 {
                     ChunkResult chunk = chunks[i];
-                    string recordId = await StoreEmbeddingAsync(collectionId, documentId, chunk, i, token).ConfigureAwait(false);
+                    string recordId = await StoreEmbeddingAsync(document.TenantId, collectionId, documentId, chunk, i, token).ConfigureAwait(false);
                     if (!String.IsNullOrEmpty(recordId))
                     {
                         storedCount++;
@@ -389,12 +391,13 @@ namespace AssistantHub.Core.Services
         /// <param name="recordId">Record identifier.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Task.</returns>
-        public async Task DeleteEmbeddingAsync(string collectionId, string recordId, CancellationToken token = default)
+        public async Task DeleteEmbeddingAsync(string tenantId, string collectionId, string recordId, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (String.IsNullOrEmpty(recordId)) throw new ArgumentNullException(nameof(recordId));
 
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/documents/" + recordId;
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/" + recordId;
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, url))
             {
@@ -804,9 +807,9 @@ namespace AssistantHub.Core.Services
         /// Check that a RecallDB collection exists via HEAD.
         /// Collections must be created via the dashboard/RecallDB before ingestion.
         /// </summary>
-        private async Task<bool> EnsureCollectionExistsAsync(string collectionId, CancellationToken token)
+        private async Task<bool> EnsureCollectionExistsAsync(string tenantId, string collectionId, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId;
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId;
 
             try
             {
@@ -839,9 +842,9 @@ namespace AssistantHub.Core.Services
         /// <param name="chunkIndex">Zero-based chunk position within the document.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Document key if stored successfully, null otherwise.</returns>
-        private async Task<string> StoreEmbeddingAsync(string collectionId, string documentId, ChunkResult chunk, int chunkIndex, CancellationToken token)
+        private async Task<string> StoreEmbeddingAsync(string tenantId, string collectionId, string documentId, ChunkResult chunk, int chunkIndex, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _RecallDbSettings.TenantId + "/collections/" + collectionId + "/documents";
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
 
             try
             {

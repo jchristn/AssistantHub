@@ -13,7 +13,7 @@ namespace AssistantHub.Server.Handlers
     using WatsonWebserver.Core;
 
     /// <summary>
-    /// Handles credential CRUD routes (admin only).
+    /// Handles credential CRUD routes under /v1.0/tenants/{tenantId}/credentials.
     /// </summary>
     public class CredentialHandler : HandlerBase
     {
@@ -44,7 +44,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// PUT /v1.0/credentials - Create a new credential.
+        /// PUT /v1.0/tenants/{tenantId}/credentials - Create a new credential.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task PutCredentialAsync(HttpContextBase ctx)
@@ -53,7 +53,25 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
+                if (String.IsNullOrEmpty(tenantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!ValidateTenantAccess(auth, tenantId))
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -71,17 +89,18 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                // Verify the user exists
-                bool userExists = await Database.User.ExistsAsync(credential.UserId).ConfigureAwait(false);
-                if (!userExists)
+                // Verify the user exists and belongs to this tenant
+                UserMaster user = await Database.User.ReadAsync(credential.UserId).ConfigureAwait(false);
+                if (user == null || !String.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "User not found."))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "User not found in this tenant."))).ConfigureAwait(false);
                     return;
                 }
 
                 credential.Id = IdGenerator.NewCredentialId();
+                credential.TenantId = tenantId;
                 credential.BearerToken = IdGenerator.NewBearerToken();
                 credential.CreatedUtc = DateTime.UtcNow;
                 credential.LastUpdateUtc = DateTime.UtcNow;
@@ -102,7 +121,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// GET /v1.0/credentials - List credentials.
+        /// GET /v1.0/tenants/{tenantId}/credentials - List credentials.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetCredentialsAsync(HttpContextBase ctx)
@@ -111,7 +130,25 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
+                if (String.IsNullOrEmpty(tenantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!ValidateTenantAccess(auth, tenantId))
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -120,7 +157,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<Credential> result = await Database.Credential.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<Credential> result = await Database.Credential.EnumerateAsync(tenantId, query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -136,7 +173,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// GET /v1.0/credentials/{credentialId} - Get credential by ID.
+        /// GET /v1.0/tenants/{tenantId}/credentials/{credentialId} - Get credential by ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetCredentialAsync(HttpContextBase ctx)
@@ -145,7 +182,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -153,8 +191,9 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
                 string credentialId = ctx.Request.Url.Parameters["credentialId"];
-                if (String.IsNullOrEmpty(credentialId))
+                if (String.IsNullOrEmpty(tenantId) || String.IsNullOrEmpty(credentialId))
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
@@ -162,8 +201,16 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                if (!ValidateTenantAccess(auth, tenantId))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
                 Credential credential = await Database.Credential.ReadAsync(credentialId).ConfigureAwait(false);
-                if (credential == null)
+                if (credential == null || !String.Equals(credential.TenantId, tenantId, StringComparison.Ordinal))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -185,7 +232,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// PUT /v1.0/credentials/{credentialId} - Update credential by ID.
+        /// PUT /v1.0/tenants/{tenantId}/credentials/{credentialId} - Update credential by ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task PutCredentialByIdAsync(HttpContextBase ctx)
@@ -194,7 +241,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -202,8 +250,9 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
                 string credentialId = ctx.Request.Url.Parameters["credentialId"];
-                if (String.IsNullOrEmpty(credentialId))
+                if (String.IsNullOrEmpty(tenantId) || String.IsNullOrEmpty(credentialId))
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
@@ -211,8 +260,16 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                if (!ValidateTenantAccess(auth, tenantId))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
                 Credential existing = await Database.Credential.ReadAsync(credentialId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !String.Equals(existing.TenantId, tenantId, StringComparison.Ordinal))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -231,6 +288,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 updated.Id = credentialId;
+                updated.TenantId = tenantId;
                 updated.UserId = existing.UserId;
                 updated.BearerToken = existing.BearerToken;
                 updated.CreatedUtc = existing.CreatedUtc;
@@ -252,7 +310,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// DELETE /v1.0/credentials/{credentialId} - Delete credential by ID.
+        /// DELETE /v1.0/tenants/{tenantId}/credentials/{credentialId} - Delete credential by ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task DeleteCredentialAsync(HttpContextBase ctx)
@@ -261,7 +319,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -269,8 +328,9 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
                 string credentialId = ctx.Request.Url.Parameters["credentialId"];
-                if (String.IsNullOrEmpty(credentialId))
+                if (String.IsNullOrEmpty(tenantId) || String.IsNullOrEmpty(credentialId))
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
@@ -278,12 +338,28 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                if (!ValidateTenantAccess(auth, tenantId))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
                 Credential existing = await Database.Credential.ReadAsync(credentialId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !String.Equals(existing.TenantId, tenantId, StringComparison.Ordinal))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (existing.IsProtected)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed, null, "Protected records cannot be deleted. Deactivate by setting Active to false instead."))).ConfigureAwait(false);
                     return;
                 }
 
@@ -302,7 +378,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// HEAD /v1.0/credentials/{credentialId} - Check credential existence.
+        /// HEAD /v1.0/tenants/{tenantId}/credentials/{credentialId} - Check credential existence.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task HeadCredentialAsync(HttpContextBase ctx)
@@ -311,22 +387,32 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     await ctx.Response.Send().ConfigureAwait(false);
                     return;
                 }
 
+                string tenantId = ctx.Request.Url.Parameters["tenantId"];
                 string credentialId = ctx.Request.Url.Parameters["credentialId"];
-                if (String.IsNullOrEmpty(credentialId))
+                if (String.IsNullOrEmpty(tenantId) || String.IsNullOrEmpty(credentialId))
                 {
                     ctx.Response.StatusCode = 400;
                     await ctx.Response.Send().ConfigureAwait(false);
                     return;
                 }
 
-                bool exists = await Database.Credential.ExistsAsync(credentialId).ConfigureAwait(false);
+                if (!ValidateTenantAccess(auth, tenantId))
+                {
+                    ctx.Response.StatusCode = 403;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                    return;
+                }
+
+                Credential credential = await Database.Credential.ReadAsync(credentialId).ConfigureAwait(false);
+                bool exists = credential != null && String.Equals(credential.TenantId, tenantId, StringComparison.Ordinal);
                 ctx.Response.StatusCode = exists ? 200 : 404;
                 await ctx.Response.Send().ConfigureAwait(false);
             }

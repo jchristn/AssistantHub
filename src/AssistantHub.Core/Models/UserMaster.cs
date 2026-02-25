@@ -23,6 +23,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// Email address.
         /// </summary>
         public string Email
@@ -47,14 +56,25 @@ namespace AssistantHub.Core.Models
         public string LastName { get; set; } = null;
 
         /// <summary>
-        /// Indicates whether the user is an administrator.
+        /// Indicates whether the user is a global administrator.
+        /// Users with IsAdmin=true are treated as global admins with cross-tenant access.
         /// </summary>
         public bool IsAdmin { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether the user is a tenant administrator.
+        /// </summary>
+        public bool IsTenantAdmin { get; set; } = false;
 
         /// <summary>
         /// Indicates whether the user is active.
         /// </summary>
         public bool Active { get; set; } = true;
+
+        /// <summary>
+        /// Indicates whether the record is protected from deletion.
+        /// </summary>
+        public bool IsProtected { get; set; } = false;
 
         /// <summary>
         /// Timestamp when the record was created in UTC.
@@ -71,6 +91,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewUserId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _Email = "user@example.com";
 
         #endregion
@@ -94,12 +115,15 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             UserMaster obj = new UserMaster();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.Email = DataTableHelper.GetStringValue(row, "email");
             obj.PasswordSha256 = DataTableHelper.GetStringValue(row, "password_sha256");
             obj.FirstName = DataTableHelper.GetStringValue(row, "first_name");
             obj.LastName = DataTableHelper.GetStringValue(row, "last_name");
             obj.IsAdmin = DataTableHelper.GetBooleanValue(row, "is_admin");
+            obj.IsTenantAdmin = DataTableHelper.GetBooleanValue(row, "is_tenant_admin");
             obj.Active = DataTableHelper.GetBooleanValue(row, "active", true);
+            obj.IsProtected = DataTableHelper.GetBooleanValue(row, "is_protected");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

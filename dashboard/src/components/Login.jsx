@@ -7,6 +7,7 @@ function Login() {
   const [authMode, setAuthMode] = useState('bearer'); // 'email' or 'bearer'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [tenantId, setTenantId] = useState('');
   const [bearerToken, setBearerToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +23,7 @@ function Login() {
       let authBody;
       if (authMode === 'email') {
         authBody = { Email: email, Password: password };
+        if (tenantId.trim()) authBody.TenantId = tenantId.trim();
       } else {
         authBody = { BearerToken: bearerToken };
       }
@@ -58,6 +60,10 @@ function Login() {
           </div>
           {authMode === 'email' ? (
             <>
+              <div className="form-group">
+                <label>Tenant ID <span style={{ fontWeight: 'normal', color: 'var(--text-secondary, #888)', fontSize: '0.8em' }}>(optional)</span></label>
+                <input type="text" value={tenantId} onChange={(e) => setTenantId(e.target.value)} placeholder="default" />
+              </div>
               <div className="form-group">
                 <label>Email</label>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@assistanthub.local" required />

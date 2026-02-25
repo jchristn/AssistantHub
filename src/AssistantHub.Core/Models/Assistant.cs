@@ -21,6 +21,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// User identifier to which this assistant belongs.
         /// </summary>
         public string UserId
@@ -63,6 +72,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewAssistantId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _UserId = "usr_placeholder";
         private string _Name = "My Assistant";
 
@@ -87,6 +97,7 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             Assistant obj = new Assistant();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.UserId = DataTableHelper.GetStringValue(row, "user_id");
             obj.Name = DataTableHelper.GetStringValue(row, "name");
             obj.Description = DataTableHelper.GetStringValue(row, "description");

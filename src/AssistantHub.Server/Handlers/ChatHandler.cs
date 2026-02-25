@@ -299,6 +299,7 @@ namespace AssistantHub.Server.Handlers
                     Stopwatch retrievalSw = Stopwatch.StartNew();
 
                     List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
+                        assistant.TenantId,
                         settings.CollectionId,
                         lastUserMessage,
                         settings.RetrievalTopK,
@@ -462,7 +463,7 @@ namespace AssistantHub.Server.Handlers
                 {
                     await HandleStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
-                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
@@ -471,7 +472,7 @@ namespace AssistantHub.Server.Handlers
                 {
                     await HandleNonStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
-                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
@@ -526,6 +527,7 @@ namespace AssistantHub.Server.Handlers
 
                 AssistantFeedback feedback = new AssistantFeedback();
                 feedback.Id = IdGenerator.NewAssistantFeedbackId();
+                feedback.TenantId = assistant.TenantId;
                 feedback.AssistantId = assistantId;
                 feedback.UserMessage = feedbackReq.UserMessage;
                 feedback.AssistantResponse = feedbackReq.AssistantResponse;
@@ -655,6 +657,7 @@ namespace AssistantHub.Server.Handlers
                 if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
                 {
                     List<RetrievalChunk> retrievedChunks = await Retrieval.RetrieveAsync(
+                        assistant.TenantId,
                         settings.CollectionId, lastUserMessage,
                         settings.RetrievalTopK, settings.RetrievalScoreThreshold,
                         default,
@@ -911,7 +914,7 @@ namespace AssistantHub.Server.Handlers
                 query.Ordering = Enums.EnumerationOrderEnum.CreatedAscending;
                 query.MaxResults = 1000;
 
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(assistant.TenantId, query).ConfigureAwait(false);
 
                 List<object> items = new List<object>();
                 if (result?.Objects != null)
@@ -998,7 +1001,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
+                if (doc == null || doc.TenantId != assistant.TenantId)
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -1051,6 +1054,7 @@ namespace AssistantHub.Server.Handlers
             Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
+            string tenantId = null,
             string threadId = null,
             string assistantId = null,
             string collectionId = null,
@@ -1126,7 +1130,7 @@ namespace AssistantHub.Server.Handlers
                 // Fire-and-forget chat history write
                 if (!String.IsNullOrEmpty(threadId))
                 {
-                    _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                    _ = WriteChatHistoryAsync(tenantId, threadId, assistantId, collectionId,
                         userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContext,
                         promptSentUtc, promptTokens,
@@ -1158,6 +1162,7 @@ namespace AssistantHub.Server.Handlers
             Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
+            string tenantId = null,
             string threadId = null,
             string assistantId = null,
             string collectionId = null,
@@ -1253,7 +1258,7 @@ namespace AssistantHub.Server.Handlers
                     // Fire-and-forget chat history write
                     if (!String.IsNullOrEmpty(threadId))
                     {
-                        _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                        _ = WriteChatHistoryAsync(tenantId, threadId, assistantId, collectionId,
                             userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                             retrievalStartUtc, retrievalDurationMs, retrievalContext,
                             promptSentUtc, promptTokens,
@@ -1479,7 +1484,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         private async Task WriteChatHistoryAsync(
-            string threadId, string assistantId, string collectionId,
+            string tenantId, string threadId, string assistantId, string collectionId,
             DateTime userMessageUtc, string userMessage,
             DateTime? retrievalStartUtc, double retrievalDurationMs, string retrievalContext,
             DateTime? promptSentUtc, int promptTokens,
@@ -1493,6 +1498,7 @@ namespace AssistantHub.Server.Handlers
             {
                 ChatHistory history = new ChatHistory();
                 history.Id = IdGenerator.NewChatHistoryId();
+                history.TenantId = tenantId;
                 history.ThreadId = threadId;
                 history.AssistantId = assistantId;
                 history.CollectionId = collectionId;

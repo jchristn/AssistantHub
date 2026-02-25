@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
+import PasswordInput from '../PasswordInput';
 
 const API_FORMAT_OPTIONS = ['Ollama', 'OpenAI'];
 const HEALTH_CHECK_METHOD_OPTIONS = ['GET', 'POST', 'HEAD'];
@@ -183,8 +184,7 @@ function EmbeddingEndpointFormModal({ endpoint, onSave, onClose }) {
         {/* ApiKey */}
         <div className="form-group">
           <label><Tooltip text="Optional API key for authenticating with the embedding endpoint">API Key</Tooltip></label>
-          <input
-            type="password"
+          <PasswordInput
             value={form.ApiKey}
             onChange={(e) => handleChange('ApiKey', e.target.value)}
             placeholder="Optional"

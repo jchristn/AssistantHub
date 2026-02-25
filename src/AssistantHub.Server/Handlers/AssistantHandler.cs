@@ -56,7 +56,14 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 string body = ctx.Request.DataAsString;
                 Assistant assistant = Serializer.DeserializeJson<Assistant>(body);
@@ -69,7 +76,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 assistant.Id = IdGenerator.NewAssistantId();
-                assistant.UserId = user.Id;
+                assistant.TenantId = auth.TenantId;
+                assistant.UserId = auth.UserId;
                 assistant.CreatedUtc = DateTime.UtcNow;
                 assistant.LastUpdateUtc = DateTime.UtcNow;
 
@@ -86,7 +94,7 @@ namespace AssistantHub.Server.Handlers
                 try
                 {
                     EnumerationQuery ruleQuery = new EnumerationQuery { MaxResults = 1 };
-                    EnumerationResult<IngestionRule> rules = await Database.IngestionRule.EnumerateAsync(ruleQuery).ConfigureAwait(false);
+                    EnumerationResult<IngestionRule> rules = await Database.IngestionRule.EnumerateAsync(assistant.TenantId, ruleQuery).ConfigureAwait(false);
                     if (rules != null && rules.Objects != null && rules.Objects.Count > 0)
                     {
                         string collectionId = rules.Objects[0].CollectionId;
@@ -193,17 +201,22 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-
-                EnumerationResult<Assistant> result = await Database.Assistant.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<Assistant> result = await Database.Assistant.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 // Non-admin users can only see their own assistants
-                if (!isAdmin && result != null && result.Objects != null)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && result != null && result.Objects != null)
                 {
-                    result.Objects = result.Objects.FindAll(a => a.UserId == user.Id);
+                    result.Objects = result.Objects.FindAll(a => a.UserId == auth.UserId);
                 }
 
                 ctx.Response.StatusCode = 200;
@@ -229,8 +242,14 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 string assistantId = ctx.Request.Url.Parameters["assistantId"];
                 if (String.IsNullOrEmpty(assistantId))
@@ -250,7 +269,15 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin && assistant.UserId != user.Id)
+                if (!EnforceTenantOwnership(auth, assistant.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && assistant.UserId != auth.UserId)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -281,8 +308,14 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 string assistantId = ctx.Request.Url.Parameters["assistantId"];
                 if (String.IsNullOrEmpty(assistantId))
@@ -294,7 +327,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 Assistant existing = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !EnforceTenantOwnership(auth, existing.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -302,7 +335,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin && existing.UserId != user.Id)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && existing.UserId != auth.UserId)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -321,6 +354,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 updated.Id = assistantId;
+                updated.TenantId = existing.TenantId;
                 updated.UserId = existing.UserId;
                 updated.CreatedUtc = existing.CreatedUtc;
                 updated.LastUpdateUtc = DateTime.UtcNow;
@@ -350,8 +384,14 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 string assistantId = ctx.Request.Url.Parameters["assistantId"];
                 if (String.IsNullOrEmpty(assistantId))
@@ -363,7 +403,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 Assistant existing = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !EnforceTenantOwnership(auth, existing.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -371,7 +411,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin && existing.UserId != user.Id)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && existing.UserId != auth.UserId)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -407,8 +447,13 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                    return;
+                }
 
                 string assistantId = ctx.Request.Url.Parameters["assistantId"];
                 if (String.IsNullOrEmpty(assistantId))
@@ -419,14 +464,14 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
-                if (assistant == null)
+                if (assistant == null || !EnforceTenantOwnership(auth, assistant.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     await ctx.Response.Send().ConfigureAwait(false);
                     return;
                 }
 
-                if (!isAdmin && assistant.UserId != user.Id)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && assistant.UserId != auth.UserId)
                 {
                     ctx.Response.StatusCode = 403;
                     await ctx.Response.Send().ConfigureAwait(false);

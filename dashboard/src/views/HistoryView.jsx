@@ -10,7 +10,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
 function HistoryView() {
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [viewHistory, setViewHistory] = useState(null);
   const [showJson, setShowJson] = useState(null);
@@ -38,6 +38,7 @@ function HistoryView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this history entry', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'ThreadId', label: 'Thread ID', tooltip: 'Conversation thread identifier', render: (row) => <CopyableId id={row.ThreadId} /> },
     { key: 'AssistantId', label: 'Assistant ID', tooltip: 'The assistant for this conversation', render: (row) => <CopyableId id={row.AssistantId} /> },
     { key: 'UserMessage', label: 'User Message', tooltip: 'The message the user sent', filterable: true, render: (row) => row.UserMessage ? (row.UserMessage.length > 80 ? row.UserMessage.substring(0, 80) + '...' : row.UserMessage) : '' },

@@ -27,12 +27,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<UserMaster> ReadAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Read a user record by email address.
+        /// Read a user record by tenant and email address.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="email">Email address.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>User master record.</returns>
-        Task<UserMaster> ReadByEmailAsync(string email, CancellationToken token = default);
+        Task<UserMaster> ReadByEmailAsync(string tenantId, string email, CancellationToken token = default);
 
         /// <summary>
         /// Update a user record.
@@ -59,12 +60,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<bool> ExistsAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate user records.
+        /// Enumerate user records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing user master records.</returns>
-        Task<EnumerationResult<UserMaster>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<UserMaster>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
         /// Get the count of user records.

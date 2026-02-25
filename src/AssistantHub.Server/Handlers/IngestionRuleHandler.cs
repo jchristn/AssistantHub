@@ -54,7 +54,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -97,8 +98,17 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 rule.Id = IdGenerator.NewIngestionRuleId();
+                rule.TenantId = auth.TenantId;
                 rule.CreatedUtc = DateTime.UtcNow;
                 rule.LastUpdateUtc = DateTime.UtcNow;
+
+                // Enforce tenant prefix on bucket name
+                if (!auth.IsGlobalAdmin && !String.IsNullOrEmpty(rule.Bucket))
+                {
+                    string tenantPrefix = auth.TenantId + "_";
+                    if (!rule.Bucket.StartsWith(tenantPrefix))
+                        rule.Bucket = tenantPrefix + rule.Bucket;
+                }
 
                 rule = await Database.IngestionRule.CreateAsync(rule).ConfigureAwait(false);
 
@@ -125,8 +135,9 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<IngestionRule> result = await Database.IngestionRule.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<IngestionRule> result = await Database.IngestionRule.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -151,6 +162,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string ruleId = ctx.Request.Url.Parameters["ruleId"];
                 if (String.IsNullOrEmpty(ruleId))
                 {
@@ -161,7 +174,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 IngestionRule rule = await Database.IngestionRule.ReadAsync(ruleId).ConfigureAwait(false);
-                if (rule == null)
+                if (rule == null || !EnforceTenantOwnership(auth, rule.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -192,7 +205,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -210,7 +224,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 IngestionRule existing = await Database.IngestionRule.ReadAsync(ruleId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !EnforceTenantOwnership(auth, existing.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -253,8 +267,17 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 updated.Id = ruleId;
+                updated.TenantId = existing.TenantId;
                 updated.CreatedUtc = existing.CreatedUtc;
                 updated.LastUpdateUtc = DateTime.UtcNow;
+
+                // Enforce tenant prefix on bucket name
+                if (!auth.IsGlobalAdmin && !String.IsNullOrEmpty(updated.Bucket))
+                {
+                    string tenantPrefix = auth.TenantId + "_";
+                    if (!updated.Bucket.StartsWith(tenantPrefix))
+                        updated.Bucket = tenantPrefix + updated.Bucket;
+                }
 
                 updated = await Database.IngestionRule.UpdateAsync(updated).ConfigureAwait(false);
 
@@ -281,7 +304,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -299,7 +323,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 IngestionRule existing = await Database.IngestionRule.ReadAsync(ruleId).ConfigureAwait(false);
-                if (existing == null)
+                if (existing == null || !EnforceTenantOwnership(auth, existing.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -331,6 +355,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string ruleId = ctx.Request.Url.Parameters["ruleId"];
                 if (String.IsNullOrEmpty(ruleId))
                 {
@@ -339,7 +365,8 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                bool exists = await Database.IngestionRule.ExistsAsync(ruleId).ConfigureAwait(false);
+                IngestionRule rule = await Database.IngestionRule.ReadAsync(ruleId).ConfigureAwait(false);
+                bool exists = rule != null && EnforceTenantOwnership(auth, rule.TenantId);
                 ctx.Response.StatusCode = exists ? 200 : 404;
                 await ctx.Response.Send().ConfigureAwait(false);
             }

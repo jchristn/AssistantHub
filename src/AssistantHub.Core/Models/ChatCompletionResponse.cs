@@ -112,9 +112,20 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Indices from Sources that the model actually cited in its response.
         /// Validated against the source manifest (invalid indices are excluded).
+        /// When the model does not cite any sources, all source indices are
+        /// populated as a fallback and AutoPopulated is set to true.
         /// </summary>
         [JsonPropertyName("referenced_indices")]
         public List<int> ReferencedIndices { get; set; } = new List<int>();
+
+        /// <summary>
+        /// True when the model did not produce inline citation markers and the
+        /// system automatically populated ReferencedIndices with all source indices.
+        /// Useful for diagnosing models that ignore citation instructions.
+        /// </summary>
+        [JsonPropertyName("auto_populated")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool AutoPopulated { get; set; } = false;
     }
 
     /// <summary>

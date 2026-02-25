@@ -61,6 +61,7 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>
         /// PUT /v1.0/buckets - Create a new bucket.
+        /// Non-global-admin users have their tenant ID automatically prefixed to the bucket name.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task PutBucketAsync(HttpContextBase ctx)
@@ -69,7 +70,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -96,6 +98,14 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string bucketName = parsed["Name"].ToString();
+
+                // Non-global-admin users: auto-prefix bucket name with tenant ID
+                if (!auth.IsGlobalAdmin)
+                {
+                    string tenantPrefix = auth.TenantId + "_";
+                    if (!bucketName.StartsWith(tenantPrefix))
+                        bucketName = tenantPrefix + bucketName;
+                }
 
                 await _S3Client.PutBucketAsync(bucketName).ConfigureAwait(false);
 
@@ -127,7 +137,8 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// GET /v1.0/buckets - List all buckets.
+        /// GET /v1.0/buckets - List buckets.
+        /// Non-global-admin users only see buckets prefixed with their tenant ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetBucketsAsync(HttpContextBase ctx)
@@ -136,11 +147,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -149,8 +161,14 @@ namespace AssistantHub.Server.Handlers
                 List<object> buckets = new List<object>();
                 if (listResponse.Buckets != null)
                 {
+                    string tenantPrefix = auth.IsGlobalAdmin ? null : auth.TenantId + "_";
+
                     foreach (S3Bucket bucket in listResponse.Buckets)
                     {
+                        // Non-global-admin users only see their tenant's buckets
+                        if (tenantPrefix != null && !bucket.BucketName.StartsWith(tenantPrefix))
+                            continue;
+
                         buckets.Add(new { Name = bucket.BucketName, CreationDate = bucket.CreationDate });
                     }
                 }
@@ -183,6 +201,7 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>
         /// GET /v1.0/buckets/{name} - Get a specific bucket by name.
+        /// Non-global-admin users can only access buckets prefixed with their tenant ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task GetBucketAsync(HttpContextBase ctx)
@@ -191,11 +210,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -205,6 +225,14 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !name.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -241,6 +269,7 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>
         /// DELETE /v1.0/buckets/{name} - Delete a bucket by name.
+        /// Non-global-admin users can only delete buckets prefixed with their tenant ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task DeleteBucketAsync(HttpContextBase ctx)
@@ -249,7 +278,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -263,6 +293,14 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !name.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -302,6 +340,7 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>
         /// HEAD /v1.0/buckets/{name} - Check bucket existence.
+        /// Non-global-admin users can only check buckets prefixed with their tenant ID.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task HeadBucketAsync(HttpContextBase ctx)
@@ -310,9 +349,10 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     await ctx.Response.Send().ConfigureAwait(false);
                     return;
                 }
@@ -321,6 +361,13 @@ namespace AssistantHub.Server.Handlers
                 if (String.IsNullOrEmpty(name))
                 {
                     ctx.Response.StatusCode = 400;
+                    await ctx.Response.Send().ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !name.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
                     await ctx.Response.Send().ConfigureAwait(false);
                     return;
                 }
@@ -362,11 +409,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -376,6 +424,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -466,11 +523,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -481,6 +539,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Bucket name and key are required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -548,11 +615,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -563,6 +631,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Bucket name and key are required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -655,11 +732,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -670,6 +748,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Bucket name and key are required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -727,11 +814,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -742,6 +830,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Bucket name and key are required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -791,11 +888,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
                 {
-                    ctx.Response.StatusCode = 403;
+                    ctx.Response.StatusCode = 401;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
                     return;
                 }
 
@@ -806,6 +904,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Bucket name and key are required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Non-global-admin users can only access their tenant's buckets
+                if (!auth.IsGlobalAdmin && !bucketName.StartsWith(auth.TenantId + "_"))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
                     return;
                 }
 

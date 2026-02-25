@@ -9,7 +9,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
 function IngestionRulesView() {
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editRule, setEditRule] = useState(null);
@@ -49,6 +49,7 @@ function IngestionRulesView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this ingestion rule', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Name', label: 'Name', tooltip: 'Display name for this ingestion rule', filterable: true },
     { key: 'Bucket', label: 'Bucket', tooltip: 'Source storage bucket that this rule monitors', filterable: true },
     { key: 'CollectionName', label: 'Collection', tooltip: 'Target vector collection for processed documents', filterable: true },

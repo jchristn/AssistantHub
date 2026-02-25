@@ -9,6 +9,11 @@
             AssistantHub server.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.AssistantHubServer.HealthCheckService">
+            <summary>
+            The endpoint health check service instance, accessible by handlers.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.AssistantHubServer.Main(System.String[])">
             <summary>
             Entry point.
@@ -167,30 +172,35 @@
         <member name="M:AssistantHub.Server.Handlers.BucketHandler.PutBucketAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             PUT /v1.0/buckets - Create a new bucket.
+            Non-global-admin users have their tenant ID automatically prefixed to the bucket name.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetBucketsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/buckets - List all buckets.
+            GET /v1.0/buckets - List buckets.
+            Non-global-admin users only see buckets prefixed with their tenant ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.BucketHandler.GetBucketAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/buckets/{name} - Get a specific bucket by name.
+            Non-global-admin users can only access buckets prefixed with their tenant ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.BucketHandler.DeleteBucketAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             DELETE /v1.0/buckets/{name} - Delete a bucket by name.
+            Non-global-admin users can only delete buckets prefixed with their tenant ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.BucketHandler.HeadBucketAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/buckets/{name} - Check bucket existence.
+            Non-global-admin users can only check buckets prefixed with their tenant ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -437,7 +447,12 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
+            GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health from local state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetAllCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/completion/health - Get all completion endpoint health statuses.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.ConfigurationHandler">
@@ -462,7 +477,7 @@
         </member>
         <member name="T:AssistantHub.Server.Handlers.CredentialHandler">
             <summary>
-            Handles credential CRUD routes (admin only).
+            Handles credential CRUD routes under /v1.0/tenants/{tenantId}/credentials.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
@@ -480,37 +495,37 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.PutCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            PUT /v1.0/credentials - Create a new credential.
+            PUT /v1.0/tenants/{tenantId}/credentials - Create a new credential.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.GetCredentialsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/credentials - List credentials.
+            GET /v1.0/tenants/{tenantId}/credentials - List credentials.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.GetCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/credentials/{credentialId} - Get credential by ID.
+            GET /v1.0/tenants/{tenantId}/credentials/{credentialId} - Get credential by ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.PutCredentialByIdAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            PUT /v1.0/credentials/{credentialId} - Update credential by ID.
+            PUT /v1.0/tenants/{tenantId}/credentials/{credentialId} - Update credential by ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.DeleteCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            DELETE /v1.0/credentials/{credentialId} - Delete credential by ID.
+            DELETE /v1.0/tenants/{tenantId}/credentials/{credentialId} - Delete credential by ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CredentialHandler.HeadCredentialAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            HEAD /v1.0/credentials/{credentialId} - Check credential existence.
+            HEAD /v1.0/tenants/{tenantId}/credentials/{credentialId} - Check credential existence.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -629,7 +644,12 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/endpoints/embedding/{endpointId}/health - Get embedding endpoint health.
+            GET /v1.0/endpoints/embedding/{endpointId}/health - Get embedding endpoint health from local state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/embedding/health - Get all embedding endpoint health statuses.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.FeedbackHandler">
@@ -734,6 +754,52 @@
             </summary>
             <param name="ctx">HTTP context.</param>
             <returns>Authenticated user.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.GetAuthContext(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Get the AuthContext from the request metadata.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>AuthContext or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.RequireAuth(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Require any authenticated user. Returns AuthContext or sends 401.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>AuthContext or null if 401 was sent.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.RequireGlobalAdmin(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Require global admin. Returns AuthContext or null (caller should send 403).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>AuthContext if global admin, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.RequireAdmin(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Require global admin or tenant admin. Returns AuthContext or null.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>AuthContext if admin, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.ValidateTenantAccess(AssistantHub.Core.Models.AuthContext,System.String)">
+            <summary>
+            Validate that the caller can access the given tenant.
+            Global admins can access any tenant. Non-global-admins can only access their own.
+            </summary>
+            <param name="auth">Auth context.</param>
+            <param name="tenantId">Tenant ID to check.</param>
+            <returns>True if access is allowed.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.EnforceTenantOwnership(AssistantHub.Core.Models.AuthContext,System.String)">
+            <summary>
+            Enforce that a loaded record belongs to the caller's tenant.
+            Global admins bypass this check.
+            </summary>
+            <param name="auth">Auth context.</param>
+            <param name="recordTenantId">Tenant ID on the record.</param>
+            <returns>True if ownership is valid.</returns>
         </member>
         <member name="M:AssistantHub.Server.Handlers.HandlerBase.BuildEnumerationQuery(WatsonWebserver.Core.HttpContextBase)">
             <summary>
@@ -921,9 +987,69 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.TenantHandler">
+            <summary>
+            Handles tenant CRUD routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.PutTenantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/tenants - Create a new tenant (global admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.GetTenantsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/tenants - List tenants. Global admin sees all; others see only their own.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.GetTenantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/tenants/{id} - Get tenant by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.PutTenantByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/tenants/{id} - Update tenant (global admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.DeleteTenantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/tenants/{id} - Delete tenant (global admin only).
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.HeadTenantAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/tenants/{id} - Check tenant existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.GetWhoAmIAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/whoami - Return current authentication context.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.UserHandler">
             <summary>
-            Handles user CRUD routes (admin only).
+            Handles user CRUD routes under /v1.0/tenants/{tenantId}/users.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
@@ -941,39 +1067,102 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.PutUserAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            PUT /v1.0/users - Create a new user.
+            PUT /v1.0/tenants/{tenantId}/users - Create a new user.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.GetUsersAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/users - List users.
+            GET /v1.0/tenants/{tenantId}/users - List users.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.GetUserAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/users/{userId} - Get user by ID.
+            GET /v1.0/tenants/{tenantId}/users/{userId} - Get user by ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.PutUserByIdAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            PUT /v1.0/users/{userId} - Update user by ID.
+            PUT /v1.0/tenants/{tenantId}/users/{userId} - Update user by ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.DeleteUserAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            DELETE /v1.0/users/{userId} - Delete user and cascade credentials.
+            DELETE /v1.0/tenants/{tenantId}/users/{userId} - Delete user and cascade credentials.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.UserHandler.HeadUserAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            HEAD /v1.0/users/{userId} - Check user existence.
+            HEAD /v1.0/tenants/{tenantId}/users/{userId} - Check user existence.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService">
+            <summary>
+            Background service that performs periodic health checks on both embedding and completion endpoints.
+            Health state is tracked entirely in RAM and not persisted.
+            Endpoint config is fetched from Partio via HTTP; this service parses JSON responses directly.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Initialize a new EndpointHealthCheckService.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.StartAsync">
+            <summary>
+            Start health checks for all enabled and active endpoints by enumerating from Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.EnumerateAndStartAsync(System.String)">
+            <summary>
+            Enumerate endpoints of a given type from Partio and start health checks.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointCreated(System.String)">
+            <summary>
+            Called when a new endpoint is created. Parse the Partio response JSON and start monitoring if applicable.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointUpdated(System.String)">
+            <summary>
+            Called when an endpoint is updated. Parse the Partio response JSON, stop existing loop, and restart if applicable.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointDeleted(System.String)">
+            <summary>
+            Called when an endpoint is deleted. Stop the loop and remove state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.GetHealthState(System.String)">
+            <summary>
+            Get the health state for a specific endpoint.
+            Returns null if no state exists.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.GetAllHealthStates(System.String)">
+            <summary>
+            Get health states for all monitored endpoints, optionally filtered by tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.IsHealthy(System.String)">
+            <summary>
+            Returns true if the endpoint is healthy or if no health state exists (health check not enabled).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.ParseEndpointConfig(System.Text.Json.JsonElement)">
+            <summary>
+            Parse endpoint health config fields from a JSON element (Partio response).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService.EndpointConfig">
+            <summary>
+            Internal config holder for parsed endpoint JSON.
+            </summary>
         </member>
     </members>
 </doc>

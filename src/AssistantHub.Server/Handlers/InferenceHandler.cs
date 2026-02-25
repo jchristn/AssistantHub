@@ -93,7 +93,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -204,7 +205,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -249,7 +251,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";

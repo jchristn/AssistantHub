@@ -11,7 +11,7 @@ import AlertModal from '../components/AlertModal';
 
 function CredentialsView() {
   const location = useLocation();
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, tenantId, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editCredential, setEditCredential] = useState(null);
@@ -24,29 +24,32 @@ function CredentialsView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this credential', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Tenant this credential belongs to', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Name', label: 'Name', tooltip: 'Display name for this credential', filterable: true },
     { key: 'UserId', label: 'User ID', tooltip: 'The user account this credential belongs to', filterable: true, render: (row) => <CopyableId id={row.UserId} /> },
     { key: 'BearerToken', label: 'Bearer Token', tooltip: 'Authentication token used for API access', render: (row) => row.BearerToken ? <CopyableId id={row.BearerToken} /> : <span className="status-badge info">Hidden</span> },
     { key: 'Active', label: 'Status', tooltip: 'Whether this credential is currently active', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
+    { key: 'IsProtected', label: 'Protected', tooltip: 'Protected records cannot be deleted', render: (row) => row.IsProtected ? <span className="status-badge active">Yes</span> : <span className="status-badge inactive">No</span> },
   ];
 
   const fetchData = useCallback(async (params) => {
-    return await api.getCredentials(params);
-  }, [serverUrl, credential]);
+    return await api.getCredentials(tenantId, params);
+  }, [serverUrl, credential, tenantId]);
 
   const getRowActions = (row) => [
     { label: 'Edit', onClick: () => { setEditCredential(row); setShowForm(true); } },
     { label: 'View JSON', onClick: () => setShowJson(row) },
-    { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
+    ...(!row.IsProtected ? [{ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) }] : []),
   ];
 
   const handleSave = async (data) => {
     try {
       let result;
+      const tid = data.TenantId || tenantId;
       if (editCredential) {
-        result = await api.updateCredential(editCredential.Id, data);
+        result = await api.updateCredential(tid, editCredential.Id, data);
       } else {
-        result = await api.createCredential(data);
+        result = await api.createCredential(data, tid);
       }
       setShowForm(false);
       setEditCredential(null);
@@ -59,7 +62,8 @@ function CredentialsView() {
 
   const handleDelete = async () => {
     try {
-      await api.deleteCredential(deleteTarget.Id);
+      const tid = deleteTarget.TenantId || tenantId;
+      await api.deleteCredential(tid, deleteTarget.Id);
       setDeleteTarget(null);
       setRefresh(r => r + 1);
     } catch (err) {
@@ -70,7 +74,7 @@ function CredentialsView() {
   const handleBulkDelete = async (ids) => {
     try {
       for (const id of ids) {
-        await api.deleteCredential(id);
+        await api.deleteCredential(tenantId, id);
       }
       setRefresh(r => r + 1);
     } catch (err) {

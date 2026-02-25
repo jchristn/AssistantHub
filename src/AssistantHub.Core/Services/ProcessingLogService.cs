@@ -52,13 +52,14 @@ namespace AssistantHub.Core.Services
         /// <param name="documentId">Document identifier.</param>
         /// <param name="level">Log level (INFO, WARN, ERROR, DEBUG).</param>
         /// <param name="message">Log message.</param>
+        /// <param name="tenantId">Optional tenant identifier for directory namespacing.</param>
         /// <returns>Task.</returns>
-        public async Task LogAsync(string documentId, string level, string message)
+        public async Task LogAsync(string documentId, string level, string message, string tenantId = null)
         {
             if (String.IsNullOrEmpty(documentId)) return;
 
             string line = "[" + DateTime.UtcNow.ToString("o") + "] [" + level + "] " + message + Environment.NewLine;
-            string filePath = GetLogFilePath(documentId);
+            string filePath = GetLogFilePath(documentId, tenantId);
 
             try
             {
@@ -76,9 +77,9 @@ namespace AssistantHub.Core.Services
         /// <param name="documentId">Document identifier.</param>
         /// <param name="stepName">Step name.</param>
         /// <returns>A Stopwatch started at call time for measuring elapsed time.</returns>
-        public async Task<Stopwatch> LogStepStartAsync(string documentId, string stepName)
+        public async Task<Stopwatch> LogStepStartAsync(string documentId, string stepName, string tenantId = null)
         {
-            await LogAsync(documentId, "INFO", stepName + " started").ConfigureAwait(false);
+            await LogAsync(documentId, "INFO", stepName + " started", tenantId).ConfigureAwait(false);
             return Stopwatch.StartNew();
         }
 
@@ -90,14 +91,14 @@ namespace AssistantHub.Core.Services
         /// <param name="result">Result description.</param>
         /// <param name="sw">Stopwatch from LogStepStartAsync.</param>
         /// <returns>Task.</returns>
-        public async Task LogStepCompleteAsync(string documentId, string stepName, string result, Stopwatch sw)
+        public async Task LogStepCompleteAsync(string documentId, string stepName, string result, Stopwatch sw, string tenantId = null)
         {
             sw?.Stop();
             string elapsed = sw != null ? sw.Elapsed.TotalMilliseconds.ToString("F2") + "ms" : "unknown";
             string message = stepName + " completed in " + elapsed;
             if (!String.IsNullOrEmpty(result))
                 message += " — " + result;
-            await LogAsync(documentId, "INFO", message).ConfigureAwait(false);
+            await LogAsync(documentId, "INFO", message, tenantId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -105,11 +106,19 @@ namespace AssistantHub.Core.Services
         /// </summary>
         /// <param name="documentId">Document identifier.</param>
         /// <returns>Log file contents, or null if no log file exists.</returns>
-        public async Task<string> GetLogAsync(string documentId)
+        public async Task<string> GetLogAsync(string documentId, string tenantId = null)
         {
             if (String.IsNullOrEmpty(documentId)) return null;
 
-            string filePath = GetLogFilePath(documentId);
+            string filePath = GetLogFilePath(documentId, tenantId);
+
+            // Fallback: check old flat path if tenant-namespaced path doesn't exist
+            if (!File.Exists(filePath) && !String.IsNullOrEmpty(tenantId))
+            {
+                string flatPath = GetLogFilePath(documentId, null);
+                if (File.Exists(flatPath))
+                    filePath = flatPath;
+            }
 
             if (!File.Exists(filePath))
                 return null;
@@ -136,7 +145,7 @@ namespace AssistantHub.Core.Services
                 if (!Directory.Exists(_Directory)) return Task.CompletedTask;
 
                 DateTime cutoff = DateTime.UtcNow.AddDays(-_Settings.RetentionDays);
-                string[] files = Directory.GetFiles(_Directory, "*.log");
+                string[] files = Directory.GetFiles(_Directory, "*.log", SearchOption.AllDirectories);
                 int deleted = 0;
 
                 foreach (string file in files)
@@ -164,8 +173,15 @@ namespace AssistantHub.Core.Services
 
         #region Private-Methods
 
-        private string GetLogFilePath(string documentId)
+        private string GetLogFilePath(string documentId, string tenantId = null)
         {
+            if (!String.IsNullOrEmpty(tenantId))
+            {
+                string tenantDir = Path.Combine(_Directory, tenantId);
+                if (!Directory.Exists(tenantDir))
+                    Directory.CreateDirectory(tenantDir);
+                return Path.Combine(tenantDir, documentId + ".log");
+            }
             return Path.Combine(_Directory, documentId + ".log");
         }
 

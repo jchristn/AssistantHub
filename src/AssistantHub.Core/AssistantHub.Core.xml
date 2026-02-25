@@ -79,6 +79,11 @@
             Chat history identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.TenantIdentifierPrefix">
+            <summary>
+            Tenant identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.ChatCompletionIdentifierPrefix">
             <summary>
             Chat completion identifier prefix.
@@ -134,9 +139,24 @@
             Chat history table name.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.TenantsTable">
+            <summary>
+            Tenants table name.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.ThreadIdHeader">
             <summary>
             Thread ID header name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultTenantId">
+            <summary>
+            Default tenant identifier.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.DefaultTenantName">
+            <summary>
+            Default tenant name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.DefaultAdminEmail">
@@ -202,6 +222,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistory">
             <summary>
             Chat history methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.Tenant">
+            <summary>
+            Tenant methods.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
@@ -353,10 +378,11 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the record exists.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate assistant document records.
+            Enumerate assistant document records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing assistant document records.</returns>
@@ -399,10 +425,11 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate assistant feedback records.
+            Enumerate assistant feedback records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing assistant feedback records.</returns>
@@ -460,10 +487,11 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the record exists.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate assistant records.
+            Enumerate assistant records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing assistant records.</returns>
@@ -557,10 +585,11 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate chat history records.
+            Enumerate chat history records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing chat history records.</returns>
@@ -634,10 +663,11 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the record exists.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICredentialMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate credential records.
+            Enumerate credential records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing credential records.</returns>
@@ -671,6 +701,15 @@
             <param name="token">Cancellation token.</param>
             <returns>Ingestion rule record.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.ReadByNameAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an ingestion rule record by tenant and name.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="name">Ingestion rule name.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Ingestion rule record.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <summary>
             Update an ingestion rule record.
@@ -695,13 +734,82 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the record exists.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate ingestion rule records.
+            Enumerate ingestion rule records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing ingestion rule records.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.ITenantMethods">
+            <summary>
+            Tenant database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.CreateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <summary>
+            Create a tenant record.
+            </summary>
+            <param name="tenant">Tenant metadata record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created tenant metadata record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.ReadByIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a tenant record by identifier.
+            </summary>
+            <param name="id">Tenant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Tenant metadata record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.ReadByNameAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a tenant record by name.
+            </summary>
+            <param name="name">Tenant name.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Tenant metadata record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.UpdateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <summary>
+            Update a tenant record.
+            </summary>
+            <param name="tenant">Tenant metadata record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated tenant metadata record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.DeleteByIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a tenant record.
+            </summary>
+            <param name="id">Tenant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.ExistsByIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a tenant record exists.
+            </summary>
+            <param name="id">Tenant identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate tenant records.
+            </summary>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing tenant metadata records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ITenantMethods.GetCountAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the count of tenant records.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Count of tenant records.</returns>
         </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IUserMethods">
             <summary>
@@ -724,10 +832,11 @@
             <param name="token">Cancellation token.</param>
             <returns>User master record.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.ReadByEmailAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
-            Read a user record by email address.
+            Read a user record by tenant and email address.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="email">Email address.</param>
             <param name="token">Cancellation token.</param>
             <returns>User master record.</returns>
@@ -756,10 +865,11 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the record exists.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Interfaces.IUserMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <summary>
-            Enumerate user records.
+            Enumerate user records scoped to a tenant.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="query">Enumeration query.</param>
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing user master records.</returns>
@@ -802,7 +912,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
@@ -830,7 +940,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -864,7 +974,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -923,7 +1033,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -963,7 +1073,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
@@ -988,6 +1098,9 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.ReadByNameAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
@@ -997,7 +1110,44 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods">
+            <summary>
+            MySQL tenant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.CreateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.ReadByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.ReadByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.UpdateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.DeleteByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.ExistsByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods.GetCountAsync(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.UserMethods">
@@ -1019,7 +1169,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
@@ -1031,7 +1181,7 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1097,7 +1247,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
@@ -1125,7 +1275,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1159,7 +1309,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1218,7 +1368,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1258,7 +1408,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1283,6 +1433,9 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.ReadByNameAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
@@ -1292,7 +1445,44 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods">
+            <summary>
+            PostgreSQL tenant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.CreateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.ReadByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.ReadByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.UpdateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.DeleteByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.ExistsByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods.GetCountAsync(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods">
@@ -1314,7 +1504,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ReadByEmailAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
@@ -1326,7 +1516,7 @@
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1392,7 +1582,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
@@ -1426,7 +1616,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1460,7 +1650,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1519,7 +1709,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1559,7 +1749,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1593,7 +1783,47 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.ReadByNameAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods">
+            <summary>
+            SQLite tenant methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.CreateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.ReadByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.ReadByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.UpdateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.DeleteByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.ExistsByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods.GetCountAsync(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods">
@@ -1615,7 +1845,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ReadByEmailAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
@@ -1627,7 +1857,7 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1727,7 +1957,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
@@ -1755,7 +1985,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1789,7 +2019,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -1848,7 +2078,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1888,7 +2118,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
@@ -1913,6 +2143,9 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.ReadByNameAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.UpdateAsync(AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
@@ -1922,7 +2155,44 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods">
+            <summary>
+            SQL Server tenant methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.CreateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.ReadByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.ReadByNameAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.UpdateAsync(AssistantHub.Core.Models.TenantMetadata,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.DeleteByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.ExistsByIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods.GetCountAsync(System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods">
@@ -1944,7 +2214,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ReadByEmailAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ReadByEmailAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.UpdateAsync(AssistantHub.Core.Models.UserMaster,System.Threading.CancellationToken)">
@@ -1956,7 +2226,7 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
-        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.EnumerateAsync(AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.UserMethods.GetCountAsync(System.Threading.CancellationToken)">
@@ -2181,6 +2451,26 @@
             Extracts bracket-notation citation references from model response text.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.CitationPattern">
+            <summary>
+            Matches bracket-notation citations including comma-separated forms.
+            Handles: [1], [2, 3], [1, 2, 3], \[1\], [8, 9, 10], etc.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.NumberPattern">
+            <summary>
+            Extracts individual numbers from a comma-separated capture group.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Helpers.CitationExtractor.TrailingBibliographyPattern">
+            <summary>
+            Matches a trailing bibliography/reference list that some models generate.
+            Detects blocks like:
+              [1] Document Name (Page 20)
+              [2] Document Name (Page 54)
+            at the end of the response, optionally preceded by a heading.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.CitationExtractor.Extract(System.Collections.Generic.List{AssistantHub.Core.Models.CitationSource},System.String)">
             <summary>
             Build a ChatCompletionCitations object from the source manifest
@@ -2189,6 +2479,14 @@
             <param name="sources">The citation source manifest built during context injection.</param>
             <param name="responseText">The completed model response text.</param>
             <returns>A populated ChatCompletionCitations object.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.CitationExtractor.StripBibliography(System.String)">
+            <summary>
+            Remove any trailing model-generated bibliography/reference list from the response text.
+            This is used to clean the response before sending it to the client.
+            </summary>
+            <param name="responseText">The raw model response text.</param>
+            <returns>The response text with any trailing bibliography removed.</returns>
         </member>
         <member name="T:AssistantHub.Core.Helpers.DataTableHelper">
             <summary>
@@ -2301,6 +2599,12 @@
             <summary>
             Helper class for generating K-sortable identifiers and bearer tokens.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewTenantId">
+            <summary>
+            Generate a tenant identifier.
+            </summary>
+            <returns>Tenant identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewUserId">
             <summary>
@@ -2450,6 +2754,11 @@
             Unique identifier with prefix asst_.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.Assistant.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.Assistant.UserId">
             <summary>
             User identifier to which this assistant belongs.
@@ -2500,6 +2809,11 @@
         <member name="P:AssistantHub.Core.Models.AssistantDocument.Id">
             <summary>
             Unique identifier with prefix adoc_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.TenantId">
+            <summary>
+            Tenant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.Name">
@@ -2597,6 +2911,11 @@
         <member name="P:AssistantHub.Core.Models.AssistantFeedback.Id">
             <summary>
             Unique identifier with prefix afb_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantFeedback.TenantId">
+            <summary>
+            Tenant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantFeedback.AssistantId">
@@ -2830,6 +3149,56 @@
             <param name="row">Data row.</param>
             <returns>AssistantSettings instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.AuthContext">
+            <summary>
+            Authentication context propagated through request handlers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.IsAuthenticated">
+            <summary>
+            Indicates whether the request is authenticated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.IsGlobalAdmin">
+            <summary>
+            Indicates whether the caller is a global admin (authenticated via admin API key, or a user with IsAdmin=true).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.IsTenantAdmin">
+            <summary>
+            Indicates whether the caller is a tenant admin.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.TenantId">
+            <summary>
+            Tenant identifier for the authenticated user. Null for API-key-based global admins.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.UserId">
+            <summary>
+            User identifier for the authenticated user. Null for API-key-based global admins.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.CredentialId">
+            <summary>
+            Credential identifier used for authentication. Null for API-key-based global admins.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.Email">
+            <summary>
+            Email address of the authenticated user. Null for API-key-based global admins.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.Tenant">
+            <summary>
+            Tenant metadata for the authenticated user. Null for API-key-based global admins.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthContext.User">
+            <summary>
+            User record for the authenticated user. Null for API-key-based global admins.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AuthenticateRequest">
             <summary>
             Authentication request.
@@ -2848,6 +3217,11 @@
         <member name="P:AssistantHub.Core.Models.AuthenticateRequest.BearerToken">
             <summary>
             Bearer token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateRequest.TenantId">
+            <summary>
+            Tenant identifier (required for email/password authentication).
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.AuthenticateRequest.#ctor">
@@ -2878,6 +3252,26 @@
         <member name="P:AssistantHub.Core.Models.AuthenticateResult.ErrorMessage">
             <summary>
             Error message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.TenantName">
+            <summary>
+            Tenant name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.IsGlobalAdmin">
+            <summary>
+            Whether the user is a global admin.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AuthenticateResult.IsTenantAdmin">
+            <summary>
+            Whether the user is a tenant admin.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.AuthenticateResult.#ctor">
@@ -3052,6 +3446,15 @@
             <summary>
             Indices from Sources that the model actually cited in its response.
             Validated against the source manifest (invalid indices are excluded).
+            When the model does not cite any sources, all source indices are
+            populated as a fallback and AutoPopulated is set to true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.AutoPopulated">
+            <summary>
+            True when the model did not produce inline citation markers and the
+            system automatically populated ReferencedIndices with all source indices.
+            Useful for diagnosing models that ignore citation instructions.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CitationSource">
@@ -3129,6 +3532,11 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.Id">
             <summary>
             Unique identifier with prefix chist_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TenantId">
+            <summary>
+            Tenant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.ThreadId">
@@ -3331,6 +3739,11 @@
             Unique identifier with prefix cred_.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.Credential.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.Credential.UserId">
             <summary>
             User identifier to which this credential belongs.
@@ -3349,6 +3762,11 @@
         <member name="P:AssistantHub.Core.Models.Credential.Active">
             <summary>
             Indicates whether the credential is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.Credential.IsProtected">
+            <summary>
+            Indicates whether the record is protected from deletion.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.Credential.CreatedUtc">
@@ -3372,6 +3790,121 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>Credential instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointHealthState">
+            <summary>
+            In-memory runtime health state for an endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.EndpointId">
+            <summary>The endpoint ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.EndpointName">
+            <summary>Model name (for display/logging).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TenantId">
+            <summary>Tenant scope.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.IsHealthy">
+            <summary>Current health state. Starts false; must prove healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.FirstCheckUtc">
+            <summary>When monitoring began.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastCheckUtc">
+            <summary>Most recent check time.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastHealthyUtc">
+            <summary>Last transition to healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastUnhealthyUtc">
+            <summary>Last transition to unhealthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastStateChangeUtc">
+            <summary>Last transition in either direction.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TotalUptimeMs">
+            <summary>Cumulative healthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TotalDowntimeMs">
+            <summary>Cumulative unhealthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.ConsecutiveSuccesses">
+            <summary>Running counter of consecutive successes; resets on failure.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.ConsecutiveFailures">
+            <summary>Running counter of consecutive failures; resets on success.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastError">
+            <summary>Error message from most recent failed check.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.CheckHistory">
+            <summary>Rolling window of individual check results (max 24 hours).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.Lock">
+            <summary>Per-state lock for thread safety.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.HistoryLock">
+            <summary>Separate lock for history list access.</summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointHealthStatus">
+            <summary>
+            API response DTO combining EndpointHealthState fields with computed values.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.EndpointId">
+            <summary>The endpoint ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.EndpointName">
+            <summary>Model name.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TenantId">
+            <summary>Tenant scope.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.IsHealthy">
+            <summary>Current health state.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.FirstCheckUtc">
+            <summary>When monitoring began.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastCheckUtc">
+            <summary>Most recent check time.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastHealthyUtc">
+            <summary>Last transition to healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastUnhealthyUtc">
+            <summary>Last transition to unhealthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastStateChangeUtc">
+            <summary>Last transition in either direction.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TotalUptimeMs">
+            <summary>Cumulative healthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TotalDowntimeMs">
+            <summary>Cumulative unhealthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.UptimePercentage">
+            <summary>Uptime percentage (0-100).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.ConsecutiveSuccesses">
+            <summary>Consecutive successes.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.ConsecutiveFailures">
+            <summary>Consecutive failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastError">
+            <summary>Error message from most recent failed check.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.History">
+            <summary>Rolling window of check history records.</summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EndpointHealthStatus.FromState(AssistantHub.Core.Models.EndpointHealthState)">
+            <summary>
+            Create an EndpointHealthStatus from an EndpointHealthState.
+            Snapshots the state and computes current-period uptime/downtime.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.EnumerationQuery">
             <summary>
@@ -3507,6 +4040,21 @@
         <member name="M:AssistantHub.Core.Models.FeedbackRequest.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.HealthCheckRecord">
+            <summary>
+            A single health check result record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.HealthCheckRecord.TimestampUtc">
+            <summary>
+            UTC timestamp of the check.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.HealthCheckRecord.Success">
+            <summary>
+            Whether the check was successful.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.InferenceModel">
@@ -3672,6 +4220,11 @@
         <member name="P:AssistantHub.Core.Models.IngestionRule.Id">
             <summary>
             Unique identifier with prefix irule_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.TenantId">
+            <summary>
+            Tenant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionRule.Name">
@@ -3964,6 +4517,63 @@
             Passed to RecallDB as IncludeNeighbors on the search query.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.TenantMetadata">
+            <summary>
+            Tenant metadata record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.Id">
+            <summary>
+            Unique identifier with prefix ten_ (or "default" for the default tenant).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.Name">
+            <summary>
+            Display name for the tenant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.Active">
+            <summary>
+            Indicates whether the tenant is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.IsProtected">
+            <summary>
+            Indicates whether the record is protected from deletion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.Labels">
+            <summary>
+            Labels for categorization.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.Tags">
+            <summary>
+            Key-value metadata tags.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TenantMetadata.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.TenantMetadata.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.TenantMetadata.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a TenantMetadata from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>TenantMetadata instance or null.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
             <summary>
             User master record.
@@ -3972,6 +4582,11 @@
         <member name="P:AssistantHub.Core.Models.UserMaster.Id">
             <summary>
             Unique identifier with prefix usr_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.TenantId">
+            <summary>
+            Tenant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.UserMaster.Email">
@@ -3996,12 +4611,23 @@
         </member>
         <member name="P:AssistantHub.Core.Models.UserMaster.IsAdmin">
             <summary>
-            Indicates whether the user is an administrator.
+            Indicates whether the user is a global administrator.
+            Users with IsAdmin=true are treated as global admins with cross-tenant access.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.IsTenantAdmin">
+            <summary>
+            Indicates whether the user is a tenant administrator.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.UserMaster.Active">
             <summary>
             Indicates whether the user is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.UserMaster.IsProtected">
+            <summary>
+            Indicates whether the record is protected from deletion.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.UserMaster.CreatedUtc">
@@ -4044,24 +4670,44 @@
             Authentication service.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.AuthenticationService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule)">
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings)">
             <summary>
             Instantiate.
             </summary>
             <param name="database">Database driver.</param>
             <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateBearerAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticate a bearer token and return an AuthContext.
+            Checks admin API keys first, then credential-based auth with tenant validation.
+            </summary>
+            <param name="bearerToken">Bearer token.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>AuthContext.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByBearerTokenAsync(System.String,System.Threading.CancellationToken)">
             <summary>
-            Authenticate using a bearer token.
+            Authenticate using a bearer token (legacy - returns AuthenticateResult).
             </summary>
             <param name="bearerToken">Bearer token.</param>
             <param name="token">Cancellation token.</param>
             <returns>Authentication result.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByEmailPasswordAsync(System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByEmailPasswordAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Authenticate using email and password.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="email">Email address.</param>
+            <param name="password">Password.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Authentication result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AuthenticationService.AuthenticateByEmailPasswordAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticate using email and password (legacy overload without tenantId).
             </summary>
             <param name="email">Email address.</param>
             <param name="password">Password.</param>
@@ -4278,7 +4924,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingAsync(System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Delete a single embedding record from a RecallDB collection.
             </summary>
@@ -4340,19 +4986,19 @@
             Recursively flatten all chunks from a SemanticCellResponse hierarchy.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <summary>
             Compute embedding vector for a single piece of text using the Partio embedding endpoint.
             Used when chunking strategy is "None" to embed the whole document as a single chunk.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Check that a RecallDB collection exists via HEAD.
             Collections must be created via the dashboard/RecallDB before ingestion.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkResult,System.Int32,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkResult,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
@@ -4362,6 +5008,11 @@
             <param name="chunkIndex">Zero-based chunk position within the document.</param>
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.Excerpt(System.String,System.Int32)">
+            <summary>
+            Truncate text to a maximum length for logging, appending total length if truncated.
+            </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
@@ -4436,16 +5087,17 @@
             <param name="settings">Processing log settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogAsync(System.String,System.String,System.String)">
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogAsync(System.String,System.String,System.String,System.String)">
             <summary>
             Write a log entry for a document.
             </summary>
             <param name="documentId">Document identifier.</param>
             <param name="level">Log level (INFO, WARN, ERROR, DEBUG).</param>
             <param name="message">Log message.</param>
+            <param name="tenantId">Optional tenant identifier for directory namespacing.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepStartAsync(System.String,System.String)">
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepStartAsync(System.String,System.String,System.String)">
             <summary>
             Log the start of a processing step.
             </summary>
@@ -4453,7 +5105,7 @@
             <param name="stepName">Step name.</param>
             <returns>A Stopwatch started at call time for measuring elapsed time.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepCompleteAsync(System.String,System.String,System.String,System.Diagnostics.Stopwatch)">
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepCompleteAsync(System.String,System.String,System.String,System.Diagnostics.Stopwatch,System.String)">
             <summary>
             Log the completion of a processing step.
             </summary>
@@ -4463,7 +5115,7 @@
             <param name="sw">Stopwatch from LogStepStartAsync.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.ProcessingLogService.GetLogAsync(System.String)">
+        <member name="M:AssistantHub.Core.Services.ProcessingLogService.GetLogAsync(System.String,System.String)">
             <summary>
             Read the processing log for a document.
             </summary>
@@ -4489,7 +5141,7 @@
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String,AssistantHub.Core.Models.RetrievalSearchOptions)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Retrieve relevant document chunks for a given query.
             </summary>
@@ -4507,7 +5159,7 @@
             Build the RecallDB search request body based on search mode.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.ExecuteSearchAsync(System.String,System.Object,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ExecuteSearchAsync(System.String,System.String,System.Object,System.Threading.CancellationToken)">
             <summary>
             Execute a search request against RecallDB.
             </summary>
@@ -4659,9 +5311,74 @@
             <param name="bucketName">Bucket name.</param>
             <returns>S3 blob client for the bucket.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.TenantProvisioningService">
+            <summary>
+            Service for provisioning resources when a new tenant is created.
+            Creates RecallDB tenant, default collection, admin user, credential, and ingestion rule.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.ProvisionAsync(AssistantHub.Core.Models.TenantMetadata)">
+            <summary>
+            Provision all default resources for a new tenant.
+            </summary>
+            <param name="tenant">The tenant metadata (already persisted).</param>
+            <returns>Provisioning result with created credentials.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.DeprovisionAsync(System.String)">
+            <summary>
+            Deprovision all resources for a tenant being deleted.
+            Deletes child rows in dependency order, RecallDB tenant, and tenant row.
+            </summary>
+            <param name="tenantId">The tenant ID to deprovision.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.TenantProvisioningResult">
+            <summary>
+            Result of tenant provisioning.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.TenantId">
+            <summary>Tenant ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.TenantName">
+            <summary>Tenant name.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.AdminUserId">
+            <summary>Admin user ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.AdminEmail">
+            <summary>Admin email.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.AdminPassword">
+            <summary>Admin password (plaintext, for initial provisioning only).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.BearerToken">
+            <summary>Default bearer token.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.User">
+            <summary>Admin user created during provisioning.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.Credential">
+            <summary>Credential created during provisioning.</summary>
+        </member>
         <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
             <summary>
             AssistantHub settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.AdminApiKeys">
+            <summary>
+            List of global admin API keys.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.DefaultTenant">
+            <summary>
+            Default tenant settings for first-run provisioning.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Webserver">
@@ -4825,6 +5542,31 @@
             </summary>
             <returns>Connection string.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Settings.DefaultTenantSettings">
+            <summary>
+            Default tenant settings for first-run provisioning.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DefaultTenantSettings.Name">
+            <summary>
+            Default tenant display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DefaultTenantSettings.AdminEmail">
+            <summary>
+            Default admin email address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.DefaultTenantSettings.AdminPassword">
+            <summary>
+            Default admin password.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.DefaultTenantSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Settings.DocumentAtomSettings">
             <summary>
             DocumentAtom service settings.
@@ -4953,11 +5695,6 @@
         <member name="P:AssistantHub.Core.Settings.RecallDbSettings.Endpoint">
             <summary>
             Endpoint URL for the RecallDb service.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.TenantId">
-            <summary>
-            Tenant identifier for the RecallDb service.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Settings.RecallDbSettings.AccessKey">

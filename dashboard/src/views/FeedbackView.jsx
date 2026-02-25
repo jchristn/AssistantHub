@@ -10,7 +10,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
 function FeedbackView() {
-  const { serverUrl, credential } = useAuth();
+  const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [viewFeedback, setViewFeedback] = useState(null);
   const [showJson, setShowJson] = useState(null);
@@ -37,6 +37,7 @@ function FeedbackView() {
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this feedback entry', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
+    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'AssistantId', label: 'Assistant ID', tooltip: 'The assistant that received this feedback', render: (row) => <CopyableId id={row.AssistantId} /> },
     { key: 'Rating', label: 'Rating', tooltip: "User's thumbs up or thumbs down rating", render: (row) => row.Rating === 'ThumbsUp' ? '\uD83D\uDC4D' : '\uD83D\uDC4E' },
     { key: 'UserMessage', label: 'User Message', tooltip: 'The message the user sent before giving feedback', filterable: true, render: (row) => row.UserMessage ? (row.UserMessage.length > 80 ? row.UserMessage.substring(0, 80) + '...' : row.UserMessage) : '' },

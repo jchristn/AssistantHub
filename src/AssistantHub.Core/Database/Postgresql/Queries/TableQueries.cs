@@ -7,15 +7,30 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
     {
         #region Tables
 
+        internal static string CreateTenantsTable =
+            "CREATE TABLE IF NOT EXISTS tenants (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  name TEXT NOT NULL, " +
+            "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  is_protected INTEGER NOT NULL DEFAULT 0, " +
+            "  labels_json TEXT, " +
+            "  tags_json TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
         internal static string CreateUsersTable =
             "CREATE TABLE IF NOT EXISTS users (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  email TEXT NOT NULL, " +
             "  password_sha256 TEXT, " +
             "  first_name TEXT, " +
             "  last_name TEXT, " +
             "  is_admin INTEGER NOT NULL DEFAULT 0, " +
+            "  is_tenant_admin INTEGER NOT NULL DEFAULT 0, " +
             "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  is_protected INTEGER NOT NULL DEFAULT 0, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -23,10 +38,12 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateCredentialsTable =
             "CREATE TABLE IF NOT EXISTS credentials (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  user_id TEXT NOT NULL, " +
             "  name TEXT, " +
             "  bearer_token TEXT NOT NULL, " +
             "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  is_protected INTEGER NOT NULL DEFAULT 0, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -34,6 +51,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateAssistantsTable =
             "CREATE TABLE IF NOT EXISTS assistants (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  user_id TEXT NOT NULL, " +
             "  name TEXT NOT NULL, " +
             "  description TEXT, " +
@@ -79,6 +97,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  name TEXT NOT NULL, " +
             "  original_filename TEXT, " +
             "  content_type TEXT DEFAULT 'application/octet-stream', " +
@@ -99,6 +118,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateAssistantFeedbackTable =
             "CREATE TABLE IF NOT EXISTS assistant_feedback (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  assistant_id TEXT NOT NULL, " +
             "  user_message TEXT, " +
             "  assistant_response TEXT, " +
@@ -112,6 +132,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateIngestionRulesTable =
             "CREATE TABLE IF NOT EXISTS ingestion_rules (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  name TEXT NOT NULL, " +
             "  description TEXT, " +
             "  bucket TEXT NOT NULL, " +
@@ -130,6 +151,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateChatHistoryTable =
             "CREATE TABLE IF NOT EXISTS chat_history (" +
             "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  thread_id TEXT NOT NULL, " +
             "  assistant_id TEXT NOT NULL, " +
             "  collection_id TEXT, " +
@@ -159,8 +181,38 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         #region Indices
 
+        internal static string CreateTenantsNameIndex =
+            "CREATE INDEX IF NOT EXISTS idx_tenants_name ON tenants (name)";
+
+        internal static string CreateTenantsCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_tenants_created_utc ON tenants (created_utc)";
+
+        internal static string CreateUsersTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users (tenant_id)";
+
+        internal static string CreateUsersTenantEmailIndex =
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email ON users (tenant_id, email)";
+
         internal static string CreateUsersEmailIndex =
             "CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)";
+
+        internal static string CreateCredentialsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_credentials_tenant_id ON credentials (tenant_id)";
+
+        internal static string CreateAssistantsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistants_tenant_id ON assistants (tenant_id)";
+
+        internal static string CreateAssistantDocumentsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_tenant_id ON assistant_documents (tenant_id)";
+
+        internal static string CreateAssistantFeedbackTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_tenant_id ON assistant_feedback (tenant_id)";
+
+        internal static string CreateIngestionRulesTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_tenant_id ON ingestion_rules (tenant_id)";
+
+        internal static string CreateChatHistoryTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_tenant_id ON chat_history (tenant_id)";
 
         internal static string CreateCredentialsUserIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_credentials_user_id ON credentials (user_id)";

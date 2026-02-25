@@ -77,8 +77,8 @@ namespace AssistantHub.Server.Handlers
                 return;
             }
 
-            AuthenticateResult authResult = await Authentication.AuthenticateByBearerTokenAsync(bearerToken).ConfigureAwait(false);
-            if (!authResult.Success || authResult.User == null)
+            AuthContext authContext = await Authentication.AuthenticateBearerAsync(bearerToken).ConfigureAwait(false);
+            if (authContext == null || !authContext.IsAuthenticated)
             {
                 ctx.Response.StatusCode = 401;
                 ctx.Response.ContentType = "application/json";
@@ -86,9 +86,18 @@ namespace AssistantHub.Server.Handlers
                 return;
             }
 
-            GetMetadata(ctx)["user"] = authResult.User;
-            GetMetadata(ctx)["credential"] = authResult.Credential;
-            GetMetadata(ctx)["isAdmin"] = authResult.User.IsAdmin;
+            GetMetadata(ctx)["authContext"] = authContext;
+
+            // Backward compatibility: keep legacy metadata entries
+            if (authContext.User != null)
+            {
+                GetMetadata(ctx)["user"] = authContext.User;
+                GetMetadata(ctx)["isAdmin"] = authContext.User.IsAdmin || authContext.IsGlobalAdmin;
+            }
+            else if (authContext.IsGlobalAdmin)
+            {
+                GetMetadata(ctx)["isAdmin"] = true;
+            }
         }
     }
 }

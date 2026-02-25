@@ -58,7 +58,8 @@ namespace AssistantHub.Server.Handlers
                 bool isAdmin = IsAdmin(ctx);
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<AssistantFeedback> result = await Database.AssistantFeedback.EnumerateAsync(query).ConfigureAwait(false);
+                AuthContext auth = GetAuthContext(ctx);
+                EnumerationResult<AssistantFeedback> result = await Database.AssistantFeedback.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 // Non-admin users: filter to only their assistants' feedback
                 if (!isAdmin && result != null && result.Objects != null)
@@ -98,8 +99,7 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = GetAuthContext(ctx);
 
                 string feedbackId = ctx.Request.Url.Parameters["feedbackId"];
                 if (String.IsNullOrEmpty(feedbackId))
@@ -111,7 +111,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantFeedback feedback = await Database.AssistantFeedback.ReadAsync(feedbackId).ConfigureAwait(false);
-                if (feedback == null)
+                if (feedback == null || !EnforceTenantOwnership(auth, feedback.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -119,10 +119,10 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
                 {
                     Assistant assistant = await Database.Assistant.ReadAsync(feedback.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
+                    if (assistant == null || assistant.UserId != auth.UserId)
                     {
                         ctx.Response.StatusCode = 403;
                         ctx.Response.ContentType = "application/json";
@@ -154,8 +154,7 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = GetAuthContext(ctx);
 
                 string feedbackId = ctx.Request.Url.Parameters["feedbackId"];
                 if (String.IsNullOrEmpty(feedbackId))
@@ -167,7 +166,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantFeedback feedback = await Database.AssistantFeedback.ReadAsync(feedbackId).ConfigureAwait(false);
-                if (feedback == null)
+                if (feedback == null || !EnforceTenantOwnership(auth, feedback.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -175,10 +174,10 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
                 {
                     Assistant assistant = await Database.Assistant.ReadAsync(feedback.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
+                    if (assistant == null || assistant.UserId != auth.UserId)
                     {
                         ctx.Response.StatusCode = 403;
                         ctx.Response.ContentType = "application/json";

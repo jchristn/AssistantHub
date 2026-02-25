@@ -7,15 +7,31 @@ namespace AssistantHub.Core.Database.Mysql.Queries
     {
         #region Tables
 
+        internal static string CreateTenantsTable =
+            "CREATE TABLE IF NOT EXISTS `tenants` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `name` VARCHAR(256) NOT NULL, " +
+            "  `active` INT NOT NULL DEFAULT 1, " +
+            "  `is_protected` INT NOT NULL DEFAULT 0, " +
+            "  `labels_json` TEXT, " +
+            "  `tags_json` TEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
         internal static string CreateUsersTable =
             "CREATE TABLE IF NOT EXISTS `users` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `email` VARCHAR(256) NOT NULL, " +
             "  `password_sha256` VARCHAR(256), " +
             "  `first_name` TEXT, " +
             "  `last_name` TEXT, " +
             "  `is_admin` INT NOT NULL DEFAULT 0, " +
+            "  `is_tenant_admin` TINYINT NOT NULL DEFAULT 0, " +
             "  `active` INT NOT NULL DEFAULT 1, " +
+            "  `is_protected` INT NOT NULL DEFAULT 0, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -24,10 +40,12 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateCredentialsTable =
             "CREATE TABLE IF NOT EXISTS `credentials` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `user_id` VARCHAR(256) NOT NULL, " +
             "  `name` TEXT, " +
             "  `bearer_token` VARCHAR(256) NOT NULL, " +
             "  `active` INT NOT NULL DEFAULT 1, " +
+            "  `is_protected` INT NOT NULL DEFAULT 0, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -36,6 +54,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateAssistantsTable =
             "CREATE TABLE IF NOT EXISTS `assistants` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `user_id` VARCHAR(256) NOT NULL, " +
             "  `name` TEXT NOT NULL, " +
             "  `description` TEXT, " +
@@ -83,6 +102,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `name` TEXT NOT NULL, " +
             "  `original_filename` TEXT, " +
             "  `content_type` VARCHAR(128) DEFAULT 'application/octet-stream', " +
@@ -104,6 +124,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateAssistantFeedbackTable =
             "CREATE TABLE IF NOT EXISTS `assistant_feedback` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `assistant_id` VARCHAR(256) NOT NULL, " +
             "  `user_message` TEXT, " +
             "  `assistant_response` TEXT, " +
@@ -118,6 +139,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateIngestionRulesTable =
             "CREATE TABLE IF NOT EXISTS `ingestion_rules` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `name` TEXT NOT NULL, " +
             "  `description` TEXT, " +
             "  `bucket` TEXT NOT NULL, " +
@@ -137,6 +159,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateChatHistoryTable =
             "CREATE TABLE IF NOT EXISTS `chat_history` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
             "  `thread_id` VARCHAR(256) NOT NULL, " +
             "  `assistant_id` VARCHAR(256) NOT NULL, " +
             "  `collection_id` VARCHAR(256), " +
@@ -167,30 +190,66 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         #region Indices
 
+        // Tenants indices
+        internal static string CreateTenantsNameIndex =
+            "CREATE INDEX idx_tenants_name ON `tenants` (`name`)";
+
+        internal static string CreateTenantsCreatedUtcIndex =
+            "CREATE INDEX idx_tenants_created_utc ON `tenants` (`created_utc`(191))";
+
+        // Users indices
         internal static string CreateUsersEmailIndex =
             "CREATE INDEX idx_users_email ON `users` (`email`)";
 
+        internal static string CreateUsersTenantIdIndex =
+            "CREATE INDEX idx_users_tenant_id ON `users` (`tenant_id`)";
+
+        internal static string CreateUsersTenantEmailIndex =
+            "CREATE UNIQUE INDEX idx_users_tenant_email ON `users` (`tenant_id`, `email`)";
+
+        // Credentials indices
         internal static string CreateCredentialsUserIdIndex =
             "CREATE INDEX idx_credentials_user_id ON `credentials` (`user_id`)";
 
         internal static string CreateCredentialsBearerTokenIndex =
             "CREATE INDEX idx_credentials_bearer_token ON `credentials` (`bearer_token`)";
 
+        internal static string CreateCredentialsTenantIdIndex =
+            "CREATE INDEX idx_credentials_tenant_id ON `credentials` (`tenant_id`)";
+
+        // Assistants indices
         internal static string CreateAssistantsUserIdIndex =
             "CREATE INDEX idx_assistants_user_id ON `assistants` (`user_id`)";
 
+        internal static string CreateAssistantsTenantIdIndex =
+            "CREATE INDEX idx_assistants_tenant_id ON `assistants` (`tenant_id`)";
+
+        // Assistant settings indices
         internal static string CreateAssistantSettingsAssistantIdIndex =
             "CREATE INDEX idx_assistant_settings_assistant_id ON `assistant_settings` (`assistant_id`)";
 
+        // Assistant feedback indices
         internal static string CreateAssistantFeedbackAssistantIdIndex =
             "CREATE INDEX idx_assistant_feedback_assistant_id ON `assistant_feedback` (`assistant_id`)";
 
+        internal static string CreateAssistantFeedbackTenantIdIndex =
+            "CREATE INDEX idx_assistant_feedback_tenant_id ON `assistant_feedback` (`tenant_id`)";
+
+        // Ingestion rules indices
         internal static string CreateIngestionRulesNameIndex =
             "CREATE INDEX idx_ingestion_rules_name ON `ingestion_rules` (`name`(191))";
 
+        internal static string CreateIngestionRulesTenantIdIndex =
+            "CREATE INDEX idx_ingestion_rules_tenant_id ON `ingestion_rules` (`tenant_id`)";
+
+        // Assistant documents indices
         internal static string CreateAssistantDocumentsIngestionRuleIdIndex =
             "CREATE INDEX idx_assistant_documents_ingestion_rule_id ON `assistant_documents` (`ingestion_rule_id`(191))";
 
+        internal static string CreateAssistantDocumentsTenantIdIndex =
+            "CREATE INDEX idx_assistant_documents_tenant_id ON `assistant_documents` (`tenant_id`)";
+
+        // Chat history indices
         internal static string CreateChatHistoryAssistantIdIndex =
             "CREATE INDEX idx_chat_history_assistant_id ON `chat_history` (`assistant_id`)";
 
@@ -199,6 +258,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateChatHistoryCreatedUtcIndex =
             "CREATE INDEX idx_chat_history_created_utc ON `chat_history` (`created_utc`(191))";
+
+        internal static string CreateChatHistoryTenantIdIndex =
+            "CREATE INDEX idx_chat_history_tenant_id ON `chat_history` (`tenant_id`)";
 
         #endregion
     }

@@ -54,6 +54,11 @@ namespace AssistantHub.Core.Database
         /// </summary>
         public IChatHistoryMethods ChatHistory { get; protected set; }
 
+        /// <summary>
+        /// Tenant methods.
+        /// </summary>
+        public ITenantMethods Tenant { get; protected set; }
+
         #endregion
 
         #region Constructors-and-Factories

@@ -2,13 +2,16 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 function Topbar() {
-  const { serverUrl, user, isAdmin, theme, toggleTheme, logout } = useAuth();
+  const { serverUrl, user, isGlobalAdmin, isTenantAdmin, tenantName, theme, toggleTheme, logout } = useAuth();
+
+  const roleBadge = isGlobalAdmin ? 'Global Admin' : isTenantAdmin ? 'Tenant Admin' : 'User';
 
   return (
     <div className="topbar" data-tour-target="topbar-misc">
       <div className="topbar-left">
         <span className="topbar-badge server">{serverUrl}</span>
-        {isAdmin && <span className="topbar-badge admin">Admin</span>}
+        {tenantName && <span className="topbar-badge tenant">{tenantName}</span>}
+        <span className={`topbar-badge ${isGlobalAdmin ? 'admin' : isTenantAdmin ? 'tenant-admin' : 'user-role'}`}>{roleBadge}</span>
       </div>
       <div className="topbar-right">
         <span className="topbar-user">{user?.Email}</span>

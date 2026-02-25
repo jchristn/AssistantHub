@@ -87,6 +87,125 @@
 			]
 		},
 		{
+			"name": "Tenants",
+			"item": [
+				{
+					"name": "Create Tenant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"Acme Corp\",\n\t\"Active\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants"]
+						}
+					}
+				},
+				{
+					"name": "List Tenants",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants"]
+						}
+					}
+				},
+				{
+					"name": "Get Tenant",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants", ":tenantId"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "tenant-id-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Tenant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"Acme Corp Updated\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants", ":tenantId"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "tenant-id-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants", ":tenantId"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "tenant-id-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Tenant Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "tenants", ":tenantId"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "tenant-id-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "Users",
 			"item": [
 				{
@@ -101,7 +220,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"password123\",\n\t\"Active\": true\n}"
+							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"password123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/users",
@@ -152,7 +271,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"newpassword123\",\n\t\"Active\": true\n}"
+							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"newpassword123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/users/:userId",
@@ -220,7 +339,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My API Key\",\n\t\"Description\": \"API key for external service\",\n\t\"ApiKey\": \"sk-abc123\"\n}"
+							"raw": "{\n\t\"Name\": \"My API Key\",\n\t\"UserId\": \"usr_abc123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/credentials",
@@ -271,7 +390,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My API Key (Updated)\",\n\t\"Description\": \"Updated API key\",\n\t\"ApiKey\": \"sk-xyz789\"\n}"
+							"raw": "{\n\t\"Name\": \"My API Key (Updated)\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
@@ -776,7 +895,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Description\": \"Embedding endpoint for vector generation\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 16\n}"
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
@@ -836,7 +955,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Description\": \"Updated embedding endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 32\n}"
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
@@ -922,7 +1041,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Description\": \"Completion endpoint for chat\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 4096,\n\t\"Temperature\": 0.7\n}"
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -982,7 +1101,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Description\": \"Updated completion endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"Temperature\": 0.8\n}"
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",

@@ -17,7 +17,8 @@ namespace Test.Database.Tests
             Console.WriteLine("--- Credential Tests ---");
 
             // setup: create a user to own credentials
-            UserMaster user = await driver.User.CreateAsync(new UserMaster { Email = "cred-owner@example.com", FirstName = "Cred", LastName = "Owner" }, token);
+            string tenantId = TenantTests.TestTenantId;
+            UserMaster user = await driver.User.CreateAsync(new UserMaster { TenantId = tenantId, Email = "cred-owner@example.com", FirstName = "Cred", LastName = "Owner" }, token);
             string userId = user.Id;
             string createdId = null;
             string bearerTokenValue = null;
@@ -26,6 +27,7 @@ namespace Test.Database.Tests
             {
                 Credential cred = new Credential
                 {
+                    TenantId = tenantId,
                     UserId = userId,
                     Name = "Test Credential",
                     Active = true
@@ -49,6 +51,7 @@ namespace Test.Database.Tests
             {
                 Credential cred = new Credential
                 {
+                    TenantId = tenantId,
                     UserId = userId
                 };
 
@@ -128,7 +131,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Credential.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<Credential> result = await driver.Credential.EnumerateAsync(query, ct);
+                EnumerationResult<Credential> result = await driver.Credential.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "enumeration success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 2, "objects count");
@@ -137,19 +140,19 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("Credential.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<Credential> r1 = await driver.Credential.EnumerateAsync(q1, ct);
+                EnumerationResult<Credential> r1 = await driver.Credential.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<Credential> r2 = await driver.Credential.EnumerateAsync(q2, ct);
+                EnumerationResult<Credential> r2 = await driver.Credential.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "different credentials on different pages");
             }, token);
 
             await runner.RunTestAsync("Credential.Delete", async ct =>
             {
-                Credential cred = new Credential { UserId = userId, Name = "To Delete" };
+                Credential cred = new Credential { TenantId = tenantId, UserId = userId, Name = "To Delete" };
                 Credential created = await driver.Credential.CreateAsync(cred, ct);
 
                 await driver.Credential.DeleteAsync(created.Id, ct);
@@ -160,9 +163,9 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("Credential.DeleteByUserId", async ct =>
             {
-                UserMaster tempUser = await driver.User.CreateAsync(new UserMaster { Email = "cred-delete-test@example.com" }, token);
-                Credential c1 = await driver.Credential.CreateAsync(new Credential { UserId = tempUser.Id, Name = "C1" }, ct);
-                Credential c2 = await driver.Credential.CreateAsync(new Credential { UserId = tempUser.Id, Name = "C2" }, ct);
+                UserMaster tempUser = await driver.User.CreateAsync(new UserMaster { TenantId = tenantId, Email = "cred-delete-test@example.com" }, token);
+                Credential c1 = await driver.Credential.CreateAsync(new Credential { TenantId = tenantId, UserId = tempUser.Id, Name = "C1" }, ct);
+                Credential c2 = await driver.Credential.CreateAsync(new Credential { TenantId = tenantId, UserId = tempUser.Id, Name = "C2" }, ct);
 
                 await driver.Credential.DeleteByUserIdAsync(tempUser.Id, ct);
 

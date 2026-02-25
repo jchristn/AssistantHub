@@ -22,6 +22,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string BearerToken { get; set; } = null;
 
+        /// <summary>
+        /// Tenant identifier (required for email/password authentication).
+        /// </summary>
+        public string TenantId { get; set; } = null;
+
         #endregion
 
         #region Private-Members

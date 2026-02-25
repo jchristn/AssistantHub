@@ -60,11 +60,12 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
 
             string query =
                 "INSERT INTO ingestion_rules " +
-                "(id, name, description, bucket, collection_name, collection_id, " +
+                "(id, tenant_id, name, description, bucket, collection_name, collection_id, " +
                 "labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, " +
                 "created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(rule.Id) + "', " +
+                "'" + _Driver.Sanitize(rule.TenantId) + "', " +
                 "'" + _Driver.Sanitize(rule.Name) + "', " +
                 _Driver.FormatNullableString(rule.Description) + ", " +
                 "'" + _Driver.Sanitize(rule.Bucket) + "', " +
@@ -96,6 +97,19 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
         }
 
         /// <inheritdoc />
+        public async Task<IngestionRule> ReadByNameAsync(string tenantId, string name, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
+
+            string query = "SELECT * FROM ingestion_rules WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' AND name = '" + _Driver.Sanitize(name) + "';";
+
+            DataTable result = await _Driver.ExecuteQueryAsync(query, false, token).ConfigureAwait(false);
+            if (result == null || result.Rows.Count < 1) return null;
+            return IngestionRule.FromDataRow(result.Rows[0]);
+        }
+
+        /// <inheritdoc />
         public async Task<IngestionRule> UpdateAsync(IngestionRule rule, CancellationToken token = default)
         {
             if (rule == null) throw new ArgumentNullException(nameof(rule));
@@ -104,6 +118,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
 
             string query =
                 "UPDATE ingestion_rules SET " +
+                "tenant_id = '" + _Driver.Sanitize(rule.TenantId) + "', " +
                 "name = '" + _Driver.Sanitize(rule.Name) + "', " +
                 "description = " + _Driver.FormatNullableString(rule.Description) + ", " +
                 "bucket = '" + _Driver.Sanitize(rule.Bucket) + "', " +
@@ -146,8 +161,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<IngestionRule>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<IngestionRule>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             Stopwatch sw = Stopwatch.StartNew();
@@ -163,7 +179,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 ? "ORDER BY created_utc ASC"
                 : "ORDER BY created_utc DESC";
 
-            string countQuery = "SELECT COUNT(*) AS cnt FROM ingestion_rules;";
+            string whereClause = "WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' ";
+
+            string countQuery = "SELECT COUNT(*) AS cnt FROM ingestion_rules " + whereClause + ";";
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);
             long totalRecords = 0;
             if (countResult != null && countResult.Rows.Count > 0)
@@ -171,6 +189,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
 
             string selectQuery =
                 "SELECT * FROM ingestion_rules " +
+                whereClause +
                 orderBy + " " +
                 "OFFSET " + skip + " ROWS FETCH NEXT " + maxResults + " ROWS ONLY;";
 

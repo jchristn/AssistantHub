@@ -21,6 +21,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// Thread identifier with prefix thr_.
         /// </summary>
         public string ThreadId
@@ -151,6 +160,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewChatHistoryId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _ThreadId = "thr_placeholder";
         private string _AssistantId = "asst_placeholder";
 
@@ -175,6 +185,7 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             ChatHistory obj = new ChatHistory();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.ThreadId = DataTableHelper.GetStringValue(row, "thread_id");
             obj.AssistantId = DataTableHelper.GetStringValue(row, "assistant_id");
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");

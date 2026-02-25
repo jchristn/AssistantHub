@@ -58,7 +58,8 @@ namespace AssistantHub.Server.Handlers
                 bool isAdmin = IsAdmin(ctx);
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(query).ConfigureAwait(false);
+                AuthContext auth = GetAuthContext(ctx);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 // Non-admin users: filter to only their assistants' history
                 if (!isAdmin && result != null && result.Objects != null)
@@ -98,8 +99,7 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = GetAuthContext(ctx);
 
                 string historyId = ctx.Request.Url.Parameters["historyId"];
                 if (String.IsNullOrEmpty(historyId))
@@ -111,7 +111,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 ChatHistory history = await Database.ChatHistory.ReadAsync(historyId).ConfigureAwait(false);
-                if (history == null)
+                if (history == null || !EnforceTenantOwnership(auth, history.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -119,10 +119,10 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
                 {
                     Assistant assistant = await Database.Assistant.ReadAsync(history.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
+                    if (assistant == null || assistant.UserId != auth.UserId)
                     {
                         ctx.Response.StatusCode = 403;
                         ctx.Response.ContentType = "application/json";
@@ -154,8 +154,7 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = GetAuthContext(ctx);
 
                 string historyId = ctx.Request.Url.Parameters["historyId"];
                 if (String.IsNullOrEmpty(historyId))
@@ -167,7 +166,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 ChatHistory history = await Database.ChatHistory.ReadAsync(historyId).ConfigureAwait(false);
-                if (history == null)
+                if (history == null || !EnforceTenantOwnership(auth, history.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -175,10 +174,10 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                if (!isAdmin)
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
                 {
                     Assistant assistant = await Database.Assistant.ReadAsync(history.AssistantId).ConfigureAwait(false);
-                    if (assistant == null || assistant.UserId != user.Id)
+                    if (assistant == null || assistant.UserId != auth.UserId)
                     {
                         ctx.Response.StatusCode = 403;
                         ctx.Response.ContentType = "application/json";
@@ -211,13 +210,12 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = GetAuthContext(ctx);
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
 
                 // Fetch all history records (up to maxResults)
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 // Group by thread_id
                 Dictionary<string, List<ChatHistory>> threadGroups = new Dictionary<string, List<ChatHistory>>();
@@ -226,10 +224,10 @@ namespace AssistantHub.Server.Handlers
                     foreach (ChatHistory ch in result.Objects)
                     {
                         // Ownership check for non-admins
-                        if (!isAdmin)
+                        if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
                         {
                             Assistant assistant = await Database.Assistant.ReadAsync(ch.AssistantId).ConfigureAwait(false);
-                            if (assistant == null || assistant.UserId != user.Id) continue;
+                            if (assistant == null || assistant.UserId != auth.UserId) continue;
                         }
 
                         if (!threadGroups.ContainsKey(ch.ThreadId))

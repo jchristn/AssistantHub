@@ -16,8 +16,9 @@ namespace Test.Database.Tests
             Console.WriteLine();
             Console.WriteLine("--- ChatHistory Tests ---");
 
-            UserMaster user = await driver.User.CreateAsync(new UserMaster { Email = "chat-owner@example.com" }, token);
-            Assistant asst = await driver.Assistant.CreateAsync(new Assistant { UserId = user.Id, Name = "Chat Test Asst" }, token);
+            string tenantId = TenantTests.TestTenantId;
+            UserMaster user = await driver.User.CreateAsync(new UserMaster { TenantId = tenantId, Email = "chat-owner@example.com" }, token);
+            Assistant asst = await driver.Assistant.CreateAsync(new Assistant { TenantId = tenantId, UserId = user.Id, Name = "Chat Test Asst" }, token);
             string assistantId = asst.Id;
             string threadId = IdGenerator.NewThreadId();
             string createdId = null;
@@ -26,6 +27,7 @@ namespace Test.Database.Tests
             {
                 ChatHistory history = new ChatHistory
                 {
+                    TenantId = tenantId,
                     ThreadId = threadId,
                     AssistantId = assistantId,
                     CollectionId = "col_chat_123",
@@ -84,6 +86,7 @@ namespace Test.Database.Tests
             {
                 ChatHistory history = new ChatHistory
                 {
+                    TenantId = tenantId,
                     ThreadId = IdGenerator.NewThreadId(),
                     AssistantId = assistantId
                 };
@@ -114,6 +117,7 @@ namespace Test.Database.Tests
             {
                 ChatHistory history = new ChatHistory
                 {
+                    TenantId = tenantId,
                     ThreadId = IdGenerator.NewThreadId(),
                     AssistantId = assistantId,
                     RetrievalGateDecision = "SKIP",
@@ -158,7 +162,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("ChatHistory.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 3, "objects count");
@@ -167,12 +171,12 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("ChatHistory.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<ChatHistory> r1 = await driver.ChatHistory.EnumerateAsync(q1, ct);
+                EnumerationResult<ChatHistory> r1 = await driver.ChatHistory.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<ChatHistory> r2 = await driver.ChatHistory.EnumerateAsync(q2, ct);
+                EnumerationResult<ChatHistory> r2 = await driver.ChatHistory.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "different items on pages");
             }, token);
@@ -184,7 +188,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     AssistantIdFilter = assistantId
                 };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 3, "filtered count");
                 foreach (ChatHistory h in result.Objects)
                     AssertHelper.AreEqual(assistantId, h.AssistantId, "AssistantId filter");
@@ -197,7 +201,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     ThreadIdFilter = threadId
                 };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 1, "thread-filtered count");
                 foreach (ChatHistory h in result.Objects)
                     AssertHelper.AreEqual(threadId, h.ThreadId, "ThreadId filter");
@@ -210,7 +214,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     Ordering = EnumerationOrderEnum.CreatedAscending
                 };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 for (int i = 1; i < result.Objects.Count; i++)
                     AssertHelper.IsTrue(result.Objects[i].CreatedUtc >= result.Objects[i - 1].CreatedUtc, $"ascending at {i}");
             }, token);
@@ -222,7 +226,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     Ordering = EnumerationOrderEnum.CreatedDescending
                 };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 for (int i = 1; i < result.Objects.Count; i++)
                     AssertHelper.IsTrue(result.Objects[i].CreatedUtc <= result.Objects[i - 1].CreatedUtc, $"descending at {i}");
             }, token);
@@ -240,7 +244,7 @@ namespace Test.Database.Tests
                         ContinuationToken = contToken,
                         AssistantIdFilter = assistantId
                     };
-                    EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                    EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                     all.AddRange(result.Objects);
                     if (result.EndOfResults) break;
                     contToken = result.ContinuationToken;
@@ -253,6 +257,7 @@ namespace Test.Database.Tests
             {
                 ChatHistory history = await driver.ChatHistory.CreateAsync(new ChatHistory
                 {
+                    TenantId = tenantId,
                     ThreadId = IdGenerator.NewThreadId(),
                     AssistantId = assistantId,
                     UserMessage = "Delete me"
@@ -266,14 +271,14 @@ namespace Test.Database.Tests
 
             await runner.RunTestAsync("ChatHistory.DeleteByAssistantId", async ct =>
             {
-                Assistant tempAsst = await driver.Assistant.CreateAsync(new Assistant { UserId = user.Id, Name = "Chat Del Asst" }, ct);
-                await driver.ChatHistory.CreateAsync(new ChatHistory { ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst.Id, UserMessage = "M1" }, ct);
-                await driver.ChatHistory.CreateAsync(new ChatHistory { ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst.Id, UserMessage = "M2" }, ct);
+                Assistant tempAsst = await driver.Assistant.CreateAsync(new Assistant { TenantId = tenantId, UserId = user.Id, Name = "Chat Del Asst" }, ct);
+                await driver.ChatHistory.CreateAsync(new ChatHistory { TenantId = tenantId, ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst.Id, UserMessage = "M1" }, ct);
+                await driver.ChatHistory.CreateAsync(new ChatHistory { TenantId = tenantId, ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst.Id, UserMessage = "M2" }, ct);
 
                 await driver.ChatHistory.DeleteByAssistantIdAsync(tempAsst.Id, ct);
 
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100, AssistantIdFilter = tempAsst.Id };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.AreEqual(0, result.Objects.Count, "all chat history deleted by assistant id");
             }, token);
 
@@ -282,27 +287,27 @@ namespace Test.Database.Tests
                 // create entries, then try to delete with a very large retention (should keep all)
                 long countBefore = 0;
                 EnumerationQuery q = new EnumerationQuery { MaxResults = 1, AssistantIdFilter = assistantId };
-                EnumerationResult<ChatHistory> r = await driver.ChatHistory.EnumerateAsync(q, ct);
+                EnumerationResult<ChatHistory> r = await driver.ChatHistory.EnumerateAsync(tenantId, q, ct);
                 countBefore = r.TotalRecords;
 
                 await driver.ChatHistory.DeleteExpiredAsync(9999, ct);
 
-                EnumerationResult<ChatHistory> rAfter = await driver.ChatHistory.EnumerateAsync(q, ct);
+                EnumerationResult<ChatHistory> rAfter = await driver.ChatHistory.EnumerateAsync(tenantId, q, ct);
                 AssertHelper.AreEqual(countBefore, rAfter.TotalRecords, "no records deleted with large retention");
             }, token);
 
             await runner.RunTestAsync("ChatHistory.DeleteExpired_ActualDeletion", async ct =>
             {
                 // delete with 0-day retention should delete everything
-                Assistant tempAsst2 = await driver.Assistant.CreateAsync(new Assistant { UserId = user.Id, Name = "Expire Asst" }, ct);
-                await driver.ChatHistory.CreateAsync(new ChatHistory { ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst2.Id, UserMessage = "Old msg" }, ct);
+                Assistant tempAsst2 = await driver.Assistant.CreateAsync(new Assistant { TenantId = tenantId, UserId = user.Id, Name = "Expire Asst" }, ct);
+                await driver.ChatHistory.CreateAsync(new ChatHistory { TenantId = tenantId, ThreadId = IdGenerator.NewThreadId(), AssistantId = tempAsst2.Id, UserMessage = "Old msg" }, ct);
 
                 // wait briefly to ensure timestamp is in the past
                 await Task.Delay(100, ct);
                 await driver.ChatHistory.DeleteExpiredAsync(0, ct);
 
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100, AssistantIdFilter = tempAsst2.Id };
-                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(query, ct);
+                EnumerationResult<ChatHistory> result = await driver.ChatHistory.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.AreEqual(0, result.Objects.Count, "expired records deleted with 0-day retention");
             }, token);
         }

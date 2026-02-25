@@ -65,8 +65,14 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                UserMaster user = GetUser(ctx);
-                bool isAdmin = IsAdmin(ctx);
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
 
                 string body = ctx.Request.DataAsString;
                 if (String.IsNullOrEmpty(body))
@@ -129,9 +135,19 @@ namespace AssistantHub.Server.Handlers
                 string filename = uploadRequest.Name ?? uploadRequest.OriginalFilename ?? ("upload_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
                 string contentType = uploadRequest.ContentType ?? "application/octet-stream";
 
+                // Enforce tenant ownership on the ingestion rule
+                if (!EnforceTenantOwnership(auth, rule.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Ingestion rule not found."))).ConfigureAwait(false);
+                    return;
+                }
+
                 // Create the document record
                 AssistantDocument doc = new AssistantDocument();
                 doc.Id = IdGenerator.NewAssistantDocumentId();
+                doc.TenantId = auth.TenantId;
                 doc.Name = filename;
                 doc.OriginalFilename = uploadRequest.OriginalFilename ?? filename;
                 doc.ContentType = contentType;
@@ -209,8 +225,9 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<AssistantDocument> result = await Database.AssistantDocument.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<AssistantDocument> result = await Database.AssistantDocument.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -235,6 +252,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -245,7 +264,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -276,6 +295,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -286,7 +307,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -336,6 +357,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -346,7 +369,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -382,7 +405,7 @@ namespace AssistantHub.Server.Handlers
                             {
                                 try
                                 {
-                                    await Ingestion.DeleteEmbeddingAsync(doc.CollectionId, recordId).ConfigureAwait(false);
+                                    await Ingestion.DeleteEmbeddingAsync(doc.TenantId, doc.CollectionId, recordId).ConfigureAwait(false);
                                 }
                                 catch (Exception embeddingEx)
                                 {
@@ -421,6 +444,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -429,7 +454,8 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                bool exists = await Database.AssistantDocument.ExistsAsync(documentId).ConfigureAwait(false);
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                bool exists = doc != null && EnforceTenantOwnership(auth, doc.TenantId);
                 ctx.Response.StatusCode = exists ? 200 : 404;
                 await ctx.Response.Send().ConfigureAwait(false);
             }
@@ -451,6 +477,8 @@ namespace AssistantHub.Server.Handlers
 
             try
             {
+                AuthContext auth = GetAuthContext(ctx);
+
                 string documentId = ctx.Request.Url.Parameters["documentId"];
                 if (String.IsNullOrEmpty(documentId))
                 {
@@ -460,8 +488,8 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                bool exists = await Database.AssistantDocument.ExistsAsync(documentId).ConfigureAwait(false);
-                if (!exists)
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";

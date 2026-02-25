@@ -94,6 +94,11 @@ namespace AssistantHub.Core
         public static string ChatHistoryIdentifierPrefix = "chist_";
 
         /// <summary>
+        /// Tenant identifier prefix.
+        /// </summary>
+        public static string TenantIdentifierPrefix = "ten_";
+
+        /// <summary>
         /// Chat completion identifier prefix.
         /// </summary>
         public static string ChatCompletionIdentifierPrefix = "chatcmpl-";
@@ -152,6 +157,11 @@ namespace AssistantHub.Core
         /// </summary>
         public static string ChatHistoryTable = "chat_history";
 
+        /// <summary>
+        /// Tenants table name.
+        /// </summary>
+        public static string TenantsTable = "tenants";
+
         #endregion
 
         #region Headers
@@ -164,6 +174,16 @@ namespace AssistantHub.Core
         #endregion
 
         #region Default-Admin
+
+        /// <summary>
+        /// Default tenant identifier.
+        /// </summary>
+        public static string DefaultTenantId = "default";
+
+        /// <summary>
+        /// Default tenant name.
+        /// </summary>
+        public static string DefaultTenantName = "Default Tenant";
 
         /// <summary>
         /// Default admin email.

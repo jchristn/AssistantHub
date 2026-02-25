@@ -7,16 +7,33 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
     {
         #region Tables
 
+        internal static readonly string CreateTenantsTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tenants')
+            CREATE TABLE tenants (
+                id NVARCHAR(256) NOT NULL,
+                name NVARCHAR(256) NOT NULL,
+                active INT NOT NULL DEFAULT 1,
+                is_protected INT NOT NULL DEFAULT 0,
+                labels_json NVARCHAR(MAX) NULL,
+                tags_json NVARCHAR(MAX) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_tenants PRIMARY KEY (id)
+            );";
+
         internal static readonly string CreateUsersTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'users')
             CREATE TABLE users (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 email NVARCHAR(256) NOT NULL,
                 password_sha256 NVARCHAR(256) NULL,
                 first_name NVARCHAR(MAX) NULL,
                 last_name NVARCHAR(MAX) NULL,
                 is_admin INT NOT NULL DEFAULT 0,
+                is_tenant_admin INT NOT NULL DEFAULT 0,
                 active INT NOT NULL DEFAULT 1,
+                is_protected INT NOT NULL DEFAULT 0,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_users PRIMARY KEY (id)
@@ -26,10 +43,12 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'credentials')
             CREATE TABLE credentials (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 user_id NVARCHAR(256) NOT NULL,
                 name NVARCHAR(MAX) NULL,
                 bearer_token NVARCHAR(256) NOT NULL,
                 active INT NOT NULL DEFAULT 1,
+                is_protected INT NOT NULL DEFAULT 0,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_credentials PRIMARY KEY (id)
@@ -39,6 +58,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistants')
             CREATE TABLE assistants (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 user_id NVARCHAR(256) NOT NULL,
                 name NVARCHAR(MAX) NOT NULL,
                 description NVARCHAR(MAX) NULL,
@@ -88,6 +108,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')
             CREATE TABLE assistant_documents (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 name NVARCHAR(MAX) NOT NULL,
                 original_filename NVARCHAR(MAX) NULL,
                 content_type NVARCHAR(MAX) NULL DEFAULT 'application/octet-stream',
@@ -110,6 +131,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_feedback')
             CREATE TABLE assistant_feedback (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 assistant_id NVARCHAR(256) NOT NULL,
                 user_message NVARCHAR(MAX) NULL,
                 assistant_response NVARCHAR(MAX) NULL,
@@ -125,6 +147,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ingestion_rules')
             CREATE TABLE ingestion_rules (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 name NVARCHAR(256) NOT NULL,
                 description NVARCHAR(MAX) NULL,
                 bucket NVARCHAR(MAX) NOT NULL,
@@ -145,6 +168,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'chat_history')
             CREATE TABLE chat_history (
                 id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
                 thread_id NVARCHAR(256) NOT NULL,
                 assistant_id NVARCHAR(256) NOT NULL,
                 collection_id NVARCHAR(256) NULL,
@@ -175,9 +199,25 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
 
         #region Indices
 
+        internal static readonly string CreateTenantsNameIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_tenants_name')
+            CREATE INDEX idx_tenants_name ON tenants (name);";
+
+        internal static readonly string CreateTenantsCreatedUtcIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_tenants_created_utc')
+            CREATE INDEX idx_tenants_created_utc ON tenants (created_utc);";
+
         internal static readonly string CreateUsersEmailIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_users_email')
             CREATE INDEX idx_users_email ON users (email);";
+
+        internal static readonly string CreateUsersTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_users_tenant_id')
+            CREATE INDEX idx_users_tenant_id ON users (tenant_id);";
+
+        internal static readonly string CreateUsersTenantEmailIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_users_tenant_email')
+            CREATE UNIQUE INDEX idx_users_tenant_email ON users (tenant_id, email);";
 
         internal static readonly string CreateCredentialsUserIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_credentials_user_id')
@@ -187,25 +227,45 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_credentials_bearer_token')
             CREATE INDEX idx_credentials_bearer_token ON credentials (bearer_token);";
 
+        internal static readonly string CreateCredentialsTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_credentials_tenant_id')
+            CREATE INDEX idx_credentials_tenant_id ON credentials (tenant_id);";
+
         internal static readonly string CreateAssistantsUserIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistants_user_id')
             CREATE INDEX idx_assistants_user_id ON assistants (user_id);";
+
+        internal static readonly string CreateAssistantsTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistants_tenant_id')
+            CREATE INDEX idx_assistants_tenant_id ON assistants (tenant_id);";
 
         internal static readonly string CreateAssistantSettingsAssistantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_settings_assistant_id')
             CREATE INDEX idx_assistant_settings_assistant_id ON assistant_settings (assistant_id);";
 
+        internal static readonly string CreateAssistantDocumentsTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_tenant_id')
+            CREATE INDEX idx_assistant_documents_tenant_id ON assistant_documents (tenant_id);";
+
+        internal static readonly string CreateAssistantDocumentsIngestionRuleIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_ingestion_rule_id')
+            CREATE INDEX idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id);";
+
         internal static readonly string CreateAssistantFeedbackAssistantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_feedback_assistant_id')
             CREATE INDEX idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id);";
+
+        internal static readonly string CreateAssistantFeedbackTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_feedback_tenant_id')
+            CREATE INDEX idx_assistant_feedback_tenant_id ON assistant_feedback (tenant_id);";
 
         internal static readonly string CreateIngestionRulesNameIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ingestion_rules_name')
             CREATE INDEX idx_ingestion_rules_name ON ingestion_rules (name);";
 
-        internal static readonly string CreateAssistantDocumentsIngestionRuleIdIndex =
-            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_ingestion_rule_id')
-            CREATE INDEX idx_assistant_documents_ingestion_rule_id ON assistant_documents (ingestion_rule_id);";
+        internal static readonly string CreateIngestionRulesTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ingestion_rules_tenant_id')
+            CREATE INDEX idx_ingestion_rules_tenant_id ON ingestion_rules (tenant_id);";
 
         internal static readonly string CreateChatHistoryAssistantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_assistant_id')
@@ -218,6 +278,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateChatHistoryCreatedUtcIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_created_utc')
             CREATE INDEX idx_chat_history_created_utc ON chat_history (created_utc);";
+
+        internal static readonly string CreateChatHistoryTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_tenant_id')
+            CREATE INDEX idx_chat_history_tenant_id ON chat_history (tenant_id);";
 
         #endregion
     }

@@ -50,6 +50,7 @@ namespace AssistantHub.Core.Database.Postgresql
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            Tenant = new TenantMethods(this, _Settings, _Logging);
         }
 
         #endregion
@@ -61,6 +62,7 @@ namespace AssistantHub.Core.Database.Postgresql
         {
             List<string> queries = new List<string>
             {
+                TableQueries.CreateTenantsTable,
                 TableQueries.CreateUsersTable,
                 TableQueries.CreateCredentialsTable,
                 TableQueries.CreateAssistantsTable,
@@ -68,37 +70,31 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
+                TableQueries.CreateTenantsNameIndex,
+                TableQueries.CreateTenantsCreatedUtcIndex,
+                TableQueries.CreateUsersTenantIdIndex,
+                TableQueries.CreateUsersTenantEmailIndex,
                 TableQueries.CreateUsersEmailIndex,
+                TableQueries.CreateCredentialsTenantIdIndex,
                 TableQueries.CreateCredentialsUserIdIndex,
                 TableQueries.CreateCredentialsBearerTokenIndex,
+                TableQueries.CreateAssistantsTenantIdIndex,
                 TableQueries.CreateAssistantsUserIdIndex,
                 TableQueries.CreateAssistantSettingsAssistantIdIndex,
+                TableQueries.CreateAssistantDocumentsTenantIdIndex,
+                TableQueries.CreateAssistantFeedbackTenantIdIndex,
                 TableQueries.CreateAssistantFeedbackAssistantIdIndex,
+                TableQueries.CreateIngestionRulesTenantIdIndex,
                 TableQueries.CreateIngestionRulesNameIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
                 TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateChatHistoryTenantIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);
-
-            // Auto-migration: add columns that may not exist in older databases
-            string[] migrations = new string[]
-            {
-                "ALTER TABLE chat_history ADD COLUMN completion_tokens INTEGER NOT NULL DEFAULT 0",
-                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_overall DOUBLE PRECISION NOT NULL DEFAULT 0",
-                "ALTER TABLE chat_history ADD COLUMN tokens_per_second_generation DOUBLE PRECISION NOT NULL DEFAULT 0",
-                "ALTER TABLE assistant_settings ADD COLUMN enable_citations INTEGER NOT NULL DEFAULT 0",
-                "ALTER TABLE assistant_settings ADD COLUMN citation_link_mode TEXT DEFAULT 'None'"
-            };
-
-            foreach (string migration in migrations)
-            {
-                try { await ExecuteQueryAsync(migration, false, token).ConfigureAwait(false); }
-                catch (Exception) { /* Column already exists */ }
-            }
 
             _Logging.Info("PostgreSQL database initialized successfully");
         }

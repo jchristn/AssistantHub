@@ -17,6 +17,7 @@ namespace AssistantHub.Server
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
     using AssistantHub.Server.Handlers;
+    using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
@@ -39,8 +40,14 @@ namespace AssistantHub.Server
         private static InferenceService _Inference = null;
         private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
+        private static EndpointHealthCheckService _HealthCheckService = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
         private static bool _ShuttingDown = false;
+
+        /// <summary>
+        /// The endpoint health check service instance, accessible by handlers.
+        /// </summary>
+        public static EndpointHealthCheckService HealthCheckService => _HealthCheckService;
 
         #endregion
 
@@ -58,6 +65,7 @@ namespace AssistantHub.Server
             await InitializeFirstRunAsync();
             InitializeServices();
             await ValidateConnectivityAsync();
+            await StartHealthCheckServiceAsync();
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
             InitializeWebserver();
@@ -173,47 +181,74 @@ namespace AssistantHub.Server
 
         private static async Task InitializeFirstRunAsync()
         {
-            long userCount = await _Database.User.GetCountAsync().ConfigureAwait(false);
-            if (userCount > 0)
+            long tenantCount = await _Database.Tenant.GetCountAsync().ConfigureAwait(false);
+            if (tenantCount > 0)
             {
-                _Logging.Info(_Header + "existing users found, skipping first-run setup");
+                _Logging.Info(_Header + "existing tenants found, skipping first-run setup");
                 return;
             }
 
-            _Logging.Info(_Header + "no users found, creating default admin user");
+            _Logging.Info(_Header + "no tenants found, running first-time setup");
+
+            // Step 1: Create default tenant
+            TenantMetadata defaultTenant = new TenantMetadata();
+            defaultTenant.Id = Constants.DefaultTenantId;
+            defaultTenant.Name = _Settings.DefaultTenant?.Name ?? Constants.DefaultTenantName;
+            defaultTenant.Active = true;
+            defaultTenant.IsProtected = true;
+            defaultTenant.CreatedUtc = DateTime.UtcNow;
+            defaultTenant.LastUpdateUtc = DateTime.UtcNow;
+            defaultTenant = await _Database.Tenant.CreateAsync(defaultTenant).ConfigureAwait(false);
+
+            _Logging.Info(_Header + "default tenant created: " + defaultTenant.Id);
+
+            // Step 2: Create default admin user
+            string adminEmail = _Settings.DefaultTenant?.AdminEmail ?? Constants.DefaultAdminEmail;
+            string adminPassword = _Settings.DefaultTenant?.AdminPassword ?? Constants.DefaultAdminPassword;
 
             UserMaster admin = new UserMaster();
             admin.Id = IdGenerator.NewUserId();
-            admin.Email = Constants.DefaultAdminEmail;
+            admin.TenantId = Constants.DefaultTenantId;
+            admin.Email = adminEmail;
             admin.FirstName = Constants.DefaultAdminFirstName;
             admin.LastName = Constants.DefaultAdminLastName;
             admin.IsAdmin = true;
+            admin.IsTenantAdmin = true;
             admin.Active = true;
-            admin.SetPassword(Constants.DefaultAdminPassword);
+            admin.IsProtected = true;
+            admin.SetPassword(adminPassword);
             admin = await _Database.User.CreateAsync(admin).ConfigureAwait(false);
 
+            // Step 3: Create default credential
             Credential credential = new Credential();
             credential.Id = IdGenerator.NewCredentialId();
+            credential.TenantId = Constants.DefaultTenantId;
             credential.UserId = admin.Id;
             credential.Name = "Default admin credential";
             credential.BearerToken = "default";
             credential.Active = true;
+            credential.IsProtected = true;
             credential = await _Database.Credential.CreateAsync(credential).ConfigureAwait(false);
 
             _Logging.Info(_Header + "default admin created:");
+            _Logging.Info(_Header + "  tenant: " + defaultTenant.Id + " (" + defaultTenant.Name + ")");
             _Logging.Info(_Header + "  email: " + admin.Email);
-            _Logging.Info(_Header + "  password: " + Constants.DefaultAdminPassword);
+            _Logging.Info(_Header + "  password: " + adminPassword);
             _Logging.Info(_Header + "  bearer token: " + credential.BearerToken);
 
             Console.WriteLine("");
-            Console.WriteLine("*** Default admin credentials ***");
-            Console.WriteLine("Email       : " + admin.Email);
-            Console.WriteLine("Password    : " + Constants.DefaultAdminPassword);
-            Console.WriteLine("Bearer token: " + credential.BearerToken);
+            Console.WriteLine("*** Default tenant credentials ***");
+            Console.WriteLine("Tenant ID   : " + defaultTenant.Id);
+            Console.WriteLine("Tenant Name : " + defaultTenant.Name);
+            Console.WriteLine("Admin Email : " + admin.Email);
+            Console.WriteLine("Password    : " + adminPassword);
+            Console.WriteLine("Bearer Token: " + credential.BearerToken);
             Console.WriteLine("");
 
+            // Step 4: Create default ingestion rule
             IngestionRule defaultRule = new IngestionRule();
             defaultRule.Id = IdGenerator.NewIngestionRuleId();
+            defaultRule.TenantId = Constants.DefaultTenantId;
             defaultRule.Name = "Default";
             defaultRule.Description = "Default ingestion rule";
             defaultRule.Bucket = "default";
@@ -227,37 +262,55 @@ namespace AssistantHub.Server
 
             _Logging.Info(_Header + "default ingestion rule created: " + defaultRule.Id);
 
-            // Create default collection in RecallDB
+            // Step 5: Provision RecallDB tenant and collection
             try
             {
                 using (HttpClient http = new HttpClient())
                 {
-                    string url = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + _Settings.RecallDb.TenantId + "/collections";
-                    using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, url))
+                    // Create RecallDB tenant
+                    string tenantUrl = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants";
+                    using (HttpRequestMessage tenantReq = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, tenantUrl))
                     {
-                        object body = new { Id = "default", Name = "default" };
-                        req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+                        object tenantBody = new { Id = Constants.DefaultTenantId, Name = defaultTenant.Name };
+                        tenantReq.Content = new StringContent(JsonSerializer.Serialize(tenantBody), Encoding.UTF8, "application/json");
 
                         if (!String.IsNullOrEmpty(_Settings.RecallDb.AccessKey))
-                            req.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
+                            tenantReq.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
 
-                        HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
-                        if (resp.IsSuccessStatusCode)
+                        HttpResponseMessage tenantResp = await http.SendAsync(tenantReq).ConfigureAwait(false);
+                        if (tenantResp.IsSuccessStatusCode)
+                            _Logging.Info(_Header + "default RecallDB tenant created");
+                        else
+                            _Logging.Warn(_Header + "failed to create default RecallDB tenant: HTTP " + (int)tenantResp.StatusCode);
+                    }
+
+                    // Create default collection in RecallDB
+                    string collUrl = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + Constants.DefaultTenantId + "/collections";
+                    using (HttpRequestMessage collReq = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, collUrl))
+                    {
+                        object collBody = new { Id = "default", Name = "default" };
+                        collReq.Content = new StringContent(JsonSerializer.Serialize(collBody), Encoding.UTF8, "application/json");
+
+                        if (!String.IsNullOrEmpty(_Settings.RecallDb.AccessKey))
+                            collReq.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
+
+                        HttpResponseMessage collResp = await http.SendAsync(collReq).ConfigureAwait(false);
+                        if (collResp.IsSuccessStatusCode)
                             _Logging.Info(_Header + "default RecallDB collection created");
                         else
-                            _Logging.Warn(_Header + "failed to create default RecallDB collection: HTTP " + (int)resp.StatusCode);
+                            _Logging.Warn(_Header + "failed to create default RecallDB collection: HTTP " + (int)collResp.StatusCode);
                     }
                 }
             }
             catch (Exception e)
             {
-                _Logging.Warn(_Header + "could not create default RecallDB collection: " + e.Message);
+                _Logging.Warn(_Header + "could not provision RecallDB: " + e.Message);
             }
         }
 
         private static void InitializeServices()
         {
-            _Authentication = new AuthenticationService(_Database, _Logging);
+            _Authentication = new AuthenticationService(_Database, _Logging, _Settings);
 
             _ProcessingLog = new ProcessingLogService(_Settings.ProcessingLog, _Logging);
 
@@ -413,6 +466,19 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "chat history cleanup loop started");
         }
 
+        private static async Task StartHealthCheckServiceAsync()
+        {
+            try
+            {
+                _HealthCheckService = new EndpointHealthCheckService(_Settings, _Logging);
+                await _HealthCheckService.StartAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "health check service failed to start: " + e.Message);
+            }
+        }
+
         private static void InitializeWebserver()
         {
             WatsonWebserver.Core.WebserverSettings wsSettings = new WatsonWebserver.Core.WebserverSettings(_Settings.Webserver.Hostname, _Settings.Webserver.Port, _Settings.Webserver.Ssl);
@@ -423,6 +489,7 @@ namespace AssistantHub.Server
             RootHandler rootHandler = new RootHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AuthenticateHandler authenticateHandler = new AuthenticateHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ChatHandler chatHandler = new ChatHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            TenantHandler tenantHandler = new TenantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             UserHandler userHandler = new UserHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CredentialHandler credentialHandler = new CredentialHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CollectionHandler collectionHandler = new CollectionHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
@@ -454,21 +521,32 @@ namespace AssistantHub.Server
             // Authentication handler
             _Server.Routes.AuthenticateRequest = authHandler.HandleAuthenticateRequestAsync;
 
-            // Authenticated routes - Users (admin only)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/users", userHandler.PutUserAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/users", userHandler.GetUsersAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/users/{userId}", userHandler.GetUserAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/users/{userId}", userHandler.PutUserByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/users/{userId}", userHandler.DeleteUserAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/users/{userId}", userHandler.HeadUserAsync);
+            // Authenticated routes - Tenants
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants", tenantHandler.PutTenantAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants", tenantHandler.GetTenantsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{id}", tenantHandler.GetTenantAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{id}", tenantHandler.PutTenantByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{id}", tenantHandler.DeleteTenantAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{id}", tenantHandler.HeadTenantAsync);
 
-            // Authenticated routes - Credentials (admin only)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/credentials", credentialHandler.PutCredentialAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/credentials", credentialHandler.GetCredentialsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/credentials/{credentialId}", credentialHandler.GetCredentialAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/credentials/{credentialId}", credentialHandler.PutCredentialByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/credentials/{credentialId}", credentialHandler.DeleteCredentialAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/credentials/{credentialId}", credentialHandler.HeadCredentialAsync);
+            // Authenticated routes - WhoAmI
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/whoami", tenantHandler.GetWhoAmIAsync);
+
+            // Authenticated routes - Users (under tenant path)
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users", userHandler.PutUserAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users", userHandler.GetUsersAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.GetUserAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.PutUserByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.DeleteUserAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.HeadUserAsync);
+
+            // Authenticated routes - Credentials (under tenant path)
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.PutCredentialAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.GetCredentialsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.GetCredentialAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.PutCredentialByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.DeleteCredentialAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.HeadCredentialAsync);
 
             // Authenticated routes - Collections (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections", collectionHandler.PutCollectionAsync);
@@ -522,6 +600,7 @@ namespace AssistantHub.Server
             // Authenticated routes - Embedding Endpoints (admin only, proxied to Partio)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding", embeddingEndpointHandler.CreateEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/enumerate", embeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/health", embeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync);
@@ -531,6 +610,7 @@ namespace AssistantHub.Server
             // Authenticated routes - Completion Endpoints (admin only, proxied to Partio)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion", completionEndpointHandler.CreateCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/enumerate", completionEndpointHandler.EnumerateCompletionEndpointsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/health", completionEndpointHandler.GetAllCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync);

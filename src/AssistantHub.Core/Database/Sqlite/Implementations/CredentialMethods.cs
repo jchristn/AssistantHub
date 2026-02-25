@@ -59,13 +59,15 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "INSERT INTO credentials " +
-                "(id, user_id, name, bearer_token, active, created_utc, last_update_utc) " +
+                "(id, tenant_id, user_id, name, bearer_token, active, is_protected, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(credential.Id) + "', " +
+                "'" + _Driver.Sanitize(credential.TenantId) + "', " +
                 "'" + _Driver.Sanitize(credential.UserId) + "', " +
                 _Driver.FormatNullableString(credential.Name) + ", " +
                 "'" + _Driver.Sanitize(credential.BearerToken) + "', " +
                 _Driver.FormatBoolean(credential.Active) + ", " +
+                _Driver.FormatBoolean(credential.IsProtected) + ", " +
                 "'" + _Driver.FormatDateTime(credential.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(credential.LastUpdateUtc) + "'" +
                 ");";
@@ -109,10 +111,12 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "UPDATE credentials SET " +
+                "tenant_id = '" + _Driver.Sanitize(credential.TenantId) + "', " +
                 "user_id = '" + _Driver.Sanitize(credential.UserId) + "', " +
                 "name = " + _Driver.FormatNullableString(credential.Name) + ", " +
                 "bearer_token = '" + _Driver.Sanitize(credential.BearerToken) + "', " +
                 "active = " + _Driver.FormatBoolean(credential.Active) + ", " +
+                "is_protected = " + _Driver.FormatBoolean(credential.IsProtected) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(credential.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(credential.Id) + "';";
 
@@ -146,8 +150,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<Credential>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<Credential>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             EnumerationResult<Credential> ret = new EnumerationResult<Credential>();
@@ -169,13 +174,12 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                     break;
             }
 
-            string whereClause = "";
-            string whereClauseCount = "";
+            List<string> conditions = new List<string>();
+            conditions.Add("tenant_id = '" + _Driver.Sanitize(tenantId) + "'");
             if (!String.IsNullOrEmpty(query.AssistantIdFilter))
-            {
-                whereClause = "WHERE user_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "' ";
-                whereClauseCount = whereClause;
-            }
+                conditions.Add("user_id = '" + _Driver.Sanitize(query.AssistantIdFilter) + "'");
+
+            string whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
 
             string selectQuery =
                 "SELECT * FROM credentials " +
@@ -184,7 +188,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "LIMIT " + query.MaxResults + " OFFSET " + skip + ";";
 
             string countQuery =
-                "SELECT COUNT(*) AS cnt FROM credentials " + whereClauseCount + ";";
+                "SELECT COUNT(*) AS cnt FROM credentials " + whereClause + ";";
 
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);
             if (countResult != null && countResult.Rows.Count > 0)

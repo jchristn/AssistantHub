@@ -299,6 +299,7 @@ namespace AssistantHub.Server.Handlers
                     Stopwatch retrievalSw = Stopwatch.StartNew();
 
                     List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
+                        assistant.TenantId,
                         settings.CollectionId,
                         lastUserMessage,
                         settings.RetrievalTopK,
@@ -462,7 +463,7 @@ namespace AssistantHub.Server.Handlers
                 {
                     await HandleStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
-                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
@@ -471,7 +472,7 @@ namespace AssistantHub.Server.Handlers
                 {
                     await HandleNonStreamingResponse(ctx, messages, model, maxTokens, temperature, topP,
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
-                        threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
+                        assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
@@ -526,6 +527,7 @@ namespace AssistantHub.Server.Handlers
 
                 AssistantFeedback feedback = new AssistantFeedback();
                 feedback.Id = IdGenerator.NewAssistantFeedbackId();
+                feedback.TenantId = assistant.TenantId;
                 feedback.AssistantId = assistantId;
                 feedback.UserMessage = feedbackReq.UserMessage;
                 feedback.AssistantResponse = feedbackReq.AssistantResponse;
@@ -652,9 +654,11 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 List<string> contextChunks = new List<string>();
+                List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
                 if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
                 {
                     List<RetrievalChunk> retrievedChunks = await Retrieval.RetrieveAsync(
+                        assistant.TenantId,
                         settings.CollectionId, lastUserMessage,
                         settings.RetrievalTopK, settings.RetrievalScoreThreshold,
                         default,
@@ -669,7 +673,35 @@ namespace AssistantHub.Server.Handlers
                             FullTextMinimumScore = settings.FullTextMinimumScore,
                             IncludeNeighbors = settings.RetrievalIncludeNeighbors
                         }).ConfigureAwait(false);
-                    if (retrievedChunks != null) contextChunks.AddRange(retrievedChunks.Select(c => c.MergedContent));
+                    if (retrievedChunks != null)
+                    {
+                        retrievalChunks.AddRange(retrievedChunks);
+                        contextChunks.AddRange(retrievedChunks.Select(c => c.MergedContent));
+                    }
+                }
+
+                // Resolve document names for citation labels
+                List<string> chunkLabels = null;
+
+                if (settings.EnableCitations && settings.EnableRag && retrievalChunks.Count > 0)
+                {
+                    chunkLabels = new List<string>();
+
+                    foreach (RetrievalChunk chunk in retrievalChunks)
+                    {
+                        string docName = "Unknown Document";
+
+                        if (!String.IsNullOrEmpty(chunk.DocumentId))
+                        {
+                            AssistantDocument doc = await Database.AssistantDocument.ReadAsync(chunk.DocumentId).ConfigureAwait(false);
+                            if (doc != null)
+                            {
+                                docName = doc.Name ?? doc.OriginalFilename ?? "Unknown Document";
+                            }
+                        }
+
+                        chunkLabels.Add("(Source: \"" + docName + "\")");
+                    }
                 }
 
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
@@ -677,7 +709,9 @@ namespace AssistantHub.Server.Handlers
                 bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
                 if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
                 {
-                    string fullSystemMessage = Inference.BuildSystemMessage(settings.SystemPrompt, contextChunks);
+                    string fullSystemMessage = Inference.BuildSystemMessage(
+                        settings.SystemPrompt, contextChunks,
+                        settings.EnableCitations, chunkLabels);
                     messages.Insert(0, new ChatCompletionMessage { Role = "system", Content = fullSystemMessage });
                 }
                 else if (hasSystemMessage && contextChunks.Count > 0)
@@ -689,7 +723,9 @@ namespace AssistantHub.Server.Handlers
                             messages[i] = new ChatCompletionMessage
                             {
                                 Role = "system",
-                                Content = Inference.BuildSystemMessage(messages[i].Content, contextChunks)
+                                Content = Inference.BuildSystemMessage(
+                                    messages[i].Content, contextChunks,
+                                    settings.EnableCitations, chunkLabels)
                             };
                             break;
                         }
@@ -911,7 +947,7 @@ namespace AssistantHub.Server.Handlers
                 query.Ordering = Enums.EnumerationOrderEnum.CreatedAscending;
                 query.MaxResults = 1000;
 
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(query).ConfigureAwait(false);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(assistant.TenantId, query).ConfigureAwait(false);
 
                 List<object> items = new List<object>();
                 if (result?.Objects != null)
@@ -998,7 +1034,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
-                if (doc == null)
+                if (doc == null || doc.TenantId != assistant.TenantId)
                 {
                     ctx.Response.StatusCode = 404;
                     ctx.Response.ContentType = "application/json";
@@ -1014,7 +1050,20 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                byte[] data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                byte[] data = null;
+                try
+                {
+                    data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                }
+                catch (Exception storageEx)
+                {
+                    Logging.Warn(_Header + "storage download failed for document " + documentId + " (bucket: " + doc.BucketName + ", key: " + doc.S3Key + "): " + storageEx.Message);
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
                 if (data == null || data.Length == 0)
                 {
                     ctx.Response.StatusCode = 404;
@@ -1051,6 +1100,7 @@ namespace AssistantHub.Server.Handlers
             Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
+            string tenantId = null,
             string threadId = null,
             string assistantId = null,
             string collectionId = null,
@@ -1082,8 +1132,13 @@ namespace AssistantHub.Server.Handlers
 
             if (inferenceResult != null && inferenceResult.Success && !String.IsNullOrEmpty(inferenceResult.Content))
             {
+                // Strip any model-generated bibliography before building the response
+                string responseContent = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
+                    ? CitationExtractor.StripBibliography(inferenceResult.Content)
+                    : inferenceResult.Content;
+
                 int responsePromptTokens = EstimateTokenCount(messages);
-                int completionTokens = EstimateTokenCount(inferenceResult.Content);
+                int completionTokens = EstimateTokenCount(responseContent);
 
                 ChatCompletionResponse response = new ChatCompletionResponse
                 {
@@ -1096,7 +1151,7 @@ namespace AssistantHub.Server.Handlers
                         new ChatCompletionChoice
                         {
                             Index = 0,
-                            Message = new ChatCompletionMessage { Role = "assistant", Content = inferenceResult.Content },
+                            Message = new ChatCompletionMessage { Role = "assistant", Content = responseContent },
                             FinishReason = "stop"
                         }
                     },
@@ -1115,7 +1170,7 @@ namespace AssistantHub.Server.Handlers
                         Chunks = retrievalChunks ?? new List<RetrievalChunk>()
                     } : null,
                     Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
-                        ? CitationExtractor.Extract(citationSources, inferenceResult.Content)
+                        ? CitationExtractor.Extract(citationSources, responseContent)
                         : null
                 };
 
@@ -1126,7 +1181,7 @@ namespace AssistantHub.Server.Handlers
                 // Fire-and-forget chat history write
                 if (!String.IsNullOrEmpty(threadId))
                 {
-                    _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                    _ = WriteChatHistoryAsync(tenantId, threadId, assistantId, collectionId,
                         userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContext,
                         promptSentUtc, promptTokens,
@@ -1158,6 +1213,7 @@ namespace AssistantHub.Server.Handlers
             Enums.InferenceProviderEnum inferenceProvider,
             string inferenceEndpoint,
             string inferenceApiKey,
+            string tenantId = null,
             string threadId = null,
             string assistantId = null,
             string collectionId = null,
@@ -1246,20 +1302,25 @@ namespace AssistantHub.Server.Handlers
 
                     Logging.Info(_Header + "inference timing: connection=" + inferenceConnectionMs + "ms, TTFT=" + timeToFirstTokenMs + "ms, TTLT=" + timeToLastTokenMs + "ms");
 
+                    // Strip any model-generated bibliography for citation extraction
+                    string cleanedContent = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
+                        ? CitationExtractor.StripBibliography(fullContent)
+                        : fullContent;
+
                     // Send finish chunk with usage
                     int finishPromptTokens = EstimateTokenCount(messages);
                     int finishCompletionTokens = EstimateTokenCount(fullContent);
 
-                    // Fire-and-forget chat history write
+                    // Fire-and-forget chat history write (use cleaned content)
                     if (!String.IsNullOrEmpty(threadId))
                     {
-                        _ = WriteChatHistoryAsync(threadId, assistantId, collectionId,
+                        _ = WriteChatHistoryAsync(tenantId, threadId, assistantId, collectionId,
                             userMessageUtc ?? DateTime.UtcNow, lastUserMessage,
                             retrievalStartUtc, retrievalDurationMs, retrievalContext,
                             promptSentUtc, promptTokens,
                             endpointResolutionMs, compactionMs, inferenceConnectionMs,
                             timeToFirstTokenMs, timeToLastTokenMs,
-                            fullContent,
+                            cleanedContent,
                             finishCompletionTokens,
                             retrievalGateDecision, retrievalGateDurationMs);
                     }
@@ -1293,7 +1354,7 @@ namespace AssistantHub.Server.Handlers
                             Chunks = retrievalChunks ?? new List<RetrievalChunk>()
                         } : null,
                         Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
-                            ? CitationExtractor.Extract(citationSources, fullContent)
+                            ? CitationExtractor.Extract(citationSources, cleanedContent)
                             : null
                     };
                     await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
@@ -1479,7 +1540,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         private async Task WriteChatHistoryAsync(
-            string threadId, string assistantId, string collectionId,
+            string tenantId, string threadId, string assistantId, string collectionId,
             DateTime userMessageUtc, string userMessage,
             DateTime? retrievalStartUtc, double retrievalDurationMs, string retrievalContext,
             DateTime? promptSentUtc, int promptTokens,
@@ -1493,6 +1554,7 @@ namespace AssistantHub.Server.Handlers
             {
                 ChatHistory history = new ChatHistory();
                 history.Id = IdGenerator.NewChatHistoryId();
+                history.TenantId = tenantId;
                 history.ThreadId = threadId;
                 history.AssistantId = assistantId;
                 history.CollectionId = collectionId;

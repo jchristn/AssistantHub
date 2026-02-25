@@ -10,7 +10,9 @@ function UserFormModal({ user, onSave, onClose }) {
     FirstName: user?.FirstName || '',
     LastName: user?.LastName || '',
     IsAdmin: user?.IsAdmin || false,
-    Active: user?.Active !== undefined ? user.Active : true
+    IsTenantAdmin: user?.IsTenantAdmin || false,
+    Active: user?.Active !== undefined ? user.Active : true,
+    IsProtected: user?.IsProtected !== undefined ? user.IsProtected : false
   });
   const [saving, setSaving] = useState(false);
 
@@ -62,6 +64,15 @@ function UserFormModal({ user, onSave, onClose }) {
         <div className="form-group">
           <div className="form-toggle">
             <label className="toggle-switch">
+              <input type="checkbox" checked={form.IsTenantAdmin} onChange={(e) => handleChange('IsTenantAdmin', e.target.checked)} />
+              <span className="toggle-slider"></span>
+            </label>
+            <span><Tooltip text="Grant this user tenant administrator privileges (manage users, credentials, and resources within the tenant)">Tenant Admin</Tooltip></span>
+          </div>
+        </div>
+        <div className="form-group">
+          <div className="form-toggle">
+            <label className="toggle-switch">
               <input type="checkbox" checked={form.IsAdmin} onChange={(e) => handleChange('IsAdmin', e.target.checked)} />
               <span className="toggle-slider"></span>
             </label>
@@ -69,15 +80,26 @@ function UserFormModal({ user, onSave, onClose }) {
           </div>
         </div>
         {isEdit && (
-          <div className="form-group">
-            <div className="form-toggle">
-              <label className="toggle-switch">
-                <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
-                <span className="toggle-slider"></span>
-              </label>
-              <span><Tooltip text="Whether this user account is currently active and can log in">Active</Tooltip></span>
+          <>
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Whether this user account is currently active and can log in">Active</Tooltip></span>
+              </div>
             </div>
-          </div>
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={form.IsProtected} onChange={(e) => handleChange('IsProtected', e.target.checked)} />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Protected records cannot be deleted">Protected</Tooltip></span>
+              </div>
+            </div>
+          </>
         )}
       </form>
     </Modal>

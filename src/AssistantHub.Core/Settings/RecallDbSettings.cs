@@ -19,15 +19,6 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
-        /// Tenant identifier for the RecallDb service.
-        /// </summary>
-        public string TenantId
-        {
-            get => _TenantId;
-            set { if (!String.IsNullOrEmpty(value)) _TenantId = value; }
-        }
-
-        /// <summary>
         /// Access key for the RecallDb service.
         /// </summary>
         public string AccessKey { get; set; } = "recalldbadmin";
@@ -37,7 +28,6 @@ namespace AssistantHub.Core.Settings
         #region Private-Members
 
         private string _Endpoint = "http://localhost:8401";
-        private string _TenantId = "default";
 
         #endregion
 

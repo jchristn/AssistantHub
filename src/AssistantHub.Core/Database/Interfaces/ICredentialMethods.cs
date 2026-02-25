@@ -59,12 +59,13 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<bool> ExistsAsync(string id, CancellationToken token = default);
 
         /// <summary>
-        /// Enumerate credential records.
+        /// Enumerate credential records scoped to a tenant.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="query">Enumeration query.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Enumeration result containing credential records.</returns>
-        Task<EnumerationResult<Credential>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default);
+        Task<EnumerationResult<Credential>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default);
 
         /// <summary>
         /// Delete all credential records belonging to a user.

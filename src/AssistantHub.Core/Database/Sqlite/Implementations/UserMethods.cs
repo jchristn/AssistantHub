@@ -59,15 +59,18 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "INSERT INTO users " +
-                "(id, email, password_sha256, first_name, last_name, is_admin, active, created_utc, last_update_utc) " +
+                "(id, tenant_id, email, password_sha256, first_name, last_name, is_admin, is_tenant_admin, active, is_protected, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(user.Id) + "', " +
+                "'" + _Driver.Sanitize(user.TenantId) + "', " +
                 "'" + _Driver.Sanitize(user.Email) + "', " +
                 _Driver.FormatNullableString(user.PasswordSha256) + ", " +
                 _Driver.FormatNullableString(user.FirstName) + ", " +
                 _Driver.FormatNullableString(user.LastName) + ", " +
                 _Driver.FormatBoolean(user.IsAdmin) + ", " +
+                _Driver.FormatBoolean(user.IsTenantAdmin) + ", " +
                 _Driver.FormatBoolean(user.Active) + ", " +
+                _Driver.FormatBoolean(user.IsProtected) + ", " +
                 "'" + _Driver.FormatDateTime(user.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(user.LastUpdateUtc) + "'" +
                 ");";
@@ -90,12 +93,13 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<UserMaster> ReadByEmailAsync(string email, CancellationToken token = default)
+        public async Task<UserMaster> ReadByEmailAsync(string tenantId, string email, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (String.IsNullOrEmpty(email)) throw new ArgumentNullException(nameof(email));
 
             string query =
-                "SELECT * FROM users WHERE email = '" + _Driver.Sanitize(email) + "';";
+                "SELECT * FROM users WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' AND email = '" + _Driver.Sanitize(email) + "';";
 
             DataTable result = await _Driver.ExecuteQueryAsync(query, false, token).ConfigureAwait(false);
             if (result == null || result.Rows.Count < 1) return null;
@@ -111,12 +115,15 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "UPDATE users SET " +
+                "tenant_id = '" + _Driver.Sanitize(user.TenantId) + "', " +
                 "email = '" + _Driver.Sanitize(user.Email) + "', " +
                 "password_sha256 = " + _Driver.FormatNullableString(user.PasswordSha256) + ", " +
                 "first_name = " + _Driver.FormatNullableString(user.FirstName) + ", " +
                 "last_name = " + _Driver.FormatNullableString(user.LastName) + ", " +
                 "is_admin = " + _Driver.FormatBoolean(user.IsAdmin) + ", " +
+                "is_tenant_admin = " + _Driver.FormatBoolean(user.IsTenantAdmin) + ", " +
                 "active = " + _Driver.FormatBoolean(user.Active) + ", " +
+                "is_protected = " + _Driver.FormatBoolean(user.IsProtected) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(user.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(user.Id) + "';";
 
@@ -150,8 +157,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<UserMaster>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<UserMaster>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             EnumerationResult<UserMaster> ret = new EnumerationResult<UserMaster>();
@@ -175,11 +183,12 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string selectQuery =
                 "SELECT * FROM users " +
+                "WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' " +
                 orderBy + " " +
                 "LIMIT " + query.MaxResults + " OFFSET " + skip + ";";
 
             string countQuery =
-                "SELECT COUNT(*) AS cnt FROM users;";
+                "SELECT COUNT(*) AS cnt FROM users WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "';";
 
             DataTable countResult = await _Driver.ExecuteQueryAsync(countQuery, false, token).ConfigureAwait(false);
             if (countResult != null && countResult.Rows.Count > 0)

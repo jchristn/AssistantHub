@@ -13,27 +13,22 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.2.0
+## New in v0.3.0
 
-- **Initial release**
-- **Multi-assistant platform** -- Create and manage multiple AI assistants, each with independent configuration, personality, knowledge base, and appearance
-- **Automated document ingestion pipeline** -- Upload documents (PDF, text, HTML, and more); automatic text extraction via DocumentAtom, chunking and embedding via Partio, and storage in RecallDB
-- **Ingestion rules** -- Define reusable ingestion configurations specifying target S3 buckets, RecallDB collections, chunking strategies, optional summarization, and embedding settings
-- **Flexible search modes** -- Vector (semantic similarity), full-text (keyword matching), and hybrid search with tunable scoring weights for optimal retrieval
-- **Neighbor chunk retrieval** -- Optionally retrieve surrounding chunks for each search match to provide broader document context to the model, configurable per assistant (0–10 neighbors)
-- **LLM-based retrieval gate** -- Optional per-assistant retrieval gate that classifies whether each user message requires new document retrieval or can be answered from existing conversation context
-- **Conversation compaction** -- Automatic summarization of older messages when the conversation approaches the context window limit, preserving conversation continuity
-- **Streaming chat responses** -- Real-time Server-Sent Events (SSE) streaming for token-by-token response delivery
-- **Configurable inference endpoints** -- Support for Ollama (local) and OpenAI (cloud) inference providers, with per-assistant endpoint overrides via managed Partio endpoints
-- **Document summarization** -- Optional pre-chunking or post-chunking summarization of document content using configurable completion endpoints
-- **Public chat API** -- Unauthenticated OpenAI-compatible chat endpoint for embedding assistants into external applications
-- **Feedback collection** -- Thumbs-up/thumbs-down feedback and free-text comments on assistant responses for quality monitoring
-- **Chat history and performance metrics** -- Per-turn history with detailed timing measurements: retrieval duration, time to first token, time to last token, tokens per second, compaction duration, and more
-- **Browser-based dashboard** -- Full management UI for assistants, documents, ingestion rules, endpoints, feedback, history, collections, buckets, users, and live chat testing
-- **Multi-tenant user management** -- Admin and standard user roles with per-user assistant ownership
-- **Multiple database backends** -- SQLite (default), PostgreSQL, SQL Server, and MySQL for the application database
-- **One-command Docker deployment** -- Fully orchestrated Docker Compose stack with health checks, dependency ordering, and persistent volumes
-- Citation metadata in chat completion responses with source attribution
+- **Full multi-tenancy** -- Row-level tenant isolation across all entities. Each tenant operates in complete isolation within a shared deployment
+- **Tenant management** -- CRUD API and dashboard view for creating, updating, and deleting tenants with auto-provisioning of default resources (admin user, credential, RecallDB tenant, collection, S3 bucket, ingestion rule)
+- **Protected records** -- Default tenant, admin user, and credential are marked `IsProtected = true` and cannot be deleted (returns 403). Deactivate by setting `Active = false` instead
+- **Three-tier authorization** -- Global Admin (admin API keys or users with `IsAdmin=true`), Tenant Admin, and Tenant User roles with appropriate access controls
+- **Per-tenant storage isolation** -- Each tenant gets dedicated S3 buckets prefixed with `{tenantId}_`; processing logs namespaced by tenant; 1:1 RecallDB tenant mapping
+- **Tenant-scoped API routes** -- Users and credentials accessed via `/v1.0/tenants/{tenantId}/...`; WhoAmI endpoint for authentication context
+- **Dashboard tenant awareness** -- Tenant name and role badges, conditional admin sections, Tenant column in data views for global admins
+- **Automatic data migration** -- Seamless v0.2.0 to v0.3.0 upgrade across all 4 database drivers
+- See [CHANGELOG.md](CHANGELOG.md) for full details
+
+## v0.2.0
+
+- **Initial release** with multi-assistant platform, automated document ingestion, flexible search modes, streaming chat, and browser-based dashboard
+- See [CHANGELOG.md](CHANGELOG.md) for full details
 
 ---
 
@@ -49,7 +44,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (OpenAI, Ollama). Supports real-time SSE streaming.
 - **Conversation Compaction** -- Automatic summarization of older messages when the conversation approaches the context window limit, preserving continuity across long conversations.
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
-- **Multi-Tenant** -- User and credential management with admin and standard user roles. Each user owns their own assistants and documents.
+- **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
 - **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 
@@ -231,8 +226,14 @@ The server reads configuration from `assistanthub.json` in the working directory
   },
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
-    "TenantId": "default",
     "AccessKey": "recalldbadmin"
+  },
+  "AdminApiKeys": [
+    "assistanthubadmin"
+  ],
+  "DefaultTenant": {
+    "Id": "default",
+    "Name": "Default Tenant"
   },
   "ProcessingLog": {
     "Directory": "./processing-logs/",
@@ -264,8 +265,10 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `DocumentAtom` | Endpoint and access key for the DocumentAtom document-processing service. |
 | `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking/embedding service. |
 | `Inference` | LLM provider (`Ollama` or `OpenAI`), endpoint, API key, and default model. |
-| `RecallDb` | Endpoint, tenant ID, and access key for the RecallDB vector database service. |
-| `ProcessingLog` | Directory and retention for per-document processing logs. |
+| `RecallDb` | Endpoint and access key for the RecallDB vector database service. |
+| `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
+| `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
+| `ProcessingLog` | Directory and retention for per-document processing logs (namespaced by tenant). |
 | `ChatHistory` | Retention period in days for chat history records (0 = keep indefinitely). Background cleanup runs hourly. |
 | `Logging` | Console/file logging toggles, severity level, log directory, and optional syslog servers. |
 
@@ -305,11 +308,13 @@ For complete endpoint documentation including request/response schemas and examp
 | Category | Endpoints | Description |
 |---|---|---|
 | Health | `GET /`, `HEAD /` | Server info and health check (unauthenticated) |
-| Authentication | `POST /v1.0/authenticate` | Authenticate with email/password or bearer token |
-| Users | `PUT/GET /v1.0/users`, `GET/PUT/DELETE/HEAD /v1.0/users/{id}` | User management (admin only) |
-| Credentials | `PUT/GET /v1.0/credentials`, `GET/PUT/DELETE/HEAD /v1.0/credentials/{id}` | API credential management (admin only) |
-| Buckets | `PUT/GET /v1.0/buckets`, `GET/DELETE/HEAD /v1.0/buckets/{name}` | S3 bucket management (admin only) |
-| Bucket Objects | `GET/PUT/POST/DELETE /v1.0/buckets/{name}/objects` | S3 object management with upload, download, metadata, and directory creation (admin only) |
+| Authentication | `POST /v1.0/authenticate` | Authenticate with email/password (+ optional TenantId) or bearer token |
+| WhoAmI | `GET /v1.0/whoami` | Return current authentication context (tenant, role, user) |
+| Tenants | `PUT/GET /v1.0/tenants`, `GET/PUT/DELETE/HEAD /v1.0/tenants/{id}` | Tenant management (global admin only) |
+| Users | `PUT/GET /v1.0/tenants/{tenantId}/users`, `GET/PUT/DELETE/HEAD .../users/{id}` | Tenant-scoped user management |
+| Credentials | `PUT/GET /v1.0/tenants/{tenantId}/credentials`, `GET/PUT/DELETE/HEAD .../credentials/{id}` | Tenant-scoped credential management |
+| Buckets | `PUT/GET /v1.0/buckets`, `GET/DELETE/HEAD /v1.0/buckets/{name}` | S3 bucket management (tenant-scoped by `{tenantId}_` prefix) |
+| Bucket Objects | `GET/PUT/POST/DELETE /v1.0/buckets/{name}/objects` | S3 object management with upload, download, metadata, and directory creation (tenant-scoped) |
 | Collections | `PUT/GET /v1.0/collections`, `GET/PUT/DELETE/HEAD /v1.0/collections/{id}` | RecallDB collection management (admin only) |
 | Collection Records | `PUT/GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` | Browse and manage records within collections (admin only) |
 | Ingestion Rules | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` | Document processing rule management |

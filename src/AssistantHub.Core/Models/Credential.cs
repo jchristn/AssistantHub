@@ -21,6 +21,15 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Tenant identifier.
+        /// </summary>
+        public string TenantId
+        {
+            get => _TenantId;
+            set => _TenantId = !String.IsNullOrEmpty(value) ? value : throw new ArgumentNullException(nameof(TenantId));
+        }
+
+        /// <summary>
         /// User identifier to which this credential belongs.
         /// </summary>
         public string UserId
@@ -49,6 +58,11 @@ namespace AssistantHub.Core.Models
         public bool Active { get; set; } = true;
 
         /// <summary>
+        /// Indicates whether the record is protected from deletion.
+        /// </summary>
+        public bool IsProtected { get; set; } = false;
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -63,6 +77,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private string _Id = IdGenerator.NewCredentialId();
+        private string _TenantId = Constants.DefaultTenantId;
         private string _UserId = "usr_placeholder";
         private string _BearerToken = IdGenerator.NewBearerToken();
 
@@ -87,10 +102,12 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             Credential obj = new Credential();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.UserId = DataTableHelper.GetStringValue(row, "user_id");
             obj.Name = DataTableHelper.GetStringValue(row, "name");
             obj.BearerToken = DataTableHelper.GetStringValue(row, "bearer_token");
             obj.Active = DataTableHelper.GetBooleanValue(row, "active", true);
+            obj.IsProtected = DataTableHelper.GetBooleanValue(row, "is_protected");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

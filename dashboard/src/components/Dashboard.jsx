@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Tour from './Tour';
 import SetupWizard from './SetupWizard';
+import TenantsView from '../views/TenantsView';
 import UsersView from '../views/UsersView';
 import CredentialsView from '../views/CredentialsView';
 import AssistantsView from '../views/AssistantsView';
@@ -23,9 +24,11 @@ import InferenceEndpointsView from '../views/InferenceEndpointsView';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const [showTour, setShowTour] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+
+  const isAdminOrTenantAdmin = isGlobalAdmin || isTenantAdmin;
 
   useEffect(() => {
     if (!localStorage.getItem('ah_tourCompleted')) {
@@ -35,7 +38,7 @@ function Dashboard() {
 
   const handleTourComplete = () => {
     setShowTour(false);
-    if (isAdmin && !localStorage.getItem('ah_wizardCompleted')) {
+    if (isAdminOrTenantAdmin && !localStorage.getItem('ah_wizardCompleted')) {
       setShowWizard(true);
     }
   };
@@ -51,8 +54,9 @@ function Dashboard() {
         <div className="content-area">
           <Routes>
             <Route path="/" element={<Navigate to="/assistants" />} />
-            {isAdmin && <Route path="/users" element={<UsersView />} />}
-            {isAdmin && <Route path="/credentials" element={<CredentialsView />} />}
+            {isGlobalAdmin && <Route path="/tenants" element={<TenantsView />} />}
+            {isAdminOrTenantAdmin && <Route path="/users" element={<UsersView />} />}
+            {isAdminOrTenantAdmin && <Route path="/credentials" element={<CredentialsView />} />}
             {isAdmin && <Route path="/buckets" element={<BucketsView />} />}
             {isAdmin && <Route path="/objects" element={<ObjectsView />} />}
             {isAdmin && <Route path="/collections" element={<CollectionsView />} />}
@@ -61,12 +65,12 @@ function Dashboard() {
             <Route path="/assistant-settings" element={<AssistantSettingsView />} />
             {isAdmin && <Route path="/endpoints/embedding" element={<EmbeddingEndpointsView />} />}
             {isAdmin && <Route path="/endpoints/inference" element={<InferenceEndpointsView />} />}
-            {isAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
+            {isAdminOrTenantAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
             <Route path="/documents" element={<DocumentsView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/history" element={<HistoryView />} />
             <Route path="/models" element={<ModelsView />} />
-            {isAdmin && <Route path="/configuration" element={<ConfigurationView />} />}
+            {isGlobalAdmin && <Route path="/configuration" element={<ConfigurationView />} />}
             <Route path="*" element={<Navigate to="/assistants" />} />
           </Routes>
         </div>

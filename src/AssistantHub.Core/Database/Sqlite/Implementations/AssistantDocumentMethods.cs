@@ -59,11 +59,12 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "INSERT INTO assistant_documents " +
-                "(id, name, original_filename, content_type, size_bytes, s3_key, " +
+                "(id, tenant_id, name, original_filename, content_type, size_bytes, s3_key, " +
                 "status, status_message, ingestion_rule_id, bucket_name, collection_id, " +
                 "labels_json, tags_json, chunk_record_ids, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(document.Id) + "', " +
+                "'" + _Driver.Sanitize(document.TenantId) + "', " +
                 "'" + _Driver.Sanitize(document.Name) + "', " +
                 _Driver.FormatNullableString(document.OriginalFilename) + ", " +
                 _Driver.FormatNullableString(document.ContentType) + ", " +
@@ -107,6 +108,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             string query =
                 "UPDATE assistant_documents SET " +
+                "tenant_id = '" + _Driver.Sanitize(document.TenantId) + "', " +
                 "name = '" + _Driver.Sanitize(document.Name) + "', " +
                 "original_filename = " + _Driver.FormatNullableString(document.OriginalFilename) + ", " +
                 "content_type = " + _Driver.FormatNullableString(document.ContentType) + ", " +
@@ -170,8 +172,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
         }
 
         /// <inheritdoc />
-        public async Task<EnumerationResult<AssistantDocument>> EnumerateAsync(EnumerationQuery query, CancellationToken token = default)
+        public async Task<EnumerationResult<AssistantDocument>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
         {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
             if (query == null) throw new ArgumentNullException(nameof(query));
 
             EnumerationResult<AssistantDocument> ret = new EnumerationResult<AssistantDocument>();
@@ -193,14 +196,14 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                     break;
             }
 
-            string whereClause = "";
             List<string> conditions = new List<string>();
+            conditions.Add("tenant_id = '" + _Driver.Sanitize(tenantId) + "'");
             if (!String.IsNullOrEmpty(query.BucketNameFilter))
                 conditions.Add("bucket_name = '" + _Driver.Sanitize(query.BucketNameFilter) + "'");
             if (!String.IsNullOrEmpty(query.CollectionIdFilter))
                 conditions.Add("collection_id = '" + _Driver.Sanitize(query.CollectionIdFilter) + "'");
-            if (conditions.Count > 0)
-                whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
+
+            string whereClause = "WHERE " + String.Join(" AND ", conditions) + " ";
 
             string selectQuery =
                 "SELECT * FROM assistant_documents " +

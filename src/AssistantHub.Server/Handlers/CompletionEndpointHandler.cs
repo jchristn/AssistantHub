@@ -13,6 +13,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver.Core;
 
@@ -48,7 +49,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -66,6 +68,9 @@ namespace AssistantHub.Server.Handlers
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (resp.IsSuccessStatusCode)
+                    AssistantHubServer.HealthCheckService?.OnEndpointCreated(respBody);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
@@ -87,7 +92,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -135,7 +141,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -172,7 +179,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -191,6 +199,9 @@ namespace AssistantHub.Server.Handlers
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (resp.IsSuccessStatusCode)
+                    AssistantHubServer.HealthCheckService?.OnEndpointUpdated(respBody);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
@@ -212,7 +223,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -227,6 +239,9 @@ namespace AssistantHub.Server.Handlers
                 req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
 
                 HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+
+                if (resp.IsSuccessStatusCode)
+                    AssistantHubServer.HealthCheckService?.OnEndpointDeleted(endpointId);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -256,7 +271,8 @@ namespace AssistantHub.Server.Handlers
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     await ctx.Response.Send().ConfigureAwait(false);
@@ -335,14 +351,15 @@ namespace AssistantHub.Server.Handlers
         #endregion
 
         /// <summary>
-        /// GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
+        /// GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health from local state.
         /// </summary>
         public async Task GetCompletionEndpointHealthAsync(HttpContextBase ctx)
         {
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
             try
             {
-                if (!IsAdmin(ctx))
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
                 {
                     ctx.Response.StatusCode = 403;
                     ctx.Response.ContentType = "application/json";
@@ -351,21 +368,61 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId + "/health";
+                EndpointHealthState state = AssistantHubServer.HealthCheckService?.GetHealthState(endpointId);
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                if (state == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
 
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
-                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                ctx.Response.StatusCode = (int)resp.StatusCode;
+                EndpointHealthStatus status = EndpointHealthStatus.FromState(state);
+                ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(respBody).ConfigureAwait(false);
+                await ctx.Response.Send(Serializer.SerializeJson(status)).ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetCompletionEndpointHealthAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/endpoints/completion/health - Get all completion endpoint health statuses.
+        /// </summary>
+        public async Task GetAllCompletionEndpointHealthAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                List<EndpointHealthState> states = AssistantHubServer.HealthCheckService?.GetAllHealthStates() ?? new List<EndpointHealthState>();
+                List<EndpointHealthStatus> statuses = new List<EndpointHealthStatus>();
+                foreach (EndpointHealthState state in states)
+                {
+                    statuses.Add(EndpointHealthStatus.FromState(state));
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(statuses)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetAllCompletionEndpointHealthAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../Modal';
 import CopyableId from '../CopyableId';
 import Tooltip from '../Tooltip';
+import { ApiClient } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 function formatTps(tps) {
   if (!tps || tps <= 0 || !isFinite(tps)) return 'N/A';
@@ -42,8 +44,52 @@ function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
 function HistoryViewModal({ history, onClose }) {
   if (!history) return null;
 
+  const { serverUrl, credential } = useAuth();
   const [retrievalOpen, setRetrievalOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(true);
+  const [docNames, setDocNames] = useState({});
+
+  // Parse retrieval chunks once
+  const retrievalChunks = useMemo(() => {
+    if (!history.RetrievalContext) return null;
+    try {
+      const parsed = JSON.parse(history.RetrievalContext);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch { return null; }
+  }, [history.RetrievalContext]);
+
+  // Compute retrieval summary stats
+  const retrievalStats = useMemo(() => {
+    if (!retrievalChunks) return null;
+    const docIds = new Set();
+    let totalChunks = 0;
+    for (const chunk of retrievalChunks) {
+      totalChunks++;
+      if (chunk.document_id) docIds.add(chunk.document_id);
+      if (chunk.neighbors) {
+        totalChunks += chunk.neighbors.length;
+      }
+    }
+    return { uniqueDocIds: [...docIds], totalChunks };
+  }, [retrievalChunks]);
+
+  // Fetch document names for unique document IDs
+  useEffect(() => {
+    if (!retrievalStats || retrievalStats.uniqueDocIds.length === 0) return;
+    const api = new ApiClient(serverUrl, credential?.BearerToken);
+    let cancelled = false;
+    (async () => {
+      const names = {};
+      await Promise.all(retrievalStats.uniqueDocIds.map(async (id) => {
+        try {
+          const doc = await api.getDocument(id);
+          if (!cancelled && doc) names[id] = doc.OriginalFilename || doc.Name || null;
+        } catch { /* document may have been deleted */ }
+      }));
+      if (!cancelled) setDocNames(names);
+    })();
+    return () => { cancelled = true; };
+  }, [retrievalStats, serverUrl, credential]);
 
   // Compute total pipeline duration for proportional bars
   const totalPipelineMs =
@@ -243,32 +289,78 @@ function HistoryViewModal({ history, onClose }) {
         </div>
         {retrievalOpen && (
           <div className="history-retrieval-body">
-            {(() => {
-              if (!history.RetrievalContext) return <div className="json-view">(no context retrieved)</div>;
-              let chunks;
-              try { chunks = JSON.parse(history.RetrievalContext); } catch { chunks = null; }
-              if (!Array.isArray(chunks)) {
-                return <div className="json-view" style={{ maxHeight: '300px' }}>{history.RetrievalContext}</div>;
-              }
-              return chunks.map((chunk, idx) => (
-                <div key={idx} className="history-chunk-card">
-                  <div className="history-chunk-header">
-                    <span className="history-chunk-num">Chunk {idx + 1}</span>
-                    {chunk.score != null && (
-                      <span className="history-chunk-score">Score: <strong>{chunk.score.toFixed(4)}</strong></span>
-                    )}
-                    {chunk.document_id && (
-                      <span className="history-chunk-source">
-                        Source: <CopyableId id={chunk.document_id} />
-                      </span>
+            {!history.RetrievalContext ? (
+              <div className="json-view">(no context retrieved)</div>
+            ) : !retrievalChunks ? (
+              <div className="json-view" style={{ maxHeight: '300px' }}>{history.RetrievalContext}</div>
+            ) : (
+              <>
+                {/* Retrieval summary stats */}
+                {retrievalStats && (
+                  <div className="history-retrieval-summary">
+                    <div className="history-retrieval-summary-stats">
+                      <div className="history-metric">
+                        <span className="history-metric-label">Documents</span>
+                        <span className="history-metric-value">{retrievalStats.uniqueDocIds.length}</span>
+                      </div>
+                      <div className="history-metric">
+                        <span className="history-metric-label">Chunks</span>
+                        <span className="history-metric-value">{retrievalStats.totalChunks}</span>
+                      </div>
+                    </div>
+                    {retrievalStats.uniqueDocIds.length > 0 && (
+                      <div className="history-retrieval-doc-list">
+                        <div className="history-retrieval-doc-list-label">Source Documents</div>
+                        <ul className="history-retrieval-doc-items">
+                          {retrievalStats.uniqueDocIds.map((docId) => (
+                            <li key={docId} className="history-retrieval-doc-item">
+                              <CopyableId id={docId} />
+                              {docNames[docId] && (
+                                <span className="history-retrieval-doc-name">{docNames[docId]}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
-                  <div className="json-view history-chunk-content">
-                    {chunk.content || '(empty)'}
+                )}
+                {/* Auto-populated citation notice */}
+                {(() => {
+                  const hasBracketCitations = history.AssistantResponse && /\[\d+\]/.test(history.AssistantResponse);
+                  return retrievalChunks.length > 0 && !hasBracketCitations ? (
+                    <div className="history-auto-populated-tag">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      Citations auto-populated — model did not produce inline [N] references
+                    </div>
+                  ) : null;
+                })()}
+                {/* Individual chunks */}
+                {retrievalChunks.map((chunk, idx) => (
+                  <div key={idx} className="history-chunk-card">
+                    <div className="history-chunk-header">
+                      <span className="history-chunk-num">Chunk {idx + 1}</span>
+                      {chunk.score != null && (
+                        <span className="history-chunk-score">Score: <strong>{chunk.score.toFixed(4)}</strong></span>
+                      )}
+                      {chunk.document_id && (
+                        <span className="history-chunk-source">
+                          Source: <CopyableId id={chunk.document_id} />
+                          {docNames[chunk.document_id] && (
+                            <span className="history-retrieval-doc-name">{docNames[chunk.document_id]}</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="json-view history-chunk-content">
+                      {chunk.content || '(empty)'}
+                    </div>
                   </div>
-                </div>
-              ));
-            })()}
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>

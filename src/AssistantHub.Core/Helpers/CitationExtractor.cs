@@ -46,7 +46,19 @@ namespace AssistantHub.Core.Helpers
                 }
             }
 
-            citations.ReferencedIndices = referenced.OrderBy(i => i).ToList();
+            if (referenced.Count > 0)
+            {
+                citations.ReferencedIndices = referenced.OrderBy(i => i).ToList();
+            }
+            else
+            {
+                // Model did not produce any inline citation markers.
+                // Fall back to referencing all sources so the UI can still
+                // display them, and flag this as auto-populated for diagnostics.
+                citations.ReferencedIndices = sources.Select(s => s.Index).ToList();
+                citations.AutoPopulated = true;
+            }
+
             return citations;
         }
     }

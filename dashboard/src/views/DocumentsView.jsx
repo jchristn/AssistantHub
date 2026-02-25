@@ -98,8 +98,10 @@ function DocumentsView() {
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this document', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
     ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
-    { key: 'Name', label: 'Name', tooltip: 'Display name assigned to this document', filterable: true },
-    { key: 'OriginalFilename', label: 'Filename', tooltip: 'Original filename when the document was uploaded', filterable: true },
+    { key: 'OriginalFilename', label: 'Filename', tooltip: 'Original filename when the document was uploaded', filterable: true, render: (row) => {
+      const name = row.OriginalFilename || '';
+      return name.length > 40 ? <span title={name}>{name.slice(0, 37)}...</span> : name;
+    }},
     { key: 'ContentType', label: 'Content Type', tooltip: 'MIME type of the document (e.g. application/pdf)', filterable: true },
     { key: 'SizeBytes', label: 'Size', tooltip: 'File size of the uploaded document', render: (row) => formatFileSize(row.SizeBytes) },
     { key: 'Status', label: 'Status', tooltip: 'Current processing state of the document', render: (row) => <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span> },

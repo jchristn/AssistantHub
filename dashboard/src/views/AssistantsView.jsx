@@ -31,7 +31,7 @@ function AssistantsView() {
     { key: 'Active', label: 'Status', tooltip: 'Whether this assistant is currently active and available', render: (row) => row.Active ? <span className="status-badge active">Active</span> : <span className="status-badge inactive">Inactive</span> },
     { key: 'ChatLink', label: 'Chat Link', tooltip: 'URL to open the chat interface for this assistant', render: (row) => (
       <span className="copyable-id">
-        <a href={`/chat/${row.Id}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8125rem', color: 'var(--accent-color)' }}>Open</a>
+        <a href={`/chat/${row.Id}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">Launch</a>
         <CopyButton text={chatUrl(row.Id)} />
       </span>
     )},

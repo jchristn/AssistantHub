@@ -3418,6 +3418,15 @@
             <summary>
             Indices from Sources that the model actually cited in its response.
             Validated against the source manifest (invalid indices are excluded).
+            When the model does not cite any sources, all source indices are
+            populated as a fallback and AutoPopulated is set to true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.AutoPopulated">
+            <summary>
+            True when the model did not produce inline citation markers and the
+            system automatically populated ReferencedIndices with all source indices.
+            Useful for diagnosing models that ignore citation instructions.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CitationSource">
@@ -4949,7 +4958,7 @@
             Recursively flatten all chunks from a SemanticCellResponse hierarchy.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <summary>
             Compute embedding vector for a single piece of text using the Partio embedding endpoint.
             Used when chunking strategy is "None" to embed the whole document as a single chunk.
@@ -4971,6 +4980,11 @@
             <param name="chunkIndex">Zero-based chunk position within the document.</param>
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.Excerpt(System.String,System.Int32)">
+            <summary>
+            Truncate text to a maximum length for logging, appending total length if truncated.
+            </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>

@@ -625,12 +625,12 @@ function ChatView() {
                       <div className="chat-user-text">{msg.content}</div>
                     )}
                   </div>
-                  {msg.citations && msg.citations.sources && msg.citations.referenced_indices?.length > 0 && (
+                  {msg.citations && msg.citations.sources?.length > 0 && (
                     <div className="chat-citations">
                       <div className="chat-citations-label">Sources</div>
                       <div className="chat-citations-list">
                         {msg.citations.sources
-                          .filter(s => msg.citations.referenced_indices.includes(s.index))
+                          .filter(s => !msg.citations.referenced_indices?.length || msg.citations.referenced_indices.includes(s.index))
                           .map((source) => (
                             source.download_url ? (
                               <a

@@ -541,6 +541,9 @@ namespace AssistantHub.Core.Services
                         sb.AppendLine("[" + (i + 1) + "] " + chunkLabels[i]);
                         sb.AppendLine(contextChunks[i]);
                     }
+
+                    sb.AppendLine();
+                    sb.AppendLine("Reminder: you MUST cite sources using bracket notation [1], [2], etc. in your response when using information from the sources above.");
                 }
                 else
                 {

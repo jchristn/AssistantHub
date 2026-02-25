@@ -155,6 +155,9 @@ function AssistantSettingsView() {
           <h1 className="content-title">Assistant Settings</h1>
           <p className="content-subtitle">Configure model, retrieval, and inference settings for each assistant.</p>
         </div>
+        {selectedId && (
+          <a href={`/chat/${selectedId}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Launch Chat</a>
+        )}
       </div>
       <div className="settings-view">
         <div className="form-group">

@@ -11,6 +11,21 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
+<details>
+<summary><strong>Screenshots</strong> (click to expand)</summary>
+<br>
+
+![Chat Example](assets/screenshots/chat-example-1.png)
+![Citations](assets/screenshots/citations.png)
+![Assistant Settings](assets/screenshots/assistant-settings.png)
+![Endpoint Health](assets/screenshots/endpoint-health.png)
+![Feedback](assets/screenshots/feedback.png)
+![Feedback Management](assets/screenshots/feedback-mgmt.png)
+![History Details](assets/screenshots/history-details-1.png)
+![History Details](assets/screenshots/history-details-2.png)
+
+</details>
+
 ---
 
 ## New in v0.3.0

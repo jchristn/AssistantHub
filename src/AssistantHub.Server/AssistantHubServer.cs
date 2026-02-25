@@ -17,6 +17,7 @@ namespace AssistantHub.Server
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
     using AssistantHub.Server.Handlers;
+    using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
@@ -39,8 +40,14 @@ namespace AssistantHub.Server
         private static InferenceService _Inference = null;
         private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
+        private static EndpointHealthCheckService _HealthCheckService = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
         private static bool _ShuttingDown = false;
+
+        /// <summary>
+        /// The endpoint health check service instance, accessible by handlers.
+        /// </summary>
+        public static EndpointHealthCheckService HealthCheckService => _HealthCheckService;
 
         #endregion
 
@@ -58,6 +65,7 @@ namespace AssistantHub.Server
             await InitializeFirstRunAsync();
             InitializeServices();
             await ValidateConnectivityAsync();
+            await StartHealthCheckServiceAsync();
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
             InitializeWebserver();
@@ -458,6 +466,19 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "chat history cleanup loop started");
         }
 
+        private static async Task StartHealthCheckServiceAsync()
+        {
+            try
+            {
+                _HealthCheckService = new EndpointHealthCheckService(_Settings, _Logging);
+                await _HealthCheckService.StartAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "health check service failed to start: " + e.Message);
+            }
+        }
+
         private static void InitializeWebserver()
         {
             WatsonWebserver.Core.WebserverSettings wsSettings = new WatsonWebserver.Core.WebserverSettings(_Settings.Webserver.Hostname, _Settings.Webserver.Port, _Settings.Webserver.Ssl);
@@ -579,6 +600,7 @@ namespace AssistantHub.Server
             // Authenticated routes - Embedding Endpoints (admin only, proxied to Partio)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding", embeddingEndpointHandler.CreateEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/enumerate", embeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/health", embeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync);
@@ -588,6 +610,7 @@ namespace AssistantHub.Server
             // Authenticated routes - Completion Endpoints (admin only, proxied to Partio)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion", completionEndpointHandler.CreateCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/enumerate", completionEndpointHandler.EnumerateCompletionEndpointsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/health", completionEndpointHandler.GetAllCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync);

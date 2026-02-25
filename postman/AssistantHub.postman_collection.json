@@ -895,7 +895,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Description\": \"Embedding endpoint for vector generation\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 16\n}"
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
@@ -955,7 +955,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Description\": \"Updated embedding endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/embed\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"BatchSize\": 32\n}"
+							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
@@ -1041,7 +1041,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Description\": \"Completion endpoint for chat\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 4096,\n\t\"Temperature\": 0.7\n}"
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -1101,7 +1101,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Description\": \"Updated completion endpoint\",\n\t\"ApiUrl\": \"http://localhost:11434/api/chat\",\n\t\"Model\": \"llama3\",\n\t\"CredentialId\": \"credential-guid-here\",\n\t\"MaxTokens\": 8192,\n\t\"Temperature\": 0.8\n}"
+							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",

@@ -9,6 +9,11 @@
             AssistantHub server.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.AssistantHubServer.HealthCheckService">
+            <summary>
+            The endpoint health check service instance, accessible by handlers.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.AssistantHubServer.Main(System.String[])">
             <summary>
             Entry point.
@@ -442,7 +447,12 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health.
+            GET /v1.0/endpoints/completion/{endpointId}/health - Get completion endpoint health from local state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetAllCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/completion/health - Get all completion endpoint health statuses.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.ConfigurationHandler">
@@ -634,7 +644,12 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            GET /v1.0/endpoints/embedding/{endpointId}/health - Get embedding endpoint health.
+            GET /v1.0/endpoints/embedding/{endpointId}/health - Get embedding endpoint health from local state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/endpoints/embedding/health - Get all embedding endpoint health statuses.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.FeedbackHandler">
@@ -1085,6 +1100,69 @@
             HEAD /v1.0/tenants/{tenantId}/users/{userId} - Check user existence.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService">
+            <summary>
+            Background service that performs periodic health checks on both embedding and completion endpoints.
+            Health state is tracked entirely in RAM and not persisted.
+            Endpoint config is fetched from Partio via HTTP; this service parses JSON responses directly.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Initialize a new EndpointHealthCheckService.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.StartAsync">
+            <summary>
+            Start health checks for all enabled and active endpoints by enumerating from Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.EnumerateAndStartAsync(System.String)">
+            <summary>
+            Enumerate endpoints of a given type from Partio and start health checks.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointCreated(System.String)">
+            <summary>
+            Called when a new endpoint is created. Parse the Partio response JSON and start monitoring if applicable.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointUpdated(System.String)">
+            <summary>
+            Called when an endpoint is updated. Parse the Partio response JSON, stop existing loop, and restart if applicable.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.OnEndpointDeleted(System.String)">
+            <summary>
+            Called when an endpoint is deleted. Stop the loop and remove state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.GetHealthState(System.String)">
+            <summary>
+            Get the health state for a specific endpoint.
+            Returns null if no state exists.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.GetAllHealthStates(System.String)">
+            <summary>
+            Get health states for all monitored endpoints, optionally filtered by tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.IsHealthy(System.String)">
+            <summary>
+            Returns true if the endpoint is healthy or if no health state exists (health check not enabled).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.ParseEndpointConfig(System.Text.Json.JsonElement)">
+            <summary>
+            Parse endpoint health config fields from a JSON element (Partio response).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService.EndpointConfig">
+            <summary>
+            Internal config holder for parsed endpoint JSON.
+            </summary>
         </member>
     </members>
 </doc>

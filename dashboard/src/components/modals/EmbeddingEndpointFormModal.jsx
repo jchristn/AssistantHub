@@ -38,6 +38,7 @@ function EmbeddingEndpointFormModal({ endpoint, onSave, onClose }) {
   const isEdit = !!endpoint;
 
   const [form, setForm] = useState({
+    Name: endpoint?.Name || '',
     Model: endpoint?.Model || '',
     Endpoint: endpoint?.Endpoint || '',
     ApiFormat: endpoint?.ApiFormat || 'Ollama',
@@ -79,6 +80,7 @@ function EmbeddingEndpointFormModal({ endpoint, onSave, onClose }) {
     setSaving(true);
     try {
       const data = {
+        Name: form.Name,
         Model: form.Model,
         Endpoint: form.Endpoint,
         ApiFormat: form.ApiFormat,
@@ -130,6 +132,17 @@ function EmbeddingEndpointFormModal({ endpoint, onSave, onClose }) {
       }
     >
       <form onSubmit={handleSubmit}>
+        {/* Name */}
+        <div className="form-group">
+          <label><Tooltip text="Optional display name for the embedding endpoint">Name</Tooltip></label>
+          <input
+            type="text"
+            value={form.Name}
+            onChange={(e) => handleChange('Name', e.target.value)}
+            placeholder="Optional"
+          />
+        </div>
+
         {/* Model */}
         <div className="form-group">
           <label><Tooltip text="Name of the embedding model to use (e.g. all-minilm, text-embedding-3-small)">Model</Tooltip></label>

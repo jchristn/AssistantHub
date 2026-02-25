@@ -148,12 +148,20 @@ export class ApiClient {
   updateEmbeddingEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/embedding/${id}`, endpoint); }
   deleteEmbeddingEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/embedding/${id}`); }
 
+  // Embedding Endpoint Health
+  getAllEmbeddingEndpointHealth() { return this.request('GET', '/v1.0/endpoints/embedding/health'); }
+  getEmbeddingEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/embedding/${id}/health`); }
+
   // Completion Endpoints
   createCompletionEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/completion', endpoint); }
   enumerateCompletionEndpoints(params) { return this.request('POST', '/v1.0/endpoints/completion/enumerate', params || {}); }
   getCompletionEndpoint(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}`); }
   updateCompletionEndpoint(id, endpoint) { return this.request('PUT', `/v1.0/endpoints/completion/${id}`, endpoint); }
   deleteCompletionEndpoint(id) { return this.request('DELETE', `/v1.0/endpoints/completion/${id}`); }
+
+  // Completion Endpoint Health
+  getAllCompletionEndpointHealth() { return this.request('GET', '/v1.0/endpoints/completion/health'); }
+  getCompletionEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}/health`); }
 
   // Ingestion Rules
   createIngestionRule(rule) { return this.request('PUT', '/v1.0/ingestion-rules', rule); }

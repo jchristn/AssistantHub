@@ -179,8 +179,14 @@ function ChatView() {
     try {
       const result = await ApiClient.compact(serverUrl, assistantId, chatMessages, threadId);
       if (result.messages) {
-        setMessages(result.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content })));
-        setMessages(prev => [...prev, { role: 'system', content: 'Conversation compacted successfully.', isSystem: true }]);
+        const compacted = result.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content }));
+        // Preserve the last assistant message (with citations) after compaction
+        const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.isError);
+        if (lastAssistant) {
+          compacted.push({ role: 'assistant', content: lastAssistant.content, userMessage: lastAssistant.userMessage, citations: lastAssistant.citations || null });
+        }
+        compacted.push({ role: 'system', content: 'Conversation compacted successfully.', isSystem: true });
+        setMessages(compacted);
       }
       if (result.usage) {
         setContextUsage(result.usage);
@@ -367,12 +373,20 @@ function ChatView() {
             try {
               const compactResult = await ApiClient.compact(serverUrl, assistantId, messagesForCompaction, currentThreadId);
               if (compactResult.messages) {
-                setMessages(compactResult.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content })));
-                setMessages(prev => [...prev, {
+                const compacted = compactResult.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content }));
+                // Preserve the current assistant response (with citations) after compaction
+                compacted.push({
+                  role: 'assistant',
+                  content: assistantContent,
+                  userMessage,
+                  citations: result.citations || null
+                });
+                compacted.push({
                   role: 'system',
                   content: 'Conversation automatically compacted to free up context space.',
                   isSystem: true
-                }]);
+                });
+                setMessages(compacted);
               }
               if (compactResult.usage) {
                 setContextUsage(compactResult.usage);

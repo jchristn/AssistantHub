@@ -3754,6 +3754,121 @@
             <param name="row">Data row.</param>
             <returns>Credential instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.EndpointHealthState">
+            <summary>
+            In-memory runtime health state for an endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.EndpointId">
+            <summary>The endpoint ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.EndpointName">
+            <summary>Model name (for display/logging).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TenantId">
+            <summary>Tenant scope.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.IsHealthy">
+            <summary>Current health state. Starts false; must prove healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.FirstCheckUtc">
+            <summary>When monitoring began.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastCheckUtc">
+            <summary>Most recent check time.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastHealthyUtc">
+            <summary>Last transition to healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastUnhealthyUtc">
+            <summary>Last transition to unhealthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastStateChangeUtc">
+            <summary>Last transition in either direction.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TotalUptimeMs">
+            <summary>Cumulative healthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.TotalDowntimeMs">
+            <summary>Cumulative unhealthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.ConsecutiveSuccesses">
+            <summary>Running counter of consecutive successes; resets on failure.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.ConsecutiveFailures">
+            <summary>Running counter of consecutive failures; resets on success.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.LastError">
+            <summary>Error message from most recent failed check.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.CheckHistory">
+            <summary>Rolling window of individual check results (max 24 hours).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.Lock">
+            <summary>Per-state lock for thread safety.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthState.HistoryLock">
+            <summary>Separate lock for history list access.</summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointHealthStatus">
+            <summary>
+            API response DTO combining EndpointHealthState fields with computed values.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.EndpointId">
+            <summary>The endpoint ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.EndpointName">
+            <summary>Model name.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TenantId">
+            <summary>Tenant scope.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.IsHealthy">
+            <summary>Current health state.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.FirstCheckUtc">
+            <summary>When monitoring began.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastCheckUtc">
+            <summary>Most recent check time.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastHealthyUtc">
+            <summary>Last transition to healthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastUnhealthyUtc">
+            <summary>Last transition to unhealthy.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastStateChangeUtc">
+            <summary>Last transition in either direction.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TotalUptimeMs">
+            <summary>Cumulative healthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.TotalDowntimeMs">
+            <summary>Cumulative unhealthy milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.UptimePercentage">
+            <summary>Uptime percentage (0-100).</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.ConsecutiveSuccesses">
+            <summary>Consecutive successes.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.ConsecutiveFailures">
+            <summary>Consecutive failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.LastError">
+            <summary>Error message from most recent failed check.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointHealthStatus.History">
+            <summary>Rolling window of check history records.</summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EndpointHealthStatus.FromState(AssistantHub.Core.Models.EndpointHealthState)">
+            <summary>
+            Create an EndpointHealthStatus from an EndpointHealthState.
+            Snapshots the state and computes current-period uptime/downtime.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.EnumerationQuery">
             <summary>
             Enumeration query.
@@ -3888,6 +4003,21 @@
         <member name="M:AssistantHub.Core.Models.FeedbackRequest.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.HealthCheckRecord">
+            <summary>
+            A single health check result record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.HealthCheckRecord.TimestampUtc">
+            <summary>
+            UTC timestamp of the check.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.HealthCheckRecord.Success">
+            <summary>
+            Whether the check was successful.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.InferenceModel">

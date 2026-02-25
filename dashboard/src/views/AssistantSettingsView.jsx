@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Tooltip from '../components/Tooltip';
 import AlertModal from '../components/AlertModal';
+import JsonViewModal from '../components/modals/JsonViewModal';
 
 function AssistantSettingsView() {
   const { serverUrl, credential } = useAuth();
@@ -19,6 +20,7 @@ function AssistantSettingsView() {
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [showJson, setShowJson] = useState(false);
 
   const loadCollections = useCallback(async () => {
     try {
@@ -357,7 +359,7 @@ function AssistantSettingsView() {
                 <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
                   <option value="">-- Use server default --</option>
                   {(embeddingEndpoints || []).map(ep => (
-                    <option key={ep.Id} value={ep.Id}>{ep.Model || ep.Id}</option>
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
                   ))}
                 </select>
               </div>
@@ -365,6 +367,7 @@ function AssistantSettingsView() {
             </div>
 
             <div className="settings-actions">
+              <button className="btn btn-secondary" onClick={() => setShowJson(true)}>View JSON</button>
               <button className="btn btn-secondary" onClick={handleReset} disabled={!dirty || saving}>Reset</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={!dirty || saving}>
                 {saving ? 'Saving...' : 'Save Settings'}
@@ -377,6 +380,7 @@ function AssistantSettingsView() {
           <div className="empty-state"><p>No settings found for this assistant.</p></div>
         )}
       </div>
+      {showJson && settings && <JsonViewModal title="Assistant Settings JSON" data={settings} onClose={() => setShowJson(false)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
     </div>
   );

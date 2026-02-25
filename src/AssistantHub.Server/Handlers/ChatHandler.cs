@@ -1017,7 +1017,20 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                byte[] data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                byte[] data = null;
+                try
+                {
+                    data = await Storage.DownloadAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                }
+                catch (Exception storageEx)
+                {
+                    Logging.Warn(_Header + "storage download failed for document " + documentId + " (bucket: " + doc.BucketName + ", key: " + doc.S3Key + "): " + storageEx.Message);
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
                 if (data == null || data.Length == 0)
                 {
                     ctx.Response.StatusCode = 404;

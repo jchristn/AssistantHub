@@ -1171,6 +1171,7 @@ Create a new embedding endpoint.
 
 ```json
 {
+  "Name": "MiniLM Embeddings",
   "Model": "all-MiniLM-L6-v2",
   "Endpoint": "http://localhost:11434",
   "ApiFormat": "Ollama",

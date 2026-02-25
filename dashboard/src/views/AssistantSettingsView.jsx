@@ -6,7 +6,7 @@ import Tooltip from '../components/Tooltip';
 import AlertModal from '../components/AlertModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 
-function AssistantSettingsView() {
+function AssistantSettingsView({ onOpenChatDrawer }) {
   const { serverUrl, credential } = useAuth();
   const [searchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
@@ -156,7 +156,17 @@ function AssistantSettingsView() {
           <p className="content-subtitle">Configure model, retrieval, and inference settings for each assistant.</p>
         </div>
         {selectedId && (
-          <a href={`/chat/${selectedId}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Launch Chat</a>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {onOpenChatDrawer && (
+              <button className="btn btn-secondary" onClick={() => onOpenChatDrawer(selectedId)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, verticalAlign: 'text-bottom' }}>
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Test Chat
+              </button>
+            )}
+            <a href={`/chat/${selectedId}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Launch Chat</a>
+          </div>
         )}
       </div>
       <div className="settings-view">

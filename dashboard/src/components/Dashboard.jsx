@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Tour from './Tour';
 import SetupWizard from './SetupWizard';
+import ChatDrawer from './ChatDrawer';
 import TenantsView from '../views/TenantsView';
 import UsersView from '../views/UsersView';
 import CredentialsView from '../views/CredentialsView';
@@ -27,8 +28,19 @@ function Dashboard() {
   const { isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const [showTour, setShowTour] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [drawerAssistantId, setDrawerAssistantId] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isAdminOrTenantAdmin = isGlobalAdmin || isTenantAdmin;
+
+  const openChatDrawer = useCallback((assistantId) => {
+    setDrawerAssistantId(assistantId);
+    setDrawerOpen(true);
+  }, []);
+
+  const closeChatDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
 
   useEffect(() => {
     if (!localStorage.getItem('ah_tourCompleted')) {
@@ -62,7 +74,7 @@ function Dashboard() {
             {isAdmin && <Route path="/collections" element={<CollectionsView />} />}
             {isAdmin && <Route path="/records" element={<RecordsView />} />}
             <Route path="/assistants" element={<AssistantsView />} />
-            <Route path="/assistant-settings" element={<AssistantSettingsView />} />
+            <Route path="/assistant-settings" element={<AssistantSettingsView onOpenChatDrawer={openChatDrawer} />} />
             {isAdmin && <Route path="/endpoints/embedding" element={<EmbeddingEndpointsView />} />}
             {isAdmin && <Route path="/endpoints/inference" element={<InferenceEndpointsView />} />}
             {isAdminOrTenantAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
@@ -75,6 +87,7 @@ function Dashboard() {
           </Routes>
         </div>
       </div>
+      <ChatDrawer assistantId={drawerAssistantId} isOpen={drawerOpen} onClose={closeChatDrawer} />
       {showTour && <Tour onComplete={handleTourComplete} />}
       {showWizard && <SetupWizard onClose={() => setShowWizard(false)} />}
     </div>

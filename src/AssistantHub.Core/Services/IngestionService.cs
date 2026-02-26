@@ -1113,7 +1113,7 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
-        /// Semantic cell response from the Partio v0.2.0 service.
+        /// Semantic cell response from the Partio v0.4.0 service.
         /// </summary>
         private class SemanticCellResponse
         {
@@ -1126,7 +1126,7 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
-        /// A single chunk result from Partio v0.2.0.
+        /// A single chunk result from Partio v0.4.0.
         /// </summary>
         private class ChunkResult
         {

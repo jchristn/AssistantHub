@@ -28,7 +28,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.3.0
+## New in v0.4.0
 
 - **Full multi-tenancy** -- Row-level tenant isolation across all entities. Each tenant operates in complete isolation within a shared deployment
 - **Tenant management** -- CRUD API and dashboard view for creating, updating, and deleting tenants with auto-provisioning of default resources (admin user, credential, RecallDB tenant, collection, S3 bucket, ingestion rule)
@@ -37,10 +37,10 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Per-tenant storage isolation** -- Each tenant gets dedicated S3 buckets prefixed with `{tenantId}_`; processing logs namespaced by tenant; 1:1 RecallDB tenant mapping
 - **Tenant-scoped API routes** -- Users and credentials accessed via `/v1.0/tenants/{tenantId}/...`; WhoAmI endpoint for authentication context
 - **Dashboard tenant awareness** -- Tenant name and role badges, conditional admin sections, Tenant column in data views for global admins
-- **Automatic data migration** -- Seamless v0.2.0 to v0.3.0 upgrade across all 4 database drivers
+- **Automatic data migration** -- Seamless v0.4.0 upgrade across all 4 database drivers
 - See [CHANGELOG.md](CHANGELOG.md) for full details
 
-## v0.2.0
+## v0.4.0
 
 - **Initial release** with multi-assistant platform, automated document ingestion, flexible search modes, streaming chat, and browser-based dashboard
 - See [CHANGELOG.md](CHANGELOG.md) for full details
@@ -61,6 +61,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
+- **Query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval to broaden recall and capture synonyms, alternate phrasing, and conceptual restatements
 - **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 
 ---

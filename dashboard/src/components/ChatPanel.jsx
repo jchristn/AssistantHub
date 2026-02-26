@@ -631,23 +631,39 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                       <div className="chat-user-text">{msg.content}</div>
                     )}
                   </div>
-                  {msg.citations && msg.citations.sources?.length > 0 && (
-                    <div className="chat-citations">
-                      <div className="chat-citations-label">Sources</div>
-                      <div className="chat-citations-list">
-                        {msg.citations.sources
-                          .filter(s => !msg.citations.referenced_indices?.length || msg.citations.referenced_indices.includes(s.index))
-                          .map((source) => (
+                  {msg.citations && msg.citations.sources?.length > 0 && (() => {
+                    const filtered = msg.citations.sources
+                      .filter(s => !msg.citations.referenced_indices?.length || msg.citations.referenced_indices.includes(s.index));
+                    const grouped = Object.values(filtered.reduce((acc, source) => {
+                      const key = source.document_name;
+                      if (!acc[key]) {
+                        acc[key] = { ...source, indices: [source.index] };
+                      } else {
+                        acc[key].indices.push(source.index);
+                        if (source.score > acc[key].score) {
+                          acc[key].score = source.score;
+                        }
+                        if (source.download_url && !acc[key].download_url) {
+                          acc[key].download_url = source.download_url;
+                        }
+                      }
+                      return acc;
+                    }, {}));
+                    return (
+                      <div className="chat-citations">
+                        <div className="chat-citations-label">Sources</div>
+                        <div className="chat-citations-list">
+                          {grouped.map((source) => (
                             source.download_url ? (
                               <a
-                                key={source.index}
+                                key={source.indices.join(',')}
                                 className="chat-citation-card chat-citation-clickable"
                                 href={source.download_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title={source.excerpt}
                               >
-                                <span className="chat-citation-index">[{source.index}]</span>
+                                <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
                                 <span className="chat-citation-name">
                                   {source.document_name}
                                 </span>
@@ -656,8 +672,8 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                                 </span>
                               </a>
                             ) : (
-                              <div key={source.index} className="chat-citation-card" title={source.excerpt}>
-                                <span className="chat-citation-index">[{source.index}]</span>
+                              <div key={source.indices.join(',')} className="chat-citation-card" title={source.excerpt}>
+                                <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
                                 <span className="chat-citation-name">
                                   {source.document_name}
                                 </span>
@@ -667,9 +683,10 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                               </div>
                             )
                           ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                   {msg.role === 'assistant' && !msg.isError && (
                     <div className="chat-message-actions">
                       <button

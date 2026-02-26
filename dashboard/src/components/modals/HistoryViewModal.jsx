@@ -47,6 +47,7 @@ function HistoryViewModal({ history, onClose }) {
   const { serverUrl, credential } = useAuth();
   const [retrievalOpen, setRetrievalOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(true);
+  const [queryRewriteOpen, setQueryRewriteOpen] = useState(false);
   const [docNames, setDocNames] = useState({});
 
   // Parse retrieval chunks once
@@ -94,6 +95,7 @@ function HistoryViewModal({ history, onClose }) {
   // Compute total pipeline duration for proportional bars
   const totalPipelineMs =
     (history.RetrievalGateDurationMs || 0) +
+    (history.QueryRewriteDurationMs || 0) +
     (history.RetrievalDurationMs || 0) +
     (history.EndpointResolutionDurationMs || 0) +
     (history.CompactionDurationMs || 0) +
@@ -162,6 +164,13 @@ function HistoryViewModal({ history, onClose }) {
             durationMs={history.RetrievalGateDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-gate, #a9e34b)"
+          />
+          <TimingBar
+            label="Query Rewrite"
+            tooltip="LLM-based query rewrite — rewrites the user prompt into multiple semantically varied queries to improve retrieval recall"
+            durationMs={history.QueryRewriteDurationMs}
+            totalMs={totalPipelineMs}
+            color="var(--timing-rewrite, #74c0fc)"
           />
           <TimingBar
             label="Retrieval"
@@ -273,6 +282,32 @@ function HistoryViewModal({ history, onClose }) {
           </div>
         )}
       </div>
+
+      {/* === Query Rewrite === */}
+      {history.QueryRewriteResult && (
+        <div className="history-section">
+          <div
+            className="history-section-header history-section-toggle"
+            onClick={() => setQueryRewriteOpen(!queryRewriteOpen)}
+          >
+            <Tooltip text="LLM-based query rewrite — the original prompt was rewritten into multiple queries for broader retrieval">Query Rewrite</Tooltip>
+            <span className="history-toggle-icon">{queryRewriteOpen ? '\u25BC' : '\u25B6'}</span>
+            <span className="history-section-badge">{formatMs(history.QueryRewriteDurationMs)}</span>
+          </div>
+          {queryRewriteOpen && (
+            <div className="history-retrieval-body">
+              {history.QueryRewriteResult.split('\n').filter(q => q.trim()).map((query, idx) => (
+                <div key={idx} className="history-chunk-card">
+                  <div className="history-chunk-header">
+                    <span className="history-chunk-num">{idx === 0 ? 'Original' : `Variant ${idx}`}</span>
+                  </div>
+                  <div className="json-view history-chunk-content">{query.trim()}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* === Retrieval Context === */}
       <div className="history-section">

@@ -56,7 +56,8 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
             string query =
                 "INSERT INTO chat_history " +
                 "(id, tenant_id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
-                "retrieval_start_utc, retrieval_duration_ms, retrieval_gate_decision, retrieval_gate_duration_ms, retrieval_context, " +
+                "retrieval_start_utc, retrieval_duration_ms, retrieval_gate_decision, retrieval_gate_duration_ms, " +
+                "query_rewrite_result, query_rewrite_duration_ms, retrieval_context, " +
                 "prompt_sent_utc, prompt_tokens, " +
                 "endpoint_resolution_duration_ms, compaction_duration_ms, inference_connection_duration_ms, " +
                 "time_to_first_token_ms, time_to_last_token_ms, " +
@@ -74,6 +75,8 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatDouble(history.RetrievalDurationMs) + ", " +
                 _Driver.FormatNullableString(history.RetrievalGateDecision) + ", " +
                 _Driver.FormatDouble(history.RetrievalGateDurationMs) + ", " +
+                _Driver.FormatNullableString(history.QueryRewriteResult) + ", " +
+                _Driver.FormatDouble(history.QueryRewriteDurationMs) + ", " +
                 _Driver.FormatNullableString(history.RetrievalContext) + ", " +
                 _Driver.FormatNullableDateTime(history.PromptSentUtc) + ", " +
                 history.PromptTokens + ", " +

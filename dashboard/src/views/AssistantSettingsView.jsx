@@ -99,6 +99,8 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         LogoUrl: result?.LogoUrl || '',
         FaviconUrl: result?.FaviconUrl || '',
         Streaming: result?.Streaming ?? true,
+        EnableQueryRewrite: result?.EnableQueryRewrite ?? false,
+        QueryRewritePrompt: result?.QueryRewritePrompt || '',
       });
       setDirty(false);
     } catch (err) {
@@ -285,6 +287,24 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                         <option value="Authenticated">Authenticated (bearer token required)</option>
                         <option value="Public">Public (no authentication required)</option>
                       </select>
+                    </div>
+                  )}
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableQueryRewrite} onChange={(e) => handleChange('EnableQueryRewrite', e.target.checked)} />
+                      <Tooltip text="When enabled, the user's prompt is rewritten into multiple semantically varied queries before retrieval, improving recall by capturing synonyms and alternate phrasing">Enable Query Rewrite</Tooltip>
+                    </label>
+                  </div>
+                  {settings.EnableQueryRewrite && (
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="The prompt sent to the LLM to rewrite the user's query. Must contain the {prompt} placeholder, which is replaced with the user's message at runtime. The LLM should return a newline-separated list of prompts including the original.">Query Rewrite Prompt</Tooltip></label>
+                      <textarea
+                        className="form-input"
+                        value={settings.QueryRewritePrompt}
+                        onChange={(e) => handleChange('QueryRewritePrompt', e.target.value)}
+                        rows={6}
+                        placeholder="Leave empty to use the built-in default prompt. Custom prompts must include {prompt} as a placeholder for the user's message."
+                      />
                     </div>
                   )}
                   <div className="form-group">

@@ -28,6 +28,27 @@ namespace AssistantHub.Server.Handlers
     {
         private static readonly string _Header = "[ChatHandler] ";
 
+        private static readonly string _DefaultQueryRewritePrompt =
+            "Evaluate the following prompt.\n" +
+            "Return up to three variants of this prompt using different words or phrasing to maximize retrieval accuracy.\n" +
+            "If you are unable to rewrite this prompt, respond ONLY with the original prompt.\n" +
+            "Always include the original prompt in the response.\n" +
+            "Return nothing other than a newline-separated list of prompts.\n\n" +
+            "Example #1 (positive example)\n" +
+            "User prompt:\n" +
+            "\"How do I speed up my Postgres vector search? It's getting slow as my data grows.\"\n\n" +
+            "LLM response:\n" +
+            "\"How do I speed up my Postgres vector search? It's getting slow as my data grows.\"\n" +
+            "\"How can I optimize pgvector similarity queries in Postgres (index type, HNSW/IVFFlat settings, query patterns, and maintenance like VACUUM/ANALYZE)?\"\n" +
+            "\"Best practices for scaling Postgres vector retrieval with pgvector: schema design, indexing strategy, and query structure to reduce response time.\"\n" +
+            "\"pgvector performance tuning checklist: choosing distance function, index parameters, batch sizes, and filters without killing recall or speed.\"\n\n" +
+            "Example #2 (negative example)\n" +
+            "User prompt:\n" +
+            "\"Why is it doing that thing again?\"\n\n" +
+            "LLM response:\n" +
+            "\"Why is it doing that thing again?\"\n\n" +
+            "The prompt to evaluate is: {prompt}";
+
         private static readonly string _RetrievalGatePrompt =
             "You are a retrieval classifier. Given a conversation and the user's latest message, " +
             "decide whether answering the latest message requires searching an external knowledge base " +
@@ -289,6 +310,76 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                // Query rewrite: generate alternate phrasings for improved retrieval recall
+                string queryRewriteResult = null;
+                double queryRewriteDurationMs = 0;
+                List<string> retrievalQueries = new List<string> { lastUserMessage };
+
+                if (settings.EnableRag && settings.EnableQueryRewrite && shouldRetrieve
+                    && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+                {
+                    // Resolve inference endpoint (same as retrieval gate)
+                    Enums.InferenceProviderEnum rewriteProvider = Settings.Inference.Provider;
+                    string rewriteEndpoint = Settings.Inference.Endpoint;
+                    string rewriteApiKey = Settings.Inference.ApiKey;
+
+                    if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                    {
+                        var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                        if (resolved != null)
+                        {
+                            rewriteProvider = resolved.Value.Provider;
+                            rewriteEndpoint = resolved.Value.Endpoint;
+                            rewriteApiKey = resolved.Value.ApiKey;
+                        }
+                    }
+
+                    string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
+                        ? settings.QueryRewritePrompt
+                        : _DefaultQueryRewritePrompt;
+
+                    string rewritePrompt = rewritePromptTemplate.Replace("{prompt}", lastUserMessage);
+
+                    List<ChatCompletionMessage> rewriteMessages = new List<ChatCompletionMessage>
+                    {
+                        new ChatCompletionMessage { Role = "system", Content = rewritePrompt }
+                    };
+
+                    Stopwatch rewriteSw = Stopwatch.StartNew();
+                    try
+                    {
+                        InferenceResult rewriteResult = await Inference.GenerateResponseAsync(
+                            rewriteMessages, settings.Model, 512, 0.7, 1.0,
+                            rewriteProvider, rewriteEndpoint, rewriteApiKey).ConfigureAwait(false);
+
+                        rewriteSw.Stop();
+                        queryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
+
+                        if (rewriteResult != null && rewriteResult.Success && !String.IsNullOrEmpty(rewriteResult.Content))
+                        {
+                            queryRewriteResult = rewriteResult.Content.Trim();
+                            List<string> rewrittenQueries = rewriteResult.Content
+                                .Split('\n')
+                                .Select(q => q.Trim().Trim('"'))
+                                .Where(q => !String.IsNullOrWhiteSpace(q))
+                                .ToList();
+
+                            if (rewrittenQueries.Count > 0)
+                            {
+                                retrievalQueries = rewrittenQueries;
+                            }
+                        }
+                    }
+                    catch (Exception rewriteEx)
+                    {
+                        rewriteSw.Stop();
+                        queryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
+                        Logging.Warn(_Header + "query rewrite failed, using original query: " + rewriteEx.Message);
+                    }
+
+                    Logging.Info(_Header + "query rewrite produced " + retrievalQueries.Count + " queries (" + queryRewriteDurationMs + " ms)");
+                }
+
                 // Retrieve relevant context from the vector database
                 List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
                 DateTime? retrievalStartUtc = null;
@@ -298,32 +389,52 @@ namespace AssistantHub.Server.Handlers
                     retrievalStartUtc = DateTime.UtcNow;
                     Stopwatch retrievalSw = Stopwatch.StartNew();
 
-                    List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
-                        assistant.TenantId,
-                        settings.CollectionId,
-                        lastUserMessage,
-                        settings.RetrievalTopK,
-                        settings.RetrievalScoreThreshold,
-                        default,
-                        settings.EmbeddingEndpointId,
-                        new RetrievalSearchOptions
+                    RetrievalSearchOptions searchOptions = new RetrievalSearchOptions
+                    {
+                        SearchMode = settings.SearchMode,
+                        TextWeight = settings.TextWeight,
+                        FullTextSearchType = settings.FullTextSearchType,
+                        FullTextLanguage = settings.FullTextLanguage,
+                        FullTextNormalization = settings.FullTextNormalization,
+                        FullTextMinimumScore = settings.FullTextMinimumScore,
+                        IncludeNeighbors = settings.RetrievalIncludeNeighbors
+                    };
+
+                    HashSet<string> seenChunks = new HashSet<string>();
+
+                    foreach (string query in retrievalQueries)
+                    {
+                        List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
+                            assistant.TenantId,
+                            settings.CollectionId,
+                            query,
+                            settings.RetrievalTopK,
+                            settings.RetrievalScoreThreshold,
+                            default,
+                            settings.EmbeddingEndpointId,
+                            searchOptions).ConfigureAwait(false);
+
+                        if (retrieved != null)
                         {
-                            SearchMode = settings.SearchMode,
-                            TextWeight = settings.TextWeight,
-                            FullTextSearchType = settings.FullTextSearchType,
-                            FullTextLanguage = settings.FullTextLanguage,
-                            FullTextNormalization = settings.FullTextNormalization,
-                            FullTextMinimumScore = settings.FullTextMinimumScore,
-                            IncludeNeighbors = settings.RetrievalIncludeNeighbors
-                        }).ConfigureAwait(false);
+                            foreach (RetrievalChunk chunk in retrieved)
+                            {
+                                string dedupeKey = (chunk.DocumentId ?? "") + ":" + chunk.Position;
+                                if (seenChunks.Add(dedupeKey))
+                                {
+                                    retrievalChunks.Add(chunk);
+                                }
+                            }
+                        }
+                    }
+
+                    // Re-sort by score descending and cap at TopK
+                    retrievalChunks = retrievalChunks
+                        .OrderByDescending(c => c.Score)
+                        .Take(settings.RetrievalTopK)
+                        .ToList();
 
                     retrievalSw.Stop();
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
-
-                    if (retrieved != null)
-                    {
-                        retrievalChunks.AddRange(retrieved);
-                    }
                 }
 
                 // Extract content strings for system message building (merged with neighbors when present)
@@ -466,7 +577,8 @@ namespace AssistantHub.Server.Handlers
                         assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
-                        retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
+                        retrievalGateDecision, retrievalGateDurationMs, citationSources,
+                        queryRewriteResult, queryRewriteDurationMs).ConfigureAwait(false);
                 }
                 else
                 {
@@ -475,7 +587,8 @@ namespace AssistantHub.Server.Handlers
                         assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
-                        retrievalGateDecision, retrievalGateDurationMs, citationSources).ConfigureAwait(false);
+                        retrievalGateDecision, retrievalGateDurationMs, citationSources,
+                        queryRewriteResult, queryRewriteDurationMs).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -1117,7 +1230,9 @@ namespace AssistantHub.Server.Handlers
             double compactionMs = 0,
             string retrievalGateDecision = null,
             double retrievalGateDurationMs = 0,
-            List<CitationSource> citationSources = null)
+            List<CitationSource> citationSources = null,
+            string queryRewriteResult = null,
+            double queryRewriteDurationMs = 0)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -1189,7 +1304,8 @@ namespace AssistantHub.Server.Handlers
                         timeToLastTokenMs, timeToLastTokenMs,
                         inferenceResult.Content,
                         completionTokens,
-                        retrievalGateDecision, retrievalGateDurationMs);
+                        retrievalGateDecision, retrievalGateDurationMs,
+                        queryRewriteResult, queryRewriteDurationMs);
                 }
             }
             else
@@ -1230,7 +1346,9 @@ namespace AssistantHub.Server.Handlers
             double compactionMs = 0,
             string retrievalGateDecision = null,
             double retrievalGateDurationMs = 0,
-            List<CitationSource> citationSources = null)
+            List<CitationSource> citationSources = null,
+            string queryRewriteResult = null,
+            double queryRewriteDurationMs = 0)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -1322,7 +1440,8 @@ namespace AssistantHub.Server.Handlers
                             timeToFirstTokenMs, timeToLastTokenMs,
                             cleanedContent,
                             finishCompletionTokens,
-                            retrievalGateDecision, retrievalGateDurationMs);
+                            retrievalGateDecision, retrievalGateDurationMs,
+                            queryRewriteResult, queryRewriteDurationMs);
                     }
                     ChatCompletionResponse finishChunk = new ChatCompletionResponse
                     {
@@ -1548,7 +1667,8 @@ namespace AssistantHub.Server.Handlers
             double timeToFirstTokenMs, double timeToLastTokenMs,
             string assistantResponse,
             int completionTokens = 0,
-            string retrievalGateDecision = null, double retrievalGateDurationMs = 0)
+            string retrievalGateDecision = null, double retrievalGateDurationMs = 0,
+            string queryRewriteResult = null, double queryRewriteDurationMs = 0)
         {
             try
             {
@@ -1564,6 +1684,8 @@ namespace AssistantHub.Server.Handlers
                 history.RetrievalDurationMs = retrievalDurationMs;
                 history.RetrievalGateDecision = retrievalGateDecision;
                 history.RetrievalGateDurationMs = retrievalGateDurationMs;
+                history.QueryRewriteResult = queryRewriteResult;
+                history.QueryRewriteDurationMs = queryRewriteDurationMs;
                 history.RetrievalContext = retrievalContext;
                 history.PromptSentUtc = promptSentUtc;
                 history.PromptTokens = promptTokens;

@@ -67,6 +67,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  model TEXT NOT NULL DEFAULT 'gemma3:4b', " +
                 "  enable_rag INTEGER NOT NULL DEFAULT 0, " +
                 "  enable_retrieval_gate INTEGER NOT NULL DEFAULT 0, " +
+                "  enable_query_rewrite INTEGER NOT NULL DEFAULT 0, " +
+                "  query_rewrite_prompt TEXT, " +
                 "  enable_citations INTEGER NOT NULL DEFAULT 0, " +
                 "  citation_link_mode TEXT DEFAULT 'None', " +
                 "  collection_id TEXT, " +
@@ -148,6 +150,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  retrieval_gate_decision TEXT, " +
                 "  retrieval_gate_duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  query_rewrite_result TEXT, " +
+                "  query_rewrite_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  retrieval_context TEXT, " +
                 "  prompt_sent_utc TEXT, " +
                 "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +

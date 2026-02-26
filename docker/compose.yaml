@@ -234,6 +234,7 @@ services:
       - ./assistanthub/data/:/app/data/
       - ./assistanthub/logs/:/app/logs/
       - ./assistanthub/processing-logs/:/app/processing-logs/
+      - ./assistanthub/crawl-enumerations/:/app/crawl-enumerations/
     depends_on:
       assistanthub-db-init:
         condition: service_completed_successfully

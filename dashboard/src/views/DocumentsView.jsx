@@ -45,6 +45,8 @@ function DocumentsView() {
   const [collections, setCollections] = useState([]);
   const [bucketFilter, setBucketFilter] = useState('');
   const [collectionFilter, setCollectionFilter] = useState('');
+  const [crawlerFilter, setCrawlerFilter] = useState('');
+  const [crawlPlans, setCrawlPlans] = useState([]);
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [pendingDropFiles, setPendingDropFiles] = useState(null);
@@ -93,6 +95,15 @@ function DocumentsView() {
         console.error('Failed to load collections', err);
       }
     })();
+    (async () => {
+      try {
+        const result = await api.getCrawlPlans({ maxResults: 1000 });
+        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        setCrawlPlans(items);
+      } catch (err) {
+        console.error('Failed to load crawl plans', err);
+      }
+    })();
   }, [serverUrl, credential]);
 
   const columns = [
@@ -104,7 +115,12 @@ function DocumentsView() {
     }},
     { key: 'ContentType', label: 'Content Type', tooltip: 'MIME type of the document (e.g. application/pdf)', filterable: true },
     { key: 'SizeBytes', label: 'Size', tooltip: 'File size of the uploaded document', render: (row) => formatFileSize(row.SizeBytes) },
-    { key: 'Status', label: 'Status', tooltip: 'Current processing state of the document', render: (row) => <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span> },
+    { key: 'Status', label: 'Status', tooltip: 'Current processing state of the document', render: (row) => (
+      <>
+        <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span>
+        {row.CrawlPlanId && <span className="status-badge badge-crawled" style={{ marginLeft: '0.25rem' }}>Crawled</span>}
+      </>
+    )},
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the document was uploaded', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 
@@ -112,14 +128,23 @@ function DocumentsView() {
     const filterParams = { ...params };
     if (bucketFilter) filterParams.bucketName = bucketFilter;
     if (collectionFilter) filterParams.collectionId = collectionFilter;
+    if (crawlerFilter) filterParams.crawlPlanId = crawlerFilter;
     return await api.getDocuments(filterParams);
-  }, [serverUrl, credential, bucketFilter, collectionFilter]);
+  }, [serverUrl, credential, bucketFilter, collectionFilter, crawlerFilter]);
 
-  const getRowActions = (row) => [
-    { label: 'View JSON', onClick: () => setShowJson(row) },
-    { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
-    { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
-  ];
+  const getRowActions = (row) => {
+    const actions = [
+      { label: 'View JSON', onClick: () => setShowJson(row) },
+      { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
+    ];
+    if (row.CrawlOperationId) {
+      actions.push({ label: 'View Crawl Operation', onClick: () => {
+        window.open(`#/crawlers?op=${row.CrawlOperationId}&plan=${row.CrawlPlanId}`, '_self');
+      }});
+    }
+    actions.push({ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) });
+    return actions;
+  };
 
   const handleUpload = (docData) => {
     const { file, IngestionRuleId, Labels, Tags } = docData;
@@ -220,6 +245,15 @@ function DocumentsView() {
             <option value="">All Collections</option>
             {collections.map((c) => (
               <option key={c.Id || c.GUID} value={c.Id || c.GUID}>{c.Name || c.Id || c.GUID}</option>
+            ))}
+          </select>
+        </label>
+        <label className="filter-label">
+          <Tooltip text="Filter documents by crawl plan">Crawler:</Tooltip>
+          <select value={crawlerFilter} onChange={(e) => setCrawlerFilter(e.target.value)}>
+            <option value="">All Sources</option>
+            {crawlPlans.map((cp) => (
+              <option key={cp.Id || cp.GUID} value={cp.Id || cp.GUID}>{cp.Name || cp.Id || cp.GUID}</option>
             ))}
           </select>
         </label>

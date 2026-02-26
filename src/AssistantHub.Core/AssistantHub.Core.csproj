@@ -37,6 +37,7 @@
     <PackageReference Include="Npgsql" Version="9.0.3" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageReference Include="MySql.Data" Version="9.2.0" />
+    <PackageReference Include="CrawlSharp" Version="1.0.16" />
   </ItemGroup>
 
 </Project>

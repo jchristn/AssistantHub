@@ -114,6 +114,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _ChatHistory = value; }
         }
 
+        /// <summary>
+        /// Crawl settings.
+        /// </summary>
+        public CrawlSettings Crawl
+        {
+            get => _Crawl;
+            set { if (value != null) _Crawl = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -129,6 +138,7 @@ namespace AssistantHub.Core.Settings
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();
         private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
+        private CrawlSettings _Crawl = new CrawlSettings();
 
         #endregion
 

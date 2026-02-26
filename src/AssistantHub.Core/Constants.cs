@@ -104,6 +104,16 @@ namespace AssistantHub.Core
         public static string ChatCompletionIdentifierPrefix = "chatcmpl-";
 
         /// <summary>
+        /// Crawl plan identifier prefix.
+        /// </summary>
+        public static string CrawlPlanIdentifierPrefix = "cplan_";
+
+        /// <summary>
+        /// Crawl operation identifier prefix.
+        /// </summary>
+        public static string CrawlOperationIdentifierPrefix = "cop_";
+
+        /// <summary>
         /// Identifier length (total length including prefix).
         /// </summary>
         public static int IdentifierLength = 32;
@@ -161,6 +171,16 @@ namespace AssistantHub.Core
         /// Tenants table name.
         /// </summary>
         public static string TenantsTable = "tenants";
+
+        /// <summary>
+        /// Crawl plans table name.
+        /// </summary>
+        public static string CrawlPlansTable = "crawl_plans";
+
+        /// <summary>
+        /// Crawl operations table name.
+        /// </summary>
+        public static string CrawlOperationsTable = "crawl_operations";
 
         #endregion
 

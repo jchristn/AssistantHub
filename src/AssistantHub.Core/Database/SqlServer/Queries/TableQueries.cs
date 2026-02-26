@@ -124,6 +124,9 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 chunk_record_ids NVARCHAR(MAX) NULL,
+                crawl_plan_id NVARCHAR(256) NULL,
+                crawl_operation_id NVARCHAR(256) NULL,
+                source_url NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_documents PRIMARY KEY (id)
@@ -164,6 +167,63 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_ingestion_rules PRIMARY KEY (id)
+            );";
+
+        internal static readonly string CreateCrawlPlansTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'crawl_plans')
+            CREATE TABLE crawl_plans (
+                id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
+                name NVARCHAR(256) NOT NULL,
+                repository_type NVARCHAR(256) NOT NULL DEFAULT 'Web',
+                ingestion_settings_json NVARCHAR(MAX) NULL,
+                repository_settings_json NVARCHAR(MAX) NULL,
+                schedule_json NVARCHAR(MAX) NULL,
+                filter_json NVARCHAR(MAX) NULL,
+                process_additions BIT NOT NULL DEFAULT 1,
+                process_updates BIT NOT NULL DEFAULT 1,
+                process_deletions BIT NOT NULL DEFAULT 0,
+                max_drain_tasks INT NOT NULL DEFAULT 8,
+                retention_days INT NOT NULL DEFAULT 7,
+                state NVARCHAR(256) NOT NULL DEFAULT 'Stopped',
+                last_crawl_start_utc NVARCHAR(64) NULL,
+                last_crawl_finish_utc NVARCHAR(64) NULL,
+                last_crawl_success BIT NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_crawl_plans PRIMARY KEY (id)
+            );";
+
+        internal static readonly string CreateCrawlOperationsTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'crawl_operations')
+            CREATE TABLE crawl_operations (
+                id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
+                crawl_plan_id NVARCHAR(256) NOT NULL,
+                state NVARCHAR(256) NOT NULL DEFAULT 'NotStarted',
+                status_message NVARCHAR(MAX) NULL,
+                objects_enumerated BIGINT NOT NULL DEFAULT 0,
+                bytes_enumerated BIGINT NOT NULL DEFAULT 0,
+                objects_added BIGINT NOT NULL DEFAULT 0,
+                bytes_added BIGINT NOT NULL DEFAULT 0,
+                objects_updated BIGINT NOT NULL DEFAULT 0,
+                bytes_updated BIGINT NOT NULL DEFAULT 0,
+                objects_deleted BIGINT NOT NULL DEFAULT 0,
+                bytes_deleted BIGINT NOT NULL DEFAULT 0,
+                objects_success BIGINT NOT NULL DEFAULT 0,
+                bytes_success BIGINT NOT NULL DEFAULT 0,
+                objects_failed BIGINT NOT NULL DEFAULT 0,
+                bytes_failed BIGINT NOT NULL DEFAULT 0,
+                enumeration_file NVARCHAR(MAX) NULL,
+                start_utc NVARCHAR(64) NULL,
+                start_enumeration_utc NVARCHAR(64) NULL,
+                finish_enumeration_utc NVARCHAR(64) NULL,
+                start_retrieval_utc NVARCHAR(64) NULL,
+                finish_retrieval_utc NVARCHAR(64) NULL,
+                finish_utc NVARCHAR(64) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_crawl_operations PRIMARY KEY (id)
             );";
 
         internal static readonly string CreateChatHistoryTable =
@@ -286,6 +346,34 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateChatHistoryTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_tenant_id')
             CREATE INDEX idx_chat_history_tenant_id ON chat_history (tenant_id);";
+
+        internal static readonly string CreateCrawlPlansTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_plans_tenant_id')
+            CREATE INDEX idx_crawl_plans_tenant_id ON crawl_plans (tenant_id);";
+
+        internal static readonly string CreateCrawlPlansStateIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_plans_state')
+            CREATE INDEX idx_crawl_plans_state ON crawl_plans (state);";
+
+        internal static readonly string CreateCrawlOperationsTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_operations_tenant_id')
+            CREATE INDEX idx_crawl_operations_tenant_id ON crawl_operations (tenant_id);";
+
+        internal static readonly string CreateCrawlOperationsCrawlPlanIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_operations_crawl_plan_id')
+            CREATE INDEX idx_crawl_operations_crawl_plan_id ON crawl_operations (crawl_plan_id);";
+
+        internal static readonly string CreateCrawlOperationsCreatedUtcIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_operations_created_utc')
+            CREATE INDEX idx_crawl_operations_created_utc ON crawl_operations (created_utc);";
+
+        internal static readonly string CreateAssistantDocumentsCrawlPlanIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_crawl_plan_id')
+            CREATE INDEX idx_assistant_documents_crawl_plan_id ON assistant_documents (crawl_plan_id);";
+
+        internal static readonly string CreateAssistantDocumentsCrawlOperationIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_documents_crawl_operation_id')
+            CREATE INDEX idx_assistant_documents_crawl_operation_id ON assistant_documents (crawl_operation_id);";
 
         #endregion
     }

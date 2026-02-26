@@ -57,6 +57,8 @@ namespace AssistantHub.Core.Database.Mysql
             AssistantDocument = new AssistantDocumentMethods(this, _Settings, _Logging);
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
+            CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
+            CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
         }
 
@@ -77,6 +79,8 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
+                TableQueries.CreateCrawlPlansTable,
+                TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateChatHistoryTable
             };
 
@@ -103,6 +107,13 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateIngestionRulesTenantIdIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
                 TableQueries.CreateAssistantDocumentsTenantIdIndex,
+                TableQueries.CreateCrawlPlansTenantIdIndex,
+                TableQueries.CreateCrawlPlansStateIndex,
+                TableQueries.CreateCrawlOperationsTenantIdIndex,
+                TableQueries.CreateCrawlOperationsCrawlPlanIdIndex,
+                TableQueries.CreateCrawlOperationsCreatedUtcIndex,
+                TableQueries.CreateAssistantDocumentsCrawlPlanIdIndex,
+                TableQueries.CreateAssistantDocumentsCrawlOperationIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,

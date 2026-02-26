@@ -59,6 +59,16 @@ namespace AssistantHub.Core.Database
         /// </summary>
         public ITenantMethods Tenant { get; protected set; }
 
+        /// <summary>
+        /// Crawl plan methods.
+        /// </summary>
+        public ICrawlPlanMethods CrawlPlan { get; protected set; }
+
+        /// <summary>
+        /// Crawl operation methods.
+        /// </summary>
+        public ICrawlOperationMethods CrawlOperation { get; protected set; }
+
         #endregion
 
         #region Constructors-and-Factories

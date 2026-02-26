@@ -106,6 +106,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  labels_json TEXT, " +
                 "  tags_json TEXT, " +
                 "  chunk_record_ids TEXT, " +
+                "  crawl_plan_id TEXT, " +
+                "  crawl_operation_id TEXT, " +
+                "  source_url TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -135,6 +138,55 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  summarization_json TEXT, " +
                 "  chunking_json TEXT, " +
                 "  embedding_json TEXT, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS crawl_plans (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  name TEXT NOT NULL, " +
+                "  repository_type TEXT NOT NULL DEFAULT 'Web', " +
+                "  ingestion_settings_json TEXT, " +
+                "  repository_settings_json TEXT, " +
+                "  schedule_json TEXT, " +
+                "  filter_json TEXT, " +
+                "  process_additions INTEGER NOT NULL DEFAULT 1, " +
+                "  process_updates INTEGER NOT NULL DEFAULT 1, " +
+                "  process_deletions INTEGER NOT NULL DEFAULT 0, " +
+                "  max_drain_tasks INTEGER NOT NULL DEFAULT 8, " +
+                "  retention_days INTEGER NOT NULL DEFAULT 7, " +
+                "  state TEXT NOT NULL DEFAULT 'Stopped', " +
+                "  last_crawl_start_utc TEXT, " +
+                "  last_crawl_finish_utc TEXT, " +
+                "  last_crawl_success INTEGER, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS crawl_operations (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  crawl_plan_id TEXT NOT NULL, " +
+                "  state TEXT NOT NULL DEFAULT 'NotStarted', " +
+                "  status_message TEXT, " +
+                "  objects_enumerated INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_enumerated INTEGER NOT NULL DEFAULT 0, " +
+                "  objects_added INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_added INTEGER NOT NULL DEFAULT 0, " +
+                "  objects_updated INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_updated INTEGER NOT NULL DEFAULT 0, " +
+                "  objects_deleted INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_deleted INTEGER NOT NULL DEFAULT 0, " +
+                "  objects_success INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_success INTEGER NOT NULL DEFAULT 0, " +
+                "  objects_failed INTEGER NOT NULL DEFAULT 0, " +
+                "  bytes_failed INTEGER NOT NULL DEFAULT 0, " +
+                "  enumeration_file TEXT, " +
+                "  start_utc TEXT, " +
+                "  start_enumeration_utc TEXT, " +
+                "  finish_enumeration_utc TEXT, " +
+                "  start_retrieval_utc TEXT, " +
+                "  finish_retrieval_utc TEXT, " +
+                "  finish_utc TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -197,7 +249,14 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_assistant_id ON chat_history (assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_thread_id ON chat_history (thread_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc); " +
-                "CREATE INDEX IF NOT EXISTS idx_chat_history_tenant_id ON chat_history(tenant_id); ";
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_tenant_id ON chat_history(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_crawl_plans_state ON crawl_plans(state); " +
+                "CREATE INDEX IF NOT EXISTS idx_crawl_operations_tenant_id ON crawl_operations(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_crawl_operations_crawl_plan_id ON crawl_operations(crawl_plan_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_crawl_operations_created_utc ON crawl_operations(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_plan_id ON assistant_documents(crawl_plan_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_operation_id ON assistant_documents(crawl_operation_id); ";
         }
 
     }

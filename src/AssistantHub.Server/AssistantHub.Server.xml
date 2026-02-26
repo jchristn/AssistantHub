@@ -475,6 +475,141 @@
             PUT /v1.0/configuration - Update settings and persist to disk.
             </summary>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.CrawlOperationHandler">
+            <summary>
+            Handles crawl operation routes under /v1.0/crawlplans/{planId}/operations.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+            <param name="processingLog">Processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.GetOperationsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{planId}/operations - List operations for a crawl plan.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.GetStatisticsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{planId}/operations/statistics - Get aggregate statistics for all operations.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.GetOperationAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{planId}/operations/{id} - Get a single operation.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.GetOperationStatisticsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{planId}/operations/{id}/statistics - Get statistics for a single operation.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.DeleteOperationAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/crawlplans/{planId}/operations/{id} - Delete a single operation.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.GetEnumerationAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{planId}/operations/{id}/enumeration - Get enumeration file contents.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.CrawlPlanHandler">
+            <summary>
+            Handles crawl plan CRUD and control routes under /v1.0/crawlplans.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService,AssistantHub.Server.Services.CrawlSchedulerService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+            <param name="processingLog">Processing log service.</param>
+            <param name="crawlScheduler">Crawl scheduler service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.PutCrawlPlanAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/crawlplans - Create a new crawl plan.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.GetCrawlPlansAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans - List crawl plans.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.GetCrawlPlanAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{id} - Get crawl plan by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.PutCrawlPlanByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/crawlplans/{id} - Update crawl plan by ID.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.DeleteCrawlPlanAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/crawlplans/{id} - Delete crawl plan and all associated operations.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.StartCrawlAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/crawlplans/{id}/start - Start a crawl.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.StopCrawlAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/crawlplans/{id}/stop - Stop a crawl.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.TestConnectivityAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/crawlplans/{id}/connectivity - Test connectivity to the repository.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.EnumerateContentsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/crawlplans/{id}/enumerate - Enumerate repository contents.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.HeadCrawlPlanAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/crawlplans/{id} - Check crawl plan existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.CredentialHandler">
             <summary>
             Handles credential CRUD routes under /v1.0/tenants/{tenantId}/credentials.
@@ -1100,6 +1235,82 @@
             HEAD /v1.0/tenants/{tenantId}/users/{userId} - Check user existence.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CrawlOperationCleanupService">
+            <summary>
+            Background service that performs periodic cleanup of expired crawl operations and their associated enumeration files.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlOperationCleanupService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlOperationCleanupService.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start the cleanup service.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlOperationCleanupService.StopAsync">
+            <summary>
+            Stop the cleanup service.
+            </summary>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CrawlSchedulerService">
+            <summary>
+            Background service that manages crawl scheduling, startup recovery, and on-demand crawl execution.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="processingLog">Processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start the crawl scheduler service.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.StopAsync">
+            <summary>
+            Stop the crawl scheduler service.
+            </summary>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.StartCrawlAsync(System.String)">
+            <summary>
+            Start a crawl for a specific crawl plan on demand.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <returns>The created crawl operation, or null on failure.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.StopCrawlAsync(System.String)">
+            <summary>
+            Stop a running crawl for a specific crawl plan.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.IsRunning(System.String)">
+            <summary>
+            Check if a crawl plan is currently running.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <returns>True if the crawl plan is running.</returns>
         </member>
         <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService">
             <summary>

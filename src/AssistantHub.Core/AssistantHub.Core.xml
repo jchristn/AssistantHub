@@ -89,6 +89,16 @@
             Chat completion identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.CrawlPlanIdentifierPrefix">
+            <summary>
+            Crawl plan identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.CrawlOperationIdentifierPrefix">
+            <summary>
+            Crawl operation identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.IdentifierLength">
             <summary>
             Identifier length (total length including prefix).
@@ -142,6 +152,16 @@
         <member name="F:AssistantHub.Core.Constants.TenantsTable">
             <summary>
             Tenants table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.CrawlPlansTable">
+            <summary>
+            Crawl plans table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.CrawlOperationsTable">
+            <summary>
+            Crawl operations table name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.ThreadIdHeader">
@@ -227,6 +247,16 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.Tenant">
             <summary>
             Tenant methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.CrawlPlan">
+            <summary>
+            Crawl plan methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.CrawlOperation">
+            <summary>
+            Crawl operation methods.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
@@ -609,6 +639,149 @@
             <param name="retentionDays">Number of days to retain.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods">
+            <summary>
+            Crawl operation database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.CreateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <summary>
+            Create a crawl operation record.
+            </summary>
+            <param name="operation">Crawl operation record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created crawl operation record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a crawl operation record by identifier.
+            </summary>
+            <param name="id">Crawl operation identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Crawl operation record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.UpdateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <summary>
+            Update a crawl operation record.
+            </summary>
+            <param name="operation">Crawl operation record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated crawl operation record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a crawl operation record.
+            </summary>
+            <param name="id">Crawl operation identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a crawl operation record exists.
+            </summary>
+            <param name="id">Crawl operation identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate crawl operation records scoped to a tenant.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing crawl operation records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.EnumerateByCrawlPlanAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate crawl operation records by crawl plan identifier.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing crawl operation records.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.DeleteByCrawlPlanAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all crawl operation records for a crawl plan.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods.DeleteExpiredAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete expired crawl operation records.
+            </summary>
+            <param name="crawlPlanId">Crawl plan identifier.</param>
+            <param name="retentionDays">Retention period in days.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods">
+            <summary>
+            Crawl plan database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.CreateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <summary>
+            Create a crawl plan record.
+            </summary>
+            <param name="plan">Crawl plan record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created crawl plan record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a crawl plan record by identifier.
+            </summary>
+            <param name="id">Crawl plan identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Crawl plan record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.UpdateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <summary>
+            Update a crawl plan record.
+            </summary>
+            <param name="plan">Crawl plan record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Updated crawl plan record.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.UpdateStateAsync(System.String,AssistantHub.Core.Enums.CrawlPlanStateEnum,System.Threading.CancellationToken)">
+            <summary>
+            Update the state of a crawl plan.
+            </summary>
+            <param name="id">Crawl plan identifier.</param>
+            <param name="state">New state.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a crawl plan record.
+            </summary>
+            <param name="id">Crawl plan identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if a crawl plan record exists.
+            </summary>
+            <param name="id">Crawl plan identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the record exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.ICrawlPlanMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate crawl plan records scoped to a tenant.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="query">Enumeration query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result containing crawl plan records.</returns>
         </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.ICredentialMethods">
             <summary>
@@ -1042,6 +1215,80 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods">
+            <summary>
+            MySQL crawl operation methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.CreateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.UpdateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.EnumerateByCrawlPlanAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.DeleteByCrawlPlanAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods.DeleteExpiredAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods">
+            <summary>
+            MySQL crawl plan methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.CreateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.UpdateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.UpdateStateAsync(System.String,AssistantHub.Core.Enums.CrawlPlanStateEnum,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CrawlPlanMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods">
             <summary>
             MySQL credential methods implementation.
@@ -1375,6 +1622,80 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods">
+            <summary>
+            PostgreSQL crawl operation methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.CreateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.UpdateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.EnumerateByCrawlPlanAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.DeleteByCrawlPlanAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods.DeleteExpiredAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods">
+            <summary>
+            PostgreSQL crawl plan methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.CreateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.UpdateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.UpdateStateAsync(System.String,AssistantHub.Core.Enums.CrawlPlanStateEnum,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CrawlPlanMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods">
@@ -1716,6 +2037,80 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods">
+            <summary>
+            SQLite crawl operation methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.CreateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.UpdateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.EnumerateByCrawlPlanAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.DeleteByCrawlPlanAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods.DeleteExpiredAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods">
+            <summary>
+            SQLite crawl plan methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.CreateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.UpdateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.UpdateStateAsync(System.String,AssistantHub.Core.Enums.CrawlPlanStateEnum,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CrawlPlanMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods">
@@ -2087,6 +2482,80 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods">
+            <summary>
+            SQL Server crawl operation methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.CreateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.UpdateAsync(AssistantHub.Core.Models.CrawlOperation,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.EnumerateByCrawlPlanAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.DeleteByCrawlPlanAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods.DeleteExpiredAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods">
+            <summary>
+            SQL Server crawl plan methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.CreateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.UpdateAsync(AssistantHub.Core.Models.CrawlPlan,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.UpdateStateAsync(System.String,AssistantHub.Core.Enums.CrawlPlanStateEnum,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CrawlPlanMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods">
             <summary>
             SQL Server credential methods.
@@ -2296,6 +2765,66 @@
             Internal error.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Enums.CrawlOperationStateEnum">
+            <summary>
+            Crawl operation state enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.NotStarted">
+            <summary>
+            Not started.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Starting">
+            <summary>
+            Starting.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Enumerating">
+            <summary>
+            Enumerating.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Retrieving">
+            <summary>
+            Retrieving.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Success">
+            <summary>
+            Success.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Failed">
+            <summary>
+            Failed.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Stopped">
+            <summary>
+            Stopped.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlOperationStateEnum.Canceled">
+            <summary>
+            Canceled.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.CrawlPlanStateEnum">
+            <summary>
+            Crawl plan state enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlPlanStateEnum.Stopped">
+            <summary>
+            Stopped.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.CrawlPlanStateEnum.Running">
+            <summary>
+            Running.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Enums.DatabaseTypeEnum">
             <summary>
             Database type enumeration.
@@ -2431,6 +2960,46 @@
             Ollama.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Enums.RepositoryTypeEnum">
+            <summary>
+            Repository type enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.Web">
+            <summary>
+            Web.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.ScheduleIntervalEnum">
+            <summary>
+            Schedule interval enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ScheduleIntervalEnum.OneTime">
+            <summary>
+            One time.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ScheduleIntervalEnum.Minutes">
+            <summary>
+            Minutes.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ScheduleIntervalEnum.Hours">
+            <summary>
+            Hours.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ScheduleIntervalEnum.Days">
+            <summary>
+            Days.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.ScheduleIntervalEnum.Weeks">
+            <summary>
+            Weeks.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Enums.SummarizationOrderEnum">
             <summary>
             Summarization traversal order.
@@ -2444,6 +3013,31 @@
         <member name="F:AssistantHub.Core.Enums.SummarizationOrderEnum.TopDown">
             <summary>
             Top-down traversal.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Enums.WebAuthTypeEnum">
+            <summary>
+            Web authentication type enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.WebAuthTypeEnum.None">
+            <summary>
+            None.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.WebAuthTypeEnum.Basic">
+            <summary>
+            Basic.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.WebAuthTypeEnum.ApiKey">
+            <summary>
+            API key.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.WebAuthTypeEnum.BearerToken">
+            <summary>
+            Bearer token.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Helpers.CitationExtractor">
@@ -2659,6 +3253,18 @@
             Generate a chat history identifier.
             </summary>
             <returns>Chat history identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCrawlPlanId">
+            <summary>
+            Generate a crawl plan identifier.
+            </summary>
+            <returns>Crawl plan identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCrawlOperationId">
+            <summary>
+            Generate a crawl operation identifier.
+            </summary>
+            <returns>Crawl operation identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatCompletionId">
             <summary>
@@ -2879,6 +3485,21 @@
         <member name="P:AssistantHub.Core.Models.AssistantDocument.ChunkRecordIds">
             <summary>
             Chunk record IDs stored in RecallDB (JSON array).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.CrawlPlanId">
+            <summary>
+            Crawl plan identifier that produced this document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.CrawlOperationId">
+            <summary>
+            Crawl operation identifier that produced this document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.SourceUrl">
+            <summary>
+            Original URL or key from the crawl source.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.CreatedUtc">
@@ -3750,6 +4371,504 @@
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.ChatResult.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlFilterSettings">
+            <summary>
+            Crawl filter settings sub-object.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlFilterSettings.ObjectPrefix">
+            <summary>
+            Object key prefix filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlFilterSettings.ObjectSuffix">
+            <summary>
+            Object key suffix filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlFilterSettings.AllowedContentTypes">
+            <summary>
+            Allowed content types filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlFilterSettings.MinimumSize">
+            <summary>
+            Minimum object size in bytes.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlFilterSettings.MaximumSize">
+            <summary>
+            Maximum object size in bytes.
+            Nullable. Clamped >= 0 when set.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlFilterSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlIngestionSettings">
+            <summary>
+            Crawl ingestion settings sub-object.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlIngestionSettings.IngestionRuleId">
+            <summary>
+            Ingestion rule identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlIngestionSettings.StoreInS3">
+            <summary>
+            Store crawled documents in S3.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlIngestionSettings.S3BucketName">
+            <summary>
+            S3 bucket name for storing crawled documents.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlIngestionSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlOperation">
+            <summary>
+            Crawl operation record representing a single crawl execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.Id">
+            <summary>
+            Unique identifier with prefix cop_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.CrawlPlanId">
+            <summary>
+            Associated crawl plan identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.State">
+            <summary>
+            Current state of the operation.
+            Default: NotStarted.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.StatusMessage">
+            <summary>
+            Status message providing additional details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsEnumerated">
+            <summary>
+            Number of objects enumerated.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesEnumerated">
+            <summary>
+            Total bytes enumerated.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsAdded">
+            <summary>
+            Number of objects added.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesAdded">
+            <summary>
+            Total bytes added.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsUpdated">
+            <summary>
+            Number of objects updated.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesUpdated">
+            <summary>
+            Total bytes updated.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsDeleted">
+            <summary>
+            Number of objects deleted.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesDeleted">
+            <summary>
+            Total bytes deleted.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsSuccess">
+            <summary>
+            Number of objects successfully processed.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesSuccess">
+            <summary>
+            Total bytes successfully processed.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.ObjectsFailed">
+            <summary>
+            Number of objects that failed processing.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.BytesFailed">
+            <summary>
+            Total bytes that failed processing.
+            Default: 0. Clamped >= 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.EnumerationFile">
+            <summary>
+            Path to the enumeration JSON file on disk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.StartUtc">
+            <summary>
+            Operation start timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.StartEnumerationUtc">
+            <summary>
+            Enumeration start timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.FinishEnumerationUtc">
+            <summary>
+            Enumeration finish timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.StartRetrievalUtc">
+            <summary>
+            Retrieval start timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.FinishRetrievalUtc">
+            <summary>
+            Retrieval finish timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.FinishUtc">
+            <summary>
+            Operation finish timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlOperation.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlOperation.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlOperation.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a CrawlOperation from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>CrawlOperation instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlPlan">
+            <summary>
+            Crawl plan record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.Id">
+            <summary>
+            Unique identifier with prefix cplan_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.Name">
+            <summary>
+            Display name for the crawl plan.
+            Default: My crawl plan.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.RepositoryType">
+            <summary>
+            Repository type.
+            Default: Web.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.IngestionSettings">
+            <summary>
+            Ingestion settings (stored as JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.RepositorySettings">
+            <summary>
+            Repository settings (stored as JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.Schedule">
+            <summary>
+            Schedule settings (stored as JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.Filter">
+            <summary>
+            Filter settings (stored as JSON).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.ProcessAdditions">
+            <summary>
+            Process new objects found during crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.ProcessUpdates">
+            <summary>
+            Process updated objects found during crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.ProcessDeletions">
+            <summary>
+            Process deleted objects found during crawling.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.MaxDrainTasks">
+            <summary>
+            Maximum concurrent drain tasks.
+            Default: 8. Clamped 1-64.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.RetentionDays">
+            <summary>
+            Operation retention in days.
+            Default: 7. Clamped 0-14.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.State">
+            <summary>
+            Current state of the crawl plan.
+            Default: Stopped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.LastCrawlStartUtc">
+            <summary>
+            Timestamp of the last crawl start in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.LastCrawlFinishUtc">
+            <summary>
+            Timestamp of the last crawl finish in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.LastCrawlSuccess">
+            <summary>
+            Whether the last crawl was successful.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlPlan.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlPlan.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlPlan.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create a CrawlPlan from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>CrawlPlan instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlRepositorySettings">
+            <summary>
+            Base class for crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlRepositorySettings.RepositoryType">
+            <summary>
+            Repository type.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebCrawlRepositorySettings">
+            <summary>
+            Web crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.AuthenticationType">
+            <summary>
+            Authentication type.
+            Default: None.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Username">
+            <summary>
+            Username for Basic authentication.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Password">
+            <summary>
+            Password for Basic authentication.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyHeader">
+            <summary>
+            API key header name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyValue">
+            <summary>
+            API key value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.BearerToken">
+            <summary>
+            Bearer token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UserAgent">
+            <summary>
+            User agent string.
+            Default: assistanthub-crawler.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.StartUrl">
+            <summary>
+            Start URL for crawling.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UseHeadlessBrowser">
+            <summary>
+            Use headless browser for JavaScript-heavy sites.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowLinks">
+            <summary>
+            Follow links during crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowRedirects">
+            <summary>
+            Follow HTTP redirects.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ExtractSitemapLinks">
+            <summary>
+            Extract and follow sitemap links.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToChildUrls">
+            <summary>
+            Restrict crawling to child URLs of the start URL.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToSubdomain">
+            <summary>
+            Restrict crawling to the same subdomain.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToRootDomain">
+            <summary>
+            Restrict crawling to the same root domain.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.IgnoreRobotsTxt">
+            <summary>
+            Ignore robots.txt directives.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxDepth">
+            <summary>
+            Maximum crawl depth.
+            Default: 5. Clamped 1-100.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxParallelTasks">
+            <summary>
+            Maximum parallel crawl tasks.
+            Default: 8. Clamped 1-64.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.CrawlDelayMs">
+            <summary>
+            Delay between requests in milliseconds.
+            Default: 100. Clamped 0-60000.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.WebCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlScheduleSettings">
+            <summary>
+            Crawl schedule settings sub-object.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlScheduleSettings.IntervalType">
+            <summary>
+            Schedule interval type.
+            Default: Hours.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlScheduleSettings.IntervalValue">
+            <summary>
+            Interval value.
+            Default: 24. Clamped 1-10080.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlScheduleSettings.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -4739,6 +5858,379 @@
             <param name="token">Cancellation token.</param>
             <returns>Authentication result.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CrawledObject">
+            <summary>
+            Represents a single crawled object (URL, file, etc.).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.Key">
+            <summary>
+            Object key (URL or path).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.ContentType">
+            <summary>
+            MIME content type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.ContentLength">
+            <summary>
+            Content length in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.Data">
+            <summary>
+            Raw data bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.MD5Hash">
+            <summary>
+            MD5 hash of the content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.SHA1Hash">
+            <summary>
+            SHA1 hash of the content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.SHA256Hash">
+            <summary>
+            SHA256 hash of the content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.ETag">
+            <summary>
+            ETag from the server.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.LastModifiedUtc">
+            <summary>
+            Last modified timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.DocumentId">
+            <summary>
+            Document identifier populated after ingestion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawledObject.IsFolder">
+            <summary>
+            Whether this object represents a folder/directory.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawledObject.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawledObject.CopyWithoutData">
+            <summary>
+            Create a copy without the Data field (for enumeration file storage).
+            </summary>
+            <returns>Copy without data.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CrawlEnumeration">
+            <summary>
+            Crawl enumeration containing all file lists and statistics from a crawl operation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.AllFiles">
+            <summary>
+            All files found during enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Added">
+            <summary>
+            Files added (new since last crawl).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Changed">
+            <summary>
+            Files changed since last crawl.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Deleted">
+            <summary>
+            Files deleted since last crawl.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Unchanged">
+            <summary>
+            Files unchanged since last crawl.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Success">
+            <summary>
+            Files successfully processed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Failed">
+            <summary>
+            Files that failed processing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.Statistics">
+            <summary>
+            Aggregate statistics.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlEnumeration.CopyWithoutData">
+            <summary>
+            Create a copy with Data fields stripped from all objects (for file storage).
+            </summary>
+            <returns>Copy without data.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics">
+            <summary>
+            Aggregate statistics for a crawl enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.TotalCount">
+            <summary>
+            Total object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.TotalBytes">
+            <summary>
+            Total bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.AddedCount">
+            <summary>
+            Added object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.AddedBytes">
+            <summary>
+            Added bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.ChangedCount">
+            <summary>
+            Changed object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.ChangedBytes">
+            <summary>
+            Changed bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.DeletedCount">
+            <summary>
+            Deleted object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.DeletedBytes">
+            <summary>
+            Deleted bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.SuccessCount">
+            <summary>
+            Success object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.SuccessBytes">
+            <summary>
+            Success bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.FailedCount">
+            <summary>
+            Failed object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.CrawlEnumerationStatistics.FailedBytes">
+            <summary>
+            Failed bytes.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CrawlerBase">
+            <summary>
+            Abstract base class for all crawler types.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._Logging">
+            <summary>
+            Logging module.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._Database">
+            <summary>
+            Database driver.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._CrawlPlan">
+            <summary>
+            Crawl plan configuration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._CrawlOperation">
+            <summary>
+            Current crawl operation record.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._Ingestion">
+            <summary>
+            Ingestion service.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._Storage">
+            <summary>
+            Storage service.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._ProcessingLog">
+            <summary>
+            Processing log service.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._EnumerationDirectory">
+            <summary>
+            Enumeration directory.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.Crawlers.CrawlerBase._Token">
+            <summary>
+            Cancellation token.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.EnumerateAsync(System.Threading.CancellationToken)">
+            <summary>
+            Enumerate objects from the repository.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Async enumerable of crawled objects.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.ValidateConnectivityAsync(System.Threading.CancellationToken)">
+            <summary>
+            Validate connectivity to the repository.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>True if connectivity is valid.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.EnumerateContentsAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate repository contents with pagination.
+            </summary>
+            <param name="maxKeys">Maximum objects to return.</param>
+            <param name="skip">Number of objects to skip.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of crawled objects.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.StartAsync">
+            <summary>
+            Start the crawl operation.
+            </summary>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.Dispose">
+            <summary>
+            Dispose of resources.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.IsSkipFile(System.String)">
+            <summary>
+            Check if a file should be skipped based on filename.
+            </summary>
+            <param name="filename">Filename or key.</param>
+            <returns>True if the file should be skipped.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.Dispose(System.Boolean)">
+            <summary>
+            Dispose of resources.
+            </summary>
+            <param name="disposing">Disposing.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.CleanupDocumentAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <summary>
+            Cleanup a document by removing embeddings, S3 object, processing log, and database record.
+            </summary>
+            <param name="doc">Document to clean up.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.DeleteEnumerationFile(System.String)">
+            <summary>
+            Delete an enumeration file from disk.
+            </summary>
+            <param name="path">File path.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CrawlerFactory">
+            <summary>
+            Factory for creating crawler instances based on repository type.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerFactory.Create(AssistantHub.Core.Enums.RepositoryTypeEnum,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Create a crawler for the specified repository type.
+            </summary>
+            <param name="type">Repository type.</param>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Crawler instance.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler">
+            <summary>
+            Web repository crawler implementation using CrawlSharp.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.EnumerateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.ValidateConnectivityAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.EnumerateContentsAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.IsSkipFile(System.String)">
+            <summary>
+            Web crawlers do not skip files by filename.
+            </summary>
+            <param name="filename">Filename.</param>
+            <returns>Always false.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.InferenceService">
             <summary>
             Inference service for generating responses from language models.
@@ -5456,6 +6948,11 @@
             Chat history settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Crawl">
+            <summary>
+            Crawl settings.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
             <summary>
             Instantiate.
@@ -5499,6 +6996,17 @@
         <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.CrawlSettings">
+            <summary>
+            Crawl settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CrawlSettings.EnumerationDirectory">
+            <summary>
+            Directory for storing crawl enumeration files.
+            Default: ./crawl-enumerations/
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Settings.DatabaseSettings">

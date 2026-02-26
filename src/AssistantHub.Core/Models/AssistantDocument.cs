@@ -104,6 +104,21 @@ namespace AssistantHub.Core.Models
         public string ChunkRecordIds { get; set; } = null;
 
         /// <summary>
+        /// Crawl plan identifier that produced this document.
+        /// </summary>
+        public string CrawlPlanId { get; set; } = null;
+
+        /// <summary>
+        /// Crawl operation identifier that produced this document.
+        /// </summary>
+        public string CrawlOperationId { get; set; } = null;
+
+        /// <summary>
+        /// Original URL or key from the crawl source.
+        /// </summary>
+        public string SourceUrl { get; set; } = null;
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -157,6 +172,9 @@ namespace AssistantHub.Core.Models
             obj.Labels = DataTableHelper.GetStringValue(row, "labels_json");
             obj.Tags = DataTableHelper.GetStringValue(row, "tags_json");
             obj.ChunkRecordIds = DataTableHelper.GetStringValue(row, "chunk_record_ids");
+            obj.CrawlPlanId = DataTableHelper.GetStringValue(row, "crawl_plan_id");
+            obj.CrawlOperationId = DataTableHelper.GetStringValue(row, "crawl_operation_id");
+            obj.SourceUrl = DataTableHelper.GetStringValue(row, "source_url");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

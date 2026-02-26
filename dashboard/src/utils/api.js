@@ -362,6 +362,25 @@ export class ApiClient {
     }).then(r => r.json());
   }
 
+  // Crawl Plans
+  getCrawlPlans(params) { return this.request('GET', '/v1.0/crawlplans' + this.buildQuery(params)); }
+  getCrawlPlan(id) { return this.request('GET', `/v1.0/crawlplans/${id}`); }
+  createCrawlPlan(plan) { return this.request('PUT', '/v1.0/crawlplans', plan); }
+  updateCrawlPlan(id, plan) { return this.request('PUT', `/v1.0/crawlplans/${id}`, plan); }
+  deleteCrawlPlan(id) { return this.request('DELETE', `/v1.0/crawlplans/${id}`); }
+  startCrawl(id) { return this.request('POST', `/v1.0/crawlplans/${id}/start`); }
+  stopCrawl(id) { return this.request('POST', `/v1.0/crawlplans/${id}/stop`); }
+  testCrawlConnectivity(id) { return this.request('POST', `/v1.0/crawlplans/${id}/connectivity`); }
+  enumerateCrawlContents(id, params) { return this.request('GET', `/v1.0/crawlplans/${id}/enumerate` + this.buildQuery(params)); }
+
+  // Crawl Operations
+  getCrawlOperations(planId, params) { return this.request('GET', `/v1.0/crawlplans/${planId}/operations` + this.buildQuery(params)); }
+  getCrawlOperationStatistics(planId) { return this.request('GET', `/v1.0/crawlplans/${planId}/operations/statistics`); }
+  getCrawlOperation(planId, id) { return this.request('GET', `/v1.0/crawlplans/${planId}/operations/${id}`); }
+  getCrawlOperationStats(planId, id) { return this.request('GET', `/v1.0/crawlplans/${planId}/operations/${id}/statistics`); }
+  deleteCrawlOperation(planId, id) { return this.request('DELETE', `/v1.0/crawlplans/${planId}/operations/${id}`); }
+  getCrawlOperationEnumeration(planId, id) { return this.request('GET', `/v1.0/crawlplans/${planId}/operations/${id}/enumeration`); }
+
   buildQuery(params) {
     if (!params) return '';
     const parts = [];
@@ -372,6 +391,7 @@ export class ApiClient {
     if (params.bucketName) parts.push(`bucketName=${encodeURIComponent(params.bucketName)}`);
     if (params.collectionId) parts.push(`collectionId=${encodeURIComponent(params.collectionId)}`);
     if (params.threadId) parts.push(`threadId=${encodeURIComponent(params.threadId)}`);
+    if (params.crawlPlanId) parts.push(`crawlPlanId=${encodeURIComponent(params.crawlPlanId)}`);
     return parts.length > 0 ? '?' + parts.join('&') : '';
   }
 }

@@ -61,7 +61,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "INSERT INTO assistant_documents " +
                 "(id, tenant_id, name, original_filename, content_type, size_bytes, s3_key, " +
                 "status, status_message, ingestion_rule_id, bucket_name, collection_id, " +
-                "labels_json, tags_json, chunk_record_ids, created_utc, last_update_utc) " +
+                "labels_json, tags_json, chunk_record_ids, " +
+                "crawl_plan_id, crawl_operation_id, source_url, " +
+                "created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(document.Id) + "', " +
                 "'" + _Driver.Sanitize(document.TenantId) + "', " +
@@ -78,6 +80,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 _Driver.FormatNullableString(document.Labels) + ", " +
                 _Driver.FormatNullableString(document.Tags) + ", " +
                 _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
+                _Driver.FormatNullableString(document.CrawlPlanId) + ", " +
+                _Driver.FormatNullableString(document.CrawlOperationId) + ", " +
+                _Driver.FormatNullableString(document.SourceUrl) + ", " +
                 "'" + _Driver.FormatDateTime(document.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(document.LastUpdateUtc) + "'" +
                 ");";
@@ -122,6 +127,9 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "labels_json = " + _Driver.FormatNullableString(document.Labels) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(document.Tags) + ", " +
                 "chunk_record_ids = " + _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
+                "crawl_plan_id = " + _Driver.FormatNullableString(document.CrawlPlanId) + ", " +
+                "crawl_operation_id = " + _Driver.FormatNullableString(document.CrawlOperationId) + ", " +
+                "source_url = " + _Driver.FormatNullableString(document.SourceUrl) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(document.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(document.Id) + "';";
 

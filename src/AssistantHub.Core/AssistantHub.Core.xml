@@ -3027,6 +3027,20 @@
             new retrieval or can be answered from existing conversation context.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableQueryRewrite">
+            <summary>
+            Whether LLM-based query rewrite is enabled.
+            When enabled, the user's prompt is rewritten into multiple semantically
+            varied queries before retrieval to improve recall.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.QueryRewritePrompt">
+            <summary>
+            The prompt template used for query rewriting.
+            Must contain the {prompt} placeholder which is replaced with the user's message.
+            When null or empty, a built-in default prompt is used.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableCitations">
             <summary>
             Whether to include citation metadata in chat completion responses.
@@ -3582,6 +3596,17 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalGateDurationMs">
             <summary>
             Duration of the retrieval gate LLM call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.QueryRewriteResult">
+            <summary>
+            Newline-separated list of rewritten query prompts returned by the query rewrite LLM call.
+            Null when query rewrite is disabled or not triggered.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.QueryRewriteDurationMs">
+            <summary>
+            Duration of the query rewrite LLM call in milliseconds.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
@@ -5057,12 +5082,12 @@
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.SemanticCellResponse">
             <summary>
-            Semantic cell response from the Partio v0.2.0 service.
+            Semantic cell response from the Partio v0.4.0 service.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.ChunkResult">
             <summary>
-            A single chunk result from Partio v0.2.0.
+            A single chunk result from Partio v0.4.0.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse">
@@ -5175,7 +5200,7 @@
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
             <summary>
-            Process response from the Partio v0.2.0 service.
+            Process response from the Partio v0.4.0 service.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessChunk">

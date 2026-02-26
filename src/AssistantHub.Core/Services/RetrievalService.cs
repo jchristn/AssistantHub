@@ -321,7 +321,7 @@ namespace AssistantHub.Core.Services
         #region Private-Classes
 
         /// <summary>
-        /// Process response from the Partio v0.2.0 service.
+        /// Process response from the Partio v0.4.0 service.
         /// </summary>
         private class ProcessResponse
         {

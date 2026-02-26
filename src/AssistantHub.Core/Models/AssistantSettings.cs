@@ -88,6 +88,20 @@ namespace AssistantHub.Core.Models
         public bool EnableRetrievalGate { get; set; } = false;
 
         /// <summary>
+        /// Whether LLM-based query rewrite is enabled.
+        /// When enabled, the user's prompt is rewritten into multiple semantically
+        /// varied queries before retrieval to improve recall.
+        /// </summary>
+        public bool EnableQueryRewrite { get; set; } = false;
+
+        /// <summary>
+        /// The prompt template used for query rewriting.
+        /// Must contain the {prompt} placeholder which is replaced with the user's message.
+        /// When null or empty, a built-in default prompt is used.
+        /// </summary>
+        public string QueryRewritePrompt { get; set; } = null;
+
+        /// <summary>
         /// Whether to include citation metadata in chat completion responses.
         /// When enabled, retrieved context chunks are indexed in the system prompt
         /// and the model is instructed to cite sources using bracket notation [1], [2], etc.
@@ -253,6 +267,8 @@ namespace AssistantHub.Core.Models
             obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
             obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
+            obj.EnableQueryRewrite = DataTableHelper.GetBooleanValue(row, "enable_query_rewrite", false);
+            obj.QueryRewritePrompt = DataTableHelper.GetStringValue(row, "query_rewrite_prompt");
             obj.EnableCitations = DataTableHelper.GetBooleanValue(row, "enable_citations", false);
             obj.CitationLinkMode = DataTableHelper.GetStringValue(row, "citation_link_mode") ?? "None";
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");

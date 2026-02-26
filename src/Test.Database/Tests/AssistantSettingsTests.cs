@@ -33,6 +33,8 @@ namespace Test.Database.Tests
                     Model = "llama3:8b",
                     EnableRag = true,
                     EnableRetrievalGate = true,
+                    EnableQueryRewrite = true,
+                    QueryRewritePrompt = "Rewrite this: {prompt}",
                     CollectionId = "col_test_123",
                     RetrievalTopK = 5,
                     RetrievalScoreThreshold = 0.5,
@@ -63,6 +65,8 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("llama3:8b", created.Model, "Model");
                 AssertHelper.AreEqual(true, created.EnableRag, "EnableRag");
                 AssertHelper.AreEqual(true, created.EnableRetrievalGate, "EnableRetrievalGate");
+                AssertHelper.AreEqual(true, created.EnableQueryRewrite, "EnableQueryRewrite");
+                AssertHelper.AreEqual("Rewrite this: {prompt}", created.QueryRewritePrompt, "QueryRewritePrompt");
                 AssertHelper.AreEqual("col_test_123", created.CollectionId, "CollectionId");
                 AssertHelper.AreEqual(5, created.RetrievalTopK, "RetrievalTopK");
                 AssertHelper.AreEqual(0.5, created.RetrievalScoreThreshold, "RetrievalScoreThreshold");
@@ -96,6 +100,8 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("gemma3:4b", created.Model, "default Model");
                 AssertHelper.AreEqual(false, created.EnableRag, "default EnableRag");
                 AssertHelper.AreEqual(false, created.EnableRetrievalGate, "default EnableRetrievalGate");
+                AssertHelper.AreEqual(false, created.EnableQueryRewrite, "default EnableQueryRewrite");
+                AssertHelper.IsNull(created.QueryRewritePrompt, "default QueryRewritePrompt");
                 AssertHelper.IsNull(created.CollectionId, "default CollectionId");
                 AssertHelper.AreEqual(10, created.RetrievalTopK, "default RetrievalTopK");
                 AssertHelper.AreEqual(0.3, created.RetrievalScoreThreshold, "default RetrievalScoreThreshold");
@@ -127,6 +133,8 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("llama3:8b", read.Model, "Model");
                 AssertHelper.AreEqual(true, read.EnableRag, "EnableRag");
                 AssertHelper.AreEqual(true, read.EnableRetrievalGate, "EnableRetrievalGate");
+                AssertHelper.AreEqual(true, read.EnableQueryRewrite, "EnableQueryRewrite");
+                AssertHelper.AreEqual("Rewrite this: {prompt}", read.QueryRewritePrompt, "QueryRewritePrompt");
                 AssertHelper.AreEqual("col_test_123", read.CollectionId, "CollectionId");
                 AssertHelper.AreEqual(5, read.RetrievalTopK, "RetrievalTopK");
                 AssertHelper.AreEqual(0.5, read.RetrievalScoreThreshold, "RetrievalScoreThreshold");
@@ -175,6 +183,8 @@ namespace Test.Database.Tests
                 read.Model = "gpt-4o";
                 read.EnableRag = false;
                 read.EnableRetrievalGate = false;
+                read.EnableQueryRewrite = false;
+                read.QueryRewritePrompt = null;
                 read.CollectionId = null;
                 read.RetrievalTopK = 20;
                 read.RetrievalScoreThreshold = 0.7;
@@ -200,6 +210,8 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("gpt-4o", updated.Model, "updated Model");
                 AssertHelper.AreEqual(false, updated.EnableRag, "updated EnableRag");
                 AssertHelper.AreEqual(false, updated.EnableRetrievalGate, "updated EnableRetrievalGate");
+                AssertHelper.AreEqual(false, updated.EnableQueryRewrite, "updated EnableQueryRewrite");
+                AssertHelper.IsNull(updated.QueryRewritePrompt, "updated QueryRewritePrompt");
                 AssertHelper.IsNull(updated.CollectionId, "updated CollectionId");
                 AssertHelper.AreEqual(20, updated.RetrievalTopK, "updated RetrievalTopK");
                 AssertHelper.AreEqual(0.7, updated.RetrievalScoreThreshold, "updated RetrievalScoreThreshold");

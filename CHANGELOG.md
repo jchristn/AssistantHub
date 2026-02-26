@@ -1,6 +1,16 @@
 # Changelog
 
-## Current Version: v0.3.0
+## Current Version: v0.4.0
+
+### Query Rewrite
+
+- **LLM-based query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval, broadening recall by capturing synonyms, alternate phrasing, and conceptual restatements that a single query would miss
+- **Customizable rewrite prompt** -- User-editable prompt template with `{prompt}` placeholder; dashboard textarea with tooltips for easy customization. Falls back to a built-in default when not customized
+- **Multi-query retrieval** -- All rewritten queries are sent to RecallDB independently; results are deduplicated by document ID and position, re-sorted by score, and capped at the configured Top K
+- **Rewrite metrics in chat history** -- Query rewrite results and duration are persisted in chat history for auditability and performance monitoring
+- **Breaking change** -- v0.4.0 includes schema changes to `assistant_settings` and `chat_history` tables. A migration script is provided at `migrations/002_upgrade_to_v0.4.0.sql`
+
+## v0.3.0
 
 ### Multi-Tenant Platform
 

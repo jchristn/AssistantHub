@@ -1505,6 +1505,8 @@ Retrieve settings for an assistant.
   "Model": "gpt-4o",
   "EnableRag": false,
   "EnableRetrievalGate": false,
+  "EnableQueryRewrite": false,
+  "QueryRewritePrompt": null,
   "CollectionId": "collection-uuid",
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
@@ -1538,6 +1540,8 @@ Retrieve settings for an assistant.
 | `Model`                    | string  | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
 | `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
+| `EnableQueryRewrite`       | bool    | Whether LLM-based query rewrite is enabled. When enabled, the user's prompt is rewritten into multiple semantically varied queries before retrieval to improve recall. Default `false`. |
+| `QueryRewritePrompt`       | string? | The prompt template used for query rewriting. Must contain the `{prompt}` placeholder which is replaced with the user's message. When null or empty, a built-in default prompt is used. |
 | `EnableCitations`          | bool    | Include citation metadata in chat responses. Requires `EnableRag` to also be `true`. Default `false`. |
 | `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token via `/v1.0/documents/{id}/download`), `Public` (unauthenticated server-proxied download via `/v1.0/assistants/{assistantId}/documents/{id}/download`). Default `None`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
@@ -1579,6 +1583,8 @@ Create or update settings for an assistant. If settings already exist, they are 
   "Model": "gpt-4o",
   "EnableRag": false,
   "EnableRetrievalGate": false,
+  "EnableQueryRewrite": false,
+  "QueryRewritePrompt": null,
   "EnableCitations": false,
   "CitationLinkMode": "None",
   "CollectionId": "my-collection-id",
@@ -1848,6 +1854,8 @@ Retrieve a single chat history record by ID.
   "RetrievalDurationMs": 45.23,
   "RetrievalGateDecision": "RETRIEVE",
   "RetrievalGateDurationMs": 120.50,
+  "QueryRewriteResult": null,
+  "QueryRewriteDurationMs": 0,
   "RetrievalContext": "Chunk 1: To reset your password...",
   "PromptSentUtc": "2025-01-01T12:00:00.150Z",
   "PromptTokens": 1250,
@@ -1879,6 +1887,8 @@ Retrieve a single chat history record by ID.
 | `RetrievalDurationMs`  | double   | RAG retrieval duration in milliseconds.                      |
 | `RetrievalGateDecision`| string   | Retrieval gate decision: `RETRIEVE`, `SKIP`, or null (gate disabled). |
 | `RetrievalGateDurationMs` | double | Duration of the retrieval gate LLM call in milliseconds.    |
+| `QueryRewriteResult`   | string?  | Newline-separated list of rewritten query prompts returned by the query rewrite LLM call. Null when query rewrite is disabled or not triggered. |
+| `QueryRewriteDurationMs` | double | Duration of the query rewrite LLM call in milliseconds.      |
 | `RetrievalContext`     | string   | Retrieved context chunks (null if no RAG).                   |
 | `PromptSentUtc`        | datetime | UTC timestamp when the prompt was sent to the model.         |
 | `PromptTokens`         | int      | Estimated prompt token count sent to the model.              |

@@ -1,6 +1,6 @@
 # AssistantHub Multi-Tenant Migration Plan
 
-**Version:** v0.2.0 → v0.3.0
+**Version:** v0.4.0 → v0.4.0
 **Status:** Implementation Complete
 **Breaking Changes:** Yes (migration guide included)
 
@@ -39,7 +39,7 @@
 11. [External Service Integration](#11-external-service-integration)
 12. [API Contract Changes](#12-api-contract-changes)
 13. [Tenant Administration Experience](#13-tenant-administration-experience)
-14. [Migration Script (v0.2.0 → v0.3.0)](#14-migration-script-v020--v030)
+14. [Migration Script (v0.4.0 → v0.4.0)](#14-migration-script-v020--v030)
 15. [Docker & Deployment](#15-docker--deployment)
 16. [Postman Collection](#16-postman-collection)
 17. [Documentation](#17-documentation)
@@ -989,9 +989,9 @@ When a global admin creates a new tenant via `PUT /v1.0/tenants`, the `TenantPro
   - `DefaultTenantName = "Default Tenant"`
 - [x] Keep existing constants (`DefaultAdminEmail`, `DefaultAdminPassword`, etc.) as fallbacks, but prefer values from `Settings.DefaultTenant` when available
 
-#### 9.3.10 Migration: Existing v0.2.0 Deployments
+#### 9.3.10 Migration: Existing v0.4.0 Deployments
 
-When upgrading from v0.2.0 to v0.3.0, the migration SQL (009) runs first and creates the `tenants` table with a `"default"` row and backfills all existing records. After migration, `Tenant.GetCountAsync() > 0`, so `InitializeFirstRunAsync` is skipped — preserving all existing data under the `"default"` tenant. No duplicate records are created.
+When upgrading from v0.4.0 to v0.4.0, the migration SQL (009) runs first and creates the `tenants` table with a `"default"` row and backfills all existing records. After migration, `Tenant.GetCountAsync() > 0`, so `InitializeFirstRunAsync` is skipped — preserving all existing data under the `"default"` tenant. No duplicate records are created.
 
 - [x] Verify migration SQL inserts the default tenant BEFORE the first-run check executes
 - [x] Verify existing admin user gets `is_tenant_admin = 1` set by migration SQL
@@ -1311,13 +1311,13 @@ A global admin can do everything a tenant admin can, PLUS:
 
 ---
 
-## 14. Migration Script (v0.2.0 → v0.3.0)
+## 14. Migration Script (v0.4.0 → v0.4.0)
 
 ### 14.1 Database Migration
 
 File: `migrations/009_add_multi_tenancy.sql`
 
-Steps executed automatically on v0.3.0 startup:
+Steps executed automatically on v0.4.0 startup:
 
 - [x] 1. Create `tenants` table
 - [x] 2. Insert default tenant: `('default', 'Default Tenant', 1, now, now)`
@@ -1382,7 +1382,7 @@ Steps executed automatically on v0.3.0 startup:
 
 ### 15.4 Health Check Updates
 
-- [x] Update health check to report version `v0.3.0`
+- [x] Update health check to report version `v0.4.0`
 - [x] Optionally add tenant count to health response
 
 ---
@@ -1438,12 +1438,12 @@ Steps executed automatically on v0.3.0 startup:
 - [x] Update quick-start guide with tenant context
 - [x] Update API examples with tenant-scoped requests
 
-### 17.2 Create `UPGRADING.md` (v0.2.0 → v0.3.0)
+### 17.2 Create `UPGRADING.md` (v0.4.0 → v0.4.0)
 
 - [x] Step-by-step upgrade instructions:
   1. Stop existing deployment
   2. Back up database
-  3. Update Docker images to v0.3.0
+  3. Update Docker images to v0.4.0
   4. Update `assistanthub.json` configuration (detail all changes)
   5. Start deployment (migration runs automatically)
   6. Verify default tenant created
@@ -1693,7 +1693,7 @@ Every existing test class creates entities inline. Since all entities now requir
 
 - [x] Full flow: create tenant → create user → login → create assistant → upload document → ingest → chat → receive RAG response
 - [x] Multi-tenant flow: two tenants, verify complete isolation
-- [x] Migration flow: deploy v0.2.0, populate data, upgrade to v0.3.0, verify everything works
+- [x] Migration flow: deploy v0.4.0, populate data, upgrade to v0.4.0, verify everything works
 
 ---
 
@@ -1790,7 +1790,7 @@ Recommended sequence for implementation, with dependencies noted:
 | 6.11 | Wire `TenantProvisioningService` into `TenantHandler.CreateTenant` for non-default tenants | 5.5, 4.1 | `Handlers/TenantHandler.cs` |
 | 6.12 | Update `assistanthub.json` config (add `AdminApiKeys`, `DefaultTenant`; remove `RecallDb.TenantId`) | 3.1 | `docker/assistanthub/assistanthub.json` |
 | 6.13 | Verify migration → first-run ordering: migration inserts default tenant before first-run check | 6.1, 6.3 | Integration test |
-| 6.14 | Verify v0.2.0 → v0.3.0 upgrade: existing data backfilled, no duplicate records created | 6.1 | Integration test |
+| 6.14 | Verify v0.4.0 → v0.4.0 upgrade: existing data backfilled, no duplicate records created | 6.1 | Integration test |
 
 ### Phase 7: Frontend
 
@@ -1850,7 +1850,7 @@ Recommended sequence for implementation, with dependencies noted:
 
 | # | Task | Depends On | Files |
 |---|------|-----------|-------|
-| 11.1 | Database migration tests (v0.2.0 → v0.3.0 upgrade) | Phase 6 | Manual / automated |
+| 11.1 | Database migration tests (v0.4.0 → v0.4.0 upgrade) | Phase 6 | Manual / automated |
 | 11.2 | Authentication tests (admin API key, bearer, email/password) | Phase 3 | Manual / automated |
 | 11.3 | Tenant isolation tests (cross-tenant data leak verification) | Phase 4 | Manual / automated |
 | 11.4 | Tenant lifecycle tests (create, disable, delete + cascade) | Phase 5 | Manual / automated |
@@ -1894,4 +1894,4 @@ Recommended sequence for implementation, with dependencies noted:
 | Other resource routes | Keep flat, scope via auth context | Less API churn; tenant derived implicitly from authenticated user |
 | Public chat | Derive tenant from assistant | No auth required; assistant lookup provides tenant context |
 | Default tenant on migration | ID = `"default"` | Matches RecallDB's default; seamless for existing single-tenant deployments |
-| Breaking changes | Accepted | v0.3.0 is a major feature release; upgrade guide mitigates impact |
+| Breaking changes | Accepted | v0.4.0 is a major feature release; upgrade guide mitigates impact |

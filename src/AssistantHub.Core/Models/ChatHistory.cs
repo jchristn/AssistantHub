@@ -83,6 +83,17 @@ namespace AssistantHub.Core.Models
         public double RetrievalGateDurationMs { get; set; } = 0;
 
         /// <summary>
+        /// Newline-separated list of rewritten query prompts returned by the query rewrite LLM call.
+        /// Null when query rewrite is disabled or not triggered.
+        /// </summary>
+        public string QueryRewriteResult { get; set; } = null;
+
+        /// <summary>
+        /// Duration of the query rewrite LLM call in milliseconds.
+        /// </summary>
+        public double QueryRewriteDurationMs { get; set; } = 0;
+
+        /// <summary>
         /// Text retrieved from the vector database.
         /// </summary>
         public string RetrievalContext { get; set; } = null;
@@ -195,6 +206,8 @@ namespace AssistantHub.Core.Models
             obj.RetrievalDurationMs = DataTableHelper.GetDoubleValue(row, "retrieval_duration_ms");
             obj.RetrievalGateDecision = DataTableHelper.GetStringValue(row, "retrieval_gate_decision");
             obj.RetrievalGateDurationMs = DataTableHelper.GetDoubleValue(row, "retrieval_gate_duration_ms");
+            obj.QueryRewriteResult = DataTableHelper.GetStringValue(row, "query_rewrite_result");
+            obj.QueryRewriteDurationMs = DataTableHelper.GetDoubleValue(row, "query_rewrite_duration_ms");
             obj.RetrievalContext = DataTableHelper.GetStringValue(row, "retrieval_context");
             obj.PromptSentUtc = DataTableHelper.GetNullableDateTimeValue(row, "prompt_sent_utc");
             obj.PromptTokens = DataTableHelper.GetIntValue(row, "prompt_tokens");

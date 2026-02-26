@@ -1,4 +1,4 @@
-# AssistantHub — Partio v0.2.0 Summarization Integration Plan
+# AssistantHub — Partio v0.4.0 Summarization Integration Plan
 
 **Status:** Planned
 **Date:** 2026-02-19
@@ -35,12 +35,12 @@
 
 ### What
 
-Partio v0.2.0 introduces **summarization** as an optional processing step before chunking and embedding, and introduces **completion endpoints** as a new endpoint type alongside embedding endpoints. AssistantHub must integrate this by:
+Partio v0.4.0 introduces **summarization** as an optional processing step before chunking and embedding, and introduces **completion endpoints** as a new endpoint type alongside embedding endpoints. AssistantHub must integrate this by:
 
 1. Adding an `IngestionSummarizationConfig` model (parallel to `IngestionChunkingConfig` and `IngestionEmbeddingConfig`).
 2. Adding a `Summarization` property to `IngestionRule` (positioned before `Chunking`).
-3. Updating **both** `IngestionService` and `RetrievalService` to use the new v0.2.0 routes.
-4. Updating the response models (`ChunkingResponse` / `ChunkWithEmbedding`) to match Partio v0.2.0's `SemanticCellResponse` / `ChunkResult` shape.
+3. Updating **both** `IngestionService` and `RetrievalService` to use the new v0.4.0 routes.
+4. Updating the response models (`ChunkingResponse` / `ChunkWithEmbedding`) to match Partio v0.4.0's `SemanticCellResponse` / `ChunkResult` shape.
 5. Adding **proxy APIs** in AssistantHub.Server for managing Partio embedding and completion (inference) endpoints.
 6. Adding **dashboard views** for Inference Endpoints and Embedding Endpoints under the Configuration section.
 7. Updating the dashboard ingestion rule form to include a collapsible "Summarization" section with all 9 config fields.
@@ -50,15 +50,15 @@ Partio v0.2.0 introduces **summarization** as an optional processing step before
 ### Pipeline Change (Partio-side)
 
 **v0.1.0:** `Upload cells → Chunk → Embed`
-**v0.2.0:** `Upload cells → (Summarize if configured) → Chunk → Embed`
+**v0.4.0:** `Upload cells → (Summarize if configured) → Chunk → Embed`
 
 When summarization is enabled, summaries are injected as **child cells** with `Type = "Summary"` in the response hierarchy. They are not a separate field on chunks — they appear as child `SemanticCellResponse` nodes with their own `Chunks` and `Text`.
 
 ### Partio Route Changes (Breaking)
 
-AssistantHub must update **all** Partio API calls (in both `IngestionService` and `RetrievalService`) to the new v0.2.0 routes:
+AssistantHub must update **all** Partio API calls (in both `IngestionService` and `RetrievalService`) to the new v0.4.0 routes:
 
-| Old Route (v0.1.0) | New Route (v0.2.0) |
+| Old Route (v0.1.0) | New Route (v0.4.0) |
 |---|---|
 | `POST /v1.0/endpoints/{id}/process` | `POST /v1.0/process` |
 | `POST /v1.0/endpoints/{id}/process/batch` | `POST /v1.0/process/batch` |
@@ -69,7 +69,7 @@ The embedding endpoint ID (`_ChunkingSettings.EndpointId`) moves from the URL pa
 
 ### Partio Endpoint Management (New)
 
-Partio v0.2.0 exposes CRUD APIs for both endpoint types:
+Partio v0.4.0 exposes CRUD APIs for both endpoint types:
 
 | Endpoint Type | Partio Routes | Purpose |
 |---|---|---|
@@ -137,7 +137,7 @@ if (!String.IsNullOrEmpty(summarizationJson))
 
 - [ ] **File:** `src/AssistantHub.Core/Services/IngestionService.cs` (private inner classes at bottom, ~line 784)
 
-Partio v0.2.0 returns a `SemanticCellResponse` with a hierarchical structure. The existing flat `ChunkingResponse { List<ChunkWithEmbedding> Chunks }` must be updated.
+Partio v0.4.0 returns a `SemanticCellResponse` with a hierarchical structure. The existing flat `ChunkingResponse { List<ChunkWithEmbedding> Chunks }` must be updated.
 
 **Old models (v0.1.0):**
 ```csharp
@@ -153,7 +153,7 @@ private class ChunkWithEmbedding
 }
 ```
 
-**New models (v0.2.0):**
+**New models (v0.4.0):**
 ```csharp
 private class SemanticCellResponse
 {
@@ -279,7 +279,7 @@ _Driver.FormatNullableString(Serializer.SerializeJson(rule.Summarization))
 
 - [ ] **File:** `src/AssistantHub.Core/Services/IngestionService.cs`
 
-**Route change** — Update the Partio URL from the old v0.1.0 route to v0.2.0:
+**Route change** — Update the Partio URL from the old v0.1.0 route to v0.4.0:
 
 ```csharp
 // OLD:
@@ -1202,9 +1202,9 @@ There is no auto-migration mechanism. Breaking changes are acceptable. The facto
   2. Start the server (it will create a fresh DB with the new schema via `CREATE TABLE IF NOT EXISTS`)
   3. Copy the new DB to `docker/factory/assistanthub.db`
 
-- [ ] **File:** `docker/factory/partio.db` — Regenerate to include the `completion_endpoints` table (v0.2.0 schema). The current factory copy is missing this table. Steps:
+- [ ] **File:** `docker/factory/partio.db` — Regenerate to include the `completion_endpoints` table (v0.4.0 schema). The current factory copy is missing this table. Steps:
   1. Delete the existing `docker/partio/data/partio.db`
-  2. Start the Partio v0.2.0 container (it will create a fresh DB with the new schema)
+  2. Start the Partio v0.4.0 container (it will create a fresh DB with the new schema)
   3. Copy the new DB to `docker/factory/partio.db`
 
 ---
@@ -1214,12 +1214,12 @@ There is no auto-migration mechanism. Breaking changes are acceptable. The facto
 ### 17.1 Verify Partio Version
 
 - [ ] **File:** `docker/compose.yaml`
-- [ ] Partio is already set to `v0.2.0` (`jchristn77/partio-server:v0.2.0` and `jchristn77/partio-dashboard:v0.2.0`). **No changes needed.**
+- [ ] Partio is already set to `v0.4.0` (`jchristn77/partio-server:v0.4.0` and `jchristn77/partio-dashboard:v0.4.0`). **No changes needed.**
 
 ### 17.2 Verify Partio Configuration
 
 - [ ] **File:** `docker/partio/partio.json`
-- [ ] Ensure the Partio configuration file is compatible with v0.2.0. The existing `DefaultEmbeddingEndpoints` array should still work. If Partio v0.2.0 introduces new top-level config fields, update accordingly.
+- [ ] Ensure the Partio configuration file is compatible with v0.4.0. The existing `DefaultEmbeddingEndpoints` array should still work. If Partio v0.4.0 introduces new top-level config fields, update accordingly.
 
 ---
 
@@ -1321,12 +1321,12 @@ There is no auto-migration mechanism. Breaking changes are acceptable. The facto
 - [ ] 3.2 — Update `IngestionRuleMethods.UpdateAsync` in all 4 providers
 
 ### Phase 3: Ingestion & Retrieval Pipeline
-- [ ] 5.1 — Update Partio URL in `IngestionService` from v0.1.0 to v0.2.0 (`/v1.0/process`)
+- [ ] 5.1 — Update Partio URL in `IngestionService` from v0.1.0 to v0.4.0 (`/v1.0/process`)
 - [ ] 5.1 — Add `EmbeddingEndpointId` to `EmbeddingConfiguration` in `IngestionService` request body
 - [ ] 5.1 — Add `SummarizationConfiguration` to request body when `rule.Summarization` is present
 - [ ] 5.1 — Update response deserialization to use `SemanticCellResponse` + `FlattenChunks`
 - [ ] 5.2 — Update processing log messages
-- [ ] 6.1 — Update Partio URL in `RetrievalService` from v0.1.0 to v0.2.0 (`/v1.0/process`)
+- [ ] 6.1 — Update Partio URL in `RetrievalService` from v0.1.0 to v0.4.0 (`/v1.0/process`)
 - [ ] 6.1 — Add `EmbeddingEndpointId` to `RetrievalService` request body
 
 ### Phase 4: Validation
@@ -1358,7 +1358,7 @@ There is no auto-migration mechanism. Breaking changes are acceptable. The facto
 - [ ] 16.2 — Regenerate `docker/factory/partio.db` with `completion_endpoints` table
 
 ### Phase 9: Documentation
-- [ ] 17.2 — Verify `docker/partio/partio.json` compatibility with v0.2.0
+- [ ] 17.2 — Verify `docker/partio/partio.json` compatibility with v0.4.0
 - [ ] 18.1 — Update `REST_API.md` with Summarization property and documentation
 - [ ] 18.2 — Add Endpoint Proxy API documentation to `REST_API.md`
 - [ ] 19.1 — Update `README.md` feature descriptions

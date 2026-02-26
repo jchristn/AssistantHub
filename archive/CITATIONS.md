@@ -1,7 +1,7 @@
 # CITATIONS.md — Implementation Plan
 
 > **Feature:** Citation metadata in chat completion responses
-> **Target version:** v0.2.0
+> **Target version:** v0.4.0
 > **Status:** Fully Implemented (Phases 1-14)
 > **Last updated:** 2026-02-24
 > **Implemented:** 2026-02-24 by Claude Opus 4.6 (Phases 1-11: base citations; Phases 12-14: citation linking)
@@ -748,7 +748,7 @@ The non-streaming path (`response.json()` on line 228) already returns the full 
 
 **File:** `CHANGELOG.md`
 
-- [x] Add to the v0.2.0 bullet list (after the existing bullets, before line 22):
+- [x] Add to the v0.4.0 bullet list (after the existing bullets, before line 22):
   ```markdown
   - **Citation metadata in chat responses** -- When enabled per-assistant, the system instructs the model to cite source documents using bracket notation [1], [2] and returns a structured `citations` object in the response mapping references to source document names, IDs, relevance scores, and text excerpts
   ```
@@ -757,7 +757,7 @@ The non-streaming path (`response.json()` on line 228) already returns the full 
 
 **File:** `README.md`
 
-- [x] Add to the "New in v0.2.0" section (~line 16-34):
+- [x] Add to the "New in v0.4.0" section (~line 16-34):
   ```markdown
   - Citation metadata in chat completion responses with source attribution
   ```

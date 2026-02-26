@@ -180,6 +180,15 @@ namespace AssistantHub.Server.Handlers
                 updated.TextWeight = Math.Clamp(updated.TextWeight, 0.0, 1.0);
                 updated.RetrievalIncludeNeighbors = Math.Clamp(updated.RetrievalIncludeNeighbors, 0, 10);
 
+                // Validate query rewrite prompt placeholder
+                if (!String.IsNullOrEmpty(updated.QueryRewritePrompt) && !updated.QueryRewritePrompt.Contains("{prompt}"))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "QueryRewritePrompt must contain the {prompt} placeholder."))).ConfigureAwait(false);
+                    return;
+                }
+
                 string[] validSearchTypes = { "TsRank", "TsRankCd" };
                 if (!String.IsNullOrEmpty(updated.FullTextSearchType) &&
                     !validSearchTypes.Contains(updated.FullTextSearchType, StringComparer.OrdinalIgnoreCase))

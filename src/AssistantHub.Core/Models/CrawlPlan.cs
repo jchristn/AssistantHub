@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Models
 {
     using System;
     using System.Data;
+    using System.Text.Json.Serialization;
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
 
@@ -54,6 +55,7 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Repository settings (stored as JSON).
         /// </summary>
+        [JsonConverter(typeof(CrawlRepositorySettingsConverter))]
         public CrawlRepositorySettings RepositorySettings { get; set; } = new WebCrawlRepositorySettings();
 
         /// <summary>
@@ -176,7 +178,17 @@ namespace AssistantHub.Core.Models
 
             string repoJson = DataTableHelper.GetStringValue(row, "repository_settings_json");
             if (!String.IsNullOrEmpty(repoJson))
-                obj.RepositorySettings = Serializer.DeserializeJson<CrawlRepositorySettings>(repoJson);
+            {
+                switch (obj.RepositoryType)
+                {
+                    case RepositoryTypeEnum.Web:
+                        obj.RepositorySettings = Serializer.DeserializeJson<WebCrawlRepositorySettings>(repoJson);
+                        break;
+                    default:
+                        obj.RepositorySettings = Serializer.DeserializeJson<WebCrawlRepositorySettings>(repoJson);
+                        break;
+                }
+            }
 
             string scheduleJson = DataTableHelper.GetStringValue(row, "schedule_json");
             if (!String.IsNullOrEmpty(scheduleJson))

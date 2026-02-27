@@ -161,7 +161,8 @@ namespace AssistantHub.Core.Services
                 currentStep = "Type detection";
                 Stopwatch typeDetectSw = _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Type detection").ConfigureAwait(false) : null;
 
-                string detectedType = await DetectDocumentTypeAsync(documentId, fileBytes, document.OriginalFilename, token).ConfigureAwait(false);
+                TypeDetectResponse typeDetectResult = await DetectDocumentTypeAsync(documentId, fileBytes, document.OriginalFilename, token).ConfigureAwait(false);
+                string detectedType = typeDetectResult?.Type;
 
                 // Step 5: Check if type is unknown
                 if (String.IsNullOrEmpty(detectedType) || String.Equals(detectedType, "unknown", StringComparison.OrdinalIgnoreCase))
@@ -175,6 +176,14 @@ namespace AssistantHub.Core.Services
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Type detection", "detected type: " + detectedType, typeDetectSw).ConfigureAwait(false);
+
+                // Update document content type from type detection result
+                if (!String.IsNullOrEmpty(typeDetectResult.MimeType) && document.ContentType != typeDetectResult.MimeType)
+                {
+                    document.ContentType = typeDetectResult.MimeType;
+                    await _Database.AssistantDocument.UpdateAsync(document, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "updated content type for document " + documentId + " to " + typeDetectResult.MimeType);
+                }
 
                 // Step 6: Update status to TypeDetectionSuccess, then Processing
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetectionSuccess, "Detected type: " + detectedType, token).ConfigureAwait(false);
@@ -453,7 +462,7 @@ namespace AssistantHub.Core.Services
         /// <param name="filename">Original filename.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>Detected document type string.</returns>
-        private async Task<string> DetectDocumentTypeAsync(string documentId, byte[] fileBytes, string filename, CancellationToken token)
+        private async Task<TypeDetectResponse> DetectDocumentTypeAsync(string documentId, byte[] fileBytes, string filename, CancellationToken token)
         {
             string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + "/typedetect";
 
@@ -478,12 +487,13 @@ namespace AssistantHub.Core.Services
                     return null;
                 }
 
-                _Logging.Debug(_Header + "type detection response for document " + documentId + ": " + responseBody);
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Type detection response: " + responseBody).ConfigureAwait(false);
-
                 TypeDetectResponse typeResult = JsonSerializer.Deserialize<TypeDetectResponse>(responseBody, _JsonOptions);
-                return typeResult?.Type;
+
+                _Logging.Debug(_Header + "type detection response for document " + documentId + ": " + typeResult?.MimeType);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Type detection response: " + typeResult?.MimeType).ConfigureAwait(false);
+
+                return typeResult;
             }
         }
 
@@ -1095,6 +1105,11 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private class TypeDetectResponse
         {
+            /// <summary>
+            /// Detected MIME type.
+            /// </summary>
+            public string MimeType { get; set; } = null;
+
             /// <summary>
             /// Detected document type.
             /// </summary>

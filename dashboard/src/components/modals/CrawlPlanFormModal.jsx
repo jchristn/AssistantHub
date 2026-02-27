@@ -137,7 +137,6 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
           S3BucketName: form.StoreInS3 ? form.S3BucketName : undefined,
         },
         RepositorySettings: {
-          $type: 'Web',
           StartUrl: form.Repository.StartUrl,
           AuthenticationType: form.Repository.AuthType,
           ...(form.Repository.AuthType === 'Basic' ? { Username: form.Repository.Username, Password: form.Repository.Password } : {}),

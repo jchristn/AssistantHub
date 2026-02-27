@@ -4851,6 +4851,18 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.CrawlRepositorySettingsConverter">
+            <summary>
+            JSON converter for CrawlRepositorySettings polymorphic deserialization.
+            Uses the RepositoryType property to determine the derived type.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlRepositorySettingsConverter.Read(System.Text.Json.Utf8JsonReader@,System.Type,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlRepositorySettingsConverter.Write(System.Text.Json.Utf8JsonWriter,AssistantHub.Core.Models.CrawlRepositorySettings,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.CrawlScheduleSettings">
             <summary>
             Crawl schedule settings sub-object.
@@ -6557,6 +6569,11 @@
             Type detection response from DocumentAtom.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.IngestionService.TypeDetectResponse.MimeType">
+            <summary>
+            Detected MIME type.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.IngestionService.TypeDetectResponse.Type">
             <summary>
             Detected document type.
@@ -6923,6 +6940,11 @@
             Chunking service settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Embeddings">
+            <summary>
+            Embeddings service settings.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Inference">
             <summary>
             Inference service settings.
@@ -7116,6 +7138,31 @@
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.DocumentAtomSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.EmbeddingsSettings">
+            <summary>
+            Embeddings service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.EmbeddingsSettings.Endpoint">
+            <summary>
+            Endpoint URL for the embeddings service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.EmbeddingsSettings.AccessKey">
+            <summary>
+            Access key for the embeddings service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.EmbeddingsSettings.EndpointId">
+            <summary>
+            Endpoint identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.EmbeddingsSettings.#ctor">
             <summary>
             Instantiate.
             </summary>

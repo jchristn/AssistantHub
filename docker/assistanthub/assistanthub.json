@@ -31,6 +31,11 @@
     "AccessKey": "partioadmin",
     "EndpointId": "default"
   },
+  "Embeddings": {
+    "Endpoint": "http://partio-server:8400",
+    "AccessKey": "partioadmin",
+    "EndpointId": "default"
+  },
   "Inference": {
     "Provider": "Ollama",
     "Endpoint": "http://ollama:11434",

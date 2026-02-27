@@ -70,6 +70,15 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
+        /// Embeddings service settings.
+        /// </summary>
+        public EmbeddingsSettings Embeddings
+        {
+            get => _Embeddings;
+            set { if (value != null) _Embeddings = value; }
+        }
+
+        /// <summary>
         /// Inference service settings.
         /// </summary>
         public InferenceSettings Inference
@@ -132,6 +141,7 @@ namespace AssistantHub.Core.Settings
         private S3Settings _S3 = new S3Settings();
         private DocumentAtomSettings _DocumentAtom = new DocumentAtomSettings();
         private ChunkingSettings _Chunking = new ChunkingSettings();
+        private EmbeddingsSettings _Embeddings = new EmbeddingsSettings();
         private InferenceSettings _Inference = new InferenceSettings();
         private RecallDbSettings _RecallDb = new RecallDbSettings();
         private LoggingSettings _Logging = new LoggingSettings();

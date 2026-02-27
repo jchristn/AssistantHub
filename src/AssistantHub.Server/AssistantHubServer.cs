@@ -370,6 +370,12 @@ namespace AssistantHub.Server
                     _Settings.Chunking.Endpoint.TrimEnd('/') + "/",
                     bearerToken: _Settings.Chunking.AccessKey);
 
+                // Embeddings (Partio) - HEAD request
+                allSucceeded &= await CheckServiceAsync(http, "Embeddings (Partio)",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.Embeddings.Endpoint.TrimEnd('/') + "/",
+                    bearerToken: _Settings.Embeddings.AccessKey);
+
                 // Inference (Ollama) - GET request
                 allSucceeded &= await CheckServiceAsync(http, "Inference (Ollama)",
                     System.Net.Http.HttpMethod.Get,

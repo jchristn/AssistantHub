@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 
@@ -82,6 +82,14 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
     },
     RetentionDays: plan?.RetentionDays ?? 7,
   });
+
+  // Auto-select S3 bucket if there is exactly one
+  useEffect(() => {
+    if (!form.S3BucketName && buckets && buckets.length === 1) {
+      const name = buckets[0].Name || buckets[0].name || buckets[0];
+      handleChange('S3BucketName', name);
+    }
+  }, [buckets]);
 
   const [saving, setSaving] = useState(false);
   const [generalOpen, setGeneralOpen] = useState(true);

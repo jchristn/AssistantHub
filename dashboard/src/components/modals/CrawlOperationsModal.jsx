@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import CopyableId from '../CopyableId';
+import ActionMenu from '../ActionMenu';
 import CrawlEnumerationModal from './CrawlEnumerationModal';
 import ConfirmModal from '../ConfirmModal';
 import AlertModal from '../AlertModal';
@@ -13,6 +14,71 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
 }
 
+function OperationStatsModal({ operation, onClose }) {
+  const op = operation;
+  const runtimeMs = (op.StartUtc && op.FinishUtc)
+    ? new Date(op.FinishUtc) - new Date(op.StartUtc)
+    : null;
+
+  const rows = [
+    { label: 'Objects Enumerated', count: op.ObjectsEnumerated, bytes: op.BytesEnumerated },
+    { label: 'Objects Added', count: op.ObjectsAdded, bytes: op.BytesAdded },
+    { label: 'Objects Updated', count: op.ObjectsUpdated, bytes: op.BytesUpdated },
+    { label: 'Objects Deleted', count: op.ObjectsDeleted, bytes: op.BytesDeleted },
+    { label: 'Objects Succeeded', count: op.ObjectsSuccess, bytes: op.BytesSuccess },
+    { label: 'Objects Failed', count: op.ObjectsFailed, bytes: op.BytesFailed },
+  ];
+
+  return (
+    <Modal title="Operation Statistics" onClose={onClose} wide footer={
+      <button className="btn btn-secondary" onClick={onClose}>Close</button>
+    }>
+      <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th style={{ textAlign: 'right' }}>Count</th>
+            <th style={{ textAlign: 'right' }}>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              <td>{row.label}</td>
+              <td style={{ textAlign: 'right' }}>{row.count ?? 0}</td>
+              <td style={{ textAlign: 'right' }}>{formatFileSize(row.bytes ?? 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+          <span>Start</span>
+          <span>{op.StartUtc ? new Date(op.StartUtc).toLocaleString() : '-'}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+          <span>End</span>
+          <span>{op.FinishUtc ? new Date(op.FinishUtc).toLocaleString() : '-'}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+          <span>Total Runtime</span>
+          <span>{runtimeMs != null ? `${runtimeMs.toFixed(2)}ms` : '-'}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+          <span>State</span>
+          <span>{op.State || '-'}</span>
+        </div>
+        {op.StatusMessage && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0' }}>
+            <span>Message</span>
+            <span>{op.StatusMessage}</span>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 function CrawlOperationsModal({ api, plan, onClose }) {
   const planId = plan.Id || plan.GUID;
   const [operations, setOperations] = useState([]);
@@ -21,6 +87,7 @@ function CrawlOperationsModal({ api, plan, onClose }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
   const [showEnumeration, setShowEnumeration] = useState(null);
+  const [showStats, setShowStats] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -52,12 +119,12 @@ function CrawlOperationsModal({ api, plan, onClose }) {
   };
 
   const statCards = statistics ? [
-    { label: 'Total Operations', value: statistics.TotalOperations ?? statistics.Total ?? '-' },
-    { label: 'Successful', value: statistics.Successful ?? statistics.SuccessCount ?? '-' },
-    { label: 'Failed', value: statistics.Failed ?? statistics.FailedCount ?? '-' },
-    { label: 'Total Objects', value: statistics.TotalObjects ?? statistics.ObjectCount ?? '-' },
-    { label: 'Total Bytes', value: formatFileSize(statistics.TotalBytes ?? statistics.ByteCount) },
-    { label: 'Avg Duration', value: statistics.AverageDurationMs ? `${(statistics.AverageDurationMs / 1000).toFixed(1)}s` : '-' },
+    { label: 'Total Operations', value: (statistics.SuccessfulRunCount ?? 0) + (statistics.FailedRunCount ?? 0) },
+    { label: 'Successful', value: statistics.SuccessfulRunCount ?? '-' },
+    { label: 'Failed', value: statistics.FailedRunCount ?? '-' },
+    { label: 'Total Objects', value: statistics.ObjectCount ?? '-' },
+    { label: 'Total Bytes', value: formatFileSize(statistics.BytesCrawled) },
+    { label: 'Avg Duration', value: statistics.AvgRuntimeMs ? `${(statistics.AvgRuntimeMs / 1000).toFixed(1)}s` : '-' },
   ] : [];
 
   return (
@@ -113,17 +180,12 @@ function CrawlOperationsModal({ api, plan, onClose }) {
                     <td><span className={`status-badge ${statusCls}`}>{status}</span></td>
                     <td>{op.ObjectsEnumerated ?? ''}</td>
                     <td>{formatFileSize(op.BytesEnumerated)}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                          onClick={() => setShowEnumeration({ planId, operationId: op.Id || op.GUID })}>
-                          Enumeration
-                        </button>
-                        <button className="btn btn-danger" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                          onClick={() => setDeleteTarget(op)}>
-                          Delete
-                        </button>
-                      </div>
+                    <td className="actions-cell">
+                      <ActionMenu items={[
+                        { label: 'Statistics', onClick: () => setShowStats(op) },
+                        { label: 'Enumeration', onClick: () => setShowEnumeration({ planId, operationId: op.Id || op.GUID }) },
+                        { label: 'Delete', danger: true, onClick: () => setDeleteTarget(op) },
+                      ]} />
                     </td>
                   </tr>
                 );
@@ -133,6 +195,12 @@ function CrawlOperationsModal({ api, plan, onClose }) {
         </div>
       )}
 
+      {showStats && (
+        <OperationStatsModal
+          operation={showStats}
+          onClose={() => setShowStats(null)}
+        />
+      )}
       {showEnumeration && (
         <CrawlEnumerationModal
           api={api}

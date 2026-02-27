@@ -206,12 +206,12 @@ body {
 }
 
 .sidebar-section {
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1rem;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--sidebar-section-color);
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .sidebar-item {
@@ -786,10 +786,17 @@ body {
   gap: 1rem;
 }
 
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .form-toggle label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0;
 }
 
 .form-toggle input[type="checkbox"] {

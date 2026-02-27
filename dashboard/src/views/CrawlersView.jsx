@@ -10,10 +10,9 @@ import CrawlOperationsModal from '../components/modals/CrawlOperationsModal';
 import CrawlEnumerationModal from '../components/modals/CrawlEnumerationModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
-import Tooltip from '../components/Tooltip';
 
 function CrawlersView() {
-  const { serverUrl, credential, isGlobalAdmin } = useAuth();
+  const { serverUrl, credential } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(null); // null | 'create' | crawlPlan object
@@ -54,14 +53,27 @@ function CrawlersView() {
     }
   }, []);
 
+  const getNextCrawl = (row) => {
+    const schedule = row.Schedule;
+    if (!schedule || !row.LastCrawlStartUtc) return null;
+    const type = (schedule.IntervalType || '').toLowerCase();
+    if (type === 'onetime') return null;
+    const val = schedule.IntervalValue || 1;
+    const last = new Date(row.LastCrawlStartUtc);
+    const intervalMs = type === 'minutes' ? val * 60 * 1000
+      : type === 'days' ? val * 24 * 60 * 60 * 1000
+      : type === 'weeks' ? val * 7 * 24 * 60 * 60 * 1000
+      : val * 60 * 60 * 1000; // default hours
+    return new Date(last.getTime() + intervalMs);
+  };
+
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this crawl plan', filterable: true, render: (row) => <CopyableId id={row.Id || row.GUID} /> },
-    ...(isGlobalAdmin ? [{ key: 'TenantId', label: 'Tenant', tooltip: 'Owning tenant ID', filterable: true, render: (row) => <CopyableId id={row.TenantId} /> }] : []),
     { key: 'Name', label: 'Name', tooltip: 'Display name for this crawl plan', filterable: true },
-    { key: 'RepositoryType', label: 'Type', tooltip: 'Repository type (e.g. Web)', filterable: true },
-    { key: 'StartUrl', label: 'URL', tooltip: 'Start URL for this crawler', filterable: true, render: (row) => {
+    { key: 'RepositoryType', label: 'Type', tooltip: 'Repository type (e.g. Web)', filterable: true, style: { width: '4.5rem', whiteSpace: 'nowrap' } },
+    { key: 'StartUrl', label: 'URL', tooltip: 'Start URL for this crawler', filterable: true, style: { maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, render: (row) => {
       const url = row.RepositorySettings?.StartUrl || row.StartUrl || '';
-      return url.length > 50 ? <span title={url}>{url.slice(0, 47)}...</span> : url;
+      return <span title={url}>{url}</span>;
     }},
     { key: 'State', label: 'State', tooltip: 'Current state of the crawler', render: (row) => {
       const state = row.State || 'Stopped';
@@ -73,12 +85,16 @@ function CrawlersView() {
       if (!schedule) return '';
       return `${schedule.IntervalValue || ''} ${schedule.IntervalType || ''}`.trim();
     }},
-    { key: 'LastCrawl', label: 'Last Crawl', tooltip: 'Date and time of the last crawl', render: (row) => row.LastCrawlUtc ? new Date(row.LastCrawlUtc).toLocaleString() : '' },
+    { key: 'LastCrawl', label: 'Last Crawl', tooltip: 'Date and time of the last completed crawl', render: (row) => row.LastCrawlFinishUtc ? new Date(row.LastCrawlFinishUtc).toLocaleString() : '' },
+    { key: 'NextCrawl', label: 'Next Crawl', tooltip: 'Estimated time of the next scheduled crawl', render: (row) => {
+      if ((row.State || '').toLowerCase() === 'running') return <span className="status-badge badge-running">Running</span>;
+      const next = getNextCrawl(row);
+      return next ? next.toLocaleString() : '';
+    }},
     { key: 'LastResult', label: 'Result', tooltip: 'Result of the last crawl operation', render: (row) => {
-      const result = row.LastResult || row.LastCrawlResult;
-      if (!result) return <span className="status-badge badge-na">N/A</span>;
-      const cls = result.toLowerCase() === 'success' ? 'success' : result.toLowerCase() === 'failed' ? 'failed' : 'na';
-      return <span className={`status-badge badge-${cls}`}>{result}</span>;
+      if (row.LastCrawlSuccess === true) return <span className="status-badge badge-success">Success</span>;
+      if (row.LastCrawlSuccess === false) return <span className="status-badge badge-failed">Failed</span>;
+      return '';
     }},
   ];
 

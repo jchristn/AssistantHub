@@ -343,6 +343,16 @@ namespace AssistantHub.Core.Services.Crawlers
 
                     await _Database.CrawlPlan.UpdateAsync(_CrawlPlan, default).ConfigureAwait(false);
                     await _Database.CrawlOperation.UpdateAsync(_CrawlOperation, default).ConfigureAwait(false);
+
+                    // Log completion summary
+                    double runtimeMs = ((_CrawlOperation.FinishUtc ?? DateTime.UtcNow) - (_CrawlOperation.StartUtc ?? DateTime.UtcNow)).TotalMilliseconds;
+                    _Logging.Info(_Header + "completed crawl operation " + _CrawlOperation.Id + " for crawler " + _CrawlPlan.Id + Environment.NewLine
+                        + "| Objects enumerated        : " + _CrawlOperation.ObjectsEnumerated + ", " + FormatBytes(_CrawlOperation.BytesEnumerated) + Environment.NewLine
+                        + "| Objects added             : " + _CrawlOperation.ObjectsAdded + ", " + FormatBytes(_CrawlOperation.BytesAdded) + Environment.NewLine
+                        + "| Objects deleted           : " + _CrawlOperation.ObjectsDeleted + ", " + FormatBytes(_CrawlOperation.BytesDeleted) + Environment.NewLine
+                        + "| Objects updated           : " + _CrawlOperation.ObjectsUpdated + ", " + FormatBytes(_CrawlOperation.BytesUpdated) + Environment.NewLine
+                        + "| Objects processed         : " + (_CrawlOperation.ObjectsSuccess + _CrawlOperation.ObjectsFailed) + " (" + _CrawlOperation.ObjectsSuccess + " success, " + _CrawlOperation.ObjectsFailed + " failures)" + Environment.NewLine
+                        + "| Total runtime             : " + runtimeMs.ToString("F2") + "ms");
                 }
                 catch (Exception ex)
                 {
@@ -836,6 +846,14 @@ namespace AssistantHub.Core.Services.Crawlers
             {
                 return Path.GetFileName(key) ?? key;
             }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes < 1024) return bytes + "B";
+            if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F1") + "KB";
+            if (bytes < 1024L * 1024 * 1024) return (bytes / (1024.0 * 1024)).ToString("F1") + "MB";
+            return (bytes / (1024.0 * 1024 * 1024)).ToString("F2") + "GB";
         }
 
         internal static void SaveEnumerationFile(string directory, string crawlPlanId, string operationId, CrawlEnumeration enumeration)

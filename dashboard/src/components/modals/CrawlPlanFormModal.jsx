@@ -16,15 +16,15 @@ const defaultRepository = {
   UserAgent: '',
   FollowLinks: true,
   FollowRedirects: true,
-  ExtractSitemapLinks: false,
+  ExtractSitemapLinks: true,
   RestrictToChildUrls: true,
-  RestrictToSubdomain: false,
-  RestrictToRootDomain: false,
+  RestrictToSubdomain: true,
+  RestrictToRootDomain: true,
   IgnoreRobotsTxt: false,
-  UseHeadlessBrowser: false,
+  UseHeadlessBrowser: true,
   MaxDepth: 5,
   MaxParallelTasks: 4,
-  CrawlDelayMs: 1000,
+  CrawlDelayMs: 100,
 };
 
 const defaultSchedule = {
@@ -47,26 +47,40 @@ const defaultProcessing = {
   MaxDrainTasks: 4,
 };
 
-function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
+function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) {
   const isEdit = !!plan;
+
+  const repoSettings = plan?.RepositorySettings;
+  const ingestionSettings = plan?.IngestionSettings;
+  const filterSettings = plan?.Filter;
 
   const [form, setForm] = useState({
     Name: plan?.Name || '',
     RepositoryType: plan?.RepositoryType || 'Web',
-    IngestionRuleId: plan?.IngestionRuleId || '',
-    StoreInS3: plan?.StoreInS3 ?? false,
-    S3BucketName: plan?.S3BucketName || '',
-    Repository: plan?.Repository ? { ...defaultRepository, ...plan.Repository } : { ...defaultRepository },
+    IngestionRuleId: ingestionSettings?.IngestionRuleId || '',
+    StoreInS3: ingestionSettings?.StoreInS3 ?? false,
+    S3BucketName: ingestionSettings?.S3BucketName || '',
+    Repository: repoSettings ? {
+      ...defaultRepository,
+      ...repoSettings,
+      AuthType: repoSettings.AuthenticationType || 'None',
+      ApiKey: repoSettings.ApiKeyValue || '',
+    } : { ...defaultRepository },
     Schedule: plan?.Schedule ? { ...defaultSchedule, ...plan.Schedule } : { ...defaultSchedule },
-    Filter: plan?.Filter ? {
-      ObjectPrefix: plan.Filter.ObjectPrefix || '',
-      ObjectSuffix: plan.Filter.ObjectSuffix || '',
-      AllowedContentTypes: (plan.Filter.AllowedContentTypes || []).join(', '),
-      MinimumSize: plan.Filter.MinimumSize ?? '',
-      MaximumSize: plan.Filter.MaximumSize ?? '',
+    Filter: filterSettings ? {
+      ObjectPrefix: filterSettings.ObjectPrefix || '',
+      ObjectSuffix: filterSettings.ObjectSuffix || '',
+      AllowedContentTypes: (filterSettings.AllowedContentTypes || []).join(', '),
+      MinimumSize: filterSettings.MinimumSize ?? '',
+      MaximumSize: filterSettings.MaximumSize ?? '',
     } : { ...defaultFilter },
-    Processing: plan?.Processing ? { ...defaultProcessing, ...plan.Processing } : { ...defaultProcessing },
-    RetentionDays: plan?.RetentionDays ?? '',
+    Processing: {
+      ProcessAdditions: plan?.ProcessAdditions ?? defaultProcessing.ProcessAdditions,
+      ProcessUpdates: plan?.ProcessUpdates ?? defaultProcessing.ProcessUpdates,
+      ProcessDeletions: plan?.ProcessDeletions ?? defaultProcessing.ProcessDeletions,
+      MaxDrainTasks: plan?.MaxDrainTasks ?? defaultProcessing.MaxDrainTasks,
+    },
+    RetentionDays: plan?.RetentionDays ?? 7,
   });
 
   const [saving, setSaving] = useState(false);
@@ -117,15 +131,18 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
       const data = {
         Name: form.Name,
         RepositoryType: form.RepositoryType,
-        IngestionRuleId: form.IngestionRuleId || undefined,
-        StoreInS3: form.StoreInS3,
-        S3BucketName: form.StoreInS3 ? form.S3BucketName : undefined,
-        Repository: {
+        IngestionSettings: {
+          IngestionRuleId: form.IngestionRuleId || undefined,
+          StoreInS3: form.StoreInS3,
+          S3BucketName: form.StoreInS3 ? form.S3BucketName : undefined,
+        },
+        RepositorySettings: {
+          $type: 'Web',
           StartUrl: form.Repository.StartUrl,
-          AuthType: form.Repository.AuthType,
+          AuthenticationType: form.Repository.AuthType,
           ...(form.Repository.AuthType === 'Basic' ? { Username: form.Repository.Username, Password: form.Repository.Password } : {}),
           ...(form.Repository.AuthType === 'Bearer' ? { BearerToken: form.Repository.BearerToken } : {}),
-          ...(form.Repository.AuthType === 'ApiKey' ? { ApiKey: form.Repository.ApiKey } : {}),
+          ...(form.Repository.AuthType === 'ApiKey' ? { ApiKeyValue: form.Repository.ApiKey } : {}),
           UserAgent: form.Repository.UserAgent || undefined,
           FollowLinks: form.Repository.FollowLinks,
           FollowRedirects: form.Repository.FollowRedirects,
@@ -136,8 +153,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
           IgnoreRobotsTxt: form.Repository.IgnoreRobotsTxt,
           UseHeadlessBrowser: form.Repository.UseHeadlessBrowser,
           MaxDepth: parseInt(form.Repository.MaxDepth) || 5,
-          MaxParallelTasks: parseInt(form.Repository.MaxParallelTasks) || 4,
-          CrawlDelayMs: parseInt(form.Repository.CrawlDelayMs) || 1000,
+          MaxParallelTasks: parseInt(form.Repository.MaxParallelTasks) || 8,
+          CrawlDelayMs: parseInt(form.Repository.CrawlDelayMs) ?? 100,
         },
         Schedule: {
           IntervalType: form.Schedule.IntervalType,
@@ -152,13 +169,11 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
           MinimumSize: form.Filter.MinimumSize !== '' ? parseInt(form.Filter.MinimumSize) : undefined,
           MaximumSize: form.Filter.MaximumSize !== '' ? parseInt(form.Filter.MaximumSize) : undefined,
         },
-        Processing: {
-          ProcessAdditions: form.Processing.ProcessAdditions,
-          ProcessUpdates: form.Processing.ProcessUpdates,
-          ProcessDeletions: form.Processing.ProcessDeletions,
-          MaxDrainTasks: parseInt(form.Processing.MaxDrainTasks) || 4,
-        },
-        RetentionDays: form.RetentionDays !== '' ? parseInt(form.RetentionDays) : undefined,
+        ProcessAdditions: form.Processing.ProcessAdditions,
+        ProcessUpdates: form.Processing.ProcessUpdates,
+        ProcessDeletions: form.Processing.ProcessDeletions,
+        MaxDrainTasks: parseInt(form.Processing.MaxDrainTasks) || 8,
+        RetentionDays: form.RetentionDays !== '' ? parseInt(form.RetentionDays) : 7,
       };
       if (isEdit && (plan.Id || plan.GUID)) {
         data.Id = plan.Id || plan.GUID;
@@ -247,8 +262,14 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
               </div>
               {form.StoreInS3 && (
                 <div className="form-group">
-                  <label><Tooltip text="S3 bucket name to store crawled content">S3 Bucket Name</Tooltip></label>
-                  <input type="text" value={form.S3BucketName} onChange={(e) => handleChange('S3BucketName', e.target.value)} />
+                  <label><Tooltip text="S3 bucket to store crawled content">S3 Bucket Name</Tooltip></label>
+                  <select value={form.S3BucketName} onChange={(e) => handleChange('S3BucketName', e.target.value)}>
+                    <option value="">-- Select Bucket --</option>
+                    {(buckets || []).map(b => {
+                      const name = b.Name || b.name || b;
+                      return <option key={name} value={name}>{name}</option>;
+                    })}
+                  </select>
                 </div>
               )}
             </div>
@@ -297,8 +318,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
                 </div>
               )}
               <div className="form-group">
-                <label><Tooltip text="User agent string sent with HTTP requests">User Agent</Tooltip></label>
-                <input type="text" value={form.Repository.UserAgent} onChange={(e) => handleRepoChange('UserAgent', e.target.value)} placeholder="Optional" />
+                <label><Tooltip text="User agent string sent with HTTP requests. Default: assistanthub-crawler">User Agent</Tooltip></label>
+                <input type="text" value={form.Repository.UserAgent} onChange={(e) => handleRepoChange('UserAgent', e.target.value)} placeholder="assistanthub-crawler" />
               </div>
 
               <div className="form-group">
@@ -325,7 +346,7 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
                     <input type="checkbox" checked={form.Repository.ExtractSitemapLinks} onChange={(e) => handleRepoChange('ExtractSitemapLinks', e.target.checked)} />
                     <span className="toggle-slider"></span>
                   </label>
-                  <span><Tooltip text="Extract and follow URLs found in sitemap.xml">Extract Sitemap Links</Tooltip></span>
+                  <span><Tooltip text="Extract and follow URLs found in the root domain sitemap.xml (e.g. example.com/sitemap.xml, not example.com/path/sitemap.xml)">Extract Sitemap Links</Tooltip></span>
                 </div>
               </div>
               <div className="form-group">
@@ -375,16 +396,16 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
               </div>
 
               <div className="form-group">
-                <label><Tooltip text="Maximum depth to follow links from the start URL">Max Depth</Tooltip></label>
-                <input type="number" value={form.Repository.MaxDepth} onChange={(e) => handleRepoChange('MaxDepth', e.target.value)} min="1" />
+                <label><Tooltip text="Maximum depth to follow links from the start URL. Range: 1-100, default: 5">Max Depth</Tooltip></label>
+                <input type="number" value={form.Repository.MaxDepth} onChange={(e) => handleRepoChange('MaxDepth', e.target.value)} min="1" max="100" />
               </div>
               <div className="form-group">
-                <label><Tooltip text="Maximum number of pages to crawl concurrently">Max Parallel Tasks</Tooltip></label>
-                <input type="number" value={form.Repository.MaxParallelTasks} onChange={(e) => handleRepoChange('MaxParallelTasks', e.target.value)} min="1" />
+                <label><Tooltip text="Maximum number of pages to crawl concurrently. Range: 1-64, default: 8">Max Parallel Tasks</Tooltip></label>
+                <input type="number" value={form.Repository.MaxParallelTasks} onChange={(e) => handleRepoChange('MaxParallelTasks', e.target.value)} min="1" max="64" />
               </div>
               <div className="form-group">
-                <label><Tooltip text="Delay in milliseconds between consecutive requests to the same host">Crawl Delay (ms)</Tooltip></label>
-                <input type="number" value={form.Repository.CrawlDelayMs} onChange={(e) => handleRepoChange('CrawlDelayMs', e.target.value)} min="0" step="100" />
+                <label><Tooltip text="Delay in milliseconds between consecutive requests to the same host. Range: 0-60000, default: 100">Crawl Delay (ms)</Tooltip></label>
+                <input type="number" value={form.Repository.CrawlDelayMs} onChange={(e) => handleRepoChange('CrawlDelayMs', e.target.value)} min="0" max="60000" step="100" />
               </div>
             </div>
           )}
@@ -398,14 +419,14 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
           {scheduleOpen && (
             <div style={{ marginTop: '0.5rem' }}>
               <div className="form-group">
-                <label><Tooltip text="Unit of time for the crawl interval">Interval Type</Tooltip></label>
+                <label><Tooltip text="Unit of time for the crawl interval. Default: Hours">Interval Type</Tooltip></label>
                 <select value={form.Schedule.IntervalType} onChange={(e) => handleScheduleChange('IntervalType', e.target.value)}>
                   {INTERVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label><Tooltip text="Number of interval units between crawls">Interval Value</Tooltip></label>
-                <input type="number" value={form.Schedule.IntervalValue} onChange={(e) => handleScheduleChange('IntervalValue', e.target.value)} min="1" />
+                <label><Tooltip text="Number of interval units between crawls. Range: 1-10080, default: 24">Interval Value</Tooltip></label>
+                <input type="number" value={form.Schedule.IntervalValue} onChange={(e) => handleScheduleChange('IntervalValue', e.target.value)} min="1" max="10080" />
               </div>
             </div>
           )}
@@ -431,12 +452,12 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
                 <input type="text" value={form.Filter.AllowedContentTypes} onChange={(e) => handleFilterChange('AllowedContentTypes', e.target.value)} placeholder="e.g. text/html, application/pdf" />
               </div>
               <div className="form-group">
-                <label><Tooltip text="Minimum file size in bytes to process">Minimum Size (bytes)</Tooltip></label>
-                <input type="number" value={form.Filter.MinimumSize} onChange={(e) => handleFilterChange('MinimumSize', e.target.value)} min="0" placeholder="Optional" />
+                <label><Tooltip text="Minimum file size in bytes to process. Default: 0 (no minimum)">Minimum Size (bytes)</Tooltip></label>
+                <input type="number" value={form.Filter.MinimumSize} onChange={(e) => handleFilterChange('MinimumSize', e.target.value)} min="0" placeholder="0" />
               </div>
               <div className="form-group">
-                <label><Tooltip text="Maximum file size in bytes to process">Maximum Size (bytes)</Tooltip></label>
-                <input type="number" value={form.Filter.MaximumSize} onChange={(e) => handleFilterChange('MaximumSize', e.target.value)} min="0" placeholder="Optional" />
+                <label><Tooltip text="Maximum file size in bytes to process. Leave empty for no limit">Maximum Size (bytes)</Tooltip></label>
+                <input type="number" value={form.Filter.MaximumSize} onChange={(e) => handleFilterChange('MaximumSize', e.target.value)} min="0" placeholder="No limit" />
               </div>
             </div>
           )}
@@ -477,8 +498,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
                 </div>
               </div>
               <div className="form-group">
-                <label><Tooltip text="Maximum number of concurrent document processing tasks">Max Concurrent Tasks</Tooltip></label>
-                <input type="number" value={form.Processing.MaxDrainTasks} onChange={(e) => handleProcessingChange('MaxDrainTasks', e.target.value)} min="1" />
+                <label><Tooltip text="Maximum number of concurrent document processing tasks. Range: 1-64, default: 8">Max Concurrent Tasks</Tooltip></label>
+                <input type="number" value={form.Processing.MaxDrainTasks} onChange={(e) => handleProcessingChange('MaxDrainTasks', e.target.value)} min="1" max="64" />
               </div>
             </div>
           )}
@@ -492,8 +513,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, onSave, onClose }) {
           {retentionOpen && (
             <div style={{ marginTop: '0.5rem' }}>
               <div className="form-group">
-                <label><Tooltip text="Number of days to retain crawl operation history. Leave empty for no limit.">Retention Days</Tooltip></label>
-                <input type="number" value={form.RetentionDays} onChange={(e) => handleChange('RetentionDays', e.target.value)} min="1" placeholder="Optional" />
+                <label><Tooltip text="Number of days to retain crawl operation history. Range: 0-14, default: 7. Set to 0 to delete operations immediately after completion.">Retention Days</Tooltip></label>
+                <input type="number" value={form.RetentionDays} onChange={(e) => handleChange('RetentionDays', e.target.value)} min="0" max="14" />
               </div>
             </div>
           )}

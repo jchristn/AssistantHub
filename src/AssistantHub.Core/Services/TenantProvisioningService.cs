@@ -131,7 +131,11 @@ namespace AssistantHub.Core.Services
             rule.CollectionName = "default";
             rule.CollectionId = collectionId ?? "default";
             rule.Chunking = new IngestionChunkingConfig();
-            rule.Embedding = new IngestionEmbeddingConfig();
+            rule.Embedding = new IngestionEmbeddingConfig
+            {
+                EmbeddingEndpointId = "default",
+                L2Normalization = true
+            };
             rule.CreatedUtc = DateTime.UtcNow;
             rule.LastUpdateUtc = DateTime.UtcNow;
 

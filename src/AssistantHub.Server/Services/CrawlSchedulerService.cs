@@ -402,6 +402,10 @@ namespace AssistantHub.Server.Services
 
             _RunningCrawlers[plan.Id] = (crawler, cts);
 
+            // Set plan state to Running immediately so the dashboard reflects it
+            plan.State = CrawlPlanStateEnum.Running;
+            await _Database.CrawlPlan.UpdateAsync(plan).ConfigureAwait(false);
+
             _ = Task.Run(async () =>
             {
                 try
@@ -411,6 +415,21 @@ namespace AssistantHub.Server.Services
                 catch (Exception ex)
                 {
                     _Logging.Alert(_Header + "crawl operation " + operation.Id + " for plan " + plan.Id + " failed: " + ex.Message);
+
+                    // Ensure plan state is reset on failure
+                    try
+                    {
+                        plan.State = CrawlPlanStateEnum.Stopped;
+                        operation.State = CrawlOperationStateEnum.Failed;
+                        operation.StatusMessage = ex.Message;
+                        operation.FinishUtc = DateTime.UtcNow;
+                        await _Database.CrawlPlan.UpdateAsync(plan).ConfigureAwait(false);
+                        await _Database.CrawlOperation.UpdateAsync(operation).ConfigureAwait(false);
+                    }
+                    catch (Exception dbEx)
+                    {
+                        _Logging.Warn(_Header + "error updating state after failure for plan " + plan.Id + ": " + dbEx.Message);
+                    }
                 }
                 finally
                 {

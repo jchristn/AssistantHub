@@ -165,6 +165,7 @@ namespace AssistantHub.Core.Services.Crawlers
             try
             {
                 // Step 1: Set starting state
+                _Logging.Info(_Header + "starting crawl operation " + _CrawlOperation.Id + " for plan " + _CrawlPlan.Id);
                 _CrawlPlan.State = CrawlPlanStateEnum.Running;
                 _CrawlOperation.State = CrawlOperationStateEnum.Starting;
                 _CrawlOperation.StartUtc = DateTime.UtcNow;
@@ -172,11 +173,13 @@ namespace AssistantHub.Core.Services.Crawlers
                 await _Database.CrawlOperation.UpdateAsync(_CrawlOperation, _Token).ConfigureAwait(false);
 
                 // Step 2: Enumeration phase
+                _Logging.Info(_Header + "beginning enumeration for operation " + _CrawlOperation.Id);
                 _CrawlOperation.State = CrawlOperationStateEnum.Enumerating;
                 _CrawlOperation.StartEnumerationUtc = DateTime.UtcNow;
                 await _Database.CrawlOperation.UpdateAsync(_CrawlOperation, _Token).ConfigureAwait(false);
 
                 // Step 3: Enumerate
+                _Logging.Info(_Header + "calling EnumerateAsync for operation " + _CrawlOperation.Id);
                 List<CrawledObject> currentObjects = new List<CrawledObject>();
                 await foreach (CrawledObject obj in EnumerateAsync(_Token))
                 {

@@ -22,6 +22,7 @@ function CrawlersView() {
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
   const [ingestionRules, setIngestionRules] = useState([]);
+  const [buckets, setBuckets] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -32,6 +33,13 @@ function CrawlersView() {
       } catch (err) {
         console.error('Failed to load ingestion rules', err);
       }
+      try {
+        const result = await api.getBuckets({ maxResults: 1000 });
+        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        setBuckets(items);
+      } catch (err) {
+        console.error('Failed to load buckets', err);
+      }
     })();
   }, [serverUrl, credential]);
 
@@ -41,7 +49,7 @@ function CrawlersView() {
     { key: 'Name', label: 'Name', tooltip: 'Display name for this crawl plan', filterable: true },
     { key: 'RepositoryType', label: 'Type', tooltip: 'Repository type (e.g. Web)', filterable: true },
     { key: 'StartUrl', label: 'URL', tooltip: 'Start URL for this crawler', filterable: true, render: (row) => {
-      const url = row.Repository?.StartUrl || row.StartUrl || '';
+      const url = row.RepositorySettings?.StartUrl || row.StartUrl || '';
       return url.length > 50 ? <span title={url}>{url.slice(0, 47)}...</span> : url;
     }},
     { key: 'State', label: 'State', tooltip: 'Current state of the crawler', render: (row) => {
@@ -156,6 +164,7 @@ function CrawlersView() {
         <CrawlPlanFormModal
           plan={showForm !== 'create' ? showForm : null}
           ingestionRules={ingestionRules}
+          buckets={buckets}
           onSave={handleSave}
           onClose={() => setShowForm(null)}
         />

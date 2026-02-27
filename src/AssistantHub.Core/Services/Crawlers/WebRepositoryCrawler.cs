@@ -62,11 +62,14 @@ namespace AssistantHub.Core.Services.Crawlers
         /// <inheritdoc />
         public override async IAsyncEnumerable<CrawledObject> EnumerateAsync([EnumeratorCancellation] CancellationToken token = default)
         {
+            _Logging.Info(_Header + "building settings for crawl of " + _WebSettings.StartUrl);
             Settings settings = BuildSettings();
+            _Logging.Info(_Header + "creating WebCrawler instance (UseHeadlessBrowser=" + settings.Crawl.UseHeadlessBrowser + ")");
             WebCrawler crawler = new WebCrawler(settings, token);
-            crawler.Logger = (msg) => _Logging.Debug(_Header + msg);
+            crawler.Logger = (msg) => _Logging.Info(_Header + msg);
             crawler.Exception = (msg, ex) => _Logging.Warn(_Header + "crawler exception: " + msg + " " + ex.Message);
 
+            _Logging.Info(_Header + "starting CrawlAsync for " + _WebSettings.StartUrl);
             await foreach (WebResource resource in crawler.CrawlAsync(token))
             {
                 if (token.IsCancellationRequested) yield break;

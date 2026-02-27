@@ -258,7 +258,11 @@ namespace AssistantHub.Server
             defaultRule.CollectionName = "default";
             defaultRule.CollectionId = "default";
             defaultRule.Chunking = new IngestionChunkingConfig();
-            defaultRule.Embedding = new IngestionEmbeddingConfig();
+            defaultRule.Embedding = new IngestionEmbeddingConfig
+            {
+                EmbeddingEndpointId = "default",
+                L2Normalization = true
+            };
             defaultRule.CreatedUtc = DateTime.UtcNow;
             defaultRule.LastUpdateUtc = DateTime.UtcNow;
             defaultRule = await _Database.IngestionRule.CreateAsync(defaultRule).ConfigureAwait(false);

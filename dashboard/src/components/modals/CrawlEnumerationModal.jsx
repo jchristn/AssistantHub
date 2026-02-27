@@ -46,7 +46,7 @@ function EnumerationSection({ title, files, totalBytes }) {
                     <span title={file.Key || file.Url || file.ObjectKey || ''}>{file.Key || file.Url || file.ObjectKey || ''}</span>
                   </td>
                   <td>{file.ContentType || ''}</td>
-                  <td>{formatFileSize(file.SizeBytes ?? file.Size)}</td>
+                  <td>{formatFileSize(file.ContentLength)}</td>
                   <td>{file.LastModifiedUtc ? new Date(file.LastModifiedUtc).toLocaleString() : ''}</td>
                 </tr>
               ))}
@@ -87,13 +87,14 @@ function CrawlEnumerationModal({ api, planId, operationId, onClose }) {
     })();
   }, [planId, operationId]);
 
+  const stats = data?.Statistics;
   const sections = data ? [
-    { title: 'All Files', files: data.AllFiles || data.All || [], totalBytes: data.AllBytes ?? data.TotalBytes },
-    { title: 'New Files', files: data.NewFiles || data.Additions || [], totalBytes: data.NewBytes ?? data.AdditionBytes },
-    { title: 'Changed Files', files: data.ChangedFiles || data.Updates || [], totalBytes: data.ChangedBytes ?? data.UpdateBytes },
-    { title: 'Deleted Files', files: data.DeletedFiles || data.Deletions || [], totalBytes: data.DeletedBytes ?? data.DeletionBytes },
-    { title: 'Successfully Crawled', files: data.SuccessFiles || data.Successful || [], totalBytes: data.SuccessBytes },
-    { title: 'Failed', files: data.FailedFiles || data.Failed || [], totalBytes: data.FailedBytes },
+    { title: 'All Files', files: data.AllFiles || [], totalBytes: stats?.TotalBytes },
+    { title: 'New Files', files: data.Added || [], totalBytes: stats?.AddedBytes },
+    { title: 'Changed Files', files: data.Changed || [], totalBytes: stats?.ChangedBytes },
+    { title: 'Deleted Files', files: data.Deleted || [], totalBytes: stats?.DeletedBytes },
+    { title: 'Successfully Crawled', files: data.Success || [], totalBytes: stats?.SuccessBytes },
+    { title: 'Failed', files: data.Failed || [], totalBytes: stats?.FailedBytes },
   ] : [];
 
   return (

@@ -6457,6 +6457,7 @@
             <summary>
             Delete a single embedding record from a RecallDB collection.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="collectionId">Collection identifier.</param>
             <param name="recordId">Record identifier.</param>
             <param name="token">Cancellation token.</param>
@@ -6531,6 +6532,7 @@
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="collectionId">Collection identifier.</param>
             <param name="documentId">Source document identifier.</param>
             <param name="chunk">Chunk with embedding data.</param>
@@ -6637,6 +6639,7 @@
             </summary>
             <param name="documentId">Document identifier.</param>
             <param name="stepName">Step name.</param>
+            <param name="tenantId">Tenant identifier.</param>
             <returns>A Stopwatch started at call time for measuring elapsed time.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.ProcessingLogService.LogStepCompleteAsync(System.String,System.String,System.String,System.Diagnostics.Stopwatch,System.String)">
@@ -6647,6 +6650,7 @@
             <param name="stepName">Step name.</param>
             <param name="result">Result description.</param>
             <param name="sw">Stopwatch from LogStepStartAsync.</param>
+            <param name="tenantId">Tenant identifier.</param>
             <returns>Task.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.ProcessingLogService.GetLogAsync(System.String,System.String)">
@@ -6654,6 +6658,7 @@
             Read the processing log for a document.
             </summary>
             <param name="documentId">Document identifier.</param>
+            <param name="tenantId">Tenant identifier.</param>
             <returns>Log file contents, or null if no log file exists.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.ProcessingLogService.CleanupOldLogsAsync">
@@ -6679,6 +6684,7 @@
             <summary>
             Retrieve relevant document chunks for a given query.
             </summary>
+            <param name="tenantId">Tenant identifier.</param>
             <param name="collectionId">Collection identifier.</param>
             <param name="query">Search query text.</param>
             <param name="topK">Number of top results to retrieve.</param>

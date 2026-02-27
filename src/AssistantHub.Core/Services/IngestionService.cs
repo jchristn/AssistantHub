@@ -403,6 +403,7 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Delete a single embedding record from a RecallDB collection.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="collectionId">Collection identifier.</param>
         /// <param name="recordId">Record identifier.</param>
         /// <param name="token">Cancellation token.</param>
@@ -902,6 +903,7 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Store a single chunk embedding in RecallDB.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="collectionId">Collection identifier.</param>
         /// <param name="documentId">Source document identifier.</param>
         /// <param name="chunk">Chunk with embedding data.</param>

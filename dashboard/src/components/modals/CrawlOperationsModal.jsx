@@ -62,7 +62,10 @@ function CrawlOperationsModal({ api, plan, onClose }) {
 
   return (
     <Modal title={`Operations - ${plan.Name || planId}`} onClose={onClose} extraWide footer={
-      <button className="btn btn-secondary" onClick={onClose}>Close</button>
+      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', width: '100%' }}>
+        <button className="btn btn-secondary" onClick={loadData} disabled={loading}>Refresh</button>
+        <button className="btn btn-secondary" onClick={onClose}>Close</button>
+      </div>
     }>
       {/* Statistics */}
       {statistics && (
@@ -106,10 +109,10 @@ function CrawlOperationsModal({ api, plan, onClose }) {
                   <tr key={op.Id || op.GUID || idx}>
                     <td><CopyableId id={op.Id || op.GUID} /></td>
                     <td>{op.StartUtc ? new Date(op.StartUtc).toLocaleString() : ''}</td>
-                    <td>{op.EndUtc ? new Date(op.EndUtc).toLocaleString() : ''}</td>
+                    <td>{op.FinishUtc ? new Date(op.FinishUtc).toLocaleString() : ''}</td>
                     <td><span className={`status-badge ${statusCls}`}>{status}</span></td>
-                    <td>{op.ObjectCount ?? op.TotalObjects ?? ''}</td>
-                    <td>{formatFileSize(op.ByteCount ?? op.TotalBytes)}</td>
+                    <td>{op.ObjectsEnumerated ?? ''}</td>
+                    <td>{formatFileSize(op.BytesEnumerated)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}

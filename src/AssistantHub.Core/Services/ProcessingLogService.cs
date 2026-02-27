@@ -76,6 +76,7 @@ namespace AssistantHub.Core.Services
         /// </summary>
         /// <param name="documentId">Document identifier.</param>
         /// <param name="stepName">Step name.</param>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <returns>A Stopwatch started at call time for measuring elapsed time.</returns>
         public async Task<Stopwatch> LogStepStartAsync(string documentId, string stepName, string tenantId = null)
         {
@@ -90,6 +91,7 @@ namespace AssistantHub.Core.Services
         /// <param name="stepName">Step name.</param>
         /// <param name="result">Result description.</param>
         /// <param name="sw">Stopwatch from LogStepStartAsync.</param>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <returns>Task.</returns>
         public async Task LogStepCompleteAsync(string documentId, string stepName, string result, Stopwatch sw, string tenantId = null)
         {
@@ -105,6 +107,7 @@ namespace AssistantHub.Core.Services
         /// Read the processing log for a document.
         /// </summary>
         /// <param name="documentId">Document identifier.</param>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <returns>Log file contents, or null if no log file exists.</returns>
         public async Task<string> GetLogAsync(string documentId, string tenantId = null)
         {

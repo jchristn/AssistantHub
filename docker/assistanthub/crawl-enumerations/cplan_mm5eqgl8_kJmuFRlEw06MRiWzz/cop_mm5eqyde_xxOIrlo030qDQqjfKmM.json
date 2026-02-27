@@ -1,0 +1,407 @@
+{
+  "AllFiles": [
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte",
+      "ContentType": "text/html",
+      "ContentLength": 3622,
+      "MD5Hash": "16F7FCBDD9E4FA8344A39763840E92DB",
+      "SHA1Hash": "00D008619E2BE1C38AE6150595B69EAEC3275FA1",
+      "SHA256Hash": "5D9C6BE944DF49AFEF56FF9205EDCE96B22293BC3C62689531BC240490D61605",
+      "DocumentId": "adoc_mm5ert1r_uTbcq6IuJU21veaXms",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/December Megagreens.pdf",
+      "ContentLength": 108112,
+      "MD5Hash": "C5060C5ED5D6DCCE7CECF2702DDB04E2",
+      "SHA1Hash": "B4376E3B29687275C823B010C44A8C43EF72B858",
+      "SHA256Hash": "384C95E36816138E184AC0638B27314B59C95936492D96DA60F1982C327276F2",
+      "DocumentId": "adoc_mm5ert36_AnnXaoYrB0COzd8CvN",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/HOLIDAY%2BWELLNESS%2BGUIDE%2BEBOOK_2025-compressed.pdf",
+      "ContentLength": 1583785,
+      "MD5Hash": "605136F009B2E02D0EEEA45B74CA0F2A",
+      "SHA1Hash": "576A3AB4F5B1B2E75B8B917D07D3DE8B201079B3",
+      "SHA256Hash": "7DA1A02EA956CDE66FCE63E406053A68C8F21DFB5A95097B581D944B8C219E39",
+      "DocumentId": "adoc_mm5ert68_RDmnKtoSUWsGH9NSH0",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/FULL-BODY-S.I.T-WORKOUT-20-MINUTES.pdf",
+      "ContentLength": 3362553,
+      "MD5Hash": "746944CB8622722EA6F49ACB306BC77B",
+      "SHA1Hash": "408CC8ECB8DBA9531DF967B27FAAF62B3AAFE23E",
+      "SHA256Hash": "813D3C4970CD8928EE642F0BA9E3478EE7FF3E0C4574A4AE602905E3A1109E74",
+      "DocumentId": "adoc_mm5ertme_L3UZDzHcZkKCaebLkD",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Keynote svelte summit.pdf",
+      "ContentLength": 120299,
+      "MD5Hash": "C79D8C0489A6516FD4E1BB922CA92869",
+      "SHA1Hash": "E4873EAD6C9CD5757C731F1A0E663721550B037E",
+      "SHA256Hash": "4746E33E1443190350E808BA667161FC3A79618968F1876CC64AB5B09F9A8975",
+      "DocumentId": "adoc_mm5ertza_LDUuaYPYzEitks0bTh",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/10%2BDay%2BMetaBoost%2BMeal%2BPlan_2024.pdf",
+      "ContentLength": 6690233,
+      "MD5Hash": "CD8C7D02393F8F18F82DFA879E151CAF",
+      "SHA1Hash": "08C85F8DE5A6FD55777A9370D4BF11786D6AB511",
+      "SHA256Hash": "ED6B666BA7725B8F49FC78333BADB63B3D5C1FD96535C462D4D979FC1391469B",
+      "DocumentId": "adoc_mm5eru5w_ql2UJPRcnEai7UOpPP",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens promo.pdf",
+      "ContentLength": 98444,
+      "MD5Hash": "33F2ECD827946C24CD7D9CE629D6808B",
+      "SHA1Hash": "5D1DA7183A4AE9EAF2DEAC4456BE36EB9985908D",
+      "SHA256Hash": "AB146448533A7BD2D69FA27FAD97EAAB4984A601151A438DBCC669C59DD6DECB",
+      "DocumentId": "adoc_mm5erwlq_o1ETLx2Fk5gKywzL1D",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Meredeith.pdf",
+      "ContentLength": 4930577,
+      "MD5Hash": "65B7729B283DF8CFBC187F499094CF92",
+      "SHA1Hash": "61562F6F212B8070FB03669A4E1902C93532FBFA",
+      "SHA256Hash": "FD99E916DD86F17692195F791D3493F8E9EC7DA82CC2051C1561D178E21F9D5E",
+      "DocumentId": "adoc_mm5erudy_lnjHqafEtkaSsH3BuR",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Seven Minutes a Day.pdf",
+      "ContentLength": 5796534,
+      "MD5Hash": "54933FF769B4D7168186BDA63A6CBE4A",
+      "SHA1Hash": "FD159302CEF01EA4E0FE46F0B1B84C3D486873C9",
+      "SHA256Hash": "8C43422822257574675E075A3B89E105D7840A805AC449996E822E3DA20D3B81",
+      "DocumentId": "adoc_mm5erv8z_CDyiOWvX5keLX2r9Wj",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte - Understand The Brand.pdf",
+      "ContentLength": 4420972,
+      "MD5Hash": "B35C6C84EF07543E79290ECC4816A86E",
+      "SHA1Hash": "A108CA7261C5F2B66C1EF722ED849FB9FA5FF86D",
+      "SHA256Hash": "F2B4622D054940711311E2D9B68169AA1DE7C1F623941FF07DBA275AA3A6572D",
+      "DocumentId": "adoc_mm5ervjp_tJDeLR9ntEGRE4EaX3",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens Product Page.pdf",
+      "ContentLength": 12959770,
+      "MD5Hash": "6C06C736260B3F3DF388727063A51DDD",
+      "SHA1Hash": "6A86682B6649473C118D8D8044BD4A5C6FAEF0C9",
+      "SHA256Hash": "2F4C14D19FB9A22BCF6F1ADDA215A4C11E2A5B49D1E0C209C4DE6D45DCA1F850",
+      "DocumentId": "adoc_mm5erwpd_vO62CRmYPkSqeJxI7H",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte Training 1.pdf",
+      "ContentLength": 4473410,
+      "MD5Hash": "3205E7189059E508596FC3A7ECD815BA",
+      "SHA1Hash": "296C665F9D86C20689B440E0350FC331EB4BF048",
+      "SHA256Hash": "97D1CBE6FD2D19551E09E4B5256088AB08D8408FBA539454A0470F553B856338",
+      "DocumentId": "adoc_mm5ervry_J20wG3BbJEKdY56nGe",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Vital Youth Product Page.pdf",
+      "ContentLength": 1571655,
+      "MD5Hash": "ABDC89DEE8C598FB622714EB6320A612",
+      "SHA1Hash": "F0A4382E472C55711C02C5653BE977DA67F6523F",
+      "SHA256Hash": "661972615284A191F25B5C9769864B481248E2B905CE8A334804BCC0F4ABB1E6",
+      "DocumentId": "adoc_mm5erwxa_MqcDybJ4ky891cDkQt",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Tamaslim Product Page.pdf",
+      "ContentLength": 1593532,
+      "MD5Hash": "4B682BF0F8E9C9199AA040F3A13BE443",
+      "SHA1Hash": "7D94C286D0755FB9454F98D632AD5AEDA831B051",
+      "SHA256Hash": "6F5D4DEA49A685D2597BD5CF7975A40C4E8604B6C251A8A7AB3D63AD9D50DD67",
+      "DocumentId": "adoc_mm5erwth_AHNkFSNtkaCk7R0vIW",
+      "IsFolder": false
+    }
+  ],
+  "Added": [
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte",
+      "ContentType": "text/html",
+      "ContentLength": 3622,
+      "MD5Hash": "16F7FCBDD9E4FA8344A39763840E92DB",
+      "SHA1Hash": "00D008619E2BE1C38AE6150595B69EAEC3275FA1",
+      "SHA256Hash": "5D9C6BE944DF49AFEF56FF9205EDCE96B22293BC3C62689531BC240490D61605",
+      "DocumentId": "adoc_mm5ert1r_uTbcq6IuJU21veaXms",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/December Megagreens.pdf",
+      "ContentLength": 108112,
+      "MD5Hash": "C5060C5ED5D6DCCE7CECF2702DDB04E2",
+      "SHA1Hash": "B4376E3B29687275C823B010C44A8C43EF72B858",
+      "SHA256Hash": "384C95E36816138E184AC0638B27314B59C95936492D96DA60F1982C327276F2",
+      "DocumentId": "adoc_mm5ert36_AnnXaoYrB0COzd8CvN",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/HOLIDAY%2BWELLNESS%2BGUIDE%2BEBOOK_2025-compressed.pdf",
+      "ContentLength": 1583785,
+      "MD5Hash": "605136F009B2E02D0EEEA45B74CA0F2A",
+      "SHA1Hash": "576A3AB4F5B1B2E75B8B917D07D3DE8B201079B3",
+      "SHA256Hash": "7DA1A02EA956CDE66FCE63E406053A68C8F21DFB5A95097B581D944B8C219E39",
+      "DocumentId": "adoc_mm5ert68_RDmnKtoSUWsGH9NSH0",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/FULL-BODY-S.I.T-WORKOUT-20-MINUTES.pdf",
+      "ContentLength": 3362553,
+      "MD5Hash": "746944CB8622722EA6F49ACB306BC77B",
+      "SHA1Hash": "408CC8ECB8DBA9531DF967B27FAAF62B3AAFE23E",
+      "SHA256Hash": "813D3C4970CD8928EE642F0BA9E3478EE7FF3E0C4574A4AE602905E3A1109E74",
+      "DocumentId": "adoc_mm5ertme_L3UZDzHcZkKCaebLkD",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Keynote svelte summit.pdf",
+      "ContentLength": 120299,
+      "MD5Hash": "C79D8C0489A6516FD4E1BB922CA92869",
+      "SHA1Hash": "E4873EAD6C9CD5757C731F1A0E663721550B037E",
+      "SHA256Hash": "4746E33E1443190350E808BA667161FC3A79618968F1876CC64AB5B09F9A8975",
+      "DocumentId": "adoc_mm5ertza_LDUuaYPYzEitks0bTh",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/10%2BDay%2BMetaBoost%2BMeal%2BPlan_2024.pdf",
+      "ContentLength": 6690233,
+      "MD5Hash": "CD8C7D02393F8F18F82DFA879E151CAF",
+      "SHA1Hash": "08C85F8DE5A6FD55777A9370D4BF11786D6AB511",
+      "SHA256Hash": "ED6B666BA7725B8F49FC78333BADB63B3D5C1FD96535C462D4D979FC1391469B",
+      "DocumentId": "adoc_mm5eru5w_ql2UJPRcnEai7UOpPP",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens promo.pdf",
+      "ContentLength": 98444,
+      "MD5Hash": "33F2ECD827946C24CD7D9CE629D6808B",
+      "SHA1Hash": "5D1DA7183A4AE9EAF2DEAC4456BE36EB9985908D",
+      "SHA256Hash": "AB146448533A7BD2D69FA27FAD97EAAB4984A601151A438DBCC669C59DD6DECB",
+      "DocumentId": "adoc_mm5erwlq_o1ETLx2Fk5gKywzL1D",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Meredeith.pdf",
+      "ContentLength": 4930577,
+      "MD5Hash": "65B7729B283DF8CFBC187F499094CF92",
+      "SHA1Hash": "61562F6F212B8070FB03669A4E1902C93532FBFA",
+      "SHA256Hash": "FD99E916DD86F17692195F791D3493F8E9EC7DA82CC2051C1561D178E21F9D5E",
+      "DocumentId": "adoc_mm5erudy_lnjHqafEtkaSsH3BuR",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Seven Minutes a Day.pdf",
+      "ContentLength": 5796534,
+      "MD5Hash": "54933FF769B4D7168186BDA63A6CBE4A",
+      "SHA1Hash": "FD159302CEF01EA4E0FE46F0B1B84C3D486873C9",
+      "SHA256Hash": "8C43422822257574675E075A3B89E105D7840A805AC449996E822E3DA20D3B81",
+      "DocumentId": "adoc_mm5erv8z_CDyiOWvX5keLX2r9Wj",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte - Understand The Brand.pdf",
+      "ContentLength": 4420972,
+      "MD5Hash": "B35C6C84EF07543E79290ECC4816A86E",
+      "SHA1Hash": "A108CA7261C5F2B66C1EF722ED849FB9FA5FF86D",
+      "SHA256Hash": "F2B4622D054940711311E2D9B68169AA1DE7C1F623941FF07DBA275AA3A6572D",
+      "DocumentId": "adoc_mm5ervjp_tJDeLR9ntEGRE4EaX3",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens Product Page.pdf",
+      "ContentLength": 12959770,
+      "MD5Hash": "6C06C736260B3F3DF388727063A51DDD",
+      "SHA1Hash": "6A86682B6649473C118D8D8044BD4A5C6FAEF0C9",
+      "SHA256Hash": "2F4C14D19FB9A22BCF6F1ADDA215A4C11E2A5B49D1E0C209C4DE6D45DCA1F850",
+      "DocumentId": "adoc_mm5erwpd_vO62CRmYPkSqeJxI7H",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte Training 1.pdf",
+      "ContentLength": 4473410,
+      "MD5Hash": "3205E7189059E508596FC3A7ECD815BA",
+      "SHA1Hash": "296C665F9D86C20689B440E0350FC331EB4BF048",
+      "SHA256Hash": "97D1CBE6FD2D19551E09E4B5256088AB08D8408FBA539454A0470F553B856338",
+      "DocumentId": "adoc_mm5ervry_J20wG3BbJEKdY56nGe",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Vital Youth Product Page.pdf",
+      "ContentLength": 1571655,
+      "MD5Hash": "ABDC89DEE8C598FB622714EB6320A612",
+      "SHA1Hash": "F0A4382E472C55711C02C5653BE977DA67F6523F",
+      "SHA256Hash": "661972615284A191F25B5C9769864B481248E2B905CE8A334804BCC0F4ABB1E6",
+      "DocumentId": "adoc_mm5erwxa_MqcDybJ4ky891cDkQt",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Tamaslim Product Page.pdf",
+      "ContentLength": 1593532,
+      "MD5Hash": "4B682BF0F8E9C9199AA040F3A13BE443",
+      "SHA1Hash": "7D94C286D0755FB9454F98D632AD5AEDA831B051",
+      "SHA256Hash": "6F5D4DEA49A685D2597BD5CF7975A40C4E8604B6C251A8A7AB3D63AD9D50DD67",
+      "DocumentId": "adoc_mm5erwth_AHNkFSNtkaCk7R0vIW",
+      "IsFolder": false
+    }
+  ],
+  "Changed": [],
+  "Deleted": [],
+  "Unchanged": [],
+  "Success": [
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte",
+      "ContentType": "text/html",
+      "ContentLength": 3622,
+      "MD5Hash": "16F7FCBDD9E4FA8344A39763840E92DB",
+      "SHA1Hash": "00D008619E2BE1C38AE6150595B69EAEC3275FA1",
+      "SHA256Hash": "5D9C6BE944DF49AFEF56FF9205EDCE96B22293BC3C62689531BC240490D61605",
+      "DocumentId": "adoc_mm5ert1r_uTbcq6IuJU21veaXms",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/December Megagreens.pdf",
+      "ContentLength": 108112,
+      "MD5Hash": "C5060C5ED5D6DCCE7CECF2702DDB04E2",
+      "SHA1Hash": "B4376E3B29687275C823B010C44A8C43EF72B858",
+      "SHA256Hash": "384C95E36816138E184AC0638B27314B59C95936492D96DA60F1982C327276F2",
+      "DocumentId": "adoc_mm5ert36_AnnXaoYrB0COzd8CvN",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/HOLIDAY%2BWELLNESS%2BGUIDE%2BEBOOK_2025-compressed.pdf",
+      "ContentLength": 1583785,
+      "MD5Hash": "605136F009B2E02D0EEEA45B74CA0F2A",
+      "SHA1Hash": "576A3AB4F5B1B2E75B8B917D07D3DE8B201079B3",
+      "SHA256Hash": "7DA1A02EA956CDE66FCE63E406053A68C8F21DFB5A95097B581D944B8C219E39",
+      "DocumentId": "adoc_mm5ert68_RDmnKtoSUWsGH9NSH0",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/FULL-BODY-S.I.T-WORKOUT-20-MINUTES.pdf",
+      "ContentLength": 3362553,
+      "MD5Hash": "746944CB8622722EA6F49ACB306BC77B",
+      "SHA1Hash": "408CC8ECB8DBA9531DF967B27FAAF62B3AAFE23E",
+      "SHA256Hash": "813D3C4970CD8928EE642F0BA9E3478EE7FF3E0C4574A4AE602905E3A1109E74",
+      "DocumentId": "adoc_mm5ertme_L3UZDzHcZkKCaebLkD",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Keynote svelte summit.pdf",
+      "ContentLength": 120299,
+      "MD5Hash": "C79D8C0489A6516FD4E1BB922CA92869",
+      "SHA1Hash": "E4873EAD6C9CD5757C731F1A0E663721550B037E",
+      "SHA256Hash": "4746E33E1443190350E808BA667161FC3A79618968F1876CC64AB5B09F9A8975",
+      "DocumentId": "adoc_mm5ertza_LDUuaYPYzEitks0bTh",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/10%2BDay%2BMetaBoost%2BMeal%2BPlan_2024.pdf",
+      "ContentLength": 6690233,
+      "MD5Hash": "CD8C7D02393F8F18F82DFA879E151CAF",
+      "SHA1Hash": "08C85F8DE5A6FD55777A9370D4BF11786D6AB511",
+      "SHA256Hash": "ED6B666BA7725B8F49FC78333BADB63B3D5C1FD96535C462D4D979FC1391469B",
+      "DocumentId": "adoc_mm5eru5w_ql2UJPRcnEai7UOpPP",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Meredeith.pdf",
+      "ContentLength": 4930577,
+      "MD5Hash": "65B7729B283DF8CFBC187F499094CF92",
+      "SHA1Hash": "61562F6F212B8070FB03669A4E1902C93532FBFA",
+      "SHA256Hash": "FD99E916DD86F17692195F791D3493F8E9EC7DA82CC2051C1561D178E21F9D5E",
+      "DocumentId": "adoc_mm5erudy_lnjHqafEtkaSsH3BuR",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Seven Minutes a Day.pdf",
+      "ContentLength": 5796534,
+      "MD5Hash": "54933FF769B4D7168186BDA63A6CBE4A",
+      "SHA1Hash": "FD159302CEF01EA4E0FE46F0B1B84C3D486873C9",
+      "SHA256Hash": "8C43422822257574675E075A3B89E105D7840A805AC449996E822E3DA20D3B81",
+      "DocumentId": "adoc_mm5erv8z_CDyiOWvX5keLX2r9Wj",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte - Understand The Brand.pdf",
+      "ContentLength": 4420972,
+      "MD5Hash": "B35C6C84EF07543E79290ECC4816A86E",
+      "SHA1Hash": "A108CA7261C5F2B66C1EF722ED849FB9FA5FF86D",
+      "SHA256Hash": "F2B4622D054940711311E2D9B68169AA1DE7C1F623941FF07DBA275AA3A6572D",
+      "DocumentId": "adoc_mm5ervjp_tJDeLR9ntEGRE4EaX3",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Svelte Training 1.pdf",
+      "ContentLength": 4473410,
+      "MD5Hash": "3205E7189059E508596FC3A7ECD815BA",
+      "SHA1Hash": "296C665F9D86C20689B440E0350FC331EB4BF048",
+      "SHA256Hash": "97D1CBE6FD2D19551E09E4B5256088AB08D8408FBA539454A0470F553B856338",
+      "DocumentId": "adoc_mm5ervry_J20wG3BbJEKdY56nGe",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens promo.pdf",
+      "ContentLength": 98444,
+      "MD5Hash": "33F2ECD827946C24CD7D9CE629D6808B",
+      "SHA1Hash": "5D1DA7183A4AE9EAF2DEAC4456BE36EB9985908D",
+      "SHA256Hash": "AB146448533A7BD2D69FA27FAD97EAAB4984A601151A438DBCC669C59DD6DECB",
+      "DocumentId": "adoc_mm5erwlq_o1ETLx2Fk5gKywzL1D",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Megagreens Product Page.pdf",
+      "ContentLength": 12959770,
+      "MD5Hash": "6C06C736260B3F3DF388727063A51DDD",
+      "SHA1Hash": "6A86682B6649473C118D8D8044BD4A5C6FAEF0C9",
+      "SHA256Hash": "2F4C14D19FB9A22BCF6F1ADDA215A4C11E2A5B49D1E0C209C4DE6D45DCA1F850",
+      "DocumentId": "adoc_mm5erwpd_vO62CRmYPkSqeJxI7H",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Tamaslim Product Page.pdf",
+      "ContentLength": 1593532,
+      "MD5Hash": "4B682BF0F8E9C9199AA040F3A13BE443",
+      "SHA1Hash": "7D94C286D0755FB9454F98D632AD5AEDA831B051",
+      "SHA256Hash": "6F5D4DEA49A685D2597BD5CF7975A40C4E8604B6C251A8A7AB3D63AD9D50DD67",
+      "DocumentId": "adoc_mm5erwth_AHNkFSNtkaCk7R0vIW",
+      "IsFolder": false
+    },
+    {
+      "Key": "http://ec2-3-144-17-87.us-east-2.compute.amazonaws.com:9000/download/svelte/Vital Youth Product Page.pdf",
+      "ContentLength": 1571655,
+      "MD5Hash": "ABDC89DEE8C598FB622714EB6320A612",
+      "SHA1Hash": "F0A4382E472C55711C02C5653BE977DA67F6523F",
+      "SHA256Hash": "661972615284A191F25B5C9769864B481248E2B905CE8A334804BCC0F4ABB1E6",
+      "DocumentId": "adoc_mm5erwxa_MqcDybJ4ky891cDkQt",
+      "IsFolder": false
+    }
+  ],
+  "Failed": [],
+  "Statistics": {
+    "TotalCount": 14,
+    "TotalBytes": 47713498,
+    "AddedCount": 14,
+    "AddedBytes": 47713498,
+    "ChangedCount": 0,
+    "ChangedBytes": 0,
+    "DeletedCount": 0,
+    "DeletedBytes": 0,
+    "SuccessCount": 14,
+    "SuccessBytes": 47713498,
+    "FailedCount": 0,
+    "FailedBytes": 0
+  }
+}

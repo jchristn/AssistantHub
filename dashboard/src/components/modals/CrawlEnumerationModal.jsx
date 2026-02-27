@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
+import CopyButton from '../CopyButton';
 
 function formatFileSize(bytes) {
   if (bytes == null) return '';
@@ -98,7 +99,7 @@ function CrawlEnumerationModal({ api, planId, operationId, onClose }) {
   ] : [];
 
   return (
-    <Modal title="Crawl Enumeration" onClose={onClose} extraWide footer={
+    <Modal title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>Crawl Enumeration{data && <CopyButton text={JSON.stringify(data, null, 2)} />}</span>} onClose={onClose} extraWide footer={
       <button className="btn btn-secondary" onClick={onClose}>Close</button>
     }>
       {loading ? (

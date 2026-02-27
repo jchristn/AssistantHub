@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -13,6 +14,7 @@ import Tooltip from '../components/Tooltip';
 
 function CrawlersView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(null); // null | 'create' | crawlPlan object
   const [showJson, setShowJson] = useState(null);
@@ -42,6 +44,15 @@ function CrawlersView() {
       }
     })();
   }, [serverUrl, credential]);
+
+  // Auto-open operations modal when navigated from Documents view
+  useEffect(() => {
+    const planId = searchParams.get('plan');
+    if (planId) {
+      setShowOperations({ Id: planId, Name: planId });
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this crawl plan', filterable: true, render: (row) => <CopyableId id={row.Id || row.GUID} /> },
@@ -114,9 +125,10 @@ function CrawlersView() {
   };
 
   const handleTestConnectivity = async (row) => {
+    setAlert({ title: 'Connectivity Test', message: 'Testing connectivity to ' + (row.Name || row.Id) + '...', loading: true });
     try {
       const result = await api.testCrawlConnectivity(row.Id || row.GUID);
-      setAlert({ title: 'Connectivity Test', message: result?.Message || result?.Success ? 'Connectivity test succeeded.' : 'Connectivity test completed.' });
+      setAlert({ title: 'Connectivity Test', message: result?.Message || (result?.Success ? 'Connectivity test succeeded.' : 'Connectivity test completed.') });
     } catch (err) {
       setAlert({ title: 'Connectivity Test Failed', message: err.message || 'Failed to test connectivity' });
     }
@@ -186,7 +198,7 @@ function CrawlersView() {
         />
       )}
       {deleteTarget && <ConfirmModal title="Delete Crawl Plan" message={`Are you sure you want to delete crawl plan "${deleteTarget.Name || deleteTarget.Id}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
-      {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
+      {alert && <AlertModal title={alert.title} message={alert.message} loading={alert.loading} onClose={() => setAlert(null)} />}
     </div>
   );
 }

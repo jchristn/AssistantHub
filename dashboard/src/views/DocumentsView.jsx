@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -33,6 +34,7 @@ function getStatusBadgeClass(status) {
 
 function DocumentsView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
+  const navigate = useNavigate();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showUpload, setShowUpload] = useState(false);
   const [showJson, setShowJson] = useState(null);
@@ -139,7 +141,7 @@ function DocumentsView() {
     ];
     if (row.CrawlOperationId) {
       actions.push({ label: 'View Crawl Operation', onClick: () => {
-        window.open(`#/crawlers?op=${row.CrawlOperationId}&plan=${row.CrawlPlanId}`, '_self');
+        navigate(`/crawlers?op=${row.CrawlOperationId}&plan=${row.CrawlPlanId}`);
       }});
     }
     actions.push({ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) });

@@ -16,10 +16,9 @@ RUN dotnet restore AssistantHub.Server/AssistantHub.Server.csproj
 COPY . .
 RUN dotnet publish AssistantHub.Server/AssistantHub.Server.csproj -c Release -o /app/publish
 
-# Install Playwright browsers (Chromium and Firefox).
-# CrawlSharp uses Playwright for headless browser crawling and requires both.
+# Pre-install Playwright Firefox browser.
+# CrawlSharp uses Playwright Firefox for headless browser crawling.
 # Pre-installing here avoids a slow download on first crawl at runtime.
-RUN pwsh /app/publish/playwright.ps1 install chromium
 RUN pwsh /app/publish/playwright.ps1 install firefox
 
 

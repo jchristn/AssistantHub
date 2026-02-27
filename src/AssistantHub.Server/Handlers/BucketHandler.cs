@@ -671,7 +671,7 @@ namespace AssistantHub.Server.Handlers
                             }
                         }
 
-                        continuationToken = listResponse.IsTruncated ? listResponse.NextContinuationToken : null;
+                        continuationToken = (listResponse.IsTruncated == true) ? listResponse.NextContinuationToken : null;
                     } while (continuationToken != null);
 
                     // Attempt to delete the folder marker object itself (ignore 404)

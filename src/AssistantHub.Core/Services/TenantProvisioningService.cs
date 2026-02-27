@@ -346,7 +346,7 @@ namespace AssistantHub.Core.Services
                                     }
                                 }
 
-                                continuationToken = objResponse.IsTruncated ? objResponse.NextContinuationToken : null;
+                                continuationToken = (objResponse.IsTruncated == true) ? objResponse.NextContinuationToken : null;
                             } while (continuationToken != null);
 
                             await _S3Client.DeleteBucketAsync(bucket.BucketName).ConfigureAwait(false);

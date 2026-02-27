@@ -22,6 +22,7 @@ function Sidebar({ onStartTour, onStartWizard }) {
       adminOnly: false,
       items: [
         { path: '/documents', label: 'Documents', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
+        { path: '/crawlers', label: 'Crawlers', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> },
       ],
     },
     {
@@ -86,6 +87,7 @@ function Sidebar({ onStartTour, onStartWizard }) {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {item.tag && <span className="sidebar-tag">{item.tag}</span>}
                   </button>
                 );
               })}

@@ -131,7 +131,11 @@ namespace AssistantHub.Core.Services
             rule.CollectionName = "default";
             rule.CollectionId = collectionId ?? "default";
             rule.Chunking = new IngestionChunkingConfig();
-            rule.Embedding = new IngestionEmbeddingConfig();
+            rule.Embedding = new IngestionEmbeddingConfig
+            {
+                EmbeddingEndpointId = "default",
+                L2Normalization = true
+            };
             rule.CreatedUtc = DateTime.UtcNow;
             rule.LastUpdateUtc = DateTime.UtcNow;
 
@@ -342,7 +346,7 @@ namespace AssistantHub.Core.Services
                                     }
                                 }
 
-                                continuationToken = objResponse.IsTruncated ? objResponse.NextContinuationToken : null;
+                                continuationToken = (objResponse.IsTruncated == true) ? objResponse.NextContinuationToken : null;
                             } while (continuationToken != null);
 
                             await _S3Client.DeleteBucketAsync(bucket.BucketName).ConfigureAwait(false);

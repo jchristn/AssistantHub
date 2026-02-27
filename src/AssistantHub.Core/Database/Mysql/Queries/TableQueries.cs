@@ -118,6 +118,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `labels_json` TEXT, " +
             "  `tags_json` TEXT, " +
             "  `chunk_record_ids` TEXT, " +
+            "  `crawl_plan_id` TEXT, " +
+            "  `crawl_operation_id` TEXT, " +
+            "  `source_url` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -153,6 +156,61 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `summarization_json` TEXT, " +
             "  `chunking_json` TEXT, " +
             "  `embedding_json` TEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
+        internal static string CreateCrawlPlansTable =
+            "CREATE TABLE IF NOT EXISTS `crawl_plans` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
+            "  `name` TEXT NOT NULL, " +
+            "  `repository_type` VARCHAR(32) NOT NULL DEFAULT 'Web', " +
+            "  `ingestion_settings_json` TEXT, " +
+            "  `repository_settings_json` TEXT, " +
+            "  `schedule_json` TEXT, " +
+            "  `filter_json` TEXT, " +
+            "  `process_additions` TINYINT(1) NOT NULL DEFAULT 1, " +
+            "  `process_updates` TINYINT(1) NOT NULL DEFAULT 1, " +
+            "  `process_deletions` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `max_drain_tasks` INT NOT NULL DEFAULT 8, " +
+            "  `retention_days` INT NOT NULL DEFAULT 7, " +
+            "  `state` VARCHAR(32) NOT NULL DEFAULT 'Stopped', " +
+            "  `last_crawl_start_utc` TEXT, " +
+            "  `last_crawl_finish_utc` TEXT, " +
+            "  `last_crawl_success` TINYINT(1), " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
+        internal static string CreateCrawlOperationsTable =
+            "CREATE TABLE IF NOT EXISTS `crawl_operations` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
+            "  `crawl_plan_id` VARCHAR(256) NOT NULL, " +
+            "  `state` VARCHAR(32) NOT NULL DEFAULT 'NotStarted', " +
+            "  `status_message` TEXT, " +
+            "  `objects_enumerated` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_enumerated` BIGINT NOT NULL DEFAULT 0, " +
+            "  `objects_added` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_added` BIGINT NOT NULL DEFAULT 0, " +
+            "  `objects_updated` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_updated` BIGINT NOT NULL DEFAULT 0, " +
+            "  `objects_deleted` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_deleted` BIGINT NOT NULL DEFAULT 0, " +
+            "  `objects_success` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_success` BIGINT NOT NULL DEFAULT 0, " +
+            "  `objects_failed` INT NOT NULL DEFAULT 0, " +
+            "  `bytes_failed` BIGINT NOT NULL DEFAULT 0, " +
+            "  `enumeration_file` TEXT, " +
+            "  `start_utc` TEXT, " +
+            "  `start_enumeration_utc` TEXT, " +
+            "  `finish_enumeration_utc` TEXT, " +
+            "  `start_retrieval_utc` TEXT, " +
+            "  `finish_retrieval_utc` TEXT, " +
+            "  `finish_utc` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -252,6 +310,30 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateAssistantDocumentsTenantIdIndex =
             "CREATE INDEX idx_assistant_documents_tenant_id ON `assistant_documents` (`tenant_id`)";
+
+        // Crawl plans indices
+        internal static string CreateCrawlPlansTenantIdIndex =
+            "CREATE INDEX idx_crawl_plans_tenant_id ON `crawl_plans` (`tenant_id`)";
+
+        internal static string CreateCrawlPlansStateIndex =
+            "CREATE INDEX idx_crawl_plans_state ON `crawl_plans` (`state`(191))";
+
+        // Crawl operations indices
+        internal static string CreateCrawlOperationsTenantIdIndex =
+            "CREATE INDEX idx_crawl_operations_tenant_id ON `crawl_operations` (`tenant_id`)";
+
+        internal static string CreateCrawlOperationsCrawlPlanIdIndex =
+            "CREATE INDEX idx_crawl_operations_crawl_plan_id ON `crawl_operations` (`crawl_plan_id`)";
+
+        internal static string CreateCrawlOperationsCreatedUtcIndex =
+            "CREATE INDEX idx_crawl_operations_created_utc ON `crawl_operations` (`created_utc`(191))";
+
+        // Assistant documents crawl indices
+        internal static string CreateAssistantDocumentsCrawlPlanIdIndex =
+            "CREATE INDEX idx_assistant_documents_crawl_plan_id ON `assistant_documents` (`crawl_plan_id`(191))";
+
+        internal static string CreateAssistantDocumentsCrawlOperationIdIndex =
+            "CREATE INDEX idx_assistant_documents_crawl_operation_id ON `assistant_documents` (`crawl_operation_id`(191))";
 
         // Chat history indices
         internal static string CreateChatHistoryAssistantIdIndex =

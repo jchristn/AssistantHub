@@ -114,7 +114,8 @@ echo "[5/6] Clearing logs and history..."
 
 rm -f "$DOCKER_DIR/assistanthub/logs/"*
 rm -rf "$DOCKER_DIR/assistanthub/processing-logs/"*
-echo "        Cleared AssistantHub logs and processing logs"
+rm -rf "$DOCKER_DIR/assistanthub/crawl-enumerations/"*
+echo "        Cleared AssistantHub logs, processing logs, and crawl enumerations"
 
 rm -f "$DOCKER_DIR/less3/logs/"*
 echo "        Cleared Less3 logs"

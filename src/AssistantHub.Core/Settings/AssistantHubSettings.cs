@@ -70,6 +70,15 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
+        /// Embeddings service settings.
+        /// </summary>
+        public EmbeddingsSettings Embeddings
+        {
+            get => _Embeddings;
+            set { if (value != null) _Embeddings = value; }
+        }
+
+        /// <summary>
         /// Inference service settings.
         /// </summary>
         public InferenceSettings Inference
@@ -114,6 +123,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _ChatHistory = value; }
         }
 
+        /// <summary>
+        /// Crawl settings.
+        /// </summary>
+        public CrawlSettings Crawl
+        {
+            get => _Crawl;
+            set { if (value != null) _Crawl = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -123,12 +141,14 @@ namespace AssistantHub.Core.Settings
         private S3Settings _S3 = new S3Settings();
         private DocumentAtomSettings _DocumentAtom = new DocumentAtomSettings();
         private ChunkingSettings _Chunking = new ChunkingSettings();
+        private EmbeddingsSettings _Embeddings = new EmbeddingsSettings();
         private InferenceSettings _Inference = new InferenceSettings();
         private RecallDbSettings _RecallDb = new RecallDbSettings();
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();
         private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
+        private CrawlSettings _Crawl = new CrawlSettings();
 
         #endregion
 

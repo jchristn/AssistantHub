@@ -28,19 +28,24 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.4.0
+## New in v0.5.0
 
-- **Full multi-tenancy** -- Row-level tenant isolation across all entities. Each tenant operates in complete isolation within a shared deployment
-- **Tenant management** -- CRUD API and dashboard view for creating, updating, and deleting tenants with auto-provisioning of default resources (admin user, credential, RecallDB tenant, collection, S3 bucket, ingestion rule)
-- **Protected records** -- Default tenant, admin user, and credential are marked `IsProtected = true` and cannot be deleted (returns 403). Deactivate by setting `Active = false` instead
-- **Three-tier authorization** -- Global Admin (admin API keys or users with `IsAdmin=true`), Tenant Admin, and Tenant User roles with appropriate access controls
-- **Per-tenant storage isolation** -- Each tenant gets dedicated S3 buckets prefixed with `{tenantId}_`; processing logs namespaced by tenant; 1:1 RecallDB tenant mapping
-- **Tenant-scoped API routes** -- Users and credentials accessed via `/v1.0/tenants/{tenantId}/...`; WhoAmI endpoint for authentication context
-- **Dashboard tenant awareness** -- Tenant name and role badges, conditional admin sections, Tenant column in data views for global admins
-- **Automatic data migration** -- Seamless v0.4.0 upgrade across all 4 database drivers
+- **Native web crawlers** -- Built-in web crawling engine that automatically discovers, retrieves, and ingests website content. Configure a URL, schedule, and ingestion rule, and AssistantHub handles the rest
+- **Crawl plans and scheduling** -- Persistent crawler configurations with automatic recurring execution on configurable intervals (one-time, minutes, hours, days, weeks)
+- **Delta-based crawling** -- Subsequent crawls compare against the previous enumeration to process only new, changed, and deleted content
+- **Document traceability** -- Every crawled document is linked back to its source crawler and operation. Filter the Documents view by crawler to see all ingested content
+- **On-demand controls** -- Start, stop, test connectivity, and preview discovered content from the dashboard or API
+- **Full dashboard integration** -- Crawlers management view, operations viewer with statistics, enumeration browser, and Documents view integration
+- **16 new API endpoints** -- Complete CRUD, lifecycle control, statistics, and enumeration access for crawl plans and operations
 - See [CHANGELOG.md](CHANGELOG.md) for full details
 
 ## v0.4.0
+
+- **Query rewrite** -- LLM-based query rewriting for improved retrieval recall
+- **Full multi-tenancy** -- Row-level tenant isolation, three-tier authorization, auto-provisioning, tenant-scoped routes
+- See [CHANGELOG.md](CHANGELOG.md) for full details
+
+## v0.3.0
 
 - **Initial release** with multi-assistant platform, automated document ingestion, flexible search modes, streaming chat, and browser-based dashboard
 - See [CHANGELOG.md](CHANGELOG.md) for full details
@@ -51,6 +56,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 - **Assistants** -- Create and manage multiple AI assistants, each with their own configuration, personality, and knowledge base.
 - **Documents** -- Upload documents (PDF, text, HTML, and more) to build a knowledge base for each assistant. Documents are automatically chunked, embedded, and indexed.
+- **Crawlers** -- Native web crawling engine that automatically discovers, retrieves, and ingests website content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, and web authentication (Basic, API Key, Bearer Token). Each crawled document is traceable back to its source crawler and operation.
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
 - **Endpoint Management** -- Manage embedding and completion (inference) endpoints on the Partio service directly from the dashboard or API.
@@ -258,6 +264,9 @@ The server reads configuration from `assistanthub.json` in the working directory
   "ChatHistory": {
     "RetentionDays": 7
   },
+  "Crawl": {
+    "EnumerationDirectory": "./crawl-enumerations/"
+  },
   "Logging": {
     "ConsoleLogging": true,
     "EnableColors": false,
@@ -286,6 +295,7 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
 | `ProcessingLog` | Directory and retention for per-document processing logs (namespaced by tenant). |
 | `ChatHistory` | Retention period in days for chat history records (0 = keep indefinitely). Background cleanup runs hourly. |
+| `Crawl` | Directory for storing crawl enumeration files (delta snapshots used for change detection between crawl runs). |
 | `Logging` | Console/file logging toggles, severity level, log directory, and optional syslog servers. |
 
 ---
@@ -338,6 +348,8 @@ For complete endpoint documentation including request/response schemas and examp
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health` | Partio completion endpoint management (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
 | Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings` | Per-assistant inference and RAG configuration (owner or admin) |
+| Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |
+| Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
 | Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |
 | Feedback | `GET /v1.0/feedback`, `GET/DELETE /v1.0/feedback/{id}` | View and manage user feedback |
 | History | `GET /v1.0/history`, `GET/DELETE /v1.0/history/{id}` | View and manage chat history with timing metrics |

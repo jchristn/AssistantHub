@@ -113,6 +113,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  labels_json TEXT, " +
             "  tags_json TEXT, " +
             "  chunk_record_ids TEXT, " +
+            "  crawl_plan_id TEXT, " +
+            "  crawl_operation_id TEXT, " +
+            "  source_url TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -146,6 +149,59 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  summarization_json TEXT, " +
             "  chunking_json TEXT, " +
             "  embedding_json TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateCrawlPlansTable =
+            "CREATE TABLE IF NOT EXISTS crawl_plans (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  name TEXT NOT NULL, " +
+            "  repository_type TEXT NOT NULL DEFAULT 'Web', " +
+            "  ingestion_settings_json TEXT, " +
+            "  repository_settings_json TEXT, " +
+            "  schedule_json TEXT, " +
+            "  filter_json TEXT, " +
+            "  process_additions INTEGER NOT NULL DEFAULT 1, " +
+            "  process_updates INTEGER NOT NULL DEFAULT 1, " +
+            "  process_deletions INTEGER NOT NULL DEFAULT 0, " +
+            "  max_drain_tasks INTEGER NOT NULL DEFAULT 8, " +
+            "  retention_days INTEGER NOT NULL DEFAULT 7, " +
+            "  state TEXT NOT NULL DEFAULT 'Stopped', " +
+            "  last_crawl_start_utc TEXT, " +
+            "  last_crawl_finish_utc TEXT, " +
+            "  last_crawl_success INTEGER, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateCrawlOperationsTable =
+            "CREATE TABLE IF NOT EXISTS crawl_operations (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  crawl_plan_id TEXT NOT NULL, " +
+            "  state TEXT NOT NULL DEFAULT 'NotStarted', " +
+            "  status_message TEXT, " +
+            "  objects_enumerated INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_enumerated INTEGER NOT NULL DEFAULT 0, " +
+            "  objects_added INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_added INTEGER NOT NULL DEFAULT 0, " +
+            "  objects_updated INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_updated INTEGER NOT NULL DEFAULT 0, " +
+            "  objects_deleted INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_deleted INTEGER NOT NULL DEFAULT 0, " +
+            "  objects_success INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_success INTEGER NOT NULL DEFAULT 0, " +
+            "  objects_failed INTEGER NOT NULL DEFAULT 0, " +
+            "  bytes_failed INTEGER NOT NULL DEFAULT 0, " +
+            "  enumeration_file TEXT, " +
+            "  start_utc TEXT, " +
+            "  start_enumeration_utc TEXT, " +
+            "  finish_enumeration_utc TEXT, " +
+            "  start_retrieval_utc TEXT, " +
+            "  finish_retrieval_utc TEXT, " +
+            "  finish_utc TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -247,6 +303,27 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateChatHistoryCreatedUtcIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc)";
+
+        internal static string CreateCrawlPlansTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans (tenant_id)";
+
+        internal static string CreateCrawlPlansStateIndex =
+            "CREATE INDEX IF NOT EXISTS idx_crawl_plans_state ON crawl_plans (state)";
+
+        internal static string CreateCrawlOperationsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_crawl_operations_tenant_id ON crawl_operations (tenant_id)";
+
+        internal static string CreateCrawlOperationsCrawlPlanIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_crawl_operations_crawl_plan_id ON crawl_operations (crawl_plan_id)";
+
+        internal static string CreateCrawlOperationsCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_crawl_operations_created_utc ON crawl_operations (created_utc)";
+
+        internal static string CreateAssistantDocumentsCrawlPlanIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_plan_id ON assistant_documents (crawl_plan_id)";
+
+        internal static string CreateAssistantDocumentsCrawlOperationIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_operation_id ON assistant_documents (crawl_operation_id)";
 
         #endregion
     }

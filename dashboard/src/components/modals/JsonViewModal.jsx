@@ -3,7 +3,8 @@ import Modal from '../Modal';
 import CopyButton from '../CopyButton';
 
 function JsonViewModal({ title, data, onClose }) {
-  const json = JSON.stringify(data, null, 2);
+  const { statusCode, ...displayData } = data || {};
+  const json = JSON.stringify(displayData, null, 2);
 
   return (
     <Modal title={title || 'JSON View'} onClose={onClose} wide footer={

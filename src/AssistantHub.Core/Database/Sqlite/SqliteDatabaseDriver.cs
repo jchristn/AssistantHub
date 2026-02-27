@@ -56,6 +56,8 @@ namespace AssistantHub.Core.Database.Sqlite
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
+            CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
         }
 
         #endregion

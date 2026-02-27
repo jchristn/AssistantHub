@@ -107,6 +107,24 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate a crawl plan identifier.
+        /// </summary>
+        /// <returns>Crawl plan identifier.</returns>
+        public static string NewCrawlPlanId()
+        {
+            return _Generator.GenerateKSortable(Constants.CrawlPlanIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
+        /// Generate a crawl operation identifier.
+        /// </summary>
+        /// <returns>Crawl operation identifier.</returns>
+        public static string NewCrawlOperationId()
+        {
+            return _Generator.GenerateKSortable(Constants.CrawlOperationIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a chat completion identifier.
         /// </summary>
         /// <returns>Chat completion identifier.</returns>

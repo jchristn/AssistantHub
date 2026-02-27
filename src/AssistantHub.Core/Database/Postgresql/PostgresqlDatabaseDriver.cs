@@ -51,6 +51,8 @@ namespace AssistantHub.Core.Database.Postgresql
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             Tenant = new TenantMethods(this, _Settings, _Logging);
+            CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
+            CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
         }
 
         #endregion
@@ -91,7 +93,16 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.CreateChatHistoryTenantIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
-                TableQueries.CreateChatHistoryCreatedUtcIndex
+                TableQueries.CreateChatHistoryCreatedUtcIndex,
+                TableQueries.CreateCrawlPlansTable,
+                TableQueries.CreateCrawlOperationsTable,
+                TableQueries.CreateCrawlPlansTenantIdIndex,
+                TableQueries.CreateCrawlPlansStateIndex,
+                TableQueries.CreateCrawlOperationsTenantIdIndex,
+                TableQueries.CreateCrawlOperationsCrawlPlanIdIndex,
+                TableQueries.CreateCrawlOperationsCreatedUtcIndex,
+                TableQueries.CreateAssistantDocumentsCrawlPlanIdIndex,
+                TableQueries.CreateAssistantDocumentsCrawlOperationIdIndex
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);

@@ -113,7 +113,9 @@ echo [5/6] Clearing logs and history...
 del /q "%DOCKER_DIR%assistanthub\logs\*" 2>nul
 rd /s /q "%DOCKER_DIR%assistanthub\processing-logs" 2>nul
 mkdir "%DOCKER_DIR%assistanthub\processing-logs" 2>nul
-echo         Cleared AssistantHub logs and processing logs
+rd /s /q "%DOCKER_DIR%assistanthub\crawl-enumerations" 2>nul
+mkdir "%DOCKER_DIR%assistanthub\crawl-enumerations" 2>nul
+echo         Cleared AssistantHub logs, processing logs, and crawl enumerations
 
 del /q "%DOCKER_DIR%less3\logs\*" 2>nul
 echo         Cleared Less3 logs

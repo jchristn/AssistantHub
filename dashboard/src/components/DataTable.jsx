@@ -173,7 +173,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
                 </th>
               )}
               {columns.map((col) => (
-                <th key={col.key} onClick={() => handleSort(col.key)}>
+                <th key={col.key} style={col.style} onClick={() => handleSort(col.key)}>
                   <span className="th-content">
                     <Tooltip text={col.tooltip}>{col.label}</Tooltip>
                     {sortKey === col.key && (
@@ -227,7 +227,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
                     </td>
                   )}
                   {columns.map((col) => (
-                    <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>
+                    <td key={col.key} style={col.style}>{col.render ? col.render(row) : row[col.key]}</td>
                   ))}
                   {getRowActions && (
                     <td className="actions-cell">

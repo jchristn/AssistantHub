@@ -12,13 +12,26 @@ function ActionMenu({ items }) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + 4,
-        left: rect.right - 160
+        left: rect.right - 160,
+        triggerTop: rect.top,
+        triggerBottom: rect.bottom,
       });
     }
     setOpen(true);
   };
 
   const handleClose = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open || !menuRef.current) return;
+    const menuRect = menuRef.current.getBoundingClientRect();
+    if (menuRect.bottom > window.innerHeight) {
+      setPosition((prev) => ({
+        ...prev,
+        top: prev.triggerTop - menuRect.height - 4,
+      }));
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

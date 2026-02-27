@@ -63,6 +63,7 @@ namespace AssistantHub.Core.Services
         /// <summary>
         /// Retrieve relevant document chunks for a given query.
         /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="collectionId">Collection identifier.</param>
         /// <param name="query">Search query text.</param>
         /// <param name="topK">Number of top results to retrieve.</param>

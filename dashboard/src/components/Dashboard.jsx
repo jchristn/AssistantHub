@@ -22,6 +22,7 @@ import AssistantSettingsView from '../views/AssistantSettingsView';
 import IngestionRulesView from '../views/IngestionRulesView';
 import EmbeddingEndpointsView from '../views/EmbeddingEndpointsView';
 import InferenceEndpointsView from '../views/InferenceEndpointsView';
+import CrawlersView from '../views/CrawlersView';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
@@ -79,6 +80,7 @@ function Dashboard() {
             {isAdmin && <Route path="/endpoints/inference" element={<InferenceEndpointsView />} />}
             {isAdminOrTenantAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
             <Route path="/documents" element={<DocumentsView />} />
+            <Route path="/crawlers" element={<CrawlersView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/history" element={<HistoryView />} />
             <Route path="/models" element={<ModelsView />} />

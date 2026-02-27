@@ -1,6 +1,34 @@
 # Changelog
 
-## Current Version: v0.4.0
+## Current Version: v0.5.0
+
+### Native Crawlers
+
+- **Web crawler engine** -- Built-in web crawling powered by CrawlSharp. Automatically discovers, retrieves, and ingests content from websites. Supports link following, sitemap extraction, robots.txt compliance, and configurable crawl depth, parallelism, and throttling
+- **Crawl plans** -- Persistent crawler configurations that define what to crawl, how to crawl it, and what to do with the results. Each plan specifies a target URL, authentication, schedule, filters, ingestion rule, and processing options
+- **Scheduled crawling** -- Automatic recurring crawls on configurable intervals (one-time, minutes, hours, days, weeks). Background scheduler service checks all plans every 60 seconds and launches crawls when due
+- **Crawl operations** -- Each crawl execution is tracked as a separate operation with full lifecycle state (NotStarted, Starting, Enumerating, Retrieving, Success, Failed, Stopped, Canceled) and detailed counters for objects/bytes enumerated, added, updated, deleted, succeeded, and failed
+- **Delta-based crawling** -- Crawl enumerations are persisted to disk as JSON files. Subsequent crawls compare against the previous enumeration to identify new, changed, deleted, and unchanged objects, processing only the delta
+- **Document traceability** -- Crawled documents are linked back to their crawl plan and operation via `CrawlPlanId`, `CrawlOperationId`, and `SourceUrl` fields on `AssistantDocument`. Filter the Documents view by crawler to see all documents from a specific crawl plan
+- **Web authentication** -- Support for None, Basic (username/password), API Key (custom header), and Bearer Token authentication when crawling protected sites
+- **Crawl filters** -- Optional content type whitelist, object prefix/suffix matching, and minimum/maximum file size constraints to control which discovered resources are ingested
+- **Configurable processing** -- Per-plan control over whether additions, updates, and deletions are processed. Configurable maximum concurrent drain tasks (1-64) for parallel ingestion
+- **Operation retention** -- Per-plan retention period (0-14 days) with automatic cleanup of expired operations and their enumeration files by a background service running hourly
+- **Startup recovery** -- The scheduler service detects any crawl plans left in a Running state from a previous unclean shutdown and resets them to Stopped with the last operation marked as Failed
+- **On-demand controls** -- Start and stop crawls immediately via API or dashboard, independent of the schedule
+- **Connectivity testing** -- Test crawl plan connectivity before running a full crawl. The API performs a single-page fetch against the configured URL and reports success/failure
+- **Content enumeration** -- Preview what a crawl plan would discover without ingesting anything. The API returns the list of discovered resources with metadata
+- **Crawl operations statistics** -- Aggregate and per-operation statistics including run counts, success/failure rates, runtime min/max/avg, total objects and bytes crawled, and next scheduled run time
+- **Dashboard: Crawlers view** -- Full management UI for crawl plans with DataTable listing, create/edit form modal with collapsible sections (General, Ingestion, Repository Settings, Schedule, Filter, Processing, Retention), row actions (Start, Stop, Edit, View Operations, View JSON, Verify Connectivity, Enumerate Contents, Delete), and bulk delete
+- **Dashboard: Operations modal** -- Statistics panel with aggregate metrics, operations table with status badges, per-operation actions (View Enumeration, Delete)
+- **Dashboard: Enumeration viewer** -- Collapsible sections for All Files, New Files, Changed Files, Deleted Files, Successfully Crawled, and Failed, each with count/size summary and expandable file table
+- **Dashboard: Documents integration** -- Crawler filter dropdown in Documents view, "Crawled" badge on crawler-produced documents, "View Crawl Operation" context menu action
+- **Extensible crawler architecture** -- Abstract `CrawlerBase` class with `CrawlerFactory` pattern. Web is the first implementation; future repository types (S3, SFTP, etc.) can be added by implementing `CrawlerBase` and extending `RepositoryTypeEnum`
+- **API endpoints** -- 16 new authenticated routes: CRUD for crawl plans (`/v1.0/crawlplans`), start/stop/connectivity/enumerate actions, and crawl operations sub-resource with statistics and enumeration file access
+- **Database support** -- Full schema for all 4 database drivers (SQLite, PostgreSQL, MySQL, SQL Server) with new `crawl_plans` and `crawl_operations` tables plus indexes
+- **Breaking change** -- v0.5.0 includes schema changes to add `crawl_plans` and `crawl_operations` tables and add `crawl_plan_id`, `crawl_operation_id`, `source_url` columns to `assistant_documents`. A migration script is provided at `migrations/003_upgrade_to_v0.5.0.sql`
+
+## v0.4.0
 
 ### Query Rewrite
 

@@ -46,10 +46,19 @@
   ],
   "DefaultEmbeddingEndpoints": [
     {
+      "Name": "all-minilm",
       "Model": "all-minilm",
       "Endpoint": "http://ollama:11434",
       "ApiFormat": "Ollama",
       "ApiKey": null
+    }
+  ],
+  "DefaultInferenceEndpoints": [
+    {
+      "Name": "gemma3:4b",
+      "Model": "gemma3:4b",
+      "Endpoint": "http://ollama:11434",
+      "ApiFormat": "Ollama"
     }
   ]
 }

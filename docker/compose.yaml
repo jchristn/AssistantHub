@@ -88,7 +88,7 @@ services:
   # --- Summarization, Chunking, Embedding (Partio) ---
 
   partio-server:
-    image: jchristn77/partio-server:v0.4.0
+    image: jchristn77/partio-server:v0.2.0
     container_name: assistanthub-partio-server
     ports:
       - "8321:8400"
@@ -108,7 +108,7 @@ services:
     restart: unless-stopped
 
   partio-dashboard:
-    image: jchristn77/partio-dashboard:v0.4.0
+    image: jchristn77/partio-dashboard:v0.2.0
     container_name: assistanthub-partio-dashboard
     ports:
       - "8322:8401"
@@ -234,6 +234,7 @@ services:
       - ./assistanthub/data/:/app/data/
       - ./assistanthub/logs/:/app/logs/
       - ./assistanthub/processing-logs/:/app/processing-logs/
+      - ./assistanthub/crawl-enumerations/:/app/crawl-enumerations/
     depends_on:
       assistanthub-db-init:
         condition: service_completed_successfully

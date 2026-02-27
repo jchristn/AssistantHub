@@ -41,6 +41,8 @@ namespace AssistantHub.Server
         private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
         private static EndpointHealthCheckService _HealthCheckService = null;
+        private static CrawlSchedulerService _CrawlScheduler = null;
+        private static CrawlOperationCleanupService _CrawlOperationCleanup = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
         private static bool _ShuttingDown = false;
 
@@ -68,6 +70,7 @@ namespace AssistantHub.Server
             await StartHealthCheckServiceAsync();
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
+            await StartCrawlServicesAsync();
             InitializeWebserver();
 
             _Logging.Info(_Header + "server started on " + _Settings.Webserver.Hostname + ":" + _Settings.Webserver.Port);
@@ -255,7 +258,11 @@ namespace AssistantHub.Server
             defaultRule.CollectionName = "default";
             defaultRule.CollectionId = "default";
             defaultRule.Chunking = new IngestionChunkingConfig();
-            defaultRule.Embedding = new IngestionEmbeddingConfig();
+            defaultRule.Embedding = new IngestionEmbeddingConfig
+            {
+                EmbeddingEndpointId = "default",
+                L2Normalization = true
+            };
             defaultRule.CreatedUtc = DateTime.UtcNow;
             defaultRule.LastUpdateUtc = DateTime.UtcNow;
             defaultRule = await _Database.IngestionRule.CreateAsync(defaultRule).ConfigureAwait(false);
@@ -363,6 +370,12 @@ namespace AssistantHub.Server
                     _Settings.Chunking.Endpoint.TrimEnd('/') + "/",
                     bearerToken: _Settings.Chunking.AccessKey);
 
+                // Embeddings (Partio) - HEAD request
+                allSucceeded &= await CheckServiceAsync(http, "Embeddings (Partio)",
+                    System.Net.Http.HttpMethod.Head,
+                    _Settings.Embeddings.Endpoint.TrimEnd('/') + "/",
+                    bearerToken: _Settings.Embeddings.AccessKey);
+
                 // Inference (Ollama) - GET request
                 allSucceeded &= await CheckServiceAsync(http, "Inference (Ollama)",
                     System.Net.Http.HttpMethod.Get,
@@ -466,6 +479,22 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "chat history cleanup loop started");
         }
 
+        private static async Task StartCrawlServicesAsync()
+        {
+            try
+            {
+                _CrawlScheduler = new CrawlSchedulerService(_Database, _Logging, _Settings, _Ingestion, _Storage, _ProcessingLog);
+                _CrawlOperationCleanup = new CrawlOperationCleanupService(_Database, _Logging, _Settings);
+                await _CrawlScheduler.StartAsync(_TokenSource.Token).ConfigureAwait(false);
+                await _CrawlOperationCleanup.StartAsync(_TokenSource.Token).ConfigureAwait(false);
+                _Logging.Info(_Header + "crawl services started");
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "crawl services failed to start: " + e.Message);
+            }
+        }
+
         private static async Task StartHealthCheckServiceAsync()
         {
             try
@@ -504,6 +533,8 @@ namespace AssistantHub.Server
             HistoryHandler historyHandler = new HistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             InferenceHandler inferenceHandler = new InferenceHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog, _CrawlScheduler);
+            CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
 
             // Unauthenticated routes
             _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/", rootHandler.GetRootAsync);
@@ -646,6 +677,26 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/models/pull", inferenceHandler.PostPullModelAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models/pull/status", inferenceHandler.GetPullStatusAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/models/{modelName}", inferenceHandler.DeleteModelAsync);
+
+            // Authenticated routes - Crawl Plans
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans", crawlPlanHandler.PutCrawlPlanAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans", crawlPlanHandler.GetCrawlPlansAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}", crawlPlanHandler.GetCrawlPlanAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans/{id}", crawlPlanHandler.PutCrawlPlanByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{id}", crawlPlanHandler.DeleteCrawlPlanAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/crawlplans/{id}", crawlPlanHandler.HeadCrawlPlanAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/start", crawlPlanHandler.StartCrawlAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/stop", crawlPlanHandler.StopCrawlAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/connectivity", crawlPlanHandler.TestConnectivityAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}/enumerate", crawlPlanHandler.EnumerateContentsAsync);
+
+            // Authenticated routes - Crawl Operations
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations", crawlOperationHandler.GetOperationsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/statistics", crawlOperationHandler.GetStatisticsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.GetOperationAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/statistics", crawlOperationHandler.GetOperationStatisticsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.DeleteOperationAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/enumeration", crawlOperationHandler.GetEnumerationAsync);
 
             // Post-routing
             _Server.Routes.PostRouting = async (ctx) =>

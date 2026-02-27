@@ -58,6 +58,8 @@ namespace AssistantHub.Core.Database.SqlServer
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
+            CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
         }
 
         #endregion
@@ -78,6 +80,8 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
                 TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateCrawlPlansTable,
+                TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateTenantsNameIndex,
                 TableQueries.CreateTenantsCreatedUtcIndex,
                 TableQueries.CreateUsersEmailIndex,
@@ -98,7 +102,14 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
-                TableQueries.CreateChatHistoryTenantIdIndex
+                TableQueries.CreateChatHistoryTenantIdIndex,
+                TableQueries.CreateCrawlPlansTenantIdIndex,
+                TableQueries.CreateCrawlPlansStateIndex,
+                TableQueries.CreateCrawlOperationsTenantIdIndex,
+                TableQueries.CreateCrawlOperationsCrawlPlanIdIndex,
+                TableQueries.CreateCrawlOperationsCreatedUtcIndex,
+                TableQueries.CreateAssistantDocumentsCrawlPlanIdIndex,
+                TableQueries.CreateAssistantDocumentsCrawlOperationIdIndex
             };
 
             await ExecuteQueriesAsync(queries, true, token).ConfigureAwait(false);

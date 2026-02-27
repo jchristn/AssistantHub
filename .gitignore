@@ -39,3 +39,4 @@ logs/
 # Allow .db files in docker/ and subdirectories
 !docker/**/*.db
 !docker/**/*.db-*
+!docker/**/*.json

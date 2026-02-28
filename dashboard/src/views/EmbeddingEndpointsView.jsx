@@ -14,6 +14,7 @@ function EmbeddingEndpointsView() {
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editEndpoint, setEditEndpoint] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -86,8 +87,16 @@ function EmbeddingEndpointsView() {
     });
   }, [serverUrl, credential]);
 
+  const handleDuplicate = (row) => {
+    const { Id, GUID, CreatedUtc, ...rest } = row;
+    setEditEndpoint(null);
+    setInitialFormData({ ...rest, Name: (rest.Name ? rest.Name + ' (Copy)' : '') });
+    setShowForm(true);
+  };
+
   const getRowActions = (row) => [
-    { label: 'Edit', onClick: () => { setEditEndpoint(row); setShowForm(true); } },
+    { label: 'Edit', onClick: () => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); } },
+    { label: 'Duplicate', onClick: () => handleDuplicate(row) },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     ...(row.HealthCheckEnabled ? [{ label: 'Health Detail', onClick: () => openHealthDetail(row.Id) }] : []),
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
@@ -102,6 +111,7 @@ function EmbeddingEndpointsView() {
       }
       setShowForm(false);
       setEditEndpoint(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
       loadHealth();
     } catch (err) {
@@ -139,10 +149,10 @@ function EmbeddingEndpointsView() {
           <h1 className="content-title">Embedding Endpoints</h1>
           <p className="content-subtitle">Manage Partio embedding endpoints for vector generation.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setShowForm(true); }}>Create Embedding Endpoint</button>
+        <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setInitialFormData(null); setShowForm(true); }}>Create Embedding Endpoint</button>
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
-      {showForm && <EmbeddingEndpointFormModal endpoint={editEndpoint} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); }} />}
+      {showForm && <EmbeddingEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Embedding Endpoint JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Embedding Endpoint" message={`Are you sure you want to delete embedding endpoint "${deleteTarget.Name || deleteTarget.Model}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

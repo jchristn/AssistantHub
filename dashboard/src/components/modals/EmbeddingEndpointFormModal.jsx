@@ -35,25 +35,26 @@ function getDefaultHealthCheckUrl(endpoint, apiFormat) {
   return '';
 }
 
-function EmbeddingEndpointFormModal({ endpoint, onSave, onClose }) {
+function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) {
   const isEdit = !!endpoint;
+  const source = endpoint || initialData;
 
   const [form, setForm] = useState({
-    Name: endpoint?.Name || '',
-    Model: endpoint?.Model || '',
-    Endpoint: endpoint?.Endpoint || '',
-    ApiFormat: endpoint?.ApiFormat || 'Ollama',
-    ApiKey: endpoint?.ApiKey || '',
-    Active: endpoint?.Active !== undefined ? endpoint.Active : true,
-    HealthCheckEnabled: endpoint?.HealthCheckEnabled !== undefined ? endpoint.HealthCheckEnabled : defaultHealthCheck.HealthCheckEnabled,
-    HealthCheckUrl: endpoint?.HealthCheckUrl || getDefaultHealthCheckUrl(endpoint?.Endpoint, endpoint?.ApiFormat || 'Ollama'),
-    HealthCheckMethod: endpoint?.HealthCheckMethod || defaultHealthCheck.HealthCheckMethod,
-    HealthCheckIntervalMs: endpoint?.HealthCheckIntervalMs !== undefined ? endpoint.HealthCheckIntervalMs : defaultHealthCheck.HealthCheckIntervalMs,
-    HealthCheckTimeoutMs: endpoint?.HealthCheckTimeoutMs !== undefined ? endpoint.HealthCheckTimeoutMs : defaultHealthCheck.HealthCheckTimeoutMs,
-    HealthCheckExpectedStatusCode: endpoint?.HealthCheckExpectedStatusCode !== undefined ? endpoint.HealthCheckExpectedStatusCode : defaultHealthCheck.HealthCheckExpectedStatusCode,
-    HealthyThreshold: endpoint?.HealthyThreshold !== undefined ? endpoint.HealthyThreshold : defaultHealthCheck.HealthyThreshold,
-    UnhealthyThreshold: endpoint?.UnhealthyThreshold !== undefined ? endpoint.UnhealthyThreshold : defaultHealthCheck.UnhealthyThreshold,
-    HealthCheckUseAuth: endpoint?.HealthCheckUseAuth !== undefined ? endpoint.HealthCheckUseAuth : defaultHealthCheck.HealthCheckUseAuth
+    Name: source?.Name || '',
+    Model: source?.Model || '',
+    Endpoint: source?.Endpoint || '',
+    ApiFormat: source?.ApiFormat || 'Ollama',
+    ApiKey: source?.ApiKey || '',
+    Active: source?.Active !== undefined ? source.Active : true,
+    HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : defaultHealthCheck.HealthCheckEnabled,
+    HealthCheckUrl: source?.HealthCheckUrl || getDefaultHealthCheckUrl(source?.Endpoint, source?.ApiFormat || 'Ollama'),
+    HealthCheckMethod: source?.HealthCheckMethod || defaultHealthCheck.HealthCheckMethod,
+    HealthCheckIntervalMs: source?.HealthCheckIntervalMs !== undefined ? source.HealthCheckIntervalMs : defaultHealthCheck.HealthCheckIntervalMs,
+    HealthCheckTimeoutMs: source?.HealthCheckTimeoutMs !== undefined ? source.HealthCheckTimeoutMs : defaultHealthCheck.HealthCheckTimeoutMs,
+    HealthCheckExpectedStatusCode: source?.HealthCheckExpectedStatusCode !== undefined ? source.HealthCheckExpectedStatusCode : defaultHealthCheck.HealthCheckExpectedStatusCode,
+    HealthyThreshold: source?.HealthyThreshold !== undefined ? source.HealthyThreshold : defaultHealthCheck.HealthyThreshold,
+    UnhealthyThreshold: source?.UnhealthyThreshold !== undefined ? source.UnhealthyThreshold : defaultHealthCheck.UnhealthyThreshold,
+    HealthCheckUseAuth: source?.HealthCheckUseAuth !== undefined ? source.HealthCheckUseAuth : defaultHealthCheck.HealthCheckUseAuth
   });
 
   const [saving, setSaving] = useState(false);

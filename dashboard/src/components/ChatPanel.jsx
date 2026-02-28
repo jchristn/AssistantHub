@@ -233,7 +233,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     if (!loading) return;
     const interval = setInterval(() => {
       setWaitMessage(pickWaitMessage());
-    }, 4000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [loading]);
   const [compacting, setCompacting] = useState(false);

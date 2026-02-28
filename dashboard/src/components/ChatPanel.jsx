@@ -227,6 +227,14 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     if (recentWaitMessages.current.length > 20) recentWaitMessages.current.shift();
     return picked;
   }
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setWaitMessage(pickWaitMessage());
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [loading]);
   const [compacting, setCompacting] = useState(false);
   const [error, setError] = useState(null);
   const [feedbackSent, setFeedbackSent] = useState({});

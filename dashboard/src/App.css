@@ -1341,6 +1341,14 @@ body {
   cursor: not-allowed;
 }
 
+.chat-cancel-btn {
+  background: var(--text-secondary);
+}
+
+.chat-cancel-btn:hover {
+  background: var(--danger-color, #dc3545);
+}
+
 .chat-status-bar {
   display: flex;
   justify-content: space-between;

@@ -218,6 +218,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const [loading, setLoading] = useState(false);
   const [waitMessage, setWaitMessage] = useState('');
   const recentWaitMessages = useRef([]);
+  const abortControllerRef = useRef(null);
 
   function pickWaitMessage() {
     const available = WAIT_MESSAGES.filter(m => !recentWaitMessages.current.includes(m));
@@ -482,6 +483,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     setLoading(true);
     setWaitMessage(pickWaitMessage());
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       // Create thread on first message
       let currentThreadId = threadId;
@@ -525,7 +529,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         }
       };
 
-      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId);
+      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId, abortController.signal);
 
       if (streamingIndex !== null) {
         setMessages(prev => {
@@ -606,13 +610,32 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         }
       }
     } catch (err) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Failed to get response. Please try again.',
-        isError: true
-      }]);
+      if (err.name === 'AbortError') {
+        // Cancelled by user — mark any partial streaming message as complete
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastMsg = updated[updated.length - 1];
+          if (lastMsg && lastMsg.isStreaming) {
+            updated[updated.length - 1] = { ...lastMsg, isStreaming: false };
+          }
+          return updated;
+        });
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'Failed to get response. Please try again.',
+          isError: true
+        }]);
+      }
     } finally {
+      abortControllerRef.current = null;
       setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -980,19 +1003,30 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             onKeyDown={handleKeyDown}
             placeholder="Message..."
             rows={1}
-            disabled={loading}
           />
-          <button
-            className="chat-send-btn"
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            title="Send message"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
+          {loading ? (
+            <button
+              className="chat-send-btn chat-cancel-btn"
+              onClick={handleCancel}
+              title="Cancel generation"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" stroke="none"/>
+              </svg>
+            </button>
+          ) : (
+            <button
+              className="chat-send-btn"
+              onClick={handleSend}
+              disabled={!input.trim()}
+              title="Send message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

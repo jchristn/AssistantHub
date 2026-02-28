@@ -229,14 +229,15 @@ export class ApiClient {
   }
 
   // Chat (unauthenticated) - handles both JSON and SSE streaming responses
-  static async chat(serverUrl, assistantId, messages, onDelta, threadId) {
+  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal) {
     const headers = { 'Content-Type': 'application/json' };
     if (threadId) headers['X-Thread-ID'] = threadId;
 
     const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/chat`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages })
+      body: JSON.stringify({ messages }),
+      signal
     });
 
     const contentType = response.headers.get('content-type') || '';

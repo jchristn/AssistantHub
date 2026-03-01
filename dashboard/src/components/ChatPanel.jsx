@@ -911,7 +911,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                               >
                                 <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
                                 <span className="chat-citation-name">
-                                  {source.document_name}
+                                  {decodeURIComponent(source.document_name)}
                                 </span>
                                 <span className="chat-citation-score">
                                   {Math.round(source.score * 100)}%
@@ -921,7 +921,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                               <div key={source.indices.join(',')} className="chat-citation-card" title={source.excerpt}>
                                 <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
                                 <span className="chat-citation-name">
-                                  {source.document_name}
+                                  {decodeURIComponent(source.document_name)}
                                 </span>
                                 <span className="chat-citation-score">
                                   {Math.round(source.score * 100)}%

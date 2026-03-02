@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.6.0
+
+### Added
+- **LLM-based re-ranking**: After initial retrieval, an LLM scores each chunk's relevance (0-10) to the user's query. Low-scoring chunks are filtered out and results are re-sorted by relevance before context injection.
+- New assistant settings: `EnableReranking`, `RerankerTopK`, `RerankerScoreThreshold`, `RerankPrompt`
+- New chat history telemetry: `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- Re-ranking TimingBar in history detail view
+- Re-rank score display on citation cards and chunk details
+- Migration script: `migrations/004_upgrade_to_v0.6.0.sql`
+
+### Changed
+- Docker image tags updated to v0.6.0
+- Database schema updated with re-ranking columns for `assistant_settings` and `chat_history` tables
+
+### Breaking
+- Database schema changes require running `migrations/004_upgrade_to_v0.6.0.sql` for existing installations
+
 ## Current Version: v0.5.0
 
 ### Native Crawlers

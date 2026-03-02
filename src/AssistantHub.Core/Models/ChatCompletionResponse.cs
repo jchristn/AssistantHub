@@ -90,6 +90,27 @@ namespace AssistantHub.Core.Models
         public int ChunksReturned { get; set; } = 0;
 
         /// <summary>
+        /// Duration of the re-ranking LLM call in milliseconds.
+        /// </summary>
+        [JsonPropertyName("rerank_duration_ms")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public double RerankDurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Number of chunks sent to the re-ranker.
+        /// </summary>
+        [JsonPropertyName("rerank_input_count")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int RerankInputCount { get; set; } = 0;
+
+        /// <summary>
+        /// Number of chunks that survived re-ranking.
+        /// </summary>
+        [JsonPropertyName("rerank_output_count")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int RerankOutputCount { get; set; } = 0;
+
+        /// <summary>
         /// The retrieved context chunks with source identification.
         /// </summary>
         [JsonPropertyName("chunks")]
@@ -163,6 +184,13 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("score")]
         public double Score { get; set; } = 0;
+
+        /// <summary>
+        /// LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
+        /// </summary>
+        [JsonPropertyName("rerank_score")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? RerankScore { get; set; } = null;
 
         /// <summary>
         /// Text excerpt from the retrieved chunk.

@@ -35,6 +35,10 @@ namespace Test.Database.Tests
                     EnableRetrievalGate = true,
                     EnableQueryRewrite = true,
                     QueryRewritePrompt = "Rewrite this: {prompt}",
+                    EnableReranking = true,
+                    RerankerTopK = 3,
+                    RerankerScoreThreshold = 5.0,
+                    RerankPrompt = "Score these: {query} {chunks}",
                     CollectionId = "col_test_123",
                     RetrievalTopK = 5,
                     RetrievalScoreThreshold = 0.5,
@@ -67,6 +71,10 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(true, created.EnableRetrievalGate, "EnableRetrievalGate");
                 AssertHelper.AreEqual(true, created.EnableQueryRewrite, "EnableQueryRewrite");
                 AssertHelper.AreEqual("Rewrite this: {prompt}", created.QueryRewritePrompt, "QueryRewritePrompt");
+                AssertHelper.AreEqual(true, created.EnableReranking, "EnableReranking");
+                AssertHelper.AreEqual(3, created.RerankerTopK, "RerankerTopK");
+                AssertHelper.AreEqual(5.0, created.RerankerScoreThreshold, "RerankerScoreThreshold");
+                AssertHelper.AreEqual("Score these: {query} {chunks}", created.RerankPrompt, "RerankPrompt");
                 AssertHelper.AreEqual("col_test_123", created.CollectionId, "CollectionId");
                 AssertHelper.AreEqual(5, created.RetrievalTopK, "RetrievalTopK");
                 AssertHelper.AreEqual(0.5, created.RetrievalScoreThreshold, "RetrievalScoreThreshold");
@@ -102,6 +110,10 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(false, created.EnableRetrievalGate, "default EnableRetrievalGate");
                 AssertHelper.AreEqual(false, created.EnableQueryRewrite, "default EnableQueryRewrite");
                 AssertHelper.IsNull(created.QueryRewritePrompt, "default QueryRewritePrompt");
+                AssertHelper.AreEqual(false, created.EnableReranking, "default EnableReranking");
+                AssertHelper.AreEqual(5, created.RerankerTopK, "default RerankerTopK");
+                AssertHelper.AreEqual(3.0, created.RerankerScoreThreshold, "default RerankerScoreThreshold");
+                AssertHelper.IsNull(created.RerankPrompt, "default RerankPrompt");
                 AssertHelper.IsNull(created.CollectionId, "default CollectionId");
                 AssertHelper.AreEqual(10, created.RetrievalTopK, "default RetrievalTopK");
                 AssertHelper.AreEqual(0.3, created.RetrievalScoreThreshold, "default RetrievalScoreThreshold");
@@ -135,6 +147,10 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(true, read.EnableRetrievalGate, "EnableRetrievalGate");
                 AssertHelper.AreEqual(true, read.EnableQueryRewrite, "EnableQueryRewrite");
                 AssertHelper.AreEqual("Rewrite this: {prompt}", read.QueryRewritePrompt, "QueryRewritePrompt");
+                AssertHelper.AreEqual(true, read.EnableReranking, "EnableReranking");
+                AssertHelper.AreEqual(3, read.RerankerTopK, "RerankerTopK");
+                AssertHelper.AreEqual(5.0, read.RerankerScoreThreshold, "RerankerScoreThreshold");
+                AssertHelper.AreEqual("Score these: {query} {chunks}", read.RerankPrompt, "RerankPrompt");
                 AssertHelper.AreEqual("col_test_123", read.CollectionId, "CollectionId");
                 AssertHelper.AreEqual(5, read.RetrievalTopK, "RetrievalTopK");
                 AssertHelper.AreEqual(0.5, read.RetrievalScoreThreshold, "RetrievalScoreThreshold");
@@ -185,6 +201,10 @@ namespace Test.Database.Tests
                 read.EnableRetrievalGate = false;
                 read.EnableQueryRewrite = false;
                 read.QueryRewritePrompt = null;
+                read.EnableReranking = false;
+                read.RerankerTopK = 7;
+                read.RerankerScoreThreshold = 2.0;
+                read.RerankPrompt = "Updated: {query} {chunks}";
                 read.CollectionId = null;
                 read.RetrievalTopK = 20;
                 read.RetrievalScoreThreshold = 0.7;
@@ -212,6 +232,10 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(false, updated.EnableRetrievalGate, "updated EnableRetrievalGate");
                 AssertHelper.AreEqual(false, updated.EnableQueryRewrite, "updated EnableQueryRewrite");
                 AssertHelper.IsNull(updated.QueryRewritePrompt, "updated QueryRewritePrompt");
+                AssertHelper.AreEqual(false, updated.EnableReranking, "updated EnableReranking");
+                AssertHelper.AreEqual(7, updated.RerankerTopK, "updated RerankerTopK");
+                AssertHelper.AreEqual(2.0, updated.RerankerScoreThreshold, "updated RerankerScoreThreshold");
+                AssertHelper.AreEqual("Updated: {query} {chunks}", updated.RerankPrompt, "updated RerankPrompt");
                 AssertHelper.IsNull(updated.CollectionId, "updated CollectionId");
                 AssertHelper.AreEqual(20, updated.RetrievalTopK, "updated RetrievalTopK");
                 AssertHelper.AreEqual(0.7, updated.RetrievalScoreThreshold, "updated RetrievalScoreThreshold");

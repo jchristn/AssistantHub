@@ -2342,6 +2342,15 @@
           "LogoUrl": { "type": "string", "nullable": true, "description": "Logo image URL (max 192x192)." },
           "FaviconUrl": { "type": "string", "nullable": true, "description": "Favicon URL." },
           "Streaming": { "type": "boolean", "default": true, "description": "Enable SSE streaming." },
+          "EnableCitations": { "type": "boolean", "default": false, "description": "Enable citation extraction from retrieved chunks." },
+          "CitationLinkMode": { "type": "string", "enum": ["Public", "Private", "None"], "default": "Public", "description": "Citation link visibility mode." },
+          "RetrievalIncludeNeighbors": { "type": "integer", "default": 0, "minimum": 0, "description": "Number of neighboring chunks to include around each retrieved chunk." },
+          "EnableQueryRewrite": { "type": "boolean", "default": false, "description": "Enable LLM-based query rewriting before retrieval." },
+          "QueryRewritePrompt": { "type": "string", "nullable": true, "description": "Custom query rewrite prompt template." },
+          "EnableReranking": { "type": "boolean", "default": false, "description": "Enable LLM-based re-ranking of retrieved chunks" },
+          "RerankerTopK": { "type": "integer", "default": 5, "minimum": 1, "description": "Maximum chunks to keep after re-ranking" },
+          "RerankerScoreThreshold": { "type": "number", "default": 3.0, "minimum": 0, "maximum": 10, "description": "Minimum LLM relevance score (0-10) to retain a chunk" },
+          "RerankPrompt": { "type": "string", "nullable": true, "description": "Custom re-ranking prompt template (must contain {query} and {chunks} placeholders)" },
           "CreatedUtc": { "type": "string", "format": "date-time" },
           "LastUpdateUtc": { "type": "string", "format": "date-time" }
         },
@@ -2517,10 +2526,22 @@
           "AssistantResponse": { "type": "string", "nullable": true },
           "Sources": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": { "$ref": "#/components/schemas/CitationSource" },
             "description": "Source references."
           },
           "ErrorMessage": { "type": "string", "nullable": true }
+        }
+      },
+      "CitationSource": {
+        "type": "object",
+        "description": "Citation source reference from a retrieved chunk.",
+        "properties": {
+          "DocumentId": { "type": "string", "nullable": true, "description": "Source document identifier." },
+          "FileName": { "type": "string", "nullable": true, "description": "Source file name." },
+          "Url": { "type": "string", "nullable": true, "description": "Public or private URL to the source." },
+          "ChunkIndex": { "type": "integer", "nullable": true, "description": "Index of the chunk within the document." },
+          "Score": { "type": "number", "nullable": true, "description": "Retrieval similarity score." },
+          "RerankScore": { "type": "number", "nullable": true, "description": "LLM-assigned relevance score (0-10)" }
         }
       },
       "ChatHistory": {
@@ -2536,6 +2557,10 @@
           "RetrievalStartUtc": { "type": "string", "format": "date-time", "nullable": true },
           "RetrievalDurationMs": { "type": "number", "format": "double" },
           "RetrievalContext": { "type": "string", "nullable": true },
+          "QueryRewriteDurationMs": { "type": "number", "format": "double", "default": 0, "description": "Duration of the query rewrite LLM call in milliseconds." },
+          "RerankDurationMs": { "type": "number", "default": 0, "description": "Duration of the re-ranking LLM call in milliseconds" },
+          "RerankInputCount": { "type": "integer", "default": 0, "description": "Number of chunks sent to the re-ranker" },
+          "RerankOutputCount": { "type": "integer", "default": 0, "description": "Number of chunks that survived re-ranking" },
           "PromptSentUtc": { "type": "string", "format": "date-time", "nullable": true },
           "PromptTokens": { "type": "integer" },
           "CompletionTokens": { "type": "integer", "default": 0, "description": "Estimated completion token count from the model's response." },

@@ -102,6 +102,37 @@ namespace AssistantHub.Core.Models
         public string QueryRewritePrompt { get; set; } = null;
 
         /// <summary>
+        /// Whether LLM-based re-ranking of retrieved chunks is enabled.
+        /// When enabled, retrieved chunks are scored by an LLM for relevance
+        /// and low-scoring chunks are filtered out before context injection.
+        /// </summary>
+        public bool EnableReranking { get; set; } = false;
+
+        /// <summary>
+        /// Maximum number of chunks to keep after re-ranking (min 1).
+        /// </summary>
+        public int RerankerTopK
+        {
+            get => _RerankerTopK;
+            set => _RerankerTopK = (value >= 1) ? value : throw new ArgumentOutOfRangeException(nameof(RerankerTopK));
+        }
+
+        /// <summary>
+        /// Minimum LLM relevance score (0.0–10.0) for a chunk to survive re-ranking.
+        /// </summary>
+        public double RerankerScoreThreshold
+        {
+            get => _RerankerScoreThreshold;
+            set => _RerankerScoreThreshold = (value >= 0.0 && value <= 10.0) ? value : throw new ArgumentOutOfRangeException(nameof(RerankerScoreThreshold));
+        }
+
+        /// <summary>
+        /// Custom re-ranking prompt template. Must contain {query} and {chunks} placeholders.
+        /// When null, a built-in default prompt is used.
+        /// </summary>
+        public string RerankPrompt { get; set; } = null;
+
+        /// <summary>
         /// Whether to include citation metadata in chat completion responses.
         /// When enabled, retrieved context chunks are indexed in the system prompt
         /// and the model is instructed to cite sources using bracket notation [1], [2], etc.
@@ -235,6 +266,8 @@ namespace AssistantHub.Core.Models
         private int _ContextWindow = 8192;
         private int _RetrievalTopK = 10;
         private double _RetrievalScoreThreshold = 0.3;
+        private int _RerankerTopK = 5;
+        private double _RerankerScoreThreshold = 3.0;
         private int _RetrievalIncludeNeighbors = 0;
 
         #endregion
@@ -269,6 +302,10 @@ namespace AssistantHub.Core.Models
             obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
             obj.EnableQueryRewrite = DataTableHelper.GetBooleanValue(row, "enable_query_rewrite", false);
             obj.QueryRewritePrompt = DataTableHelper.GetStringValue(row, "query_rewrite_prompt");
+            obj.EnableReranking = DataTableHelper.GetBooleanValue(row, "enable_reranking", false);
+            obj.RerankerTopK = DataTableHelper.GetIntValue(row, "reranker_top_k", 5);
+            obj.RerankerScoreThreshold = DataTableHelper.GetDoubleValue(row, "reranker_score_threshold", 3.0);
+            obj.RerankPrompt = DataTableHelper.GetStringValue(row, "rerank_prompt");
             obj.EnableCitations = DataTableHelper.GetBooleanValue(row, "enable_citations", false);
             obj.CitationLinkMode = DataTableHelper.GetStringValue(row, "citation_link_mode") ?? "None";
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");

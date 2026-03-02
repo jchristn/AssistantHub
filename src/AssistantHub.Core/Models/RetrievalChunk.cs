@@ -23,6 +23,12 @@ namespace AssistantHub.Core.Models
         public double Score { get; set; } = 0;
 
         /// <summary>
+        /// LLM-assigned relevance score from re-ranking (0.0–10.0), null when re-ranking is disabled.
+        /// </summary>
+        [JsonPropertyName("rerank_score")]
+        public double? RerankScore { get; set; } = null;
+
+        /// <summary>
         /// Full-text relevance score component (null in vector-only mode).
         /// </summary>
         [JsonPropertyName("text_score")]

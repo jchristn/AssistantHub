@@ -66,6 +66,29 @@ namespace AssistantHub.Server.Handlers
             "Latest user message:\n{lastUserMessage}\n\n" +
             "Decision:";
 
+        private static readonly string _DefaultRerankPrompt =
+            "You are a relevance judge. Given a user query and a numbered list of text chunks retrieved from a document collection, score each chunk's relevance to answering the query.\n\n" +
+            "Score each chunk from 0 to 10:\n" +
+            "- 0: Completely irrelevant, no connection to the query\n" +
+            "- 1-3: Tangentially related but does not help answer the query\n" +
+            "- 4-6: Somewhat relevant, contains related information but may not directly answer\n" +
+            "- 7-8: Highly relevant, directly addresses the query\n" +
+            "- 9-10: Perfect match, contains the exact information needed to answer\n\n" +
+            "Respond with ONLY a JSON array of objects, each with \"index\" (the chunk number) and \"score\" (your relevance rating).\n\n" +
+            "Example response:\n" +
+            "[{\"index\": 1, \"score\": 8}, {\"index\": 2, \"score\": 3}, {\"index\": 3, \"score\": 7}]\n\n" +
+            "User query:\n{query}\n\n" +
+            "Retrieved chunks:\n{chunks}";
+
+        private class RerankResult
+        {
+            [JsonPropertyName("index")]
+            public int Index { get; set; }
+
+            [JsonPropertyName("score")]
+            public double Score { get; set; }
+        }
+
         private static readonly JsonSerializerOptions _SseJsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -437,6 +460,127 @@ namespace AssistantHub.Server.Handlers
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
                 }
 
+                // Re-rank retrieved chunks using an LLM relevance scorer
+                double rerankDurationMs = 0;
+                int rerankInputCount = 0;
+                int rerankOutputCount = 0;
+
+                if (settings.EnableRag && settings.EnableReranking && shouldRetrieve && retrievalChunks.Count > 0)
+                {
+                    rerankInputCount = retrievalChunks.Count;
+                    Stopwatch rerankSw = Stopwatch.StartNew();
+
+                    try
+                    {
+                        // Resolve inference endpoint (same as retrieval gate / query rewrite)
+                        Enums.InferenceProviderEnum rerankProvider = Settings.Inference.Provider;
+                        string rerankEndpoint = Settings.Inference.Endpoint;
+                        string rerankApiKey = Settings.Inference.ApiKey;
+
+                        if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                        {
+                            var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                            if (resolved != null)
+                            {
+                                rerankProvider = resolved.Value.Provider;
+                                rerankEndpoint = resolved.Value.Endpoint;
+                                rerankApiKey = resolved.Value.ApiKey;
+                            }
+                        }
+
+                        // Build the re-rank prompt
+                        string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
+                            ? settings.RerankPrompt
+                            : _DefaultRerankPrompt;
+
+                        StringBuilder chunksBuilder = new StringBuilder();
+                        for (int i = 0; i < retrievalChunks.Count; i++)
+                        {
+                            string chunkText = retrievalChunks[i].Content ?? "";
+                            if (chunkText.Length > 500) chunkText = chunkText.Substring(0, 500);
+                            chunksBuilder.AppendLine("[" + (i + 1) + "] " + chunkText);
+                        }
+
+                        string rerankPrompt = rerankPromptTemplate
+                            .Replace("{query}", lastUserMessage)
+                            .Replace("{chunks}", chunksBuilder.ToString());
+
+                        List<ChatCompletionMessage> rerankMessages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "system", Content = rerankPrompt }
+                        };
+
+                        InferenceResult rerankResult = await Inference.GenerateResponseAsync(
+                            rerankMessages, settings.Model, 512, 0.0, 1.0,
+                            rerankProvider, rerankEndpoint, rerankApiKey).ConfigureAwait(false);
+
+                        if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
+                        {
+                            string rerankContent = rerankResult.Content.Trim();
+                            Logging.Info(_Header + "re-rank raw response (" + rerankContent.Length + " chars): " + (rerankContent.Length > 500 ? rerankContent.Substring(0, 500) + "..." : rerankContent));
+
+                            // Strip markdown code fences if present
+                            if (rerankContent.StartsWith("```json"))
+                                rerankContent = rerankContent.Substring(7);
+                            else if (rerankContent.StartsWith("```"))
+                                rerankContent = rerankContent.Substring(3);
+                            if (rerankContent.EndsWith("```"))
+                                rerankContent = rerankContent.Substring(0, rerankContent.Length - 3);
+                            rerankContent = rerankContent.Trim();
+
+                            // Extract JSON array if embedded in surrounding text
+                            int firstBracket = rerankContent.IndexOf('[');
+                            int lastBracket = rerankContent.LastIndexOf(']');
+                            if (firstBracket >= 0 && lastBracket > firstBracket)
+                            {
+                                rerankContent = rerankContent.Substring(firstBracket, lastBracket - firstBracket + 1);
+                            }
+
+                            List<RerankResult> scores = JsonSerializer.Deserialize<List<RerankResult>>(rerankContent,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                            if (scores != null && scores.Count > 0)
+                            {
+                                Logging.Info(_Header + "re-rank parsed " + scores.Count + " scores");
+
+                                // Map scores back to chunks by 1-based index
+                                foreach (RerankResult score in scores)
+                                {
+                                    int idx = score.Index - 1;
+                                    if (idx >= 0 && idx < retrievalChunks.Count)
+                                    {
+                                        retrievalChunks[idx].RerankScore = score.Score;
+                                    }
+                                }
+
+                                // Filter by threshold, sort by rerank score, cap at RerankerTopK
+                                retrievalChunks = retrievalChunks
+                                    .Where(c => c.RerankScore.HasValue && c.RerankScore.Value >= settings.RerankerScoreThreshold)
+                                    .OrderByDescending(c => c.RerankScore.Value)
+                                    .Take(settings.RerankerTopK)
+                                    .ToList();
+                            }
+                            else
+                            {
+                                Logging.Warn(_Header + "re-rank response parsed to null or empty list");
+                            }
+                        }
+                        else
+                        {
+                            Logging.Warn(_Header + "re-rank LLM call returned no content (Success=" + (rerankResult?.Success) + ")");
+                        }
+                    }
+                    catch (Exception rerankEx)
+                    {
+                        Logging.Warn(_Header + "re-ranking failed, using original retrieval ordering: " + rerankEx.Message);
+                    }
+
+                    rerankSw.Stop();
+                    rerankDurationMs = Math.Round(rerankSw.Elapsed.TotalMilliseconds, 2);
+                    rerankOutputCount = retrievalChunks.Count;
+                    Logging.Info(_Header + "re-ranking: " + rerankInputCount + " → " + rerankOutputCount + " chunks (" + rerankDurationMs + " ms)");
+                }
+
                 // Extract content strings for system message building (merged with neighbors when present)
                 List<string> contextChunks = retrievalChunks.Select(c => c.MergedContent).ToList();
 
@@ -488,6 +632,7 @@ namespace AssistantHub.Server.Handlers
                             DocumentName = docName,
                             ContentType = contentType,
                             Score = chunk.Score,
+                            RerankScore = chunk.RerankScore,
                             Excerpt = chunk.Content?.Length > 200 ? chunk.Content.Substring(0, 200) + "..." : chunk.Content,
                             DownloadUrl = downloadUrl
                         });
@@ -578,7 +723,8 @@ namespace AssistantHub.Server.Handlers
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
-                        queryRewriteResult, queryRewriteDurationMs).ConfigureAwait(false);
+                        queryRewriteResult, queryRewriteDurationMs,
+                        rerankDurationMs, rerankInputCount, rerankOutputCount).ConfigureAwait(false);
                 }
                 else
                 {
@@ -588,7 +734,8 @@ namespace AssistantHub.Server.Handlers
                         retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
-                        queryRewriteResult, queryRewriteDurationMs).ConfigureAwait(false);
+                        queryRewriteResult, queryRewriteDurationMs,
+                        rerankDurationMs, rerankInputCount, rerankOutputCount).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -1232,7 +1379,10 @@ namespace AssistantHub.Server.Handlers
             double retrievalGateDurationMs = 0,
             List<CitationSource> citationSources = null,
             string queryRewriteResult = null,
-            double queryRewriteDurationMs = 0)
+            double queryRewriteDurationMs = 0,
+            double rerankDurationMs = 0,
+            int rerankInputCount = 0,
+            int rerankOutputCount = 0)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -1282,7 +1432,10 @@ namespace AssistantHub.Server.Handlers
                         CollectionId = collectionId,
                         DurationMs = retrievalDurationMs,
                         ChunksReturned = retrievalChunks?.Count ?? 0,
-                        Chunks = retrievalChunks ?? new List<RetrievalChunk>()
+                        Chunks = retrievalChunks ?? new List<RetrievalChunk>(),
+                        RerankDurationMs = rerankDurationMs,
+                        RerankInputCount = rerankInputCount,
+                        RerankOutputCount = rerankOutputCount
                     } : null,
                     Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
                         ? CitationExtractor.Extract(citationSources, responseContent)
@@ -1305,7 +1458,8 @@ namespace AssistantHub.Server.Handlers
                         inferenceResult.Content,
                         completionTokens,
                         retrievalGateDecision, retrievalGateDurationMs,
-                        queryRewriteResult, queryRewriteDurationMs);
+                        queryRewriteResult, queryRewriteDurationMs,
+                        rerankDurationMs, rerankInputCount, rerankOutputCount);
                 }
             }
             else
@@ -1348,7 +1502,10 @@ namespace AssistantHub.Server.Handlers
             double retrievalGateDurationMs = 0,
             List<CitationSource> citationSources = null,
             string queryRewriteResult = null,
-            double queryRewriteDurationMs = 0)
+            double queryRewriteDurationMs = 0,
+            double rerankDurationMs = 0,
+            int rerankInputCount = 0,
+            int rerankOutputCount = 0)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -1441,7 +1598,8 @@ namespace AssistantHub.Server.Handlers
                             cleanedContent,
                             finishCompletionTokens,
                             retrievalGateDecision, retrievalGateDurationMs,
-                            queryRewriteResult, queryRewriteDurationMs);
+                            queryRewriteResult, queryRewriteDurationMs,
+                            rerankDurationMs, rerankInputCount, rerankOutputCount);
                     }
                     ChatCompletionResponse finishChunk = new ChatCompletionResponse
                     {
@@ -1470,7 +1628,10 @@ namespace AssistantHub.Server.Handlers
                             CollectionId = collectionId,
                             DurationMs = retrievalDurationMs,
                             ChunksReturned = retrievalChunks?.Count ?? 0,
-                            Chunks = retrievalChunks ?? new List<RetrievalChunk>()
+                            Chunks = retrievalChunks ?? new List<RetrievalChunk>(),
+                            RerankDurationMs = rerankDurationMs,
+                            RerankInputCount = rerankInputCount,
+                            RerankOutputCount = rerankOutputCount
                         } : null,
                         Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
                             ? CitationExtractor.Extract(citationSources, cleanedContent)
@@ -1668,7 +1829,8 @@ namespace AssistantHub.Server.Handlers
             string assistantResponse,
             int completionTokens = 0,
             string retrievalGateDecision = null, double retrievalGateDurationMs = 0,
-            string queryRewriteResult = null, double queryRewriteDurationMs = 0)
+            string queryRewriteResult = null, double queryRewriteDurationMs = 0,
+            double rerankDurationMs = 0, int rerankInputCount = 0, int rerankOutputCount = 0)
         {
             try
             {
@@ -1686,6 +1848,9 @@ namespace AssistantHub.Server.Handlers
                 history.RetrievalGateDurationMs = retrievalGateDurationMs;
                 history.QueryRewriteResult = queryRewriteResult;
                 history.QueryRewriteDurationMs = queryRewriteDurationMs;
+                history.RerankDurationMs = rerankDurationMs;
+                history.RerankInputCount = rerankInputCount;
+                history.RerankOutputCount = rerankOutputCount;
                 history.RetrievalContext = retrievalContext;
                 history.PromptSentUtc = promptSentUtc;
                 history.PromptTokens = promptTokens;

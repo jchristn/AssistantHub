@@ -3662,6 +3662,29 @@
             When null or empty, a built-in default prompt is used.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableReranking">
+            <summary>
+            Whether LLM-based re-ranking of retrieved chunks is enabled.
+            When enabled, retrieved chunks are scored by an LLM for relevance
+            and low-scoring chunks are filtered out before context injection.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankerTopK">
+            <summary>
+            Maximum number of chunks to keep after re-ranking (min 1).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankerScoreThreshold">
+            <summary>
+            Minimum LLM relevance score (0.0–10.0) for a chunk to survive re-ranking.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankPrompt">
+            <summary>
+            Custom re-ranking prompt template. Must contain {query} and {chunks} placeholders.
+            When null, a built-in default prompt is used.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableCitations">
             <summary>
             Whether to include citation metadata in chat completion responses.
@@ -4060,6 +4083,21 @@
             Number of context chunks retrieved (after score filtering).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankDurationMs">
+            <summary>
+            Duration of the re-ranking LLM call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankInputCount">
+            <summary>
+            Number of chunks sent to the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankOutputCount">
+            <summary>
+            Number of chunks that survived re-ranking.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
             <summary>
             The retrieved context chunks with source identification.
@@ -4120,6 +4158,11 @@
         <member name="P:AssistantHub.Core.Models.CitationSource.Score">
             <summary>
             Retrieval relevance score (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.RerankScore">
+            <summary>
+            LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.CitationSource.Excerpt">
@@ -4228,6 +4271,21 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.QueryRewriteDurationMs">
             <summary>
             Duration of the query rewrite LLM call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RerankDurationMs">
+            <summary>
+            Duration of the re-ranking LLM call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RerankInputCount">
+            <summary>
+            Number of chunks sent to the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RerankOutputCount">
+            <summary>
+            Number of chunks that survived re-ranking.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
@@ -5602,6 +5660,11 @@
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.Score">
             <summary>
             Cosine similarity score (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.RerankScore">
+            <summary>
+            LLM-assigned relevance score from re-ranking (0.0–10.0), null when re-ranking is disabled.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.TextScore">

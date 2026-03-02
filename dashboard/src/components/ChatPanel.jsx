@@ -262,6 +262,13 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     localStorage.setItem('ah_chat_theme', newTheme);
   };
 
+  // When ChatPanel manages its own theme, apply it to the document
+  useEffect(() => {
+    if (managesOwnTheme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [managesOwnTheme, theme]);
+
   // Reset state when assistantId changes
   useEffect(() => {
     setMessages([]);
@@ -909,23 +916,29 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                                 rel="noopener noreferrer"
                                 title={source.excerpt}
                               >
-                                <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
-                                <span className="chat-citation-name">
+                                <span className="chat-citation-index" title="Citation reference number">[{source.indices.join(', ')}]</span>
+                                <span className="chat-citation-name" title={"Source document: " + decodeURIComponent(source.document_name)}>
                                   {decodeURIComponent(source.document_name)}
                                 </span>
-                                <span className="chat-citation-score">
+                                <span className="chat-citation-score" title="Cosine similarity score — how closely this chunk matches your query by embedding distance">
                                   {Math.round(source.score * 100)}%
                                 </span>
+                                {source.rerank_score != null && (
+                                    <span className="chat-citation-relevance" title="LLM re-ranking relevance score (0–10) — how relevant an LLM judged this chunk to your query">{source.rerank_score.toFixed(1)}/10</span>
+                                )}
                               </a>
                             ) : (
                               <div key={source.indices.join(',')} className="chat-citation-card" title={source.excerpt}>
-                                <span className="chat-citation-index">[{source.indices.join(', ')}]</span>
-                                <span className="chat-citation-name">
+                                <span className="chat-citation-index" title="Citation reference number">[{source.indices.join(', ')}]</span>
+                                <span className="chat-citation-name" title={"Source document: " + decodeURIComponent(source.document_name)}>
                                   {decodeURIComponent(source.document_name)}
                                 </span>
-                                <span className="chat-citation-score">
+                                <span className="chat-citation-score" title="Cosine similarity score — how closely this chunk matches your query by embedding distance">
                                   {Math.round(source.score * 100)}%
                                 </span>
+                                {source.rerank_score != null && (
+                                    <span className="chat-citation-relevance" title="LLM re-ranking relevance score (0–10) — how relevant an LLM judged this chunk to your query">{source.rerank_score.toFixed(1)}/10</span>
+                                )}
                               </div>
                             )
                           ))}

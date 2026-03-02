@@ -94,6 +94,21 @@ namespace AssistantHub.Core.Models
         public double QueryRewriteDurationMs { get; set; } = 0;
 
         /// <summary>
+        /// Duration of the re-ranking LLM call in milliseconds.
+        /// </summary>
+        public double RerankDurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Number of chunks sent to the re-ranker.
+        /// </summary>
+        public int RerankInputCount { get; set; } = 0;
+
+        /// <summary>
+        /// Number of chunks that survived re-ranking.
+        /// </summary>
+        public int RerankOutputCount { get; set; } = 0;
+
+        /// <summary>
         /// Text retrieved from the vector database.
         /// </summary>
         public string RetrievalContext { get; set; } = null;
@@ -208,6 +223,9 @@ namespace AssistantHub.Core.Models
             obj.RetrievalGateDurationMs = DataTableHelper.GetDoubleValue(row, "retrieval_gate_duration_ms");
             obj.QueryRewriteResult = DataTableHelper.GetStringValue(row, "query_rewrite_result");
             obj.QueryRewriteDurationMs = DataTableHelper.GetDoubleValue(row, "query_rewrite_duration_ms");
+            obj.RerankDurationMs = DataTableHelper.GetDoubleValue(row, "rerank_duration_ms");
+            obj.RerankInputCount = DataTableHelper.GetIntValue(row, "rerank_input_count");
+            obj.RerankOutputCount = DataTableHelper.GetIntValue(row, "rerank_output_count");
             obj.RetrievalContext = DataTableHelper.GetStringValue(row, "retrieval_context");
             obj.PromptSentUtc = DataTableHelper.GetNullableDateTimeValue(row, "prompt_sent_utc");
             obj.PromptTokens = DataTableHelper.GetIntValue(row, "prompt_tokens");

@@ -262,6 +262,13 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     localStorage.setItem('ah_chat_theme', newTheme);
   };
 
+  // When ChatPanel manages its own theme, apply it to the document
+  useEffect(() => {
+    if (managesOwnTheme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [managesOwnTheme, theme]);
+
   // Reset state when assistantId changes
   useEffect(() => {
     setMessages([]);

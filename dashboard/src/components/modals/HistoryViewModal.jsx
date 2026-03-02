@@ -326,6 +326,11 @@ function HistoryViewModal({ history, onClose }) {
           <Tooltip text="Document retrieval phase — context fetched from the collection for RAG">Retrieval Context</Tooltip>
           <span className="history-toggle-icon">{retrievalOpen ? '\u25BC' : '\u25B6'}</span>
           <span className="history-section-badge">{formatMs(history.RetrievalDurationMs)}</span>
+          {history.RerankInputCount > 0 && (
+            <span className="history-section-badge" style={{ background: 'var(--timing-rerank, #ffa94d)', color: '#000' }}>
+              Re-ranked: {history.RerankInputCount} → {history.RerankOutputCount} chunks in {formatMs(history.RerankDurationMs)}
+            </span>
+          )}
           {history.RetrievalStartUtc && (
             <span className="history-section-meta">started {formatTimestamp(history.RetrievalStartUtc)}</span>
           )}

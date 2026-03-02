@@ -517,6 +517,7 @@ namespace AssistantHub.Server.Handlers
                         if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
                         {
                             string rerankContent = rerankResult.Content.Trim();
+                            Logging.Info(_Header + "re-rank raw response (" + rerankContent.Length + " chars): " + (rerankContent.Length > 500 ? rerankContent.Substring(0, 500) + "..." : rerankContent));
 
                             // Strip markdown code fences if present
                             if (rerankContent.StartsWith("```json"))
@@ -527,11 +528,21 @@ namespace AssistantHub.Server.Handlers
                                 rerankContent = rerankContent.Substring(0, rerankContent.Length - 3);
                             rerankContent = rerankContent.Trim();
 
+                            // Extract JSON array if embedded in surrounding text
+                            int firstBracket = rerankContent.IndexOf('[');
+                            int lastBracket = rerankContent.LastIndexOf(']');
+                            if (firstBracket >= 0 && lastBracket > firstBracket)
+                            {
+                                rerankContent = rerankContent.Substring(firstBracket, lastBracket - firstBracket + 1);
+                            }
+
                             List<RerankResult> scores = JsonSerializer.Deserialize<List<RerankResult>>(rerankContent,
                                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                             if (scores != null && scores.Count > 0)
                             {
+                                Logging.Info(_Header + "re-rank parsed " + scores.Count + " scores");
+
                                 // Map scores back to chunks by 1-based index
                                 foreach (RerankResult score in scores)
                                 {
@@ -549,6 +560,14 @@ namespace AssistantHub.Server.Handlers
                                     .Take(settings.RerankerTopK)
                                     .ToList();
                             }
+                            else
+                            {
+                                Logging.Warn(_Header + "re-rank response parsed to null or empty list");
+                            }
+                        }
+                        else
+                        {
+                            Logging.Warn(_Header + "re-rank LLM call returned no content (Success=" + (rerankResult?.Success) + ")");
                         }
                     }
                     catch (Exception rerankEx)

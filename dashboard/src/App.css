@@ -2179,6 +2179,17 @@ body {
   font-size: 0.65rem;
 }
 
+.chat-citation-relevance {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-relevance, #e67700);
+  background: var(--bg-relevance, rgba(255, 169, 77, 0.15));
+  padding: 0 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
 .chat-citation-clickable {
   cursor: pointer;
   text-decoration: none;

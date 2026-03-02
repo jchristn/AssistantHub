@@ -101,6 +101,10 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         Streaming: result?.Streaming ?? true,
         EnableQueryRewrite: result?.EnableQueryRewrite ?? false,
         QueryRewritePrompt: result?.QueryRewritePrompt || '',
+        EnableReranking: result?.EnableReranking ?? false,
+        RerankerTopK: result?.RerankerTopK ?? 5,
+        RerankerScoreThreshold: result?.RerankerScoreThreshold ?? 3.0,
+        RerankPrompt: result?.RerankPrompt || '',
       });
       setDirty(false);
     } catch (err) {
@@ -132,7 +136,9 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         FullTextNormalization: parseInt(settings.FullTextNormalization) || 32,
         FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
           ? null
-          : parseFloat(settings.FullTextMinimumScore)
+          : parseFloat(settings.FullTextMinimumScore),
+        RerankerTopK: parseInt(settings.RerankerTopK) || 5,
+        RerankerScoreThreshold: parseFloat(settings.RerankerScoreThreshold) || 3.0
       };
       await api.updateAssistantSettings(selectedId, payload);
       setDirty(false);
@@ -306,6 +312,34 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                         placeholder="Leave empty to use the built-in default prompt. Custom prompts must include {prompt} as a placeholder for the user's message."
                       />
                     </div>
+                  )}
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableReranking} onChange={(e) => handleChange('EnableReranking', e.target.checked)} />
+                      <Tooltip text="When enabled, retrieved chunks are scored by an LLM for relevance to the query. Low-relevance chunks are filtered out before context injection, improving answer precision.">Enable Re-Ranking</Tooltip>
+                    </label>
+                  </div>
+                  {settings.EnableReranking && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="Maximum number of chunks to keep after re-ranking. Should be less than or equal to Retrieval Top K.">Re-Ranker Top K</Tooltip></label>
+                        <input className="form-input" type="number" min="1" value={settings.RerankerTopK} onChange={(e) => handleChange('RerankerTopK', e.target.value)} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="Minimum re-rank score (0-10) for a chunk to be included. Higher values mean stricter filtering.">Re-Ranker Score Threshold</Tooltip> <span className="range-value">{settings.RerankerScoreThreshold}</span></label>
+                        <input type="range" min="0" max="10" step="0.5" value={settings.RerankerScoreThreshold} onChange={(e) => handleChange('RerankerScoreThreshold', parseFloat(e.target.value))} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="The prompt sent to the LLM to score each chunk's relevance. Must contain {query} and {chunks} placeholders. Leave blank to use the built-in default.">Re-Rank Prompt</Tooltip></label>
+                        <textarea
+                          className="form-input"
+                          value={settings.RerankPrompt}
+                          onChange={(e) => handleChange('RerankPrompt', e.target.value)}
+                          rows={5}
+                          placeholder="Leave blank to use built-in default re-rank prompt"
+                        />
+                      </div>
+                    </>
                   )}
                   <div className="form-group">
                     <label className="form-label"><Tooltip text="Vector collection to search for relevant document chunks">Collection ID</Tooltip></label>

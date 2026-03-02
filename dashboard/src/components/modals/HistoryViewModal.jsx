@@ -97,6 +97,7 @@ function HistoryViewModal({ history, onClose }) {
     (history.RetrievalGateDurationMs || 0) +
     (history.QueryRewriteDurationMs || 0) +
     (history.RetrievalDurationMs || 0) +
+    (history.RerankDurationMs || 0) +
     (history.EndpointResolutionDurationMs || 0) +
     (history.CompactionDurationMs || 0) +
     (history.TimeToLastTokenMs || 0);
@@ -178,6 +179,13 @@ function HistoryViewModal({ history, onClose }) {
             durationMs={history.RetrievalDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-retrieval, #4dabf7)"
+          />
+          <TimingBar
+            label="Re-Ranking"
+            tooltip="LLM-based re-ranking — scores each retrieved chunk for relevance and filters low-scoring chunks"
+            durationMs={history.RerankDurationMs}
+            totalMs={totalPipelineMs}
+            color="var(--timing-rerank, #ffa94d)"
           />
           <TimingBar
             label="Endpoint Resolution"
@@ -379,6 +387,9 @@ function HistoryViewModal({ history, onClose }) {
                       <span className="history-chunk-num">Chunk {idx + 1}</span>
                       {chunk.score != null && (
                         <span className="history-chunk-score">Score: <strong>{chunk.score.toFixed(4)}</strong></span>
+                      )}
+                      {chunk.rerank_score != null && (
+                        <span className="history-chunk-score">Relevance: <strong>{chunk.rerank_score.toFixed(1)}/10</strong></span>
                       )}
                       {chunk.document_id && (
                         <span className="history-chunk-source">

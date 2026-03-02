@@ -37,6 +37,9 @@ namespace Test.Database.Tests
                     RetrievalDurationMs = 45.5,
                     RetrievalGateDecision = "RETRIEVE",
                     RetrievalGateDurationMs = 12.3,
+                    RerankDurationMs = 25.3,
+                    RerankInputCount = 10,
+                    RerankOutputCount = 4,
                     RetrievalContext = "Relevant context from documents...",
                     PromptSentUtc = DateTime.UtcNow,
                     PromptTokens = 150,
@@ -65,6 +68,9 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(45.5, created.RetrievalDurationMs, "RetrievalDurationMs");
                 AssertHelper.AreEqual("RETRIEVE", created.RetrievalGateDecision, "RetrievalGateDecision");
                 AssertHelper.AreEqual(12.3, created.RetrievalGateDurationMs, "RetrievalGateDurationMs");
+                AssertHelper.AreEqual(25.3, created.RerankDurationMs, "RerankDurationMs");
+                AssertHelper.AreEqual(10, created.RerankInputCount, "RerankInputCount");
+                AssertHelper.AreEqual(4, created.RerankOutputCount, "RerankOutputCount");
                 AssertHelper.AreEqual("Relevant context from documents...", created.RetrievalContext, "RetrievalContext");
                 AssertHelper.DateTimeNullableRecent(created.PromptSentUtc, "PromptSentUtc");
                 AssertHelper.AreEqual(150, created.PromptTokens, "PromptTokens");
@@ -99,6 +105,9 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(0.0, created.RetrievalDurationMs, "RetrievalDurationMs default");
                 AssertHelper.IsNull(created.RetrievalGateDecision, "RetrievalGateDecision");
                 AssertHelper.AreEqual(0.0, created.RetrievalGateDurationMs, "RetrievalGateDurationMs default");
+                AssertHelper.AreEqual(0.0, created.RerankDurationMs, "RerankDurationMs default");
+                AssertHelper.AreEqual(0, created.RerankInputCount, "RerankInputCount default");
+                AssertHelper.AreEqual(0, created.RerankOutputCount, "RerankOutputCount default");
                 AssertHelper.IsNull(created.RetrievalContext, "RetrievalContext");
                 AssertHelper.IsNull(created.PromptSentUtc, "PromptSentUtc");
                 AssertHelper.AreEqual(0, created.PromptTokens, "PromptTokens default");
@@ -140,6 +149,9 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(45.5, read.RetrievalDurationMs, "RetrievalDurationMs");
                 AssertHelper.AreEqual("RETRIEVE", read.RetrievalGateDecision, "RetrievalGateDecision");
                 AssertHelper.AreEqual(12.3, read.RetrievalGateDurationMs, "RetrievalGateDurationMs");
+                AssertHelper.AreEqual(25.3, read.RerankDurationMs, "RerankDurationMs");
+                AssertHelper.AreEqual(10, read.RerankInputCount, "RerankInputCount");
+                AssertHelper.AreEqual(4, read.RerankOutputCount, "RerankOutputCount");
                 AssertHelper.AreEqual("Relevant context from documents...", read.RetrievalContext, "RetrievalContext");
                 AssertHelper.AreEqual(150, read.PromptTokens, "PromptTokens");
                 AssertHelper.AreEqual(5.2, read.EndpointResolutionDurationMs, "EndpointResolutionDurationMs");

@@ -78,6 +78,10 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `enable_retrieval_gate` TINYINT NOT NULL DEFAULT 0, " +
             "  `enable_query_rewrite` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `query_rewrite_prompt` TEXT, " +
+            "  `enable_reranking` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `reranker_top_k` INT NOT NULL DEFAULT 5, " +
+            "  `reranker_score_threshold` DOUBLE NOT NULL DEFAULT 3.0, " +
+            "  `rerank_prompt` TEXT, " +
             "  `enable_citations` TINYINT NOT NULL DEFAULT 0, " +
             "  `citation_link_mode` VARCHAR(32) DEFAULT 'None', " +
             "  `collection_id` VARCHAR(256), " +
@@ -231,6 +235,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `retrieval_gate_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `query_rewrite_result` TEXT, " +
             "  `query_rewrite_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `rerank_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `rerank_input_count` INT NOT NULL DEFAULT 0, " +
+            "  `rerank_output_count` INT NOT NULL DEFAULT 0, " +
             "  `retrieval_context` LONGTEXT, " +
             "  `prompt_sent_utc` TEXT, " +
             "  `prompt_tokens` INT NOT NULL DEFAULT 0, " +

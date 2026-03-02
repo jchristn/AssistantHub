@@ -916,6 +916,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                                 <span className="chat-citation-score">
                                   {Math.round(source.score * 100)}%
                                 </span>
+                                {source.rerank_score != null && (
+                                    <span className="chat-citation-relevance"> · Relevance: {source.rerank_score.toFixed(1)}/10</span>
+                                )}
                               </a>
                             ) : (
                               <div key={source.indices.join(',')} className="chat-citation-card" title={source.excerpt}>
@@ -926,6 +929,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                                 <span className="chat-citation-score">
                                   {Math.round(source.score * 100)}%
                                 </span>
+                                {source.rerank_score != null && (
+                                    <span className="chat-citation-relevance"> · Relevance: {source.rerank_score.toFixed(1)}/10</span>
+                                )}
                               </div>
                             )
                           ))}

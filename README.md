@@ -28,7 +28,14 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.5.0
+## New in v0.6.0
+
+- **LLM-based re-ranking** -- After initial retrieval, an LLM scores each chunk's relevance to the user's query and filters out low-quality results before context injection. Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
+- New assistant settings: `EnableReranking`, `RerankerTopK`, `RerankerScoreThreshold`, `RerankPrompt`
+- New chat history telemetry: `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- See [CHANGELOG.md](CHANGELOG.md) for full details
+
+## v0.5.0
 
 - **Native web crawlers** -- Built-in web crawling engine that automatically discovers, retrieves, and ingests website content. Configure a URL, schedule, and ingestion rule, and AssistantHub handles the rest
 - **Crawl plans and scheduling** -- Persistent crawler configurations with automatic recurring execution on configurable intervals (one-time, minutes, hours, days, weeks)
@@ -68,6 +75,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
 - **Query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval to broaden recall and capture synonyms, alternate phrasing, and conceptual restatements
+- **LLM-based re-ranking** -- Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
 - **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 
 ---

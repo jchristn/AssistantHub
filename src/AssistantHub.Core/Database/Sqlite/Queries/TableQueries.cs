@@ -69,6 +69,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  enable_retrieval_gate INTEGER NOT NULL DEFAULT 0, " +
                 "  enable_query_rewrite INTEGER NOT NULL DEFAULT 0, " +
                 "  query_rewrite_prompt TEXT, " +
+                "  enable_reranking INTEGER NOT NULL DEFAULT 0, " +
+                "  reranker_top_k INTEGER NOT NULL DEFAULT 5, " +
+                "  reranker_score_threshold REAL NOT NULL DEFAULT 3.0, " +
+                "  rerank_prompt TEXT, " +
                 "  enable_citations INTEGER NOT NULL DEFAULT 0, " +
                 "  citation_link_mode TEXT DEFAULT 'None', " +
                 "  collection_id TEXT, " +
@@ -204,6 +208,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_gate_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  query_rewrite_result TEXT, " +
                 "  query_rewrite_duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  rerank_duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  rerank_input_count INTEGER NOT NULL DEFAULT 0, " +
+                "  rerank_output_count INTEGER NOT NULL DEFAULT 0, " +
                 "  retrieval_context TEXT, " +
                 "  prompt_sent_utc TEXT, " +
                 "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +

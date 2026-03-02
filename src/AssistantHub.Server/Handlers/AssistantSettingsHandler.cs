@@ -189,6 +189,16 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                // Validate re-rank prompt placeholders
+                if (!String.IsNullOrEmpty(updated.RerankPrompt) &&
+                    (!updated.RerankPrompt.Contains("{query}") || !updated.RerankPrompt.Contains("{chunks}")))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "RerankPrompt must contain the {query} and {chunks} placeholders."))).ConfigureAwait(false);
+                    return;
+                }
+
                 string[] validSearchTypes = { "TsRank", "TsRankCd" };
                 if (!String.IsNullOrEmpty(updated.FullTextSearchType) &&
                     !validSearchTypes.Contains(updated.FullTextSearchType, StringComparer.OrdinalIgnoreCase))

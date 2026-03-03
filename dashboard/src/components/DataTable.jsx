@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Pagination from './Pagination';
 import ActionMenu from './ActionMenu';
 import Tooltip from './Tooltip';
+import ConfirmModal from './ConfirmModal';
 
 function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete }) {
   const [allData, setAllData] = useState([]);
@@ -14,6 +15,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   const [sortDirection, setSortDirection] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const refreshTimerRef = useRef(null);
 
   const loadData = useCallback(async () => {
@@ -126,8 +128,13 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
     });
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedIds.size === 0 || !onBulkDelete) return;
+    setBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleteConfirm(false);
     setBulkDeleting(true);
     await onBulkDelete(Array.from(selectedIds));
     setSelectedIds(new Set());
@@ -239,6 +246,16 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
             })}
           </tbody>
         </table>
+      )}
+      {bulkDeleteConfirm && (
+        <ConfirmModal
+          title="Delete Selected"
+          message={`You are about to delete ${selectedIds.size} item(s). This action cannot be undone.`}
+          confirmLabel="Delete"
+          danger={true}
+          onConfirm={confirmBulkDelete}
+          onClose={() => setBulkDeleteConfirm(false)}
+        />
       )}
     </div>
   );

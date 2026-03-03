@@ -7,7 +7,7 @@ function CollectionFormModal({ collection, onSave, onClose }) {
   const [form, setForm] = useState({
     Name: collection?.Name || '',
     Description: collection?.Description || '',
-    Dimensionality: collection?.Dimensionality || 384,
+    Dimensionality: collection?.Dimensionality || 768,
     Active: collection?.Active !== undefined ? collection.Active : true
   });
   const [saving, setSaving] = useState(false);

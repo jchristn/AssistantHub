@@ -147,7 +147,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
 
         {/* Model */}
         <div className="form-group">
-          <label><Tooltip text="Name of the embedding model to use (e.g. all-minilm, text-embedding-3-small)">Model</Tooltip></label>
+          <label><Tooltip text="Name of the embedding model to use (e.g. nomic-embed-text, text-embedding-3-small)">Model</Tooltip></label>
           <input
             type="text"
             value={form.Model}

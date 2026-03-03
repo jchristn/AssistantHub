@@ -61,7 +61,7 @@ export function useUploadQueue(api) {
   const activeCount = useRef(0);
   const queue = useRef([]);
   const unmounted = useRef(false);
-  const CONCURRENCY = 3;
+  const CONCURRENCY = Number(window.DASHBOARD_INGEST_MAX_PARALLEL_INGESTIONS) || 5;
 
   const updateRecord = useCallback((id, patch) => {
     setRecords(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));

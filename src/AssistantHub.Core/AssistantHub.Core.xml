@@ -6613,6 +6613,17 @@
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingBatchAsync(System.String,System.String,System.String,System.Collections.Generic.List{AssistantHub.Core.Services.IngestionService.ChunkResult},System.Threading.CancellationToken)">
+            <summary>
+            Store all chunk embeddings in RecallDB via the batch API in a single request.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="documentId">Document identifier.</param>
+            <param name="chunks">List of chunks with embeddings.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>List of stored document keys.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.Excerpt(System.String,System.Int32)">
             <summary>
             Truncate text to a maximum length for logging, appending total length if truncated.

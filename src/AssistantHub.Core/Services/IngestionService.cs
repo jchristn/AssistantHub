@@ -345,29 +345,15 @@ namespace AssistantHub.Core.Services
                     return;
                 }
 
-                // Step 13: Store each chunk+embedding in RecallDB and capture record IDs
+                // Step 13: Store chunk embeddings in RecallDB via batch API
                 if (_ProcessingLog != null)
                 {
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + chunks.Count + " chunks to store").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + chunks.Count + " chunks to store (batch)").ConfigureAwait(false);
                 }
 
                 Stopwatch storeSw = Stopwatch.StartNew();
-                int storedCount = 0;
-                List<string> chunkRecordIds = new List<string>();
-
-                for (int i = 0; i < chunks.Count; i++)
-                {
-                    ChunkResult chunk = chunks[i];
-                    string recordId = await StoreEmbeddingAsync(document.TenantId, collectionId, documentId, chunk, i, token).ConfigureAwait(false);
-                    if (!String.IsNullOrEmpty(recordId))
-                    {
-                        storedCount++;
-                        chunkRecordIds.Add(recordId);
-                    }
-
-                    if (_ProcessingLog != null && (i + 1) % 10 == 0)
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage progress: [" + (i + 1) + "/" + chunks.Count + "] chunks stored").ConfigureAwait(false);
-                }
+                List<string> chunkRecordIds = await StoreEmbeddingBatchAsync(document.TenantId, collectionId, documentId, chunks, token).ConfigureAwait(false);
+                int storedCount = chunkRecordIds.Count;
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Embedding storage", storedCount + "/" + chunks.Count + " stored", storeSw).ConfigureAwait(false);
@@ -1016,6 +1002,93 @@ namespace AssistantHub.Core.Services
                         "Chunk text: " + (chunk.Text?.Length ?? 0) + " chars, embeddings: " + (chunk.Embeddings?.Count ?? 0) + " dimensions").ConfigureAwait(false);
                 }
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Store all chunk embeddings in RecallDB via the batch API in a single request.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="collectionId">Collection identifier.</param>
+        /// <param name="documentId">Document identifier.</param>
+        /// <param name="chunks">List of chunks with embeddings.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>List of stored document keys.</returns>
+        private async Task<List<string>> StoreEmbeddingBatchAsync(string tenantId, string collectionId, string documentId, List<ChunkResult> chunks, CancellationToken token)
+        {
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch";
+
+            try
+            {
+                List<object> documents = new List<object>();
+                for (int i = 0; i < chunks.Count; i++)
+                {
+                    ChunkResult chunk = chunks[i];
+                    documents.Add(new
+                    {
+                        Content = chunk.Text,
+                        Embeddings = chunk.Embeddings,
+                        DocumentId = documentId,
+                        Position = i,
+                        ContentType = "Text"
+                    });
+                }
+
+                string json = JsonSerializer.Serialize(documents, _JsonOptions);
+
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+                {
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
+                    {
+                        request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
+                    }
+
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "RecallDB batch store returned " + (int)response.StatusCode + " for " + chunks.Count + " chunks: " + responseBody);
+                        if (_ProcessingLog != null)
+                        {
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "RecallDB batch store API returned HTTP " + (int)response.StatusCode + " for " + chunks.Count + " chunks: " + responseBody).ConfigureAwait(false);
+                        }
+                        return new List<string>();
+                    }
+
+                    try
+                    {
+                        List<RecallDbStoreResponse> results = JsonSerializer.Deserialize<List<RecallDbStoreResponse>>(responseBody, _JsonOptions);
+                        List<string> recordIds = new List<string>();
+                        if (results != null)
+                        {
+                            foreach (RecallDbStoreResponse result in results)
+                            {
+                                if (!String.IsNullOrEmpty(result?.DocumentKey))
+                                    recordIds.Add(result.DocumentKey);
+                            }
+                        }
+                        return recordIds;
+                    }
+                    catch
+                    {
+                        _Logging.Debug(_Header + "could not parse RecallDB batch store response");
+                        return new List<string>();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception during batch embedding storage: " + e.Message);
+                if (_ProcessingLog != null)
+                {
+                    await _ProcessingLog.LogAsync(documentId, "ERROR",
+                        "RecallDB batch store exception for " + chunks.Count + " chunks: " + e.Message).ConfigureAwait(false);
+                }
+                return new List<string>();
             }
         }
 

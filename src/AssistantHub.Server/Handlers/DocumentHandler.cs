@@ -393,30 +393,20 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                // Delete embeddings from RecallDB
+                // Delete embeddings from RecallDB (batch)
                 if (!String.IsNullOrEmpty(doc.ChunkRecordIds) && !String.IsNullOrEmpty(doc.CollectionId) && Ingestion != null)
                 {
                     try
                     {
                         List<string> recordIds = JsonSerializer.Deserialize<List<string>>(doc.ChunkRecordIds);
-                        if (recordIds != null)
+                        if (recordIds != null && recordIds.Count > 0)
                         {
-                            foreach (string recordId in recordIds)
-                            {
-                                try
-                                {
-                                    await Ingestion.DeleteEmbeddingAsync(doc.TenantId, doc.CollectionId, recordId).ConfigureAwait(false);
-                                }
-                                catch (Exception embeddingEx)
-                                {
-                                    Logging.Warn(_Header + "failed to delete embedding " + recordId + ": " + embeddingEx.Message);
-                                }
-                            }
+                            await Ingestion.DeleteEmbeddingBatchAsync(doc.TenantId, doc.CollectionId, recordIds).ConfigureAwait(false);
                         }
                     }
-                    catch (Exception parseEx)
+                    catch (Exception embeddingEx)
                     {
-                        Logging.Warn(_Header + "failed to parse chunk record IDs for document " + documentId + ": " + parseEx.Message);
+                        Logging.Warn(_Header + "failed to batch delete embeddings for document " + documentId + ": " + embeddingEx.Message);
                     }
                 }
 
@@ -428,6 +418,117 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in DeleteDocumentAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/documents/delete - Bulk delete multiple documents.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task BulkDeleteDocumentsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = GetAuthContext(ctx);
+
+                string body = ctx.Request.DataAsString;
+                if (String.IsNullOrEmpty(body))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                var request = JsonSerializer.Deserialize<BulkDeleteRequest>(body);
+                if (request == null || request.DocumentIds == null || request.DocumentIds.Count == 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Read all documents and validate tenant ownership
+                List<AssistantDocument> docs = new List<AssistantDocument>();
+                foreach (string docId in request.DocumentIds)
+                {
+                    AssistantDocument doc = await Database.AssistantDocument.ReadAsync(docId).ConfigureAwait(false);
+                    if (doc != null && EnforceTenantOwnership(auth, doc.TenantId))
+                        docs.Add(doc);
+                }
+
+                // Group chunk record IDs by collection for batch delete
+                Dictionary<string, List<string>> recordIdsByCollection = new Dictionary<string, List<string>>();
+                foreach (AssistantDocument doc in docs)
+                {
+                    if (!String.IsNullOrEmpty(doc.ChunkRecordIds) && !String.IsNullOrEmpty(doc.CollectionId))
+                    {
+                        try
+                        {
+                            List<string> recordIds = JsonSerializer.Deserialize<List<string>>(doc.ChunkRecordIds);
+                            if (recordIds != null && recordIds.Count > 0)
+                            {
+                                if (!recordIdsByCollection.ContainsKey(doc.CollectionId))
+                                    recordIdsByCollection[doc.CollectionId] = new List<string>();
+                                recordIdsByCollection[doc.CollectionId].AddRange(recordIds);
+                            }
+                        }
+                        catch (Exception parseEx)
+                        {
+                            Logging.Warn(_Header + "failed to parse chunk record IDs for document " + doc.Id + ": " + parseEx.Message);
+                        }
+                    }
+                }
+
+                // Batch delete embeddings per collection
+                if (Ingestion != null)
+                {
+                    foreach (var kvp in recordIdsByCollection)
+                    {
+                        try
+                        {
+                            await Ingestion.DeleteEmbeddingBatchAsync(auth.TenantId, kvp.Key, kvp.Value).ConfigureAwait(false);
+                        }
+                        catch (Exception embeddingEx)
+                        {
+                            Logging.Warn(_Header + "failed to batch delete embeddings for collection " + kvp.Key + ": " + embeddingEx.Message);
+                        }
+                    }
+                }
+
+                // Delete S3 objects and DB records
+                foreach (AssistantDocument doc in docs)
+                {
+                    if (Storage != null && !String.IsNullOrEmpty(doc.S3Key))
+                    {
+                        try
+                        {
+                            if (!String.IsNullOrEmpty(doc.BucketName))
+                                await Storage.DeleteAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                            else
+                                await Storage.DeleteAsync(doc.S3Key).ConfigureAwait(false);
+                        }
+                        catch (Exception storageEx)
+                        {
+                            Logging.Warn(_Header + "failed to delete S3 object " + doc.S3Key + ": " + storageEx.Message);
+                        }
+                    }
+
+                    await Database.AssistantDocument.DeleteAsync(doc.Id).ConfigureAwait(false);
+                }
+
+                ctx.Response.StatusCode = 204;
+                await ctx.Response.Send().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in BulkDeleteDocumentsAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
@@ -527,6 +628,11 @@ namespace AssistantHub.Server.Handlers
             public List<string> Labels { get; set; } = null;
             public Dictionary<string, string> Tags { get; set; } = null;
             public string Base64Content { get; set; } = null;
+        }
+
+        private class BulkDeleteRequest
+        {
+            public List<string> DocumentIds { get; set; } = null;
         }
 
         #endregion

@@ -401,6 +401,47 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Delete multiple embedding records from a RecallDB collection in a single batch request.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="collectionId">Collection identifier.</param>
+        /// <param name="recordIds">List of record identifiers to delete.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public async Task DeleteEmbeddingBatchAsync(string tenantId, string collectionId, List<string> recordIds, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
+            if (recordIds == null || recordIds.Count == 0) return;
+
+            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch/delete";
+
+            string body = JsonSerializer.Serialize(new { DocumentKeys = recordIds });
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
+                {
+                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
+                }
+
+                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    _Logging.Warn(_Header + "RecallDB batch delete returned " + (int)response.StatusCode + " for " + recordIds.Count + " records in collection " + collectionId + ": " + responseBody);
+                }
+                else
+                {
+                    _Logging.Debug(_Header + "batch deleted " + recordIds.Count + " embedding records from collection " + collectionId);
+                }
+            }
+        }
+
+        /// <summary>
         /// Delete a single embedding record from a RecallDB collection.
         /// </summary>
         /// <param name="tenantId">Tenant identifier.</param>

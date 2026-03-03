@@ -387,6 +387,12 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.BatchDeleteRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/collections/{collectionId}/records/batch/delete - Batch delete records in a collection.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.CollectionHandler.PutRecordAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             PUT /v1.0/collections/{collectionId}/records - Create a new record (document) in a collection.
@@ -710,6 +716,12 @@
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DeleteDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             DELETE /v1.0/documents/{documentId} - Delete document, S3 object, and RecallDB embeddings.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.BulkDeleteDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/documents/delete - Bulk delete multiple documents.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>

@@ -176,6 +176,7 @@ export class ApiClient {
   getDocument(id) { return this.request('GET', `/v1.0/documents/${id}`); }
   getDocumentProcessingLog(id) { return this.request('GET', `/v1.0/documents/${id}/processing-log`); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
+  deleteDocuments(ids) { return this.request('POST', '/v1.0/documents/delete', { DocumentIds: ids }); }
 
   // Feedback
   getFeedbackList(params) { return this.request('GET', '/v1.0/feedback' + this.buildQuery(params)); }

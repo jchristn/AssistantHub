@@ -227,6 +227,33 @@ For each model: verify default constructor, JSON round-trip, nullable fields, ID
 - [ ] `IngestionRule` — defaults, Id prefix
 - [ ] `CrawlPlan` — defaults, nested `CrawlFilterSettings` / `CrawlIngestionSettings`
 - [ ] `CrawlOperation` — defaults, state enum
+- [ ] `RetrievalChunk` — defaults, `RerankScore` null by default, JSON property name is `rerank_score`
+
+### 2.2.1 AssistantSettings — reranking fields
+
+- [ ] `EnableReranking` defaults to `false`
+- [ ] `RerankerTopK` defaults to `5`
+- [ ] `RerankerTopK` setter clamps values below 1 to 1
+- [ ] `RerankerScoreThreshold` defaults to `3.0`
+- [ ] `RerankerScoreThreshold` setter clamps to range 0.0–10.0 (below 0 → 0, above 10 → 10)
+- [ ] `RerankPrompt` defaults to `null`
+- [ ] JSON round-trip preserves all four reranking fields
+- [ ] `FromDataRow()` loads all four reranking columns correctly
+
+### 2.2.2 ChatHistory — reranking telemetry fields
+
+- [ ] `RerankDurationMs` defaults to `0`
+- [ ] `RerankInputCount` defaults to `0`
+- [ ] `RerankOutputCount` defaults to `0`
+- [ ] JSON round-trip preserves all three fields
+- [ ] `FromDataRow()` loads all three reranking columns correctly
+
+### 2.2.3 RetrievalChunk — rerank score
+
+- [ ] `RerankScore` defaults to `null`
+- [ ] JSON serialization uses property name `rerank_score`
+- [ ] `RerankScore` round-trips through JSON correctly when set to a value
+- [ ] `RerankScore` round-trips as null when not set
 
 ### 2.3 API contract models
 
@@ -236,6 +263,20 @@ For each model: verify default constructor, JSON round-trip, nullable fields, ID
 - [ ] `ApiErrorResponse` — error enum + message populated
 - [ ] `EnumerationQuery` — default `MaxResults`, ordering
 - [ ] `EnumerationResult<T>` — `EndOfResults`, `ContinuationToken`, `TotalRecords`, `RecordsRemaining`
+
+### 2.3.1 ChatCompletionRetrieval — reranking telemetry
+
+- [ ] `RerankDurationMs` defaults to `0`, `JsonIgnore` when default
+- [ ] `RerankInputCount` defaults to `0`, `JsonIgnore` when default
+- [ ] `RerankOutputCount` defaults to `0`, `JsonIgnore` when default
+- [ ] Fields present in JSON when non-zero
+- [ ] Fields omitted from JSON when zero (verify `JsonIgnoreCondition.WhenWritingDefault`)
+
+### 2.3.2 CitationSource — rerank score
+
+- [ ] `RerankScore` defaults to `null`, `JsonIgnore` when null
+- [ ] `RerankScore` present in JSON when set to a value (e.g. `8.5`)
+- [ ] `RerankScore` omitted from JSON when null
 
 ### 2.4 Settings models
 
@@ -256,19 +297,47 @@ For each model: verify default constructor, JSON round-trip, nullable fields, ID
 
 **Project:** `Test.Database` (existing)
 
-### 3.1 Current coverage (existing — verify passing)
+### 3.1 Current coverage (existing — verify passing, then augment)
 
 - [ ] `TenantTests` — CRUD, enumerate, paginate, order, filter
 - [ ] `UserTests` — CRUD, enumerate, paginate, password hashing
 - [ ] `CredentialTests` — CRUD, enumerate, bearer token lookup
 - [ ] `AssistantTests` — CRUD, enumerate, paginate, order
-- [ ] `AssistantSettingsTests` — CRUD, per-assistant settings
+- [ ] `AssistantSettingsTests` — CRUD, per-assistant settings (**must be updated for reranking columns — see 3.2**)
 - [ ] `AssistantDocumentTests` — CRUD, enumerate, filter by assistant
 - [ ] `AssistantFeedbackTests` — CRUD, enumerate, filter by assistant
 - [ ] `IngestionRuleTests` — CRUD, enumerate
-- [ ] `ChatHistoryTests` — CRUD, enumerate, filter by thread
+- [ ] `ChatHistoryTests` — CRUD, enumerate, filter by thread (**must be updated for reranking columns — see 3.2**)
 
-### 3.2 Missing coverage to add
+### 3.2 Reranking column coverage (v0.6.0)
+
+Tests that the 7 new reranking columns are correctly stored and retrieved across all 4 database drivers.
+
+**assistant_settings — 4 new columns:**
+
+- [ ] Create settings with `EnableReranking = true` → read back, verify `true`
+- [ ] Create settings with `EnableReranking = false` (default) → read back, verify `false`
+- [ ] Create settings with `RerankerTopK = 10` → read back, verify `10`
+- [ ] Create settings with default `RerankerTopK` → read back, verify `5`
+- [ ] Create settings with `RerankerScoreThreshold = 7.5` → read back, verify `7.5`
+- [ ] Create settings with default `RerankerScoreThreshold` → read back, verify `3.0`
+- [ ] Create settings with `RerankPrompt = "custom prompt {query} {chunks}"` → read back, verify exact string
+- [ ] Create settings with `RerankPrompt = null` (default) → read back, verify `null`
+- [ ] Update `EnableReranking` from `false` to `true` → read back, verify updated
+- [ ] Update `RerankerTopK` → read back, verify updated
+- [ ] Update `RerankerScoreThreshold` → read back, verify updated
+- [ ] Update `RerankPrompt` from null to non-null → read back, verify updated
+- [ ] Update `RerankPrompt` from non-null to null → read back, verify null
+
+**chat_history — 3 new columns:**
+
+- [ ] Create chat history with `RerankDurationMs = 1234.5` → read back, verify `1234.5`
+- [ ] Create chat history with default `RerankDurationMs` → read back, verify `0`
+- [ ] Create chat history with `RerankInputCount = 10` → read back, verify `10`
+- [ ] Create chat history with `RerankOutputCount = 5` → read back, verify `5`
+- [ ] Create chat history with all three rerank fields populated → read back, verify all three
+
+### 3.3 Missing coverage to add
 
 - [ ] `CrawlPlanTests` — CRUD, enumerate, filter by tenant
 - [ ] `CrawlOperationTests` — CRUD, enumerate, filter by crawl plan
@@ -472,6 +541,16 @@ Each handler tested with mocked services. Verify request validation, response co
 - [ ] `GET /v1.0/assistants/{id}/settings` — returns settings
 - [ ] `PUT /v1.0/assistants/{id}/settings` — creates/updates settings
 - [ ] Settings bound to correct assistant ID
+- [ ] `PUT` with `EnableReranking = true` persists and reads back correctly
+- [ ] `PUT` with valid `RerankPrompt` containing `{query}` and `{chunks}` → 200
+- [ ] `PUT` with `RerankPrompt` missing `{query}` placeholder → 400
+- [ ] `PUT` with `RerankPrompt` missing `{chunks}` placeholder → 400
+- [ ] `PUT` with `RerankPrompt = null` (use default) → 200
+- [ ] `PUT` with `RerankPrompt = ""` (empty string) → 200 (treated as null/default)
+- [ ] `PUT` with `RerankerTopK = 0` → clamped to 1 or rejected with 400
+- [ ] `PUT` with `RerankerScoreThreshold = -1` → clamped to 0.0 or rejected with 400
+- [ ] `PUT` with `RerankerScoreThreshold = 15` → clamped to 10.0 or rejected with 400
+- [ ] `GET` returns all four reranking fields in response JSON
 
 ### 6.6 DocumentHandler
 
@@ -493,11 +572,92 @@ Each handler tested with mocked services. Verify request validation, response co
 - [ ] Query rewriting — when enabled, multiple query variants generated
 - [ ] Retrieval gate — when enabled, decides whether to retrieve
 
+#### 6.7.1 ChatHandler — reranking pipeline step
+
+**Guard conditions (reranking skipped when):**
+
+- [ ] `EnableReranking = false` → reranking step skipped, chunks passed through unmodified
+- [ ] `EnableRag = false` → reranking step skipped (no retrieval at all)
+- [ ] Retrieval returns 0 chunks → reranking step skipped
+- [ ] Retrieval gate decides SKIP → reranking step skipped even if `EnableReranking = true`
+
+**Prompt construction:**
+
+- [ ] Default prompt used when `RerankPrompt` is null
+- [ ] Custom `RerankPrompt` used when set, with `{query}` and `{chunks}` replaced
+- [ ] `{query}` placeholder replaced with the user's last message
+- [ ] `{chunks}` placeholder replaced with numbered chunk list (`[1] ...`, `[2] ...`, etc.)
+- [ ] Each chunk text truncated to 500 characters in the prompt
+
+**LLM call parameters:**
+
+- [ ] Temperature set to `0.0` (deterministic)
+- [ ] TopP set to `1.0`
+- [ ] MaxTokens set to `512`
+- [ ] Model from `settings.Model` used
+- [ ] Correct inference endpoint resolved (custom or default)
+
+**Response parsing:**
+
+- [ ] Valid JSON array `[{"index":1,"score":8.5},...]` parsed into `RerankResult` list
+- [ ] Markdown code fences stripped before parsing (`` ``` `` and `` ```json ``)
+- [ ] 1-based index mapped correctly to 0-based chunk list
+- [ ] Out-of-bounds indices silently skipped (no crash)
+- [ ] Empty JSON array → all chunks filtered out
+
+**Filtering and reordering:**
+
+- [ ] Chunks with `RerankScore < RerankerScoreThreshold` filtered out
+- [ ] Remaining chunks sorted by `RerankScore` descending
+- [ ] Result capped at `RerankerTopK` chunks
+- [ ] Example: 10 input chunks, threshold 5.0, topK 3 → only top 3 chunks scoring >= 5.0 survive
+
+**Score assignment:**
+
+- [ ] Each surviving chunk's `RerankScore` property set to the LLM-assigned score
+- [ ] Chunks that were filtered out do not appear in final context
+- [ ] Original retrieval `Score` (cosine similarity) preserved alongside `RerankScore`
+
+**Fallback behavior on LLM failure:**
+
+- [ ] LLM returns null/empty response → original chunks kept, warning logged
+- [ ] LLM returns malformed JSON → original chunks kept, warning logged
+- [ ] LLM returns valid JSON but wrong structure → original chunks kept, warning logged
+- [ ] Inference endpoint unreachable → original chunks kept, warning logged
+- [ ] Pipeline does NOT abort on reranking failure — chat continues with original chunks
+
+**Telemetry recording:**
+
+- [ ] `rerankDurationMs` measured correctly (stopwatch start to LLM response parsed)
+- [ ] `rerankInputCount` = number of chunks before reranking
+- [ ] `rerankOutputCount` = number of chunks after filtering
+
+**Citation integration:**
+
+- [ ] Each `CitationSource` includes `RerankScore` (nullable double) from corresponding chunk
+- [ ] `RerankScore` is null in citations when reranking is disabled
+- [ ] Both cosine similarity score and rerank score present in citation when reranking is enabled
+
+**SSE telemetry chunk:**
+
+- [ ] `ChatCompletionRetrieval` includes `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- [ ] Fields are zero/omitted when reranking is disabled
+- [ ] Fields populated when reranking ran successfully
+
+**Chat history persistence:**
+
+- [ ] `WriteChatHistoryAsync` receives reranking parameters
+- [ ] `ChatHistory` record persisted with `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- [ ] Reranking telemetry fields are `0` when reranking is disabled
+- [ ] Reranking telemetry fields are populated when reranking ran
+
 ### 6.8 HistoryHandler
 
 - [ ] `GET /v1.0/history` — paginated list, filter by assistant/thread
 - [ ] `GET /v1.0/history/{id}` — returns single record
 - [ ] `DELETE /v1.0/history/{id}` — deletes record
+- [ ] `GET /v1.0/history/{id}` — response includes `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- [ ] Reranking telemetry fields are `0` for history entries where reranking was disabled
 
 ### 6.9 FeedbackHandler
 
@@ -617,7 +777,18 @@ Complete create → read → update → enumerate → delete cycle for each enti
 - [ ] Tenant A's user cannot see Tenant B's documents
 - [ ] Global admin can see both tenants' resources
 
-### 7.6 Error handling
+### 7.6 Reranking end-to-end pipeline
+
+- [ ] Create assistant with `EnableReranking = true`, `RerankerTopK = 3`, `RerankerScoreThreshold = 4.0`
+- [ ] Send chat message → verify SSE retrieval telemetry includes non-zero `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- [ ] Verify chat history record persisted with reranking telemetry
+- [ ] Verify citations include `RerankScore` on each source
+- [ ] Verify chunk count in final context <= `RerankerTopK`
+- [ ] Create assistant with `EnableReranking = false` → verify reranking telemetry fields are `0` in history
+- [ ] Update `RerankPrompt` to custom prompt → verify custom prompt used (check via mock LLM request body)
+- [ ] Set `RerankerScoreThreshold = 10.0` → all chunks filtered out, LLM gets no context (graceful empty response)
+
+### 7.7 Error handling
 
 - [ ] Malformed JSON body → 400
 - [ ] Non-existent endpoint → 404
@@ -734,11 +905,11 @@ Exit code: `0` only if every project returned `0`.
 
 | Layer | Project | Tests | Status |
 |-------|---------|-------|--------|
-| 1 — Models & Enums | Test.Models | ~40 | `[ ] Not started` |
-| 2 — Database Drivers | Test.Database | ~200 existing + ~50 new | `[~] Partial (9 suites exist, 2 missing)` |
+| 1 — Models & Enums | Test.Models | ~60 | `[ ] Not started` |
+| 2 — Database Drivers | Test.Database | ~200 existing + ~80 new | `[~] Partial (9 suites exist, 2 missing + reranking columns)` |
 | 3 — Core Services | Test.Services | ~60 | `[ ] Not started` |
 | 4 — Auth & Authz | Test.Api | ~15 | `[ ] Not started` |
-| 5 — API Handlers | Test.Api | ~80 | `[ ] Not started` |
-| 6 — API Integration | Test.Integration | ~30 | `[ ] Not started` |
+| 5 — API Handlers | Test.Api | ~130 | `[ ] Not started` |
+| 6 — API Integration | Test.Integration | ~40 | `[ ] Not started` |
 | 7 — Background Services | Test.Services | ~10 | `[ ] Not started` |
-| **Total** | | **~485** | |
+| **Total** | | **~595** | |

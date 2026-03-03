@@ -479,6 +479,63 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// POST /v1.0/collections/{collectionId}/records/batch/delete - Batch delete records in a collection.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task BatchDeleteRecordsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string collectionId = ctx.Request.Url.Parameters["collectionId"];
+                if (String.IsNullOrEmpty(collectionId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = ctx.Request.DataAsString;
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, "batch/delete"));
+                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
+                if (!String.IsNullOrEmpty(body))
+                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                if (ctx.Response.StatusCode == 204)
+                {
+                    await ctx.Response.Send().ConfigureAwait(false);
+                }
+                else
+                {
+                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in BatchDeleteRecordsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// PUT /v1.0/collections/{collectionId}/records - Create a new record (document) in a collection.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>

@@ -166,9 +166,7 @@ function DocumentsView() {
 
   const handleBulkDelete = async (ids) => {
     try {
-      for (const id of ids) {
-        await api.deleteDocument(id);
-      }
+      await api.deleteDocuments(ids);
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to delete some documents' });

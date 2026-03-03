@@ -6516,6 +6516,16 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingBatchAsync(System.String,System.String,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Delete multiple embedding records from a RecallDB collection in a single batch request.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="recordIds">List of record identifiers to delete.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Delete a single embedding record from a RecallDB collection.

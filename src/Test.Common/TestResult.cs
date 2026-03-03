@@ -1,7 +1,6 @@
-namespace Test.Database
+namespace Test.Common
 {
     using System;
-    using System.Diagnostics;
 
     public class TestResult
     {

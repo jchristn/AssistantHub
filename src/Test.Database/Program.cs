@@ -9,6 +9,7 @@ namespace Test.Database
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
+    using Test.Common;
     using Test.Database.Tests;
 
     public class Program
@@ -74,6 +75,9 @@ namespace Test.Database
                 await AssistantFeedbackTests.RunAllAsync(driver, runner, token);
                 await IngestionRuleTests.RunAllAsync(driver, runner, token);
                 await ChatHistoryTests.RunAllAsync(driver, runner, token);
+                await CrawlPlanTests.RunAllAsync(driver, runner, token);
+                await CrawlOperationTests.RunAllAsync(driver, runner, token);
+                await BoundaryTests.RunAllAsync(driver, runner, token);
             }
             catch (Exception ex)
             {
@@ -95,6 +99,8 @@ namespace Test.Database
                 // Delete in dependency order: child tables first, then parent tables
                 string[] cleanupTables = new string[]
                 {
+                    "crawl_operations",
+                    "crawl_plans",
                     "chat_history",
                     "assistant_feedback",
                     "assistant_settings",

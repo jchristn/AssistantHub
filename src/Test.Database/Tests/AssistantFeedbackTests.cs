@@ -1,6 +1,7 @@
 namespace Test.Database.Tests
 {
     using System;
+    using Test.Common;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -103,7 +104,7 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("AssistantFeedback.Enumerate_Default", async ct =>
             {
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync("default", query, ct);
+                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsNotNull(result, "enumeration result");
                 AssertHelper.IsTrue(result.Success, "success");
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 3, "objects count");
@@ -112,12 +113,12 @@ namespace Test.Database.Tests
             await runner.RunTestAsync("AssistantFeedback.Enumerate_Pagination", async ct =>
             {
                 EnumerationQuery q1 = new EnumerationQuery { MaxResults = 1 };
-                EnumerationResult<AssistantFeedback> r1 = await driver.AssistantFeedback.EnumerateAsync("default", q1, ct);
+                EnumerationResult<AssistantFeedback> r1 = await driver.AssistantFeedback.EnumerateAsync(tenantId, q1, ct);
                 AssertHelper.AreEqual(1, r1.Objects.Count, "page 1 count");
                 AssertHelper.IsFalse(r1.EndOfResults, "page 1 not end");
 
                 EnumerationQuery q2 = new EnumerationQuery { MaxResults = 1, ContinuationToken = r1.ContinuationToken };
-                EnumerationResult<AssistantFeedback> r2 = await driver.AssistantFeedback.EnumerateAsync("default", q2, ct);
+                EnumerationResult<AssistantFeedback> r2 = await driver.AssistantFeedback.EnumerateAsync(tenantId, q2, ct);
                 AssertHelper.AreEqual(1, r2.Objects.Count, "page 2 count");
                 AssertHelper.AreNotEqual(r1.Objects[0].Id, r2.Objects[0].Id, "different feedback items");
             }, token);
@@ -129,7 +130,7 @@ namespace Test.Database.Tests
                     MaxResults = 100,
                     AssistantIdFilter = assistantId
                 };
-                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync("default", query, ct);
+                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.IsGreaterThanOrEqual(result.Objects.Count, 3, "filtered count");
                 foreach (AssistantFeedback fb in result.Objects)
                     AssertHelper.AreEqual(assistantId, fb.AssistantId, "AssistantId filter");
@@ -153,7 +154,7 @@ namespace Test.Database.Tests
                 await driver.AssistantFeedback.DeleteByAssistantIdAsync(tempAsst.Id, ct);
 
                 EnumerationQuery query = new EnumerationQuery { MaxResults = 100, AssistantIdFilter = tempAsst.Id };
-                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync("default", query, ct);
+                EnumerationResult<AssistantFeedback> result = await driver.AssistantFeedback.EnumerateAsync(tenantId, query, ct);
                 AssertHelper.AreEqual(0, result.Objects.Count, "all feedback deleted by assistant id");
             }, token);
         }

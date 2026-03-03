@@ -1,4 +1,4 @@
-namespace Test.Database
+namespace Test.Common
 {
     using System;
     using System.Collections.Generic;

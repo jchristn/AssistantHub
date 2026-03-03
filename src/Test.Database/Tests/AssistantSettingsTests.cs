@@ -1,6 +1,7 @@
 namespace Test.Database.Tests
 {
     using System;
+    using Test.Common;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
@@ -260,6 +261,19 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("gpt-4o", read.Model, "Model after re-read");
                 AssertHelper.AreEqual("FullText", read.SearchMode, "SearchMode after re-read");
                 AssertHelper.AreEqual(true, read.Streaming, "Streaming after re-read");
+            }, token);
+
+            await runner.RunTestAsync("AssistantSettings.Update_RerankPromptToNull", async ct =>
+            {
+                AssistantSettings read = await driver.AssistantSettings.ReadAsync(createdId, ct);
+                AssertHelper.AreEqual("Updated: {query} {chunks}", read.RerankPrompt, "RerankPrompt before null update");
+
+                read.RerankPrompt = null;
+                AssistantSettings updated = await driver.AssistantSettings.UpdateAsync(read, ct);
+                AssertHelper.IsNull(updated.RerankPrompt, "RerankPrompt should be null after update");
+
+                AssistantSettings reRead = await driver.AssistantSettings.ReadAsync(createdId, ct);
+                AssertHelper.IsNull(reRead.RerankPrompt, "RerankPrompt should persist as null");
             }, token);
 
             await runner.RunTestAsync("AssistantSettings.Delete", async ct =>

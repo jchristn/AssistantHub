@@ -1,7 +1,8 @@
-namespace Test.Database
+namespace Test.Common
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     public static class AssertHelper
     {
@@ -83,6 +84,61 @@ namespace Test.Database
             {
                 // expected
             }
+        }
+
+        // --- Collection assertions ---
+
+        public static void HasCount<T>(ICollection<T> collection, int expected, string name)
+        {
+            IsNotNull(collection, name);
+            if (collection.Count != expected)
+                throw new Exception($"Expected {name} to have {expected} items, but had {collection.Count}.");
+        }
+
+        public static void Contains<T>(IEnumerable<T> collection, T item, string name)
+        {
+            IsNotNull(collection, name);
+            if (!collection.Contains(item))
+                throw new Exception($"Expected {name} to contain '{item}', but it did not.");
+        }
+
+        public static void IsEmpty<T>(ICollection<T> collection, string name)
+        {
+            IsNotNull(collection, name);
+            if (collection.Count != 0)
+                throw new Exception($"Expected {name} to be empty, but had {collection.Count} items.");
+        }
+
+        public static void AllMatch<T>(IEnumerable<T> collection, Func<T, bool> predicate, string name)
+        {
+            IsNotNull(collection, name);
+            int index = 0;
+            foreach (T item in collection)
+            {
+                if (!predicate(item))
+                    throw new Exception($"Expected all items in {name} to match predicate, but item at index {index} ('{item}') did not.");
+                index++;
+            }
+        }
+
+        public static void DoesNotContain<T>(IEnumerable<T> collection, T item, string name)
+        {
+            IsNotNull(collection, name);
+            if (collection.Contains(item))
+                throw new Exception($"Expected {name} to not contain '{item}', but it did.");
+        }
+
+        public static void InRange(double actual, double min, double max, string name)
+        {
+            if (actual < min || actual > max)
+                throw new Exception($"Expected {name} to be in range [{min}, {max}], but was {actual}.");
+        }
+
+        public static void StringContains(string actual, string substring, string name)
+        {
+            IsNotNull(actual, name);
+            if (!actual.Contains(substring))
+                throw new Exception($"Expected {name} to contain '{substring}', but was '{actual}'.");
         }
     }
 }

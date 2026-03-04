@@ -43,5 +43,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("max_tokens")]
         public int? MaxTokens { get; set; } = null;
+
+        /// <summary>
+        /// Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
+        /// </summary>
+        [JsonPropertyName("metadata_filter")]
+        public ChatMetadataFilter MetadataFilter { get; set; } = null;
     }
 }

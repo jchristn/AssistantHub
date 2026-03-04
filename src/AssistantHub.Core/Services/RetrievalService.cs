@@ -122,12 +122,14 @@ namespace AssistantHub.Core.Services
                     && queryEmbeddings != null)
                 {
                     _Logging.Info(_Header + "hybrid search returned 0 results, falling back to vector-only");
-                    object vectorOnlyBody = new
+                    var vectorOnlyBody = new Dictionary<string, object>
                     {
-                        Vector = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
-                        MaxResults = topK,
-                        IncludeNeighbors = searchOptions.IncludeNeighbors > 0 ? searchOptions.IncludeNeighbors : (int?)null
+                        ["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
+                        ["MaxResults"] = topK
                     };
+                    if (searchOptions.IncludeNeighbors > 0) vectorOnlyBody["IncludeNeighbors"] = searchOptions.IncludeNeighbors;
+                    if (searchOptions.MetadataFilter != null && !searchOptions.MetadataFilter.IsEmpty)
+                        AddMetadataFilters(vectorOnlyBody, searchOptions.MetadataFilter);
                     searchResults = await ExecuteSearchAsync(tenantId, collectionId, vectorOnlyBody, token).ConfigureAwait(false);
                 }
 
@@ -185,57 +187,75 @@ namespace AssistantHub.Core.Services
         {
             int? includeNeighbors = options.IncludeNeighbors > 0 ? options.IncludeNeighbors : null;
 
+            var body = new Dictionary<string, object>();
+
             if (options.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
             {
-                return new
+                body["FullText"] = new
                 {
-                    FullText = new
-                    {
-                        Query = query,
-                        SearchType = options.FullTextSearchType,
-                        Language = options.FullTextLanguage,
-                        Normalization = options.FullTextNormalization,
-                        MinimumScore = options.FullTextMinimumScore
-                    },
-                    MaxResults = topK,
-                    IncludeNeighbors = includeNeighbors
+                    Query = query,
+                    SearchType = options.FullTextSearchType,
+                    Language = options.FullTextLanguage,
+                    Normalization = options.FullTextNormalization,
+                    MinimumScore = options.FullTextMinimumScore
                 };
             }
             else if (options.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase))
             {
-                return new
+                body["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings };
+                body["FullText"] = new
                 {
-                    Vector = new
-                    {
-                        SearchType = "CosineSimilarity",
-                        Embeddings = embeddings
-                    },
-                    FullText = new
-                    {
-                        Query = query,
-                        SearchType = options.FullTextSearchType,
-                        Language = options.FullTextLanguage,
-                        Normalization = options.FullTextNormalization,
-                        TextWeight = options.TextWeight,
-                        MinimumScore = options.FullTextMinimumScore
-                    },
-                    MaxResults = topK,
-                    IncludeNeighbors = includeNeighbors
+                    Query = query,
+                    SearchType = options.FullTextSearchType,
+                    Language = options.FullTextLanguage,
+                    Normalization = options.FullTextNormalization,
+                    TextWeight = options.TextWeight,
+                    MinimumScore = options.FullTextMinimumScore
                 };
             }
             else
             {
                 // Vector mode (default)
-                return new
-                {
-                    Vector = new
-                    {
-                        SearchType = "CosineSimilarity",
-                        Embeddings = embeddings
-                    },
-                    MaxResults = topK,
-                    IncludeNeighbors = includeNeighbors
-                };
+                body["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings };
+            }
+
+            body["MaxResults"] = topK;
+            if (includeNeighbors.HasValue) body["IncludeNeighbors"] = includeNeighbors.Value;
+
+            // Add metadata filters when present
+            if (options.MetadataFilter != null && !options.MetadataFilter.IsEmpty)
+            {
+                AddMetadataFilters(body, options.MetadataFilter);
+            }
+
+            return body;
+        }
+
+        /// <summary>
+        /// Add LabelFilter and TagFilter to the search body from a ChatMetadataFilter.
+        /// </summary>
+        private void AddMetadataFilters(Dictionary<string, object> body, ChatMetadataFilter filter)
+        {
+            bool hasRequiredLabels = filter.RequiredLabels != null && filter.RequiredLabels.Count > 0;
+            bool hasExcludedLabels = filter.ExcludedLabels != null && filter.ExcludedLabels.Count > 0;
+            if (hasRequiredLabels || hasExcludedLabels)
+            {
+                var labelFilter = new Dictionary<string, object>();
+                if (hasRequiredLabels) labelFilter["Required"] = filter.RequiredLabels;
+                if (hasExcludedLabels) labelFilter["Excluded"] = filter.ExcludedLabels;
+                body["LabelFilter"] = labelFilter;
+            }
+
+            bool hasRequiredTags = filter.RequiredTags != null && filter.RequiredTags.Count > 0;
+            bool hasExcludedTags = filter.ExcludedTags != null && filter.ExcludedTags.Count > 0;
+            if (hasRequiredTags || hasExcludedTags)
+            {
+                var tagFilter = new Dictionary<string, object>();
+                if (hasRequiredTags)
+                    tagFilter["Required"] = filter.RequiredTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
+                if (hasExcludedTags)
+                    tagFilter["Excluded"] = filter.ExcludedTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
+                body["TagFilter"] = tagFilter;
             }
         }
 

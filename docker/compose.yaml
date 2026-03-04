@@ -29,7 +29,6 @@ services:
       - |
         set -e
         echo "Pulling models..."
-        ollama pull nomic-embed-text
         ollama pull all-minilm
         ollama pull gemma3:4b
     environment:
@@ -251,7 +250,7 @@ services:
     restart: "no"
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.6.0
+    image: jchristn77/assistanthub-server:v0.7.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
@@ -281,7 +280,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.6.0
+    image: jchristn77/assistanthub-dashboard:v0.7.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

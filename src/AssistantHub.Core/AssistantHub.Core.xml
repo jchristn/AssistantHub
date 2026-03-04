@@ -3780,6 +3780,16 @@
             URL for the favicon shown in the browser tab.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalLabelFilter">
+            <summary>
+            JSON-serialized label filter for retrieval (e.g. {"Required":["a"],"Excluded":["b"]}).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalTagFilter">
+            <summary>
+            JSON-serialized tag filter for retrieval (e.g. {"Required":[{"Key":"k","Condition":"Equals","Value":"v"}],"Excluded":[...]}).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Streaming">
             <summary>
             Whether to enable SSE streaming for chat responses.
@@ -4010,6 +4020,11 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.MaxTokens">
             <summary>
             Maximum tokens to generate (optional override).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.MetadataFilter">
+            <summary>
+            Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionResponse">
@@ -4346,6 +4361,12 @@
             Measures pure token generation throughput excluding prompt processing.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.MetadataFilter">
+            <summary>
+            JSON-serialized effective ChatMetadataFilter that was applied during retrieval.
+            Null when no filters were active.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantResponse">
             <summary>
             The assistant response content.
@@ -4372,6 +4393,44 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>ChatHistory instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatMetadataFilter">
+            <summary>
+            Metadata filter for controlling which documents are included during RAG retrieval.
+            Supports label-based and tag-based (key-value) filtering.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.RequiredLabels">
+            <summary>
+            Labels that must be present on retrieved documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.ExcludedLabels">
+            <summary>
+            Labels that must NOT be present on retrieved documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.RequiredTags">
+            <summary>
+            Tag conditions that must all match on retrieved documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.ExcludedTags">
+            <summary>
+            Tag conditions that must NOT match on retrieved documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.IsEmpty">
+            <summary>
+            Returns true if no filters are configured.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatMetadataFilter.Merge(AssistantHub.Core.Models.ChatMetadataFilter)">
+            <summary>
+            Merge another filter into this one.
+            Required labels/tags are unioned; excluded labels/tags are unioned.
+            </summary>
+            <param name="other">Filter to merge.</param>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatRequest">
             <summary>
@@ -4431,6 +4490,27 @@
         <member name="M:AssistantHub.Core.Models.ChatResult.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatTagCondition">
+            <summary>
+            A single tag condition used to filter retrieval results by key-value metadata.
+            Maps to RecallDB's TagCondition structure.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatTagCondition.Key">
+            <summary>
+            Tag key to match against.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatTagCondition.Condition">
+            <summary>
+            Condition type: Equals, NotEquals, Contains, ContainsNot, StartsWith, EndsWith, IsNull, IsNotNull, GreaterThan, LessThan.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatTagCondition.Value">
+            <summary>
+            Value to compare against.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CrawlFilterSettings">
@@ -5736,6 +5816,11 @@
             Passed to RecallDB as IncludeNeighbors on the search query.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.MetadataFilter">
+            <summary>
+            Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.TenantMetadata">
             <summary>
             Tenant metadata record.
@@ -6781,6 +6866,11 @@
         <member name="M:AssistantHub.Core.Services.RetrievalService.BuildSearchBody(System.String,System.Collections.Generic.List{System.Double},System.Int32,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Build the RecallDB search request body based on search mode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.AddMetadataFilters(System.Collections.Generic.Dictionary{System.String,System.Object},AssistantHub.Core.Models.ChatMetadataFilter)">
+            <summary>
+            Add LabelFilter and TagFilter to the search body from a ChatMetadataFilter.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.ExecuteSearchAsync(System.String,System.String,System.Object,System.Threading.CancellationToken)">

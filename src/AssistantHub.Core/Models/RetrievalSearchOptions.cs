@@ -40,5 +40,10 @@ namespace AssistantHub.Core.Models
         /// Passed to RecallDB as IncludeNeighbors on the search query.
         /// </summary>
         public int IncludeNeighbors { get; set; } = 0;
+
+        /// <summary>
+        /// Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
+        /// </summary>
+        public ChatMetadataFilter MetadataFilter { get; set; } = null;
     }
 }

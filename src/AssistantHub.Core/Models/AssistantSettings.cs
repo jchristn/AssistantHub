@@ -240,6 +240,16 @@ namespace AssistantHub.Core.Models
         public string FaviconUrl { get; set; } = null;
 
         /// <summary>
+        /// JSON-serialized label filter for retrieval (e.g. {"Required":["a"],"Excluded":["b"]}).
+        /// </summary>
+        public string RetrievalLabelFilter { get; set; } = null;
+
+        /// <summary>
+        /// JSON-serialized tag filter for retrieval (e.g. {"Required":[{"Key":"k","Condition":"Equals","Value":"v"}],"Excluded":[...]}).
+        /// </summary>
+        public string RetrievalTagFilter { get; set; } = null;
+
+        /// <summary>
         /// Whether to enable SSE streaming for chat responses.
         /// </summary>
         public bool Streaming { get; set; } = true;
@@ -323,6 +333,8 @@ namespace AssistantHub.Core.Models
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");
+            obj.RetrievalLabelFilter = DataTableHelper.GetStringValue(row, "retrieval_label_filter");
+            obj.RetrievalTagFilter = DataTableHelper.GetStringValue(row, "retrieval_tag_filter");
             obj.Streaming = DataTableHelper.GetBooleanValue(row, "streaming", true);
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");

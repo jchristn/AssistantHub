@@ -315,6 +315,16 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantDistinctLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/labels/distinct - Get distinct labels for an assistant's collection (public).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantDistinctTagsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/tags/distinct - Get distinct tag keys for an assistant's collection (public).
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.CollectionHandler">
             <summary>
             Handles collection CRUD routes by proxying to RecallDB (admin only).
@@ -398,6 +408,16 @@
             PUT /v1.0/collections/{collectionId}/records - Create a new record (document) in a collection.
             </summary>
             <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetDistinctLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections/{collectionId}/labels/distinct - Get distinct label values (admin).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.GetDistinctTagsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/collections/{collectionId}/tags/distinct - Get distinct tag keys (admin).
+            </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.CompletionEndpointHandler">
             <summary>

@@ -974,6 +974,42 @@ Delete a record from a collection.
 **Error Responses:**
 - `404` -- Record not found.
 
+### GET /v1.0/collections/{collectionId}/labels/distinct
+
+Retrieve all distinct label values across records in a collection. Useful for populating filter UIs.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):**
+
+```json
+["finance", "quarterly-report", "internal", "draft"]
+```
+
+Returns a JSON array of unique label strings found in the collection.
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Collection not found.
+
+### GET /v1.0/collections/{collectionId}/tags/distinct
+
+Retrieve all distinct tag keys across records in a collection. Useful for populating filter UIs.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):**
+
+```json
+["department", "year", "status", "author"]
+```
+
+Returns a JSON array of unique tag key strings found in the collection.
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Collection not found.
+
 ---
 
 ## Ingestion Rules
@@ -2129,6 +2165,40 @@ Create a new conversation thread for an assistant. Returns a thread ID that can 
 **Error Responses:**
 - `404` -- Assistant not found or not active.
 
+### GET /v1.0/assistants/{assistantId}/labels/distinct
+
+Retrieve all distinct label values for the collection associated with an assistant. Intended for populating filter controls in public chat UIs.
+
+**Auth:** None
+
+**Response (200 OK):**
+
+```json
+["finance", "quarterly-report", "internal"]
+```
+
+Returns a JSON array of unique label strings. The endpoint looks up the assistant's configured `CollectionId` and proxies to RecallDB.
+
+**Error Responses:**
+- `404` -- Assistant not found or not active.
+
+### GET /v1.0/assistants/{assistantId}/tags/distinct
+
+Retrieve all distinct tag keys for the collection associated with an assistant. Intended for populating filter controls in public chat UIs.
+
+**Auth:** None
+
+**Response (200 OK):**
+
+```json
+["department", "year", "status"]
+```
+
+Returns a JSON array of unique tag key strings. The endpoint looks up the assistant's configured `CollectionId` and proxies to RecallDB.
+
+**Error Responses:**
+- `404` -- Assistant not found or not active.
+
 ### POST /v1.0/assistants/{assistantId}/chat
 
 Send a chat completion request using the OpenAI-compatible format. The server retrieves relevant document chunks via vector similarity search, injects them into the system message, and forwards the conversation to the configured LLM.
@@ -2157,18 +2227,42 @@ When the conversation history approaches the context window limit, older message
   "temperature": 0.7,
   "top_p": 1.0,
   "max_tokens": 4096,
-  "stream": false
+  "stream": false,
+  "metadata_filter": {
+    "required_labels": ["finance", "quarterly-report"],
+    "excluded_labels": ["draft"],
+    "required_tags": [
+      { "key": "department", "condition": "Equals", "value": "accounting" }
+    ],
+    "excluded_tags": [
+      { "key": "status", "condition": "Equals", "value": "archived" }
+    ]
+  }
 }
 ```
 
-| Field         | Type   | Required | Description                                                    |
-|---------------|--------|----------|----------------------------------------------------------------|
-| `model`       | string | No       | Model override (falls back to assistant settings).             |
-| `messages`    | array  | Yes      | Array of message objects with `role` and `content`.            |
-| `temperature` | double | No       | Sampling temperature override (0.0-2.0).                       |
-| `top_p`       | double | No       | Top-p override (0.0-1.0).                                      |
-| `max_tokens`  | int    | No       | Max tokens override.                                           |
-| `stream`      | bool   | No       | Ignored; streaming is controlled by the assistant `Streaming` setting. |
+| Field             | Type   | Required | Description                                                    |
+|-------------------|--------|----------|----------------------------------------------------------------|
+| `model`           | string | No       | Model override (falls back to assistant settings).             |
+| `messages`        | array  | Yes      | Array of message objects with `role` and `content`.            |
+| `temperature`     | double | No       | Sampling temperature override (0.0-2.0).                       |
+| `top_p`           | double | No       | Top-p override (0.0-1.0).                                      |
+| `max_tokens`      | int    | No       | Max tokens override.                                           |
+| `stream`          | bool   | No       | Ignored; streaming is controlled by the assistant `Streaming` setting. |
+| `metadata_filter` | object | No       | Metadata filter to restrict retrieval (see below). Merged with assistant-level defaults. |
+
+**Metadata Filter Object:**
+
+| Field             | Type   | Description                                                    |
+|-------------------|--------|----------------------------------------------------------------|
+| `required_labels` | array  | Labels that must be present on retrieved documents.            |
+| `excluded_labels` | array  | Labels that must NOT be present on retrieved documents.        |
+| `required_tags`   | array  | Tag conditions that must all match. Each has `key`, `condition`, `value`. |
+| `excluded_tags`   | array  | Tag conditions that must NOT match. Same structure as required_tags. |
+
+**Tag Condition Operators:** `Equals`, `NotEquals`, `GreaterThan`, `LessThan`, `Contains`, `ContainsNot`, `StartsWith`, `EndsWith`, `IsNull`, `IsNotNull`
+
+When `metadata_filter` is omitted or null, no filtering is applied. If the assistant also has default filters configured, they are merged with request-level filters (unions of required/excluded lists).
 
 **Non-Streaming Response (200 OK):**
 

@@ -105,6 +105,8 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         RerankerTopK: result?.RerankerTopK ?? 5,
         RerankerScoreThreshold: result?.RerankerScoreThreshold ?? 3.0,
         RerankPrompt: result?.RerankPrompt || '',
+        RetrievalLabelFilter: result?.RetrievalLabelFilter || '',
+        RetrievalTagFilter: result?.RetrievalTagFilter || '',
       });
       setDirty(false);
     } catch (err) {
@@ -405,6 +407,34 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                       </div>
                     </>
                   )}
+                  {/* Retrieval Filters */}
+                  <div className="form-section-header" style={{ marginTop: '1.5rem' }}>
+                    <Tooltip text="Filter retrieval to only return documents matching specific labels and/or tag conditions. Stored as JSON. Label filter format: {&quot;Required&quot;:[&quot;label1&quot;],&quot;Excluded&quot;:[&quot;label2&quot;]}. Tag filter format: {&quot;Required&quot;:[{&quot;Key&quot;:&quot;k&quot;,&quot;Condition&quot;:&quot;Equals&quot;,&quot;Value&quot;:&quot;v&quot;}],&quot;Excluded&quot;:[...]}">Retrieval Filters</Tooltip>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">
+                      <Tooltip text='JSON label filter. Example: {"Required":["finance","internal"],"Excluded":["draft"]}'>Label Filter (JSON)</Tooltip>
+                    </label>
+                    <textarea
+                      className="form-input"
+                      value={settings.RetrievalLabelFilter}
+                      onChange={(e) => handleChange('RetrievalLabelFilter', e.target.value)}
+                      rows={3}
+                      placeholder='{"Required":["label1"],"Excluded":["label2"]}'
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">
+                      <Tooltip text='JSON tag filter. Example: {"Required":[{"Key":"department","Condition":"Equals","Value":"accounting"}],"Excluded":[]}'>Tag Filter (JSON)</Tooltip>
+                    </label>
+                    <textarea
+                      className="form-input"
+                      value={settings.RetrievalTagFilter}
+                      onChange={(e) => handleChange('RetrievalTagFilter', e.target.value)}
+                      rows={3}
+                      placeholder='{"Required":[{"Key":"key","Condition":"Equals","Value":"value"}],"Excluded":[]}'
+                    />
+                  </div>
                 </>
               )}
             </div>

@@ -90,6 +90,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
                 "  favicon_url TEXT, " +
+                "  retrieval_label_filter TEXT, " +
+                "  retrieval_tag_filter TEXT, " +
                 "  streaming INTEGER NOT NULL DEFAULT 1, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
@@ -222,6 +224,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  completion_tokens INTEGER NOT NULL DEFAULT 0, " +
                 "  tokens_per_second_overall REAL NOT NULL DEFAULT 0, " +
                 "  tokens_per_second_generation REAL NOT NULL DEFAULT 0, " +
+                "  metadata_filter TEXT, " +
                 "  assistant_response TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +

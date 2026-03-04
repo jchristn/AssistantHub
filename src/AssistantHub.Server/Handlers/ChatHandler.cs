@@ -97,6 +97,13 @@ namespace AssistantHub.Server.Handlers
             Converters = { new JsonStringEnumConverter() }
         };
 
+        private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
         /// <summary>
         /// Instantiate.
         /// </summary>
@@ -217,6 +224,69 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
                     return;
+                }
+
+                // Build effective metadata filter by merging assistant defaults + request-level filter
+                ChatMetadataFilter effectiveMetadataFilter = null;
+                string metadataFilterJson = null;
+                {
+                    // Deserialize assistant-level filters
+                    ChatMetadataFilter assistantFilter = null;
+                    bool hasAssistantLabelFilter = !String.IsNullOrEmpty(settings.RetrievalLabelFilter);
+                    bool hasAssistantTagFilter = !String.IsNullOrEmpty(settings.RetrievalTagFilter);
+                    if (hasAssistantLabelFilter || hasAssistantTagFilter)
+                    {
+                        assistantFilter = new ChatMetadataFilter();
+                        if (hasAssistantLabelFilter)
+                        {
+                            var labelFilter = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(settings.RetrievalLabelFilter, _JsonOptions);
+                            if (labelFilter != null)
+                            {
+                                labelFilter.TryGetValue("Required", out var reqLabels);
+                                labelFilter.TryGetValue("Excluded", out var exclLabels);
+                                assistantFilter.RequiredLabels = reqLabels;
+                                assistantFilter.ExcludedLabels = exclLabels;
+                            }
+                        }
+                        if (hasAssistantTagFilter)
+                        {
+                            var tagFilter = JsonSerializer.Deserialize<Dictionary<string, List<ChatTagCondition>>>(settings.RetrievalTagFilter, _JsonOptions);
+                            if (tagFilter != null)
+                            {
+                                tagFilter.TryGetValue("Required", out var reqTags);
+                                tagFilter.TryGetValue("Excluded", out var exclTags);
+                                assistantFilter.RequiredTags = reqTags;
+                                assistantFilter.ExcludedTags = exclTags;
+                            }
+                        }
+                    }
+
+                    // Merge assistant-level and request-level filters
+                    if (assistantFilter != null && chatReq.MetadataFilter != null)
+                    {
+                        effectiveMetadataFilter = new ChatMetadataFilter
+                        {
+                            RequiredLabels = assistantFilter.RequiredLabels != null ? new List<string>(assistantFilter.RequiredLabels) : null,
+                            ExcludedLabels = assistantFilter.ExcludedLabels != null ? new List<string>(assistantFilter.ExcludedLabels) : null,
+                            RequiredTags = assistantFilter.RequiredTags != null ? new List<ChatTagCondition>(assistantFilter.RequiredTags) : null,
+                            ExcludedTags = assistantFilter.ExcludedTags != null ? new List<ChatTagCondition>(assistantFilter.ExcludedTags) : null
+                        };
+                        effectiveMetadataFilter.Merge(chatReq.MetadataFilter);
+                    }
+                    else if (assistantFilter != null)
+                    {
+                        effectiveMetadataFilter = assistantFilter;
+                    }
+                    else if (chatReq.MetadataFilter != null)
+                    {
+                        effectiveMetadataFilter = chatReq.MetadataFilter;
+                    }
+
+                    if (effectiveMetadataFilter != null && !effectiveMetadataFilter.IsEmpty)
+                    {
+                        metadataFilterJson = JsonSerializer.Serialize(effectiveMetadataFilter, _JsonOptions);
+                        Logging.Info(_Header + "effective metadata filter: " + metadataFilterJson);
+                    }
                 }
 
                 // Check for thread ID header for history tracking
@@ -420,7 +490,8 @@ namespace AssistantHub.Server.Handlers
                         FullTextLanguage = settings.FullTextLanguage,
                         FullTextNormalization = settings.FullTextNormalization,
                         FullTextMinimumScore = settings.FullTextMinimumScore,
-                        IncludeNeighbors = settings.RetrievalIncludeNeighbors
+                        IncludeNeighbors = settings.RetrievalIncludeNeighbors,
+                        MetadataFilter = effectiveMetadataFilter
                     };
 
                     HashSet<string> seenChunks = new HashSet<string>();
@@ -724,7 +795,8 @@ namespace AssistantHub.Server.Handlers
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
                         queryRewriteResult, queryRewriteDurationMs,
-                        rerankDurationMs, rerankInputCount, rerankOutputCount).ConfigureAwait(false);
+                        rerankDurationMs, rerankInputCount, rerankOutputCount,
+                        metadataFilterJson).ConfigureAwait(false);
                 }
                 else
                 {
@@ -735,7 +807,8 @@ namespace AssistantHub.Server.Handlers
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
                         queryRewriteResult, queryRewriteDurationMs,
-                        rerankDurationMs, rerankInputCount, rerankOutputCount).ConfigureAwait(false);
+                        rerankDurationMs, rerankInputCount, rerankOutputCount,
+                        metadataFilterJson).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -1347,6 +1420,124 @@ namespace AssistantHub.Server.Handlers
             }
         }
 
+        /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/labels/distinct - Get distinct labels for an assistant's collection (public).
+        /// </summary>
+        public async Task GetAssistantDistinctLabelsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null || String.IsNullOrEmpty(settings.CollectionId))
+                {
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send("[]").ConfigureAwait(false);
+                    return;
+                }
+
+                string url = Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/labels/distinct";
+                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url))
+                {
+                    if (!String.IsNullOrEmpty(Settings.RecallDb.AccessKey))
+                        req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
+                    using (HttpClient client = new HttpClient())
+                    {
+                        HttpResponseMessage resp = await client.SendAsync(req).ConfigureAwait(false);
+                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        ctx.Response.StatusCode = (int)resp.StatusCode;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(respBody).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetAssistantDistinctLabelsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/tags/distinct - Get distinct tag keys for an assistant's collection (public).
+        /// </summary>
+        public async Task GetAssistantDistinctTagsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null || String.IsNullOrEmpty(settings.CollectionId))
+                {
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send("[]").ConfigureAwait(false);
+                    return;
+                }
+
+                string url = Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/tags/distinct";
+                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url))
+                {
+                    if (!String.IsNullOrEmpty(Settings.RecallDb.AccessKey))
+                        req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
+                    using (HttpClient client = new HttpClient())
+                    {
+                        HttpResponseMessage resp = await client.SendAsync(req).ConfigureAwait(false);
+                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        ctx.Response.StatusCode = (int)resp.StatusCode;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(respBody).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetAssistantDistinctTagsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
         #region Private-Methods
 
         private async Task HandleNonStreamingResponse(
@@ -1382,7 +1573,8 @@ namespace AssistantHub.Server.Handlers
             double queryRewriteDurationMs = 0,
             double rerankDurationMs = 0,
             int rerankInputCount = 0,
-            int rerankOutputCount = 0)
+            int rerankOutputCount = 0,
+            string metadataFilterJson = null)
         {
             InferenceResult inferenceResult = await Inference.GenerateResponseAsync(
                 messages, model, maxTokens, temperature, topP,
@@ -1459,7 +1651,8 @@ namespace AssistantHub.Server.Handlers
                         completionTokens,
                         retrievalGateDecision, retrievalGateDurationMs,
                         queryRewriteResult, queryRewriteDurationMs,
-                        rerankDurationMs, rerankInputCount, rerankOutputCount);
+                        rerankDurationMs, rerankInputCount, rerankOutputCount,
+                        metadataFilterJson);
                 }
             }
             else
@@ -1505,7 +1698,8 @@ namespace AssistantHub.Server.Handlers
             double queryRewriteDurationMs = 0,
             double rerankDurationMs = 0,
             int rerankInputCount = 0,
-            int rerankOutputCount = 0)
+            int rerankOutputCount = 0,
+            string metadataFilterJson = null)
         {
             string completionId = IdGenerator.NewChatCompletionId();
             long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -1599,7 +1793,8 @@ namespace AssistantHub.Server.Handlers
                             finishCompletionTokens,
                             retrievalGateDecision, retrievalGateDurationMs,
                             queryRewriteResult, queryRewriteDurationMs,
-                            rerankDurationMs, rerankInputCount, rerankOutputCount);
+                            rerankDurationMs, rerankInputCount, rerankOutputCount,
+                            metadataFilterJson);
                     }
                     ChatCompletionResponse finishChunk = new ChatCompletionResponse
                     {
@@ -1830,7 +2025,8 @@ namespace AssistantHub.Server.Handlers
             int completionTokens = 0,
             string retrievalGateDecision = null, double retrievalGateDurationMs = 0,
             string queryRewriteResult = null, double queryRewriteDurationMs = 0,
-            double rerankDurationMs = 0, int rerankInputCount = 0, int rerankOutputCount = 0)
+            double rerankDurationMs = 0, int rerankInputCount = 0, int rerankOutputCount = 0,
+            string metadataFilterJson = null)
         {
             try
             {
@@ -1859,6 +2055,7 @@ namespace AssistantHub.Server.Handlers
                 history.InferenceConnectionDurationMs = inferenceConnectionDurationMs;
                 history.TimeToFirstTokenMs = timeToFirstTokenMs;
                 history.TimeToLastTokenMs = timeToLastTokenMs;
+                history.MetadataFilter = metadataFilterJson;
                 history.AssistantResponse = assistantResponse;
 
                 history.CompletionTokens = completionTokens;

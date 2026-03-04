@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import MetadataFilterModal from './modals/MetadataFilterModal';
 
 const WAIT_MESSAGES = [
   "Scanning available sources...",
@@ -250,6 +251,10 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   });
   const [internalTheme, setInternalTheme] = useState(() => localStorage.getItem('ah_chat_theme') || 'light');
   const [contextUsage, setContextUsage] = useState(null);
+  const [metadataFilter, setMetadataFilter] = useState(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [availableLabels, setAvailableLabels] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
 
   // Use prop theme if provided, otherwise internal
   const theme = themeProp || internalTheme;
@@ -284,7 +289,15 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     titleRequestedRef.current = false;
     setAssistant(null);
     setThreadId(localStorage.getItem(`ah_thread_${assistantId}`) || null);
+    setMetadataFilter(null);
   }, [assistantId]);
+
+  // Fetch available labels and tags for filter modal
+  useEffect(() => {
+    if (!assistantId) return;
+    ApiClient.getDistinctLabels(serverUrl, assistantId).then(setAvailableLabels);
+    ApiClient.getDistinctTags(serverUrl, assistantId).then(setAvailableTags);
+  }, [assistantId, serverUrl]);
 
   useEffect(() => {
     if (!assistantId) return;
@@ -536,7 +549,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         }
       };
 
-      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId, abortController.signal);
+      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId, abortController.signal, metadataFilter);
 
       if (streamingIndex !== null) {
         setMessages(prev => {
@@ -1017,6 +1030,16 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             placeholder="Message..."
             rows={1}
           />
+          <button
+            className={`chat-filter-btn${metadataFilter ? ' active' : ''}`}
+            onClick={() => setShowFilterModal(true)}
+            title="Metadata filters"
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+          </button>
           {loading ? (
             <button
               className="chat-send-btn chat-cancel-btn"
@@ -1103,6 +1126,15 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             </div>
           </div>
         </div>
+      )}
+      {showFilterModal && (
+        <MetadataFilterModal
+          filter={metadataFilter}
+          availableLabels={availableLabels}
+          availableTags={availableTags}
+          onApply={(f) => { setMetadataFilter(f); setShowFilterModal(false); }}
+          onClose={() => setShowFilterModal(false)}
+        />
       )}
     </div>
   );

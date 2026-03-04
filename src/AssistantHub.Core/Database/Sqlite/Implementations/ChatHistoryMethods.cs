@@ -68,7 +68,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "endpoint_resolution_duration_ms, compaction_duration_ms, inference_connection_duration_ms, " +
                 "time_to_first_token_ms, time_to_last_token_ms, " +
                 "completion_tokens, tokens_per_second_overall, tokens_per_second_generation, " +
-                "assistant_response, created_utc, last_update_utc) " +
+                "metadata_filter, assistant_response, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(history.Id) + "', " +
                 "'" + _Driver.Sanitize(history.TenantId) + "', " +
@@ -97,6 +97,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 history.CompletionTokens + ", " +
                 _Driver.FormatDouble(history.TokensPerSecondOverall) + ", " +
                 _Driver.FormatDouble(history.TokensPerSecondGeneration) + ", " +
+                _Driver.FormatNullableString(history.MetadataFilter) + ", " +
                 _Driver.FormatNullableString(history.AssistantResponse) + ", " +
                 "'" + _Driver.FormatDateTime(history.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(history.LastUpdateUtc) + "'" +

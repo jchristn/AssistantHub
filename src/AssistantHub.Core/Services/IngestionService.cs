@@ -945,14 +945,20 @@ namespace AssistantHub.Core.Services
             {
                 using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, url))
                 {
-                    object requestBody = new
+                    Dictionary<string, object> requestBody = new Dictionary<string, object>
                     {
-                        Content = chunk.Text,
-                        Embeddings = chunk.Embeddings,
-                        DocumentId = documentId,
-                        Position = chunkIndex,
-                        ContentType = "Text"
+                        { "Content", chunk.Text },
+                        { "Embeddings", chunk.Embeddings },
+                        { "DocumentId", documentId },
+                        { "Position", chunkIndex },
+                        { "ContentType", "Text" }
                     };
+
+                    if (chunk.Labels != null && chunk.Labels.Count > 0)
+                        requestBody["Labels"] = chunk.Labels;
+
+                    if (chunk.Tags != null && chunk.Tags.Count > 0)
+                        requestBody["Tags"] = chunk.Tags;
 
                     string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -1020,18 +1026,26 @@ namespace AssistantHub.Core.Services
 
             try
             {
-                List<object> documents = new List<object>();
+                List<Dictionary<string, object>> documents = new List<Dictionary<string, object>>();
                 for (int i = 0; i < chunks.Count; i++)
                 {
                     ChunkResult chunk = chunks[i];
-                    documents.Add(new
+                    Dictionary<string, object> doc = new Dictionary<string, object>
                     {
-                        Content = chunk.Text,
-                        Embeddings = chunk.Embeddings,
-                        DocumentId = documentId,
-                        Position = i,
-                        ContentType = "Text"
-                    });
+                        { "Content", chunk.Text },
+                        { "Embeddings", chunk.Embeddings },
+                        { "DocumentId", documentId },
+                        { "Position", i },
+                        { "ContentType", "Text" }
+                    };
+
+                    if (chunk.Labels != null && chunk.Labels.Count > 0)
+                        doc["Labels"] = chunk.Labels;
+
+                    if (chunk.Tags != null && chunk.Tags.Count > 0)
+                        doc["Tags"] = chunk.Tags;
+
+                    documents.Add(doc);
                 }
 
                 string json = JsonSerializer.Serialize(documents, _JsonOptions);

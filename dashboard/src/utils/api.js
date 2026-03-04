@@ -230,14 +230,17 @@ export class ApiClient {
   }
 
   // Chat (unauthenticated) - handles both JSON and SSE streaming responses
-  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal) {
+  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal, metadataFilter = null) {
     const headers = { 'Content-Type': 'application/json' };
     if (threadId) headers['X-Thread-ID'] = threadId;
 
     const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/chat`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({
+        messages,
+        ...(metadataFilter ? { metadata_filter: metadataFilter } : {})
+      }),
       signal
     });
 
@@ -353,6 +356,23 @@ export class ApiClient {
     }
 
     return response.json();
+  }
+
+  // Distinct labels/tags (unauthenticated)
+  static async getDistinctLabels(serverUrl, assistantId) {
+    try {
+      const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/labels/distinct`);
+      if (!response.ok) return [];
+      return response.json();
+    } catch { return []; }
+  }
+
+  static async getDistinctTags(serverUrl, assistantId) {
+    try {
+      const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/tags/distinct`);
+      if (!response.ok) return [];
+      return response.json();
+    } catch { return []; }
   }
 
   // Feedback (unauthenticated)

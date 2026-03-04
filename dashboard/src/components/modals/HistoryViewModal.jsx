@@ -153,6 +153,56 @@ function HistoryViewModal({ history, onClose }) {
         )}
       </div>
 
+      {/* === Metadata Filters === */}
+      {history.MetadataFilter && (() => {
+        let filter = null;
+        try { filter = JSON.parse(history.MetadataFilter); } catch {}
+        if (!filter) return null;
+        return (
+          <div className="history-section" style={{ marginTop: '1rem' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Metadata Filters Applied</h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {filter.required_labels && filter.required_labels.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Labels: </span>
+                  {filter.required_labels.map((l, i) => (
+                    <span key={i} style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #e8f5e9)', borderRadius: '4px' }}>{l}</span>
+                  ))}
+                </div>
+              )}
+              {filter.excluded_labels && filter.excluded_labels.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Labels: </span>
+                  {filter.excluded_labels.map((l, i) => (
+                    <span key={i} style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #ffebee)', borderRadius: '4px', textDecoration: 'line-through' }}>{l}</span>
+                  ))}
+                </div>
+              )}
+              {filter.required_tags && filter.required_tags.length > 0 && (
+                <div style={{ width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Tags:</span>
+                  <div style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
+                    {filter.required_tags.map((t, i) => (
+                      <div key={i} style={{ fontFamily: 'monospace' }}>{t.key} {t.condition} {t.value || ''}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {filter.excluded_tags && filter.excluded_tags.length > 0 && (
+                <div style={{ width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Tags:</span>
+                  <div style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
+                    {filter.excluded_tags.map((t, i) => (
+                      <div key={i} style={{ fontFamily: 'monospace', textDecoration: 'line-through' }}>{t.key} {t.condition} {t.value || ''}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* === Performance Timing === */}
       <div className="history-section">
         <div className="history-section-header">

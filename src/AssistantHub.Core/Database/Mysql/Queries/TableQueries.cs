@@ -99,6 +99,8 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
+            "  `retrieval_label_filter` TEXT, " +
+            "  `retrieval_tag_filter` TEXT, " +
             "  `streaming` TINYINT NOT NULL DEFAULT 1, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
@@ -249,6 +251,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `completion_tokens` INT NOT NULL DEFAULT 0, " +
             "  `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0, " +
             "  `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `metadata_filter` TEXT, " +
             "  `assistant_response` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +

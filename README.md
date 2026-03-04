@@ -28,11 +28,36 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.6.0
+## New in v0.7.0
 
-- **LLM-based re-ranking** -- After initial retrieval, an LLM scores each chunk's relevance to the user's query and filters out low-quality results before context injection. Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
-- New assistant settings: `EnableReranking`, `RerankerTopK`, `RerankerScoreThreshold`, `RerankPrompt`
-- New chat history telemetry: `RerankDurationMs`, `RerankInputCount`, `RerankOutputCount`
+- **Metadata filtering for chat completions** -- Filter RAG retrieval to only return documents matching specified labels and/or tags. Labels are simple string lists (required/excluded). Tags are key-value conditions supporting operators: `Equals`, `NotEquals`, `Contains`, `StartsWith`, `EndsWith`, `GreaterThan`, `LessThan`, `IsNull`, `IsNotNull`. Filters can be configured as defaults on an assistant (applied to every conversation) and/or supplied per-request via the `metadata_filter` field on the chat completion request body. When both are present, they are merged (required labels/tags unioned, excluded labels/tags unioned).
+- **Per-request `metadata_filter` on chat completions** -- The `POST /v1.0/assistants/{id}/chat` endpoint accepts an optional `metadata_filter` object in the request body. This is an AssistantHub extension to the OpenAI-compatible chat schema. Clients that omit it get standard unfiltered retrieval. Example:
+  ```json
+  {
+    "messages": [{"role": "user", "content": "What were the Q4 results?"}],
+    "metadata_filter": {
+      "required_labels": ["finance", "quarterly-report"],
+      "excluded_labels": ["draft"],
+      "required_tags": [
+        {"key": "department", "condition": "Equals", "value": "accounting"}
+      ]
+    }
+  }
+  ```
+- **Assistant-level default filters** -- New `RetrievalLabelFilter` and `RetrievalTagFilter` settings on each assistant. Configure via the dashboard (Retrieval Filters section) or API. These defaults are applied to every chat retrieval for that assistant.
+- **Filter discovery endpoints** -- Four new API endpoints to discover available filter values:
+  - `GET /v1.0/collections/{collectionId}/labels/distinct` (admin)
+  - `GET /v1.0/collections/{collectionId}/tags/distinct` (admin)
+  - `GET /v1.0/assistants/{assistantId}/labels/distinct` (public)
+  - `GET /v1.0/assistants/{assistantId}/tags/distinct` (public)
+- **Dashboard** -- Retrieval Filters configuration in assistant settings, collapsible metadata filter panel in the chat UI for per-session filtering, and metadata filter display in the history detail view
+- **Auditing** -- The effective merged filter is stored in `ChatHistory.MetadataFilter` and displayed in the History View modal
+- **Docker image tags** updated to v0.7.0
+- See [CHANGELOG.md](CHANGELOG.md) for full details
+
+## v0.6.0
+
+- **LLM-based re-ranking** -- After initial retrieval, an LLM scores each chunk's relevance to the user's query and filters out low-quality results before context injection
 - See [CHANGELOG.md](CHANGELOG.md) for full details
 
 ## v0.5.0
@@ -76,6 +101,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
 - **Query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval to broaden recall and capture synonyms, alternate phrasing, and conceptual restatements
 - **LLM-based re-ranking** -- Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
+- **Metadata filtering** -- Filter RAG retrieval by document labels (required/excluded string lists) and tags (key-value conditions with conditional operators). Configure default filters per assistant and/or override per-conversation via the `metadata_filter` field on chat completion requests.
 - **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 
 ---
@@ -351,6 +377,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Bucket Objects | `GET/PUT/POST/DELETE /v1.0/buckets/{name}/objects` | S3 object management with upload, download, metadata, and directory creation (tenant-scoped) |
 | Collections | `PUT/GET /v1.0/collections`, `GET/PUT/DELETE/HEAD /v1.0/collections/{id}` | RecallDB collection management (admin only) |
 | Collection Records | `PUT/GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` | Browse and manage records within collections (admin only) |
+| Collection Metadata | `GET /v1.0/collections/{id}/labels/distinct`, `GET .../tags/distinct` | Discover distinct label values and tag keys in a collection (admin only) |
 | Ingestion Rules | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` | Document processing rule management |
 | Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health` | Partio embedding endpoint management (admin only) |
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health` | Partio completion endpoint management (admin only) |
@@ -364,11 +391,12 @@ For complete endpoint documentation including request/response schemas and examp
 | Threads | `GET /v1.0/threads` | List conversation threads |
 | Models | `GET /v1.0/models`, `POST /v1.0/models/pull`, `GET .../pull/status` | List, pull, and check pull status for inference models |
 | Configuration | `GET/PUT /v1.0/configuration` | View and update server configuration (admin only) |
-| Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG (unauthenticated, SSE or JSON) |
+| Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG and optional metadata filtering (unauthenticated, SSE or JSON) |
 | Public Generate | `POST /v1.0/assistants/{id}/generate` | Lightweight inference without RAG (unauthenticated) |
 | Public Compact | `POST /v1.0/assistants/{id}/compact` | Force conversation compaction (unauthenticated) |
 | Public Feedback | `POST /v1.0/assistants/{id}/feedback` | Submit feedback (unauthenticated) |
 | Public Info | `GET /v1.0/assistants/{id}/public` | Get assistant public info and appearance (unauthenticated) |
+| Public Metadata | `GET /v1.0/assistants/{id}/labels/distinct`, `GET .../tags/distinct` | Discover available label and tag filter values for an assistant's collection (unauthenticated) |
 | Public Threads | `POST /v1.0/assistants/{id}/threads` | Create a conversation thread (unauthenticated) |
 
 ---

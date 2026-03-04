@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, streaming, created_utc, last_update_utc) " +
+                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -92,6 +92,8 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +
                 _Driver.FormatNullableString(assistantSettings.FaviconUrl) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 (assistantSettings.Streaming ? 1 : 0) + ", " +
                 "'" + _Driver.FormatDateTime(assistantSettings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "'" +
@@ -166,6 +168,8 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "title = " + _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 "logo_url = " + _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +
                 "favicon_url = " + _Driver.FormatNullableString(assistantSettings.FaviconUrl) + ", " +
+                "retrieval_label_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
+                "retrieval_tag_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 "streaming = " + (assistantSettings.Streaming ? 1 : 0) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(assistantSettings.Id) + "'";

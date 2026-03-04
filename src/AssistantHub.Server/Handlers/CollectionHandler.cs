@@ -585,6 +585,98 @@ namespace AssistantHub.Server.Handlers
             }
         }
 
+        /// <summary>
+        /// GET /v1.0/collections/{collectionId}/labels/distinct - Get distinct label values (admin).
+        /// </summary>
+        public async Task GetDistinctLabelsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string collectionId = ctx.Request.Url.Parameters["collectionId"];
+                if (String.IsNullOrEmpty(collectionId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                string url = BuildRecallDbUrl(auth.TenantId, collectionId + "/labels/distinct");
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
+                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
+
+                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(respBody).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetDistinctLabelsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/collections/{collectionId}/tags/distinct - Get distinct tag keys (admin).
+        /// </summary>
+        public async Task GetDistinctTagsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string collectionId = ctx.Request.Url.Parameters["collectionId"];
+                if (String.IsNullOrEmpty(collectionId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                string url = BuildRecallDbUrl(auth.TenantId, collectionId + "/tags/distinct");
+                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
+                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
+
+                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(respBody).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetDistinctTagsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
         #endregion
 
         #region Private-Methods

@@ -167,6 +167,12 @@ namespace AssistantHub.Core.Models
         public double TokensPerSecondGeneration { get; set; } = 0;
 
         /// <summary>
+        /// JSON-serialized effective ChatMetadataFilter that was applied during retrieval.
+        /// Null when no filters were active.
+        /// </summary>
+        public string MetadataFilter { get; set; } = null;
+
+        /// <summary>
         /// The assistant response content.
         /// </summary>
         public string AssistantResponse { get; set; } = null;
@@ -237,6 +243,7 @@ namespace AssistantHub.Core.Models
             obj.CompletionTokens = DataTableHelper.GetIntValue(row, "completion_tokens");
             obj.TokensPerSecondOverall = DataTableHelper.GetDoubleValue(row, "tokens_per_second_overall");
             obj.TokensPerSecondGeneration = DataTableHelper.GetDoubleValue(row, "tokens_per_second_generation");
+            obj.MetadataFilter = DataTableHelper.GetStringValue(row, "metadata_filter");
             obj.AssistantResponse = DataTableHelper.GetStringValue(row, "assistant_response");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");

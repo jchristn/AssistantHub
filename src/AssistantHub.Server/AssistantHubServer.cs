@@ -548,6 +548,8 @@ namespace AssistantHub.Server
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/threads", chatHandler.PostCreateThreadAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/threads/{threadId}/history", chatHandler.GetThreadHistoryAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents/{documentId}/download", chatHandler.GetPublicDocumentDownloadAsync);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/labels/distinct", chatHandler.GetAssistantDistinctLabelsAsync);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tags/distinct", chatHandler.GetAssistantDistinctTagsAsync);
 
             // Authentication handler
             _Server.Routes.AuthenticateRequest = authHandler.HandleAuthenticateRequestAsync;
@@ -593,6 +595,8 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.GetRecordAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.DeleteRecordAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/records/batch/delete", collectionHandler.BatchDeleteRecordsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/labels/distinct", collectionHandler.GetDistinctLabelsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/tags/distinct", collectionHandler.GetDistinctTagsAsync);
 
             // Authenticated routes - Buckets (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets", bucketHandler.PutBucketAsync);

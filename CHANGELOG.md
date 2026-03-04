@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.7.0
+
+### Added
+- **Metadata filtering for RAG retrieval**: Filter chat retrieval to only return documents matching specified labels (strings) and/or tags (key-value pairs with conditional operators). Filters can be configured as defaults on an assistant and/or supplied per-conversation at chat time.
+- New assistant settings: `RetrievalLabelFilter`, `RetrievalTagFilter` — JSON-serialized default filters applied during every retrieval for that assistant
+- New `metadata_filter` field on `ChatCompletionRequest` — per-request filter that is merged with assistant defaults
+- Filter merging: assistant-level and request-level filters are unioned (required labels/tags combined, excluded labels/tags combined)
+- Effective metadata filter stored in `ChatHistory.MetadataFilter` for auditing
+- Metadata filter display in the History View modal
+- New proxy API endpoints for discovering available filter values:
+  - `GET /v1.0/collections/{collectionId}/labels/distinct` (admin, authenticated)
+  - `GET /v1.0/collections/{collectionId}/tags/distinct` (admin, authenticated)
+  - `GET /v1.0/assistants/{assistantId}/labels/distinct` (public, no auth)
+  - `GET /v1.0/assistants/{assistantId}/tags/distinct` (public, no auth)
+- Dashboard: Retrieval Filters section in assistant settings (JSON editor for label and tag filters)
+- Dashboard: Collapsible metadata filter panel in ChatPanel for per-session filtering
+- Migration script: `migrations/005_upgrade_to_v0.7.0.sql`
+
+### Changed
+- Docker image tags updated to v0.7.0
+- Database schema updated with metadata filtering columns for `assistant_settings` and `chat_history` tables
+- `RetrievalService.BuildSearchBody()` now uses Dictionary-based construction to support conditional `LabelFilter` and `TagFilter` properties
+- `RetrievalSearchOptions` extended with `MetadataFilter` property
+- Chat completion request body now accepts an optional `metadata_filter` object (AssistantHub extension to the OpenAI-compatible schema; omitting it preserves existing behavior)
+
+### Breaking
+- Database schema changes require running `migrations/005_upgrade_to_v0.7.0.sql` for existing installations
+
 ## v0.6.0
 
 ### Added
@@ -17,7 +45,7 @@
 ### Breaking
 - Database schema changes require running `migrations/004_upgrade_to_v0.6.0.sql` for existing installations
 
-## Current Version: v0.5.0
+## v0.5.0
 
 ### Native Crawlers
 

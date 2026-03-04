@@ -1335,6 +1335,44 @@ body {
   color: var(--text-secondary);
 }
 
+.chat-filter-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  position: relative;
+  margin-right: 0.125rem;
+}
+
+.chat-filter-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.chat-filter-btn.active {
+  color: var(--accent-color);
+}
+
+.chat-filter-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  border: 1.5px solid var(--input-bg);
+}
+
 .chat-send-btn {
   width: 36px;
   height: 36px;

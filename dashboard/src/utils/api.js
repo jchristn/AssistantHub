@@ -384,6 +384,23 @@ export class ApiClient {
     }).then(r => r.json());
   }
 
+  // Evaluation
+  createEvalFact(fact) { return this.request('PUT', '/v1.0/eval/facts', fact); }
+  getEvalFacts(params) { return this.request('GET', '/v1.0/eval/facts' + this.buildQuery(params)); }
+  getEvalFact(id) { return this.request('GET', `/v1.0/eval/facts/${id}`); }
+  updateEvalFact(id, fact) { return this.request('PUT', `/v1.0/eval/facts/${id}`, fact); }
+  deleteEvalFact(id) { return this.request('DELETE', `/v1.0/eval/facts/${id}`); }
+  startEvalRun(body) { return this.request('POST', '/v1.0/eval/runs', body); }
+  getEvalRuns(params) { return this.request('GET', '/v1.0/eval/runs' + this.buildQuery(params)); }
+  getEvalRun(id) { return this.request('GET', `/v1.0/eval/runs/${id}`); }
+  deleteEvalRun(id) { return this.request('DELETE', `/v1.0/eval/runs/${id}`); }
+  getEvalRunResults(runId) { return this.request('GET', `/v1.0/eval/runs/${runId}/results`); }
+  getEvalResult(id) { return this.request('GET', `/v1.0/eval/results/${id}`); }
+  getDefaultJudgePrompt() { return this.request('GET', '/v1.0/eval/judge-prompt/default'); }
+  getEvalRunStreamUrl(runId) {
+    return `${this.serverUrl}/v1.0/eval/runs/${runId}/stream`;
+  }
+
   // Crawl Plans
   getCrawlPlans(params) { return this.request('GET', '/v1.0/crawlplans' + this.buildQuery(params)); }
   getCrawlPlan(id) { return this.request('GET', `/v1.0/crawlplans/${id}`); }

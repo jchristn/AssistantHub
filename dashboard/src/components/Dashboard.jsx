@@ -23,6 +23,7 @@ import IngestionRulesView from '../views/IngestionRulesView';
 import EmbeddingEndpointsView from '../views/EmbeddingEndpointsView';
 import InferenceEndpointsView from '../views/InferenceEndpointsView';
 import CrawlersView from '../views/CrawlersView';
+import EvaluationView from '../views/EvaluationView';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
@@ -83,6 +84,7 @@ function Dashboard() {
             <Route path="/crawlers" element={<CrawlersView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/history" element={<HistoryView />} />
+            <Route path="/evaluation" element={<EvaluationView />} />
             <Route path="/models" element={<ModelsView />} />
             {isGlobalAdmin && <Route path="/configuration" element={<ConfigurationView />} />}
             <Route path="*" element={<Navigate to="/assistants" />} />

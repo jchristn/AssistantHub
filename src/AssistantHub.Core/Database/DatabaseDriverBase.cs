@@ -69,6 +69,21 @@ namespace AssistantHub.Core.Database
         /// </summary>
         public ICrawlOperationMethods CrawlOperation { get; protected set; }
 
+        /// <summary>
+        /// Eval fact methods.
+        /// </summary>
+        public IEvalFactMethods EvalFact { get; protected set; }
+
+        /// <summary>
+        /// Eval run methods.
+        /// </summary>
+        public IEvalRunMethods EvalRun { get; protected set; }
+
+        /// <summary>
+        /// Eval result methods.
+        /// </summary>
+        public IEvalResultMethods EvalResult { get; protected set; }
+
         #endregion
 
         #region Constructors-and-Factories

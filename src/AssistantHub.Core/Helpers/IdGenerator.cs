@@ -125,6 +125,33 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate an eval fact identifier.
+        /// </summary>
+        /// <returns>Eval fact identifier.</returns>
+        public static string NewEvalFactId()
+        {
+            return _Generator.GenerateKSortable(Constants.EvalFactIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
+        /// Generate an eval run identifier.
+        /// </summary>
+        /// <returns>Eval run identifier.</returns>
+        public static string NewEvalRunId()
+        {
+            return _Generator.GenerateKSortable(Constants.EvalRunIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
+        /// Generate an eval result identifier.
+        /// </summary>
+        /// <returns>Eval result identifier.</returns>
+        public static string NewEvalResultId()
+        {
+            return _Generator.GenerateKSortable(Constants.EvalResultIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a chat completion identifier.
         /// </summary>
         /// <returns>Chat completion identifier.</returns>

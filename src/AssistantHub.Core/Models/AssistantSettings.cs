@@ -250,6 +250,13 @@ namespace AssistantHub.Core.Models
         public string RetrievalTagFilter { get; set; } = null;
 
         /// <summary>
+        /// Custom evaluation judge prompt template for RAG evaluation.
+        /// Must contain {QUESTION}, {RESPONSE}, and {EXPECTED_FACT} placeholders.
+        /// When null, a built-in default prompt is used.
+        /// </summary>
+        public string EvalJudgePrompt { get; set; } = null;
+
+        /// <summary>
         /// Whether to enable SSE streaming for chat responses.
         /// </summary>
         public bool Streaming { get; set; } = true;
@@ -335,6 +342,7 @@ namespace AssistantHub.Core.Models
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");
             obj.RetrievalLabelFilter = DataTableHelper.GetStringValue(row, "retrieval_label_filter");
             obj.RetrievalTagFilter = DataTableHelper.GetStringValue(row, "retrieval_tag_filter");
+            obj.EvalJudgePrompt = DataTableHelper.GetStringValue(row, "eval_judge_prompt");
             obj.Streaming = DataTableHelper.GetBooleanValue(row, "streaming", true);
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");

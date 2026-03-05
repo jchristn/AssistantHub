@@ -114,6 +114,21 @@ namespace AssistantHub.Core
         public static string CrawlOperationIdentifierPrefix = "cop_";
 
         /// <summary>
+        /// Eval fact identifier prefix.
+        /// </summary>
+        public static string EvalFactIdentifierPrefix = "ef_";
+
+        /// <summary>
+        /// Eval run identifier prefix.
+        /// </summary>
+        public static string EvalRunIdentifierPrefix = "erun_";
+
+        /// <summary>
+        /// Eval result identifier prefix.
+        /// </summary>
+        public static string EvalResultIdentifierPrefix = "eres_";
+
+        /// <summary>
         /// Identifier length (total length including prefix).
         /// </summary>
         public static int IdentifierLength = 32;
@@ -181,6 +196,21 @@ namespace AssistantHub.Core
         /// Crawl operations table name.
         /// </summary>
         public static string CrawlOperationsTable = "crawl_operations";
+
+        /// <summary>
+        /// Eval facts table name.
+        /// </summary>
+        public static string EvalFactsTable = "eval_facts";
+
+        /// <summary>
+        /// Eval runs table name.
+        /// </summary>
+        public static string EvalRunsTable = "eval_runs";
+
+        /// <summary>
+        /// Eval results table name.
+        /// </summary>
+        public static string EvalResultsTable = "eval_results";
 
         #endregion
 

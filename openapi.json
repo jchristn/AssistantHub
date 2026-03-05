@@ -36,6 +36,7 @@
     { "name": "Threads", "description": "Conversation thread listing (Auth)" },
     { "name": "Models", "description": "Inference model management" },
     { "name": "Configuration", "description": "Application configuration (Admin)" },
+    { "name": "Evaluation", "description": "RAG evaluation: facts, runs, results, and streaming" },
     { "name": "Public", "description": "Public assistant endpoints (no auth required)" }
   ],
   "paths": {
@@ -2067,6 +2068,203 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/v1.0/eval/facts": {
+      "put": {
+        "tags": ["Evaluation"],
+        "summary": "Create eval fact",
+        "description": "Create a new evaluation fact with a question and expected facts for RAG evaluation.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EvalFact" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Eval fact created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalFact" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "List eval facts",
+        "description": "Enumerate evaluation facts scoped to the caller's tenant.",
+        "parameters": [
+          { "name": "maxResults", "in": "query", "schema": { "type": "integer" } },
+          { "name": "continuationToken", "in": "query", "schema": { "type": "string" } },
+          { "name": "assistantId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Eval facts list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnumerationResultEvalFact" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1.0/eval/facts/{factId}": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get eval fact",
+        "description": "Get a single evaluation fact by ID.",
+        "parameters": [
+          { "name": "factId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Eval fact", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalFact" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Evaluation"],
+        "summary": "Update eval fact",
+        "description": "Update an existing evaluation fact.",
+        "parameters": [
+          { "name": "factId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EvalFact" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated eval fact", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalFact" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Evaluation"],
+        "summary": "Delete eval fact",
+        "description": "Delete an evaluation fact by ID.",
+        "parameters": [
+          { "name": "factId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/eval/runs": {
+      "post": {
+        "tags": ["Evaluation"],
+        "summary": "Start eval run",
+        "description": "Start a new evaluation run for an assistant. The run executes in the background.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "AssistantId": { "type": "string", "description": "Assistant to evaluate" },
+                  "JudgePrompt": { "type": "string", "nullable": true, "description": "Optional judge prompt override for this run" }
+                },
+                "required": ["AssistantId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Eval run started", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalRun" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "List eval runs",
+        "description": "Enumerate evaluation runs scoped to the caller's tenant.",
+        "parameters": [
+          { "name": "maxResults", "in": "query", "schema": { "type": "integer" } },
+          { "name": "continuationToken", "in": "query", "schema": { "type": "string" } },
+          { "name": "assistantId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Eval runs list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnumerationResultEvalRun" } } } }
+        }
+      }
+    },
+    "/v1.0/eval/runs/{runId}": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get eval run",
+        "description": "Get a single evaluation run by ID.",
+        "parameters": [
+          { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Eval run", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalRun" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Evaluation"],
+        "summary": "Delete eval run",
+        "description": "Delete an evaluation run and all associated results.",
+        "parameters": [
+          { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/eval/runs/{runId}/results": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get run results",
+        "description": "Get all evaluation results for a specific run.",
+        "parameters": [
+          { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Array of eval results", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EvalResult" } } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/eval/runs/{runId}/stream": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Stream run progress",
+        "description": "Server-Sent Events stream of evaluation run progress. Sends JSON updates every 2 seconds until the run completes or fails.",
+        "parameters": [
+          { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "SSE stream of run progress", "content": { "text/event-stream": { "schema": { "type": "string" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/eval/results/{resultId}": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get eval result",
+        "description": "Get a single evaluation result by ID.",
+        "parameters": [
+          { "name": "resultId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Eval result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvalResult" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/eval/judge-prompt/default": {
+      "get": {
+        "tags": ["Evaluation"],
+        "summary": "Get default judge prompt",
+        "description": "Returns the built-in default evaluation judge prompt template.",
+        "responses": {
+          "200": { "description": "Default judge prompt", "content": { "application/json": { "schema": { "type": "object", "properties": { "Prompt": { "type": "string" } } } } } }
+        }
+      }
     }
   },
   "components": {
@@ -2673,6 +2871,83 @@
           "LastUpdateUtc": { "type": "string", "format": "date-time" }
         },
         "required": ["Model", "Endpoint", "ApiFormat"]
+      },
+      "EvalFact": {
+        "type": "object",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix ef_)" },
+          "TenantId": { "type": "string" },
+          "AssistantId": { "type": "string", "description": "Assistant this fact belongs to" },
+          "Category": { "type": "string", "nullable": true, "description": "Category for organizing facts" },
+          "Question": { "type": "string", "nullable": true, "description": "Question to send to the assistant" },
+          "ExpectedFacts": { "type": "string", "nullable": true, "description": "JSON array of expected facts" },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        },
+        "required": ["AssistantId"]
+      },
+      "EvalRun": {
+        "type": "object",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix erun_)" },
+          "TenantId": { "type": "string" },
+          "AssistantId": { "type": "string" },
+          "Status": { "type": "string", "enum": ["Pending", "Running", "Completed", "Failed"] },
+          "TotalFacts": { "type": "integer" },
+          "FactsEvaluated": { "type": "integer" },
+          "FactsPassed": { "type": "integer" },
+          "FactsFailed": { "type": "integer" },
+          "PassRate": { "type": "number", "description": "Pass rate percentage (0-100)" },
+          "JudgePrompt": { "type": "string", "nullable": true, "description": "Judge prompt used for this run (null = default)" },
+          "StartedUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "CompletedUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EvalResult": {
+        "type": "object",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix eres_)" },
+          "RunId": { "type": "string" },
+          "FactId": { "type": "string" },
+          "Question": { "type": "string", "nullable": true },
+          "ExpectedFacts": { "type": "string", "nullable": true, "description": "JSON array of expected facts" },
+          "LlmResponse": { "type": "string", "nullable": true, "description": "Full LLM response text" },
+          "FactVerdicts": { "type": "string", "nullable": true, "description": "JSON array of FactVerdict objects" },
+          "OverallPass": { "type": "boolean" },
+          "DurationMs": { "type": "integer", "format": "int64", "description": "Execution time in milliseconds" },
+          "CreatedUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FactVerdict": {
+        "type": "object",
+        "properties": {
+          "Fact": { "type": "string", "description": "The expected fact text" },
+          "Pass": { "type": "boolean", "description": "Whether the fact was found in the response" },
+          "Reasoning": { "type": "string", "description": "LLM judge reasoning" }
+        }
+      },
+      "EnumerationResultEvalFact": {
+        "type": "object",
+        "properties": {
+          "MaxResults": { "type": "integer" },
+          "TotalRecords": { "type": "integer", "format": "int64" },
+          "RecordsRemaining": { "type": "integer", "format": "int64" },
+          "EndOfResults": { "type": "boolean" },
+          "ContinuationToken": { "type": "string", "nullable": true },
+          "Objects": { "type": "array", "items": { "$ref": "#/components/schemas/EvalFact" } }
+        }
+      },
+      "EnumerationResultEvalRun": {
+        "type": "object",
+        "properties": {
+          "MaxResults": { "type": "integer" },
+          "TotalRecords": { "type": "integer", "format": "int64" },
+          "RecordsRemaining": { "type": "integer", "format": "int64" },
+          "EndOfResults": { "type": "boolean" },
+          "ContinuationToken": { "type": "string", "nullable": true },
+          "Objects": { "type": "array", "items": { "$ref": "#/components/schemas/EvalRun" } }
+        }
       }
     }
   }

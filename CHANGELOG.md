@@ -1,5 +1,45 @@
 # Changelog
 
+## v0.8.0
+
+### Added
+- **RAG Evaluation**: Automated evaluation framework for measuring RAG pipeline quality. Define expected facts per assistant, run evaluations that send questions through the inference pipeline, and use an LLM judge to score responses against expected facts with PASS/FAIL verdicts and reasoning.
+- New models: `EvalFact` (prefix `ef_`), `EvalRun` (prefix `erun_`), `EvalResult` (prefix `eres_`), `FactVerdict`, `EvalStatusEnum`
+- New database tables: `eval_facts`, `eval_runs`, `eval_results` with indexes for tenant, assistant, status, and temporal queries
+- New assistant setting: `EvalJudgePrompt` — custom judge prompt template per assistant (supports `{QUESTION}`, `{RESPONSE}`, `{EXPECTED_FACT}` placeholders). Falls back to built-in default when not configured.
+- New `EvalService` — orchestrates evaluation runs in the background, sends questions through inference, judges each expected fact, tracks progress, and stores results
+- New `EvalHandler` with 13 API endpoints:
+  - `PUT /v1.0/eval/facts` — create eval fact
+  - `GET /v1.0/eval/facts` — list eval facts (with assistant filter)
+  - `GET /v1.0/eval/facts/{factId}` — get eval fact
+  - `PUT /v1.0/eval/facts/{factId}` — update eval fact
+  - `DELETE /v1.0/eval/facts/{factId}` — delete eval fact
+  - `POST /v1.0/eval/runs` — start eval run (with optional judge prompt override)
+  - `GET /v1.0/eval/runs` — list eval runs
+  - `GET /v1.0/eval/runs/{runId}` — get eval run
+  - `DELETE /v1.0/eval/runs/{runId}` — delete eval run and results
+  - `GET /v1.0/eval/runs/{runId}/results` — get all results for a run
+  - `GET /v1.0/eval/runs/{runId}/stream` — SSE stream of run progress (2-second polling)
+  - `GET /v1.0/eval/results/{resultId}` — get single eval result
+  - `GET /v1.0/eval/judge-prompt/default` — get the built-in default judge prompt
+- Dashboard: "Evaluation" page in the Chat (Assistants) sidebar section with:
+  - Facts sub-tab: DataTable with category, question, expected facts count; create/edit modal with dynamic expected facts list; delete with confirmation
+  - Runs sub-tab: DataTable with status badges, pass/fail counts, pass rate, duration; start new run modal with optional judge prompt override; SSE progress streaming modal; results modal with per-fact detail view showing LLM response and judge verdicts with reasoning
+- OpenAPI spec updated with Evaluation tag and all 13 endpoint definitions plus schemas
+- Migration script: `migrations/006_upgrade_to_v0.8.0.sql` (SQLite, PostgreSQL, MySQL, SQL Server)
+
+### Changed
+- Docker image tags updated to v0.8.0
+- Database schema updated with `eval_judge_prompt` column on `assistant_settings` and three new eval tables
+- `DatabaseDriverBase` extended with `EvalFact`, `EvalRun`, `EvalResult` entity method interfaces
+- `SqliteDatabaseDriver` wired with eval method implementations
+- `TableQueries` updated with eval table creation and index statements
+- `Constants` updated with eval identifier prefixes and table names
+- `IdGenerator` updated with `NewEvalFactId()`, `NewEvalRunId()`, `NewEvalResultId()` methods
+
+### Breaking
+- Database schema changes require running `migrations/006_upgrade_to_v0.8.0.sql` for existing installations
+
 ## v0.7.0
 
 ### Added

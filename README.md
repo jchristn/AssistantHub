@@ -28,6 +28,14 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
+## New in v0.8.0
+
+- **RAG Evaluation** -- Define expected facts for each assistant and run automated evaluation to measure RAG pipeline quality. Each evaluation run sends questions through the inference pipeline, then uses an LLM judge to score whether the response contains the expected facts. Supports per-assistant judge prompt configuration with per-run overrides, real-time SSE progress streaming, detailed per-fact verdicts with judge reasoning, and pass/fail/duration metrics.
+- **Evaluation dashboard** -- New "Evaluation" page in the Chat sidebar section. Facts sub-tab for creating, editing, and deleting evaluation facts organized by category. Runs sub-tab to start new evaluation runs (with optional judge prompt override), view run history with pass rates, stream live progress via SSE, and drill into per-fact results with full LLM responses and judge reasoning.
+- **Eval judge prompt on assistant settings** -- New `EvalJudgePrompt` field on assistant settings for configuring a custom judge prompt template per assistant. Falls back to a built-in default when not set. Can be further overridden per-run at execution time.
+- **13 new API endpoints** for evaluation: CRUD for facts (`/v1.0/eval/facts`), run management (`/v1.0/eval/runs`), SSE streaming (`/v1.0/eval/runs/{id}/stream`), result retrieval (`/v1.0/eval/results/{id}`), and default judge prompt (`/v1.0/eval/judge-prompt/default`)
+- **Migration script**: `migrations/006_upgrade_to_v0.8.0.sql`
+
 ## New in v0.7.0
 
 - **Metadata filtering for chat completions** -- Filter RAG retrieval to only return documents matching specified labels and/or tags. Labels are simple string lists (required/excluded). Tags are key-value conditions supporting operators: `Equals`, `NotEquals`, `Contains`, `StartsWith`, `EndsWith`, `GreaterThan`, `LessThan`, `IsNull`, `IsNotNull`. Filters can be configured as defaults on an assistant (applied to every conversation) and/or supplied per-request via the `metadata_filter` field on the chat completion request body. When both are present, they are merged (required labels/tags unioned, excluded labels/tags unioned).

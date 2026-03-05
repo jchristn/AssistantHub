@@ -92,6 +92,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  favicon_url TEXT, " +
                 "  retrieval_label_filter TEXT, " +
                 "  retrieval_tag_filter TEXT, " +
+                "  eval_judge_prompt TEXT, " +
                 "  streaming INTEGER NOT NULL DEFAULT 1, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
@@ -228,6 +229,43 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  assistant_response TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS eval_facts (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  assistant_id TEXT NOT NULL, " +
+                "  category TEXT, " +
+                "  question TEXT, " +
+                "  expected_facts TEXT, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS eval_runs (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  assistant_id TEXT NOT NULL, " +
+                "  status TEXT NOT NULL DEFAULT 'Pending', " +
+                "  total_facts INTEGER NOT NULL DEFAULT 0, " +
+                "  facts_evaluated INTEGER NOT NULL DEFAULT 0, " +
+                "  facts_passed INTEGER NOT NULL DEFAULT 0, " +
+                "  facts_failed INTEGER NOT NULL DEFAULT 0, " +
+                "  pass_rate REAL NOT NULL DEFAULT 0, " +
+                "  judge_prompt TEXT, " +
+                "  started_utc TEXT, " +
+                "  completed_utc TEXT, " +
+                "  created_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS eval_results (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  run_id TEXT NOT NULL, " +
+                "  fact_id TEXT NOT NULL, " +
+                "  question TEXT, " +
+                "  expected_facts TEXT, " +
+                "  llm_response TEXT, " +
+                "  fact_verdicts TEXT, " +
+                "  overall_pass INTEGER NOT NULL DEFAULT 0, " +
+                "  duration_ms INTEGER NOT NULL DEFAULT 0, " +
+                "  created_utc TEXT NOT NULL" +
                 "); ";
         }
 
@@ -266,7 +304,17 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_crawl_operations_crawl_plan_id ON crawl_operations(crawl_plan_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_operations_created_utc ON crawl_operations(created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_plan_id ON assistant_documents(crawl_plan_id); " +
-                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_operation_id ON assistant_documents(crawl_operation_id); ";
+                "CREATE INDEX IF NOT EXISTS idx_assistant_documents_crawl_operation_id ON assistant_documents(crawl_operation_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_facts_tenant_id ON eval_facts(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_facts_assistant_id ON eval_facts(assistant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_facts_category ON eval_facts(category); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_facts_created_utc ON eval_facts(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_runs_tenant_id ON eval_runs(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_runs_assistant_id ON eval_runs(assistant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_runs_status ON eval_runs(status); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_runs_created_utc ON eval_runs(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_results_run_id ON eval_results(run_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_eval_results_fact_id ON eval_results(fact_id); ";
         }
 
     }

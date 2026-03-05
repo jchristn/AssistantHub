@@ -99,6 +99,21 @@
             Crawl operation identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.EvalFactIdentifierPrefix">
+            <summary>
+            Eval fact identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.EvalRunIdentifierPrefix">
+            <summary>
+            Eval run identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.EvalResultIdentifierPrefix">
+            <summary>
+            Eval result identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.IdentifierLength">
             <summary>
             Identifier length (total length including prefix).
@@ -162,6 +177,21 @@
         <member name="F:AssistantHub.Core.Constants.CrawlOperationsTable">
             <summary>
             Crawl operations table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.EvalFactsTable">
+            <summary>
+            Eval facts table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.EvalRunsTable">
+            <summary>
+            Eval runs table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.EvalResultsTable">
+            <summary>
+            Eval results table name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.ThreadIdHeader">
@@ -257,6 +287,21 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.CrawlOperation">
             <summary>
             Crawl operation methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.EvalFact">
+            <summary>
+            Eval fact methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.EvalRun">
+            <summary>
+            Eval run methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.EvalResult">
+            <summary>
+            Eval result methods.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Database.DatabaseDriverBase.#ctor">
@@ -852,6 +897,106 @@
             <param name="userId">User identifier.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IEvalFactMethods">
+            <summary>
+            Eval fact database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.CreateAsync(AssistantHub.Core.Models.EvalFact,System.Threading.CancellationToken)">
+            <summary>
+            Create an eval fact record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an eval fact record by identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.UpdateAsync(AssistantHub.Core.Models.EvalFact,System.Threading.CancellationToken)">
+            <summary>
+            Update an eval fact record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an eval fact record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate eval fact records scoped to a tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalFactMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all eval fact records belonging to an assistant.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IEvalResultMethods">
+            <summary>
+            Eval result database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalResultMethods.CreateAsync(AssistantHub.Core.Models.EvalResult,System.Threading.CancellationToken)">
+            <summary>
+            Create an eval result record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalResultMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an eval result record by identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalResultMethods.GetByRunIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get all results for a given run.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalResultMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an eval result record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalResultMethods.DeleteByRunIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all eval result records belonging to a run.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IEvalRunMethods">
+            <summary>
+            Eval run database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.CreateAsync(AssistantHub.Core.Models.EvalRun,System.Threading.CancellationToken)">
+            <summary>
+            Create an eval run record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an eval run record by identifier.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.UpdateAsync(AssistantHub.Core.Models.EvalRun,System.Threading.CancellationToken)">
+            <summary>
+            Update an eval run record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an eval run record and its associated results.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate eval run records scoped to a tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IEvalRunMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all eval run records belonging to an assistant.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IIngestionRuleMethods">
             <summary>
@@ -2150,6 +2295,87 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods">
+            <summary>
+            SQLite eval fact methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.CreateAsync(AssistantHub.Core.Models.EvalFact,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.UpdateAsync(AssistantHub.Core.Models.EvalFact,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods">
+            <summary>
+            SQLite eval result methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.CreateAsync(AssistantHub.Core.Models.EvalResult,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.GetByRunIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalResultMethods.DeleteByRunIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods">
+            <summary>
+            SQLite eval run methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.CreateAsync(AssistantHub.Core.Models.EvalRun,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.UpdateAsync(AssistantHub.Core.Models.EvalRun,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.EvalRunMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods">
             <summary>
             SQLite ingestion rule methods implementation.
@@ -2930,6 +3156,31 @@
             Created descending.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Enums.EvalStatusEnum">
+            <summary>
+            Evaluation run status enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EvalStatusEnum.Pending">
+            <summary>
+            Run is pending execution.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EvalStatusEnum.Running">
+            <summary>
+            Run is currently executing.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EvalStatusEnum.Completed">
+            <summary>
+            Run completed successfully.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.EvalStatusEnum.Failed">
+            <summary>
+            Run failed.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Enums.FeedbackRatingEnum">
             <summary>
             Feedback rating enumeration.
@@ -3265,6 +3516,24 @@
             Generate a crawl operation identifier.
             </summary>
             <returns>Crawl operation identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewEvalFactId">
+            <summary>
+            Generate an eval fact identifier.
+            </summary>
+            <returns>Eval fact identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewEvalRunId">
+            <summary>
+            Generate an eval run identifier.
+            </summary>
+            <returns>Eval run identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewEvalResultId">
+            <summary>
+            Generate an eval result identifier.
+            </summary>
+            <returns>Eval result identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatCompletionId">
             <summary>
@@ -3788,6 +4057,13 @@
         <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalTagFilter">
             <summary>
             JSON-serialized tag filter for retrieval (e.g. {"Required":[{"Key":"k","Condition":"Equals","Value":"v"}],"Excluded":[...]}).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EvalJudgePrompt">
+            <summary>
+            Custom evaluation judge prompt template for RAG evaluation.
+            Must contain {QUESTION}, {RESPONSE}, and {EXPECTED_FACT} placeholders.
+            When null, a built-in default prompt is used.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Streaming">
@@ -5296,6 +5572,232 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.EvalFact">
+            <summary>
+            Evaluation fact record — a question with expected facts for RAG evaluation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.Id">
+            <summary>
+            Unique identifier with prefix ef_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.AssistantId">
+            <summary>
+            Assistant identifier to which this fact belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.Category">
+            <summary>
+            Category for organizing facts.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.Question">
+            <summary>
+            The question to send to the assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.ExpectedFacts">
+            <summary>
+            JSON array of expected facts that the response should contain.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalFact.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalFact.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalFact.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an EvalFact from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>EvalFact instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EvalResult">
+            <summary>
+            Evaluation result record — the outcome of evaluating a single fact within a run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.Id">
+            <summary>
+            Unique identifier with prefix eres_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.RunId">
+            <summary>
+            Run identifier this result belongs to.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.FactId">
+            <summary>
+            Fact identifier that was evaluated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.Question">
+            <summary>
+            The question that was sent to the assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.ExpectedFacts">
+            <summary>
+            JSON array of expected facts.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.LlmResponse">
+            <summary>
+            The full LLM response text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.FactVerdicts">
+            <summary>
+            JSON array of FactVerdict objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.OverallPass">
+            <summary>
+            Whether all expected facts passed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.DurationMs">
+            <summary>
+            Total execution time in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalResult.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalResult.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an EvalResult from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>EvalResult instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EvalRun">
+            <summary>
+            Evaluation run record — tracks progress and results of an evaluation execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.Id">
+            <summary>
+            Unique identifier with prefix erun_.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.AssistantId">
+            <summary>
+            Assistant identifier to which this run belongs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.Status">
+            <summary>
+            Run status.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.TotalFacts">
+            <summary>
+            Total number of facts to evaluate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.FactsEvaluated">
+            <summary>
+            Number of facts evaluated so far.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.FactsPassed">
+            <summary>
+            Number of facts that passed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.FactsFailed">
+            <summary>
+            Number of facts that failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.PassRate">
+            <summary>
+            Pass rate as a percentage (0-100).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.JudgePrompt">
+            <summary>
+            Judge prompt override used for this run (null means default was used).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.StartedUtc">
+            <summary>
+            Timestamp when the run started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.CompletedUtc">
+            <summary>
+            Timestamp when the run completed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.CreatedUtc">
+            <summary>
+            Timestamp when the record was created in UTC.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalRun.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.EvalRun.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Create an EvalRun from a DataRow.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>EvalRun instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.FactVerdict">
+            <summary>
+            Verdict for a single expected fact within an evaluation result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FactVerdict.Fact">
+            <summary>
+            The expected fact text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FactVerdict.Pass">
+            <summary>
+            Whether the fact was found in the response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.FactVerdict.Reasoning">
+            <summary>
+            LLM judge reasoning for the verdict.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.FeedbackRequest">
             <summary>
             Feedback request.
@@ -6390,6 +6892,31 @@
             </summary>
             <param name="filename">Filename.</param>
             <returns>Always false.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.EvalService">
+            <summary>
+            Service for running RAG evaluation against the inference pipeline.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalService.DefaultJudgePrompt">
+            <summary>
+            Default judge prompt template.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EvalService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EvalService.StartRunAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Start an evaluation run for an assistant. Executes in the background.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="judgePromptOverride">Optional judge prompt override for this run.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>The created EvalRun.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.InferenceService">
             <summary>

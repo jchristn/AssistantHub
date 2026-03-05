@@ -65,7 +65,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, created_utc, last_update_utc) " +
+                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, eval_judge_prompt, streaming, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -102,6 +102,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 _Driver.FormatNullableString(settings.FaviconUrl) + ", " +
                 _Driver.FormatNullableString(settings.RetrievalLabelFilter) + ", " +
                 _Driver.FormatNullableString(settings.RetrievalTagFilter) + ", " +
+                _Driver.FormatNullableString(settings.EvalJudgePrompt) + ", " +
                 (settings.Streaming ? 1 : 0) + ", " +
                 "'" + _Driver.FormatDateTime(settings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "'" +
@@ -180,6 +181,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "favicon_url = " + _Driver.FormatNullableString(settings.FaviconUrl) + ", " +
                 "retrieval_label_filter = " + _Driver.FormatNullableString(settings.RetrievalLabelFilter) + ", " +
                 "retrieval_tag_filter = " + _Driver.FormatNullableString(settings.RetrievalTagFilter) + ", " +
+                "eval_judge_prompt = " + _Driver.FormatNullableString(settings.EvalJudgePrompt) + ", " +
                 "streaming = " + (settings.Streaming ? 1 : 0) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(settings.Id) + "';";

@@ -819,6 +819,81 @@
             GET /v1.0/endpoints/embedding/health - Get all embedding endpoint health statuses.
             </summary>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.EvalHandler">
+            <summary>
+            Handles RAG evaluation routes: facts CRUD, run management, results, and SSE streaming.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.EvalService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.PutFactAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/eval/facts - Create a new eval fact.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetFactsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/facts - List eval facts.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetFactAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/facts/{factId} - Get a single eval fact.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.PutFactByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/eval/facts/{factId} - Update an eval fact.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.DeleteFactAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/eval/facts/{factId} - Delete an eval fact.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.PostRunAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/eval/runs - Start a new evaluation run.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetRunsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/runs - List eval runs.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetRunAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/runs/{runId} - Get a single eval run.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.DeleteRunAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/eval/runs/{runId} - Delete an eval run and its results.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetRunResultsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/runs/{runId}/results - Get all results for a run.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetResultAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/results/{resultId} - Get a single eval result.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetRunStreamAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/runs/{runId}/stream - SSE stream of run progress.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.GetDefaultJudgePromptAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/eval/judge-prompt/default - Get the default judge prompt.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.FeedbackHandler">
             <summary>
             Handles feedback list, read, and delete routes.

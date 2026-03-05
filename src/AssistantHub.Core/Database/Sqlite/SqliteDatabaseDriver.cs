@@ -58,6 +58,9 @@ namespace AssistantHub.Core.Database.Sqlite
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
+            EvalFact = new EvalFactMethods(this, _Settings, _Logging);
+            EvalRun = new EvalRunMethods(this, _Settings, _Logging);
+            EvalResult = new EvalResultMethods(this, _Settings, _Logging);
         }
 
         #endregion

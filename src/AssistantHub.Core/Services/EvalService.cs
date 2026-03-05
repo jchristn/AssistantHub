@@ -3,6 +3,7 @@ namespace AssistantHub.Core.Services
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Net.Http;
     using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
@@ -134,10 +135,22 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                // Resolve inference endpoint
+                // Resolve inference endpoint (same logic as ChatHandler)
                 InferenceProviderEnum provider = _Settings.Inference.Provider;
                 string endpoint = _Settings.Inference.Endpoint;
                 string apiKey = _Settings.Inference.ApiKey;
+
+                if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                {
+                    var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    if (resolved != null)
+                    {
+                        provider = resolved.Value.Provider;
+                        endpoint = resolved.Value.Endpoint;
+                        apiKey = resolved.Value.ApiKey;
+                    }
+                }
+
                 string model = settings.Model;
                 int maxTokens = settings.MaxTokens;
                 double temperature = settings.Temperature;
@@ -278,6 +291,58 @@ namespace AssistantHub.Core.Services
                     await _Database.EvalRun.UpdateAsync(run).ConfigureAwait(false);
                 }
                 catch { }
+            }
+        }
+
+        private struct ResolvedEndpoint
+        {
+            public InferenceProviderEnum Provider;
+            public string Endpoint;
+            public string ApiKey;
+        }
+
+        private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)
+        {
+            try
+            {
+                string url = _Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
+                using (HttpClient client = new HttpClient())
+                {
+                    if (!String.IsNullOrEmpty(_Settings.Chunking.AccessKey))
+                    {
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _Settings.Chunking.AccessKey);
+                    }
+
+                    HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);
+                        return null;
+                    }
+
+                    string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body);
+
+                    string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
+                    string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
+                    string epApiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
+
+                    InferenceProviderEnum provider = InferenceProviderEnum.Ollama;
+                    if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                        provider = InferenceProviderEnum.OpenAI;
+
+                    return new ResolvedEndpoint
+                    {
+                        Provider = provider,
+                        Endpoint = epUrl ?? _Settings.Inference.Endpoint,
+                        ApiKey = epApiKey ?? _Settings.Inference.ApiKey
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception resolving completion endpoint " + endpointId + ": " + e.Message);
+                return null;
             }
         }
 

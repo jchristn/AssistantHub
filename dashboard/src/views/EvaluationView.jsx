@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -89,6 +89,15 @@ function EvaluationView() {
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to delete some facts' });
+    }
+  };
+
+  const handleBulkDeleteRuns = async (ids) => {
+    try {
+      for (const id of ids) await api.deleteEvalRun(id);
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to delete some runs' });
     }
   };
 
@@ -267,7 +276,7 @@ function EvaluationView() {
               Start New Run
             </button>
           </div>
-          <DataTable columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} />
+          <DataTable columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteRuns} />
         </div>
       )}
 
@@ -502,52 +511,36 @@ function FactEditorModal({ mode, fact, api, onClose, onSaved, onError }) {
   );
 }
 
-// ───── Run Progress Modal (SSE) ─────
+// ───── Run Progress Modal (polling) ─────
 function RunProgressModal({ run, api, serverUrl, bearerToken, onClose }) {
   const [currentRun, setCurrentRun] = useState(run);
   const [results, setResults] = useState([]);
-  const eventSourceRef = useRef(null);
 
   useEffect(() => {
-    const url = `${serverUrl}/v1.0/eval/runs/${run.Id}/stream`;
-    const headers = bearerToken ? { 'Authorization': `Bearer ${bearerToken}` } : {};
-
-    // Use fetch with streaming since EventSource doesn't support auth headers
     let cancelled = false;
-    const fetchStream = async () => {
-      try {
-        const response = await fetch(url, { headers });
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
 
-        while (!cancelled) {
-          const { done, value } = await reader.read();
-          if (done) break;
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const updatedRun = await api.getEvalRun(run.Id);
+          if (cancelled) break;
+          setCurrentRun(updatedRun);
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
+          const updatedResults = await api.getEvalRunResults(run.Id);
+          if (cancelled) break;
+          setResults(updatedResults);
 
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.substring(6);
-            if (data === '[DONE]') { cancelled = true; break; }
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.Run) setCurrentRun(parsed.Run);
-              if (parsed.Results) setResults(parsed.Results);
-            } catch {}
-          }
+          if (updatedRun.Status === 'Completed' || updatedRun.Status === 'Failed') break;
+        } catch (err) {
+          console.error('Poll error:', err);
         }
-      } catch (err) {
-        console.error('SSE stream error:', err);
+        await new Promise(r => setTimeout(r, 2000));
       }
     };
 
-    fetchStream();
+    poll();
     return () => { cancelled = true; };
-  }, [run.Id, serverUrl, bearerToken]);
+  }, [run.Id, api]);
 
   const progressPercent = currentRun.TotalFacts > 0 ? (currentRun.FactsEvaluated / currentRun.TotalFacts) * 100 : 0;
   const passPercent = currentRun.FactsEvaluated > 0 ? (currentRun.FactsPassed / currentRun.FactsEvaluated) * 100 : 0;
@@ -602,6 +595,12 @@ function RunProgressModal({ run, api, serverUrl, bearerToken, onClose }) {
           </div>
         ))}
       </div>
+
+      {(currentRun.Status === 'Completed' || currentRun.Status === 'Failed') && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+          <button className="btn btn-primary" onClick={onClose}>Close</button>
+        </div>
+      )}
     </Modal>
   );
 }

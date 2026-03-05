@@ -553,7 +553,7 @@ namespace AssistantHub.Server.Handlers
                     run = await Database.EvalRun.ReadAsync(runId).ConfigureAwait(false);
                     List<EvalResult> results = await Database.EvalResult.GetByRunIdAsync(runId).ConfigureAwait(false);
 
-                    string data = Serializer.SerializeJson(new { Run = run, Results = results });
+                    string data = Serializer.SerializeJson(new { Run = run, Results = results }, false);
                     bool isFinal = (run.Status == Enums.EvalStatusEnum.Completed || run.Status == Enums.EvalStatusEnum.Failed);
 
                     if (isFinal)

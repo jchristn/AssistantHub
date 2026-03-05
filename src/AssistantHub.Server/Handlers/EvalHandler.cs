@@ -2,6 +2,7 @@ namespace AssistantHub.Server.Handlers
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
@@ -41,6 +42,27 @@ namespace AssistantHub.Server.Handlers
             _EvalService = evalService ?? throw new ArgumentNullException(nameof(evalService));
         }
 
+        #region Private-Methods
+
+        private async Task<string> GetRequestBodyAsync(HttpContextBase ctx)
+        {
+            if (ctx.Request.ChunkedTransfer)
+            {
+                StringBuilder sb = new StringBuilder();
+                while (true)
+                {
+                    Chunk chunk = await ctx.Request.ReadChunk().ConfigureAwait(false);
+                    if (chunk.Length > 0)
+                        sb.Append(System.Text.Encoding.UTF8.GetString(chunk.Data));
+                    if (chunk.IsFinal) break;
+                }
+                return sb.ToString();
+            }
+            return ctx.Request.DataAsString;
+        }
+
+        #endregion
+
         #region Facts
 
         /// <summary>
@@ -52,7 +74,7 @@ namespace AssistantHub.Server.Handlers
             try
             {
                 AuthContext auth = GetAuthContext(ctx);
-                string body = await ctx.Request.ReadPayloadAsStringAsync().ConfigureAwait(false);
+                string body = await GetRequestBodyAsync(ctx).ConfigureAwait(false);
                 if (String.IsNullOrEmpty(body))
                 {
                     ctx.Response.StatusCode = 400;
@@ -179,7 +201,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = await ctx.Request.ReadPayloadAsStringAsync().ConfigureAwait(false);
+                string body = await GetRequestBodyAsync(ctx).ConfigureAwait(false);
                 EvalFact updated = Serializer.DeserializeJson<EvalFact>(body);
 
                 existing.Category = updated.Category;
@@ -255,7 +277,7 @@ namespace AssistantHub.Server.Handlers
             try
             {
                 AuthContext auth = GetAuthContext(ctx);
-                string body = await ctx.Request.ReadPayloadAsStringAsync().ConfigureAwait(false);
+                string body = await GetRequestBodyAsync(ctx).ConfigureAwait(false);
 
                 string assistantId = null;
                 string judgePromptOverride = null;
@@ -522,35 +544,48 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 ctx.Response.StatusCode = 200;
-                ctx.Response.ContentType = "text/event-stream";
-                ctx.Response.Headers.Add("Cache-Control", "no-cache");
-                ctx.Response.Headers.Add("Connection", "keep-alive");
+                ctx.Response.ServerSentEvents = true;
 
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                };
+                int eventId = 0;
 
                 while (true)
                 {
                     run = await Database.EvalRun.ReadAsync(runId).ConfigureAwait(false);
                     List<EvalResult> results = await Database.EvalResult.GetByRunIdAsync(runId).ConfigureAwait(false);
 
-                    string data = JsonSerializer.Serialize(new { Run = run, Results = results }, jsonOptions);
-                    string sseMessage = "data: " + data + "\n\n";
-                    await ctx.Response.SendChunk(System.Text.Encoding.UTF8.GetBytes(sseMessage)).ConfigureAwait(false);
+                    string data = Serializer.SerializeJson(new { Run = run, Results = results });
+                    bool isFinal = (run.Status == Enums.EvalStatusEnum.Completed || run.Status == Enums.EvalStatusEnum.Failed);
 
-                    if (run.Status == Enums.EvalStatusEnum.Completed || run.Status == Enums.EvalStatusEnum.Failed)
+                    if (isFinal)
                     {
-                        await ctx.Response.SendChunk(System.Text.Encoding.UTF8.GetBytes("data: [DONE]\n\n")).ConfigureAwait(false);
+                        eventId++;
+                        await ctx.Response.SendEvent(new ServerSentEvent
+                        {
+                            Id = eventId.ToString(),
+                            Event = "update",
+                            Data = data
+                        }, false).ConfigureAwait(false);
+
+                        eventId++;
+                        await ctx.Response.SendEvent(new ServerSentEvent
+                        {
+                            Id = eventId.ToString(),
+                            Event = "done",
+                            Data = "[DONE]"
+                        }, true).ConfigureAwait(false);
                         break;
                     }
 
+                    eventId++;
+                    await ctx.Response.SendEvent(new ServerSentEvent
+                    {
+                        Id = eventId.ToString(),
+                        Event = "update",
+                        Data = data
+                    }, false).ConfigureAwait(false);
+
                     await Task.Delay(2000).ConfigureAwait(false);
                 }
-
-                await ctx.Response.SendFinalChunk(Array.Empty<byte>()).ConfigureAwait(false);
             }
             catch (Exception e)
             {

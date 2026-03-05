@@ -627,7 +627,7 @@ namespace AssistantHub.Server.Handlers
                                 // Filter by threshold, sort by rerank score, cap at RerankerTopK
                                 retrievalChunks = retrievalChunks
                                     .Where(c => c.RerankScore.HasValue && c.RerankScore.Value >= settings.RerankerScoreThreshold)
-                                    .OrderByDescending(c => c.RerankScore.Value)
+                                    .OrderByDescending(c => c.RerankScore!.Value)
                                     .Take(settings.RerankerTopK)
                                     .ToList();
                             }
@@ -1708,10 +1708,7 @@ namespace AssistantHub.Server.Handlers
             bool firstTokenCaptured = false;
 
             ctx.Response.StatusCode = 200;
-            ctx.Response.ContentType = "text/event-stream";
-            ctx.Response.Headers.Add("Cache-Control", "no-cache");
-            ctx.Response.Headers.Add("Connection", "keep-alive");
-            ctx.Response.ChunkedTransfer = true;
+            ctx.Response.ServerSentEvents = true;
 
             // Send initial chunk with role
             ChatCompletionResponse initialChunk = new ChatCompletionResponse
@@ -1835,15 +1832,13 @@ namespace AssistantHub.Server.Handlers
                     await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
 
                     // Send [DONE]
-                    byte[] doneBytes = Encoding.UTF8.GetBytes("data: [DONE]\n\n");
-                    await ctx.Response.SendChunk(doneBytes, true).ConfigureAwait(false);
+                    await ctx.Response.SendEvent(new ServerSentEvent { Data = "[DONE]" }, true).ConfigureAwait(false);
                 },
                 onError: async (errorMessage) =>
                 {
                     Logging.Warn(_Header + "streaming error: " + errorMessage);
-                    // Send error as a final chunk
-                    byte[] errorBytes = Encoding.UTF8.GetBytes("data: [DONE]\n\n");
-                    await ctx.Response.SendChunk(errorBytes, true).ConfigureAwait(false);
+                    // Send error as a final event
+                    await ctx.Response.SendEvent(new ServerSentEvent { Data = "[DONE]" }, true).ConfigureAwait(false);
                 },
                 onConnectionEstablished: () =>
                 {
@@ -1858,9 +1853,7 @@ namespace AssistantHub.Server.Handlers
         private async Task WriteSseEvent(HttpContextBase ctx, ChatCompletionResponse chunk)
         {
             string json = JsonSerializer.Serialize(chunk, _SseJsonOptions);
-            string sseData = "data: " + json + "\n\n";
-            byte[] bytes = Encoding.UTF8.GetBytes(sseData);
-            await ctx.Response.SendChunk(bytes, false).ConfigureAwait(false);
+            await ctx.Response.SendEvent(new ServerSentEvent { Data = json }, false).ConfigureAwait(false);
         }
 
         private async Task<List<ChatCompletionMessage>> CompactIfNeeded(
@@ -1892,10 +1885,7 @@ namespace AssistantHub.Server.Handlers
                     long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                     streamingCtx.Response.StatusCode = 200;
-                    streamingCtx.Response.ContentType = "text/event-stream";
-                    streamingCtx.Response.Headers.Add("Cache-Control", "no-cache");
-                    streamingCtx.Response.Headers.Add("Connection", "keep-alive");
-                    streamingCtx.Response.ChunkedTransfer = true;
+                    streamingCtx.Response.ServerSentEvents = true;
 
                     ChatCompletionResponse statusChunk = new ChatCompletionResponse
                     {

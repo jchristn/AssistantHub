@@ -535,8 +535,8 @@ function RunProgressModal({ run, api, serverUrl, bearerToken, onClose }) {
             if (data === '[DONE]') { cancelled = true; break; }
             try {
               const parsed = JSON.parse(data);
-              if (parsed.run) setCurrentRun(parsed.run);
-              if (parsed.results) setResults(parsed.results);
+              if (parsed.Run) setCurrentRun(parsed.Run);
+              if (parsed.Results) setResults(parsed.Results);
             } catch {}
           }
         }

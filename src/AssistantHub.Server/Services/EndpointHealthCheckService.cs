@@ -295,7 +295,14 @@ namespace AssistantHub.Server.Services
 
             if (config.HealthCheckUseAuth && !string.IsNullOrEmpty(config.ApiKey))
             {
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.ApiKey);
+                if (string.Equals(config.ApiFormat, "Gemini", StringComparison.OrdinalIgnoreCase))
+                {
+                    request.Headers.Add("x-goog-api-key", config.ApiKey);
+                }
+                else
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.ApiKey);
+                }
             }
 
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -388,6 +395,7 @@ namespace AssistantHub.Server.Services
                 config.Model = element.TryGetProperty("Model", out JsonElement model) && model.ValueKind == JsonValueKind.String ? model.GetString()! : string.Empty;
                 config.TenantId = element.TryGetProperty("TenantId", out JsonElement tid) && tid.ValueKind == JsonValueKind.String ? tid.GetString()! : "default";
                 config.Endpoint = element.TryGetProperty("Endpoint", out JsonElement ep) && ep.ValueKind == JsonValueKind.String ? ep.GetString()! : string.Empty;
+                config.ApiFormat = element.TryGetProperty("ApiFormat", out JsonElement fmt) && fmt.ValueKind == JsonValueKind.String ? fmt.GetString()! : string.Empty;
                 config.ApiKey = element.TryGetProperty("ApiKey", out JsonElement ak) && ak.ValueKind == JsonValueKind.String ? ak.GetString() : null;
                 config.Active = element.TryGetProperty("Active", out JsonElement active) && active.ValueKind == JsonValueKind.True;
                 config.HealthCheckEnabled = element.TryGetProperty("HealthCheckEnabled", out JsonElement hce) && hce.ValueKind == JsonValueKind.True;
@@ -431,6 +439,7 @@ namespace AssistantHub.Server.Services
             public string Model { get; set; } = string.Empty;
             public string TenantId { get; set; } = "default";
             public string Endpoint { get; set; } = string.Empty;
+            public string ApiFormat { get; set; } = string.Empty;
             public string? ApiKey { get; set; }
             public bool Active { get; set; }
             public bool HealthCheckEnabled { get; set; }

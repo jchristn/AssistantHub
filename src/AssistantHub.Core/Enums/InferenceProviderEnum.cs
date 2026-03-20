@@ -19,6 +19,12 @@ namespace AssistantHub.Core.Enums
         /// Ollama.
         /// </summary>
         [EnumMember(Value = "Ollama")]
-        Ollama
+        Ollama,
+
+        /// <summary>
+        /// Gemini.
+        /// </summary>
+        [EnumMember(Value = "Gemini")]
+        Gemini
     }
 }

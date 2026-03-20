@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
+import { getApiFormatDefaults, getDefaultEndpoint } from '../utils/endpointDefaults';
 import Modal from './Modal';
 import PasswordInput from './PasswordInput';
 
@@ -63,6 +64,44 @@ function SetupWizard({ onClose }) {
   const current = STEP_DEFS[step];
 
   const setField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+  const setEndpointField = (field, value) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === 'ApiFormat') {
+        const oldDefaults = getApiFormatDefaults(prev.ApiFormat || 'Ollama', prev.Endpoint || getDefaultEndpoint(prev.ApiFormat || 'Ollama'));
+        const nextEndpoint = !prev.Endpoint || prev.Endpoint === getDefaultEndpoint(prev.ApiFormat || 'Ollama')
+          ? getDefaultEndpoint(value)
+          : prev.Endpoint;
+        const newDefaults = getApiFormatDefaults(value, nextEndpoint);
+
+        updated.Endpoint = nextEndpoint;
+
+        if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefaults.HealthCheckUrl) {
+          updated.HealthCheckUrl = newDefaults.HealthCheckUrl;
+        }
+        if (prev.HealthCheckUseAuth === undefined || prev.HealthCheckUseAuth === oldDefaults.HealthCheckUseAuth) {
+          updated.HealthCheckUseAuth = newDefaults.HealthCheckUseAuth;
+        }
+        if (prev.HealthCheckIntervalMs === undefined || prev.HealthCheckIntervalMs === oldDefaults.HealthCheckIntervalMs) {
+          updated.HealthCheckIntervalMs = newDefaults.HealthCheckIntervalMs;
+        }
+        if (prev.HealthCheckTimeoutMs === undefined || prev.HealthCheckTimeoutMs === oldDefaults.HealthCheckTimeoutMs) {
+          updated.HealthCheckTimeoutMs = newDefaults.HealthCheckTimeoutMs;
+        }
+        if (prev.HealthCheckEnabled === undefined) {
+          updated.HealthCheckEnabled = newDefaults.HealthCheckEnabled;
+        }
+      } else if (field === 'Endpoint') {
+        const oldDefaults = getApiFormatDefaults(prev.ApiFormat || 'Ollama', prev.Endpoint || getDefaultEndpoint(prev.ApiFormat || 'Ollama'));
+        if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefaults.HealthCheckUrl) {
+          updated.HealthCheckUrl = getApiFormatDefaults(prev.ApiFormat || 'Ollama', value).HealthCheckUrl;
+        }
+      }
+
+      return updated;
+    });
+  };
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -202,6 +241,45 @@ function SetupWizard({ onClose }) {
     if (step <= 6) loadExisting();
   }, [step, loadExisting, stopPolling]);
 
+  useEffect(() => {
+    if (step === 0) {
+      const defaults = getApiFormatDefaults('Ollama');
+      setForm({
+        Model: 'nomic-embed-text',
+        Endpoint: defaults.Endpoint,
+        ApiFormat: 'Ollama',
+        ApiKey: '',
+        HealthCheckEnabled: defaults.HealthCheckEnabled,
+        HealthCheckUrl: defaults.HealthCheckUrl,
+        HealthCheckMethod: defaults.HealthCheckMethod,
+        HealthCheckIntervalMs: defaults.HealthCheckIntervalMs,
+        HealthCheckTimeoutMs: defaults.HealthCheckTimeoutMs,
+        HealthCheckExpectedStatusCode: defaults.HealthCheckExpectedStatusCode,
+        HealthyThreshold: defaults.HealthyThreshold,
+        UnhealthyThreshold: defaults.UnhealthyThreshold,
+        HealthCheckUseAuth: defaults.HealthCheckUseAuth,
+      });
+    } else if (step === 1) {
+      const defaults = getApiFormatDefaults('Ollama');
+      setForm({
+        Name: 'Local Ollama',
+        Model: 'gemma3:4b',
+        Endpoint: defaults.Endpoint,
+        ApiFormat: 'Ollama',
+        ApiKey: '',
+        HealthCheckEnabled: defaults.HealthCheckEnabled,
+        HealthCheckUrl: defaults.HealthCheckUrl,
+        HealthCheckMethod: defaults.HealthCheckMethod,
+        HealthCheckIntervalMs: defaults.HealthCheckIntervalMs,
+        HealthCheckTimeoutMs: defaults.HealthCheckTimeoutMs,
+        HealthCheckExpectedStatusCode: defaults.HealthCheckExpectedStatusCode,
+        HealthyThreshold: defaults.HealthyThreshold,
+        UnhealthyThreshold: defaults.UnhealthyThreshold,
+        HealthCheckUseAuth: defaults.HealthCheckUseAuth,
+      });
+    }
+  }, [step]);
+
   // Pre-populate settings form when entering step 5
   useEffect(() => {
     if (step === 5) {
@@ -230,24 +308,48 @@ function SetupWizard({ onClose }) {
       let result;
       switch (step) {
         case 0:
+          {
+            const defaults = getApiFormatDefaults(form.ApiFormat || 'Ollama', form.Endpoint || getDefaultEndpoint(form.ApiFormat || 'Ollama'));
           result = await api.createEmbeddingEndpoint({
             Model: form.Model || '',
-            Endpoint: form.Endpoint || '',
-            ApiFormat: form.ApiFormat || 'OpenAI',
+            Endpoint: form.Endpoint || defaults.Endpoint,
+            ApiFormat: form.ApiFormat || 'Ollama',
             ApiKey: form.ApiKey || '',
+            HealthCheckEnabled: form.HealthCheckEnabled ?? defaults.HealthCheckEnabled,
+            HealthCheckUrl: form.HealthCheckUrl || defaults.HealthCheckUrl,
+            HealthCheckMethod: form.HealthCheckMethod || defaults.HealthCheckMethod,
+            HealthCheckIntervalMs: form.HealthCheckIntervalMs || defaults.HealthCheckIntervalMs,
+            HealthCheckTimeoutMs: form.HealthCheckTimeoutMs || defaults.HealthCheckTimeoutMs,
+            HealthCheckExpectedStatusCode: form.HealthCheckExpectedStatusCode || defaults.HealthCheckExpectedStatusCode,
+            HealthyThreshold: form.HealthyThreshold || defaults.HealthyThreshold,
+            UnhealthyThreshold: form.UnhealthyThreshold || defaults.UnhealthyThreshold,
+            HealthCheckUseAuth: form.HealthCheckUseAuth ?? defaults.HealthCheckUseAuth,
           });
           setCreatedItems(prev => ({ ...prev, embedding: result.Id || result.GUID }));
           break;
+          }
         case 1:
+          {
+            const defaults = getApiFormatDefaults(form.ApiFormat || 'Ollama', form.Endpoint || getDefaultEndpoint(form.ApiFormat || 'Ollama'));
           result = await api.createCompletionEndpoint({
             Name: form.Name || '',
             Model: form.Model || '',
-            Endpoint: form.Endpoint || '',
-            ApiFormat: form.ApiFormat || 'OpenAI',
+            Endpoint: form.Endpoint || defaults.Endpoint,
+            ApiFormat: form.ApiFormat || 'Ollama',
             ApiKey: form.ApiKey || '',
+            HealthCheckEnabled: form.HealthCheckEnabled ?? defaults.HealthCheckEnabled,
+            HealthCheckUrl: form.HealthCheckUrl || defaults.HealthCheckUrl,
+            HealthCheckMethod: form.HealthCheckMethod || defaults.HealthCheckMethod,
+            HealthCheckIntervalMs: form.HealthCheckIntervalMs || defaults.HealthCheckIntervalMs,
+            HealthCheckTimeoutMs: form.HealthCheckTimeoutMs || defaults.HealthCheckTimeoutMs,
+            HealthCheckExpectedStatusCode: form.HealthCheckExpectedStatusCode || defaults.HealthCheckExpectedStatusCode,
+            HealthyThreshold: form.HealthyThreshold || defaults.HealthyThreshold,
+            UnhealthyThreshold: form.UnhealthyThreshold || defaults.UnhealthyThreshold,
+            HealthCheckUseAuth: form.HealthCheckUseAuth ?? defaults.HealthCheckUseAuth,
           });
           setCreatedItems(prev => ({ ...prev, inference: result.Id || result.GUID }));
           break;
+          }
         case 2:
           result = await api.createBucket({ Name: form.Name || '' });
           setCreatedItems(prev => ({ ...prev, bucket: result.Name || form.Name }));
@@ -415,14 +517,14 @@ function SetupWizard({ onClose }) {
             </div>
             <div className="form-group">
               <label>Endpoint</label>
-              <input type="text" value={form.Endpoint || ''} onChange={e => setField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
+              <input type="text" value={form.Endpoint || ''} onChange={e => setEndpointField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
             </div>
             <div className="form-group">
               <label>API Format</label>
-              <select value={form.ApiFormat || 'OpenAI'} onChange={e => setField('ApiFormat', e.target.value)}>
-                <option value="OpenAI">OpenAI</option>
+              <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
                 <option value="Ollama">Ollama</option>
-                <option value="VoyageAI">VoyageAI</option>
+                <option value="OpenAI">OpenAI</option>
+                <option value="Gemini">Gemini</option>
               </select>
             </div>
             <div className="form-group">
@@ -444,13 +546,14 @@ function SetupWizard({ onClose }) {
             </div>
             <div className="form-group">
               <label>Endpoint</label>
-              <input type="text" value={form.Endpoint || ''} onChange={e => setField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
+              <input type="text" value={form.Endpoint || ''} onChange={e => setEndpointField('Endpoint', e.target.value)} placeholder="e.g. http://localhost:11434" />
             </div>
             <div className="form-group">
               <label>API Format</label>
-              <select value={form.ApiFormat || 'OpenAI'} onChange={e => setField('ApiFormat', e.target.value)}>
-                <option value="OpenAI">OpenAI</option>
+              <select value={form.ApiFormat || 'Ollama'} onChange={e => setEndpointField('ApiFormat', e.target.value)}>
                 <option value="Ollama">Ollama</option>
+                <option value="OpenAI">OpenAI</option>
+                <option value="Gemini">Gemini</option>
               </select>
             </div>
             <div className="form-group">

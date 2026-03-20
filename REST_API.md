@@ -1207,17 +1207,21 @@ Create a new embedding endpoint.
 
 ```json
 {
-  "Name": "MiniLM Embeddings",
-  "Model": "all-MiniLM-L6-v2",
-  "Endpoint": "http://localhost:11434",
-  "ApiFormat": "Ollama",
-  "ApiKey": null,
+  "Name": "Gemini Embeddings",
+  "Model": "text-embedding-004",
+  "Endpoint": "https://generativelanguage.googleapis.com",
+  "ApiFormat": "Gemini",
+  "ApiKey": "AIza...",
   "Active": true,
-  "HealthCheck": {
-    "IntervalMs": 30000,
-    "TimeoutMs": 5000,
-    "UnhealthyThreshold": 3
-  }
+  "HealthCheckEnabled": true,
+  "HealthCheckUrl": "https://generativelanguage.googleapis.com/v1beta/models",
+  "HealthCheckMethod": "GET",
+  "HealthCheckIntervalMs": 30000,
+  "HealthCheckTimeoutMs": 10000,
+  "HealthCheckExpectedStatusCode": 200,
+  "HealthyThreshold": 2,
+  "UnhealthyThreshold": 2,
+  "HealthCheckUseAuth": true
 }
 ```
 
@@ -1310,17 +1314,21 @@ Create a new completion endpoint.
 
 ```json
 {
-  "Name": "GPT-4o Summarizer",
-  "Model": "gpt-4o",
-  "Endpoint": "https://api.openai.com/v1",
-  "ApiFormat": "OpenAI",
-  "ApiKey": "sk-...",
+  "Name": "Gemini Summarizer",
+  "Model": "gemini-2.5-flash",
+  "Endpoint": "https://generativelanguage.googleapis.com",
+  "ApiFormat": "Gemini",
+  "ApiKey": "AIza...",
   "Active": true,
-  "HealthCheck": {
-    "IntervalMs": 30000,
-    "TimeoutMs": 5000,
-    "UnhealthyThreshold": 3
-  }
+  "HealthCheckEnabled": true,
+  "HealthCheckUrl": "https://generativelanguage.googleapis.com/v1beta/models",
+  "HealthCheckMethod": "GET",
+  "HealthCheckIntervalMs": 30000,
+  "HealthCheckTimeoutMs": 10000,
+  "HealthCheckExpectedStatusCode": 200,
+  "HealthyThreshold": 2,
+  "UnhealthyThreshold": 2,
+  "HealthCheckUseAuth": true
 }
 ```
 
@@ -2101,9 +2109,9 @@ List all models available on the configured inference provider.
 | Field           | Type     | Description                                         |
 |-----------------|----------|-----------------------------------------------------|
 | `Name`          | string   | Model name (e.g. `gemma3:4b`, `gpt-4o`).           |
-| `SizeBytes`     | long     | Model size on disk in bytes (0 for OpenAI).         |
+| `SizeBytes`     | long     | Model size on disk in bytes (0 for cloud providers). |
 | `ModifiedUtc`   | datetime | Last modified timestamp (UTC).                      |
-| `OwnedBy`       | string   | Model owner (OpenAI only, null for Ollama).         |
+| `OwnedBy`       | string   | Model owner when supplied by the provider.          |
 | `PullSupported` | bool     | Whether the provider supports pulling new models.   |
 
 **Error Responses:**

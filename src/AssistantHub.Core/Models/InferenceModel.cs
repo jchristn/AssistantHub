@@ -23,7 +23,7 @@ namespace AssistantHub.Core.Models
         public DateTime? ModifiedUtc { get; set; } = null;
 
         /// <summary>
-        /// Owner of the model (OpenAI only, null for Ollama).
+        /// Owner of the model when supplied by the provider.
         /// </summary>
         public string OwnedBy { get; set; } = null;
 

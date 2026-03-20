@@ -3211,6 +3211,11 @@
             Ollama.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Enums.InferenceProviderEnum.Gemini">
+            <summary>
+            Gemini.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Enums.RepositoryTypeEnum">
             <summary>
             Repository type enumeration.
@@ -3546,6 +3551,52 @@
             Generate a cryptographic random bearer token.
             </summary>
             <returns>Bearer token string.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Helpers.InferenceProviderHelper">
+            <summary>
+            Helper methods for inference provider resolution and provider-specific defaults.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.FromApiFormat(System.String,AssistantHub.Core.Enums.InferenceProviderEnum)">
+            <summary>
+            Resolve an inference provider from a Partio API format string.
+            </summary>
+            <param name="apiFormat">API format string.</param>
+            <param name="fallback">Fallback provider if format is missing or unknown.</param>
+            <returns>Inference provider.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.GetDefaultEndpoint(AssistantHub.Core.Enums.InferenceProviderEnum)">
+            <summary>
+            Get the default endpoint for a provider.
+            </summary>
+            <param name="provider">Inference provider.</param>
+            <returns>Default endpoint URL.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.GetModelsUrl(System.String,AssistantHub.Core.Enums.InferenceProviderEnum)">
+            <summary>
+            Get a provider-specific model listing or health check URL.
+            </summary>
+            <param name="endpoint">Configured provider endpoint.</param>
+            <param name="provider">Inference provider.</param>
+            <returns>Provider-specific URL.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.ApplyAuthentication(System.Net.Http.HttpRequestMessage,AssistantHub.Core.Enums.InferenceProviderEnum,System.String)">
+            <summary>
+            Apply authentication headers for the given provider.
+            </summary>
+            <param name="request">HTTP request.</param>
+            <param name="provider">Inference provider.</param>
+            <param name="apiKey">API key.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.GetCompletionUrl(System.String,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.Boolean)">
+            <summary>
+            Build the provider-specific chat/completion URL.
+            </summary>
+            <param name="endpoint">Configured provider endpoint.</param>
+            <param name="provider">Inference provider.</param>
+            <param name="model">Model name when required by the provider.</param>
+            <param name="streaming">Whether to target the streaming endpoint.</param>
+            <returns>URL.</returns>
         </member>
         <member name="T:AssistantHub.Core.Helpers.Serializer">
             <summary>
@@ -5910,7 +5961,7 @@
         </member>
         <member name="P:AssistantHub.Core.Models.InferenceModel.OwnedBy">
             <summary>
-            Owner of the model (OpenAI only, null for Ollama).
+            Owner of the model when supplied by the provider.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.InferenceModel.PullSupported">
@@ -7167,6 +7218,16 @@
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse.Data">
             <summary>
             List of model entries.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.GeminiModelsResponse.Models">
+            <summary>
+            List of Gemini models.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.GeminiModelEntry.Name">
+            <summary>
+            Model resource name.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Id">

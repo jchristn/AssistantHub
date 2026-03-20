@@ -11,6 +11,7 @@ namespace AssistantHub.Core.Services
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Enums;
+    using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
@@ -89,6 +90,9 @@ namespace AssistantHub.Core.Services
 
                     case InferenceProviderEnum.OpenAI:
                         return await ListOpenAIModelsAsync().ConfigureAwait(false);
+
+                    case InferenceProviderEnum.Gemini:
+                        return await ListGeminiModelsAsync().ConfigureAwait(false);
 
                     default:
                         _Logging.Warn(_Header + "unsupported inference provider for listing models: " + _Settings.Provider.ToString());
@@ -356,6 +360,18 @@ namespace AssistantHub.Core.Services
                             effectiveApiKey,
                             token).ConfigureAwait(false);
 
+                    case InferenceProviderEnum.Gemini:
+                        return await GenerateGeminiResponseAsync(
+                            fullSystemMessage,
+                            userMessage,
+                            effectiveModel,
+                            maxTokens,
+                            temperature,
+                            topP,
+                            effectiveEndpoint,
+                            effectiveApiKey,
+                            token).ConfigureAwait(false);
+
                     default:
                         _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
                         return InferenceResult.FromError("Unsupported inference provider: " + provider.ToString());
@@ -411,6 +427,11 @@ namespace AssistantHub.Core.Services
 
                     case InferenceProviderEnum.Ollama:
                         return await GenerateOllamaResponseFromMessagesAsync(
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+
+                    case InferenceProviderEnum.Gemini:
+                        return await GenerateGeminiResponseFromMessagesAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
 
@@ -481,6 +502,13 @@ namespace AssistantHub.Core.Services
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint, effectiveApiKey,
+                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
+                        break;
+
+                    case InferenceProviderEnum.Gemini:
+                        await GenerateGeminiStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
                             onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
@@ -579,7 +607,7 @@ namespace AssistantHub.Core.Services
             string apiKey,
             CancellationToken token)
         {
-            string url = endpoint.TrimEnd('/') + "/chat/completions";
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, false);
 
             List<object> messages = new List<object>();
             messages.Add(new { role = "system", content = systemMessage });
@@ -600,10 +628,7 @@ namespace AssistantHub.Core.Services
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                if (!String.IsNullOrEmpty(apiKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                }
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -631,6 +656,34 @@ namespace AssistantHub.Core.Services
                 _Logging.Warn(_Header + "OpenAI response contained no choices");
                 return InferenceResult.FromError("OpenAI response contained no choices.");
             }
+        }
+
+        private async Task<InferenceResult> GenerateGeminiResponseAsync(
+            string systemMessage,
+            string userMessage,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            string endpoint,
+            string apiKey,
+            CancellationToken token)
+        {
+            List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>();
+            if (!String.IsNullOrEmpty(systemMessage))
+                messages.Add(new ChatCompletionMessage { Role = "system", Content = systemMessage });
+
+            messages.Add(new ChatCompletionMessage { Role = "user", Content = userMessage });
+
+            return await GenerateGeminiResponseFromMessagesAsync(
+                messages,
+                model,
+                maxTokens,
+                temperature,
+                topP,
+                endpoint,
+                apiKey,
+                token).ConfigureAwait(false);
         }
 
         private async Task<InferenceResult> GenerateOllamaResponseAsync(
@@ -704,7 +757,7 @@ namespace AssistantHub.Core.Services
 
         private async Task<List<InferenceModel>> ListOllamaModelsAsync()
         {
-            string url = _Settings.Endpoint.TrimEnd('/') + "/api/tags";
+            string url = InferenceProviderHelper.GetModelsUrl(_Settings.Endpoint, InferenceProviderEnum.Ollama);
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
@@ -742,14 +795,11 @@ namespace AssistantHub.Core.Services
 
         private async Task<List<InferenceModel>> ListOpenAIModelsAsync()
         {
-            string url = _Settings.Endpoint.TrimEnd('/') + "/models";
+            string url = InferenceProviderHelper.GetModelsUrl(_Settings.Endpoint, InferenceProviderEnum.OpenAI);
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
-                if (!String.IsNullOrEmpty(_Settings.ApiKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _Settings.ApiKey);
-                }
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, _Settings.ApiKey);
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -789,6 +839,50 @@ namespace AssistantHub.Core.Services
             }
         }
 
+        private async Task<List<InferenceModel>> ListGeminiModelsAsync()
+        {
+            string url = InferenceProviderHelper.GetModelsUrl(_Settings.Endpoint, InferenceProviderEnum.Gemini);
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
+            {
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, _Settings.ApiKey);
+
+                HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _Logging.Warn(_Header + "Gemini list models returned " + (int)response.StatusCode + ": " + responseBody);
+                    return new List<InferenceModel>();
+                }
+
+                GeminiModelsResponse modelsResponse = JsonSerializer.Deserialize<GeminiModelsResponse>(responseBody, _JsonOptions);
+                List<InferenceModel> models = new List<InferenceModel>();
+
+                if (modelsResponse?.Models != null)
+                {
+                    foreach (GeminiModelEntry entry in modelsResponse.Models)
+                    {
+                        string name = entry.Name ?? String.Empty;
+                        if (name.StartsWith("models/", StringComparison.OrdinalIgnoreCase))
+                            name = name.Substring("models/".Length);
+
+                        models.Add(new InferenceModel
+                        {
+                            Name = name,
+                            SizeBytes = 0,
+                            ModifiedUtc = null,
+                            OwnedBy = "Google",
+                            PullSupported = false
+                        });
+                    }
+                }
+
+                _Logging.Debug(_Header + "Gemini returned " + models.Count + " models");
+                return models;
+            }
+        }
+
         private async Task<InferenceResult> GenerateOpenAIResponseFromMessagesAsync(
             List<ChatCompletionMessage> messages,
             string model,
@@ -799,7 +893,7 @@ namespace AssistantHub.Core.Services
             string apiKey,
             CancellationToken token)
         {
-            string url = endpoint.TrimEnd('/') + "/chat/completions";
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, false);
 
             List<object> msgObjects = new List<object>();
             foreach (ChatCompletionMessage msg in messages)
@@ -822,10 +916,7 @@ namespace AssistantHub.Core.Services
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                if (!String.IsNullOrEmpty(apiKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                }
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
                 HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -925,6 +1016,54 @@ namespace AssistantHub.Core.Services
             }
         }
 
+        private async Task<InferenceResult> GenerateGeminiResponseFromMessagesAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            string endpoint,
+            string apiKey,
+            CancellationToken token)
+        {
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.Gemini, model, false);
+            object requestBody = BuildGeminiRequestBody(messages, maxTokens, temperature, topP);
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, apiKey);
+
+                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _Logging.Warn(
+                        _Header +
+                        "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
+                        "| URL           : " + url + Environment.NewLine +
+                        "| API key       : " + apiKey + Environment.NewLine +
+                        "| Response body : " + Environment.NewLine + responseBody);
+                    return InferenceResult.FromError("Gemini API returned " + (int)response.StatusCode);
+                }
+
+                using (JsonDocument doc = JsonDocument.Parse(responseBody))
+                {
+                    string content = ExtractGeminiText(doc.RootElement);
+                    if (!String.IsNullOrEmpty(content))
+                    {
+                        _Logging.Debug(_Header + "Gemini response received (" + content.Length + " characters)");
+                        return InferenceResult.FromSuccess(content);
+                    }
+                }
+
+                _Logging.Warn(_Header + "Gemini response contained no candidate content");
+                return InferenceResult.FromError("Gemini response contained no candidate content.");
+            }
+        }
+
         private async Task GenerateOpenAIStreamingAsync(
             List<ChatCompletionMessage> messages,
             string model,
@@ -939,7 +1078,7 @@ namespace AssistantHub.Core.Services
             Action onConnectionEstablished,
             CancellationToken token)
         {
-            string url = endpoint.TrimEnd('/') + "/chat/completions";
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, true);
 
             List<object> msgObjects = new List<object>();
             foreach (ChatCompletionMessage msg in messages)
@@ -964,10 +1103,7 @@ namespace AssistantHub.Core.Services
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                if (!String.IsNullOrEmpty(apiKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                }
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
@@ -1030,6 +1166,95 @@ namespace AssistantHub.Core.Services
                                 {
                                     _Logging.Debug(_Header + "skipping unparseable SSE line");
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            await onComplete(fullContent.ToString()).ConfigureAwait(false);
+        }
+
+        private async Task GenerateGeminiStreamingAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            string endpoint,
+            string apiKey,
+            Func<string, Task> onDelta,
+            Func<string, Task> onComplete,
+            Func<string, Task> onError,
+            Action onConnectionEstablished,
+            CancellationToken token)
+        {
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.Gemini, model, true);
+            object requestBody = BuildGeminiRequestBody(messages, maxTokens, temperature, topP);
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            StringBuilder fullContent = new StringBuilder();
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, apiKey);
+
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                {
+                    onConnectionEstablished?.Invoke();
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string errorBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        _Logging.Warn(
+                            _Header +
+                            "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| API key       : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + errorBody);
+                        await onError("Gemini API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
+                        return;
+                    }
+
+                    using (Stream stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false))
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string line;
+                        while ((line = await reader.ReadLineAsync(token).ConfigureAwait(false)) != null)
+                        {
+                            if (String.IsNullOrWhiteSpace(line) || !line.StartsWith("data: "))
+                                continue;
+
+                            string data = line.Substring(6);
+                            if (String.IsNullOrWhiteSpace(data))
+                                continue;
+
+                            try
+                            {
+                                using (JsonDocument doc = JsonDocument.Parse(data))
+                                {
+                                    string chunkText = ExtractGeminiText(doc.RootElement);
+                                    if (!String.IsNullOrEmpty(chunkText))
+                                    {
+                                        string deltaContent = chunkText;
+                                        string accumulated = fullContent.ToString();
+                                        if (!String.IsNullOrEmpty(accumulated)
+                                            && chunkText.StartsWith(accumulated, StringComparison.Ordinal))
+                                        {
+                                            deltaContent = chunkText.Substring(accumulated.Length);
+                                        }
+
+                                        if (!String.IsNullOrEmpty(deltaContent))
+                                        {
+                                            fullContent.Append(deltaContent);
+                                            await onDelta(deltaContent).ConfigureAwait(false);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (JsonException)
+                            {
+                                _Logging.Debug(_Header + "skipping unparseable Gemini SSE line");
                             }
                         }
                     }
@@ -1148,6 +1373,93 @@ namespace AssistantHub.Core.Services
             await onComplete(fullContent.ToString()).ConfigureAwait(false);
         }
 
+        private object BuildGeminiRequestBody(
+            List<ChatCompletionMessage> messages,
+            int maxTokens,
+            double temperature,
+            double topP)
+        {
+            List<object> contents = new List<object>();
+            List<string> systemParts = new List<string>();
+
+            foreach (ChatCompletionMessage msg in messages)
+            {
+                if (msg == null || String.IsNullOrEmpty(msg.Content)) continue;
+
+                if (String.Equals(msg.Role, "system", StringComparison.OrdinalIgnoreCase))
+                {
+                    systemParts.Add(msg.Content);
+                    continue;
+                }
+
+                string role = String.Equals(msg.Role, "assistant", StringComparison.OrdinalIgnoreCase)
+                    ? "model"
+                    : "user";
+
+                contents.Add(new
+                {
+                    role = role,
+                    parts = new[]
+                    {
+                        new { text = msg.Content }
+                    }
+                });
+            }
+
+            var requestBody = new Dictionary<string, object>
+            {
+                ["contents"] = contents,
+                ["generationConfig"] = new
+                {
+                    maxOutputTokens = maxTokens,
+                    temperature = temperature,
+                    topP = topP
+                }
+            };
+
+            if (systemParts.Count > 0)
+            {
+                requestBody["system_instruction"] = new
+                {
+                    parts = new[]
+                    {
+                        new { text = String.Join(Environment.NewLine + Environment.NewLine, systemParts) }
+                    }
+                };
+            }
+
+            return requestBody;
+        }
+
+        private string ExtractGeminiText(JsonElement root)
+        {
+            if (!root.TryGetProperty("candidates", out JsonElement candidates)
+                || candidates.ValueKind != JsonValueKind.Array)
+                return null;
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (JsonElement candidate in candidates.EnumerateArray())
+            {
+                if (!candidate.TryGetProperty("content", out JsonElement content)
+                    || !content.TryGetProperty("parts", out JsonElement parts)
+                    || parts.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (JsonElement part in parts.EnumerateArray())
+                {
+                    if (part.TryGetProperty("text", out JsonElement textElement))
+                    {
+                        string text = textElement.GetString();
+                        if (!String.IsNullOrEmpty(text))
+                            sb.Append(text);
+                    }
+                }
+            }
+
+            return sb.Length > 0 ? sb.ToString() : null;
+        }
+
         #endregion
 
         #region Private-Classes
@@ -1193,6 +1505,22 @@ namespace AssistantHub.Core.Services
             /// List of model entries.
             /// </summary>
             public List<OpenAIModelEntry> Data { get; set; } = null;
+        }
+
+        private class GeminiModelsResponse
+        {
+            /// <summary>
+            /// List of Gemini models.
+            /// </summary>
+            public List<GeminiModelEntry> Models { get; set; } = null;
+        }
+
+        private class GeminiModelEntry
+        {
+            /// <summary>
+            /// Model resource name.
+            /// </summary>
+            public string Name { get; set; } = null;
         }
 
         private class OpenAIModelEntry

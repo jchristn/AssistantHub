@@ -127,7 +127,7 @@ Operational notes:
 - **Endpoint Management** -- Manage embedding and completion (inference) endpoints on the Partio service directly from the dashboard or API.
 - **Search** -- Leverages pgvector and RecallDB for vector, full-text, and hybrid search. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
 - **Retrieval Gate** -- Optional LLM-based retrieval gate that intelligently decides whether each user message requires a new document search or can be answered from existing conversation context, reducing unnecessary retrieval calls.
-- **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (OpenAI, Ollama). Supports real-time SSE streaming.
+- **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (Ollama, OpenAI, Gemini). Supports real-time SSE streaming.
 - **Conversation Compaction** -- Automatic summarization of older messages when the conversation approaches the context window limit, preserving continuity across long conversations.
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
@@ -167,7 +167,7 @@ The Docker Compose stack orchestrates the following services:
 | **less3-ui** | 8001 | Web-based management UI for Less3. Allows direct browsing and management of S3 buckets and objects. |
 | **documentatom-server** | 8301 | Document processing service. Extracts text content from uploaded files (PDF, DOCX, HTML, text, and more), returning structured cells that represent the document's content. |
 | **documentatom-dashboard** | 8302 | Web-based management UI for DocumentAtom. |
-| **partio-server** | 8321 | Text chunking, embedding, and summarization service. Splits extracted text into chunks using configurable strategies, computes vector embeddings via Ollama, and optionally summarizes content using a completion endpoint. Also manages embedding and completion endpoint configurations. |
+| **partio-server** | 8321 | Text chunking, embedding, and summarization service. Splits extracted text into chunks using configurable strategies, computes vector embeddings via configurable embedding endpoints, and optionally summarizes content using a completion endpoint. Also manages embedding and completion endpoint configurations. |
 | **partio-dashboard** | 8322 | Web-based management UI for Partio. Allows direct management of embedding and completion endpoints. |
 | **pgvector** | 5432 | PostgreSQL with the pgvector extension. Provides the underlying vector storage and full-text search capabilities used by RecallDB. Supports cosine similarity search over high-dimensional embedding vectors. |
 | **recalldb-server** | 8401 | Vector and full-text search database. Wraps pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
@@ -358,7 +358,7 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `S3` | S3-compatible object storage (Less3) for uploaded documents. |
 | `DocumentAtom` | Endpoint and access key for the DocumentAtom document-processing service. |
 | `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking/embedding service. |
-| `Inference` | LLM provider (`Ollama` or `OpenAI`), endpoint, API key, and default model. |
+| `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model. |
 | `RecallDb` | Endpoint and access key for the RecallDB vector database service. |
 | `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
@@ -517,7 +517,7 @@ For complete endpoint documentation including request/response schemas and examp
 1. User uploads a document via the API or dashboard, selecting an ingestion rule.
 2. The document file is stored in the ingestion rule's S3 bucket via Less3.
 3. DocumentAtom extracts text content from the document, returning structured cells.
-4. Partio processes the cells: optionally summarizes (pre- or post-chunking per the rule), splits into chunks using the rule's chunking strategy, and computes vector embeddings via Ollama.
+4. Partio processes the cells: optionally summarizes (pre- or post-chunking per the rule), splits into chunks using the rule's chunking strategy, and computes vector embeddings via the configured embedding endpoint.
 5. Chunks and embeddings are stored in the ingestion rule's RecallDB collection. Chunk record IDs are saved on the document for cleanup on deletion.
 
 ### Chat Data Flow
@@ -540,7 +540,7 @@ For complete endpoint documentation including request/response schemas and examp
 1. User sends a message to the chat endpoint with conversation history.
 2. If RAG is enabled (and the retrieval gate permits), the server embeds the query and searches RecallDB using the assistant's configured search mode (vector, full-text, or hybrid).
 3. RecallDB returns relevant document chunks ranked by similarity score.
-4. The server assembles the system prompt with retrieved context and sends the full message list to Ollama (or OpenAI). If the conversation exceeds the context window, older messages are compacted first.
+4. The server assembles the system prompt with retrieved context and sends the full message list to the configured inference provider (Ollama, OpenAI, or Gemini). If the conversation exceeds the context window, older messages are compacted first.
 5. The LLM generates a response.
 6. The response is streamed back to the user token-by-token via SSE (or returned as a complete JSON response). Chat history with timing metrics is persisted.
 
@@ -554,7 +554,7 @@ For complete endpoint documentation including request/response schemas and examp
 - **Vector Search:** RecallDB backed by PostgreSQL with pgvector
 - **Document Processing:** DocumentAtom (text extraction), Partio (chunking, embedding, summarization)
 - **Object Storage:** Less3 (S3-compatible)
-- **Inference Providers:** Ollama (local), OpenAI (cloud)
+- **Inference Providers:** Ollama (local), OpenAI (cloud), Gemini (cloud)
 - **Containerization:** Docker, Docker Compose
 - **Web Server (Dashboard):** nginx
 

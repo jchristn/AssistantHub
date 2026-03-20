@@ -387,11 +387,12 @@ namespace AssistantHub.Server
                     _Settings.Embeddings.Endpoint.TrimEnd('/') + "/",
                     bearerToken: _Settings.Embeddings.AccessKey);
 
-                // Inference (Ollama) - GET request
-                allSucceeded &= await CheckServiceAsync(http, "Inference (Ollama)",
+                // Inference - provider-specific model listing request
+                allSucceeded &= await CheckServiceAsync(http, "Inference (" + _Settings.Inference.Provider.ToString() + ")",
                     System.Net.Http.HttpMethod.Get,
-                    _Settings.Inference.Endpoint.TrimEnd('/') + "/",
-                    bearerToken: _Settings.Inference.ApiKey);
+                    InferenceProviderHelper.GetModelsUrl(_Settings.Inference.Endpoint, _Settings.Inference.Provider),
+                    _Settings.Inference.Provider,
+                    _Settings.Inference.ApiKey);
 
                 // RecallDb - HEAD request
                 allSucceeded &= await CheckServiceAsync(http, "RecallDb",
@@ -409,14 +410,36 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "all subordinate services are reachable");
         }
 
-        private static async Task<bool> CheckServiceAsync(HttpClient http, string serviceName, System.Net.Http.HttpMethod method, string url, string bearerToken = null)
+        private static async Task<bool> CheckServiceAsync(
+            HttpClient http,
+            string serviceName,
+            System.Net.Http.HttpMethod method,
+            string url,
+            string bearerToken = null)
+        {
+            return await CheckServiceAsync(http, serviceName, method, url, null, bearerToken).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> CheckServiceAsync(
+            HttpClient http,
+            string serviceName,
+            System.Net.Http.HttpMethod method,
+            string url,
+            Enums.InferenceProviderEnum? inferenceProvider,
+            string apiKey = null)
         {
             try
             {
                 using (HttpRequestMessage req = new HttpRequestMessage(method, url))
                 {
-                    if (!String.IsNullOrEmpty(bearerToken))
-                        req.Headers.Add("Authorization", "Bearer " + bearerToken);
+                    if (inferenceProvider.HasValue)
+                    {
+                        InferenceProviderHelper.ApplyAuthentication(req, inferenceProvider.Value, apiKey);
+                    }
+                    else if (!String.IsNullOrEmpty(apiKey))
+                    {
+                        req.Headers.Add("Authorization", "Bearer " + apiKey);
+                    }
 
                     HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
                     if (resp.IsSuccessStatusCode)

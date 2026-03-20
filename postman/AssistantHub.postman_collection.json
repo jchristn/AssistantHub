@@ -915,7 +915,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
+							"raw": "{\n\t\"Name\": \"Gemini Embedding Endpoint\",\n\t\"Model\": \"text-embedding-004\",\n\t\"Endpoint\": \"https://generativelanguage.googleapis.com\",\n\t\"ApiFormat\": \"Gemini\",\n\t\"ApiKey\": \"AIza...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://generativelanguage.googleapis.com/v1beta/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
@@ -975,7 +975,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Embedding Endpoint (Updated)\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
+							"raw": "{\n\t\"Name\": \"Gemini Embedding Endpoint (Updated)\",\n\t\"Model\": \"text-embedding-004\",\n\t\"Endpoint\": \"https://generativelanguage.googleapis.com\",\n\t\"ApiFormat\": \"Gemini\",\n\t\"ApiKey\": \"AIza...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://generativelanguage.googleapis.com/v1beta/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
@@ -1061,7 +1061,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
+							"raw": "{\n\t\"Name\": \"Gemini Completion Endpoint\",\n\t\"Model\": \"gemini-2.5-flash\",\n\t\"Endpoint\": \"https://generativelanguage.googleapis.com\",\n\t\"ApiFormat\": \"Gemini\",\n\t\"ApiKey\": \"AIza...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://generativelanguage.googleapis.com/v1beta/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -1121,7 +1121,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Completion Endpoint (Updated)\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"ApiKey\": null,\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\"\n}"
+							"raw": "{\n\t\"Name\": \"Gemini Completion Endpoint (Updated)\",\n\t\"Model\": \"gemini-2.5-flash\",\n\t\"Endpoint\": \"https://generativelanguage.googleapis.com\",\n\t\"ApiFormat\": \"Gemini\",\n\t\"ApiKey\": \"AIza...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://generativelanguage.googleapis.com/v1beta/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",

@@ -9,6 +9,7 @@ namespace AssistantHub.Core.Services
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Enums;
+    using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
@@ -327,9 +328,7 @@ namespace AssistantHub.Core.Services
                     string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
                     string epApiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
 
-                    InferenceProviderEnum provider = InferenceProviderEnum.Ollama;
-                    if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-                        provider = InferenceProviderEnum.OpenAI;
+                    InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(apiFormat, InferenceProviderEnum.Ollama);
 
                     return new ResolvedEndpoint
                     {

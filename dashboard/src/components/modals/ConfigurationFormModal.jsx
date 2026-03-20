@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 import PasswordInput from '../PasswordInput';
+import { getDefaultEndpoint } from '../../utils/endpointDefaults';
 
 function ConfigurationFormModal({ api, onSave, onClose }) {
   const [form, setForm] = useState(null);
@@ -32,10 +33,20 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
   }, []);
 
   const handleChange = (section, field, value) => {
-    setForm(prev => ({
-      ...prev,
-      [section]: { ...prev[section], [field]: value }
-    }));
+    setForm(prev => {
+      const updatedSection = { ...prev[section], [field]: value };
+      if (section === 'Inference' && field === 'Provider') {
+        const oldDefaultEndpoint = getDefaultEndpoint(prev[section]?.Provider || 'Ollama');
+        if (!prev[section]?.Endpoint || prev[section]?.Endpoint === oldDefaultEndpoint) {
+          updatedSection.Endpoint = getDefaultEndpoint(value);
+        }
+      }
+
+      return {
+        ...prev,
+        [section]: updatedSection
+      };
+    });
   };
 
   const toggleSection = (section) => {
@@ -191,7 +202,7 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
         </>)}
 
         {renderSection('Inference', 'Inference', <>
-          {renderSelect('Inference', 'Provider', 'Provider', ['OpenAI', 'Ollama'], 'Default AI inference provider for the system')}
+          {renderSelect('Inference', 'Provider', 'Provider', ['Ollama', 'OpenAI', 'Gemini'], 'Default AI inference provider for the system')}
           {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
           {renderTextField('Inference', 'ApiKey', 'API Key', 'password', 'Default API key for inference authentication')}
           {renderTextField('Inference', 'DefaultModel', 'Default Model', 'text', 'Default model name used for inference requests')}

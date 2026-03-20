@@ -41,11 +41,12 @@ namespace Test.Models.Tests
             }, token);
 
             // InferenceProviderEnum — Ollama, OpenAI
-            await runner.RunTestAsync("Enum.InferenceProviderEnum: Ollama and OpenAI", async ct =>
+            await runner.RunTestAsync("Enum.InferenceProviderEnum: Ollama, OpenAI, and Gemini", async ct =>
             {
                 AssertHelper.AreEqual(InferenceProviderEnum.Ollama, Enum.Parse<InferenceProviderEnum>("Ollama"), "Ollama");
                 AssertHelper.AreEqual(InferenceProviderEnum.OpenAI, Enum.Parse<InferenceProviderEnum>("OpenAI"), "OpenAI");
-                AssertHelper.AreEqual(2, Enum.GetValues<InferenceProviderEnum>().Length, "count");
+                AssertHelper.AreEqual(InferenceProviderEnum.Gemini, Enum.Parse<InferenceProviderEnum>("Gemini"), "Gemini");
+                AssertHelper.AreEqual(3, Enum.GetValues<InferenceProviderEnum>().Length, "count");
             }, token);
 
             // FeedbackRatingEnum — all values

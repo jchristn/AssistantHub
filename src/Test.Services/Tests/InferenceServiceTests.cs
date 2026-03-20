@@ -52,6 +52,14 @@ namespace Test.Services.Tests
                 AssertHelper.AreEqual(false, svc.IsPullSupported, "should be false for OpenAI");
             }, token);
 
+            await runner.RunTestAsync("InferenceService: IsPullSupported false for Gemini", async ct =>
+            {
+                InferenceSettings settings = new InferenceSettings();
+                settings.Provider = InferenceProviderEnum.Gemini;
+                InferenceService svc = new InferenceService(settings, logging);
+                AssertHelper.AreEqual(false, svc.IsPullSupported, "should be false for Gemini");
+            }, token);
+
             await runner.RunTestAsync("InferenceService: IsDeleteSupported true for Ollama", async ct =>
             {
                 InferenceSettings settings = new InferenceSettings();
@@ -68,10 +76,27 @@ namespace Test.Services.Tests
                 AssertHelper.AreEqual(false, svc.IsDeleteSupported, "should be false for OpenAI");
             }, token);
 
+            await runner.RunTestAsync("InferenceService: IsDeleteSupported false for Gemini", async ct =>
+            {
+                InferenceSettings settings = new InferenceSettings();
+                settings.Provider = InferenceProviderEnum.Gemini;
+                InferenceService svc = new InferenceService(settings, logging);
+                AssertHelper.AreEqual(false, svc.IsDeleteSupported, "should be false for Gemini");
+            }, token);
+
             await runner.RunTestAsync("InferenceService: PullModelAsync returns false for OpenAI", async ct =>
             {
                 InferenceSettings settings = new InferenceSettings();
                 settings.Provider = InferenceProviderEnum.OpenAI;
+                InferenceService svc = new InferenceService(settings, logging);
+                bool result = await svc.PullModelAsync("some-model");
+                AssertHelper.AreEqual(false, result, "should return false for unsupported provider");
+            }, token);
+
+            await runner.RunTestAsync("InferenceService: PullModelAsync returns false for Gemini", async ct =>
+            {
+                InferenceSettings settings = new InferenceSettings();
+                settings.Provider = InferenceProviderEnum.Gemini;
                 InferenceService svc = new InferenceService(settings, logging);
                 bool result = await svc.PullModelAsync("some-model");
                 AssertHelper.AreEqual(false, result, "should return false for unsupported provider");

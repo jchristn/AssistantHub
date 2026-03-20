@@ -953,9 +953,7 @@ namespace AssistantHub.Server.Services
                     string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
                     string apiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
 
-                    Enums.InferenceProviderEnum provider = Enums.InferenceProviderEnum.Ollama;
-                    if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-                        provider = Enums.InferenceProviderEnum.OpenAI;
+                    Enums.InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(apiFormat, Enums.InferenceProviderEnum.Ollama);
 
                     return new ResolvedEndpoint
                     {

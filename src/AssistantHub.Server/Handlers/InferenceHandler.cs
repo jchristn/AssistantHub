@@ -348,8 +348,7 @@ namespace AssistantHub.Server.Handlers
                             JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body, jsonOpts);
 
                             string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
-                            if (!String.IsNullOrEmpty(apiFormat) && apiFormat.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-                                tempSettings.Provider = Enums.InferenceProviderEnum.OpenAI;
+                            tempSettings.Provider = InferenceProviderHelper.FromApiFormat(apiFormat, tempSettings.Provider);
 
                             string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
                             if (!String.IsNullOrEmpty(epUrl)) tempSettings.Endpoint = epUrl;

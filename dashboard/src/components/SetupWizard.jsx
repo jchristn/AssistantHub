@@ -284,7 +284,6 @@ function SetupWizard({ onClose }) {
   useEffect(() => {
     if (step === 5) {
       setForm({
-        Model: 'gemma3:4b',
         Temperature: 0.7,
         SystemPrompt: 'You are a helpful assistant. Use the provided context to answer questions accurately.',
         EnableRag: true,
@@ -390,7 +389,6 @@ function SetupWizard({ onClose }) {
     setError('');
     try {
       await api.updateAssistantSettings(assistantId, {
-        Model: form.Model || 'gemma3:4b',
         Temperature: parseFloat(form.Temperature) || 0.7,
         SystemPrompt: form.SystemPrompt || '',
         EnableRag: form.EnableRag ?? true,
@@ -609,10 +607,6 @@ function SetupWizard({ onClose }) {
   const renderSettingsForm = () => (
     <div className="wizard-step-form">
       <div className="form-group">
-        <label>Model</label>
-        <input type="text" value={form.Model || ''} onChange={e => setField('Model', e.target.value)} />
-      </div>
-      <div className="form-group">
         <label>Temperature <span className="range-value">{form.Temperature}</span></label>
         <input type="range" min="0" max="2" step="0.1" value={form.Temperature || 0.7} onChange={e => setField('Temperature', parseFloat(e.target.value))} />
       </div>
@@ -791,7 +785,7 @@ function SetupWizard({ onClose }) {
     } else if (step === 5) {
       primaryAction = handleSaveSettings;
       primaryLabel = saving ? 'Saving...' : 'Save & Continue';
-      primaryDisabled = saving;
+      primaryDisabled = saving || !form.InferenceEndpointId;
     } else if (step === 6) {
       if (ingestionDone) {
         primaryAction = () => { stopPolling(); setStep(step + 1); };

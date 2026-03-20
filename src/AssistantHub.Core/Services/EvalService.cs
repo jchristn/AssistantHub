@@ -99,6 +99,8 @@ namespace AssistantHub.Core.Services
             AssistantSettings settings = await _Database.AssistantSettings.ReadByAssistantIdAsync(assistantId, token).ConfigureAwait(false);
             if (settings == null)
                 throw new InvalidOperationException("Assistant settings not found for assistant " + assistantId);
+            if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
+                throw new InvalidOperationException("Assistant inference endpoint is not configured for assistant " + assistantId);
 
             // Determine the effective judge prompt: run override > assistant setting > default
             string effectiveJudgePrompt = _DefaultJudgePrompt;
@@ -140,7 +142,7 @@ namespace AssistantHub.Core.Services
                 InferenceProviderEnum provider = _Settings.Inference.Provider;
                 string endpoint = _Settings.Inference.Endpoint;
                 string apiKey = _Settings.Inference.ApiKey;
-                string model = settings.Model;
+                string model = _Settings.Inference.DefaultModel;
 
                 if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                 {

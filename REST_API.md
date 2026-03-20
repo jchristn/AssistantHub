@@ -1644,7 +1644,6 @@ Retrieve settings for an assistant.
   "SystemPrompt": "You are a helpful assistant. Use the provided context to answer questions accurately.",
   "MaxTokens": 4096,
   "ContextWindow": 8192,
-  "Model": "gpt-4o",
   "EnableRag": false,
   "EnableRetrievalGate": false,
   "EnableQueryRewrite": false,
@@ -1688,7 +1687,6 @@ Retrieve settings for an assistant.
 | `SystemPrompt`             | string  | System prompt sent to the LLM.                                              |
 | `MaxTokens`                | int     | Maximum tokens to generate in a response.                                   |
 | `ContextWindow`            | int     | Context window size in tokens.                                              |
-| `Model`                    | string  | Model name/identifier (e.g., `gpt-4o`, `llama3`).                          |
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
 | `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
 | `EnableQueryRewrite`       | bool    | Whether LLM-based query rewrite is enabled. When enabled, the user's prompt is rewritten into multiple semantically varied queries before retrieval to improve recall. Default `false`. |
@@ -1709,7 +1707,7 @@ Retrieve settings for an assistant.
 | `FullTextNormalization`    | int     | Score normalization bitmask. `32` = normalized 0-1 (recommended). `0` = raw scores. Default `32`. |
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
 | `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
-| `InferenceEndpointId`      | string  | Managed completion endpoint ID for inference (overrides global setting).    |
+| `InferenceEndpointId`      | string  | Managed completion endpoint ID for inference. Assistant responses use the provider and model configured on this endpoint. Required for assistant settings. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
@@ -1740,7 +1738,6 @@ Create or update settings for an assistant. If settings already exist, they are 
   "SystemPrompt": "You are a technical support specialist. Answer using the provided documentation.",
   "MaxTokens": 2048,
   "ContextWindow": 8192,
-  "Model": "gpt-4o",
   "EnableRag": false,
   "EnableRetrievalGate": false,
   "EnableQueryRewrite": false,
@@ -1761,7 +1758,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "FullTextNormalization": 32,
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 2,
-  "InferenceEndpointId": null,
+  "InferenceEndpointId": "ep_abc123...",
   "EmbeddingEndpointId": null,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
@@ -1776,6 +1773,8 @@ Create or update settings for an assistant. If settings already exist, they are 
 ```
 
 **Response (200 OK):** The created or updated `AssistantSettings` object.
+
+`InferenceEndpointId` is required. Assistant settings do not define a separate model; the selected completion endpoint is the source of truth for provider and model selection.
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -2415,7 +2414,7 @@ When the conversation history approaches the context window limit, older message
 
 | Field             | Type   | Required | Description                                                    |
 |-------------------|--------|----------|----------------------------------------------------------------|
-| `model`           | string | No       | Model override (falls back to assistant settings).             |
+| `model`           | string | No       | Model override (otherwise uses the model configured on the assistant's managed inference endpoint). |
 | `messages`        | array  | Yes      | Array of message objects with `role` and `content`.            |
 | `temperature`     | double | No       | Sampling temperature override (0.0-2.0).                       |
 | `top_p`           | double | No       | Top-p override (0.0-1.0).                                      |
@@ -2554,7 +2553,7 @@ Lightweight inference-only endpoint. Sends messages directly to the configured L
 
 | Field         | Type   | Required | Description                                                    |
 |---------------|--------|----------|----------------------------------------------------------------|
-| `model`       | string | No       | Model override (falls back to assistant settings).             |
+| `model`       | string | No       | Model override (otherwise uses the model configured on the assistant's managed inference endpoint). |
 | `messages`    | array  | Yes      | Array of message objects with `role` and `content`.            |
 | `temperature` | double | No       | Sampling temperature override (0.0-2.0).                       |
 | `top_p`       | double | No       | Top-p override (0.0-1.0).                                      |
@@ -2629,7 +2628,7 @@ Force conversation compaction. Summarizes the provided message history into a sh
 | Field         | Type   | Required | Description                                                    |
 |---------------|--------|----------|----------------------------------------------------------------|
 | `messages`    | array  | Yes      | Array of message objects with `role` and `content`.            |
-| `model`       | string | No       | Model override (falls back to assistant settings).             |
+| `model`       | string | No       | Model override (otherwise uses the model configured on the assistant's managed inference endpoint). |
 | `temperature` | double | No       | Sampling temperature override (0.0-2.0).                       |
 | `top_p`       | double | No       | Top-p override (0.0-1.0).                                      |
 | `max_tokens`  | int    | No       | Max tokens override.                                           |

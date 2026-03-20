@@ -327,7 +327,7 @@ namespace AssistantHub.Server.Handlers
                 Provider = Settings.Inference.Provider,
                 Endpoint = Settings.Inference.Endpoint,
                 ApiKey = Settings.Inference.ApiKey,
-                DefaultModel = !String.IsNullOrEmpty(assistantSettings.Model) ? assistantSettings.Model : Settings.Inference.DefaultModel
+                DefaultModel = Settings.Inference.DefaultModel
             };
 
             if (!String.IsNullOrEmpty(assistantSettings.InferenceEndpointId))

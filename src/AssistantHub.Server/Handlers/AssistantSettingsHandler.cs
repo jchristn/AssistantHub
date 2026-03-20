@@ -193,6 +193,14 @@ namespace AssistantHub.Server.Handlers
                 updated.TextWeight = Math.Clamp(updated.TextWeight, 0.0, 1.0);
                 updated.RetrievalIncludeNeighbors = Math.Clamp(updated.RetrievalIncludeNeighbors, 0, 10);
 
+                if (String.IsNullOrWhiteSpace(updated.InferenceEndpointId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "InferenceEndpointId is required for assistant settings."))).ConfigureAwait(false);
+                    return;
+                }
+
                 // Validate query rewrite prompt placeholder
                 if (!String.IsNullOrEmpty(updated.QueryRewritePrompt) && !updated.QueryRewritePrompt.Contains("{prompt}"))
                 {

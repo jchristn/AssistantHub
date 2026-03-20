@@ -423,7 +423,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio embedding endpoint management and smoke testing (admin only) |
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio completion endpoint management and smoke testing (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
-| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings` | Per-assistant inference and RAG configuration (owner or admin) |
+| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings` | Per-assistant endpoint, prompt, and RAG configuration. The selected managed inference endpoint is the source of truth for provider and model selection (owner or admin). |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
 | Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |

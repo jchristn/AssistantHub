@@ -71,11 +71,6 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
-        /// Model name or identifier.
-        /// </summary>
-        public string Model { get; set; } = "gemma3:4b";
-
-        /// <summary>
         /// Whether RAG retrieval is enabled.
         /// </summary>
         public bool EnableRag { get; set; } = false;
@@ -339,7 +334,6 @@ namespace AssistantHub.Core.Models
             obj.SystemPrompt = DataTableHelper.GetStringValue(row, "system_prompt");
             obj.MaxTokens = DataTableHelper.GetIntValue(row, "max_tokens", 4096);
             obj.ContextWindow = DataTableHelper.GetIntValue(row, "context_window", 8192);
-            obj.Model = DataTableHelper.GetStringValue(row, "model");
             obj.EnableRag = DataTableHelper.GetBooleanValue(row, "enable_rag", false);
             obj.EnableRetrievalGate = DataTableHelper.GetBooleanValue(row, "enable_retrieval_gate", false);
             obj.EnableQueryRewrite = DataTableHelper.GetBooleanValue(row, "enable_query_rewrite", false);

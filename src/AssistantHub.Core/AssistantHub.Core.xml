@@ -3951,11 +3951,6 @@
             Context window size in tokens.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantSettings.Model">
-            <summary>
-            Model name or identifier.
-            </summary>
-        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableRag">
             <summary>
             Whether RAG retrieval is enabled.

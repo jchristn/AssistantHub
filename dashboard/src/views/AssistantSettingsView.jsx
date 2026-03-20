@@ -80,7 +80,6 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         SystemPrompt: result?.SystemPrompt || 'You are a helpful assistant. Use the provided context to answer questions accurately.',
         MaxTokens: result?.MaxTokens || 4096,
         ContextWindow: result?.ContextWindow || 8192,
-        Model: result?.Model || 'gemma3:4b',
         EnableRag: result?.EnableRag ?? false,
         EnableRetrievalGate: result?.EnableRetrievalGate ?? false,
         EnableCitations: result?.EnableCitations ?? false,
@@ -230,7 +229,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
       <div className="content-header">
         <div>
           <h1 className="content-title">Assistant Settings</h1>
-          <p className="content-subtitle">Configure model, retrieval, and inference settings for each assistant.</p>
+          <p className="content-subtitle">Configure retrieval, prompts, and managed endpoint settings for each assistant.</p>
         </div>
         {selectedId && (
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -291,11 +290,32 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
             </div>
 
             <div className="settings-section">
-              <h3 className="settings-section-title">Model Configuration</h3>
+              <h3 className="settings-section-title">Endpoints</h3>
               <div className="form-group">
-                <label className="form-label"><Tooltip text="Model name to use for generating responses">Model</Tooltip></label>
-                <input className="form-input" type="text" value={settings.Model} onChange={(e) => handleChange('Model', e.target.value)} />
+                <label className="form-label"><Tooltip text="Managed completion endpoint used for inference. Assistant responses always use the model configured on this endpoint.">Inference Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+                  <option value="">-- Select an inference endpoint --</option>
+                  {(inferenceEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                  ))}
+                </select>
+                <div className="form-help-text">Assistant inference uses the provider and model configured on the selected endpoint.</div>
               </div>
+              {(!settings || settings.SearchMode !== 'FullText') && (
+              <div className="form-group">
+                <label className="form-label"><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
+                <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
+                  <option value="">-- Use server default --</option>
+                  {(embeddingEndpoints || []).map(ep => (
+                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                  ))}
+                </select>
+              </div>
+              )}
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Inference Configuration</h3>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label"><Tooltip text="Controls randomness: lower values are more focused, higher values are more creative (0-2)">Temperature</Tooltip> <span className="range-value">{settings.Temperature}</span></label>
@@ -507,30 +527,6 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
             </div>
 
             <div className="settings-section">
-              <h3 className="settings-section-title">Endpoints</h3>
-              <div className="form-group">
-                <label className="form-label"><Tooltip text="Managed completion endpoint used for inference. Leave blank to use the server default">Inference Endpoint</Tooltip></label>
-                <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
-                  <option value="">-- Use server default --</option>
-                  {(inferenceEndpoints || []).map(ep => (
-                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
-                  ))}
-                </select>
-              </div>
-              {(!settings || settings.SearchMode !== 'FullText') && (
-              <div className="form-group">
-                <label className="form-label"><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
-                <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
-                  <option value="">-- Use server default --</option>
-                  {(embeddingEndpoints || []).map(ep => (
-                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
-                  ))}
-                </select>
-              </div>
-              )}
-            </div>
-
-            <div className="settings-section">
               <h3 className="settings-section-title">Slack</h3>
               <div className="form-group form-toggle">
                 <label>
@@ -568,7 +564,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
             <div className="settings-actions">
               <button className="btn btn-secondary" onClick={() => setShowJson(true)}>View JSON</button>
               <button className="btn btn-secondary" onClick={handleReset} disabled={!dirty || saving}>Reset</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={!dirty || saving}>
+              <button className="btn btn-primary" onClick={handleSave} disabled={!dirty || saving || !settings.InferenceEndpointId}>
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>
             </div>

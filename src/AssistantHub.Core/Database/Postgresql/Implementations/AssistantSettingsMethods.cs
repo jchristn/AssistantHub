@@ -52,7 +52,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
             string query =
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
-                "model, enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
+                "enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
                 "enable_reranking, reranker_top_k, reranker_score_threshold, rerank_prompt, " +
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
@@ -66,7 +66,6 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.SystemPrompt) + ", " +
                 assistantSettings.MaxTokens + ", " +
                 assistantSettings.ContextWindow + ", " +
-                _Driver.FormatNullableString(assistantSettings.Model) + ", " +
                 (assistantSettings.EnableRag ? 1 : 0) + ", " +
                 (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
                 (assistantSettings.EnableQueryRewrite ? 1 : 0) + ", " +
@@ -147,7 +146,6 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "system_prompt = " + _Driver.FormatNullableString(assistantSettings.SystemPrompt) + ", " +
                 "max_tokens = " + assistantSettings.MaxTokens + ", " +
                 "context_window = " + assistantSettings.ContextWindow + ", " +
-                "model = " + _Driver.FormatNullableString(assistantSettings.Model) + ", " +
                 "enable_rag = " + (assistantSettings.EnableRag ? 1 : 0) + ", " +
                 "enable_retrieval_gate = " + (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
                 "enable_query_rewrite = " + (assistantSettings.EnableQueryRewrite ? 1 : 0) + ", " +

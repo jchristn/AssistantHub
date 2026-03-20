@@ -389,7 +389,7 @@ namespace Test.Integration.Tests
                 {
                     AssistantId = settingsAssistantId,
                     Temperature = 0.8,
-                    Model = "llama3:8b",
+                    InferenceEndpointId = "ep_test_inference",
                     EnableReranking = true,
                     RerankerTopK = 3,
                     RerankerScoreThreshold = 5.0
@@ -411,7 +411,7 @@ namespace Test.Integration.Tests
                 AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)resp.StatusCode, "get settings should return 200");
 
                 string body = await resp.Content.ReadAsStringAsync();
-                AssertHelper.IsTrue(body.Contains("llama3:8b") || body.Contains("llama3"), "response should contain model name");
+                AssertHelper.IsTrue(body.Contains("ep_test_inference"), "response should contain inference endpoint id");
             }, token);
 
             // Cleanup settings assistant

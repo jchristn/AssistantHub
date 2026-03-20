@@ -56,7 +56,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
             string query =
                 "INSERT INTO assistant_settings " +
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
-                "model, enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
+                "enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
                 "enable_reranking, reranker_top_k, reranker_score_threshold, rerank_prompt, " +
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
@@ -70,7 +70,6 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(settings.SystemPrompt) + ", " +
                 settings.MaxTokens + ", " +
                 settings.ContextWindow + ", " +
-                _Driver.FormatNullableString(settings.Model) + ", " +
                 (settings.EnableRag ? 1 : 0) + ", " +
                 (settings.EnableRetrievalGate ? 1 : 0) + ", " +
                 (settings.EnableQueryRewrite ? 1 : 0) + ", " +
@@ -151,7 +150,6 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "system_prompt = " + _Driver.FormatNullableString(settings.SystemPrompt) + ", " +
                 "max_tokens = " + settings.MaxTokens + ", " +
                 "context_window = " + settings.ContextWindow + ", " +
-                "model = " + _Driver.FormatNullableString(settings.Model) + ", " +
                 "enable_rag = " + (settings.EnableRag ? 1 : 0) + ", " +
                 "enable_retrieval_gate = " + (settings.EnableRetrievalGate ? 1 : 0) + ", " +
                 "enable_query_rewrite = " + (settings.EnableQueryRewrite ? 1 : 0) + ", " +

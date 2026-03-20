@@ -31,7 +31,6 @@ namespace Test.Database.Tests
                     SystemPrompt = "You are a test bot.",
                     MaxTokens = 2048,
                     ContextWindow = 4096,
-                    Model = "llama3:8b",
                     EnableRag = true,
                     EnableRetrievalGate = true,
                     EnableQueryRewrite = true,
@@ -72,7 +71,6 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("You are a test bot.", created.SystemPrompt, "SystemPrompt");
                 AssertHelper.AreEqual(2048, created.MaxTokens, "MaxTokens");
                 AssertHelper.AreEqual(4096, created.ContextWindow, "ContextWindow");
-                AssertHelper.AreEqual("llama3:8b", created.Model, "Model");
                 AssertHelper.AreEqual(true, created.EnableRag, "EnableRag");
                 AssertHelper.AreEqual(true, created.EnableRetrievalGate, "EnableRetrievalGate");
                 AssertHelper.AreEqual(true, created.EnableQueryRewrite, "EnableQueryRewrite");
@@ -116,7 +114,6 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(1.0, created.TopP, "default TopP");
                 AssertHelper.AreEqual(4096, created.MaxTokens, "default MaxTokens");
                 AssertHelper.AreEqual(8192, created.ContextWindow, "default ContextWindow");
-                AssertHelper.AreEqual("gemma3:4b", created.Model, "default Model");
                 AssertHelper.AreEqual(false, created.EnableRag, "default EnableRag");
                 AssertHelper.AreEqual(false, created.EnableRetrievalGate, "default EnableRetrievalGate");
                 AssertHelper.AreEqual(false, created.EnableQueryRewrite, "default EnableQueryRewrite");
@@ -158,7 +155,6 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("You are a test bot.", read.SystemPrompt, "SystemPrompt");
                 AssertHelper.AreEqual(2048, read.MaxTokens, "MaxTokens");
                 AssertHelper.AreEqual(4096, read.ContextWindow, "ContextWindow");
-                AssertHelper.AreEqual("llama3:8b", read.Model, "Model");
                 AssertHelper.AreEqual(true, read.EnableRag, "EnableRag");
                 AssertHelper.AreEqual(true, read.EnableRetrievalGate, "EnableRetrievalGate");
                 AssertHelper.AreEqual(true, read.EnableQueryRewrite, "EnableQueryRewrite");
@@ -217,7 +213,6 @@ namespace Test.Database.Tests
                 read.SystemPrompt = "Updated system prompt.";
                 read.MaxTokens = 8192;
                 read.ContextWindow = 16384;
-                read.Model = "gpt-4o";
                 read.EnableRag = false;
                 read.EnableRetrievalGate = false;
                 read.EnableQueryRewrite = false;
@@ -253,7 +248,6 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("Updated system prompt.", updated.SystemPrompt, "updated SystemPrompt");
                 AssertHelper.AreEqual(8192, updated.MaxTokens, "updated MaxTokens");
                 AssertHelper.AreEqual(16384, updated.ContextWindow, "updated ContextWindow");
-                AssertHelper.AreEqual("gpt-4o", updated.Model, "updated Model");
                 AssertHelper.AreEqual(false, updated.EnableRag, "updated EnableRag");
                 AssertHelper.AreEqual(false, updated.EnableRetrievalGate, "updated EnableRetrievalGate");
                 AssertHelper.AreEqual(false, updated.EnableQueryRewrite, "updated EnableQueryRewrite");
@@ -288,7 +282,6 @@ namespace Test.Database.Tests
             {
                 AssistantSettings read = await driver.AssistantSettings.ReadAsync(createdId, ct);
                 AssertHelper.AreEqual(1.5, read.Temperature, "Temperature after re-read");
-                AssertHelper.AreEqual("gpt-4o", read.Model, "Model after re-read");
                 AssertHelper.AreEqual("FullText", read.SearchMode, "SearchMode after re-read");
                 AssertHelper.AreEqual(true, read.Streaming, "Streaming after re-read");
             }, token);

@@ -1517,7 +1517,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
+							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",

@@ -226,6 +226,13 @@ namespace AssistantHub.Server.Handlers
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
                     return;
                 }
+                if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant inference endpoint not configured."))).ConfigureAwait(false);
+                    return;
+                }
 
                 if (!settings.Streaming)
                 {
@@ -381,7 +388,7 @@ namespace AssistantHub.Server.Handlers
                         Enums.InferenceProviderEnum gateProvider = Settings.Inference.Provider;
                         string gateEndpoint = Settings.Inference.Endpoint;
                         string gateApiKey = Settings.Inference.ApiKey;
-                        string gateModel = settings.Model;
+                        string gateModel = Settings.Inference.DefaultModel;
 
                         if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                         {
@@ -397,7 +404,7 @@ namespace AssistantHub.Server.Handlers
                         }
 
                         if (String.IsNullOrEmpty(gateModel))
-                            gateModel = settings.Model;
+                            gateModel = Settings.Inference.DefaultModel;
                         List<ChatCompletionMessage> gateMessages = new List<ChatCompletionMessage>
                         {
                             new ChatCompletionMessage { Role = "system", Content = gatePrompt }
@@ -455,7 +462,7 @@ namespace AssistantHub.Server.Handlers
                     Enums.InferenceProviderEnum rewriteProvider = Settings.Inference.Provider;
                     string rewriteEndpoint = Settings.Inference.Endpoint;
                     string rewriteApiKey = Settings.Inference.ApiKey;
-                    string rewriteModel = settings.Model;
+                    string rewriteModel = Settings.Inference.DefaultModel;
 
                     if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                     {
@@ -648,7 +655,7 @@ namespace AssistantHub.Server.Handlers
                         Enums.InferenceProviderEnum rerankProvider = Settings.Inference.Provider;
                         string rerankEndpoint = Settings.Inference.Endpoint;
                         string rerankApiKey = Settings.Inference.ApiKey;
-                        string rerankModel = settings.Model;
+                        string rerankModel = Settings.Inference.DefaultModel;
 
                         if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                         {
@@ -849,7 +856,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 // Resolve parameters (request overrides fall back to settings)
-                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
+                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : Settings.Inference.DefaultModel;
                 double temperature = chatReq.Temperature ?? settings.Temperature;
                 double topP = chatReq.TopP ?? settings.TopP;
                 int maxTokens = chatReq.MaxTokens ?? settings.MaxTokens;
@@ -1079,6 +1086,13 @@ namespace AssistantHub.Server.Handlers
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
                     return;
                 }
+                if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant inference endpoint not configured."))).ConfigureAwait(false);
+                    return;
+                }
 
                 string threadId = ctx.Request.Headers[Constants.ThreadIdHeader];
 
@@ -1172,7 +1186,7 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
+                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : Settings.Inference.DefaultModel;
 
                 // Resolve inference endpoint details
                 Enums.InferenceProviderEnum compactInferenceProvider = Settings.Inference.Provider;
@@ -1271,9 +1285,16 @@ namespace AssistantHub.Server.Handlers
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
                     return;
                 }
+                if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant inference endpoint not configured."))).ConfigureAwait(false);
+                    return;
+                }
 
                 // Resolve parameters (request overrides fall back to settings)
-                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : settings.Model;
+                string model = !String.IsNullOrEmpty(chatReq.Model) ? chatReq.Model : Settings.Inference.DefaultModel;
                 double temperature = chatReq.Temperature ?? settings.Temperature;
                 double topP = chatReq.TopP ?? settings.TopP;
                 int maxTokens = chatReq.MaxTokens ?? settings.MaxTokens;

@@ -329,6 +329,8 @@ namespace AssistantHub.Server.Services
             AssistantSettings settings = request.AssistantSettings ?? await _Database.AssistantSettings.ReadByAssistantIdAsync(request.AssistantId, token).ConfigureAwait(false);
             if (settings == null)
                 return new AssistantChatExecutionResult { Success = false, ErrorMessage = "Assistant settings not configured." };
+            if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
+                return new AssistantChatExecutionResult { Success = false, ErrorMessage = "Assistant inference endpoint not configured." };
 
             ChatMetadataFilter effectiveMetadataFilter = BuildEffectiveMetadataFilter(settings, request.MetadataFilter);
             string metadataFilterJson = null;
@@ -355,7 +357,7 @@ namespace AssistantHub.Server.Services
                 {
                     string gatePrompt = BuildRetrievalGatePrompt(request.Messages, lastUserMessage);
                     var gateEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
-                    string gateModel = gateEndpoint?.Model ?? settings.Model;
+                    string gateModel = gateEndpoint?.Model ?? _Settings.Inference.DefaultModel;
 
                     Stopwatch gateSw = Stopwatch.StartNew();
                     try
@@ -409,7 +411,7 @@ namespace AssistantHub.Server.Services
                 && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
             {
                 var rewriteEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
-                string rewriteModel = rewriteEndpoint?.Model ?? settings.Model;
+                string rewriteModel = rewriteEndpoint?.Model ?? _Settings.Inference.DefaultModel;
                 string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
                     ? settings.QueryRewritePrompt
                     : _DefaultQueryRewritePrompt;
@@ -568,7 +570,7 @@ namespace AssistantHub.Server.Services
                 try
                 {
                     var rerankEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
-                    string rerankModel = rerankEndpoint?.Model ?? settings.Model;
+                    string rerankModel = rerankEndpoint?.Model ?? _Settings.Inference.DefaultModel;
                     string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
                         ? settings.RerankPrompt
                         : _DefaultRerankPrompt;
@@ -716,7 +718,7 @@ namespace AssistantHub.Server.Services
                 }
             }
 
-            string model = !String.IsNullOrEmpty(request.Model) ? request.Model : settings.Model;
+            string model = !String.IsNullOrEmpty(request.Model) ? request.Model : _Settings.Inference.DefaultModel;
             double temperature = request.Temperature ?? settings.Temperature;
             double topP = request.TopP ?? settings.TopP;
             int maxTokens = request.MaxTokens ?? settings.MaxTokens;

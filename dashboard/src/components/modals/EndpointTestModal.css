@@ -112,16 +112,31 @@
   color: var(--danger-color);
 }
 
-.endpoint-test-toggle {
+.endpoint-test-actions {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: none;
-  background: none;
-  color: var(--primary-color);
-  cursor: pointer;
-  padding: 0;
-  font: inherit;
+}
+
+.endpoint-test-actions-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.endpoint-test-copyable {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.endpoint-test-copyable-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
 }
 
 .endpoint-test-call-list {

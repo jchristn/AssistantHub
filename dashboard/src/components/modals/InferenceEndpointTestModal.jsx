@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import CopyButton from '../CopyButton';
 import './EndpointTestModal.css';
 
 function InferenceEndpointTestModal({ api, endpoint, onClose }) {
@@ -10,7 +11,7 @@ function InferenceEndpointTestModal({ api, endpoint, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [showRawJson, setShowRawJson] = useState(false);
+  const resultJson = result ? JSON.stringify(result, null, 2) : '';
 
   const runTest = async () => {
     setSubmitting(true);
@@ -124,7 +125,16 @@ function InferenceEndpointTestModal({ api, endpoint, onClose }) {
                 </div>
                 <div className="endpoint-test-card">
                   <label>History Entry</label>
-                  <strong>{result.RequestHistoryId || 'Not recorded'}</strong>
+                  {result.RequestHistoryId ? (
+                    <div className="endpoint-test-copyable">
+                      <code className="endpoint-test-copyable-value" title={result.RequestHistoryId}>
+                        {result.RequestHistoryId}
+                      </code>
+                      <CopyButton text={result.RequestHistoryId} />
+                    </div>
+                  ) : (
+                    <strong>Not recorded</strong>
+                  )}
                 </div>
               </div>
 
@@ -135,13 +145,9 @@ function InferenceEndpointTestModal({ api, endpoint, onClose }) {
                 <pre className="endpoint-test-output">{result.Output || '(empty)'}</pre>
               </div>
 
-              <div>
-                <button className="endpoint-test-toggle" onClick={() => setShowRawJson(prev => !prev)}>
-                  {showRawJson ? 'Hide full response JSON' : 'Show full response JSON'}
-                </button>
-                {showRawJson && (
-                  <pre className="endpoint-test-json">{JSON.stringify(result, null, 2)}</pre>
-                )}
+              <div className="endpoint-test-actions">
+                <span className="endpoint-test-actions-label">Response JSON</span>
+                <CopyButton text={resultJson} />
               </div>
 
               {Array.isArray(result.CompletionCalls) && result.CompletionCalls.length > 0 && (

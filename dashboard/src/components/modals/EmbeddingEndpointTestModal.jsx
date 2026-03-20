@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Modal from '../Modal';
+import CopyButton from '../CopyButton';
 import './EndpointTestModal.css';
 
 function EmbeddingEndpointTestModal({ api, endpoint, onClose }) {
@@ -8,12 +9,13 @@ function EmbeddingEndpointTestModal({ api, endpoint, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [showRawJson, setShowRawJson] = useState(false);
 
   const vectorPreview = useMemo(() => {
     const embedding = Array.isArray(result?.Embedding) ? result.Embedding : [];
     return embedding.slice(0, 16).map(value => Number(value).toFixed(6)).join(', ');
   }, [result]);
+
+  const resultJson = result ? JSON.stringify(result, null, 2) : '';
 
   const runTest = async () => {
     setSubmitting(true);
@@ -113,13 +115,9 @@ function EmbeddingEndpointTestModal({ api, endpoint, onClose }) {
                 </div>
               </div>
 
-              <div>
-                <button className="endpoint-test-toggle" onClick={() => setShowRawJson(prev => !prev)}>
-                  {showRawJson ? 'Hide full response JSON' : 'Show full response JSON'}
-                </button>
-                {showRawJson && (
-                  <pre className="endpoint-test-json">{JSON.stringify(result, null, 2)}</pre>
-                )}
+              <div className="endpoint-test-actions">
+                <span className="endpoint-test-actions-label">Response JSON</span>
+                <CopyButton text={resultJson} />
               </div>
 
               {Array.isArray(result.EmbeddingCalls) && result.EmbeddingCalls.length > 0 && (

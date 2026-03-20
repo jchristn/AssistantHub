@@ -470,6 +470,11 @@
             HEAD /v1.0/endpoints/completion/{endpointId} - Check completion endpoint existence.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.TestCompletionEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/completion/{endpointId}/test - Exercise a completion endpoint through Partio.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.InjectTenantId(System.String)">
             <summary>
             Inject the default TenantId into a JSON request body if not already present.
@@ -806,6 +811,11 @@
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.HeadEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/endpoints/embedding/{endpointId} - Check embedding endpoint existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.TestEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/embedding/{endpointId}/test - Exercise an embedding endpoint through Partio.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.InjectTenantId(System.String)">
@@ -1606,7 +1616,7 @@
             Returns true if the endpoint is healthy or if no health state exists (health check not enabled).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.ParseEndpointConfig(System.Text.Json.JsonElement)">
+        <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.ParseEndpointConfig(AssistantHub.Core.Models.PartioEndpointConfig)">
             <summary>
             Parse endpoint health config fields from a JSON element (Partio response).
             </summary>

@@ -128,13 +128,11 @@ namespace AssistantHub.Server.Handlers
                         if (response.IsSuccessStatusCode)
                         {
                             string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            var result = JsonSerializer.Deserialize<JsonElement>(respBody);
-                            if (result.TryGetProperty("Objects", out var objects) && objects.GetArrayLength() > 0)
-                            {
-                                string endpointId = objects[0].GetProperty("Id").GetString();
-                                if (!String.IsNullOrEmpty(endpointId))
-                                    settings.InferenceEndpointId = endpointId;
-                            }
+                            PartioEnumerationEnvelope<PartioEndpointConfig> result =
+                                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
+                            string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
+                            if (!String.IsNullOrEmpty(endpointId))
+                                settings.InferenceEndpointId = endpointId;
                         }
                     }
                 }
@@ -161,13 +159,11 @@ namespace AssistantHub.Server.Handlers
                         if (response.IsSuccessStatusCode)
                         {
                             string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            var result = JsonSerializer.Deserialize<JsonElement>(respBody);
-                            if (result.TryGetProperty("Objects", out var objects) && objects.GetArrayLength() > 0)
-                            {
-                                string endpointId = objects[0].GetProperty("Id").GetString();
-                                if (!String.IsNullOrEmpty(endpointId))
-                                    settings.EmbeddingEndpointId = endpointId;
-                            }
+                            PartioEnumerationEnvelope<PartioEndpointConfig> result =
+                                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
+                            string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
+                            if (!String.IsNullOrEmpty(endpointId))
+                                settings.EmbeddingEndpointId = endpointId;
                         }
                     }
                 }

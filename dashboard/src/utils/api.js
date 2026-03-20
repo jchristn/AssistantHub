@@ -152,6 +152,7 @@ export class ApiClient {
   // Embedding Endpoint Health
   getAllEmbeddingEndpointHealth() { return this.request('GET', '/v1.0/endpoints/embedding/health'); }
   getEmbeddingEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/embedding/${id}/health`); }
+  testEmbeddingEndpoint(id, body) { return this.request('POST', `/v1.0/endpoints/embedding/${id}/test`, body || {}); }
 
   // Completion Endpoints
   createCompletionEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/completion', endpoint); }
@@ -163,6 +164,7 @@ export class ApiClient {
   // Completion Endpoint Health
   getAllCompletionEndpointHealth() { return this.request('GET', '/v1.0/endpoints/completion/health'); }
   getCompletionEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}/health`); }
+  testCompletionEndpoint(id, body) { return this.request('POST', `/v1.0/endpoints/completion/${id}/test`, body || {}); }
 
   // Ingestion Rules
   createIngestionRule(rule) { return this.request('PUT', '/v1.0/ingestion-rules', rule); }

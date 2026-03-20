@@ -1,0 +1,158 @@
+.endpoint-test-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.endpoint-test-description {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.endpoint-test-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+}
+
+.endpoint-test-meta span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+.endpoint-test-meta strong,
+.endpoint-test-meta code {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.endpoint-test-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.endpoint-test-grid.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.endpoint-test-textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.endpoint-test-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.endpoint-test-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.endpoint-test-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.endpoint-test-card {
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+}
+
+.endpoint-test-card label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.endpoint-test-card code,
+.endpoint-test-output,
+.endpoint-test-json {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.endpoint-test-output,
+.endpoint-test-json {
+  margin: 0;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.endpoint-test-error {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: rgba(231, 76, 60, 0.08);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  color: var(--danger-color);
+}
+
+.endpoint-test-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.endpoint-test-call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.endpoint-test-call-card {
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+}
+
+.endpoint-test-call-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.endpoint-test-call-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .endpoint-test-grid.two-col {
+    grid-template-columns: 1fr;
+  }
+}

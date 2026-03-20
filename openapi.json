@@ -998,7 +998,6 @@
           "403": { "$ref": "#/components/responses/Forbidden" },
           "409": { "$ref": "#/components/responses/Conflict" }
         }
-      },
     },
     "/v1.0/endpoints/embedding/enumerate": {
       "post": {
@@ -1132,6 +1131,37 @@
         }
       }
     },
+    "/v1.0/endpoints/embedding/{endpointId}/test": {
+      "post": {
+        "tags": ["Embedding Endpoints"],
+        "summary": "Test an embedding endpoint",
+        "description": "Runs a smoke test against a specific embedding endpoint through AssistantHub's Partio proxy.",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EndpointExplorerEmbeddingRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Embedding test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EndpointExplorerEmbeddingResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
     "/v1.0/endpoints/completion": {
       "put": {
         "tags": ["Completion Endpoints"],
@@ -1158,7 +1188,6 @@
           "403": { "$ref": "#/components/responses/Forbidden" },
           "409": { "$ref": "#/components/responses/Conflict" }
         }
-      },
     },
     "/v1.0/endpoints/completion/enumerate": {
       "post": {
@@ -1287,6 +1316,37 @@
               }
             }
           },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/endpoints/completion/{endpointId}/test": {
+      "post": {
+        "tags": ["Completion Endpoints"],
+        "summary": "Test a completion endpoint",
+        "description": "Runs a smoke test against a specific completion endpoint through AssistantHub's Partio proxy.",
+        "parameters": [
+          { "$ref": "#/components/parameters/endpointId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EndpointExplorerCompletionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completion test result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EndpointExplorerCompletionResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
@@ -2295,6 +2355,7 @@
         }
       }
     }
+  }
   },
   "components": {
     "securitySchemes": {
@@ -2896,6 +2957,49 @@
         },
         "required": ["Model", "Endpoint", "ApiFormat"]
       },
+      "EmbeddingCallDetail": {
+        "type": "object",
+        "description": "Details of a single upstream embedding API call recorded during endpoint testing.",
+        "properties": {
+          "Url": { "type": "string", "nullable": true },
+          "Method": { "type": "string", "nullable": true },
+          "RequestHeaders": { "type": "object", "additionalProperties": { "type": "string" }, "nullable": true },
+          "RequestBody": { "type": "string", "nullable": true },
+          "StatusCode": { "type": "integer", "nullable": true },
+          "ResponseHeaders": { "type": "object", "additionalProperties": { "type": "string" }, "nullable": true },
+          "ResponseBody": { "type": "string", "nullable": true },
+          "ResponseTimeMs": { "type": "integer", "format": "int64", "nullable": true },
+          "Success": { "type": "boolean" },
+          "Error": { "type": "string", "nullable": true },
+          "TimestampUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EndpointExplorerEmbeddingRequest": {
+        "type": "object",
+        "description": "Request body for testing an embedding endpoint through AssistantHub and Partio.",
+        "properties": {
+          "Input": { "type": "string", "description": "Input text to embed." },
+          "L2Normalization": { "type": "boolean", "default": false, "description": "Apply L2 normalization to the returned vector." }
+        },
+        "required": ["Input"]
+      },
+      "EndpointExplorerEmbeddingResponse": {
+        "type": "object",
+        "description": "Response payload returned when testing an embedding endpoint.",
+        "properties": {
+          "Success": { "type": "boolean" },
+          "StatusCode": { "type": "integer" },
+          "Error": { "type": "string", "nullable": true },
+          "EndpointId": { "type": "string", "nullable": true },
+          "Model": { "type": "string", "nullable": true },
+          "Input": { "type": "string", "nullable": true },
+          "Embedding": { "type": "array", "items": { "type": "number", "format": "float" } },
+          "Dimensions": { "type": "integer" },
+          "ResponseTimeMs": { "type": "integer", "format": "int64" },
+          "RequestHistoryId": { "type": "string", "nullable": true },
+          "EmbeddingCalls": { "type": "array", "items": { "$ref": "#/components/schemas/EmbeddingCallDetail" } }
+        }
+      },
       "CompletionEndpoint": {
         "type": "object",
         "description": "Partio completion endpoint configuration.",
@@ -2932,6 +3036,51 @@
           "LastUpdateUtc": { "type": "string", "format": "date-time" }
         },
         "required": ["Model", "Endpoint", "ApiFormat"]
+      },
+      "CompletionCallDetail": {
+        "type": "object",
+        "description": "Details of a single upstream completion API call recorded during endpoint testing.",
+        "properties": {
+          "Url": { "type": "string", "nullable": true },
+          "Method": { "type": "string", "nullable": true },
+          "RequestHeaders": { "type": "object", "additionalProperties": { "type": "string" }, "nullable": true },
+          "RequestBody": { "type": "string", "nullable": true },
+          "StatusCode": { "type": "integer", "nullable": true },
+          "ResponseHeaders": { "type": "object", "additionalProperties": { "type": "string" }, "nullable": true },
+          "ResponseBody": { "type": "string", "nullable": true },
+          "ResponseTimeMs": { "type": "integer", "format": "int64", "nullable": true },
+          "Success": { "type": "boolean" },
+          "Error": { "type": "string", "nullable": true },
+          "TimestampUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EndpointExplorerCompletionRequest": {
+        "type": "object",
+        "description": "Request body for testing a completion endpoint through AssistantHub and Partio.",
+        "properties": {
+          "Prompt": { "type": "string", "description": "User prompt to send." },
+          "SystemPrompt": { "type": "string", "nullable": true, "description": "Optional system prompt." },
+          "MaxTokens": { "type": "integer", "default": 512, "minimum": 1 },
+          "TimeoutMs": { "type": "integer", "default": 60000, "minimum": 1000 }
+        },
+        "required": ["Prompt"]
+      },
+      "EndpointExplorerCompletionResponse": {
+        "type": "object",
+        "description": "Response payload returned when testing a completion endpoint.",
+        "properties": {
+          "Success": { "type": "boolean" },
+          "StatusCode": { "type": "integer" },
+          "Error": { "type": "string", "nullable": true },
+          "EndpointId": { "type": "string", "nullable": true },
+          "Model": { "type": "string", "nullable": true },
+          "Prompt": { "type": "string", "nullable": true },
+          "SystemPrompt": { "type": "string", "nullable": true },
+          "Output": { "type": "string", "nullable": true },
+          "ResponseTimeMs": { "type": "integer", "format": "int64" },
+          "RequestHistoryId": { "type": "string", "nullable": true },
+          "CompletionCalls": { "type": "array", "items": { "$ref": "#/components/schemas/CompletionCallDetail" } }
+        }
       },
       "EvalFact": {
         "type": "object",
@@ -3012,4 +3161,5 @@
       }
     }
   }
+}
 }

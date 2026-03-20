@@ -279,6 +279,7 @@ namespace AssistantHub.Server.Handlers
                 AuthContext auth = GetAuthContext(ctx);
                 string body = await GetRequestBodyAsync(ctx).ConfigureAwait(false);
 
+                EvalRunRequest request = null;
                 string assistantId = null;
                 string judgePromptOverride = null;
 
@@ -286,11 +287,9 @@ namespace AssistantHub.Server.Handlers
                 {
                     try
                     {
-                        JsonElement json = JsonSerializer.Deserialize<JsonElement>(body);
-                        if (json.TryGetProperty("AssistantId", out JsonElement aiProp))
-                            assistantId = aiProp.GetString();
-                        if (json.TryGetProperty("JudgePrompt", out JsonElement jpProp))
-                            judgePromptOverride = jpProp.GetString();
+                        request = JsonSerializer.Deserialize<EvalRunRequest>(body);
+                        assistantId = request?.AssistantId;
+                        judgePromptOverride = request?.JudgePrompt;
                     }
                     catch { }
                 }

@@ -270,11 +270,11 @@ namespace AssistantHub.Core.Services
                     // Try to extract Id from response
                     try
                     {
-                        var doc = System.Text.Json.JsonDocument.Parse(respBody);
-                        if (doc.RootElement.TryGetProperty("Id", out var idElem))
-                            return idElem.GetString();
-                        if (doc.RootElement.TryGetProperty("GUID", out var guidElem))
-                            return guidElem.GetString();
+                        IdentifierResponse result = System.Text.Json.JsonSerializer.Deserialize<IdentifierResponse>(respBody);
+                        if (!String.IsNullOrEmpty(result?.Id))
+                            return result.Id;
+                        if (!String.IsNullOrEmpty(result?.GUID))
+                            return result.GUID;
                     }
                     catch { }
                     return "default";

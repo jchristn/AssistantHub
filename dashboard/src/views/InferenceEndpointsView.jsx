@@ -4,6 +4,7 @@ import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
 import CopyableId from '../components/CopyableId';
 import InferenceEndpointFormModal from '../components/modals/InferenceEndpointFormModal';
+import InferenceEndpointTestModal from '../components/modals/InferenceEndpointTestModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
@@ -21,6 +22,7 @@ function InferenceEndpointsView() {
   const [refresh, setRefresh] = useState(0);
   const [healthData, setHealthData] = useState({});
   const [healthDetailModal, setHealthDetailModal] = useState({ isOpen: false, data: null });
+  const [testTarget, setTestTarget] = useState(null);
 
   const loadHealth = useCallback(async () => {
     try {
@@ -67,7 +69,14 @@ function InferenceEndpointsView() {
         const h = healthData[row.Id];
         if (!h) return <span style={{ color: 'var(--text-secondary)' }}>Pending</span>;
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => openHealthDetail(row.Id)}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            onClick={(e) =>
+            {
+              e.stopPropagation();
+              openHealthDetail(row.Id);
+            }}
+          >
             <span className={`status-badge ${h.IsHealthy ? 'active' : 'inactive'}`}>
               {h.IsHealthy ? 'Healthy' : 'Unhealthy'}
             </span>
@@ -95,6 +104,7 @@ function InferenceEndpointsView() {
   };
 
   const getRowActions = (row) => [
+    { label: 'Test', onClick: () => setTestTarget(row) },
     { label: 'Edit', onClick: () => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); } },
     { label: 'Duplicate', onClick: () => handleDuplicate(row) },
     { label: 'View JSON', onClick: () => setShowJson(row) },
@@ -153,6 +163,7 @@ function InferenceEndpointsView() {
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
       {showForm && <InferenceEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
+      {testTarget && <InferenceEndpointTestModal api={api} endpoint={testTarget} onClose={() => setTestTarget(null)} />}
       {showJson && <JsonViewModal title="Inference Endpoint JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Inference Endpoint" message={`Are you sure you want to delete inference endpoint "${deleteTarget.Name || deleteTarget.Model}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

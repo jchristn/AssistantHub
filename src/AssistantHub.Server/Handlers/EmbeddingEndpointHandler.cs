@@ -297,6 +297,56 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send().ConfigureAwait(false);
             }
         }
+
+        /// <summary>
+        /// POST /v1.0/endpoints/embedding/{endpointId}/test - Exercise an embedding endpoint through Partio.
+        /// </summary>
+        public async Task TestEmbeddingEndpointAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string endpointId = ctx.Request.Url.Parameters["endpointId"];
+                EndpointExplorerEmbeddingRequest request = String.IsNullOrEmpty(ctx.Request.DataAsString)
+                    ? new EndpointExplorerEmbeddingRequest()
+                    : JsonSerializer.Deserialize<EndpointExplorerEmbeddingRequest>(ctx.Request.DataAsString);
+
+                if (request == null)
+                    request = new EndpointExplorerEmbeddingRequest();
+
+                request.EndpointId = endpointId;
+
+                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/explorer/embedding";
+                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, partioUrl))
+                {
+                    req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                    req.Content = new StringContent(Serializer.SerializeJson(request), Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    ctx.Response.StatusCode = (int)resp.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in TestEmbeddingEndpointAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
         #region Private-Methods
 
         /// <summary>
@@ -305,19 +355,17 @@ namespace AssistantHub.Server.Handlers
         /// </summary>
         private string InjectTenantId(string body)
         {
-            if (String.IsNullOrEmpty(body)) return "{\"TenantId\":\"default\"}";
+            if (String.IsNullOrEmpty(body))
+                return JsonSerializer.Serialize(new PartioEndpointRequest { TenantId = "default" });
 
-            using JsonDocument doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("TenantId", out JsonElement tid) &&
-                tid.ValueKind == JsonValueKind.String &&
-                !String.IsNullOrEmpty(tid.GetString()))
-            {
-                return body;
-            }
+            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body);
+            if (request == null)
+                request = new PartioEndpointRequest();
 
-            var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-            dict["TenantId"] = JsonSerializer.Deserialize<JsonElement>("\"default\"");
-            return JsonSerializer.Serialize(dict);
+            if (String.IsNullOrEmpty(request.TenantId))
+                request.TenantId = "default";
+
+            return JsonSerializer.Serialize(request);
         }
 
         /// <summary>
@@ -326,26 +374,24 @@ namespace AssistantHub.Server.Handlers
         /// </summary>
         private string ConvertPartioEnvelopeToEnumerationResult(string partioJson)
         {
-            using JsonDocument doc = JsonDocument.Parse(partioJson);
-            JsonElement root = doc.RootElement;
+            PartioEnumerationEnvelope<PartioEndpointConfig> envelope =
+                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(partioJson);
 
-            JsonElement data = root.TryGetProperty("Data", out JsonElement d) ? d : default;
-            long totalCount = root.TryGetProperty("TotalCount", out JsonElement tc) && tc.ValueKind == JsonValueKind.Number ? tc.GetInt64() : 0;
-            bool hasMore = root.TryGetProperty("HasMore", out JsonElement hm) && hm.ValueKind == JsonValueKind.True;
+            EnumerationResult<PartioEndpointConfig> result = new EnumerationResult<PartioEndpointConfig>
+            {
+                Success = true,
+                MaxResults = envelope?.Data != null && envelope.Data.Count > 0 ? envelope.Data.Count : 100,
+                TotalRecords = envelope?.TotalCount ?? 0,
+                RecordsRemaining = envelope != null && envelope.HasMore
+                    ? Math.Max(envelope.TotalCount - (envelope.Data?.Count ?? 0), 0)
+                    : 0,
+                ContinuationToken = null,
+                EndOfResults = !(envelope?.HasMore ?? false),
+                Objects = envelope?.Data ?? new List<PartioEndpointConfig>(),
+                TotalMs = 0
+            };
 
-            int objectCount = data.ValueKind == JsonValueKind.Array ? data.GetArrayLength() : 0;
-            string objectsJson = data.ValueKind == JsonValueKind.Array ? data.GetRawText() : "[]";
-
-            return "{" +
-                "\"Success\":true," +
-                "\"MaxResults\":" + (objectCount > 0 ? objectCount : 100) + "," +
-                "\"TotalRecords\":" + totalCount + "," +
-                "\"RecordsRemaining\":" + (hasMore ? Math.Max(totalCount - objectCount, 0) : 0) + "," +
-                "\"ContinuationToken\":null," +
-                "\"EndOfResults\":" + (!hasMore ? "true" : "false") + "," +
-                "\"Objects\":" + objectsJson + "," +
-                "\"TotalMs\":0" +
-                "}";
+            return Serializer.SerializeJson(result);
         }
 
         #endregion

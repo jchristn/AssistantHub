@@ -868,19 +868,8 @@ namespace AssistantHub.Core.Services
                         return null;
                     }
 
-                    // Partio returns { "Embeddings": [float, ...] }
-                    using (JsonDocument doc = JsonDocument.Parse(responseBody))
-                    {
-                        if (doc.RootElement.TryGetProperty("Embeddings", out JsonElement embArr) && embArr.ValueKind == JsonValueKind.Array)
-                        {
-                            List<float> embeddings = new List<float>();
-                            foreach (JsonElement el in embArr.EnumerateArray())
-                                embeddings.Add(el.GetSingle());
-                            return embeddings;
-                        }
-                    }
-
-                    return null;
+                    PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody);
+                    return embedResponse?.Embeddings;
                 }
             }
             catch (Exception e)
@@ -1141,26 +1130,13 @@ namespace AssistantHub.Core.Services
                         return null;
 
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    using (JsonDocument doc = JsonDocument.Parse(responseBody))
-                    {
-                        JsonElement root = doc.RootElement;
-                        string model = null;
-                        string endpoint = null;
-                        string name = null;
+                    PartioEndpointConfig endpointConfig = JsonSerializer.Deserialize<PartioEndpointConfig>(responseBody);
 
-                        if (root.TryGetProperty("Model", out JsonElement modelEl))
-                            model = modelEl.GetString();
-                        if (root.TryGetProperty("Endpoint", out JsonElement endpointEl))
-                            endpoint = endpointEl.GetString();
-                        if (root.TryGetProperty("Name", out JsonElement nameEl))
-                            name = nameEl.GetString();
-
-                        List<string> parts = new List<string>();
-                        if (!String.IsNullOrEmpty(name)) parts.Add("name: " + name);
-                        if (!String.IsNullOrEmpty(model)) parts.Add("model: " + model);
-                        if (!String.IsNullOrEmpty(endpoint)) parts.Add("url: " + endpoint);
-                        return parts.Count > 0 ? String.Join(", ", parts) : null;
-                    }
+                    List<string> parts = new List<string>();
+                    if (!String.IsNullOrEmpty(endpointConfig?.Name)) parts.Add("name: " + endpointConfig.Name);
+                    if (!String.IsNullOrEmpty(endpointConfig?.Model)) parts.Add("model: " + endpointConfig.Model);
+                    if (!String.IsNullOrEmpty(endpointConfig?.Endpoint)) parts.Add("url: " + endpointConfig.Endpoint);
+                    return parts.Count > 0 ? String.Join(", ", parts) : null;
                 }
             }
             catch (Exception e)

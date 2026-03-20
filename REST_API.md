@@ -1298,6 +1298,54 @@ Check the health of an embedding endpoint.
 
 **Response (200 OK):** Health status from Partio.
 
+### POST /v1.0/endpoints/embedding/{endpointId}/test
+
+Run a smoke test against a specific embedding endpoint through AssistantHub's Partio proxy. This validates the AssistantHub-to-Partio-to-provider path and returns the explorer response payload from Partio.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Input": "AssistantHub embedding smoke test input",
+  "L2Normalization": false
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "StatusCode": 200,
+  "Error": null,
+  "EndpointId": "ep_abc123",
+  "Model": "gemini-embedding-001",
+  "Input": "AssistantHub embedding smoke test input",
+  "Embedding": [0.0123, -0.0456, 0.0789],
+  "Dimensions": 768,
+  "ResponseTimeMs": 243,
+  "RequestHistoryId": "erh_abc123",
+  "EmbeddingCalls": [
+    {
+      "Url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
+      "Method": "POST",
+      "StatusCode": 200,
+      "ResponseTimeMs": 219,
+      "Success": true,
+      "Error": null,
+      "TimestampUtc": "2026-03-20T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Endpoint not found.
+- `502` -- Partio or upstream provider unavailable.
+
 ---
 
 ## Completion Endpoints (Admin Only)
@@ -1404,6 +1452,56 @@ Check the health of a completion endpoint.
 **Auth:** Required (admin only)
 
 **Response (200 OK):** Health status from Partio.
+
+### POST /v1.0/endpoints/completion/{endpointId}/test
+
+Run a smoke test against a specific completion endpoint through AssistantHub's Partio proxy. This validates the AssistantHub-to-Partio-to-provider path and returns the explorer response payload from Partio.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Prompt": "Respond with a one-sentence smoke test confirmation.",
+  "SystemPrompt": "You are a concise and accurate assistant.",
+  "MaxTokens": 512,
+  "TimeoutMs": 60000
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "StatusCode": 200,
+  "Error": null,
+  "EndpointId": "cep_abc123",
+  "Model": "gemini-2.5-flash",
+  "Prompt": "Respond with a one-sentence smoke test confirmation.",
+  "SystemPrompt": "You are a concise and accurate assistant.",
+  "Output": "AssistantHub can successfully reach this inference endpoint.",
+  "ResponseTimeMs": 418,
+  "RequestHistoryId": "crh_abc123",
+  "CompletionCalls": [
+    {
+      "Url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "Method": "POST",
+      "StatusCode": 200,
+      "ResponseTimeMs": 394,
+      "Success": true,
+      "Error": null,
+      "TimestampUtc": "2026-03-20T12:00:00Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `403` -- Not an admin user.
+- `404` -- Endpoint not found.
+- `502` -- Partio or upstream provider unavailable.
 
 ---
 

@@ -4875,6 +4875,66 @@
             Value to compare against.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.CompletionCallDetail">
+            <summary>
+            Captures details of a single HTTP call made to an upstream completion endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.Url">
+            <summary>
+            Full URL called.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.Method">
+            <summary>
+            HTTP method.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.RequestHeaders">
+            <summary>
+            Headers sent upstream.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.RequestBody">
+            <summary>
+            Body sent upstream.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.StatusCode">
+            <summary>
+            HTTP status code returned.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.ResponseHeaders">
+            <summary>
+            Response headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.ResponseBody">
+            <summary>
+            Response body.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.ResponseTimeMs">
+            <summary>
+            Timing for this call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.Success">
+            <summary>
+            Whether the call succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.Error">
+            <summary>
+            Error message if the call failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CompletionCallDetail.TimestampUtc">
+            <summary>
+            UTC timestamp when the call was initiated.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.CrawlFilterSettings">
             <summary>
             Crawl filter settings sub-object.
@@ -5447,6 +5507,236 @@
             <param name="row">Data row.</param>
             <returns>Credential instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.EmbeddingCallDetail">
+            <summary>
+            Captures details of a single HTTP call made to an upstream embedding endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.Url">
+            <summary>
+            Full URL called.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.Method">
+            <summary>
+            HTTP method.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.RequestHeaders">
+            <summary>
+            Headers sent upstream.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.RequestBody">
+            <summary>
+            Body sent upstream.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.StatusCode">
+            <summary>
+            HTTP status code returned.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.ResponseHeaders">
+            <summary>
+            Response headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.ResponseBody">
+            <summary>
+            Response body.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.ResponseTimeMs">
+            <summary>
+            Timing for this call in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.Success">
+            <summary>
+            Whether the call succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.Error">
+            <summary>
+            Error message if the call failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EmbeddingCallDetail.TimestampUtc">
+            <summary>
+            UTC timestamp when the call was initiated.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointExplorerCompletionRequest">
+            <summary>
+            Request body for testing an inference endpoint through Partio.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionRequest.EndpointId">
+            <summary>
+            Target completion endpoint ID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionRequest.Prompt">
+            <summary>
+            User prompt to send.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionRequest.SystemPrompt">
+            <summary>
+            Optional system prompt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionRequest.MaxTokens">
+            <summary>
+            Maximum number of tokens to generate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionRequest.TimeoutMs">
+            <summary>
+            Timeout in milliseconds.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointExplorerCompletionResponse">
+            <summary>
+            Response payload for inference endpoint test requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.Success">
+            <summary>
+            Whether the explorer request succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.StatusCode">
+            <summary>
+            Explorer result status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.Error">
+            <summary>
+            Error text when the request fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.EndpointId">
+            <summary>
+            Target completion endpoint ID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.Model">
+            <summary>
+            Target model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.Prompt">
+            <summary>
+            Prompt sent to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.SystemPrompt">
+            <summary>
+            Optional system prompt sent to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.Output">
+            <summary>
+            Completion text returned by the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.ResponseTimeMs">
+            <summary>
+            Overall request duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.RequestHistoryId">
+            <summary>
+            Related request-history entry ID when persisted.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerCompletionResponse.CompletionCalls">
+            <summary>
+            Upstream completion calls made by Partio for this explorer request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointExplorerEmbeddingRequest">
+            <summary>
+            Request body for testing an embedding endpoint through Partio.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingRequest.EndpointId">
+            <summary>
+            Target embedding endpoint ID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingRequest.Input">
+            <summary>
+            Input text to embed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingRequest.L2Normalization">
+            <summary>
+            Whether to apply L2 normalization to the returned vector.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse">
+            <summary>
+            Response payload for embedding endpoint test requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Success">
+            <summary>
+            Whether the explorer request succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.StatusCode">
+            <summary>
+            Explorer result status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Error">
+            <summary>
+            Error text when the request fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.EndpointId">
+            <summary>
+            Target embedding endpoint ID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Model">
+            <summary>
+            Target model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Input">
+            <summary>
+            Input text that was embedded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Embedding">
+            <summary>
+            Returned embedding vector.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.Dimensions">
+            <summary>
+            Number of dimensions in the returned embedding.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.ResponseTimeMs">
+            <summary>
+            Overall request duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.RequestHistoryId">
+            <summary>
+            Related request-history entry ID when persisted.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EndpointExplorerEmbeddingResponse.EmbeddingCalls">
+            <summary>
+            Upstream embedding calls made by Partio for this explorer request.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.EndpointHealthState">
             <summary>
             In-memory runtime health state for an endpoint.
@@ -5864,6 +6154,21 @@
             <param name="row">Data row.</param>
             <returns>EvalRun instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.EvalRunRequest">
+            <summary>
+            Request payload for starting an evaluation run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRunRequest.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRunRequest.JudgePrompt">
+            <summary>
+            Optional judge prompt override.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.FactVerdict">
             <summary>
             Verdict for a single expected fact within an evaluation result.
@@ -5924,6 +6229,46 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.GeminiCandidate">
+            <summary>
+            Candidate payload in a Gemini response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiCandidate.Content">
+            <summary>
+            Candidate content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.GeminiContent">
+            <summary>
+            Content payload in a Gemini response candidate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiContent.Parts">
+            <summary>
+            Content parts.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.GeminiContentPart">
+            <summary>
+            Content part in a Gemini response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiContentPart.Text">
+            <summary>
+            Text content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.GeminiResponse">
+            <summary>
+            Typed Gemini response payload.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiResponse.Candidates">
+            <summary>
+            Response candidates.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.HealthCheckRecord">
             <summary>
             A single health check result record.
@@ -5937,6 +6282,21 @@
         <member name="P:AssistantHub.Core.Models.HealthCheckRecord.Success">
             <summary>
             Whether the check was successful.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IdentifierResponse">
+            <summary>
+            Generic identifier response payload for create operations that may return either Id or GUID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IdentifierResponse.Id">
+            <summary>
+            String identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IdentifierResponse.GUID">
+            <summary>
+            Legacy GUID identifier.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.InferenceModel">
@@ -6259,6 +6619,282 @@
             </summary>
             <param name="config">Configuration to validate.</param>
             <returns>List of validation error messages (empty if valid).</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.OllamaChatStreamLine">
+            <summary>
+            Single JSON line from an Ollama streaming chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.Done">
+            <summary>
+            Whether generation is complete.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.Message">
+            <summary>
+            Message payload.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.OllamaStreamMessage">
+            <summary>
+            Message payload within an Ollama chat stream line.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaStreamMessage.Content">
+            <summary>
+            Message content.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.OpenAIStreamingChoice">
+            <summary>
+            Choice payload for an OpenAI streaming chat chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingChoice.Delta">
+            <summary>
+            Incremental delta.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.OpenAIStreamingChunk">
+            <summary>
+            Streaming chunk payload from an OpenAI-compatible chat completion stream.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingChunk.Choices">
+            <summary>
+            Chunk choices.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.OpenAIStreamingDelta">
+            <summary>
+            Delta payload for an OpenAI streaming chat chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.Content">
+            <summary>
+            Delta content text.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEmbedResponse">
+            <summary>
+            Typed response payload from Partio's embedding endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Embeddings">
+            <summary>
+            Returned embedding vector.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEndpointConfig">
+            <summary>
+            Typed representation of a Partio embedding or completion endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Id">
+            <summary>
+            Endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Name">
+            <summary>
+            Optional endpoint display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Model">
+            <summary>
+            Endpoint model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Endpoint">
+            <summary>
+            Upstream endpoint URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.ApiFormat">
+            <summary>
+            Upstream API format.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.ApiKey">
+            <summary>
+            Upstream API key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Active">
+            <summary>
+            Whether the endpoint is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckEnabled">
+            <summary>
+            Whether health checks are enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckUrl">
+            <summary>
+            Health check URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckMethod">
+            <summary>
+            Health check method.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckIntervalMs">
+            <summary>
+            Health check interval in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckTimeoutMs">
+            <summary>
+            Health check timeout in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckExpectedStatusCode">
+            <summary>
+            Expected health check status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthyThreshold">
+            <summary>
+            Consecutive successes required for healthy state.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.UnhealthyThreshold">
+            <summary>
+            Consecutive failures required for unhealthy state.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckUseAuth">
+            <summary>
+            Whether auth is used for health checks.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEndpointRequest">
+            <summary>
+            Typed request payload for creating or updating a Partio-managed endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Name">
+            <summary>
+            Optional endpoint name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Model">
+            <summary>
+            Model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Endpoint">
+            <summary>
+            Endpoint URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.ApiFormat">
+            <summary>
+            API format.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.ApiKey">
+            <summary>
+            API key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Active">
+            <summary>
+            Whether the endpoint is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.EnableRequestHistory">
+            <summary>
+            Whether request history is enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Labels">
+            <summary>
+            Labels.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Tags">
+            <summary>
+            Tags.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckEnabled">
+            <summary>
+            Whether health checks are enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckUrl">
+            <summary>
+            Health check URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckMethod">
+            <summary>
+            Health check method.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckIntervalMs">
+            <summary>
+            Health check interval in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckTimeoutMs">
+            <summary>
+            Health check timeout in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckExpectedStatusCode">
+            <summary>
+            Expected health check status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthyThreshold">
+            <summary>
+            Healthy threshold.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.UnhealthyThreshold">
+            <summary>
+            Unhealthy threshold.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckUseAuth">
+            <summary>
+            Whether auth is used on health checks.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEnumerationEnvelope`1">
+            <summary>
+            Typed representation of a Partio enumeration response envelope.
+            </summary>
+            <typeparam name="T">Envelope data type.</typeparam>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEnumerationEnvelope`1.Data">
+            <summary>
+            Enumerated objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEnumerationEnvelope`1.TotalCount">
+            <summary>
+            Total count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEnumerationEnvelope`1.HasMore">
+            <summary>
+            Whether more results remain.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.PullProgress">
             <summary>
@@ -6637,6 +7273,17 @@
             </summary>
             <param name="password">Plain-text password.</param>
             <returns>True if the password matches.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter">
+            <summary>
+            Converts Partio health check method values from either string or numeric enum form.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter.Read(System.Text.Json.Utf8JsonReader@,System.Type,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter.Write(System.Text.Json.Utf8JsonWriter,System.String,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Services.AuthenticationService">
             <summary>

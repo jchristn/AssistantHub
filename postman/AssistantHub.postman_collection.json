@@ -1043,6 +1043,33 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Test Embedding Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Input\": \"AssistantHub embedding smoke test input\",\n\t\"L2Normalization\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/test",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", ":endpointId", "test"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
 				}
 			]
 		},
@@ -1181,6 +1208,33 @@
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/health",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "endpoints", "completion", ":endpointId", "health"],
+							"variable": [
+								{
+									"key": "endpointId",
+									"value": "endpoint-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Test Completion Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Prompt\": \"Respond with a one-sentence smoke test confirmation.\",\n\t\"SystemPrompt\": \"You are a concise and accurate assistant.\",\n\t\"MaxTokens\": 512,\n\t\"TimeoutMs\": 60000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/test",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", ":endpointId", "test"],
 							"variable": [
 								{
 									"key": "endpointId",

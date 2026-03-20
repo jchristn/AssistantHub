@@ -19,6 +19,11 @@ namespace AssistantHub.Server.Services
     /// </summary>
     public class EndpointHealthCheckService
     {
+        private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         private readonly LoggingModule _Logging;
         private readonly AssistantHubSettings _Settings;
         private readonly string _Header = "[HealthCheck] ";
@@ -78,12 +83,13 @@ namespace AssistantHub.Server.Services
                 }
 
                 string body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                using JsonDocument doc = JsonDocument.Parse(body);
+                PartioEnumerationEnvelope<PartioEndpointConfig>? envelope =
+                    JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(body, _JsonOptions);
 
-                if (!doc.RootElement.TryGetProperty("Data", out JsonElement dataArray) || dataArray.ValueKind != JsonValueKind.Array)
+                if (envelope?.Data == null || envelope.Data.Count < 1)
                     return 0;
 
-                foreach (JsonElement ep in dataArray.EnumerateArray())
+                foreach (PartioEndpointConfig ep in envelope.Data)
                 {
                     EndpointConfig config = ParseEndpointConfig(ep);
                     if (config != null && config.HealthCheckEnabled && config.Active)
@@ -110,8 +116,9 @@ namespace AssistantHub.Server.Services
 
             try
             {
-                using JsonDocument doc = JsonDocument.Parse(responseJson);
-                EndpointConfig config = ParseEndpointConfig(doc.RootElement);
+                PartioEndpointConfig? endpoint =
+                    JsonSerializer.Deserialize<PartioEndpointConfig>(responseJson, _JsonOptions);
+                EndpointConfig config = ParseEndpointConfig(endpoint);
                 if (config != null && config.HealthCheckEnabled && config.Active)
                 {
                     StartLoop(config);
@@ -132,8 +139,9 @@ namespace AssistantHub.Server.Services
 
             try
             {
-                using JsonDocument doc = JsonDocument.Parse(responseJson);
-                EndpointConfig config = ParseEndpointConfig(doc.RootElement);
+                PartioEndpointConfig? endpoint =
+                    JsonSerializer.Deserialize<PartioEndpointConfig>(responseJson, _JsonOptions);
+                EndpointConfig config = ParseEndpointConfig(endpoint);
                 if (config == null) return;
 
                 StopLoop(config.Id);
@@ -385,39 +393,31 @@ namespace AssistantHub.Server.Services
         /// <summary>
         /// Parse endpoint health config fields from a JSON element (Partio response).
         /// </summary>
-        private EndpointConfig? ParseEndpointConfig(JsonElement element)
+        private EndpointConfig? ParseEndpointConfig(PartioEndpointConfig? endpoint)
         {
             try
             {
-                EndpointConfig config = new EndpointConfig();
+                if (endpoint == null) return null;
 
-                config.Id = element.TryGetProperty("Id", out JsonElement id) && id.ValueKind == JsonValueKind.String ? id.GetString()! : string.Empty;
-                config.Model = element.TryGetProperty("Model", out JsonElement model) && model.ValueKind == JsonValueKind.String ? model.GetString()! : string.Empty;
-                config.TenantId = element.TryGetProperty("TenantId", out JsonElement tid) && tid.ValueKind == JsonValueKind.String ? tid.GetString()! : "default";
-                config.Endpoint = element.TryGetProperty("Endpoint", out JsonElement ep) && ep.ValueKind == JsonValueKind.String ? ep.GetString()! : string.Empty;
-                config.ApiFormat = element.TryGetProperty("ApiFormat", out JsonElement fmt) && fmt.ValueKind == JsonValueKind.String ? fmt.GetString()! : string.Empty;
-                config.ApiKey = element.TryGetProperty("ApiKey", out JsonElement ak) && ak.ValueKind == JsonValueKind.String ? ak.GetString() : null;
-                config.Active = element.TryGetProperty("Active", out JsonElement active) && active.ValueKind == JsonValueKind.True;
-                config.HealthCheckEnabled = element.TryGetProperty("HealthCheckEnabled", out JsonElement hce) && hce.ValueKind == JsonValueKind.True;
-                config.HealthCheckUrl = element.TryGetProperty("HealthCheckUrl", out JsonElement hcu) && hcu.ValueKind == JsonValueKind.String ? hcu.GetString() : null;
-
-                // HealthCheckMethod can be a string ("GET"/"HEAD") or an int (0/1)
-                if (element.TryGetProperty("HealthCheckMethod", out JsonElement hcm))
+                EndpointConfig config = new EndpointConfig
                 {
-                    if (hcm.ValueKind == JsonValueKind.String)
-                        config.HealthCheckMethod = hcm.GetString()!;
-                    else if (hcm.ValueKind == JsonValueKind.Number)
-                        config.HealthCheckMethod = hcm.GetInt32() == 1 ? "HEAD" : "GET";
-                    else
-                        config.HealthCheckMethod = "GET";
-                }
-
-                config.HealthCheckIntervalMs = element.TryGetProperty("HealthCheckIntervalMs", out JsonElement hci) && hci.ValueKind == JsonValueKind.Number ? hci.GetInt32() : 30000;
-                config.HealthCheckTimeoutMs = element.TryGetProperty("HealthCheckTimeoutMs", out JsonElement hct) && hct.ValueKind == JsonValueKind.Number ? hct.GetInt32() : 10000;
-                config.HealthCheckExpectedStatusCode = element.TryGetProperty("HealthCheckExpectedStatusCode", out JsonElement hcesc) && hcesc.ValueKind == JsonValueKind.Number ? hcesc.GetInt32() : 200;
-                config.HealthyThreshold = element.TryGetProperty("HealthyThreshold", out JsonElement ht) && ht.ValueKind == JsonValueKind.Number ? ht.GetInt32() : 2;
-                config.UnhealthyThreshold = element.TryGetProperty("UnhealthyThreshold", out JsonElement ut) && ut.ValueKind == JsonValueKind.Number ? ut.GetInt32() : 2;
-                config.HealthCheckUseAuth = element.TryGetProperty("HealthCheckUseAuth", out JsonElement hcua) && hcua.ValueKind == JsonValueKind.True;
+                    Id = endpoint.Id ?? string.Empty,
+                    Model = endpoint.Model ?? string.Empty,
+                    TenantId = endpoint.TenantId ?? "default",
+                    Endpoint = endpoint.Endpoint ?? string.Empty,
+                    ApiFormat = endpoint.ApiFormat ?? string.Empty,
+                    ApiKey = endpoint.ApiKey,
+                    Active = endpoint.Active,
+                    HealthCheckEnabled = endpoint.HealthCheckEnabled,
+                    HealthCheckUrl = endpoint.HealthCheckUrl,
+                    HealthCheckMethod = string.IsNullOrEmpty(endpoint.HealthCheckMethod) ? "GET" : endpoint.HealthCheckMethod,
+                    HealthCheckIntervalMs = endpoint.HealthCheckIntervalMs > 0 ? endpoint.HealthCheckIntervalMs : 30000,
+                    HealthCheckTimeoutMs = endpoint.HealthCheckTimeoutMs > 0 ? endpoint.HealthCheckTimeoutMs : 10000,
+                    HealthCheckExpectedStatusCode = endpoint.HealthCheckExpectedStatusCode > 0 ? endpoint.HealthCheckExpectedStatusCode : 200,
+                    HealthyThreshold = endpoint.HealthyThreshold > 0 ? endpoint.HealthyThreshold : 2,
+                    UnhealthyThreshold = endpoint.UnhealthyThreshold > 0 ? endpoint.UnhealthyThreshold : 2,
+                    HealthCheckUseAuth = endpoint.HealthCheckUseAuth
+                };
 
                 if (string.IsNullOrEmpty(config.Id)) return null;
 

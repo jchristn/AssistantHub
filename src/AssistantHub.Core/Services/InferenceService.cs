@@ -1049,14 +1049,12 @@ namespace AssistantHub.Core.Services
                     return InferenceResult.FromError("Gemini API returned " + (int)response.StatusCode);
                 }
 
-                using (JsonDocument doc = JsonDocument.Parse(responseBody))
+                GeminiResponse geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseBody, _JsonOptions);
+                string content = ExtractGeminiText(geminiResponse);
+                if (!String.IsNullOrEmpty(content))
                 {
-                    string content = ExtractGeminiText(doc.RootElement);
-                    if (!String.IsNullOrEmpty(content))
-                    {
-                        _Logging.Debug(_Header + "Gemini response received (" + content.Length + " characters)");
-                        return InferenceResult.FromSuccess(content);
-                    }
+                    _Logging.Debug(_Header + "Gemini response received (" + content.Length + " characters)");
+                    return InferenceResult.FromSuccess(content);
                 }
 
                 _Logging.Warn(_Header + "Gemini response contained no candidate content");
@@ -1143,23 +1141,14 @@ namespace AssistantHub.Core.Services
 
                                 try
                                 {
-                                    using (JsonDocument doc = JsonDocument.Parse(data))
+                                    OpenAIStreamingChunk chunk = JsonSerializer.Deserialize<OpenAIStreamingChunk>(data, _JsonOptions);
+                                    string deltaContent = chunk?.Choices != null && chunk.Choices.Count > 0
+                                        ? chunk.Choices[0].Delta?.Content
+                                        : null;
+                                    if (!String.IsNullOrEmpty(deltaContent))
                                     {
-                                        JsonElement root = doc.RootElement;
-                                        if (root.TryGetProperty("choices", out JsonElement choices) && choices.GetArrayLength() > 0)
-                                        {
-                                            JsonElement choice = choices[0];
-                                            if (choice.TryGetProperty("delta", out JsonElement delta) &&
-                                                delta.TryGetProperty("content", out JsonElement contentElement))
-                                            {
-                                                string deltaContent = contentElement.GetString();
-                                                if (!String.IsNullOrEmpty(deltaContent))
-                                                {
-                                                    fullContent.Append(deltaContent);
-                                                    await onDelta(deltaContent).ConfigureAwait(false);
-                                                }
-                                            }
-                                        }
+                                        fullContent.Append(deltaContent);
+                                        await onDelta(deltaContent).ConfigureAwait(false);
                                     }
                                 }
                                 catch (JsonException)
@@ -1231,24 +1220,22 @@ namespace AssistantHub.Core.Services
 
                             try
                             {
-                                using (JsonDocument doc = JsonDocument.Parse(data))
+                                GeminiResponse geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(data, _JsonOptions);
+                                string chunkText = ExtractGeminiText(geminiResponse);
+                                if (!String.IsNullOrEmpty(chunkText))
                                 {
-                                    string chunkText = ExtractGeminiText(doc.RootElement);
-                                    if (!String.IsNullOrEmpty(chunkText))
+                                    string deltaContent = chunkText;
+                                    string accumulated = fullContent.ToString();
+                                    if (!String.IsNullOrEmpty(accumulated)
+                                        && chunkText.StartsWith(accumulated, StringComparison.Ordinal))
                                     {
-                                        string deltaContent = chunkText;
-                                        string accumulated = fullContent.ToString();
-                                        if (!String.IsNullOrEmpty(accumulated)
-                                            && chunkText.StartsWith(accumulated, StringComparison.Ordinal))
-                                        {
-                                            deltaContent = chunkText.Substring(accumulated.Length);
-                                        }
+                                        deltaContent = chunkText.Substring(accumulated.Length);
+                                    }
 
-                                        if (!String.IsNullOrEmpty(deltaContent))
-                                        {
-                                            fullContent.Append(deltaContent);
-                                            await onDelta(deltaContent).ConfigureAwait(false);
-                                        }
+                                    if (!String.IsNullOrEmpty(deltaContent))
+                                    {
+                                        fullContent.Append(deltaContent);
+                                        await onDelta(deltaContent).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -1339,26 +1326,19 @@ namespace AssistantHub.Core.Services
 
                             try
                             {
-                                using (JsonDocument doc = JsonDocument.Parse(line))
+                                OllamaChatStreamLine streamLine = JsonSerializer.Deserialize<OllamaChatStreamLine>(line, _JsonOptions);
+
+                                if (streamLine?.Done == true)
                                 {
-                                    JsonElement root = doc.RootElement;
+                                    await onComplete(fullContent.ToString()).ConfigureAwait(false);
+                                    return;
+                                }
 
-                                    if (root.TryGetProperty("done", out JsonElement doneElement) && doneElement.GetBoolean())
-                                    {
-                                        await onComplete(fullContent.ToString()).ConfigureAwait(false);
-                                        return;
-                                    }
-
-                                    if (root.TryGetProperty("message", out JsonElement messageElement) &&
-                                        messageElement.TryGetProperty("content", out JsonElement contentElement))
-                                    {
-                                        string deltaContent = contentElement.GetString();
-                                        if (!String.IsNullOrEmpty(deltaContent))
-                                        {
-                                            fullContent.Append(deltaContent);
-                                            await onDelta(deltaContent).ConfigureAwait(false);
-                                        }
-                                    }
+                                string deltaContent = streamLine?.Message?.Content;
+                                if (!String.IsNullOrEmpty(deltaContent))
+                                {
+                                    fullContent.Append(deltaContent);
+                                    await onDelta(deltaContent).ConfigureAwait(false);
                                 }
                             }
                             catch (JsonException)
@@ -1431,29 +1411,22 @@ namespace AssistantHub.Core.Services
             return requestBody;
         }
 
-        private string ExtractGeminiText(JsonElement root)
+        private string ExtractGeminiText(GeminiResponse response)
         {
-            if (!root.TryGetProperty("candidates", out JsonElement candidates)
-                || candidates.ValueKind != JsonValueKind.Array)
+            if (response?.Candidates == null || response.Candidates.Count < 1)
                 return null;
 
             StringBuilder sb = new StringBuilder();
 
-            foreach (JsonElement candidate in candidates.EnumerateArray())
+            foreach (GeminiCandidate candidate in response.Candidates)
             {
-                if (!candidate.TryGetProperty("content", out JsonElement content)
-                    || !content.TryGetProperty("parts", out JsonElement parts)
-                    || parts.ValueKind != JsonValueKind.Array)
+                if (candidate?.Content?.Parts == null || candidate.Content.Parts.Count < 1)
                     continue;
 
-                foreach (JsonElement part in parts.EnumerateArray())
+                foreach (GeminiContentPart part in candidate.Content.Parts)
                 {
-                    if (part.TryGetProperty("text", out JsonElement textElement))
-                    {
-                        string text = textElement.GetString();
-                        if (!String.IsNullOrEmpty(text))
-                            sb.Append(text);
-                    }
+                    if (!String.IsNullOrEmpty(part?.Text))
+                        sb.Append(part.Text);
                 }
             }
 

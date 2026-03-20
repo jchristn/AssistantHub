@@ -322,19 +322,15 @@ namespace AssistantHub.Core.Services
                     }
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body);
+                    PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions);
 
-                    string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
-                    string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
-                    string epApiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
-
-                    InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(apiFormat, InferenceProviderEnum.Ollama);
+                    InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, InferenceProviderEnum.Ollama);
 
                     return new ResolvedEndpoint
                     {
                         Provider = provider,
-                        Endpoint = epUrl ?? _Settings.Inference.Endpoint,
-                        ApiKey = epApiKey ?? _Settings.Inference.ApiKey
+                        Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
+                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey
                     };
                 }
             }

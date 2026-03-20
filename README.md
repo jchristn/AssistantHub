@@ -420,8 +420,8 @@ For complete endpoint documentation including request/response schemas and examp
 | Collection Records | `PUT/GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` | Browse and manage records within collections (admin only) |
 | Collection Metadata | `GET /v1.0/collections/{id}/labels/distinct`, `GET .../tags/distinct` | Discover distinct label values and tag keys in a collection (admin only) |
 | Ingestion Rules | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` | Document processing rule management |
-| Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health` | Partio embedding endpoint management (admin only) |
-| Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health` | Partio completion endpoint management (admin only) |
+| Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio embedding endpoint management and smoke testing (admin only) |
+| Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio completion endpoint management and smoke testing (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
 | Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings` | Per-assistant inference and RAG configuration (owner or admin) |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |

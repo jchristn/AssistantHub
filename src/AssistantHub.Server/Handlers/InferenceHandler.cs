@@ -345,16 +345,12 @@ namespace AssistantHub.Server.Handlers
                         {
                             string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                             var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
-                            JsonElement ep = JsonSerializer.Deserialize<JsonElement>(body, jsonOpts);
+                            PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, jsonOpts);
 
-                            string apiFormat = ep.TryGetProperty("ApiFormat", out JsonElement af) ? af.GetString() : null;
-                            tempSettings.Provider = InferenceProviderHelper.FromApiFormat(apiFormat, tempSettings.Provider);
+                            tempSettings.Provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, tempSettings.Provider);
 
-                            string epUrl = ep.TryGetProperty("Endpoint", out JsonElement eu) ? eu.GetString() : null;
-                            if (!String.IsNullOrEmpty(epUrl)) tempSettings.Endpoint = epUrl;
-
-                            string apiKey = ep.TryGetProperty("ApiKey", out JsonElement ak) ? ak.GetString() : null;
-                            if (!String.IsNullOrEmpty(apiKey)) tempSettings.ApiKey = apiKey;
+                            if (!String.IsNullOrEmpty(ep?.Endpoint)) tempSettings.Endpoint = ep.Endpoint;
+                            if (!String.IsNullOrEmpty(ep?.ApiKey)) tempSettings.ApiKey = ep.ApiKey;
                         }
                     }
                 }

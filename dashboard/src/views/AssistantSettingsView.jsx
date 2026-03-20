@@ -299,7 +299,6 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                     <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
                   ))}
                 </select>
-                <div className="form-help-text">Assistant inference uses the provider and model configured on the selected endpoint.</div>
               </div>
               {(!settings || settings.SearchMode !== 'FullText') && (
               <div className="form-group">

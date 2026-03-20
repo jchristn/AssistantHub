@@ -351,6 +351,7 @@ namespace AssistantHub.Server.Handlers
 
                             if (!String.IsNullOrEmpty(ep?.Endpoint)) tempSettings.Endpoint = ep.Endpoint;
                             if (!String.IsNullOrEmpty(ep?.ApiKey)) tempSettings.ApiKey = ep.ApiKey;
+                            if (!String.IsNullOrEmpty(ep?.Model)) tempSettings.DefaultModel = ep.Model;
                         }
                     }
                 }

@@ -140,6 +140,7 @@ namespace AssistantHub.Core.Services
                 InferenceProviderEnum provider = _Settings.Inference.Provider;
                 string endpoint = _Settings.Inference.Endpoint;
                 string apiKey = _Settings.Inference.ApiKey;
+                string model = settings.Model;
 
                 if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                 {
@@ -149,10 +150,11 @@ namespace AssistantHub.Core.Services
                         provider = resolved.Value.Provider;
                         endpoint = resolved.Value.Endpoint;
                         apiKey = resolved.Value.ApiKey;
+                        if (!String.IsNullOrEmpty(resolved.Value.Model))
+                            model = resolved.Value.Model;
                     }
                 }
 
-                string model = settings.Model;
                 int maxTokens = settings.MaxTokens;
                 double temperature = settings.Temperature;
                 double topP = settings.TopP;
@@ -300,6 +302,7 @@ namespace AssistantHub.Core.Services
             public InferenceProviderEnum Provider;
             public string Endpoint;
             public string ApiKey;
+            public string Model;
         }
 
         private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)
@@ -330,7 +333,8 @@ namespace AssistantHub.Core.Services
                     {
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
-                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey
+                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
+                        Model = ep?.Model
                     };
                 }
             }

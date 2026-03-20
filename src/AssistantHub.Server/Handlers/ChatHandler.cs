@@ -381,6 +381,7 @@ namespace AssistantHub.Server.Handlers
                         Enums.InferenceProviderEnum gateProvider = Settings.Inference.Provider;
                         string gateEndpoint = Settings.Inference.Endpoint;
                         string gateApiKey = Settings.Inference.ApiKey;
+                        string gateModel = settings.Model;
 
                         if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                         {
@@ -390,10 +391,13 @@ namespace AssistantHub.Server.Handlers
                                 gateProvider = resolved.Value.Provider;
                                 gateEndpoint = resolved.Value.Endpoint;
                                 gateApiKey = resolved.Value.ApiKey;
+                                if (!String.IsNullOrEmpty(resolved.Value.Model))
+                                    gateModel = resolved.Value.Model;
                             }
                         }
 
-                        string gateModel = settings.Model;
+                        if (String.IsNullOrEmpty(gateModel))
+                            gateModel = settings.Model;
                         List<ChatCompletionMessage> gateMessages = new List<ChatCompletionMessage>
                         {
                             new ChatCompletionMessage { Role = "system", Content = gatePrompt }
@@ -451,6 +455,7 @@ namespace AssistantHub.Server.Handlers
                     Enums.InferenceProviderEnum rewriteProvider = Settings.Inference.Provider;
                     string rewriteEndpoint = Settings.Inference.Endpoint;
                     string rewriteApiKey = Settings.Inference.ApiKey;
+                    string rewriteModel = settings.Model;
 
                     if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                     {
@@ -460,6 +465,8 @@ namespace AssistantHub.Server.Handlers
                             rewriteProvider = resolved.Value.Provider;
                             rewriteEndpoint = resolved.Value.Endpoint;
                             rewriteApiKey = resolved.Value.ApiKey;
+                            if (!String.IsNullOrEmpty(resolved.Value.Model))
+                                rewriteModel = resolved.Value.Model;
                         }
                     }
 
@@ -478,7 +485,7 @@ namespace AssistantHub.Server.Handlers
                     try
                     {
                         InferenceResult rewriteResult = await Inference.GenerateResponseAsync(
-                            rewriteMessages, settings.Model, 512, 0.7, 1.0,
+                            rewriteMessages, rewriteModel, 512, 0.7, 1.0,
                             rewriteProvider, rewriteEndpoint, rewriteApiKey).ConfigureAwait(false);
 
                         rewriteSw.Stop();
@@ -641,6 +648,7 @@ namespace AssistantHub.Server.Handlers
                         Enums.InferenceProviderEnum rerankProvider = Settings.Inference.Provider;
                         string rerankEndpoint = Settings.Inference.Endpoint;
                         string rerankApiKey = Settings.Inference.ApiKey;
+                        string rerankModel = settings.Model;
 
                         if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                         {
@@ -650,6 +658,8 @@ namespace AssistantHub.Server.Handlers
                                 rerankProvider = resolved.Value.Provider;
                                 rerankEndpoint = resolved.Value.Endpoint;
                                 rerankApiKey = resolved.Value.ApiKey;
+                                if (!String.IsNullOrEmpty(resolved.Value.Model))
+                                    rerankModel = resolved.Value.Model;
                             }
                         }
 
@@ -676,7 +686,7 @@ namespace AssistantHub.Server.Handlers
                         };
 
                         InferenceResult rerankResult = await Inference.GenerateResponseAsync(
-                            rerankMessages, settings.Model, 512, 0.0, 1.0,
+                            rerankMessages, rerankModel, 512, 0.0, 1.0,
                             rerankProvider, rerankEndpoint, rerankApiKey).ConfigureAwait(false);
 
                         if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
@@ -862,6 +872,8 @@ namespace AssistantHub.Server.Handlers
                         inferenceProvider = resolved.Value.Provider;
                         inferenceEndpoint = resolved.Value.Endpoint;
                         inferenceApiKey = resolved.Value.ApiKey;
+                        if (String.IsNullOrEmpty(chatReq.Model) && !String.IsNullOrEmpty(resolved.Value.Model))
+                            model = resolved.Value.Model;
                     }
                 }
 
@@ -1175,6 +1187,8 @@ namespace AssistantHub.Server.Handlers
                         compactInferenceProvider = resolved.Value.Provider;
                         inferenceEndpoint = resolved.Value.Endpoint;
                         inferenceApiKey = resolved.Value.ApiKey;
+                        if (String.IsNullOrEmpty(chatReq.Model) && !String.IsNullOrEmpty(resolved.Value.Model))
+                            model = resolved.Value.Model;
                     }
                 }
 
@@ -1277,6 +1291,8 @@ namespace AssistantHub.Server.Handlers
                         inferenceProvider = resolved.Value.Provider;
                         inferenceEndpoint = resolved.Value.Endpoint;
                         inferenceApiKey = resolved.Value.ApiKey;
+                        if (String.IsNullOrEmpty(chatReq.Model) && !String.IsNullOrEmpty(resolved.Value.Model))
+                            model = resolved.Value.Model;
                     }
                 }
 
@@ -2169,6 +2185,7 @@ namespace AssistantHub.Server.Handlers
             public Enums.InferenceProviderEnum Provider;
             public string Endpoint;
             public string ApiKey;
+            public string Model;
         }
 
         private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)
@@ -2199,7 +2216,8 @@ namespace AssistantHub.Server.Handlers
                     {
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? Settings.Inference.Endpoint,
-                        ApiKey = ep?.ApiKey ?? Settings.Inference.ApiKey
+                        ApiKey = ep?.ApiKey ?? Settings.Inference.ApiKey,
+                        Model = ep?.Model
                     };
                 }
             }

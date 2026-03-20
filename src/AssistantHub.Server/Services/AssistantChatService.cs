@@ -285,6 +285,7 @@ namespace AssistantHub.Server.Services
             public Enums.InferenceProviderEnum Provider;
             public string Endpoint;
             public string ApiKey;
+            public string Model;
         }
 
         /// <summary>
@@ -354,13 +355,14 @@ namespace AssistantHub.Server.Services
                 {
                     string gatePrompt = BuildRetrievalGatePrompt(request.Messages, lastUserMessage);
                     var gateEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                    string gateModel = gateEndpoint?.Model ?? settings.Model;
 
                     Stopwatch gateSw = Stopwatch.StartNew();
                     try
                     {
                         InferenceResult gateResult = await _Inference.GenerateResponseAsync(
                             new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = gatePrompt } },
-                            settings.Model,
+                            gateModel,
                             3,
                             0.0,
                             1.0,
@@ -407,6 +409,7 @@ namespace AssistantHub.Server.Services
                 && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
             {
                 var rewriteEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                string rewriteModel = rewriteEndpoint?.Model ?? settings.Model;
                 string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
                     ? settings.QueryRewritePrompt
                     : _DefaultQueryRewritePrompt;
@@ -418,7 +421,7 @@ namespace AssistantHub.Server.Services
                 {
                     InferenceResult rewriteResult = await _Inference.GenerateResponseAsync(
                         new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rewritePrompt } },
-                        settings.Model,
+                        rewriteModel,
                         512,
                         0.7,
                         1.0,
@@ -565,6 +568,7 @@ namespace AssistantHub.Server.Services
                 try
                 {
                     var rerankEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                    string rerankModel = rerankEndpoint?.Model ?? settings.Model;
                     string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
                         ? settings.RerankPrompt
                         : _DefaultRerankPrompt;
@@ -583,7 +587,7 @@ namespace AssistantHub.Server.Services
 
                     InferenceResult rerankResult = await _Inference.GenerateResponseAsync(
                         new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rerankPrompt } },
-                        settings.Model,
+                        rerankModel,
                         512,
                         0.0,
                         1.0,
@@ -733,6 +737,8 @@ namespace AssistantHub.Server.Services
                     inferenceProvider = resolved.Value.Provider;
                     inferenceEndpoint = resolved.Value.Endpoint;
                     inferenceApiKey = resolved.Value.ApiKey;
+                    if (String.IsNullOrEmpty(request.Model) && !String.IsNullOrEmpty(resolved.Value.Model))
+                        model = resolved.Value.Model;
                 }
             }
 
@@ -955,7 +961,8 @@ namespace AssistantHub.Server.Services
                     {
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
-                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey
+                        ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
+                        Model = ep?.Model
                     };
                 }
             }

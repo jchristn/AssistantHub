@@ -93,7 +93,7 @@ function AssistantsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditAssistant(null); setShowForm(true); }}>Create Assistant</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditAssistant(row); setShowForm(true); }} />
       {showForm && <AssistantFormModal assistant={editAssistant} onSave={handleSave} onClose={() => { setShowForm(false); setEditAssistant(null); }} />}
       {showJson && <JsonViewModal title="Assistant JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Assistant" message={`Are you sure you want to delete assistant "${deleteTarget.Name}"? This will also delete all associated documents and settings.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

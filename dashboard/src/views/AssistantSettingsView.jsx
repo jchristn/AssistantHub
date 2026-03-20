@@ -5,6 +5,7 @@ import { ApiClient } from '../utils/api';
 import Tooltip from '../components/Tooltip';
 import AlertModal from '../components/AlertModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
+import PasswordInput from '../components/PasswordInput';
 
 function AssistantSettingsView({ onOpenChatDrawer }) {
   const { serverUrl, credential } = useAuth();
@@ -21,6 +22,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
   const [alert, setAlert] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [showJson, setShowJson] = useState(false);
+  const [verifyingSlack, setVerifyingSlack] = useState(false);
 
   const loadCollections = useCallback(async () => {
     try {
@@ -107,6 +109,11 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         RerankPrompt: result?.RerankPrompt || '',
         RetrievalLabelFilter: result?.RetrievalLabelFilter || '',
         RetrievalTagFilter: result?.RetrievalTagFilter || '',
+        EnableSlack: result?.EnableSlack ?? false,
+        SlackAppToken: result?.SlackAppToken || '',
+        SlackBotToken: result?.SlackBotToken || '',
+        SlackChannelId: result?.SlackChannelId || '',
+        SlackMessagePrefix: result?.SlackMessagePrefix || '',
       });
       setDirty(false);
     } catch (err) {
@@ -154,6 +161,66 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
 
   const handleReset = () => {
     loadSettings(selectedId);
+  };
+
+  const handleVerifySlack = async () => {
+    if (!selectedId || !settings) return;
+    setVerifyingSlack(true);
+    try {
+      const result = await api.verifyAssistantSlackSettings(selectedId, {
+        EnableSlack: settings.EnableSlack,
+        SlackAppToken: settings.SlackAppToken,
+        SlackBotToken: settings.SlackBotToken,
+        SlackChannelId: settings.SlackChannelId,
+        SlackMessagePrefix: settings.SlackMessagePrefix
+      });
+      const checks = [
+        { label: 'Bot token', ...result?.BotToken },
+        { label: 'Channel', ...result?.Channel },
+        { label: 'Socket Mode', ...result?.SocketMode }
+      ];
+      setAlert({
+        title: result?.Success ? 'Slack Verified' : 'Slack Verification Failed',
+        extraWide: true,
+        content: (
+          <div style={{ display: 'grid', gap: '0.75rem', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+            {checks.map((check) => {
+              const success = !!check.Success;
+              return (
+                <div
+                  key={check.label}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '20px 120px minmax(0, 1fr)',
+                    alignItems: 'start',
+                    columnGap: '0.75rem',
+                    textAlign: 'left'
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      color: success ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)',
+                      fontSize: '1rem',
+                      lineHeight: 1,
+                      textAlign: 'center'
+                    }}
+                  >
+                    {success ? '✓' : '✕'}
+                  </span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left', justifySelf: 'start' }}>{check.label}</span>
+                  <span style={{ color: 'var(--text-secondary)', textAlign: 'left', justifySelf: 'start', whiteSpace: 'normal', wordBreak: 'break-word' }}>{check.Message || (success ? 'OK' : 'Failed')}</span>
+                </div>
+              );
+            })}
+          </div>
+        )
+      });
+    } catch (err) {
+      setAlert({ title: 'Slack Verification Failed', message: err.message || 'Failed to verify Slack settings' });
+    } finally {
+      setVerifyingSlack(false);
+    }
   };
 
   const selectedAssistant = assistants.find(a => a.Id === selectedId);
@@ -463,6 +530,41 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
               )}
             </div>
 
+            <div className="settings-section">
+              <h3 className="settings-section-title">Slack</h3>
+              <div className="form-group form-toggle">
+                <label>
+                  <input type="checkbox" checked={settings.EnableSlack} onChange={(e) => handleChange('EnableSlack', e.target.checked)} />
+                  <Tooltip text="Enable a per-assistant Slack Socket Mode connection. Messages in the configured channel trigger on the configured indicator or an @bot mention. Direct messages to the bot are also supported.">Enable Slack</Tooltip>
+                </label>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Slack app-level token used for Socket Mode. Must start with xapp-.">App Token</Tooltip></label>
+                  <PasswordInput value={settings.SlackAppToken} onChange={(e) => handleChange('SlackAppToken', e.target.value)} placeholder="xapp-..." autoComplete="new-password" className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Slack bot token used for API calls and message delivery. Must start with xoxb-.">Bot Token</Tooltip></label>
+                  <PasswordInput value={settings.SlackBotToken} onChange={(e) => handleChange('SlackBotToken', e.target.value)} placeholder="xoxb-..." autoComplete="new-password" className="form-input" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Slack channel ID for channel traffic. Direct messages are also supported when Slack is enabled.">Channel ID</Tooltip></label>
+                  <input className="form-input" type="text" value={settings.SlackChannelId} onChange={(e) => handleChange('SlackChannelId', e.target.value)} placeholder="C..., G..., or similar" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Configured-channel messages trigger when they start with this indicator after leading whitespace normalization. An @bot mention also triggers the assistant.">Start-of-Message Indicator</Tooltip></label>
+                  <input className="form-input" type="text" value={settings.SlackMessagePrefix} onChange={(e) => handleChange('SlackMessagePrefix', e.target.value)} placeholder="Hey bot," />
+                </div>
+              </div>
+              <div className="form-group">
+                <button className="btn btn-secondary" type="button" onClick={handleVerifySlack} disabled={verifyingSlack}>
+                  {verifyingSlack ? 'Verifying...' : 'Verify Connectivity'}
+                </button>
+              </div>
+            </div>
+
             <div className="settings-actions">
               <button className="btn btn-secondary" onClick={() => setShowJson(true)}>View JSON</button>
               <button className="btn btn-secondary" onClick={handleReset} disabled={!dirty || saving}>Reset</button>
@@ -478,7 +580,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         )}
       </div>
       {showJson && settings && <JsonViewModal title="Assistant Settings JSON" data={settings} onClose={() => setShowJson(false)} />}
-      {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
+      {alert && <AlertModal title={alert.title} message={alert.message} content={alert.content} wide={alert.wide} extraWide={alert.extraWide} onClose={() => setAlert(null)} />}
     </div>
   );
 }

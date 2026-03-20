@@ -4,6 +4,7 @@ namespace Test.Models.Tests
     using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using Test.Common;
 
@@ -92,6 +93,16 @@ namespace Test.Models.Tests
                 AssertHelper.IsTrue(json.Length > 10, "serialized JSON not empty");
                 var d = JsonSerializer.Deserialize<AssistantHubSettings>(json, _jsonOptions);
                 AssertHelper.IsNotNull(d, "deserialized settings");
+            }, token);
+
+            await runner.RunTestAsync("Models.AssistantSettings: Slack defaults", async ct =>
+            {
+                var settings = new AssistantSettings();
+                AssertHelper.AreEqual(false, settings.EnableSlack, "EnableSlack default");
+                AssertHelper.IsNull(settings.SlackAppToken, "SlackAppToken default");
+                AssertHelper.IsNull(settings.SlackBotToken, "SlackBotToken default");
+                AssertHelper.IsNull(settings.SlackChannelId, "SlackChannelId default");
+                AssertHelper.IsNull(settings.SlackMessagePrefix, "SlackMessagePrefix default");
             }, token);
         }
     }

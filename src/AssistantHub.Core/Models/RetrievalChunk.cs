@@ -29,6 +29,13 @@ namespace AssistantHub.Core.Models
         public double? RerankScore { get; set; } = null;
 
         /// <summary>
+        /// Reciprocal Rank Fusion score computed across multiple query result lists.
+        /// Null when RRF is disabled or only a single query was issued.
+        /// </summary>
+        [JsonPropertyName("fusion_score")]
+        public double? FusionScore { get; set; } = null;
+
+        /// <summary>
         /// Full-text relevance score component (null in vector-only mode).
         /// </summary>
         [JsonPropertyName("text_score")]

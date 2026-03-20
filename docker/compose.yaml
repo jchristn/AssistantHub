@@ -250,7 +250,7 @@ services:
     restart: "no"
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.8.0
+    image: jchristn77/assistanthub-server:v0.9.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
@@ -271,6 +271,8 @@ services:
         condition: service_healthy
       documentatom-server:
         condition: service_healthy
+      partio-server:
+        condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:8800
       interval: 5s
@@ -280,7 +282,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.8.0
+    image: jchristn77/assistanthub-dashboard:v0.9.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.0 - Slack Support Added
+
+### Added
+- **Per-assistant Slack integration**: Slack configuration now lives on assistant settings with `EnableSlack`, `SlackAppToken`, `SlackBotToken`, `SlackChannelId`, and `SlackMessagePrefix`
+- **Slack connectivity verification**: New `POST /v1.0/assistants/{assistantId}/settings/slack/verify` endpoint and dashboard flow for testing draft Slack settings before saving
+- **Slack worker runtime**: AssistantHub now starts one Socket Mode worker per Slack-enabled assistant, supports configured-channel traffic and direct messages, suppresses self-messages, and posts replies back into Slack threads
+- **Shared chat execution service**: Non-streaming chat execution is now reusable by web chat and Slack so retrieval, compaction, inference, citations, and persistence stay aligned
+- **Chat history origin tracking**: `chat_history.origin` records request source values such as `web` and `slack`
+- Migration script: `migrations/007_upgrade_to_v0.9.0.sql`
+
+### Changed
+- Docker image tags updated to `v0.9.0`
+- Assistant settings API, OpenAPI spec, Postman collection, and dashboard updated for Slack configuration and verification
+- Slack responses are transport-shaped only at delivery time while canonical response text is persisted to history
+
+### Breaking
+- Database schema changes require running `migrations/007_upgrade_to_v0.9.0.sql` for existing installations
+
 ## v0.8.0
 
 ### Added

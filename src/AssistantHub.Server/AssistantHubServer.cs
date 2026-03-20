@@ -43,6 +43,7 @@ namespace AssistantHub.Server
         private static EndpointHealthCheckService _HealthCheckService = null;
         private static CrawlSchedulerService _CrawlScheduler = null;
         private static CrawlOperationCleanupService _CrawlOperationCleanup = null;
+        private static ISlackAssistantConnectionManager _SlackConnectionManager = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
         private static bool _ShuttingDown = false;
 
@@ -50,6 +51,11 @@ namespace AssistantHub.Server
         /// The endpoint health check service instance, accessible by handlers.
         /// </summary>
         public static EndpointHealthCheckService HealthCheckService => _HealthCheckService;
+
+        /// <summary>
+        /// The Slack assistant connection manager instance, accessible by handlers.
+        /// </summary>
+        public static ISlackAssistantConnectionManager SlackConnectionManager => _SlackConnectionManager;
 
         #endregion
 
@@ -71,6 +77,7 @@ namespace AssistantHub.Server
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
             await StartCrawlServicesAsync();
+            await StartSlackServicesAsync();
             InitializeWebserver();
 
             _Logging.Info(_Header + "server started on " + _Settings.Webserver.Hostname + ":" + _Settings.Webserver.Port);
@@ -96,6 +103,9 @@ namespace AssistantHub.Server
                 waitHandleSignal = waitHandle.WaitOne(1000);
             }
             while (!waitHandleSignal);
+
+            if (_SlackConnectionManager != null)
+                await _SlackConnectionManager.StopAsync().ConfigureAwait(false);
 
             _Logging.Info(_Header + "stopping at " + DateTime.UtcNow);
         }
@@ -341,6 +351,7 @@ namespace AssistantHub.Server
 
             _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging);
             _Inference = new InferenceService(_Settings.Inference, _Logging);
+            _SlackConnectionManager = new SlackAssistantConnectionManager(_Database, _Logging, _Settings, _Retrieval, _Inference);
             _Logging.Info(_Header + "services initialized");
         }
 
@@ -508,6 +519,19 @@ namespace AssistantHub.Server
             }
         }
 
+        private static async Task StartSlackServicesAsync()
+        {
+            try
+            {
+                if (_SlackConnectionManager == null) return;
+                await _SlackConnectionManager.StartAsync(_TokenSource.Token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "Slack services failed to start: " + e.Message);
+            }
+        }
+
         private static void InitializeWebserver()
         {
             WatsonWebserver.Core.WebserverSettings wsSettings = new WatsonWebserver.Core.WebserverSettings(_Settings.Webserver.Hostname, _Settings.Webserver.Port, _Settings.Webserver.Ssl);
@@ -626,6 +650,7 @@ namespace AssistantHub.Server
             // Authenticated routes - Assistant Settings
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/slack/verify", assistantSettingsHandler.VerifySlackSettingsAsync);
 
             // Authenticated routes - Ingestion Rules
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync);

@@ -102,6 +102,11 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `retrieval_label_filter` TEXT, " +
             "  `retrieval_tag_filter` TEXT, " +
             "  `streaming` TINYINT NOT NULL DEFAULT 1, " +
+            "  `enable_slack` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `slack_app_token` TEXT, " +
+            "  `slack_bot_token` TEXT, " +
+            "  `slack_channel_id` TEXT, " +
+            "  `slack_message_prefix` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -252,6 +257,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0, " +
             "  `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0, " +
             "  `metadata_filter` TEXT, " +
+            "  `origin` VARCHAR(64), " +
             "  `assistant_response` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +

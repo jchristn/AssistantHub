@@ -27,7 +27,7 @@ Write-Host "  CROSS-PROJECT TEST SUMMARY"
 Write-Host "=============================================================="
 
 foreach ($proj in $Projects) {
-    $projPath = Join-Path $ScriptDir "src" $proj
+    $projPath = Join-Path (Join-Path $ScriptDir "src") $proj
 
     if (-not (Test-Path $projPath)) {
         Write-Host "  SKIP  $proj  (directory not found)"

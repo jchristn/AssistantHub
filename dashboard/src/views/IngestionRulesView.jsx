@@ -112,7 +112,7 @@ function IngestionRulesView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditRule(null); setShowForm(true); }}>Create Ingestion Rule</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditRule(row); setShowForm(true); }} />
       {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
       {showJson && <JsonViewModal title="Ingestion Rule JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Ingestion Rule" message={`Are you sure you want to delete ingestion rule "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

@@ -82,7 +82,7 @@ function CollectionsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditCollection(null); setShowForm(true); }}>Create Collection</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCollection(row); setShowForm(true); }} />
       {showForm && <CollectionFormModal collection={editCollection} onSave={handleSave} onClose={() => { setShowForm(false); setEditCollection(null); }} />}
       {showJson && <JsonViewModal title="Collection JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Collection" message={`Are you sure you want to delete collection "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

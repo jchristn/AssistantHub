@@ -187,7 +187,7 @@ function CrawlersView() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm('create')}>Create Crawler</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => setShowForm(row)} />
       {showForm && (
         <CrawlPlanFormModal
           plan={showForm !== 'create' ? showForm : null}

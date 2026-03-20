@@ -197,7 +197,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "1.0.0",
+  "Version": "0.9.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -1563,6 +1563,11 @@ Retrieve settings for an assistant.
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
   "Streaming": true,
+  "EnableSlack": false,
+  "SlackAppToken": "xapp-***",
+  "SlackBotToken": "xoxb-***",
+  "SlackChannelId": "C12345678",
+  "SlackMessagePrefix": "Hey bot,",
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -1604,6 +1609,11 @@ Retrieve settings for an assistant.
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
 | `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `true`.                    |
+| `EnableSlack`              | bool    | Enable a per-assistant Slack Socket Mode worker. Default `false`.           |
+| `SlackAppToken`            | string  | Slack app token for Socket Mode. Must start with `xapp-` when present.      |
+| `SlackBotToken`            | string  | Slack bot token for API access. Must start with `xoxb-` when present.       |
+| `SlackChannelId`           | string  | Slack channel ID used for configured channel traffic. Direct messages are also supported. |
+| `SlackMessagePrefix`       | string  | Start-of-message indicator for configured channels. `@bot` mention also triggers the assistant. |
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -1650,13 +1660,69 @@ Create or update settings for an assistant. If settings already exist, they are 
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
-  "Streaming": true
+  "Streaming": true,
+  "EnableSlack": true,
+  "SlackAppToken": "xapp-***",
+  "SlackBotToken": "xoxb-***",
+  "SlackChannelId": "C12345678",
+  "SlackMessagePrefix": "Hey bot,"
 }
 ```
 
 **Response (200 OK):** The created or updated `AssistantSettings` object.
 
 **Error Responses:**
+- `403` -- Not the owner and not an admin.
+- `404` -- Assistant not found.
+
+### POST /v1.0/assistants/{assistantId}/settings/slack/verify
+
+Verify draft Slack settings before saving them to the assistant.
+
+**Auth:** Required (owner or admin)
+
+**Request Body:**
+
+```json
+{
+  "EnableSlack": true,
+  "SlackAppToken": "xapp-***",
+  "SlackBotToken": "xoxb-***",
+  "SlackChannelId": "C12345678",
+  "SlackMessagePrefix": "Hey bot,"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "BotToken": {
+    "Success": true,
+    "Message": "Bot token is valid."
+  },
+  "Channel": {
+    "Success": true,
+    "Message": "Channel lookup succeeded."
+  },
+  "SocketMode": {
+    "Success": true,
+    "Message": "Socket Mode connection succeeded."
+  }
+}
+```
+
+Notes:
+
+- `SlackAppToken` must start with `xapp-`
+- `SlackBotToken` must start with `xoxb-`
+- `SlackChannelId` is required for configured channel traffic
+- direct messages to the bot are also supported once Slack is enabled
+- in configured channels, either `SlackMessagePrefix` or an `@bot` mention can trigger the assistant
+
+**Error Responses:**
+- `400` -- Invalid verification payload.
 - `403` -- Not the owner and not an admin.
 - `404` -- Assistant not found.
 

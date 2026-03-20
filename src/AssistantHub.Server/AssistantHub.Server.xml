@@ -14,6 +14,11 @@
             The endpoint health check service instance, accessible by handlers.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.AssistantHubServer.SlackConnectionManager">
+            <summary>
+            The Slack assistant connection manager instance, accessible by handlers.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.AssistantHubServer.Main(System.String[])">
             <summary>
             Entry point.
@@ -100,6 +105,12 @@
         <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.PutSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             PUT /v1.0/assistants/{assistantId}/settings - Create or update assistant settings.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.VerifySlackSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/settings/slack/verify - Verify draft Slack settings.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -1343,6 +1354,129 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatService">
+            <summary>
+            Shared non-streaming assistant chat execution service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate the shared assistant chat execution service.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a non-streaming chat completion using the shared AssistantHub chat rail.
+            </summary>
+            <param name="request">Execution request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Execution result.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatExecutionRequest">
+            <summary>
+            Chat execution request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Assistant">
+            <summary>
+            Optional preloaded assistant record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.AssistantSettings">
+            <summary>
+            Optional preloaded assistant settings record.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Messages">
+            <summary>
+            Conversation messages to execute.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ThreadId">
+            <summary>
+            Conversation thread identifier used for history persistence.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Model">
+            <summary>
+            Optional model override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Temperature">
+            <summary>
+            Optional temperature override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.TopP">
+            <summary>
+            Optional top-p override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.MaxTokens">
+            <summary>
+            Optional max token override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.MetadataFilter">
+            <summary>
+            Optional metadata filter override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.UserMessageUtc">
+            <summary>
+            Optional user message timestamp override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Origin">
+            <summary>
+            Request origin label persisted to history.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatExecutionResult">
+            <summary>
+            Chat execution result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.Success">
+            <summary>
+            Indicates whether execution succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.ErrorMessage">
+            <summary>
+            Error message when execution fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.Assistant">
+            <summary>
+            Assistant record used for execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.AssistantSettings">
+            <summary>
+            Assistant settings used for execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.Response">
+            <summary>
+            OpenAI-compatible completion response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.CanonicalResponseText">
+            <summary>
+            Canonical assistant response text after transport-agnostic cleanup.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Services.CrawlOperationCleanupService">
             <summary>
             Background service that performs periodic cleanup of expired crawl operations and their associated enumeration files.
@@ -1480,6 +1614,103 @@
         <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService.EndpointConfig">
             <summary>
             Internal config holder for parsed endpoint JSON.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ISlackAssistantConnectionManager">
+            <summary>
+            Slack assistant connection manager.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ISlackAssistantConnectionManager.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start manager state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ISlackAssistantConnectionManager.StopAsync(System.Threading.CancellationToken)">
+            <summary>
+            Stop manager state.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ISlackAssistantConnectionManager.RefreshAssistantAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Refresh a single assistant worker.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.SlackAssistantConnectionManager">
+            <summary>
+            Slack assistant connection manager.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.StartAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.StopAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.RefreshAssistantAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Server.Services.SlackAssistantUtilities">
+            <summary>
+            Utility methods used by Slack assistant workers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantUtilities.BuildThreadId(System.String,System.String,System.String)">
+            <summary>
+            Build a deterministic AssistantHub thread identifier from Slack conversation coordinates.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="channelId">Slack channel identifier.</param>
+            <param name="slackConversationTimestamp">Slack root thread timestamp or message timestamp.</param>
+            <returns>Deterministic AssistantHub thread identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantUtilities.StripSlackTrigger(System.String,System.String,System.String)">
+            <summary>
+            Remove the configured prefix and bot mention from Slack text before sending it to the model.
+            </summary>
+            <param name="text">Incoming Slack text.</param>
+            <param name="prefix">Configured prefix.</param>
+            <param name="botUserId">Bot user identifier.</param>
+            <returns>Normalized user message.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantUtilities.ShapeSlackText(System.String)">
+            <summary>
+            Shape canonical assistant text for Slack delivery.
+            </summary>
+            <param name="text">Canonical assistant response text.</param>
+            <returns>Slack-safe transport text.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantUtilities.ChunkSlackMessage(System.String,System.Int32)">
+            <summary>
+            Chunk Slack transport text to fit within message size limits.
+            </summary>
+            <param name="text">Slack transport text.</param>
+            <param name="maxLength">Maximum chunk length.</param>
+            <returns>Chunked message parts.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.SlackAssistantWorker">
+            <summary>
+            Assistant-scoped Slack worker.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,System.String)">
+            <summary>
+            Instantiate the worker.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start the worker.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.StopAsync(System.Threading.CancellationToken)">
+            <summary>
+            Stop the worker.
             </summary>
         </member>
     </members>

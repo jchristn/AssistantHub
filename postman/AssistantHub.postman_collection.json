@@ -25,6 +25,26 @@
 			"key": "bearerToken",
 			"value": "",
 			"type": "string"
+		},
+		{
+			"key": "slackAppToken",
+			"value": "xapp-***",
+			"type": "string"
+		},
+		{
+			"key": "slackBotToken",
+			"value": "xoxb-***",
+			"type": "string"
+		},
+		{
+			"key": "slackChannelId",
+			"value": "C12345678",
+			"type": "string"
+		},
+		{
+			"key": "slackMessagePrefix",
+			"value": "Hey bot,",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -1443,12 +1463,39 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null\n}"
+							"raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "assistants", ":assistantId", "settings"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Verify Slack Settings",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings/slack/verify",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "settings", "slack", "verify"],
 							"variable": [
 								{
 									"key": "assistantId",

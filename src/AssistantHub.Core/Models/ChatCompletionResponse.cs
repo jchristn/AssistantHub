@@ -186,6 +186,13 @@ namespace AssistantHub.Core.Models
         public double Score { get; set; } = 0;
 
         /// <summary>
+        /// Reciprocal Rank Fusion score, null when RRF is disabled.
+        /// </summary>
+        [JsonPropertyName("fusion_score")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? FusionScore { get; set; } = null;
+
+        /// <summary>
         /// LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
         /// </summary>
         [JsonPropertyName("rerank_score")]

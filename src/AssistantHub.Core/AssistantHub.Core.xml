@@ -4071,6 +4071,31 @@
             Whether to enable SSE streaming for chat responses.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableSlack">
+            <summary>
+            Whether Slack integration is enabled for this assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SlackAppToken">
+            <summary>
+            Slack app-level token used for Socket Mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SlackBotToken">
+            <summary>
+            Slack bot token used for chat posting and metadata lookup.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SlackChannelId">
+            <summary>
+            Slack channel identifier for configured channel traffic.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SlackMessagePrefix">
+            <summary>
+            Start-of-message indicator required for configured channel traffic.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CreatedUtc">
             <summary>
             Timestamp when the record was created in UTC.
@@ -4451,6 +4476,11 @@
             Retrieval relevance score (0.0 to 1.0).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.FusionScore">
+            <summary>
+            Reciprocal Rank Fusion score, null when RRF is disabled.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.CitationSource.RerankScore">
             <summary>
             LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
@@ -4641,6 +4671,11 @@
             <summary>
             JSON-serialized effective ChatMetadataFilter that was applied during retrieval.
             Null when no filters were active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.Origin">
+            <summary>
+            Origin of the chat turn: web, api, slack, etc.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.AssistantResponse">
@@ -6249,6 +6284,12 @@
             LLM-assigned relevance score from re-ranking (0.0–10.0), null when re-ranking is disabled.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.FusionScore">
+            <summary>
+            Reciprocal Rank Fusion score computed across multiple query result lists.
+            Null when RRF is disabled or only a single query was issued.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.TextScore">
             <summary>
             Full-text relevance score component (null in vector-only mode).
@@ -6321,6 +6362,81 @@
         <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.MetadataFilter">
             <summary>
             Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.SlackVerificationRequest">
+            <summary>
+            Draft Slack settings used for connectivity verification.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationRequest.EnableSlack">
+            <summary>
+            Enable Slack.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationRequest.SlackAppToken">
+            <summary>
+            Slack app token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationRequest.SlackBotToken">
+            <summary>
+            Slack bot token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationRequest.SlackChannelId">
+            <summary>
+            Slack channel identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationRequest.SlackMessagePrefix">
+            <summary>
+            Slack message prefix.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.SlackVerificationResponse">
+            <summary>
+            Response from Slack connectivity verification.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationResponse.Success">
+            <summary>
+            True if all requested verification checks succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationResponse.BotToken">
+            <summary>
+            Bot token validation result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationResponse.Channel">
+            <summary>
+            Channel validation result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationResponse.SocketMode">
+            <summary>
+            Socket Mode connectivity result.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.SlackVerificationCheck">
+            <summary>
+            Individual verification result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Success">
+            <summary>
+            True if the check succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Message">
+            <summary>
+            User-facing status message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Details">
+            <summary>
+            Safe detail payload for UI display.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.TenantMetadata">

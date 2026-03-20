@@ -261,7 +261,7 @@ function EvaluationView() {
               Add Fact
             </button>
           </div>
-          <DataTable columns={factsColumns} fetchData={fetchFacts} getRowActions={getFactActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteFacts} />
+          <DataTable columns={factsColumns} fetchData={fetchFacts} getRowActions={getFactActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteFacts} onRowClick={(row) => setFactModal({ mode: 'edit', fact: row })} />
         </div>
       )}
 
@@ -276,7 +276,7 @@ function EvaluationView() {
               Start New Run
             </button>
           </div>
-          <DataTable columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteRuns} />
+          <DataTable columns={runsColumns} fetchData={fetchRuns} getRowActions={getRunActions} refreshTrigger={refresh} onBulkDelete={handleBulkDeleteRuns} onRowClick={(row) => loadRunResults(row)} />
         </div>
       )}
 

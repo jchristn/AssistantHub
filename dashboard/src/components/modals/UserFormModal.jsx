@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
+import PasswordInput from '../PasswordInput';
 
 function UserFormModal({ user, onSave, onClose }) {
   const isEdit = !!user;
@@ -49,7 +50,7 @@ function UserFormModal({ user, onSave, onClose }) {
         </div>
         <div className="form-group">
           <label><Tooltip text="Password for user authentication">Password</Tooltip> {isEdit && '(leave blank to keep current)'}</label>
-          <input type="password" value={form.Password} onChange={(e) => handleChange('Password', e.target.value)} {...(!isEdit ? { required: true } : {})} />
+          <PasswordInput value={form.Password} onChange={(e) => handleChange('Password', e.target.value)} {...(!isEdit ? { required: true } : {})} />
         </div>
         <div className="form-row">
           <div className="form-group">

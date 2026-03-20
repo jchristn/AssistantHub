@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 function PasswordInput({ value, onChange, placeholder, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
 
+  const show = () => setShowPassword(true);
+  const hide = () => setShowPassword(false);
+
   return (
     <div style={{ position: 'relative' }}>
       <input
@@ -15,7 +18,13 @@ function PasswordInput({ value, onChange, placeholder, ...props }) {
       />
       <button
         type="button"
-        onClick={() => setShowPassword(!showPassword)}
+        onMouseDown={show}
+        onMouseUp={hide}
+        onMouseLeave={hide}
+        onTouchStart={show}
+        onTouchEnd={hide}
+        onTouchCancel={hide}
+        onBlur={hide}
         style={{
           position: 'absolute',
           right: '8px',
@@ -29,7 +38,8 @@ function PasswordInput({ value, onChange, placeholder, ...props }) {
           display: 'flex',
           alignItems: 'center'
         }}
-        title={showPassword ? 'Hide' : 'Show'}
+        title="Press and hold to show"
+        aria-label="Press and hold to show value"
       >
         {showPassword ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>

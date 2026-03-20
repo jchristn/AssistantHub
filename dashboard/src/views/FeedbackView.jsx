@@ -115,7 +115,7 @@ function FeedbackView() {
           </select>
         </div>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => setViewFeedback(row)} />
       {viewFeedback && <FeedbackViewModal feedback={viewFeedback} onClose={() => setViewFeedback(null)} />}
       {showJson && <JsonViewModal title="Feedback JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Feedback" message="Are you sure you want to delete this feedback entry? This action cannot be undone." confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

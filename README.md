@@ -11,6 +11,8 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
+Slack support was added in `v0.9.0`, allowing each assistant to connect directly to Slack and process threaded Slack conversations through the same AssistantHub chat pipeline.
+
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
 <br>
@@ -28,13 +30,36 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.8.0
+## New in v0.9.0
 
-- **RAG Evaluation** -- Define expected facts for each assistant and run automated evaluation to measure RAG pipeline quality. Each evaluation run sends questions through the inference pipeline, then uses an LLM judge to score whether the response contains the expected facts. Supports per-assistant judge prompt configuration with per-run overrides, real-time SSE progress streaming, detailed per-fact verdicts with judge reasoning, and pass/fail/duration metrics.
-- **Evaluation dashboard** -- New "Evaluation" page in the Chat sidebar section. Facts sub-tab for creating, editing, and deleting evaluation facts organized by category. Runs sub-tab to start new evaluation runs (with optional judge prompt override), view run history with pass rates, stream live progress via SSE, and drill into per-fact results with full LLM responses and judge reasoning.
-- **Eval judge prompt on assistant settings** -- New `EvalJudgePrompt` field on assistant settings for configuring a custom judge prompt template per assistant. Falls back to a built-in default when not set. Can be further overridden per-run at execution time.
-- **13 new API endpoints** for evaluation: CRUD for facts (`/v1.0/eval/facts`), run management (`/v1.0/eval/runs`), SSE streaming (`/v1.0/eval/runs/{id}/stream`), result retrieval (`/v1.0/eval/results/{id}`), and default judge prompt (`/v1.0/eval/judge-prompt/default`)
-- **Migration script**: `migrations/006_upgrade_to_v0.8.0.sql`
+- **Slack integration per assistant** -- Configure Slack connectivity directly on assistant settings with `Enable Slack`, app token, bot token, channel ID, start-of-message indicator, and draft connectivity verification.
+- **Shared chat execution rail** -- Slack requests reuse the same retrieval, compaction, citation, inference, and history flow as AssistantHub chat instead of a separate inference path.
+- **Thread-aware Slack replies** -- Incoming Slack messages map to deterministic AssistantHub threads and replies are posted back to the originating Slack thread.
+- **Slack verification API and dashboard flow** -- Added `POST /v1.0/assistants/{assistantId}/settings/slack/verify` plus dashboard support for testing draft values before save.
+- **Chat history origin tracking** -- `chat_history.origin` now records request source such as `web` or `slack`.
+- **Migration script**: `migrations/007_upgrade_to_v0.9.0.sql`
+
+## Slack Integration Added In v0.9.0
+
+AssistantHub supports per-assistant Slack connectivity through Assistant Settings.
+
+- Enable Slack on an assistant and provide:
+  - `App Token` (`xapp-...`)
+  - `Bot Token` (`xoxb-...`)
+  - `Channel ID`
+  - `Start-of-Message Indicator`
+- Use `Verify Connectivity` in the dashboard before saving
+- AssistantHub maintains one Socket Mode connection per Slack-enabled assistant
+- In configured channels, messages are processed when they start with the configured indicator or mention the bot
+- Direct messages to the bot are also supported
+- Slack conversations reuse the same non-streaming chat execution rail as AssistantHub chat, including retrieval, citations, compaction, and history persistence
+- Slack responses are posted back into the originating Slack thread
+
+Operational notes:
+
+- Slack tokens are stored in the AssistantHub database in plaintext, so rely on your deployment's at-rest protections
+- The Slack app must have Socket Mode enabled and be invited to any private channels it should service
+- AssistantHub consumes the `EasySlack` NuGet package at version `1.0.1`
 
 ## New in v0.7.0
 
@@ -124,6 +149,8 @@ docker compose up -d
 ```
 
 Once all services are healthy, open [http://localhost:8801](http://localhost:8801) to access the dashboard.
+
+On a fresh startup, `assistanthub-server` now waits for `partio-server` to become healthy before it starts. This avoids the transient `partio-server:8400` DNS/startup race that could previously abort AssistantHub startup immediately after a factory reset.
 
 > **Note:** Deploying individual services outside of Docker is also possible, but requires manual configuration and deployment of each dependency (PostgreSQL with pgvector, Ollama, Less3, DocumentAtom, Partio, RecallDB). The Docker Compose stack handles all service wiring, health checks, and startup ordering automatically, which is why manual setup documentation is not provided.
 
@@ -362,6 +389,12 @@ After the reset completes, start the environment again:
 cd docker
 docker compose up -d
 ```
+
+Expected behavior after reset:
+
+- `assistanthub-server` will not start until `partio-server` is healthy
+- this is intentional and prevents AssistantHub from failing early while validating chunking and embeddings connectivity
+- if startup appears slower than before, wait for Partio to finish its health checks and model initialization
 
 ---
 

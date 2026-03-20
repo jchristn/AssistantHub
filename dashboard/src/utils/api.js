@@ -140,6 +140,7 @@ export class ApiClient {
   // Assistant Settings
   getAssistantSettings(assistantId) { return this.request('GET', `/v1.0/assistants/${assistantId}/settings`); }
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
+  verifyAssistantSlackSettings(assistantId, settings) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/slack/verify`, settings); }
 
   // Embedding Endpoints
   createEmbeddingEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/embedding', endpoint); }

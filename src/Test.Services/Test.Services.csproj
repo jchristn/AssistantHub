@@ -16,7 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AssistantHub.Core\AssistantHub.Core.csproj" />
     <ProjectReference Include="..\AssistantHub.Server\AssistantHub.Server.csproj" />
     <ProjectReference Include="..\Test.Common\Test.Common.csproj" />
   </ItemGroup>

@@ -262,6 +262,31 @@ namespace AssistantHub.Core.Models
         public bool Streaming { get; set; } = true;
 
         /// <summary>
+        /// Whether Slack integration is enabled for this assistant.
+        /// </summary>
+        public bool EnableSlack { get; set; } = false;
+
+        /// <summary>
+        /// Slack app-level token used for Socket Mode.
+        /// </summary>
+        public string SlackAppToken { get; set; } = null;
+
+        /// <summary>
+        /// Slack bot token used for chat posting and metadata lookup.
+        /// </summary>
+        public string SlackBotToken { get; set; } = null;
+
+        /// <summary>
+        /// Slack channel identifier for configured channel traffic.
+        /// </summary>
+        public string SlackChannelId { get; set; } = null;
+
+        /// <summary>
+        /// Start-of-message indicator required for configured channel traffic.
+        /// </summary>
+        public string SlackMessagePrefix { get; set; } = null;
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -344,6 +369,11 @@ namespace AssistantHub.Core.Models
             obj.RetrievalTagFilter = DataTableHelper.GetStringValue(row, "retrieval_tag_filter");
             obj.EvalJudgePrompt = DataTableHelper.GetStringValue(row, "eval_judge_prompt");
             obj.Streaming = DataTableHelper.GetBooleanValue(row, "streaming", true);
+            obj.EnableSlack = DataTableHelper.GetBooleanValue(row, "enable_slack", false);
+            obj.SlackAppToken = DataTableHelper.GetStringValue(row, "slack_app_token");
+            obj.SlackBotToken = DataTableHelper.GetStringValue(row, "slack_bot_token");
+            obj.SlackChannelId = DataTableHelper.GetStringValue(row, "slack_channel_id");
+            obj.SlackMessagePrefix = DataTableHelper.GetStringValue(row, "slack_message_prefix");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

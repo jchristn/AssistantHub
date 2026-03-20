@@ -14,6 +14,10 @@
 
 The AssistantHub dashboard server URL should be set to `http://localhost:8801` (which proxies API requests to the backend via nginx).
 
+## Startup Note
+
+On a fresh `docker compose up -d` or after `factory/reset.bat`, `assistanthub-server` waits for `partio-server` to report healthy before starting. This is expected and prevents AssistantHub from failing early during chunking and embeddings connectivity validation.
+
 ## Default Credentials
 
 ### AssistantHub

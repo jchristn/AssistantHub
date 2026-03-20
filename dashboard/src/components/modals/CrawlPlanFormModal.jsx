@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
+import PasswordInput from '../PasswordInput';
 
 const REPOSITORY_TYPES = ['Web'];
 const AUTH_TYPES = ['None', 'Basic', 'Bearer', 'ApiKey'];
@@ -308,20 +309,20 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
                   </div>
                   <div className="form-group">
                     <label><Tooltip text="Password for basic authentication">Password</Tooltip></label>
-                    <input type="password" value={form.Repository.Password} onChange={(e) => handleRepoChange('Password', e.target.value)} />
+                    <PasswordInput value={form.Repository.Password} onChange={(e) => handleRepoChange('Password', e.target.value)} />
                   </div>
                 </>
               )}
               {form.Repository.AuthType === 'Bearer' && (
                 <div className="form-group">
                   <label><Tooltip text="Bearer token for authentication">Bearer Token</Tooltip></label>
-                  <input type="text" value={form.Repository.BearerToken} onChange={(e) => handleRepoChange('BearerToken', e.target.value)} />
+                  <PasswordInput value={form.Repository.BearerToken} onChange={(e) => handleRepoChange('BearerToken', e.target.value)} />
                 </div>
               )}
               {form.Repository.AuthType === 'ApiKey' && (
                 <div className="form-group">
                   <label><Tooltip text="API key for authentication">API Key</Tooltip></label>
-                  <input type="text" value={form.Repository.ApiKey} onChange={(e) => handleRepoChange('ApiKey', e.target.value)} />
+                  <PasswordInput value={form.Repository.ApiKey} onChange={(e) => handleRepoChange('ApiKey', e.target.value)} />
                 </div>
               )}
               <div className="form-group">

@@ -173,6 +173,11 @@ namespace AssistantHub.Core.Models
         public string MetadataFilter { get; set; } = null;
 
         /// <summary>
+        /// Origin of the chat turn: web, api, slack, etc.
+        /// </summary>
+        public string Origin { get; set; } = null;
+
+        /// <summary>
         /// The assistant response content.
         /// </summary>
         public string AssistantResponse { get; set; } = null;
@@ -244,6 +249,7 @@ namespace AssistantHub.Core.Models
             obj.TokensPerSecondOverall = DataTableHelper.GetDoubleValue(row, "tokens_per_second_overall");
             obj.TokensPerSecondGeneration = DataTableHelper.GetDoubleValue(row, "tokens_per_second_generation");
             obj.MetadataFilter = DataTableHelper.GetStringValue(row, "metadata_filter");
+            obj.Origin = DataTableHelper.GetStringValue(row, "origin");
             obj.AssistantResponse = DataTableHelper.GetStringValue(row, "assistant_response");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");

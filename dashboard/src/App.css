@@ -1854,9 +1854,18 @@ body {
   max-width: 400px;
 }
 
+.alert-modal .modal-container.extra-wide {
+  max-width: 720px;
+  width: min(720px, 92vw);
+}
+
 .alert-modal .modal-body {
   text-align: center;
   padding: 1.5rem;
+}
+
+.alert-modal .modal-container.extra-wide .modal-body {
+  text-align: left;
 }
 
 .confirm-modal .modal-body p {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
+import PasswordInput from '../PasswordInput';
 
 function ConfigurationFormModal({ api, onSave, onClose }) {
   const [form, setForm] = useState(null);
@@ -54,11 +55,18 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
   const renderTextField = (section, field, label, type = 'text', tooltip = '') => (
     <div className="form-group" key={field}>
       <label>{tooltip ? <Tooltip text={tooltip}>{label}</Tooltip> : label}</label>
-      <input
-        type={type}
-        value={form[section]?.[field] ?? ''}
-        onChange={(e) => handleChange(section, field, type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
-      />
+      {type === 'password' ? (
+        <PasswordInput
+          value={form[section]?.[field] ?? ''}
+          onChange={(e) => handleChange(section, field, e.target.value)}
+        />
+      ) : (
+        <input
+          type={type}
+          value={form[section]?.[field] ?? ''}
+          onChange={(e) => handleChange(section, field, type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
+        />
+      )}
     </div>
   );
 
@@ -150,7 +158,7 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
           {renderTextField('Database', 'DatabaseName', 'Database Name', 'text', 'Name of the database to connect to')}
           <div className="form-row">
             {renderTextField('Database', 'Username', 'Username', 'text', 'Username for database authentication')}
-            {renderTextField('Database', 'Password', 'Password', 'text', 'Password for database authentication')}
+            {renderTextField('Database', 'Password', 'Password', 'password', 'Password for database authentication')}
           </div>
           {renderTextField('Database', 'Schema', 'Schema', 'text', 'Database schema to use for tables')}
           {renderToggle('Database', 'RequireEncryption', 'Require Encryption', 'Require encrypted connections to the database server')}
@@ -163,8 +171,8 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
             {renderTextField('S3', 'BucketName', 'Bucket Name', 'text', 'Default S3 bucket name for document storage')}
           </div>
           <div className="form-row">
-            {renderTextField('S3', 'AccessKey', 'Access Key', 'text', 'Access key ID for S3 authentication')}
-            {renderTextField('S3', 'SecretKey', 'Secret Key', 'text', 'Secret access key for S3 authentication')}
+            {renderTextField('S3', 'AccessKey', 'Access Key', 'password', 'Access key ID for S3 authentication')}
+            {renderTextField('S3', 'SecretKey', 'Secret Key', 'password', 'Secret access key for S3 authentication')}
           </div>
           {renderTextField('S3', 'EndpointUrl', 'Endpoint URL', 'text', 'Custom S3-compatible endpoint URL (e.g. MinIO)')}
           {renderToggle('S3', 'UseSsl', 'Use SSL', 'Use HTTPS for S3 connections')}
@@ -173,25 +181,25 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
 
         {renderSection('DocumentAtom', 'DocumentAtom', <>
           {renderTextField('DocumentAtom', 'Endpoint', 'Endpoint', 'text', 'URL of the DocumentAtom service for document parsing')}
-          {renderTextField('DocumentAtom', 'AccessKey', 'Access Key', 'text', 'Authentication key for the DocumentAtom service')}
+          {renderTextField('DocumentAtom', 'AccessKey', 'Access Key', 'password', 'Authentication key for the DocumentAtom service')}
         </>)}
 
         {renderSection('Chunking', 'Chunking', <>
           {renderTextField('Chunking', 'Endpoint', 'Endpoint', 'text', 'URL of the chunking service endpoint')}
-          {renderTextField('Chunking', 'AccessKey', 'Access Key', 'text', 'Authentication key for the chunking service')}
+          {renderTextField('Chunking', 'AccessKey', 'Access Key', 'password', 'Authentication key for the chunking service')}
           {renderTextField('Chunking', 'EndpointId', 'Endpoint ID', 'text', 'Identifier for the specific chunking endpoint to use')}
         </>)}
 
         {renderSection('Inference', 'Inference', <>
           {renderSelect('Inference', 'Provider', 'Provider', ['OpenAI', 'Ollama'], 'Default AI inference provider for the system')}
           {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
-          {renderTextField('Inference', 'ApiKey', 'API Key', 'text', 'Default API key for inference authentication')}
+          {renderTextField('Inference', 'ApiKey', 'API Key', 'password', 'Default API key for inference authentication')}
           {renderTextField('Inference', 'DefaultModel', 'Default Model', 'text', 'Default model name used for inference requests')}
         </>)}
 
         {renderSection('RecallDb', 'RecallDb', <>
           {renderTextField('RecallDb', 'Endpoint', 'Endpoint', 'text', 'URL of the RecallDB vector database endpoint')}
-          {renderTextField('RecallDb', 'AccessKey', 'Access Key', 'text', 'Authentication key for RecallDB access')}
+          {renderTextField('RecallDb', 'AccessKey', 'Access Key', 'password', 'Authentication key for RecallDB access')}
         </>)}
 
         {renderSection('Logging', 'Logging', <>

@@ -151,7 +151,7 @@ function EmbeddingEndpointsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditEndpoint(null); setInitialFormData(null); setShowForm(true); }}>Create Embedding Endpoint</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
       {showForm && <EmbeddingEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Embedding Endpoint JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Embedding Endpoint" message={`Are you sure you want to delete embedding endpoint "${deleteTarget.Name || deleteTarget.Model}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

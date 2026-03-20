@@ -22,14 +22,7 @@ namespace Test.Services
 
             try
             {
-                await AuthenticationServiceTests.RunAllAsync(runner, token);
-                await ProcessingLogServiceTests.RunAllAsync(runner, token);
-                await InferenceServiceTests.RunAllAsync(runner, token);
-                await TenantProvisioningServiceTests.RunAllAsync(runner, token);
-                await CrawlerFactoryTests.RunAllAsync(runner, token);
-                await CrawlOperationCleanupServiceTests.RunAllAsync(runner, token);
-                await CrawlSchedulerServiceTests.RunAllAsync(runner, token);
-                await EndpointHealthCheckServiceTests.RunAllAsync(runner, token);
+                await SlackAssistantUtilitiesTests.RunAllAsync(runner, token);
             }
             catch (Exception ex)
             {

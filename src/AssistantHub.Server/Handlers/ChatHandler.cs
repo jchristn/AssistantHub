@@ -18,6 +18,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver.Core;
 
@@ -223,6 +224,41 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 500;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!settings.Streaming)
+                {
+                    AssistantChatService chatService = new AssistantChatService(Database, Logging, Settings, Retrieval, Inference);
+                    AssistantChatExecutionResult result = await chatService.ExecuteNonStreamingAsync(
+                        new AssistantChatExecutionRequest
+                        {
+                            AssistantId = assistantId,
+                            Assistant = assistant,
+                            AssistantSettings = settings,
+                            Messages = chatReq.Messages,
+                            ThreadId = ctx.Request.Headers[Constants.ThreadIdHeader],
+                            Model = chatReq.Model,
+                            Temperature = chatReq.Temperature,
+                            TopP = chatReq.TopP,
+                            MaxTokens = chatReq.MaxTokens,
+                            MetadataFilter = chatReq.MetadataFilter,
+                            Origin = "web"
+                        }).ConfigureAwait(false);
+
+                    if (!result.Success)
+                    {
+                        ctx.Response.StatusCode = 502;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                            Enums.ApiErrorEnum.InternalError, null,
+                            result.ErrorMessage ?? "Inference failed."))).ConfigureAwait(false);
+                        return;
+                    }
+
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(result.Response)).ConfigureAwait(false);
                     return;
                 }
 
@@ -494,38 +530,96 @@ namespace AssistantHub.Server.Handlers
                         MetadataFilter = effectiveMetadataFilter
                     };
 
-                    HashSet<string> seenChunks = new HashSet<string>();
-
-                    foreach (string query in retrievalQueries)
+                    if (retrievalQueries.Count > 1)
                     {
-                        List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
-                            assistant.TenantId,
-                            settings.CollectionId,
-                            query,
-                            settings.RetrievalTopK,
-                            settings.RetrievalScoreThreshold,
-                            default,
-                            settings.EmbeddingEndpointId,
-                            searchOptions).ConfigureAwait(false);
+                        // Reciprocal Rank Fusion: fuse rankings from multiple query result lists
+                        const double rrfK = 60.0;
+                        Dictionary<string, double> rrfScores = new Dictionary<string, double>();
+                        Dictionary<string, RetrievalChunk> chunkMap = new Dictionary<string, RetrievalChunk>();
 
-                        if (retrieved != null)
+                        foreach (string query in retrievalQueries)
                         {
-                            foreach (RetrievalChunk chunk in retrieved)
+                            List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
+                                assistant.TenantId,
+                                settings.CollectionId,
+                                query,
+                                settings.RetrievalTopK,
+                                settings.RetrievalScoreThreshold,
+                                default,
+                                settings.EmbeddingEndpointId,
+                                searchOptions).ConfigureAwait(false);
+
+                            if (retrieved != null)
                             {
-                                string dedupeKey = (chunk.DocumentId ?? "") + ":" + chunk.Position;
-                                if (seenChunks.Add(dedupeKey))
+                                for (int rank = 0; rank < retrieved.Count; rank++)
                                 {
-                                    retrievalChunks.Add(chunk);
+                                    string dedupeKey = (retrieved[rank].DocumentId ?? "") + ":" + retrieved[rank].Position;
+                                    double rrfContribution = 1.0 / (rrfK + rank + 1);
+
+                                    if (!rrfScores.ContainsKey(dedupeKey))
+                                    {
+                                        rrfScores[dedupeKey] = 0;
+                                        chunkMap[dedupeKey] = retrieved[rank];
+                                    }
+                                    else if (retrieved[rank].Score > chunkMap[dedupeKey].Score)
+                                    {
+                                        chunkMap[dedupeKey] = retrieved[rank];
+                                    }
+
+                                    rrfScores[dedupeKey] += rrfContribution;
                                 }
                             }
                         }
-                    }
 
-                    // Re-sort by score descending and cap at TopK
-                    retrievalChunks = retrievalChunks
-                        .OrderByDescending(c => c.Score)
-                        .Take(settings.RetrievalTopK)
-                        .ToList();
+                        // Assign FusionScore and sort by it
+                        foreach (var kvp in chunkMap)
+                        {
+                            kvp.Value.FusionScore = Math.Round(rrfScores[kvp.Key], 6);
+                        }
+
+                        retrievalChunks = chunkMap.Values
+                            .OrderByDescending(c => c.FusionScore)
+                            .Take(settings.RetrievalTopK)
+                            .ToList();
+
+                        Logging.Info(_Header + "RRF fusion: " + rrfScores.Count + " unique chunks from " + retrievalQueries.Count + " queries, kept top " + retrievalChunks.Count);
+                    }
+                    else
+                    {
+                        // Original first-seen deduplication
+                        HashSet<string> seenChunks = new HashSet<string>();
+
+                        foreach (string query in retrievalQueries)
+                        {
+                            List<RetrievalChunk> retrieved = await Retrieval.RetrieveAsync(
+                                assistant.TenantId,
+                                settings.CollectionId,
+                                query,
+                                settings.RetrievalTopK,
+                                settings.RetrievalScoreThreshold,
+                                default,
+                                settings.EmbeddingEndpointId,
+                                searchOptions).ConfigureAwait(false);
+
+                            if (retrieved != null)
+                            {
+                                foreach (RetrievalChunk chunk in retrieved)
+                                {
+                                    string dedupeKey = (chunk.DocumentId ?? "") + ":" + chunk.Position;
+                                    if (seenChunks.Add(dedupeKey))
+                                    {
+                                        retrievalChunks.Add(chunk);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Re-sort by score descending and cap at TopK
+                        retrievalChunks = retrievalChunks
+                            .OrderByDescending(c => c.Score)
+                            .Take(settings.RetrievalTopK)
+                            .ToList();
+                    }
 
                     retrievalSw.Stop();
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
@@ -703,6 +797,7 @@ namespace AssistantHub.Server.Handlers
                             DocumentName = docName,
                             ContentType = contentType,
                             Score = chunk.Score,
+                            FusionScore = chunk.FusionScore,
                             RerankScore = chunk.RerankScore,
                             Excerpt = chunk.Content?.Length > 200 ? chunk.Content.Substring(0, 200) + "..." : chunk.Content,
                             DownloadUrl = downloadUrl
@@ -2016,7 +2111,8 @@ namespace AssistantHub.Server.Handlers
             string retrievalGateDecision = null, double retrievalGateDurationMs = 0,
             string queryRewriteResult = null, double queryRewriteDurationMs = 0,
             double rerankDurationMs = 0, int rerankInputCount = 0, int rerankOutputCount = 0,
-            string metadataFilterJson = null)
+            string metadataFilterJson = null,
+            string origin = "web")
         {
             try
             {
@@ -2047,6 +2143,7 @@ namespace AssistantHub.Server.Handlers
                 history.TimeToLastTokenMs = timeToLastTokenMs;
                 history.MetadataFilter = metadataFilterJson;
                 history.AssistantResponse = assistantResponse;
+                history.Origin = origin;
 
                 history.CompletionTokens = completionTokens;
 

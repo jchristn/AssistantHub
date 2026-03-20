@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Modal from './Modal';
+import PasswordInput from './PasswordInput';
 
 const INGESTION_STATUS_PERCENT = {
   uploading: 10, uploaded: 15, typedetecting: 25, typedetectionsuccess: 30,
@@ -426,7 +427,7 @@ function SetupWizard({ onClose }) {
             </div>
             <div className="form-group">
               <label>API Key (optional)</label>
-              <input type="password" value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
+              <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
             </div>
           </div>
         );
@@ -454,7 +455,7 @@ function SetupWizard({ onClose }) {
             </div>
             <div className="form-group">
               <label>API Key (optional)</label>
-              <input type="password" value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
+              <PasswordInput value={form.ApiKey || ''} onChange={e => setField('ApiKey', e.target.value)} placeholder="Leave blank if not required" />
             </div>
           </div>
         );

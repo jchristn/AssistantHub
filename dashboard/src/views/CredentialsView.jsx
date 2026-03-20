@@ -91,7 +91,7 @@ function CredentialsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditCredential(null); setShowForm(true); }}>Create Credential</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCredential(row); setShowForm(true); }} />
       {showForm && <CredentialFormModal credential={editCredential} onSave={handleSave} onClose={() => { setShowForm(false); setEditCredential(null); }} />}
       {showJson && <JsonViewModal title="Credential JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Credential" message={`Are you sure you want to delete credential "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

@@ -90,7 +90,7 @@ function UsersView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditUser(null); setShowForm(true); }}>Create User</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditUser(row); setShowForm(true); }} />
       {showForm && <UserFormModal user={editUser} onSave={handleSave} onClose={() => { setShowForm(false); setEditUser(null); }} />}
       {showJson && <JsonViewModal title="User JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete User" message={`Are you sure you want to delete user "${deleteTarget.Email}"? This will also delete all their credentials.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}

@@ -65,7 +65,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, eval_judge_prompt, streaming, created_utc, last_update_utc) " +
+                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, eval_judge_prompt, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -104,6 +104,11 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 _Driver.FormatNullableString(settings.RetrievalTagFilter) + ", " +
                 _Driver.FormatNullableString(settings.EvalJudgePrompt) + ", " +
                 (settings.Streaming ? 1 : 0) + ", " +
+                (settings.EnableSlack ? 1 : 0) + ", " +
+                _Driver.FormatNullableString(settings.SlackAppToken) + ", " +
+                _Driver.FormatNullableString(settings.SlackBotToken) + ", " +
+                _Driver.FormatNullableString(settings.SlackChannelId) + ", " +
+                _Driver.FormatNullableString(settings.SlackMessagePrefix) + ", " +
                 "'" + _Driver.FormatDateTime(settings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "'" +
                 ");";
@@ -183,6 +188,11 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "retrieval_tag_filter = " + _Driver.FormatNullableString(settings.RetrievalTagFilter) + ", " +
                 "eval_judge_prompt = " + _Driver.FormatNullableString(settings.EvalJudgePrompt) + ", " +
                 "streaming = " + (settings.Streaming ? 1 : 0) + ", " +
+                "enable_slack = " + (settings.EnableSlack ? 1 : 0) + ", " +
+                "slack_app_token = " + _Driver.FormatNullableString(settings.SlackAppToken) + ", " +
+                "slack_bot_token = " + _Driver.FormatNullableString(settings.SlackBotToken) + ", " +
+                "slack_channel_id = " + _Driver.FormatNullableString(settings.SlackChannelId) + ", " +
+                "slack_message_prefix = " + _Driver.FormatNullableString(settings.SlackMessagePrefix) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(settings.Id) + "';";
 

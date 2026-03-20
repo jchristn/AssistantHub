@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, created_utc, last_update_utc) " +
+                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -95,6 +95,11 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
                 _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 (assistantSettings.Streaming ? 1 : 0) + ", " +
+                (assistantSettings.EnableSlack ? 1 : 0) + ", " +
+                _Driver.FormatNullableString(assistantSettings.SlackAppToken) + ", " +
+                _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
+                _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.SlackMessagePrefix) + ", " +
                 "'" + _Driver.FormatDateTime(assistantSettings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "'" +
                 ")";
@@ -171,6 +176,11 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "retrieval_label_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
                 "retrieval_tag_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 "streaming = " + (assistantSettings.Streaming ? 1 : 0) + ", " +
+                "enable_slack = " + (assistantSettings.EnableSlack ? 1 : 0) + ", " +
+                "slack_app_token = " + _Driver.FormatNullableString(assistantSettings.SlackAppToken) + ", " +
+                "slack_bot_token = " + _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
+                "slack_channel_id = " + _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
+                "slack_message_prefix = " + _Driver.FormatNullableString(assistantSettings.SlackMessagePrefix) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(assistantSettings.Id) + "'";
 

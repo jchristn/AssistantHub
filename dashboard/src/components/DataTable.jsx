@@ -4,7 +4,7 @@ import ActionMenu from './ActionMenu';
 import Tooltip from './Tooltip';
 import ConfirmModal from './ConfirmModal';
 
-function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete }) {
+function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -133,6 +133,13 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
     setBulkDeleteConfirm(true);
   };
 
+  const handleRowClick = (row, event) => {
+    if (!onRowClick) return;
+    const interactive = event.target.closest('button, a, input, select, textarea, label, [role="button"], [data-row-click-ignore="true"]');
+    if (interactive) return;
+    onRowClick(row);
+  };
+
   const confirmBulkDelete = async () => {
     setBulkDeleteConfirm(false);
     setBulkDeleting(true);
@@ -227,9 +234,13 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
             ) : paginatedData.map((row, idx) => {
               const rowId = row.Id || row.GUID;
               return (
-                <tr key={rowId || idx}>
+                <tr
+                  key={rowId || idx}
+                  onClick={(event) => handleRowClick(row, event)}
+                  style={onRowClick ? { cursor: 'pointer' } : undefined}
+                >
                   {onBulkDelete && (
-                    <td style={{ width: '2.5rem', textAlign: 'center' }}>
+                    <td style={{ width: '2.5rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selectedIds.has(rowId)} onChange={() => toggleSelectRow(rowId)} />
                     </td>
                   )}
@@ -237,7 +248,7 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
                     <td key={col.key} style={col.style}>{col.render ? col.render(row) : row[col.key]}</td>
                   ))}
                   {getRowActions && (
-                    <td className="actions-cell">
+                    <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu items={getRowActions(row)} />
                     </td>
                   )}

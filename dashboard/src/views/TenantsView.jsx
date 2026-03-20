@@ -181,7 +181,7 @@ function TenantsView() {
         </div>
         <button className="btn btn-primary" onClick={() => { setEditTenant(null); setShowForm(true); }}>Create Tenant</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditTenant(row); setShowForm(true); }} />
       {showForm && <TenantFormModal tenant={editTenant} onSave={handleSave} onClose={() => { setShowForm(false); setEditTenant(null); }} />}
       {provisioningResult && <ProvisioningResultModal result={provisioningResult} onClose={() => setProvisioningResult(null)} />}
       {showJson && <JsonViewModal title="Tenant JSON" data={showJson} onClose={() => setShowJson(null)} />}

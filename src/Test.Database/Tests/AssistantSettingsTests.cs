@@ -54,7 +54,12 @@ namespace Test.Database.Tests
                     Title = "Test Chat",
                     LogoUrl = "https://example.com/logo.png",
                     FaviconUrl = "https://example.com/favicon.ico",
-                    Streaming = false
+                    Streaming = false,
+                    EnableSlack = true,
+                    SlackAppToken = "xapp-test-app-token",
+                    SlackBotToken = "xoxb-test-bot-token",
+                    SlackChannelId = "C12345678",
+                    SlackMessagePrefix = "Hey bot,"
                 };
 
                 AssistantSettings created = await driver.AssistantSettings.CreateAsync(settings, ct);
@@ -91,6 +96,11 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("https://example.com/logo.png", created.LogoUrl, "LogoUrl");
                 AssertHelper.AreEqual("https://example.com/favicon.ico", created.FaviconUrl, "FaviconUrl");
                 AssertHelper.AreEqual(false, created.Streaming, "Streaming");
+                AssertHelper.AreEqual(true, created.EnableSlack, "EnableSlack");
+                AssertHelper.AreEqual("xapp-test-app-token", created.SlackAppToken, "SlackAppToken");
+                AssertHelper.AreEqual("xoxb-test-bot-token", created.SlackBotToken, "SlackBotToken");
+                AssertHelper.AreEqual("C12345678", created.SlackChannelId, "SlackChannelId");
+                AssertHelper.AreEqual("Hey bot,", created.SlackMessagePrefix, "SlackMessagePrefix");
                 AssertHelper.DateTimeRecent(created.CreatedUtc, "CreatedUtc");
                 AssertHelper.DateTimeRecent(created.LastUpdateUtc, "LastUpdateUtc");
                 createdId = created.Id;
@@ -130,6 +140,11 @@ namespace Test.Database.Tests
                 AssertHelper.IsNull(created.LogoUrl, "default LogoUrl");
                 AssertHelper.IsNull(created.FaviconUrl, "default FaviconUrl");
                 AssertHelper.AreEqual(true, created.Streaming, "default Streaming");
+                AssertHelper.AreEqual(false, created.EnableSlack, "default EnableSlack");
+                AssertHelper.IsNull(created.SlackAppToken, "default SlackAppToken");
+                AssertHelper.IsNull(created.SlackBotToken, "default SlackBotToken");
+                AssertHelper.IsNull(created.SlackChannelId, "default SlackChannelId");
+                AssertHelper.IsNull(created.SlackMessagePrefix, "default SlackMessagePrefix");
             }, token);
 
             await runner.RunTestAsync("AssistantSettings.Read", async ct =>
@@ -167,6 +182,11 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual("https://example.com/logo.png", read.LogoUrl, "LogoUrl");
                 AssertHelper.AreEqual("https://example.com/favicon.ico", read.FaviconUrl, "FaviconUrl");
                 AssertHelper.AreEqual(false, read.Streaming, "Streaming");
+                AssertHelper.AreEqual(true, read.EnableSlack, "EnableSlack");
+                AssertHelper.AreEqual("xapp-test-app-token", read.SlackAppToken, "SlackAppToken");
+                AssertHelper.AreEqual("xoxb-test-bot-token", read.SlackBotToken, "SlackBotToken");
+                AssertHelper.AreEqual("C12345678", read.SlackChannelId, "SlackChannelId");
+                AssertHelper.AreEqual("Hey bot,", read.SlackMessagePrefix, "SlackMessagePrefix");
             }, token);
 
             await runner.RunTestAsync("AssistantSettings.Read_NotFound", async ct =>
@@ -221,6 +241,11 @@ namespace Test.Database.Tests
                 read.LogoUrl = null;
                 read.FaviconUrl = null;
                 read.Streaming = true;
+                read.EnableSlack = false;
+                read.SlackAppToken = null;
+                read.SlackBotToken = null;
+                read.SlackChannelId = null;
+                read.SlackMessagePrefix = null;
 
                 AssistantSettings updated = await driver.AssistantSettings.UpdateAsync(read, ct);
                 AssertHelper.AreEqual(1.5, updated.Temperature, "updated Temperature");
@@ -252,6 +277,11 @@ namespace Test.Database.Tests
                 AssertHelper.IsNull(updated.LogoUrl, "updated LogoUrl");
                 AssertHelper.IsNull(updated.FaviconUrl, "updated FaviconUrl");
                 AssertHelper.AreEqual(true, updated.Streaming, "updated Streaming");
+                AssertHelper.AreEqual(false, updated.EnableSlack, "updated EnableSlack");
+                AssertHelper.IsNull(updated.SlackAppToken, "updated SlackAppToken");
+                AssertHelper.IsNull(updated.SlackBotToken, "updated SlackBotToken");
+                AssertHelper.IsNull(updated.SlackChannelId, "updated SlackChannelId");
+                AssertHelper.IsNull(updated.SlackMessagePrefix, "updated SlackMessagePrefix");
             }, token);
 
             await runner.RunTestAsync("AssistantSettings.Update_VerifyPersistence", async ct =>

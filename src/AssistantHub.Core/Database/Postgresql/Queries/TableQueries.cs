@@ -98,6 +98,11 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  retrieval_label_filter TEXT, " +
             "  retrieval_tag_filter TEXT, " +
             "  streaming INTEGER NOT NULL DEFAULT 1, " +
+            "  enable_slack BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  slack_app_token TEXT, " +
+            "  slack_bot_token TEXT, " +
+            "  slack_channel_id TEXT, " +
+            "  slack_message_prefix TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -242,6 +247,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  tokens_per_second_overall DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  tokens_per_second_generation DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  metadata_filter TEXT, " +
+            "  origin TEXT, " +
             "  assistant_response TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +

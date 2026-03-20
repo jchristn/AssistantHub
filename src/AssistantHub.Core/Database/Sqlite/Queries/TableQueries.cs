@@ -94,6 +94,11 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_tag_filter TEXT, " +
                 "  eval_judge_prompt TEXT, " +
                 "  streaming INTEGER NOT NULL DEFAULT 1, " +
+                "  enable_slack INTEGER NOT NULL DEFAULT 0, " +
+                "  slack_app_token TEXT, " +
+                "  slack_bot_token TEXT, " +
+                "  slack_channel_id TEXT, " +
+                "  slack_message_prefix TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -226,6 +231,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  tokens_per_second_overall REAL NOT NULL DEFAULT 0, " +
                 "  tokens_per_second_generation REAL NOT NULL DEFAULT 0, " +
                 "  metadata_filter TEXT, " +
+                "  origin TEXT, " +
                 "  assistant_response TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +

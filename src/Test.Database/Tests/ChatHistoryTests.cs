@@ -52,7 +52,8 @@ namespace Test.Database.Tests
                     CompletionTokens = 85,
                     TokensPerSecondOverall = 56.7,
                     TokensPerSecondGeneration = 65.4,
-                    AssistantResponse = "I'm doing well, thank you!"
+                    AssistantResponse = "I'm doing well, thank you!",
+                    Origin = "slack"
                 };
 
                 ChatHistory created = await driver.ChatHistory.CreateAsync(history, ct);
@@ -84,6 +85,7 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(56.7, created.TokensPerSecondOverall, "TokensPerSecondOverall");
                 AssertHelper.AreEqual(65.4, created.TokensPerSecondGeneration, "TokensPerSecondGeneration");
                 AssertHelper.AreEqual("I'm doing well, thank you!", created.AssistantResponse, "AssistantResponse");
+                AssertHelper.AreEqual("slack", created.Origin, "Origin");
                 AssertHelper.DateTimeRecent(created.CreatedUtc, "CreatedUtc");
                 AssertHelper.DateTimeRecent(created.LastUpdateUtc, "LastUpdateUtc");
                 createdId = created.Id;
@@ -121,6 +123,7 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(0.0, created.TokensPerSecondOverall, "TokensPerSecondOverall default");
                 AssertHelper.AreEqual(0.0, created.TokensPerSecondGeneration, "TokensPerSecondGeneration default");
                 AssertHelper.IsNull(created.AssistantResponse, "AssistantResponse");
+                AssertHelper.IsNull(created.Origin, "Origin");
             }, token);
 
             await runner.RunTestAsync("ChatHistory.Create_SkipGate", async ct =>
@@ -164,6 +167,7 @@ namespace Test.Database.Tests
                 AssertHelper.AreEqual(56.7, read.TokensPerSecondOverall, "TokensPerSecondOverall");
                 AssertHelper.AreEqual(65.4, read.TokensPerSecondGeneration, "TokensPerSecondGeneration");
                 AssertHelper.AreEqual("I'm doing well, thank you!", read.AssistantResponse, "AssistantResponse");
+                AssertHelper.AreEqual("slack", read.Origin, "Origin");
             }, token);
 
             await runner.RunTestAsync("ChatHistory.Read_NotFound", async ct =>

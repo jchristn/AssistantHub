@@ -230,6 +230,56 @@ namespace Test.Models.Tests
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsFalse(json.Contains("\"rerank_score\""), "omitted when null");
             }, token);
+
+            // 3.1 RRF — FusionScore on RetrievalChunk and CitationSource
+            Console.WriteLine();
+            Console.WriteLine("RRF Model Tests");
+
+            // 3.1.1 RetrievalChunk — FusionScore
+            await runner.RunTestAsync("RetrievalChunk.FusionScore: defaults to null", async ct =>
+            {
+                var chunk = new RetrievalChunk();
+                AssertHelper.IsNull(chunk.FusionScore, "default FusionScore");
+            }, token);
+
+            await runner.RunTestAsync("RetrievalChunk: JSON uses property name fusion_score", async ct =>
+            {
+                var chunk = new RetrievalChunk { FusionScore = 0.016393 };
+                string json = JsonSerializer.Serialize(chunk);
+                AssertHelper.IsTrue(json.Contains("\"fusion_score\""), "JSON should contain fusion_score key");
+            }, token);
+
+            await runner.RunTestAsync("RetrievalChunk.FusionScore: round-trips when set", async ct =>
+            {
+                var chunk = new RetrievalChunk { FusionScore = 0.032787 };
+                string json = JsonSerializer.Serialize(chunk);
+                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                AssertHelper.AreEqual(0.032787, d.FusionScore, "round-trip FusionScore");
+            }, token);
+
+            await runner.RunTestAsync("RetrievalChunk.FusionScore: round-trips as null when not set", async ct =>
+            {
+                var chunk = new RetrievalChunk();
+                string json = JsonSerializer.Serialize(chunk);
+                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                AssertHelper.IsNull(d.FusionScore, "round-trip null FusionScore");
+            }, token);
+
+            // 3.3 CitationSource — FusionScore
+            await runner.RunTestAsync("CitationSource.FusionScore: defaults to null, omitted in JSON", async ct =>
+            {
+                var cs = new CitationSource();
+                AssertHelper.IsNull(cs.FusionScore, "default FusionScore");
+                string json = JsonSerializer.Serialize(cs);
+                AssertHelper.IsFalse(json.Contains("\"fusion_score\""), "omitted when null");
+            }, token);
+
+            await runner.RunTestAsync("CitationSource.FusionScore: present when set", async ct =>
+            {
+                var cs = new CitationSource { FusionScore = 0.048 };
+                string json = JsonSerializer.Serialize(cs);
+                AssertHelper.IsTrue(json.Contains("\"fusion_score\""), "present when set");
+            }, token);
         }
     }
 }

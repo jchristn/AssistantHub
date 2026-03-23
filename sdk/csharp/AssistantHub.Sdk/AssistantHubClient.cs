@@ -719,6 +719,784 @@ namespace AssistantHub.Sdk
 
         #endregion
 
+        #region Inference
+
+        /// <summary>
+        /// List available inference models.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>List of available models.</returns>
+        public async Task<List<InferenceModel>> ListModelsAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<List<InferenceModel>>(HttpMethod.Get, "/v1.0/models", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Pull a model from the provider.
+        /// </summary>
+        /// <param name="modelName">Name of the model to pull.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task PullModelAsync(string modelName, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(modelName))
+                throw new ArgumentNullException(nameof(modelName));
+
+            Dictionary<string, string> body = new Dictionary<string, string> { { "Name", modelName } };
+            await SendAsync(HttpMethod.Post, "/v1.0/models/pull", body, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get the status of a model pull operation.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Pull progress information.</returns>
+        public async Task<PullProgress> GetPullStatusAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<PullProgress>(HttpMethod.Get, "/v1.0/models/pull/status", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a model from the provider.
+        /// </summary>
+        /// <param name="modelName">Name of the model to delete.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteModelAsync(string modelName, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(modelName))
+                throw new ArgumentNullException(nameof(modelName));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/models/" + Uri.EscapeDataString(modelName), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Send a lightweight inference-only request (no RAG retrieval).
+        /// </summary>
+        /// <param name="assistantId">Assistant identifier.</param>
+        /// <param name="request">Chat completion request.</param>
+        /// <param name="threadId">Optional thread identifier for conversation continuity.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Chat completion response.</returns>
+        public async Task<ChatCompletionResponse> GenerateAsync(string assistantId, ChatCompletionRequest request, string threadId = null, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            request.Stream = false;
+
+            string path = "/v1.0/assistants/" + assistantId + "/generate";
+            string json = SerializeJson(request);
+
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, BaseUrl + path))
+            {
+                httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (!String.IsNullOrEmpty(threadId))
+                {
+                    httpRequest.Headers.Add(_ThreadIdHeader, threadId);
+                }
+
+                using (HttpResponseMessage response = await SendRawAsync(httpRequest, cancellationToken).ConfigureAwait(false))
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return DeserializeJson<ChatCompletionResponse>(responseBody);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Send a lightweight inference-only request and stream the response as server-sent events.
+        /// </summary>
+        /// <param name="assistantId">Assistant identifier.</param>
+        /// <param name="request">Chat completion request.</param>
+        /// <param name="threadId">Optional thread identifier for conversation continuity.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Async enumerable of SSE data strings.</returns>
+        public async IAsyncEnumerable<string> GenerateStreamAsync(string assistantId, ChatCompletionRequest request, string threadId = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            request.Stream = true;
+
+            string path = "/v1.0/assistants/" + assistantId + "/generate";
+            string json = SerializeJson(request);
+
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, BaseUrl + path))
+            {
+                httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (!String.IsNullOrEmpty(threadId))
+                {
+                    httpRequest.Headers.Add(_ThreadIdHeader, threadId);
+                }
+
+                using (HttpResponseMessage response = await SendRawAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
+                {
+                    using (Stream stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    {
+                        using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            while (!reader.EndOfStream)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+
+                                string line = await reader.ReadLineAsync().ConfigureAwait(false);
+
+                                if (line == null)
+                                    break;
+
+                                if (line.StartsWith("data: "))
+                                {
+                                    string data = line.Substring(6);
+
+                                    if (data == "[DONE]")
+                                        yield break;
+
+                                    yield return data;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Eval
+
+        /// <summary>
+        /// List evaluation facts.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing eval facts.</returns>
+        public async Task<EnumerationResult<EvalFact>> ListEvalFactsAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<EvalFact>>(HttpMethod.Get, "/v1.0/eval/facts", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get an evaluation fact by identifier.
+        /// </summary>
+        /// <param name="factId">Eval fact identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The eval fact.</returns>
+        public async Task<EvalFact> GetEvalFactAsync(string factId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(factId))
+                throw new ArgumentNullException(nameof(factId));
+
+            return await SendAsync<EvalFact>(HttpMethod.Get, "/v1.0/eval/facts/" + factId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new evaluation fact.
+        /// </summary>
+        /// <param name="fact">Eval fact to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created eval fact.</returns>
+        public async Task<EvalFact> CreateEvalFactAsync(EvalFact fact, CancellationToken cancellationToken = default)
+        {
+            if (fact == null)
+                throw new ArgumentNullException(nameof(fact));
+
+            return await SendAsync<EvalFact>(HttpMethod.Put, "/v1.0/eval/facts", fact, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing evaluation fact.
+        /// </summary>
+        /// <param name="factId">Eval fact identifier.</param>
+        /// <param name="fact">Updated eval fact data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated eval fact.</returns>
+        public async Task<EvalFact> UpdateEvalFactAsync(string factId, EvalFact fact, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(factId))
+                throw new ArgumentNullException(nameof(factId));
+            if (fact == null)
+                throw new ArgumentNullException(nameof(fact));
+
+            return await SendAsync<EvalFact>(HttpMethod.Put, "/v1.0/eval/facts/" + factId, fact, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an evaluation fact.
+        /// </summary>
+        /// <param name="factId">Eval fact identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteEvalFactAsync(string factId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(factId))
+                throw new ArgumentNullException(nameof(factId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/eval/facts/" + factId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Start an evaluation run.
+        /// </summary>
+        /// <param name="request">Eval run request specifying the assistant and optional judge prompt.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created eval run.</returns>
+        public async Task<EvalRun> StartEvalRunAsync(EvalRunRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<EvalRun>(HttpMethod.Post, "/v1.0/eval/runs", request, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// List evaluation runs.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing eval runs.</returns>
+        public async Task<EnumerationResult<EvalRun>> ListEvalRunsAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<EvalRun>>(HttpMethod.Get, "/v1.0/eval/runs", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get an evaluation run by identifier.
+        /// </summary>
+        /// <param name="runId">Eval run identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The eval run.</returns>
+        public async Task<EvalRun> GetEvalRunAsync(string runId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(runId))
+                throw new ArgumentNullException(nameof(runId));
+
+            return await SendAsync<EvalRun>(HttpMethod.Get, "/v1.0/eval/runs/" + runId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an evaluation run.
+        /// </summary>
+        /// <param name="runId">Eval run identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteEvalRunAsync(string runId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(runId))
+                throw new ArgumentNullException(nameof(runId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/eval/runs/" + runId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get results for an evaluation run.
+        /// </summary>
+        /// <param name="runId">Eval run identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing eval results.</returns>
+        public async Task<EnumerationResult<EvalResult>> ListEvalResultsAsync(string runId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(runId))
+                throw new ArgumentNullException(nameof(runId));
+
+            return await SendAsync<EnumerationResult<EvalResult>>(HttpMethod.Get, "/v1.0/eval/runs/" + runId + "/results", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get the default judge prompt.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The default judge prompt string.</returns>
+        public async Task<string> GetDefaultJudgePromptAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<string>(HttpMethod.Get, "/v1.0/eval/judge-prompt/default", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Crawl-Plans
+
+        /// <summary>
+        /// List crawl plans.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing crawl plans.</returns>
+        public async Task<EnumerationResult<CrawlPlan>> ListCrawlPlansAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<CrawlPlan>>(HttpMethod.Get, "/v1.0/crawlplans", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a crawl plan by identifier.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The crawl plan.</returns>
+        public async Task<CrawlPlan> GetCrawlPlanAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            return await SendAsync<CrawlPlan>(HttpMethod.Get, "/v1.0/crawlplans/" + planId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new crawl plan.
+        /// </summary>
+        /// <param name="plan">Crawl plan to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created crawl plan.</returns>
+        public async Task<CrawlPlan> CreateCrawlPlanAsync(CrawlPlan plan, CancellationToken cancellationToken = default)
+        {
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
+            return await SendAsync<CrawlPlan>(HttpMethod.Put, "/v1.0/crawlplans", plan, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing crawl plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="plan">Updated crawl plan data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated crawl plan.</returns>
+        public async Task<CrawlPlan> UpdateCrawlPlanAsync(string planId, CrawlPlan plan, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
+            return await SendAsync<CrawlPlan>(HttpMethod.Put, "/v1.0/crawlplans/" + planId, plan, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a crawl plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteCrawlPlanAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/crawlplans/" + planId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Start a crawl for the specified plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task StartCrawlAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            await SendAsync(HttpMethod.Post, "/v1.0/crawlplans/" + planId + "/start", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Stop a running crawl for the specified plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task StopCrawlAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            await SendAsync(HttpMethod.Post, "/v1.0/crawlplans/" + planId + "/stop", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Crawl-Operations
+
+        /// <summary>
+        /// List crawl operations for a plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing crawl operations.</returns>
+        public async Task<EnumerationResult<CrawlOperation>> ListCrawlOperationsAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            return await SendAsync<EnumerationResult<CrawlOperation>>(HttpMethod.Get, "/v1.0/crawlplans/" + planId + "/operations", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a crawl operation by identifier.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="operationId">Crawl operation identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The crawl operation.</returns>
+        public async Task<CrawlOperation> GetCrawlOperationAsync(string planId, string operationId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+            if (String.IsNullOrWhiteSpace(operationId))
+                throw new ArgumentNullException(nameof(operationId));
+
+            return await SendAsync<CrawlOperation>(HttpMethod.Get, "/v1.0/crawlplans/" + planId + "/operations/" + operationId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a crawl operation.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="operationId">Crawl operation identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteCrawlOperationAsync(string planId, string operationId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+            if (String.IsNullOrWhiteSpace(operationId))
+                throw new ArgumentNullException(nameof(operationId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/crawlplans/" + planId + "/operations/" + operationId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get statistics for all operations under a crawl plan.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Statistics as a JSON element.</returns>
+        public async Task<JsonElement> GetCrawlStatisticsAsync(string planId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/crawlplans/" + planId + "/operations/statistics", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get statistics for a specific crawl operation.
+        /// </summary>
+        /// <param name="planId">Crawl plan identifier.</param>
+        /// <param name="operationId">Crawl operation identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Statistics as a JSON element.</returns>
+        public async Task<JsonElement> GetCrawlOperationStatisticsAsync(string planId, string operationId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(planId))
+                throw new ArgumentNullException(nameof(planId));
+            if (String.IsNullOrWhiteSpace(operationId))
+                throw new ArgumentNullException(nameof(operationId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/crawlplans/" + planId + "/operations/" + operationId + "/statistics", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Configuration
+
+        /// <summary>
+        /// Get the current server configuration.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Configuration as a JSON element.</returns>
+        public async Task<JsonElement> GetConfigAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/configuration", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update the server configuration.
+        /// </summary>
+        /// <param name="configuration">Full configuration object to apply.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Updated configuration as a JSON element.</returns>
+        public async Task<JsonElement> UpdateConfigAsync(JsonElement configuration, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/configuration", configuration, cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Health
+
+        /// <summary>
+        /// Check server health by requesting the root endpoint.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if the server is healthy.</returns>
+        public async Task<bool> HealthCheckAsync(CancellationToken cancellationToken = default)
+        {
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, BaseUrl + "/"))
+            {
+                using (HttpResponseMessage response = await SendRawAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    return response.IsSuccessStatusCode;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the identity of the authenticated user.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>User identity as a JSON element.</returns>
+        public async Task<JsonElement> WhoAmIAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/whoami", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Tenants
+
+        /// <summary>
+        /// List all tenants.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing tenants.</returns>
+        public async Task<EnumerationResult<TenantMetadata>> ListTenantsAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<TenantMetadata>>(HttpMethod.Get, "/v1.0/tenants", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a tenant by identifier.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The tenant.</returns>
+        public async Task<TenantMetadata> GetTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            return await SendAsync<TenantMetadata>(HttpMethod.Get, "/v1.0/tenants/" + tenantId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new tenant.
+        /// </summary>
+        /// <param name="tenant">Tenant to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Composite response containing Tenant and Provisioning data.</returns>
+        public async Task<JsonElement> CreateTenantAsync(TenantMetadata tenant, CancellationToken cancellationToken = default)
+        {
+            if (tenant == null)
+                throw new ArgumentNullException(nameof(tenant));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/tenants", tenant, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="tenant">Updated tenant data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated tenant.</returns>
+        public async Task<TenantMetadata> UpdateTenantAsync(string tenantId, TenantMetadata tenant, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (tenant == null)
+                throw new ArgumentNullException(nameof(tenant));
+
+            return await SendAsync<TenantMetadata>(HttpMethod.Put, "/v1.0/tenants/" + tenantId, tenant, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/tenants/" + tenantId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Users
+
+        /// <summary>
+        /// List users for a tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing users.</returns>
+        public async Task<EnumerationResult<UserMaster>> ListUsersAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            return await SendAsync<EnumerationResult<UserMaster>>(HttpMethod.Get, "/v1.0/tenants/" + tenantId + "/users", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a user by identifier.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="userId">User identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The user.</returns>
+        public async Task<UserMaster> GetUserAsync(string tenantId, string userId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            return await SendAsync<UserMaster>(HttpMethod.Get, "/v1.0/tenants/" + tenantId + "/users/" + userId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new user for a tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="user">User to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created user.</returns>
+        public async Task<UserMaster> CreateUserAsync(string tenantId, UserMaster user, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            return await SendAsync<UserMaster>(HttpMethod.Put, "/v1.0/tenants/" + tenantId + "/users", user, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing user.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="userId">User identifier.</param>
+        /// <param name="user">Updated user data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated user.</returns>
+        public async Task<UserMaster> UpdateUserAsync(string tenantId, string userId, UserMaster user, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            return await SendAsync<UserMaster>(HttpMethod.Put, "/v1.0/tenants/" + tenantId + "/users/" + userId, user, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a user.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="userId">User identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteUserAsync(string tenantId, string userId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/tenants/" + tenantId + "/users/" + userId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Credentials
+
+        /// <summary>
+        /// List credentials for a tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing credentials.</returns>
+        public async Task<EnumerationResult<Credential>> ListCredentialsAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            return await SendAsync<EnumerationResult<Credential>>(HttpMethod.Get, "/v1.0/tenants/" + tenantId + "/credentials", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a credential by identifier.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="credentialId">Credential identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The credential.</returns>
+        public async Task<Credential> GetCredentialAsync(string tenantId, string credentialId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(credentialId))
+                throw new ArgumentNullException(nameof(credentialId));
+
+            return await SendAsync<Credential>(HttpMethod.Get, "/v1.0/tenants/" + tenantId + "/credentials/" + credentialId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new credential for a tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="credential">Credential to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created credential.</returns>
+        public async Task<Credential> CreateCredentialAsync(string tenantId, Credential credential, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (credential == null)
+                throw new ArgumentNullException(nameof(credential));
+
+            return await SendAsync<Credential>(HttpMethod.Put, "/v1.0/tenants/" + tenantId + "/credentials", credential, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing credential.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="credentialId">Credential identifier.</param>
+        /// <param name="credential">Updated credential data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated credential.</returns>
+        public async Task<Credential> UpdateCredentialAsync(string tenantId, string credentialId, Credential credential, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(credentialId))
+                throw new ArgumentNullException(nameof(credentialId));
+            if (credential == null)
+                throw new ArgumentNullException(nameof(credential));
+
+            return await SendAsync<Credential>(HttpMethod.Put, "/v1.0/tenants/" + tenantId + "/credentials/" + credentialId, credential, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a credential.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="credentialId">Credential identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteCredentialAsync(string tenantId, string credentialId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrWhiteSpace(credentialId))
+                throw new ArgumentNullException(nameof(credentialId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/tenants/" + tenantId + "/credentials/" + credentialId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
         #region Search
 
         /// <summary>

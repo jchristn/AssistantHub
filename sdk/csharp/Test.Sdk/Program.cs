@@ -38,6 +38,9 @@ namespace Test.Sdk
                     await ThreadTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await EndpointTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await InferenceTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await EvalTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await CrawlPlanTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await ConfigTests.RunAsync(runner, client, token).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

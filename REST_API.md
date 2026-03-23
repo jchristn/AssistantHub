@@ -297,6 +297,8 @@ Retrieve a single tenant by ID.
   "Name": "Acme Corp",
   "Active": true,
   "IsProtected": false,
+  "Labels": [],
+  "Tags": {},
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -317,7 +319,9 @@ Update an existing tenant.
 {
   "Name": "Acme Corp Updated",
   "Active": true,
-  "IsProtected": false
+  "IsProtected": false,
+  "Labels": ["production"],
+  "Tags": { "region": "us-east" }
 }
 ```
 
@@ -403,6 +407,7 @@ Create a new user.
   "FirstName": "Jane",
   "LastName": "Doe",
   "IsAdmin": false,
+  "IsTenantAdmin": false,
   "Active": true,
   "IsProtected": false
 }
@@ -418,6 +423,7 @@ Create a new user.
   "FirstName": "Jane",
   "LastName": "Doe",
   "IsAdmin": false,
+  "IsTenantAdmin": false,
   "Active": true,
   "IsProtected": false,
   "CreatedUtc": "2025-01-01T00:00:00Z",
@@ -455,6 +461,7 @@ Retrieve a single user by ID.
   "FirstName": "Admin",
   "LastName": "User",
   "IsAdmin": true,
+  "IsTenantAdmin": false,
   "Active": true,
   "IsProtected": true,
   "CreatedUtc": "2025-01-01T00:00:00Z",
@@ -479,6 +486,7 @@ Update an existing user. The `Id` and `CreatedUtc` fields are preserved from the
   "FirstName": "Jane",
   "LastName": "Smith",
   "IsAdmin": false,
+  "IsTenantAdmin": false,
   "Active": true,
   "IsProtected": false
 }
@@ -574,6 +582,7 @@ Retrieve a single credential by ID.
 ```json
 {
   "Id": "cred_abc123...",
+  "TenantId": "ten_abc123...",
   "UserId": "usr_abc123...",
   "Name": "My API Key",
   "BearerToken": "abc123...",
@@ -1734,6 +1743,8 @@ Retrieve settings for an assistant.
   "RerankerTopK": 5,
   "RerankerScoreThreshold": 3.0,
   "RerankPrompt": null,
+  "EnableCitations": false,
+  "CitationLinkMode": "None",
   "CollectionId": "collection-uuid",
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
@@ -1749,6 +1760,9 @@ Retrieve settings for an assistant.
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
+  "RetrievalLabelFilter": null,
+  "RetrievalTagFilter": null,
+  "EvalJudgePrompt": null,
   "Streaming": true,
   "EnableSlack": false,
   "SlackAppToken": "xapp-***",
@@ -1794,6 +1808,9 @@ Retrieve settings for an assistant.
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
+| `RetrievalLabelFilter`     | string  | JSON-serialized label filter applied to all RAG retrievals for this assistant. Merged with per-request metadata filters. Null = no default label filter. |
+| `RetrievalTagFilter`       | string  | JSON-serialized tag filter applied to all RAG retrievals for this assistant. Merged with per-request metadata filters. Null = no default tag filter. |
+| `EvalJudgePrompt`          | string  | Custom judge prompt for evaluation runs on this assistant. Null uses the system default judge prompt. |
 | `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `true`.                    |
 | `EnableSlack`              | bool    | Enable a per-assistant Slack Socket Mode worker. Default `false`.           |
 | `SlackAppToken`            | string  | Slack app token for Socket Mode. Must start with `xapp-` when present.      |
@@ -1845,6 +1862,9 @@ Create or update settings for an assistant. If settings already exist, they are 
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
+  "RetrievalLabelFilter": null,
+  "RetrievalTagFilter": null,
+  "EvalJudgePrompt": null,
   "Streaming": true,
   "EnableSlack": true,
   "SlackAppToken": "xapp-***",
@@ -1967,6 +1987,9 @@ Upload a new document using an ingestion rule.
   "Labels": "[\"user-guide\",\"v2\"]",
   "Tags": "{\"version\":\"2.0\"}",
   "ChunkRecordIds": null,
+  "CrawlPlanId": null,
+  "CrawlOperationId": null,
+  "SourceUrl": null,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -2125,6 +2148,7 @@ Retrieve a single feedback record by ID.
   "AssistantResponse": "Our return policy allows returns within 30 days...",
   "Rating": "ThumbsUp",
   "FeedbackText": "Very helpful answer!",
+  "MessageHistory": null,
   "CreatedUtc": "2025-01-01T12:00:00Z",
   "LastUpdateUtc": "2025-01-01T12:00:00Z"
 }
@@ -2196,6 +2220,8 @@ Retrieve a single chat history record by ID.
   "InferenceConnectionDurationMs": 850.00,
   "TimeToFirstTokenMs": 120.50,
   "TimeToLastTokenMs": 890.75,
+  "MetadataFilter": null,
+  "Origin": null,
   "AssistantResponse": "To reset your password, navigate to Settings > Security...",
   "CreatedUtc": "2025-01-01T12:00:00Z",
   "LastUpdateUtc": "2025-01-01T12:00:00Z"
@@ -2232,6 +2258,8 @@ Retrieve a single chat history record by ID.
 | `InferenceConnectionDurationMs` | double | Time from HTTP request sent to response headers received (ms). Includes network latency and model loading. |
 | `TimeToFirstTokenMs`   | double   | Time to first token from the model in milliseconds.          |
 | `TimeToLastTokenMs`    | double   | Time to last token from the model in milliseconds.           |
+| `MetadataFilter`       | string   | JSON-serialized metadata filter applied during retrieval (null if none). |
+| `Origin`               | string   | Origin of the chat request (e.g. `web`, `slack`, `api`). Null if not set. |
 | `AssistantResponse`    | string   | The assistant's full response text.                          |
 
 **Error Responses:**
@@ -2800,9 +2828,19 @@ Submit feedback for an assistant response.
   "UserMessage": "How do I reset my password?",
   "AssistantResponse": "To reset your password, navigate to Settings...",
   "Rating": "ThumbsUp",
-  "FeedbackText": "This was exactly what I needed!"
+  "FeedbackText": "This was exactly what I needed!",
+  "MessageHistory": "[{\"role\":\"user\",\"content\":\"How do I reset my password?\"},{\"role\":\"assistant\",\"content\":\"To reset your password, navigate to Settings...\"}]"
 }
 ```
+
+| Field              | Type   | Required | Description                                                    |
+|--------------------|--------|----------|----------------------------------------------------------------|
+| `AssistantId`      | string | Yes      | The assistant this feedback is for.                            |
+| `UserMessage`      | string | No       | The user's message that prompted the response.                 |
+| `AssistantResponse`| string | No       | The assistant's response being rated.                          |
+| `Rating`           | string | Yes      | Feedback rating: `ThumbsUp` or `ThumbsDown`.                  |
+| `FeedbackText`     | string | No       | Optional free-text feedback from the user.                     |
+| `MessageHistory`   | string | No       | JSON-serialized conversation history leading to this response. |
 
 **Rating Values:**
 - `ThumbsUp`
@@ -2818,6 +2856,7 @@ Submit feedback for an assistant response.
   "AssistantResponse": "To reset your password, navigate to Settings...",
   "Rating": "ThumbsUp",
   "FeedbackText": "This was exactly what I needed!",
+  "MessageHistory": "[{\"role\":\"user\",\"content\":\"How do I reset my password?\"},{\"role\":\"assistant\",\"content\":\"To reset your password, navigate to Settings...\"}]",
   "CreatedUtc": "2025-01-01T12:00:00Z",
   "LastUpdateUtc": "2025-01-01T12:00:00Z"
 }
@@ -3262,7 +3301,7 @@ Retrieve all results for an evaluation run.
     "Question": "What is the return policy?",
     "ExpectedFacts": "[\"30 days\", \"full refund\"]",
     "LlmResponse": "Our return policy allows returns within 30 days for a full refund...",
-    "FactVerdicts": "[{\"Fact\":\"30 days\",\"Present\":true},{\"Fact\":\"full refund\",\"Present\":true}]",
+    "FactVerdicts": "[{\"Fact\":\"30 days\",\"Pass\":true,\"Reasoning\":\"The response states returns are allowed within 30 days.\"},{\"Fact\":\"full refund\",\"Pass\":true,\"Reasoning\":\"The response mentions a full refund is provided.\"}]",
     "OverallPass": true,
     "DurationMs": 1500,
     "CreatedUtc": "2026-01-01T12:00:05Z"

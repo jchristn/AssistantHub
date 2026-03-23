@@ -82,6 +82,7 @@ from .models import (
     WebCrawlRepositorySettings,
 )
 from ._base_client import BaseClient
+from .client import AssistantHubClient
 
 __all__ = [
     # Enums
@@ -163,5 +164,6 @@ __all__ = [
     "UserMaster",
     "WebCrawlRepositorySettings",
     # Client
+    "AssistantHubClient",
     "BaseClient",
 ]

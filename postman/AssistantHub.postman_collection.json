@@ -27,6 +27,11 @@
 			"type": "string"
 		},
 		{
+			"key": "tenantId",
+			"value": "default",
+			"type": "string"
+		},
+		{
 			"key": "slackAppToken",
 			"value": "xapp-***",
 			"type": "string"
@@ -103,6 +108,18 @@
 							"path": ["v1.0", "authenticate"]
 						}
 					}
+				},
+				{
+					"name": "GET /v1.0/whoami",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/whoami",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "whoami"]
+						}
+					}
 				}
 			]
 		},
@@ -154,7 +171,7 @@
 							"variable": [
 								{
 									"key": "tenantId",
-									"value": "tenant-id-here"
+									"value": "{{tenantId}}"
 								}
 							]
 						}
@@ -181,7 +198,7 @@
 							"variable": [
 								{
 									"key": "tenantId",
-									"value": "tenant-id-here"
+									"value": "{{tenantId}}"
 								}
 							]
 						}
@@ -199,7 +216,7 @@
 							"variable": [
 								{
 									"key": "tenantId",
-									"value": "tenant-id-here"
+									"value": "{{tenantId}}"
 								}
 							]
 						}
@@ -217,7 +234,7 @@
 							"variable": [
 								{
 									"key": "tenantId",
-									"value": "tenant-id-here"
+									"value": "{{tenantId}}"
 								}
 							]
 						}
@@ -243,9 +260,15 @@
 							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"password123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users"]
+							"path": ["v1.0", "tenants", ":tenantId", "users"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								}
+							]
 						}
 					}
 				},
@@ -255,9 +278,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users"]
+							"path": ["v1.0", "tenants", ":tenantId", "users"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								}
+							]
 						}
 					}
 				},
@@ -267,10 +296,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users", ":userId"],
+							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "userId",
 									"value": "user-guid-here"
@@ -294,10 +327,14 @@
 							"raw": "{\n\t\"FirstName\": \"John\",\n\t\"LastName\": \"Doe\",\n\t\"Email\": \"john.doe@example.com\",\n\t\"Password\": \"newpassword123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users", ":userId"],
+							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "userId",
 									"value": "user-guid-here"
@@ -312,10 +349,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users", ":userId"],
+							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "userId",
 									"value": "user-guid-here"
@@ -330,10 +371,14 @@
 						"method": "HEAD",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/users/:userId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "users", ":userId"],
+							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "userId",
 									"value": "user-guid-here"
@@ -359,12 +404,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My API Key\",\n\t\"UserId\": \"usr_abc123\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
+							"raw": "{\n\t\"Name\": \"My API Key\",\n\t\"UserId\": \"user-guid-here\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials"]
+							"path": ["v1.0", "tenants", ":tenantId", "credentials"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								}
+							]
 						}
 					}
 				},
@@ -374,9 +425,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials"]
+							"path": ["v1.0", "tenants", ":tenantId", "credentials"],
+							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								}
+							]
 						}
 					}
 				},
@@ -386,10 +443,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials", ":credentialId"],
+							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "credentialId",
 									"value": "credential-guid-here"
@@ -413,10 +474,14 @@
 							"raw": "{\n\t\"Name\": \"My API Key (Updated)\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials", ":credentialId"],
+							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "credentialId",
 									"value": "credential-guid-here"
@@ -431,10 +496,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials", ":credentialId"],
+							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "credentialId",
 									"value": "credential-guid-here"
@@ -449,10 +518,14 @@
 						"method": "HEAD",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/v1.0/credentials/:credentialId",
+							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
 							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "credentials", ":credentialId"],
+							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
 							"variable": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								},
 								{
 									"key": "credentialId",
 									"value": "credential-guid-here"
@@ -897,6 +970,69 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Batch Delete Records",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n\t\"record-guid-1\",\n\t\"record-guid-2\"\n]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/batch/delete",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "records", "batch", "delete"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Distinct Labels",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/labels/distinct",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "labels", "distinct"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Distinct Tags",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/tags/distinct",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "collections", ":collectionId", "tags", "distinct"],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-guid-here"
+								}
+							]
+						}
+					}
 				}
 			]
 		},
@@ -904,7 +1040,7 @@
 			"name": "Embedding Endpoints",
 			"item": [
 				{
-					"name": "Create Embedding Endpoint",
+					"name": "Create Embedding Endpoint (Gemini)",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -925,7 +1061,49 @@
 					}
 				},
 				{
-					"name": "List Embedding Endpoints",
+					"name": "Create Embedding Endpoint (OpenAI)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"OpenAI Embedding Endpoint\",\n\t\"Model\": \"text-embedding-3-small\",\n\t\"Endpoint\": \"https://api.openai.com\",\n\t\"ApiFormat\": \"OpenAI\",\n\t\"ApiKey\": \"sk-...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://api.openai.com/v1/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding"]
+						}
+					}
+				},
+				{
+					"name": "Create Embedding Endpoint (Ollama)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"Ollama Embedding Endpoint\",\n\t\"Model\": \"nomic-embed-text\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding"]
+						}
+					}
+				},
+				{
+					"name": "Enumerate Embedding Endpoints",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -942,6 +1120,18 @@
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/enumerate",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "endpoints", "embedding", "enumerate"]
+						}
+					}
+				},
+				{
+					"name": "Get All Embedding Endpoint Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "embedding", "health"]
 						}
 					}
 				},
@@ -1077,7 +1267,7 @@
 			"name": "Completion Endpoints",
 			"item": [
 				{
-					"name": "Create Completion Endpoint",
+					"name": "Create Completion Endpoint (Gemini)",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -1098,7 +1288,49 @@
 					}
 				},
 				{
-					"name": "List Completion Endpoints",
+					"name": "Create Completion Endpoint (OpenAI)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"OpenAI Completion Endpoint\",\n\t\"Model\": \"gpt-4o\",\n\t\"Endpoint\": \"https://api.openai.com\",\n\t\"ApiFormat\": \"OpenAI\",\n\t\"ApiKey\": \"sk-...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://api.openai.com/v1/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion"]
+						}
+					}
+				},
+				{
+					"name": "Create Completion Endpoint (Ollama)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"Ollama Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion"]
+						}
+					}
+				},
+				{
+					"name": "Enumerate Completion Endpoints",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1115,6 +1347,18 @@
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/enumerate",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "endpoints", "completion", "enumerate"]
+						}
+					}
+				},
+				{
+					"name": "Get All Completion Endpoint Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/endpoints/completion/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "endpoints", "completion", "health"]
 						}
 					}
 				},
@@ -1261,7 +1505,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Ingestion Rule\",\n\t\"Description\": \"Ingestion rule with summarization\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"PreChunking\",\n\t\t\"SummarizationPrompt\": \"Summarize the following text concisely.\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 1,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 3,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
+							"raw": "{\n\t\"Name\": \"My Ingestion Rule\",\n\t\"Description\": \"Ingestion rule with summarization\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"BottomUp\",\n\t\t\"SummarizationPrompt\": \"Summarize the following text concisely.\\n\\n{content}\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 128,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 9,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules",
@@ -1312,7 +1556,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"My Ingestion Rule (Updated)\",\n\t\"Description\": \"Updated ingestion rule\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"PreChunking\",\n\t\t\"SummarizationPrompt\": \"Provide a brief summary of the following content.\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 1,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 3,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
+							"raw": "{\n\t\"Name\": \"My Ingestion Rule (Updated)\",\n\t\"Description\": \"Updated ingestion rule\",\n\t\"BucketName\": \"my-bucket\",\n\t\"CollectionId\": \"collection-guid-here\",\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"Summarization\": {\n\t\t\"CompletionEndpointId\": \"completion-endpoint-guid-here\",\n\t\t\"Order\": \"TopDown\",\n\t\t\"SummarizationPrompt\": \"Provide a brief summary of the following content.\\n\\n{content}\",\n\t\t\"MaxSummaryTokens\": 1024,\n\t\t\"MinCellLength\": 128,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"MaxRetriesPerSummary\": 3,\n\t\t\"MaxRetries\": 9,\n\t\t\"TimeoutMs\": 300000\n\t}\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
@@ -1652,6 +1896,27 @@
 					}
 				},
 				{
+					"name": "Bulk Delete Documents",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n\t\"document-guid-1\",\n\t\"document-guid-2\"\n]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/delete",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", "delete"]
+						}
+					}
+				},
+				{
 					"name": "Get Document Processing Log",
 					"request": {
 						"method": "GET",
@@ -1660,6 +1925,24 @@
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId/processing-log",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "documents", ":documentId", "processing-log"],
+							"variable": [
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download Document (Authenticated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/documents/:documentId/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "documents", ":documentId", "download"],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1889,19 +2172,582 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Key\": \"setting-name\",\n\t\"Value\": \"setting-value\"\n}"
+							"raw": "{\n\t\"Webserver\": {\n\t\t\"Port\": 8800\n\t},\n\t\"Logging\": {\n\t\t\"MinimumLevel\": \"Information\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/configuration",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "configuration"]
+						},
+						"description": "Accepts a full or partial AssistantHubSettings object. Supported sections: Webserver, Database, S3, DocumentAtom, Chunking, Inference, RecallDb, Logging."
+					}
+				}
+			]
+		},
+		{
+			"name": "Crawl Plans",
+			"item": [
+				{
+					"name": "Create Crawl Plan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Web Crawl\",\n\t\"RepositoryType\": \"Web\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"Web\",\n\t\t\"AuthenticationType\": \"None\",\n\t\t\"UserAgent\": \"assistanthub-crawler\",\n\t\t\"StartUrl\": \"https://example.com\",\n\t\t\"UseHeadlessBrowser\": false,\n\t\t\"FollowLinks\": true,\n\t\t\"FollowRedirects\": true,\n\t\t\"ExtractSitemapLinks\": true,\n\t\t\"RestrictToChildUrls\": true,\n\t\t\"RestrictToSubdomain\": false,\n\t\t\"RestrictToRootDomain\": true,\n\t\t\"IgnoreRobotsTxt\": false,\n\t\t\"MaxDepth\": 5,\n\t\t\"MaxParallelTasks\": 8,\n\t\t\"CrawlDelayMs\": 100\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": [\"text/html\", \"application/pdf\"],\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans"]
+						}
+					}
+				},
+				{
+					"name": "List Crawl Plans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans"]
+						}
+					}
+				},
+				{
+					"name": "Get Crawl Plan",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Crawl Plan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"My Web Crawl (Updated)\",\n\t\"RepositoryType\": \"Web\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"Web\",\n\t\t\"AuthenticationType\": \"None\",\n\t\t\"UserAgent\": \"assistanthub-crawler\",\n\t\t\"StartUrl\": \"https://example.com\",\n\t\t\"UseHeadlessBrowser\": false,\n\t\t\"FollowLinks\": true,\n\t\t\"FollowRedirects\": true,\n\t\t\"ExtractSitemapLinks\": true,\n\t\t\"RestrictToChildUrls\": true,\n\t\t\"RestrictToSubdomain\": false,\n\t\t\"RestrictToRootDomain\": true,\n\t\t\"IgnoreRobotsTxt\": false,\n\t\t\"MaxDepth\": 10,\n\t\t\"MaxParallelTasks\": 4,\n\t\t\"CrawlDelayMs\": 200\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Days\",\n\t\t\"IntervalValue\": 7\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": [\"text/html\"],\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": true,\n\t\"MaxDrainTasks\": 4,\n\t\"RetentionDays\": 14\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Crawl Plan",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Check Crawl Plan Exists",
+					"request": {
+						"method": "HEAD",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Start Crawl",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/start",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id", "start"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Stop Crawl",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/stop",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id", "stop"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Test Connectivity",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/connectivity",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id", "connectivity"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Enumerate Crawl Contents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/enumerate",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":id", "enumerate"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cplan_guid-here"
+								}
+							]
 						}
 					}
 				}
 			]
 		},
 		{
-			"name": "Public",
+			"name": "Crawl Operations",
+			"item": [
+				{
+					"name": "List Operations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Operations Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations", "statistics"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Operation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								},
+								{
+									"key": "id",
+									"value": "cop_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Operation Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id", "statistics"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								},
+								{
+									"key": "id",
+									"value": "cop_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Operation",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								},
+								{
+									"key": "id",
+									"value": "cop_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Operation Enumeration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id/enumeration",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id", "enumeration"],
+							"variable": [
+								{
+									"key": "planId",
+									"value": "cplan_guid-here"
+								},
+								{
+									"key": "id",
+									"value": "cop_guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Eval",
+			"item": [
+				{
+					"name": "Create Fact",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"AssistantId\": \"assistant-guid-here\",\n\t\"Category\": \"general-knowledge\",\n\t\"Question\": \"What is the capital of France?\",\n\t\"ExpectedFacts\": \"[\\\"Paris is the capital of France\\\", \\\"Located in northern France\\\"]\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/facts",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "facts"]
+						}
+					}
+				},
+				{
+					"name": "List Facts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/facts",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "facts"]
+						}
+					}
+				},
+				{
+					"name": "Get Fact",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "facts", ":factId"],
+							"variable": [
+								{
+									"key": "factId",
+									"value": "ef_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Fact",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"AssistantId\": \"assistant-guid-here\",\n\t\"Category\": \"general-knowledge\",\n\t\"Question\": \"What is the capital of France?\",\n\t\"ExpectedFacts\": \"[\\\"Paris is the capital of France\\\", \\\"Paris is the largest city in France\\\"]\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "facts", ":factId"],
+							"variable": [
+								{
+									"key": "factId",
+									"value": "ef_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Fact",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "facts", ":factId"],
+							"variable": [
+								{
+									"key": "factId",
+									"value": "ef_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Start Eval Run",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"AssistantId\": \"assistant-guid-here\",\n\t\"JudgePrompt\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs"]
+						}
+					}
+				},
+				{
+					"name": "List Eval Runs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs"]
+						}
+					}
+				},
+				{
+					"name": "Get Eval Run",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs", ":runId"],
+							"variable": [
+								{
+									"key": "runId",
+									"value": "erun_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Eval Run",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs", ":runId"],
+							"variable": [
+								{
+									"key": "runId",
+									"value": "erun_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Eval Run Results",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId/results",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs", ":runId", "results"],
+							"variable": [
+								{
+									"key": "runId",
+									"value": "erun_guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Stream Eval Run (SSE)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId/stream",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "runs", ":runId", "stream"],
+							"variable": [
+								{
+									"key": "runId",
+									"value": "erun_guid-here"
+								}
+							]
+						},
+						"description": "Server-Sent Events stream for real-time eval run progress."
+					}
+				},
+				{
+					"name": "Get Eval Result",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/results/:resultId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "results", ":resultId"],
+							"variable": [
+								{
+									"key": "resultId",
+									"value": "result-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Default Judge Prompt",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/eval/judge-prompt/default",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "eval", "judge-prompt", "default"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Public (Pre-Auth)",
 			"item": [
 				{
 					"name": "Get Public Assistant",
@@ -1955,6 +2801,31 @@
 					}
 				},
 				{
+					"name": "Get Thread History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/threads/:threadId/history",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "threads", ":threadId", "history"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								},
+								{
+									"key": "threadId",
+									"value": "thread-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
 					"name": "Chat",
 					"request": {
 						"auth": {
@@ -1965,11 +2836,15 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-Thread-ID",
+								"value": "thread-guid-here"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Message\": \"Hello, can you help me?\"\n}"
+							"raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Hello, can you help me?\"\n\t\t}\n\t],\n\t\"model\": null,\n\t\"temperature\": 0.7,\n\t\"max_tokens\": 4096\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
@@ -1982,11 +2857,11 @@
 								}
 							]
 						},
-						"description": "Send a chat message. When EnableCitations is true in assistant settings and RAG is active, the response includes a citations object with source documents and referenced indices."
+						"description": "OpenAI-compatible chat completion. Thread ID is passed via the X-Thread-ID header. Response may include citations when EnableCitations is true in assistant settings."
 					}
 				},
 				{
-					"name": "Chat (with citations)",
+					"name": "Chat (with metadata filter)",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -1996,11 +2871,15 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-Thread-ID",
+								"value": "thread-guid-here"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Message\": \"What does the document say about revenue?\"\n}"
+							"raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"What does the document say about revenue?\"\n\t\t}\n\t],\n\t\"metadata_filter\": {\n\t\t\"Labels\": [\"finance\"],\n\t\t\"Tags\": [\"Q4-2025\"]\n\t}\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
@@ -2013,7 +2892,7 @@
 								}
 							]
 						},
-						"description": "Requires EnableCitations: true in assistant settings. Response will include a citations object when RAG is active and the model references source documents."
+						"description": "Chat with metadata filter to restrict RAG retrieval to documents matching specified labels and/or tags."
 					}
 				},
 				{
@@ -2031,7 +2910,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\",\n\t\"Rating\": 5,\n\t\"Comment\": \"Very helpful response!\"\n}"
+							"raw": "{\n\t\"UserMessage\": \"What is the return policy?\",\n\t\"AssistantResponse\": \"The return policy allows returns within 30 days.\",\n\t\"Rating\": \"ThumbsUp\",\n\t\"FeedbackText\": \"Very helpful response!\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/feedback",
@@ -2057,16 +2936,118 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "X-Thread-ID",
+								"value": "thread-guid-here"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"ThreadId\": \"thread-guid-here\"\n}"
+							"raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize our conversation so far.\"\n\t\t}\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/compact",
 							"host": ["{{baseUrl}}"],
 							"path": ["v1.0", "assistants", ":assistantId", "compact"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Generate (OpenAI-compatible)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"system\",\n\t\t\t\"content\": \"You are a helpful assistant.\"\n\t\t},\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Write a haiku about programming.\"\n\t\t}\n\t],\n\t\"model\": null,\n\t\"temperature\": 0.9,\n\t\"max_tokens\": 256\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "generate"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						},
+						"description": "OpenAI-compatible completion endpoint without RAG retrieval. Uses the assistant's configured completion endpoint."
+					}
+				},
+				{
+					"name": "Download Document (Public)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/documents/:documentId/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "documents", ":documentId", "download"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								},
+								{
+									"key": "documentId",
+									"value": "document-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Distinct Labels (Public)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/labels/distinct",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "labels", "distinct"],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Distinct Tags (Public)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tags/distinct",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "assistants", ":assistantId", "tags", "distinct"],
 							"variable": [
 								{
 									"key": "assistantId",

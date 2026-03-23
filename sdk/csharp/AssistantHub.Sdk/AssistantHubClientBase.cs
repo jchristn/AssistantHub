@@ -160,6 +160,49 @@ namespace AssistantHub.Sdk
             return JsonSerializer.Deserialize<T>(json, _JsonOptions);
         }
 
+        /// <summary>
+        /// Send an HTTP request message and return the response, handling errors.
+        /// </summary>
+        /// <param name="request">HTTP request message.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>HTTP response message. Caller is responsible for disposal.</returns>
+        protected async Task<HttpResponseMessage> SendRawAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
+        {
+            HttpResponseMessage response = await _HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                int statusCode = (int)response.StatusCode;
+                string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                response.Dispose();
+                HandleErrorResponse(statusCode, responseBody);
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// Send an HTTP request message with a completion option and return the response, handling errors.
+        /// </summary>
+        /// <param name="request">HTTP request message.</param>
+        /// <param name="completionOption">HTTP completion option for streaming support.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>HTTP response message. Caller is responsible for disposal.</returns>
+        protected async Task<HttpResponseMessage> SendRawAsync(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken = default)
+        {
+            HttpResponseMessage response = await _HttpClient.SendAsync(request, completionOption, cancellationToken).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                int statusCode = (int)response.StatusCode;
+                string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                response.Dispose();
+                HandleErrorResponse(statusCode, responseBody);
+            }
+
+            return response;
+        }
+
         #endregion
 
         #region Private-Methods

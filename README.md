@@ -571,6 +571,20 @@ For complete endpoint documentation including request/response schemas and examp
 
 ---
 
+## SDKs
+
+Client libraries are available for integrating with the AssistantHub API:
+
+| SDK | Location | Description |
+|---|---|---|
+| **JavaScript/TypeScript** | [`sdk/js/`](sdk/js/) | Dual ESM/CJS output, native fetch, async generators for SSE streaming |
+| **Python** | [`sdk/python/`](sdk/python/) | Pydantic v2 models, httpx client, PEP 561 compliant |
+| **C#** | [`sdk/csharp/`](sdk/csharp/) | .NET 8.0, System.Text.Json, typed exceptions, IAsyncEnumerable streaming |
+
+Each SDK directory contains its own README with installation instructions and usage examples.
+
+---
+
 ## Issues, Feedback, and Improvements
 
 - **Bug Reports and Feature Requests** -- Use the [Issues](../../issues) tab to report bugs or request new features.

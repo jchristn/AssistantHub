@@ -136,6 +136,7 @@ Operational notes:
 - **LLM-based re-ranking** -- Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
 - **Metadata filtering** -- Filter RAG retrieval by document labels (required/excluded string lists) and tags (key-value conditions with conditional operators). Configure default filters per assistant and/or override per-conversation via the `metadata_filter` field on chat completion requests.
 - **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
+- **RAG evaluation** -- Built-in evaluation framework for measuring retrieval and response quality. Define ground-truth facts (question/expected-facts pairs) per assistant, run automated evaluation passes with LLM-based judging, and review per-fact results with pass/fail verdicts. Supports custom judge prompts and real-time SSE progress streaming.
 
 ---
 
@@ -307,7 +308,12 @@ The server reads configuration from `assistanthub.json` in the working directory
   "Chunking": {
     "Endpoint": "http://partio-server:8400",
     "AccessKey": "partioadmin",
-    "EndpointId": "ep_..."
+    "EndpointId": "default"
+  },
+  "Embeddings": {
+    "Endpoint": "http://partio-server:8400",
+    "AccessKey": "partioadmin",
+    "EndpointId": "default"
   },
   "Inference": {
     "Provider": "Ollama",
@@ -320,11 +326,11 @@ The server reads configuration from `assistanthub.json` in the working directory
     "AccessKey": "recalldbadmin"
   },
   "AdminApiKeys": [
-    "assistanthubadmin"
+    "changeme"
   ],
   "DefaultTenant": {
     "Id": "default",
-    "Name": "Default Tenant"
+    "Name": "Default"
   },
   "ProcessingLog": {
     "Directory": "./processing-logs/",
@@ -357,7 +363,8 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `Database` | Database type (`Sqlite`, `Postgresql`, `SqlServer`, `Mysql`) and connection details. |
 | `S3` | S3-compatible object storage (Less3) for uploaded documents. |
 | `DocumentAtom` | Endpoint and access key for the DocumentAtom document-processing service. |
-| `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking/embedding service. |
+| `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking service. |
+| `Embeddings` | Endpoint, access key, and default endpoint ID for the Partio embeddings service. |
 | `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model. |
 | `RecallDb` | Endpoint and access key for the RecallDB vector database service. |
 | `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
@@ -423,14 +430,18 @@ For complete endpoint documentation including request/response schemas and examp
 | Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio embedding endpoint management and smoke testing (admin only) |
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio completion endpoint management and smoke testing (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
-| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings` | Per-assistant endpoint, prompt, and RAG configuration. The selected managed inference endpoint is the source of truth for provider and model selection (owner or admin). |
+| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify` | Per-assistant endpoint, prompt, RAG, and Slack configuration. Includes draft Slack connectivity verification (owner or admin). |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
 | Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |
 | Feedback | `GET /v1.0/feedback`, `GET/DELETE /v1.0/feedback/{id}` | View and manage user feedback |
 | History | `GET /v1.0/history`, `GET/DELETE /v1.0/history/{id}` | View and manage chat history with timing metrics |
 | Threads | `GET /v1.0/threads` | List conversation threads |
-| Models | `GET /v1.0/models`, `POST /v1.0/models/pull`, `GET .../pull/status` | List, pull, and check pull status for inference models |
+| Models | `GET /v1.0/models`, `POST /v1.0/models/pull`, `GET .../pull/status`, `DELETE /v1.0/models/{modelName}` | List, pull, delete, and check pull status for inference models |
+| Eval Facts | `PUT/GET /v1.0/eval/facts`, `GET/PUT/DELETE /v1.0/eval/facts/{factId}` | Ground-truth fact management for RAG evaluation |
+| Eval Runs | `POST/GET /v1.0/eval/runs`, `GET/DELETE /v1.0/eval/runs/{runId}`, `GET .../results`, `GET .../stream` | Start, list, and stream evaluation runs with LLM-judged results |
+| Eval Results | `GET /v1.0/eval/results/{resultId}` | Retrieve individual evaluation result details |
+| Eval Judge Prompt | `GET /v1.0/eval/judge-prompt/default` | Retrieve the default judge prompt template |
 | Configuration | `GET/PUT /v1.0/configuration` | View and update server configuration (admin only) |
 | Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG and optional metadata filtering (unauthenticated, SSE or JSON) |
 | Public Generate | `POST /v1.0/assistants/{id}/generate` | Lightweight inference without RAG (unauthenticated) |

@@ -12,7 +12,8 @@ namespace AssistantHub.Sdk
     using AssistantHub.Sdk.Models;
 
     /// <summary>
-    /// Client for the AssistantHub API providing methods for assistants, collections, threads, and chat.
+    /// Client for the AssistantHub API providing methods for assistants, collections, threads, chat,
+    /// endpoints, documents, ingestion rules, and search.
     /// </summary>
     public class AssistantHubClient : AssistantHubClientBase
     {
@@ -352,6 +353,413 @@ namespace AssistantHub.Sdk
                     }
                 }
             }
+        }
+
+        #endregion
+
+        #region Embedding-Endpoints
+
+        /// <summary>
+        /// List embedding endpoints.
+        /// </summary>
+        /// <param name="query">Optional enumeration query for pagination and filtering.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing embedding endpoints.</returns>
+        public async Task<EnumerationResult<EmbeddingEndpoint>> ListEmbeddingEndpointsAsync(EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<EmbeddingEndpoint>>(HttpMethod.Post, "/v1.0/endpoints/embedding/enumerate", query, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get an embedding endpoint by identifier.
+        /// </summary>
+        /// <param name="endpointId">Embedding endpoint identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The embedding endpoint.</returns>
+        public async Task<EmbeddingEndpoint> GetEmbeddingEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            return await SendAsync<EmbeddingEndpoint>(HttpMethod.Get, "/v1.0/endpoints/embedding/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new embedding endpoint.
+        /// </summary>
+        /// <param name="endpoint">Embedding endpoint to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created embedding endpoint.</returns>
+        public async Task<EmbeddingEndpoint> CreateEmbeddingEndpointAsync(EmbeddingEndpoint endpoint, CancellationToken cancellationToken = default)
+        {
+            if (endpoint == null)
+                throw new ArgumentNullException(nameof(endpoint));
+
+            return await SendAsync<EmbeddingEndpoint>(HttpMethod.Put, "/v1.0/endpoints/embedding", endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing embedding endpoint.
+        /// </summary>
+        /// <param name="endpointId">Embedding endpoint identifier.</param>
+        /// <param name="endpoint">Updated embedding endpoint data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated embedding endpoint.</returns>
+        public async Task<EmbeddingEndpoint> UpdateEmbeddingEndpointAsync(string endpointId, EmbeddingEndpoint endpoint, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+            if (endpoint == null)
+                throw new ArgumentNullException(nameof(endpoint));
+
+            return await SendAsync<EmbeddingEndpoint>(HttpMethod.Put, "/v1.0/endpoints/embedding/" + endpointId, endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an embedding endpoint.
+        /// </summary>
+        /// <param name="endpointId">Embedding endpoint identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteEmbeddingEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/endpoints/embedding/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Check health status of all embedding endpoints.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>List of endpoint health statuses.</returns>
+        public async Task<List<EndpointHealthStatus>> CheckEmbeddingHealthAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<List<EndpointHealthStatus>>(HttpMethod.Get, "/v1.0/endpoints/embedding/health", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Completion-Endpoints
+
+        /// <summary>
+        /// List completion endpoints.
+        /// </summary>
+        /// <param name="query">Optional enumeration query for pagination and filtering.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing completion endpoints.</returns>
+        public async Task<EnumerationResult<CompletionEndpoint>> ListCompletionEndpointsAsync(EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<CompletionEndpoint>>(HttpMethod.Post, "/v1.0/endpoints/completion/enumerate", query, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a completion endpoint by identifier.
+        /// </summary>
+        /// <param name="endpointId">Completion endpoint identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The completion endpoint.</returns>
+        public async Task<CompletionEndpoint> GetCompletionEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            return await SendAsync<CompletionEndpoint>(HttpMethod.Get, "/v1.0/endpoints/completion/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new completion endpoint.
+        /// </summary>
+        /// <param name="endpoint">Completion endpoint to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created completion endpoint.</returns>
+        public async Task<CompletionEndpoint> CreateCompletionEndpointAsync(CompletionEndpoint endpoint, CancellationToken cancellationToken = default)
+        {
+            if (endpoint == null)
+                throw new ArgumentNullException(nameof(endpoint));
+
+            return await SendAsync<CompletionEndpoint>(HttpMethod.Put, "/v1.0/endpoints/completion", endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing completion endpoint.
+        /// </summary>
+        /// <param name="endpointId">Completion endpoint identifier.</param>
+        /// <param name="endpoint">Updated completion endpoint data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated completion endpoint.</returns>
+        public async Task<CompletionEndpoint> UpdateCompletionEndpointAsync(string endpointId, CompletionEndpoint endpoint, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+            if (endpoint == null)
+                throw new ArgumentNullException(nameof(endpoint));
+
+            return await SendAsync<CompletionEndpoint>(HttpMethod.Put, "/v1.0/endpoints/completion/" + endpointId, endpoint, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a completion endpoint.
+        /// </summary>
+        /// <param name="endpointId">Completion endpoint identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteCompletionEndpointAsync(string endpointId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId))
+                throw new ArgumentNullException(nameof(endpointId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/endpoints/completion/" + endpointId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Check health status of all completion endpoints.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>List of endpoint health statuses.</returns>
+        public async Task<List<EndpointHealthStatus>> CheckCompletionHealthAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<List<EndpointHealthStatus>>(HttpMethod.Get, "/v1.0/endpoints/completion/health", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Documents
+
+        /// <summary>
+        /// List documents with optional filtering.
+        /// </summary>
+        /// <param name="query">Optional enumeration query for pagination and filtering.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing documents.</returns>
+        public async Task<EnumerationResult<AssistantDocument>> ListDocumentsAsync(EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<AssistantDocument>>(HttpMethod.Get, "/v1.0/documents", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a document by identifier.
+        /// </summary>
+        /// <param name="documentId">Document identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The document.</returns>
+        public async Task<AssistantDocument> GetDocumentAsync(string documentId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentNullException(nameof(documentId));
+
+            return await SendAsync<AssistantDocument>(HttpMethod.Get, "/v1.0/documents/" + documentId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload a document for ingestion.
+        /// </summary>
+        /// <param name="ingestionRuleId">Ingestion rule identifier to process the document with.</param>
+        /// <param name="content">Raw file content as bytes.</param>
+        /// <param name="name">Optional display name for the document.</param>
+        /// <param name="originalFilename">Optional original filename.</param>
+        /// <param name="contentType">Optional MIME content type.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created document.</returns>
+        public async Task<AssistantDocument> UploadDocumentAsync(
+            string ingestionRuleId,
+            byte[] content,
+            string name = null,
+            string originalFilename = null,
+            string contentType = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(ingestionRuleId))
+                throw new ArgumentNullException(nameof(ingestionRuleId));
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
+            Dictionary<string, object> body = new Dictionary<string, object>
+            {
+                { "IngestionRuleId", ingestionRuleId },
+                { "Base64Content", Convert.ToBase64String(content) }
+            };
+
+            if (!String.IsNullOrEmpty(name))
+                body["Name"] = name;
+            if (!String.IsNullOrEmpty(originalFilename))
+                body["OriginalFilename"] = originalFilename;
+            if (!String.IsNullOrEmpty(contentType))
+                body["ContentType"] = contentType;
+
+            return await SendAsync<AssistantDocument>(HttpMethod.Put, "/v1.0/documents", body, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload a document for ingestion from a stream.
+        /// </summary>
+        /// <param name="ingestionRuleId">Ingestion rule identifier to process the document with.</param>
+        /// <param name="stream">Stream containing the file content.</param>
+        /// <param name="name">Optional display name for the document.</param>
+        /// <param name="originalFilename">Optional original filename.</param>
+        /// <param name="contentType">Optional MIME content type.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created document.</returns>
+        public async Task<AssistantDocument> UploadDocumentAsync(
+            string ingestionRuleId,
+            Stream stream,
+            string name = null,
+            string originalFilename = null,
+            string contentType = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(ingestionRuleId))
+                throw new ArgumentNullException(nameof(ingestionRuleId));
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
+                return await UploadDocumentAsync(ingestionRuleId, memoryStream.ToArray(), name, originalFilename, contentType, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Delete a document.
+        /// </summary>
+        /// <param name="documentId">Document identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteDocumentAsync(string documentId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentNullException(nameof(documentId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/documents/" + documentId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete multiple documents at once.
+        /// </summary>
+        /// <param name="documentIds">List of document identifiers to delete.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task BulkDeleteDocumentsAsync(List<string> documentIds, CancellationToken cancellationToken = default)
+        {
+            if (documentIds == null)
+                throw new ArgumentNullException(nameof(documentIds));
+
+            await SendAsync(HttpMethod.Post, "/v1.0/documents/delete", documentIds, cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Ingestion-Rules
+
+        /// <summary>
+        /// List ingestion rules.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Enumeration result containing ingestion rules.</returns>
+        public async Task<EnumerationResult<IngestionRule>> ListIngestionRulesAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<IngestionRule>>(HttpMethod.Get, "/v1.0/ingestion-rules", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get an ingestion rule by identifier.
+        /// </summary>
+        /// <param name="ruleId">Ingestion rule identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The ingestion rule.</returns>
+        public async Task<IngestionRule> GetIngestionRuleAsync(string ruleId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(ruleId))
+                throw new ArgumentNullException(nameof(ruleId));
+
+            return await SendAsync<IngestionRule>(HttpMethod.Get, "/v1.0/ingestion-rules/" + ruleId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new ingestion rule.
+        /// </summary>
+        /// <param name="rule">Ingestion rule to create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created ingestion rule.</returns>
+        public async Task<IngestionRule> CreateIngestionRuleAsync(IngestionRule rule, CancellationToken cancellationToken = default)
+        {
+            if (rule == null)
+                throw new ArgumentNullException(nameof(rule));
+
+            return await SendAsync<IngestionRule>(HttpMethod.Put, "/v1.0/ingestion-rules", rule, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update an existing ingestion rule.
+        /// </summary>
+        /// <param name="ruleId">Ingestion rule identifier.</param>
+        /// <param name="rule">Updated ingestion rule data.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated ingestion rule.</returns>
+        public async Task<IngestionRule> UpdateIngestionRuleAsync(string ruleId, IngestionRule rule, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(ruleId))
+                throw new ArgumentNullException(nameof(ruleId));
+            if (rule == null)
+                throw new ArgumentNullException(nameof(rule));
+
+            return await SendAsync<IngestionRule>(HttpMethod.Put, "/v1.0/ingestion-rules/" + ruleId, rule, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an ingestion rule.
+        /// </summary>
+        /// <param name="ruleId">Ingestion rule identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        public async Task DeleteIngestionRuleAsync(string ruleId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(ruleId))
+                throw new ArgumentNullException(nameof(ruleId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/ingestion-rules/" + ruleId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Search
+
+        /// <summary>
+        /// Search documents via RAG retrieval through the chat endpoint.
+        /// Sends a single user message to the assistant and returns the full response
+        /// including retrieval results and citations.
+        /// </summary>
+        /// <param name="assistantId">Assistant identifier to search through.</param>
+        /// <param name="query">Search query text.</param>
+        /// <param name="threadId">Optional thread identifier for conversation continuity.</param>
+        /// <param name="maxTokens">Optional maximum tokens for generation.</param>
+        /// <param name="temperature">Optional temperature for generation.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Chat completion response containing retrieval results and citations.</returns>
+        public async Task<ChatCompletionResponse> SearchAsync(
+            string assistantId,
+            string query,
+            string threadId = null,
+            int? maxTokens = null,
+            double? temperature = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (String.IsNullOrWhiteSpace(query))
+                throw new ArgumentNullException(nameof(query));
+
+            ChatCompletionRequest request = new ChatCompletionRequest
+            {
+                Messages = new List<ChatCompletionMessage>
+                {
+                    new ChatCompletionMessage { Role = "user", Content = query }
+                }
+            };
+
+            if (maxTokens.HasValue)
+                request.MaxTokens = maxTokens.Value;
+            if (temperature.HasValue)
+                request.Temperature = temperature.Value;
+
+            return await SendMessageAsync(assistantId, request, threadId, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

@@ -4,7 +4,9 @@ namespace Test.Sdk
     using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Sdk;
     using Test.Common;
+    using Test.Sdk.Tests;
 
     public class Program
     {
@@ -26,7 +28,11 @@ namespace Test.Sdk
 
             try
             {
-                // Test suite classes will be added here as they are implemented.
+                using (AssistantHubClient client = new AssistantHubClient(config.BaseUrl, config.ApiKey))
+                {
+                    await HealthTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await TenantTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {

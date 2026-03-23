@@ -82,6 +82,7 @@ from .models import (
     WebCrawlRepositorySettings,
 )
 from ._base_client import BaseClient
+from .async_client import AsyncAssistantHubClient
 from .client import AssistantHubClient
 
 __all__ = [
@@ -163,7 +164,8 @@ __all__ = [
     "TenantMetadata",
     "UserMaster",
     "WebCrawlRepositorySettings",
-    # Client
+    # Clients
     "AssistantHubClient",
+    "AsyncAssistantHubClient",
     "BaseClient",
 ]

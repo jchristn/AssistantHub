@@ -34,6 +34,8 @@ namespace Test.Sdk
                     await TenantTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await AssistantTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await CollectionTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await EndpointTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await InferenceTests.RunAsync(runner, client, token).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

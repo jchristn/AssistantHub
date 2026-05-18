@@ -86,6 +86,8 @@ copy /y "%FACTORY_DIR%assistanthub.db-wal" "%DOCKER_DIR%assistanthub\data\assist
 echo         Restored assistanthub.db
 
 del /q "%DOCKER_DIR%less3\less3.db" 2>nul
+del /q "%DOCKER_DIR%less3\less3.db-shm" 2>nul
+del /q "%DOCKER_DIR%less3\less3.db-wal" 2>nul
 copy /y "%FACTORY_DIR%less3.db" "%DOCKER_DIR%less3\less3.db" >nul
 echo         Restored less3.db
 

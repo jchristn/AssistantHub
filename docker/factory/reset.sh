@@ -89,6 +89,8 @@ echo "        Restored assistanthub.db"
 
 # Less3
 rm -f "$DOCKER_DIR/less3/less3.db"
+rm -f "$DOCKER_DIR/less3/less3.db-shm"
+rm -f "$DOCKER_DIR/less3/less3.db-wal"
 cp "$FACTORY_DIR/less3.db" "$DOCKER_DIR/less3/less3.db"
 echo "        Restored less3.db"
 

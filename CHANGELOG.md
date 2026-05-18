@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.10.0 - API Explorer And Request History
+
+### Added
+- **HTTP request history subsystem**: AssistantHub now captures searchable request and response metadata for system APIs and assistant-facing APIs, including headers, bodies, status, duration, assistant ID, thread ID, and tenant context with redaction and truncation controls.
+- **Dashboard Request History view**: New operator surface for filtering traffic, summarizing success and failure rates, inspecting request and response detail, and replaying captured calls into the explorer.
+- **Dashboard API Explorer**: New live API explorer driven by runtime route metadata, with request editing, response inspection, code snippets, recent requests, and assistant-specific helper flows for public assistant APIs.
+- **Runtime OpenAPI exposure**: AssistantHub now exposes `/openapi.json` from the running server for explorer consumption and route-surface verification.
+- Migration script: `migrations/008_upgrade_to_v0.10.0.sql`
+
+### Changed
+- Docker image tags updated to `v0.10.0`
+- Endpoint test workflows can now open directly in the shared API Explorer with prebuilt request presets
+- Product and package versions updated to `0.10.0`
+
+### Breaking
+- Database schema changes require running `migrations/008_upgrade_to_v0.10.0.sql` for existing installations
+
 ## v0.9.0 - Slack Support Added
 
 ### Added

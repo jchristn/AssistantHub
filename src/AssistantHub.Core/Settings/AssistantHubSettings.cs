@@ -124,6 +124,15 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
+        /// Request history settings.
+        /// </summary>
+        public RequestHistorySettings RequestHistory
+        {
+            get => _RequestHistory;
+            set { if (value != null) _RequestHistory = value; }
+        }
+
+        /// <summary>
         /// Crawl settings.
         /// </summary>
         public CrawlSettings Crawl
@@ -147,6 +156,7 @@ namespace AssistantHub.Core.Settings
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();
+        private RequestHistorySettings _RequestHistory = new RequestHistorySettings();
         private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
         private CrawlSettings _Crawl = new CrawlSettings();
 

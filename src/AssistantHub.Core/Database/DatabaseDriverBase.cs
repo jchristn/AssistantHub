@@ -55,6 +55,11 @@ namespace AssistantHub.Core.Database
         public IChatHistoryMethods ChatHistory { get; protected set; }
 
         /// <summary>
+        /// Request history methods.
+        /// </summary>
+        public IRequestHistoryMethods RequestHistory { get; protected set; }
+
+        /// <summary>
         /// Tenant methods.
         /// </summary>
         public ITenantMethods Tenant { get; protected set; }

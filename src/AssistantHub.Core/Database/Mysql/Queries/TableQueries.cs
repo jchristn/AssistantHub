@@ -264,6 +264,44 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  PRIMARY KEY (`id`)" +
             ")";
 
+        internal static string CreateRequestHistoryTable =
+            "CREATE TABLE IF NOT EXISTS `request_history` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256), " +
+            "  `user_id` VARCHAR(256), " +
+            "  `credential_id` VARCHAR(256), " +
+            "  `assistant_id` VARCHAR(256), " +
+            "  `thread_id` VARCHAR(256), " +
+            "  `principal_name` TEXT, " +
+            "  `request_type` VARCHAR(64) NOT NULL DEFAULT 'SystemApi', " +
+            "  `source_type` VARCHAR(64) NOT NULL DEFAULT 'api', " +
+            "  `http_method` VARCHAR(16) NOT NULL, " +
+            "  `route_template` TEXT, " +
+            "  `request_path` TEXT NOT NULL, " +
+            "  `request_url` LONGTEXT NOT NULL, " +
+            "  `source_ip` VARCHAR(128), " +
+            "  `status_code` INT NOT NULL DEFAULT 0, " +
+            "  `success` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `request_content_type` VARCHAR(256), " +
+            "  `response_content_type` VARCHAR(256), " +
+            "  `request_size_bytes` BIGINT NOT NULL DEFAULT 0, " +
+            "  `response_size_bytes` BIGINT NOT NULL DEFAULT 0, " +
+            "  `request_body_truncated` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `response_body_truncated` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `request_body_is_binary` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `response_body_is_binary` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `route_parameters_json` LONGTEXT, " +
+            "  `query_parameters_json` LONGTEXT, " +
+            "  `request_headers_json` LONGTEXT, " +
+            "  `response_headers_json` LONGTEXT, " +
+            "  `request_body` LONGTEXT, " +
+            "  `response_body` LONGTEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
         #endregion
 
         #region Indices
@@ -363,6 +401,33 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateChatHistoryTenantIdIndex =
             "CREATE INDEX idx_chat_history_tenant_id ON `chat_history` (`tenant_id`)";
+
+        internal static string CreateRequestHistoryTenantIdIndex =
+            "CREATE INDEX idx_request_history_tenant_id ON `request_history` (`tenant_id`)";
+
+        internal static string CreateRequestHistoryUserIdIndex =
+            "CREATE INDEX idx_request_history_user_id ON `request_history` (`user_id`)";
+
+        internal static string CreateRequestHistoryCredentialIdIndex =
+            "CREATE INDEX idx_request_history_credential_id ON `request_history` (`credential_id`)";
+
+        internal static string CreateRequestHistoryAssistantIdIndex =
+            "CREATE INDEX idx_request_history_assistant_id ON `request_history` (`assistant_id`)";
+
+        internal static string CreateRequestHistoryThreadIdIndex =
+            "CREATE INDEX idx_request_history_thread_id ON `request_history` (`thread_id`)";
+
+        internal static string CreateRequestHistoryStatusCodeIndex =
+            "CREATE INDEX idx_request_history_status_code ON `request_history` (`status_code`)";
+
+        internal static string CreateRequestHistorySuccessIndex =
+            "CREATE INDEX idx_request_history_success ON `request_history` (`success`)";
+
+        internal static string CreateRequestHistoryCreatedUtcIndex =
+            "CREATE INDEX idx_request_history_created_utc ON `request_history` (`created_utc`(191))";
+
+        internal static string CreateRequestHistoryPathIndex =
+            "CREATE INDEX idx_request_history_request_path ON `request_history` (`request_path`(191))";
 
         #endregion
     }

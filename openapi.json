@@ -18,6 +18,7 @@
   ],
   "tags": [
     { "name": "Health", "description": "Health check endpoints" },
+    { "name": "OpenAPI", "description": "Runtime OpenAPI document" },
     { "name": "Authentication", "description": "User authentication" },
     { "name": "Users", "description": "User management (Admin)" },
     { "name": "Credentials", "description": "API credential management (Admin)" },
@@ -34,6 +35,7 @@
     { "name": "Feedback", "description": "Assistant feedback records (Auth)" },
     { "name": "History", "description": "Chat history records (Auth)" },
     { "name": "Threads", "description": "Conversation thread listing (Auth)" },
+    { "name": "Request History", "description": "HTTP request history and replay (Admin or Tenant Admin)" },
     { "name": "Models", "description": "Inference model management" },
     { "name": "Configuration", "description": "Application configuration (Admin)" },
     { "name": "Evaluation", "description": "RAG evaluation: facts, runs, results, and streaming" },
@@ -55,7 +57,7 @@
                   "type": "object",
                   "properties": {
                     "Product": { "type": "string", "example": "AssistantHub" },
-                    "Version": { "type": "string", "example": "0.9.0" },
+                    "Version": { "type": "string", "example": "0.10.0" },
                     "Timestamp": { "type": "string", "format": "date-time" }
                   }
                 }
@@ -71,6 +73,24 @@
         "security": [],
         "responses": {
           "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": ["OpenAPI"],
+        "summary": "Get runtime OpenAPI document",
+        "description": "Returns the runtime OpenAPI document generated from the currently registered route surface.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OpenAPI document",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
         }
       }
     },
@@ -1877,6 +1897,157 @@
         "responses": {
           "200": {
             "description": "List of threads",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/requesthistory": {
+      "get": {
+        "tags": ["Request History"],
+        "summary": "List request-history entries",
+        "description": "Enumerate captured HTTP request-history entries for system and assistant-facing APIs.",
+        "parameters": [
+          { "$ref": "#/components/parameters/maxResults" },
+          { "$ref": "#/components/parameters/continuationToken" },
+          { "$ref": "#/components/parameters/ordering" },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "method", "in": "query", "schema": { "type": "string" } },
+          { "name": "path", "in": "query", "schema": { "type": "string" } },
+          { "name": "statusCode", "in": "query", "schema": { "type": "integer" } },
+          { "name": "success", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "tenantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "assistantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "threadId", "in": "query", "schema": { "type": "string" } },
+          { "name": "requestType", "in": "query", "schema": { "type": "string" } },
+          { "name": "sourceType", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of request-history entries",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/requesthistory/summary": {
+      "get": {
+        "tags": ["Request History"],
+        "summary": "Summarize request-history traffic",
+        "description": "Return aggregate request-history counts and time-bucketed summaries for the supplied filter.",
+        "parameters": [
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketMinutes", "in": "query", "schema": { "type": "integer" } },
+          { "name": "method", "in": "query", "schema": { "type": "string" } },
+          { "name": "path", "in": "query", "schema": { "type": "string" } },
+          { "name": "statusCode", "in": "query", "schema": { "type": "integer" } },
+          { "name": "success", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "tenantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "assistantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "threadId", "in": "query", "schema": { "type": "string" } },
+          { "name": "requestType", "in": "query", "schema": { "type": "string" } },
+          { "name": "sourceType", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request-history summary",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/v1.0/requesthistory/{requestId}": {
+      "get": {
+        "tags": ["Request History"],
+        "summary": "Get a request-history entry",
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request-history entry",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Request History"],
+        "summary": "Delete a request-history entry",
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Request-history entry deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/requesthistory/{requestId}/detail": {
+      "get": {
+        "tags": ["Request History"],
+        "summary": "Get request-history detail",
+        "parameters": [
+          { "name": "requestId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed request-history entry",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/requesthistory/bulk": {
+      "delete": {
+        "tags": ["Request History"],
+        "summary": "Bulk delete request-history entries",
+        "description": "Delete all request-history entries matching the supplied query filters.",
+        "parameters": [
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "method", "in": "query", "schema": { "type": "string" } },
+          { "name": "path", "in": "query", "schema": { "type": "string" } },
+          { "name": "statusCode", "in": "query", "schema": { "type": "integer" } },
+          { "name": "success", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "tenantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "assistantId", "in": "query", "schema": { "type": "string" } },
+          { "name": "threadId", "in": "query", "schema": { "type": "string" } },
+          { "name": "requestType", "in": "query", "schema": { "type": "string" } },
+          { "name": "sourceType", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk delete result",
             "content": {
               "application/json": {
                 "schema": { "type": "object" }

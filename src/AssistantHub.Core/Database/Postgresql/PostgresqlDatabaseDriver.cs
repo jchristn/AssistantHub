@@ -50,6 +50,7 @@ namespace AssistantHub.Core.Database.Postgresql
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             Tenant = new TenantMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
@@ -90,10 +91,20 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.CreateIngestionRulesNameIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
                 TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateRequestHistoryTable,
                 TableQueries.CreateChatHistoryTenantIdIndex,
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
+                TableQueries.CreateRequestHistoryTenantIdIndex,
+                TableQueries.CreateRequestHistoryUserIdIndex,
+                TableQueries.CreateRequestHistoryCredentialIdIndex,
+                TableQueries.CreateRequestHistoryAssistantIdIndex,
+                TableQueries.CreateRequestHistoryThreadIdIndex,
+                TableQueries.CreateRequestHistoryStatusCodeIndex,
+                TableQueries.CreateRequestHistorySuccessIndex,
+                TableQueries.CreateRequestHistoryCreatedUtcIndex,
+                TableQueries.CreateRequestHistoryPathIndex,
                 TableQueries.CreateCrawlPlansTable,
                 TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateCrawlPlansTenantIdIndex,

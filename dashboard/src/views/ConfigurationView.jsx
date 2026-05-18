@@ -35,6 +35,18 @@ const configTooltips = {
   MinimumSeverity: 'Minimum severity level for logging',
   ConsoleLogging: 'Whether to output logs to the console',
   EnableColors: 'Whether to use colored console output',
+  DashboardUrl: 'Browser URL for the service dashboard',
+};
+
+const getExternalServiceLinks = (config) => {
+  if (!config) return [];
+
+  return [
+    { key: 's3', label: 'Less3 (S3 Storage)', url: config.S3?.DashboardUrl },
+    { key: 'documentatom', label: 'DocumentAtom', url: config.DocumentAtom?.DashboardUrl },
+    { key: 'partio', label: 'Partio (Chunking/Embeddings)', url: config.Chunking?.DashboardUrl || config.Inference?.DashboardUrl },
+    { key: 'recalldb', label: 'RecallDb (Retrieval)', url: config.RecallDb?.DashboardUrl },
+  ].filter(link => typeof link.url === 'string' && link.url.trim().length > 0);
 };
 
 function ConfigurationView() {
@@ -77,7 +89,7 @@ function ConfigurationView() {
       <div className="config-summary-section">
         <h4>{title}</h4>
         <div className="config-summary-grid">
-          {Object.entries(obj).filter(([k]) => k !== 'statusCode').map(([key, value]) => (
+          {Object.entries(obj).filter(([k]) => k !== 'statusCode' && k !== 'DashboardUrl').map(([key, value]) => (
             <React.Fragment key={key}>
               <span className="config-summary-label">{configTooltips[key] ? <Tooltip text={configTooltips[key]}>{key}</Tooltip> : key}</span>
               <span className="config-summary-value">
@@ -95,6 +107,8 @@ function ConfigurationView() {
       </div>
     );
   };
+
+  const externalServiceLinks = getExternalServiceLinks(config);
 
   return (
     <div>
@@ -125,6 +139,25 @@ function ConfigurationView() {
           {renderSummarySection('Inference', config.Inference)}
           {renderSummarySection('RecallDb', config.RecallDb)}
           {renderSummarySection('Logging', config.Logging)}
+          {externalServiceLinks.length > 0 && (
+            <div className="config-summary-section">
+              <h4>External Service Dashboards</h4>
+              <div className="config-links-grid">
+                {externalServiceLinks.map(link => (
+                  <a
+                    key={link.key}
+                    className="config-link-card"
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    <span className="config-link-card-label">{link.label}</span>
+                    <span className="config-link-card-url">{link.url}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

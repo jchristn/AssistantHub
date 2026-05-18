@@ -107,6 +107,15 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate a request-history identifier.
+        /// </summary>
+        /// <returns>Request-history identifier.</returns>
+        public static string NewRequestHistoryId()
+        {
+            return _Generator.GenerateKSortable(Constants.RequestHistoryIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a crawl plan identifier.
         /// </summary>
         /// <returns>Crawl plan identifier.</returns>

@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-Slack support was added in `v0.9.0`, allowing each assistant to connect directly to Slack and process threaded Slack conversations through the same AssistantHub chat pipeline.
+`v0.10.0` adds first-class API observability and testing inside the product: a live API Explorer, a full HTTP Request History surface, runtime `/openapi.json`, and request replay between the two operator views.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,27 @@ Slack support was added in `v0.9.0`, allowing each assistant to connect directly
 </details>
 
 ---
+
+## New in v0.10.0
+
+- **API Explorer** -- Browse the live AssistantHub route surface from `/openapi.json`, execute management APIs directly from the dashboard, inspect responses, and generate reusable cURL or JavaScript snippets.
+- **Assistant API explorer mode** -- Exercise assistant-facing APIs end-to-end from the dashboard, including public metadata, thread creation, chat, compaction, generation, feedback, and distinct labels or tags.
+- **Request History** -- Capture and search request and response metadata across system APIs and assistant traffic with replay into the explorer, retention cleanup, body truncation, and redaction controls.
+- **Migration script** -- Existing deployments can add the new request-history table with `migrations/008_upgrade_to_v0.10.0.sql`.
+
+## API Observability Added In v0.10.0
+
+AssistantHub now includes two operator-facing tools in the dashboard:
+
+- `Request History` for searchable HTTP request and response observability
+- `API Explorer` for executing system APIs and assistant-facing APIs against the live server
+
+Operational notes:
+
+- Request-history capture is configurable under `RequestHistory` settings in `assistanthub.json`
+- Sensitive headers and selected JSON fields are redacted before persistence
+- Request and response bodies are size-limited and binary payloads are summarized rather than stored in full
+- The explorer uses the runtime `/openapi.json` route instead of a stale checked-in spec as its source of truth
 
 ## New in v0.9.0
 

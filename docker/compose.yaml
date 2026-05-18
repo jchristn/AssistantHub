@@ -41,7 +41,7 @@ services:
   # --- S3-Compatible Storage (Less3) ---
 
   less3:
-    image: jchristn77/less3:v2.1.12
+    image: jchristn77/less3:v2.2.0
     container_name: assistanthub-less3
     ports:
       - "8000:8000"
@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   less3-ui:
-    image: jchristn77/less3-ui:v2.1.12
+    image: jchristn77/less3-ui:v2.2.0
     container_name: assistanthub-less3-ui
     ports:
       - "8001:3000"
@@ -250,7 +250,7 @@ services:
     restart: "no"
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.9.0
+    image: jchristn77/assistanthub-server:v0.10.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
@@ -282,7 +282,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.9.0
+    image: jchristn77/assistanthub-dashboard:v0.10.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

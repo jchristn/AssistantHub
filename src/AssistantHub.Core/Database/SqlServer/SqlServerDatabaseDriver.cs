@@ -58,6 +58,7 @@ namespace AssistantHub.Core.Database.SqlServer
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
         }
@@ -80,6 +81,7 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
                 TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateRequestHistoryTable,
                 TableQueries.CreateCrawlPlansTable,
                 TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateTenantsNameIndex,
@@ -103,6 +105,15 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
                 TableQueries.CreateChatHistoryTenantIdIndex,
+                TableQueries.CreateRequestHistoryTenantIdIndex,
+                TableQueries.CreateRequestHistoryUserIdIndex,
+                TableQueries.CreateRequestHistoryCredentialIdIndex,
+                TableQueries.CreateRequestHistoryAssistantIdIndex,
+                TableQueries.CreateRequestHistoryThreadIdIndex,
+                TableQueries.CreateRequestHistoryStatusCodeIndex,
+                TableQueries.CreateRequestHistorySuccessIndex,
+                TableQueries.CreateRequestHistoryCreatedUtcIndex,
+                TableQueries.CreateRequestHistoryPathIndex,
                 TableQueries.CreateCrawlPlansTenantIdIndex,
                 TableQueries.CreateCrawlPlansStateIndex,
                 TableQueries.CreateCrawlOperationsTenantIdIndex,

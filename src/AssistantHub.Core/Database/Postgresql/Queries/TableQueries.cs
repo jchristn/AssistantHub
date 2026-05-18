@@ -253,6 +253,43 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  last_update_utc TEXT NOT NULL " +
             ")";
 
+        internal static string CreateRequestHistoryTable =
+            "CREATE TABLE IF NOT EXISTS request_history (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT, " +
+            "  user_id TEXT, " +
+            "  credential_id TEXT, " +
+            "  assistant_id TEXT, " +
+            "  thread_id TEXT, " +
+            "  principal_name TEXT, " +
+            "  request_type TEXT NOT NULL DEFAULT 'SystemApi', " +
+            "  source_type TEXT NOT NULL DEFAULT 'api', " +
+            "  http_method TEXT NOT NULL, " +
+            "  route_template TEXT, " +
+            "  request_path TEXT NOT NULL, " +
+            "  request_url TEXT NOT NULL, " +
+            "  source_ip TEXT, " +
+            "  status_code INTEGER NOT NULL DEFAULT 0, " +
+            "  success INTEGER NOT NULL DEFAULT 0, " +
+            "  duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  request_content_type TEXT, " +
+            "  response_content_type TEXT, " +
+            "  request_size_bytes BIGINT NOT NULL DEFAULT 0, " +
+            "  response_size_bytes BIGINT NOT NULL DEFAULT 0, " +
+            "  request_body_truncated INTEGER NOT NULL DEFAULT 0, " +
+            "  response_body_truncated INTEGER NOT NULL DEFAULT 0, " +
+            "  request_body_is_binary INTEGER NOT NULL DEFAULT 0, " +
+            "  response_body_is_binary INTEGER NOT NULL DEFAULT 0, " +
+            "  route_parameters_json TEXT, " +
+            "  query_parameters_json TEXT, " +
+            "  request_headers_json TEXT, " +
+            "  response_headers_json TEXT, " +
+            "  request_body TEXT, " +
+            "  response_body TEXT, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
         #endregion
 
         #region Indices
@@ -319,6 +356,33 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateChatHistoryCreatedUtcIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc)";
+
+        internal static string CreateRequestHistoryTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_id ON request_history (tenant_id)";
+
+        internal static string CreateRequestHistoryUserIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_user_id ON request_history (user_id)";
+
+        internal static string CreateRequestHistoryCredentialIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_credential_id ON request_history (credential_id)";
+
+        internal static string CreateRequestHistoryAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_assistant_id ON request_history (assistant_id)";
+
+        internal static string CreateRequestHistoryThreadIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_thread_id ON request_history (thread_id)";
+
+        internal static string CreateRequestHistoryStatusCodeIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_status_code ON request_history (status_code)";
+
+        internal static string CreateRequestHistorySuccessIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_success ON request_history (success)";
+
+        internal static string CreateRequestHistoryCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_created_utc ON request_history (created_utc)";
+
+        internal static string CreateRequestHistoryPathIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_request_path ON request_history (request_path)";
 
         internal static string CreateCrawlPlansTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans (tenant_id)";

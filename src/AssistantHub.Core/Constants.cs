@@ -17,7 +17,7 @@ namespace AssistantHub.Core
         /// <summary>
         /// Product version.
         /// </summary>
-        public static string ProductVersion = "0.9.0";
+        public static string ProductVersion = "0.10.0";
 
         /// <summary>
         /// Logo.
@@ -92,6 +92,11 @@ namespace AssistantHub.Core
         /// Chat history identifier prefix.
         /// </summary>
         public static string ChatHistoryIdentifierPrefix = "chist_";
+
+        /// <summary>
+        /// Request history identifier prefix.
+        /// </summary>
+        public static string RequestHistoryIdentifierPrefix = "req_";
 
         /// <summary>
         /// Tenant identifier prefix.
@@ -181,6 +186,11 @@ namespace AssistantHub.Core
         /// Chat history table name.
         /// </summary>
         public static string ChatHistoryTable = "chat_history";
+
+        /// <summary>
+        /// Request history table name.
+        /// </summary>
+        public static string RequestHistoryTable = "request_history";
 
         /// <summary>
         /// Tenants table name.

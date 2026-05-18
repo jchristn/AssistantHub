@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -12,6 +13,7 @@ import { HealthHistogram, HealthDetailModal } from '../components/HealthHistogra
 
 function EmbeddingEndpointsView() {
   const { serverUrl, credential } = useAuth();
+  const navigate = useNavigate();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editEndpoint, setEditEndpoint] = useState(null);
@@ -105,6 +107,7 @@ function EmbeddingEndpointsView() {
 
   const getRowActions = (row) => [
     { label: 'Test', onClick: () => setTestTarget(row) },
+    { label: 'Open In Explorer', onClick: () => navigate('/api-explorer', { state: { preset: { type: 'embeddingTest', endpointId: row.Id, endpointName: row.Name || row.Model } } }) },
     { label: 'Edit', onClick: () => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); } },
     { label: 'Duplicate', onClick: () => handleDuplicate(row) },
     { label: 'View JSON', onClick: () => setShowJson(row) },

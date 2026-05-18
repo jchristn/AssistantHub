@@ -21,6 +21,7 @@ namespace AssistantHub.Server
     using SyslogLogging;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// AssistantHub server.
@@ -40,6 +41,7 @@ namespace AssistantHub.Server
         private static InferenceService _Inference = null;
         private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
+        private static RequestHistoryCaptureService _RequestHistoryCapture = null;
         private static EndpointHealthCheckService _HealthCheckService = null;
         private static CrawlSchedulerService _CrawlScheduler = null;
         private static CrawlOperationCleanupService _CrawlOperationCleanup = null;
@@ -76,6 +78,7 @@ namespace AssistantHub.Server
             await StartHealthCheckServiceAsync();
             StartProcessingLogCleanup();
             StartChatHistoryCleanup();
+            StartRequestHistoryCleanup();
             await StartCrawlServicesAsync();
             await StartSlackServicesAsync();
             InitializeWebserver();
@@ -351,6 +354,7 @@ namespace AssistantHub.Server
 
             _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging);
             _Inference = new InferenceService(_Settings.Inference, _Logging);
+            _RequestHistoryCapture = new RequestHistoryCaptureService(_Database, _Settings, _Logging);
             _SlackConnectionManager = new SlackAssistantConnectionManager(_Database, _Logging, _Settings, _Retrieval, _Inference);
             _Logging.Info(_Header + "services initialized");
         }
@@ -513,6 +517,32 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "chat history cleanup loop started");
         }
 
+        private static void StartRequestHistoryCleanup()
+        {
+            _ = Task.Run(async () =>
+            {
+                while (!_TokenSource.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(_Settings.RequestHistory.PurgeIntervalMinutes), _TokenSource.Token).ConfigureAwait(false);
+                        if (_Settings.RequestHistory.Enabled)
+                            await _Database.RequestHistory.DeleteExpiredAsync(_Settings.RequestHistory.RetentionDays, _TokenSource.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _Logging.Warn(_Header + "request history cleanup error: " + e.Message);
+                    }
+                }
+            });
+
+            _Logging.Info(_Header + "request history cleanup loop started");
+        }
+
         private static async Task StartCrawlServicesAsync()
         {
             try
@@ -565,6 +595,8 @@ namespace AssistantHub.Server
             RootHandler rootHandler = new RootHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AuthenticateHandler authenticateHandler = new AuthenticateHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ChatHandler chatHandler = new ChatHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            OpenApiDocumentService openApiDocumentService = new OpenApiDocumentService(() => _Server);
+            OpenApiHandler openApiHandler = new OpenApiHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, openApiDocumentService);
             TenantHandler tenantHandler = new TenantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             UserHandler userHandler = new UserHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CredentialHandler credentialHandler = new CredentialHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
@@ -578,6 +610,7 @@ namespace AssistantHub.Server
             CompletionEndpointHandler completionEndpointHandler = new CompletionEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             FeedbackHandler feedbackHandler = new FeedbackHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             HistoryHandler historyHandler = new HistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            RequestHistoryHandler requestHistoryHandler = new RequestHistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             InferenceHandler inferenceHandler = new InferenceHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog, _CrawlScheduler);
@@ -588,6 +621,7 @@ namespace AssistantHub.Server
             // Unauthenticated routes
             _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/", rootHandler.GetRootAsync);
             _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/", rootHandler.HeadRootAsync);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/openapi.json", openApiHandler.GetOpenApiAsync);
             _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/authenticate", authenticateHandler.PostAuthenticateAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/public", chatHandler.GetAssistantPublicAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat", chatHandler.PostChatAsync);
@@ -726,6 +760,14 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/history/{historyId}", historyHandler.DeleteHistoryAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/threads", historyHandler.GetThreadsAsync);
 
+            // Authenticated routes - Request History (admin or tenant admin)
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory", requestHistoryHandler.GetRequestHistoryAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/summary", requestHistoryHandler.GetRequestHistorySummaryAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.GetRequestHistoryEntryAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}/detail", requestHistoryHandler.GetRequestHistoryEntryDetailAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.DeleteRequestHistoryEntryAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/bulk", requestHistoryHandler.DeleteRequestHistoryBulkAsync);
+
             // Authenticated routes - Configuration (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration", configurationHandler.GetConfigurationAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/configuration", configurationHandler.PutConfigurationAsync);
@@ -781,6 +823,9 @@ namespace AssistantHub.Server
                     + ctx.Request.Method + " " + ctx.Request.Url.RawWithQuery + " "
                     + ctx.Response.StatusCode + " "
                     + "(" + ctx.Timestamp.TotalMs?.ToString("F2") + "ms)");
+
+                if (_RequestHistoryCapture != null)
+                    _RequestHistoryCapture.Capture(ctx);
             };
 
             _Server.Start();

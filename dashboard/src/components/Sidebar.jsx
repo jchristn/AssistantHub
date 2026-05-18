@@ -37,6 +37,14 @@ function Sidebar({ onStartTour, onStartWizard }) {
       ],
     },
     {
+      label: 'Monitoring',
+      adminOnly: true,
+      items: [
+        { path: '/request-history', label: 'Request History', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg> },
+        { path: '/api-explorer', label: 'API Explorer', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 20.5l-6-8 6-8"/><path d="M14 3.5l6 8-6 8"/><line x1="12" y1="2" x2="12" y2="22"/></svg> },
+      ],
+    },
+    {
       label: 'Artifacts',
       adminOnly: true,
       items: [

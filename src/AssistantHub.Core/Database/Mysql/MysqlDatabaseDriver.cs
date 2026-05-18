@@ -60,6 +60,7 @@ namespace AssistantHub.Core.Database.Mysql
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
         }
 
         #endregion
@@ -81,7 +82,8 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateIngestionRulesTable,
                 TableQueries.CreateCrawlPlansTable,
                 TableQueries.CreateCrawlOperationsTable,
-                TableQueries.CreateChatHistoryTable
+                TableQueries.CreateChatHistoryTable,
+                TableQueries.CreateRequestHistoryTable
             };
 
             await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
@@ -117,7 +119,16 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryAssistantIdIndex,
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
-                TableQueries.CreateChatHistoryTenantIdIndex
+                TableQueries.CreateChatHistoryTenantIdIndex,
+                TableQueries.CreateRequestHistoryTenantIdIndex,
+                TableQueries.CreateRequestHistoryUserIdIndex,
+                TableQueries.CreateRequestHistoryCredentialIdIndex,
+                TableQueries.CreateRequestHistoryAssistantIdIndex,
+                TableQueries.CreateRequestHistoryThreadIdIndex,
+                TableQueries.CreateRequestHistoryStatusCodeIndex,
+                TableQueries.CreateRequestHistorySuccessIndex,
+                TableQueries.CreateRequestHistoryCreatedUtcIndex,
+                TableQueries.CreateRequestHistoryPathIndex
             };
 
             foreach (string indexQuery in indexQueries)

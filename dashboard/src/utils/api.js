@@ -4,6 +4,327 @@ export class ApiClient {
     this.bearerToken = bearerToken;
   }
 
+  buildUrl(path, query = null) {
+    const normalizedPath = path.startsWith('http://') || path.startsWith('https://')
+      ? path
+      : `${this.serverUrl}${path.startsWith('/') ? path : `/${path}`}`;
+
+    const url = new URL(normalizedPath);
+    if (query) {
+      Object.entries(query).forEach(([key, value]) => {
+        if (value == null || value === '') return;
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            if (item != null && item !== '') url.searchParams.append(key, item);
+          });
+        } else {
+          url.searchParams.set(key, String(value));
+        }
+      });
+    }
+
+    return url.toString();
+  }
+
+  buildRequestHeaders(headers = {}, includeAuth = true) {
+    const requestHeaders = {};
+
+    if (includeAuth && this.bearerToken && !Object.keys(headers).some((key) => key.toLowerCase() === 'authorization')) {
+      requestHeaders.Authorization = `Bearer ${this.bearerToken}`;
+    }
+
+    Object.entries(headers || {}).forEach(([key, value]) => {
+      if (!key || value == null || value === '') return;
+      requestHeaders[key] = value;
+    });
+
+    return requestHeaders;
+  }
+
+  isTextLikeContentType(contentType = '') {
+    const lowered = contentType.toLowerCase();
+    if (!lowered) return true;
+    if (lowered.startsWith('text/')) return true;
+    if (lowered.includes('json')) return true;
+    if (lowered.includes('xml')) return true;
+    if (lowered.includes('javascript')) return true;
+    if (lowered.includes('x-www-form-urlencoded')) return true;
+    if (lowered.includes('svg')) return true;
+    return false;
+  }
+
+  async parseResponsePayload(response, method = 'GET') {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (method === 'HEAD' || response.status === 204 || response.headers.get('content-length') === '0') {
+      return {
+        bodyType: 'empty',
+        text: '',
+        json: null,
+        byteLength: 0,
+      };
+    }
+
+    if (!this.isTextLikeContentType(contentType)) {
+      const bytes = await response.arrayBuffer();
+      return {
+        bodyType: 'binary',
+        text: `[binary response omitted: ${bytes.byteLength} bytes${contentType ? `, ${contentType}` : ''}]`,
+        json: null,
+        byteLength: bytes.byteLength,
+      };
+    }
+
+    const text = await response.text();
+    if (contentType.includes('application/json') || contentType.includes('text/json')) {
+      try {
+        return {
+          bodyType: 'json',
+          text,
+          json: text ? JSON.parse(text) : null,
+          byteLength: new TextEncoder().encode(text).length,
+        };
+      } catch {
+        return {
+          bodyType: 'text',
+          text,
+          json: null,
+          byteLength: new TextEncoder().encode(text).length,
+        };
+      }
+    }
+
+    try {
+      return {
+        bodyType: 'json',
+        text,
+        json: text ? JSON.parse(text) : null,
+        byteLength: new TextEncoder().encode(text).length,
+      };
+    } catch {
+      return {
+        bodyType: 'text',
+        text,
+        json: null,
+        byteLength: new TextEncoder().encode(text).length,
+      };
+    }
+  }
+
+  prepareRequestOptions(method, body = null, headers = {}, includeAuth = true) {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const requestHeaders = this.buildRequestHeaders(headers, includeAuth);
+    const options = { method, headers: requestHeaders };
+
+    if (body != null && method !== 'GET' && method !== 'HEAD') {
+      if (isFormData) {
+        options.body = body;
+      } else if (typeof body === 'string') {
+        if (!Object.keys(requestHeaders).some((key) => key.toLowerCase() === 'content-type')) {
+          requestHeaders['Content-Type'] = 'application/json';
+        }
+        options.body = body;
+      } else {
+        if (!Object.keys(requestHeaders).some((key) => key.toLowerCase() === 'content-type')) {
+          requestHeaders['Content-Type'] = 'application/json';
+        }
+        options.body = JSON.stringify(body);
+      }
+    }
+
+    return options;
+  }
+
+  async requestRaw({
+    method = 'GET',
+    path,
+    query = null,
+    headers = {},
+    body = null,
+    includeAuth = true,
+    signal = null,
+  }) {
+    const started = performance.now();
+    const url = this.buildUrl(path, query);
+    const options = this.prepareRequestOptions(method, body, headers, includeAuth);
+    if (signal) options.signal = signal;
+
+    const response = await fetch(url, options);
+    const payload = await this.parseResponsePayload(response, method);
+    const responseHeaders = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    const result = {
+      ok: response.ok,
+      statusCode: response.status,
+      elapsedMs: Math.round(performance.now() - started),
+      url,
+      method,
+      headers: responseHeaders,
+      contentType: response.headers.get('content-type') || '',
+      bodyType: payload.bodyType,
+      text: payload.text,
+      json: payload.json,
+      byteLength: payload.byteLength,
+      errorMessage: null,
+    };
+
+    if (!response.ok) {
+      result.errorMessage =
+        payload.json?.Message ||
+        payload.json?.message ||
+        payload.json?.Detail ||
+        payload.text ||
+        `Request failed with status ${response.status}`;
+    }
+
+    return result;
+  }
+
+  async requestStream({
+    method = 'POST',
+    path,
+    query = null,
+    headers = {},
+    body = null,
+    includeAuth = true,
+    signal = null,
+    onEvent = null,
+  }) {
+    const started = performance.now();
+    const url = this.buildUrl(path, query);
+    const options = this.prepareRequestOptions(method, body, headers, includeAuth);
+    if (signal) options.signal = signal;
+
+    const response = await fetch(url, options);
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!contentType.includes('text/event-stream')) {
+      const payload = await this.parseResponsePayload(response, method);
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      return {
+        ok: response.ok,
+        statusCode: response.status,
+        elapsedMs: Math.round(performance.now() - started),
+        url,
+        method,
+        streamed: false,
+        headers: responseHeaders,
+        contentType,
+        bodyType: payload.bodyType,
+        text: payload.text,
+        json: payload.json,
+        byteLength: payload.byteLength,
+        errorMessage: response.ok
+          ? null
+          : payload.json?.Message || payload.json?.message || payload.json?.Detail || payload.text || `Request failed with status ${response.status}`,
+      };
+    }
+
+    const responseHeaders = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    let usage = null;
+    let citations = null;
+    let status = null;
+    const events = [];
+
+    const flushEvent = (rawEvent) => {
+      if (!rawEvent) return;
+
+      const normalized = rawEvent.replace(/\r\n/g, '\n');
+      const lines = normalized.split('\n');
+      const dataLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith('data:')) dataLines.push(line.substring(5).trimStart());
+      }
+
+      if (dataLines.length < 1) return;
+
+      const data = dataLines.join('\n');
+      if (data === '[DONE]') {
+        if (onEvent) onEvent({ type: 'done' });
+        return;
+      }
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(data);
+      } catch {
+        parsed = null;
+      }
+
+      if (parsed?.usage) usage = parsed.usage;
+      if (parsed?.citations) citations = parsed.citations;
+      if (parsed?.status) status = parsed.status;
+
+      const deltaContent = parsed?.choices?.[0]?.delta?.content ?? parsed?.choices?.[0]?.message?.content ?? '';
+      if (deltaContent) text += deltaContent;
+
+      const event = {
+        type: 'message',
+        data,
+        json: parsed,
+        deltaContent,
+      };
+
+      if (events.length < 200) events.push(event);
+      if (onEvent) onEvent(event);
+    };
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let separatorIndex = buffer.indexOf('\n\n');
+        while (separatorIndex >= 0) {
+          const rawEvent = buffer.substring(0, separatorIndex);
+          buffer = buffer.substring(separatorIndex + 2);
+          flushEvent(rawEvent);
+          separatorIndex = buffer.indexOf('\n\n');
+        }
+      }
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) flushEvent(buffer.trim());
+
+    return {
+      ok: response.ok,
+      statusCode: response.status,
+      elapsedMs: Math.round(performance.now() - started),
+      url,
+      method,
+      streamed: true,
+      headers: responseHeaders,
+      contentType,
+      bodyType: 'sse',
+      text,
+      json: null,
+      events,
+      usage,
+      citations,
+      status,
+      errorMessage: response.ok ? null : `Request failed with status ${response.status}`,
+    };
+  }
+
   async request(method, path, body = null, isFormData = false) {
     const headers = {};
     if (this.bearerToken) {
@@ -191,6 +512,21 @@ export class ApiClient {
   getHistory(id) { return this.request('GET', `/v1.0/history/${id}`); }
   deleteHistory(id) { return this.request('DELETE', `/v1.0/history/${id}`); }
   getThreads(params) { return this.request('GET', '/v1.0/threads' + this.buildQuery(params)); }
+
+  // Request History
+  getRequestHistory(params) { return this.request('GET', '/v1.0/requesthistory' + this.buildQuery(params)); }
+  getRequestHistorySummary(params) { return this.request('GET', '/v1.0/requesthistory/summary' + this.buildQuery(params)); }
+  getRequestHistoryEntry(id) { return this.request('GET', `/v1.0/requesthistory/${id}`); }
+  getRequestHistoryEntryDetail(id) { return this.request('GET', `/v1.0/requesthistory/${id}/detail`); }
+  deleteRequestHistoryEntry(id) { return this.request('DELETE', `/v1.0/requesthistory/${id}`); }
+  deleteRequestHistoryBulk(params) { return this.request('DELETE', '/v1.0/requesthistory/bulk' + this.buildQuery(params)); }
+
+  // OpenAPI
+  async getOpenApiSpec() {
+    const response = await this.requestRaw({ method: 'GET', path: '/openapi.json', includeAuth: false });
+    if (!response.ok) throw new Error(response.errorMessage || 'Failed to load OpenAPI spec');
+    return response.json || JSON.parse(response.text || '{}');
+  }
 
   // Models
   getModels(assistantId) {
@@ -425,15 +761,22 @@ export class ApiClient {
 
   buildQuery(params) {
     if (!params) return '';
-    const parts = [];
-    if (params.maxResults) parts.push(`maxResults=${params.maxResults}`);
-    if (params.continuationToken) parts.push(`continuationToken=${params.continuationToken}`);
-    if (params.ordering) parts.push(`ordering=${params.ordering}`);
-    if (params.assistantId) parts.push(`assistantId=${params.assistantId}`);
-    if (params.bucketName) parts.push(`bucketName=${encodeURIComponent(params.bucketName)}`);
-    if (params.collectionId) parts.push(`collectionId=${encodeURIComponent(params.collectionId)}`);
-    if (params.threadId) parts.push(`threadId=${encodeURIComponent(params.threadId)}`);
-    if (params.crawlPlanId) parts.push(`crawlPlanId=${encodeURIComponent(params.crawlPlanId)}`);
-    return parts.length > 0 ? '?' + parts.join('&') : '';
+
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value == null || value === '') return;
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item != null && item !== '') search.append(key, item);
+        });
+        return;
+      }
+
+      search.set(key, typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value));
+    });
+
+    const query = search.toString();
+    return query ? `?${query}` : '';
   }
 }

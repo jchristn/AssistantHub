@@ -10,6 +10,7 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Error Responses](#error-responses)
 - [Pagination](#pagination)
 - [Health](#health)
+- [OpenAPI](#openapi)
 - [Tenants (Global Admin Only)](#tenants-global-admin-only)
 - [Who Am I](#who-am-i)
 - [Users (Admin Only)](#users-admin-only)
@@ -27,6 +28,7 @@ All API endpoints are versioned under `/v1.0/`. Responses use `application/json`
 - [Feedback (Authenticated)](#feedback-authenticated)
 - [History (Authenticated)](#history-authenticated)
 - [Threads (Authenticated)](#threads-authenticated)
+- [Request History (Admin Or Tenant Admin)](#request-history-admin-or-tenant-admin)
 - [Models](#models)
 - [Public Endpoints](#public-endpoints)
   - [Public Info](#get-v10assistantsassistantidpublic)
@@ -204,7 +206,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.9.0",
+  "Version": "0.10.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -214,6 +216,22 @@ Returns server information. **Unauthenticated.**
 Returns 200 OK with no body. Useful for health checks. **Unauthenticated.**
 
 **Response:** `200 OK` (empty body)
+
+---
+
+## OpenAPI
+
+### GET /openapi.json
+
+Returns the live runtime OpenAPI document generated from the currently registered AssistantHub route surface. **Unauthenticated.**
+
+**Response (200 OK):**
+
+- OpenAPI 3.0 JSON document containing the runtime `paths`, `tags`, `servers`, and `securitySchemes`
+
+Operational note:
+
+- The dashboard API Explorer consumes this route directly so the explorer reflects the running server rather than a manually maintained static spec.
 
 ---
 
@@ -2309,6 +2327,139 @@ List distinct conversation threads grouped from chat history records.
 | `FirstMessageUtc` | datetime | Timestamp of the first message in the thread.|
 | `LastMessageUtc`  | datetime | Timestamp of the last message in the thread. |
 | `TurnCount`       | int      | Number of conversation turns in the thread.  |
+
+---
+
+## Request History (Admin Or Tenant Admin)
+
+Request history captures HTTP request and response metadata for AssistantHub system APIs and assistant-facing APIs. Global admins can view all tenants; tenant admins are restricted to their tenant.
+
+### GET /v1.0/requesthistory
+
+List request-history entries.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `maxResults` | int | Maximum results to return. |
+| `continuationToken` | string | Continuation token from a prior response. |
+| `ordering` | string | `CreatedDescending` or `CreatedAscending`. |
+| `startUtc` | datetime | Inclusive UTC start time filter. |
+| `endUtc` | datetime | Inclusive UTC end time filter. |
+| `method` | string | Filter by HTTP method. |
+| `path` | string | Filter by request-path substring. |
+| `statusCode` | int | Filter by HTTP response status. |
+| `success` | bool | Filter to success or failure traffic. |
+| `tenantId` | string | Global-admin-only tenant filter. |
+| `assistantId` | string | Filter by assistant identifier. |
+| `threadId` | string | Filter by thread identifier. |
+| `requestType` | string | `SystemApi` or `AssistantApi`. |
+| `sourceType` | string | `dashboard`, `api`, `public`, or `public-assistant`. |
+| `search` | string | Free-text search across request path, URL, and principal fields. |
+
+**Response (200 OK):** Paginated envelope containing lightweight `RequestHistoryEntry` objects without requiring full body hydration in the grid path.
+
+### GET /v1.0/requesthistory/summary
+
+Summarize request-history activity into time buckets for charts and dashboards.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Query Parameters:** Same filters as `GET /v1.0/requesthistory`, plus:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `bucketMinutes` | int | Width of each time bucket in minutes. |
+
+**Response (200 OK):**
+
+```json
+{
+  "TotalCount": 42,
+  "TotalSuccess": 38,
+  "TotalFailure": 4,
+  "AverageDurationMs": 128.4,
+  "Buckets": [
+    {
+      "BucketStartUtc": "2025-01-01T12:00:00Z",
+      "BucketEndUtc": "2025-01-01T13:00:00Z",
+      "RequestCount": 12,
+      "SuccessCount": 11,
+      "FailureCount": 1,
+      "AverageDurationMs": 110.2
+    }
+  ]
+}
+```
+
+### GET /v1.0/requesthistory/{requestId}
+
+Get a fully hydrated request-history entry by ID.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Response (200 OK):**
+
+```json
+{
+  "Id": "req_abc123...",
+  "TenantId": "default",
+  "AssistantId": "asst_abc123...",
+  "ThreadId": "thr_abc123...",
+  "RequestType": "AssistantApi",
+  "SourceType": "public-assistant",
+  "HttpMethod": "POST",
+  "RequestPath": "/v1.0/assistants/asst_abc123/chat",
+  "RequestUrl": "/v1.0/assistants/asst_abc123/chat",
+  "StatusCode": 200,
+  "Success": true,
+  "DurationMs": 842.6,
+  "RequestHeaders": {
+    "Content-Type": "application/json",
+    "X-Thread-ID": "thr_abc123..."
+  },
+  "ResponseHeaders": {
+    "Content-Type": "text/event-stream"
+  },
+  "RequestBody": "{\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}",
+  "ResponseBody": "[server-sent events stream omitted]",
+  "CreatedUtc": "2025-01-01T12:00:00Z",
+  "LastUpdateUtc": "2025-01-01T12:00:00Z"
+}
+```
+
+### GET /v1.0/requesthistory/{requestId}/detail
+
+Alias for the fully hydrated request-history detail view.
+
+**Auth:** Required (global admin or tenant admin)
+
+### DELETE /v1.0/requesthistory/{requestId}
+
+Delete a single request-history entry.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Response:** `204 No Content`
+
+### DELETE /v1.0/requesthistory/bulk
+
+Delete all request-history entries matching the current query filters.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Query Parameters:** Same filters as `GET /v1.0/requesthistory`
+
+**Response (200 OK):**
+
+```json
+{
+  "DeletedCount": 12
+}
+```
 
 ---
 

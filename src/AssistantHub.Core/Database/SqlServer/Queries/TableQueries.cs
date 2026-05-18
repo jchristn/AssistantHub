@@ -275,6 +275,45 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 CONSTRAINT pk_chat_history PRIMARY KEY (id)
             );";
 
+        internal static readonly string CreateRequestHistoryTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'request_history')
+            CREATE TABLE request_history (
+                id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NULL,
+                user_id NVARCHAR(256) NULL,
+                credential_id NVARCHAR(256) NULL,
+                assistant_id NVARCHAR(256) NULL,
+                thread_id NVARCHAR(256) NULL,
+                principal_name NVARCHAR(MAX) NULL,
+                request_type NVARCHAR(64) NOT NULL DEFAULT 'SystemApi',
+                source_type NVARCHAR(64) NOT NULL DEFAULT 'api',
+                http_method NVARCHAR(16) NOT NULL,
+                route_template NVARCHAR(MAX) NULL,
+                request_path NVARCHAR(MAX) NOT NULL,
+                request_url NVARCHAR(MAX) NOT NULL,
+                source_ip NVARCHAR(128) NULL,
+                status_code INT NOT NULL DEFAULT 0,
+                success BIT NOT NULL DEFAULT 0,
+                duration_ms FLOAT NOT NULL DEFAULT 0,
+                request_content_type NVARCHAR(256) NULL,
+                response_content_type NVARCHAR(256) NULL,
+                request_size_bytes BIGINT NOT NULL DEFAULT 0,
+                response_size_bytes BIGINT NOT NULL DEFAULT 0,
+                request_body_truncated BIT NOT NULL DEFAULT 0,
+                response_body_truncated BIT NOT NULL DEFAULT 0,
+                request_body_is_binary BIT NOT NULL DEFAULT 0,
+                response_body_is_binary BIT NOT NULL DEFAULT 0,
+                route_parameters_json NVARCHAR(MAX) NULL,
+                query_parameters_json NVARCHAR(MAX) NULL,
+                request_headers_json NVARCHAR(MAX) NULL,
+                response_headers_json NVARCHAR(MAX) NULL,
+                request_body NVARCHAR(MAX) NULL,
+                response_body NVARCHAR(MAX) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_request_history PRIMARY KEY (id)
+            );";
+
         #endregion
 
         #region Indices
@@ -362,6 +401,42 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateChatHistoryTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_tenant_id')
             CREATE INDEX idx_chat_history_tenant_id ON chat_history (tenant_id);";
+
+        internal static readonly string CreateRequestHistoryTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_tenant_id')
+            CREATE INDEX idx_request_history_tenant_id ON request_history (tenant_id);";
+
+        internal static readonly string CreateRequestHistoryUserIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_user_id')
+            CREATE INDEX idx_request_history_user_id ON request_history (user_id);";
+
+        internal static readonly string CreateRequestHistoryCredentialIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_credential_id')
+            CREATE INDEX idx_request_history_credential_id ON request_history (credential_id);";
+
+        internal static readonly string CreateRequestHistoryAssistantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_assistant_id')
+            CREATE INDEX idx_request_history_assistant_id ON request_history (assistant_id);";
+
+        internal static readonly string CreateRequestHistoryThreadIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_thread_id')
+            CREATE INDEX idx_request_history_thread_id ON request_history (thread_id);";
+
+        internal static readonly string CreateRequestHistoryStatusCodeIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_status_code')
+            CREATE INDEX idx_request_history_status_code ON request_history (status_code);";
+
+        internal static readonly string CreateRequestHistorySuccessIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_success')
+            CREATE INDEX idx_request_history_success ON request_history (success);";
+
+        internal static readonly string CreateRequestHistoryCreatedUtcIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_created_utc')
+            CREATE INDEX idx_request_history_created_utc ON request_history (created_utc);";
+
+        internal static readonly string CreateRequestHistoryPathIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_request_path')
+            CREATE INDEX idx_request_history_request_path ON request_history (request_path);";
 
         internal static readonly string CreateCrawlPlansTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_plans_tenant_id')

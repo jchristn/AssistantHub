@@ -12,6 +12,8 @@ import AssistantsView from '../views/AssistantsView';
 import DocumentsView from '../views/DocumentsView';
 import FeedbackView from '../views/FeedbackView';
 import HistoryView from '../views/HistoryView';
+import RequestHistoryView from '../views/RequestHistoryView';
+import ApiExplorerView from '../views/ApiExplorerView';
 import CollectionsView from '../views/CollectionsView';
 import BucketsView from '../views/BucketsView';
 import ObjectsView from '../views/ObjectsView';
@@ -84,6 +86,8 @@ function Dashboard() {
             <Route path="/crawlers" element={<CrawlersView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/history" element={<HistoryView />} />
+            {isAdminOrTenantAdmin && <Route path="/request-history" element={<RequestHistoryView />} />}
+            {isAdminOrTenantAdmin && <Route path="/api-explorer" element={<ApiExplorerView />} />}
             <Route path="/evaluation" element={<EvaluationView />} />
             <Route path="/models" element={<ModelsView />} />
             {isGlobalAdmin && <Route path="/configuration" element={<ConfigurationView />} />}

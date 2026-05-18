@@ -35,6 +35,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **API Explorer** -- Browse the live AssistantHub route surface from `/openapi.json`, execute management APIs directly from the dashboard, inspect responses, and generate reusable cURL or JavaScript snippets.
 - **Assistant API explorer mode** -- Exercise assistant-facing APIs end-to-end from the dashboard, including public metadata, thread creation, chat, compaction, generation, feedback, and distinct labels or tags.
 - **Request History** -- Capture and search request and response metadata across system APIs and assistant traffic with replay into the explorer, retention cleanup, body truncation, and redaction controls.
+- **Monitoring surfaces in the dashboard** -- `API Explorer` and `Request History` are included directly in the product under the `Monitoring` section for day-to-day operator use.
 - **Migration script** -- Existing deployments can add the new request-history table with `migrations/008_upgrade_to_v0.10.0.sql`.
 
 ## API Observability Added In v0.10.0

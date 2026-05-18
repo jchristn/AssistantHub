@@ -137,6 +137,195 @@ const ASSISTANT_TEMPLATES = [
   },
 ];
 
+const COMPOUND_RESOURCE_NAMES = {
+  'assistants': { collection: 'assistants', single: 'assistant' },
+  'assistants/settings': { collection: 'assistant settings', single: 'assistant settings' },
+  'assistants/settings/slack': { collection: 'assistant Slack settings', single: 'assistant Slack settings' },
+  'assistants/threads': { collection: 'threads', single: 'thread' },
+  'buckets': { collection: 'buckets', single: 'bucket' },
+  'buckets/objects': { collection: 'bucket objects', single: 'bucket object' },
+  'collections': { collection: 'collections', single: 'collection' },
+  'collections/records': { collection: 'collection records', single: 'collection record' },
+  'credentials': { collection: 'credentials', single: 'credential' },
+  'crawlplans': { collection: 'crawl plans', single: 'crawl plan' },
+  'crawlplans/operations': { collection: 'crawl operations', single: 'crawl operation' },
+  'documents': { collection: 'documents', single: 'document' },
+  'endpoints/completion': { collection: 'completion endpoints', single: 'completion endpoint' },
+  'endpoints/embedding': { collection: 'embedding endpoints', single: 'embedding endpoint' },
+  'eval/facts': { collection: 'evaluation facts', single: 'evaluation fact' },
+  'eval/results': { collection: 'evaluation results', single: 'evaluation result' },
+  'eval/runs': { collection: 'evaluation runs', single: 'evaluation run' },
+  'feedback': { collection: 'feedback entries', single: 'feedback entry' },
+  'history': { collection: 'chat history', single: 'chat history entry' },
+  'ingestion-rules': { collection: 'ingestion rules', single: 'ingestion rule' },
+  'models': { collection: 'models', single: 'model' },
+  'requesthistory': { collection: 'request history', single: 'request history entry' },
+  'threads': { collection: 'threads', single: 'thread' },
+  'users': { collection: 'users', single: 'user' },
+};
+
+const ACTION_SUFFIXES = new Set([
+  'chat',
+  'compact',
+  'connectivity',
+  'detail',
+  'distinct',
+  'download',
+  'enumerate',
+  'feedback',
+  'generate',
+  'health',
+  'history',
+  'metadata',
+  'processing-log',
+  'public',
+  'start',
+  'status',
+  'stop',
+  'stream',
+  'summary',
+  'test',
+  'upload',
+  'verify',
+]);
+
+function isPathParameter(segment) {
+  return segment.startsWith('{') && segment.endsWith('}');
+}
+
+function stripVersionPrefix(path) {
+  const stripped = (path || '/').replace(/^\/v\d+\.\d+/, '');
+  return stripped || '/';
+}
+
+function humanizeSegment(segment) {
+  return segment
+    .replace(/[-_]/g, ' ')
+    .replace(/\bapi\b/gi, 'API')
+    .replace(/\bid\b/gi, 'ID')
+    .trim();
+}
+
+function singularizePhrase(phrase) {
+  const specialCases = {
+    assistants: 'assistant',
+    buckets: 'bucket',
+    collections: 'collection',
+    credentials: 'credential',
+    documents: 'document',
+    endpoints: 'endpoint',
+    entries: 'entry',
+    facts: 'fact',
+    models: 'model',
+    objects: 'object',
+    operations: 'operation',
+    plans: 'plan',
+    records: 'record',
+    results: 'result',
+    rules: 'rule',
+    runs: 'run',
+    settings: 'settings',
+    threads: 'thread',
+    users: 'user',
+  };
+
+  const words = phrase.split(' ');
+  const lastWord = words[words.length - 1];
+  const normalized = lastWord.toLowerCase();
+
+  let singular = specialCases[normalized];
+  if (!singular) {
+    if (normalized.endsWith('ies')) singular = `${lastWord.slice(0, -3)}y`;
+    else if (normalized.endsWith('ses')) singular = lastWord.slice(0, -2);
+    else if (normalized.endsWith('s') && !normalized.endsWith('ss')) singular = lastWord.slice(0, -1);
+    else singular = lastWord;
+  }
+
+  words[words.length - 1] = singular;
+  return words.join(' ');
+}
+
+function getResourcePhrase(staticSegments, useSingle) {
+  for (let index = 0; index < staticSegments.length; index += 1) {
+    const key = staticSegments.slice(index).join('/');
+    const mapped = COMPOUND_RESOURCE_NAMES[key];
+    if (mapped) return useSingle ? mapped.single : mapped.collection;
+  }
+
+  const lastSegment = staticSegments[staticSegments.length - 1] || 'resource';
+  const phrase = humanizeSegment(lastSegment);
+  return useSingle ? singularizePhrase(phrase) : phrase;
+}
+
+function generateOperationSummary(method, path) {
+  const normalizedPath = stripVersionPrefix(path);
+  const segments = normalizedPath.split('/').filter(Boolean);
+  const staticSegments = segments.filter((segment) => !isPathParameter(segment));
+  const lastStatic = staticSegments[staticSegments.length - 1] || '';
+  const subjectSegments = ACTION_SUFFIXES.has(lastStatic) ? staticSegments.slice(0, -1) : staticSegments;
+  const hasTrailingParameter = isPathParameter(segments[segments.length - 1] || '');
+  const collectionSubject = getResourcePhrase(subjectSegments, false);
+  const singleSubject = getResourcePhrase(subjectSegments, true);
+
+  if (normalizedPath === '/authenticate') return 'Authenticate';
+  if (normalizedPath === '/configuration') return method === 'GET' ? 'Retrieve configuration' : 'Update configuration';
+  if (normalizedPath === '/models/pull') return 'Pull model';
+  if (normalizedPath === '/models/pull/status') return 'Retrieve model pull status';
+  if (normalizedPath === '/requesthistory/summary') return 'Retrieve request history summary';
+  if (normalizedPath === '/requesthistory/{requestId}/detail') return 'Retrieve request history detail';
+  if (normalizedPath === '/requesthistory/bulk') return 'Delete filtered request history';
+  if (normalizedPath === '/assistants/{assistantId}/public') return 'Retrieve public assistant metadata';
+  if (normalizedPath === '/assistants/{assistantId}/threads') return method === 'POST' ? 'Create thread' : 'Retrieve threads';
+  if (normalizedPath === '/assistants/{assistantId}/threads/{threadId}/history') return 'Retrieve thread history';
+  if (normalizedPath === '/assistants/{assistantId}/chat') return 'Chat with assistant';
+  if (normalizedPath === '/assistants/{assistantId}/compact') return 'Compact conversation';
+  if (normalizedPath === '/assistants/{assistantId}/generate') return 'Generate assistant response';
+  if (normalizedPath === '/assistants/{assistantId}/feedback') return 'Submit assistant feedback';
+  if (normalizedPath === '/buckets/{name}/objects/metadata') return 'Retrieve bucket object metadata';
+  if (normalizedPath === '/buckets/{name}/objects/download') return 'Download bucket object';
+  if (normalizedPath === '/buckets/{name}/objects/upload') return 'Upload bucket object';
+  if (normalizedPath === '/eval/runs/{runId}/results') return 'Retrieve evaluation run results';
+  if (normalizedPath === '/eval/judge-prompt/default') return 'Retrieve default evaluation judge prompt';
+  if (normalizedPath.endsWith('/labels/distinct')) return 'Retrieve distinct labels';
+  if (normalizedPath.endsWith('/tags/distinct')) return 'Retrieve distinct tags';
+  if (normalizedPath.endsWith('/processing-log')) return 'Retrieve document processing log';
+  if (normalizedPath.endsWith('/summary')) return `Retrieve ${singleSubject} summary`;
+  if (normalizedPath.endsWith('/detail')) return `Retrieve ${singleSubject} detail`;
+  if (normalizedPath.endsWith('/metadata')) return `Retrieve ${singleSubject} metadata`;
+  if (normalizedPath.endsWith('/download')) return `Download ${singleSubject}`;
+  if (normalizedPath.endsWith('/upload')) return `Upload ${singleSubject}`;
+  if (normalizedPath.endsWith('/health')) return `Retrieve ${singleSubject} health`;
+  if (normalizedPath.endsWith('/test')) return `Test ${singleSubject}`;
+  if (normalizedPath.endsWith('/verify')) return `Verify ${singleSubject}`;
+  if (normalizedPath.endsWith('/enumerate')) return `Enumerate ${collectionSubject}`;
+  if (normalizedPath.endsWith('/stream')) return `Stream ${singleSubject}`;
+
+  switch (method) {
+    case 'GET':
+      return hasTrailingParameter ? `Retrieve ${singleSubject}` : `Retrieve all ${collectionSubject}`;
+    case 'PUT':
+      return hasTrailingParameter ? `Update ${singleSubject}` : `Create ${singleSubject}`;
+    case 'POST':
+      return `Create ${singleSubject}`;
+    case 'DELETE':
+      return `Delete ${singleSubject}`;
+    case 'HEAD':
+      return `Check ${singleSubject} existence`;
+    case 'PATCH':
+      return `Patch ${singleSubject}`;
+    default:
+      return `${method} ${path}`;
+  }
+}
+
+function normalizeOperationSummary(summary, method, path) {
+  const trimmed = (summary || '').trim();
+  if (!trimmed) return generateOperationSummary(method, path);
+  if (trimmed === `${method} ${path}`) return generateOperationSummary(method, path);
+  if (/^(GET|POST|PUT|DELETE|HEAD|PATCH)\s+\/v\d+\.\d+\/.+/i.test(trimmed)) return generateOperationSummary(method, path);
+  return trimmed;
+}
+
 function flattenOpenApiOperations(spec) {
   const operations = [];
   const paths = spec?.paths || {};
@@ -154,7 +343,7 @@ function flattenOpenApiOperations(spec) {
         key,
         method: upperMethod,
         path,
-        summary: override.summary || operation?.summary || `${upperMethod} ${path}`,
+        summary: override.summary || normalizeOperationSummary(operation?.summary, upperMethod, path),
         description: override.description || operation?.description || '',
         tags: operation?.tags || ['Misc'],
         parameters,
@@ -298,6 +487,34 @@ function buildFetchSnippet(serverUrl, resolvedPath, queryObject, method, headers
   ].join('\n');
 }
 
+function buildOperationOptionLabel(operation) {
+  const canonicalName = normalizeOperationSummary(operation?.summary, operation?.method || 'GET', operation?.path || '/');
+  return `${canonicalName} - ${operation?.method || 'GET'} ${operation?.path || '/'}`;
+}
+
+function createPendingResponseState(requestState) {
+  return {
+    ok: false,
+    pending: true,
+    statusCode: '...',
+    elapsedMs: 0,
+    url: '',
+    method: requestState.method,
+    headers: {},
+    contentType: requestState.expectStream ? 'text/event-stream' : '',
+    bodyType: requestState.expectStream ? 'sse' : 'pending',
+    text: '',
+    json: null,
+    byteLength: 0,
+    errorMessage: null,
+    streamed: requestState.expectStream,
+    events: [],
+    usage: null,
+    citations: null,
+    status: requestState.expectStream ? 'Waiting for stream...' : 'Running request...',
+  };
+}
+
 function ApiExplorerView() {
   const { serverUrl, credential } = useAuth();
   const location = useLocation();
@@ -335,6 +552,7 @@ function ApiExplorerView() {
   const [running, setRunning] = useState(false);
   const [alert, setAlert] = useState(null);
   const handledPresetRef = useRef(null);
+  const responseCardRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -385,6 +603,11 @@ function ApiExplorerView() {
       return groups;
     }, {});
   }, [visibleOperations]);
+
+  const selectableOperations = useMemo(
+    () => (mode === 'assistant' ? assistantOperations : systemOperations),
+    [assistantOperations, mode, systemOperations]
+  );
 
   const loadOperation = useCallback((operation, overrides = {}) => {
     const pathParamNames = extractPathParamNames(operation.path);
@@ -543,8 +766,25 @@ function ApiExplorerView() {
   const fetchSnippet = useMemo(() => buildFetchSnippet(serverUrl, resolvedPath, queryObject, requestState.method, headerObject, requestState.includeAuth, requestState.bodyText), [headerObject, queryObject, requestState.bodyText, requestState.includeAuth, requestState.method, resolvedPath, serverUrl]);
 
   const runRequest = async () => {
+    if (!serverUrl) {
+      setAlert({ title: 'Server Required', message: 'No AssistantHub server URL is configured for the explorer.' });
+      return;
+    }
+
+    const missingPathParams = extractPathParamNames(requestState.pathTemplate).filter((name) => !(requestState.pathParams?.[name] || '').trim());
+    if (missingPathParams.length > 0) {
+      setAlert({
+        title: 'Missing Path Parameters',
+        message: `Provide values for: ${missingPathParams.join(', ')}`,
+      });
+      return;
+    }
+
     setRunning(true);
-    setResponseState(null);
+    setResponseState(createPendingResponseState(requestState));
+    window.requestAnimationFrame(() => {
+      responseCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     try {
       const body = normalizeBodyText(requestState.bodyText, headerObject);
@@ -570,6 +810,34 @@ function ApiExplorerView() {
             headers: headerObject,
             body,
             includeAuth: requestState.includeAuth,
+            onEvent: (event) => {
+              if (event.type === 'done') {
+                setResponseState((current) => current ? {
+                  ...current,
+                  pending: true,
+                  status: 'Finalizing stream...',
+                } : current);
+                return;
+              }
+
+              setResponseState((current) => {
+                const previous = current || createPendingResponseState(requestState);
+                const nextText = event.deltaContent ? `${previous.text || ''}${event.deltaContent}` : previous.text || '';
+                const nextEvents = event.type === 'message'
+                  ? [...(previous.events || []).slice(-199), event]
+                  : previous.events || [];
+
+                return {
+                  ...previous,
+                  streamed: true,
+                  text: nextText,
+                  events: nextEvents,
+                  status: event.json?.status || previous.status || 'Streaming response...',
+                  usage: event.json?.usage || previous.usage || null,
+                  citations: event.json?.citations || previous.citations || null,
+                };
+              });
+            },
           })
         : await api.requestRaw({
             method: requestState.method,
@@ -584,9 +852,19 @@ function ApiExplorerView() {
         setThreadId(result.json.ThreadId);
       }
 
-      setResponseState(result);
+      setResponseState({
+        ...result,
+        pending: false,
+        status: result.status || null,
+      });
       setRecentRequests((current) => [requestDescriptor, ...current.filter((item) => JSON.stringify(item) !== JSON.stringify(requestDescriptor))].slice(0, 12));
     } catch (err) {
+      setResponseState((current) => current ? {
+        ...current,
+        pending: false,
+        errorMessage: err.message || 'Failed to execute request',
+        status: 'Request failed before a response was received.',
+      } : null);
       setAlert({ title: 'Error', message: err.message || 'Failed to execute request' });
     } finally {
       setRunning(false);
@@ -643,8 +921,28 @@ function ApiExplorerView() {
           <p className="content-subtitle">Explore live AssistantHub routes, execute system APIs, and exercise assistants end-to-end.</p>
         </div>
         <div className="api-explorer-header-actions">
-          <button className={`btn ${mode === 'system' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMode('system')}>System APIs</button>
-          <button className={`btn ${mode === 'assistant' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMode('assistant')}>Assistant APIs</button>
+          <button
+            type="button"
+            className={`btn ${mode === 'system' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => {
+              setMode('system');
+              setSelectedOperationKey(null);
+              setResponseState(null);
+            }}
+          >
+            System APIs
+          </button>
+          <button
+            type="button"
+            className={`btn ${mode === 'assistant' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => {
+              setMode('assistant');
+              setSelectedOperationKey(null);
+              setResponseState(null);
+            }}
+          >
+            Assistant APIs
+          </button>
         </div>
       </div>
 
@@ -682,40 +980,16 @@ function ApiExplorerView() {
                 <label>Thread ID</label>
                 <input type="text" value={threadId} onChange={(e) => setThreadId(e.target.value)} placeholder="thread_..." />
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={createThread}>Create Thread</button>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={createThread}>Create Thread</button>
             </div>
           )}
-
-          <div className="api-explorer-card">
-            <h3>Operations</h3>
-            {Object.keys(groupedOperations).length < 1 ? (
-              <p className="api-explorer-empty">No operations match the current search.</p>
-            ) : Object.entries(groupedOperations).map(([tag, items]) => (
-              <div key={tag} className="api-explorer-group">
-                <div className="api-explorer-group-title">{tag}</div>
-                {items.map((operation) => (
-                  <button
-                    key={operation.key}
-                    className={`api-explorer-operation ${selectedOperationKey === operation.key ? 'active' : ''}`}
-                    onClick={() => loadOperation(operation)}
-                  >
-                    <span className={`request-history-method method-${operation.method.toLowerCase()}`}>{operation.method}</span>
-                    <span className="api-explorer-operation-text">
-                      <strong>{operation.summary}</strong>
-                      <small>{operation.path}</small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
 
           <div className="api-explorer-card">
             <h3>Recent Requests</h3>
             {recentRequests.length < 1 ? (
               <p className="api-explorer-empty">Recent requests are stored locally after you execute them.</p>
             ) : recentRequests.map((recent, index) => (
-              <button key={`${recent.method}-${recent.pathTemplate}-${index}`} className="api-explorer-recent" onClick={() => restoreRecentRequest(recent)}>
+              <button type="button" key={`${recent.method}-${recent.pathTemplate}-${index}`} className="api-explorer-recent" onClick={() => restoreRecentRequest(recent)}>
                 <span className={`request-history-method method-${(recent.method || 'GET').toLowerCase()}`}>{recent.method}</span>
                 <span>
                   <strong>{recent.operationName || recent.pathTemplate}</strong>
@@ -727,6 +1001,34 @@ function ApiExplorerView() {
         </aside>
 
         <div className="api-explorer-main">
+          <div className="api-explorer-card">
+            <div className="form-group">
+              <label>Operation</label>
+              <select
+                value={selectedOperationKey || ''}
+                onChange={(e) => {
+                  const operation = selectableOperations.find((item) => item.key === e.target.value);
+                  if (operation) loadOperation(operation);
+                }}
+                disabled={visibleOperations.length < 1}
+              >
+                {visibleOperations.length < 1 ? (
+                  <option value="">No operations match the current search</option>
+                ) : (
+                  Object.entries(groupedOperations).map(([tag, items]) => (
+                    <optgroup key={tag} label={tag}>
+                      {items.map((operation) => (
+                        <option key={operation.key} value={operation.key}>
+                          {buildOperationOptionLabel(operation)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
           <div className="api-explorer-card">
             <div className="api-explorer-card-header">
               <div>
@@ -742,8 +1044,8 @@ function ApiExplorerView() {
                   <input type="checkbox" checked={requestState.expectStream} onChange={(e) => setRequestState((current) => ({ ...current, expectStream: e.target.checked }))} />
                   <span>Expect stream</span>
                 </label>
-                <button className="btn btn-secondary" onClick={() => setResponseState(null)}>Clear Response</button>
-                <button className="btn btn-primary" onClick={runRequest} disabled={running}>{running ? 'Running...' : 'Run Request'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setResponseState(null)}>Clear Response</button>
+                <button type="button" className="btn btn-primary" onClick={runRequest} disabled={running}>{running ? 'Running...' : 'Run Request'}</button>
               </div>
             </div>
 
@@ -820,7 +1122,7 @@ function ApiExplorerView() {
             </div>
           </div>
 
-          <div className="api-explorer-card">
+          <div className="api-explorer-card" ref={responseCardRef}>
             <div className="api-explorer-card-header">
               <div>
                 <h3>Response</h3>
@@ -850,6 +1152,12 @@ function ApiExplorerView() {
                     <span className="stat-card-value api-explorer-content-type">{responseState.contentType || '-'}</span>
                   </div>
                 </div>
+
+                {responseState.pending && (
+                  <div className="api-explorer-running-banner">
+                    {responseState.status || 'Running request...'}
+                  </div>
+                )}
 
                 {responseState.errorMessage && (
                   <div className="endpoint-test-error" style={{ marginBottom: '1rem' }}>

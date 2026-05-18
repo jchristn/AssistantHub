@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
@@ -25,39 +26,285 @@ function buildUtcIso(value) {
   return parsed.toISOString();
 }
 
-function RequestHistorySummaryChart({ buckets }) {
-  const maxCount = useMemo(() => Math.max(...(buckets || []).map((bucket) => bucket.RequestCount || 0), 1), [buckets]);
+const SUMMARY_RANGE_OPTIONS = [
+  { id: 'lastHour', label: 'Last Hour', bucketSeconds: 30, sliceCount: 120 },
+  { id: 'lastDay', label: 'Last Day', bucketSeconds: 10 * 60, sliceCount: 144 },
+  { id: 'lastWeek', label: 'Last Week', bucketSeconds: 60 * 60, sliceCount: 168 },
+  { id: 'lastMonth', label: 'Last Month', bucketSeconds: 6 * 60 * 60, sliceCount: 120 },
+];
 
-  if (!buckets || buckets.length < 1) {
+const MAX_SUMMARY_LABELS = 8;
+const MAX_SUMMARY_Y_AXIS_LABELS = 5;
+const SUMMARY_COUNT_FORMATTER = new Intl.NumberFormat(undefined, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+function getSummaryRangeConfig(rangeId) {
+  return SUMMARY_RANGE_OPTIONS.find((option) => option.id === rangeId) || SUMMARY_RANGE_OPTIONS[1];
+}
+
+function getSummaryRangeWindow(rangeId, now = new Date()) {
+  const config = getSummaryRangeConfig(rangeId);
+  const bucketMs = config.bucketSeconds * 1000;
+  const endExclusiveMs = Math.floor(now.getTime() / bucketMs) * bucketMs + bucketMs;
+  const startMs = endExclusiveMs - (config.sliceCount * bucketMs);
+
+  return {
+    ...config,
+    bucketMs,
+    startMs,
+    endExclusiveMs,
+    startUtc: new Date(startMs),
+    endUtc: new Date(endExclusiveMs - 1),
+  };
+}
+
+function formatSummaryBucketLabel(bucketStartUtc, rangeId) {
+  const date = new Date(bucketStartUtc);
+
+  if (rangeId === 'lastHour' || rangeId === 'lastDay') {
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  if (rangeId === 'lastWeek') {
+    return date.toLocaleString([], { weekday: 'short', hour: 'numeric' });
+  }
+
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function formatSummaryTooltipWindow(bucket) {
+  if (!bucket?.BucketStartUtc) return '';
+
+  const start = new Date(bucket.BucketStartUtc).toLocaleString();
+  const endValue = bucket.BucketEndUtc
+    ? new Date(new Date(bucket.BucketEndUtc).getTime() - 1).toLocaleString()
+    : '';
+
+  return endValue ? `${start} to ${endValue}` : start;
+}
+
+function formatBucketSizeLabel(bucketSeconds) {
+  if (bucketSeconds < 60) {
+    return `${bucketSeconds} second bucket${bucketSeconds === 1 ? '' : 's'}`;
+  }
+
+  if (bucketSeconds % 3600 === 0) {
+    const hours = bucketSeconds / 3600;
+    return `${hours} hour bucket${hours === 1 ? '' : 's'}`;
+  }
+
+  const minutes = bucketSeconds / 60;
+  return `${minutes} minute bucket${minutes === 1 ? '' : 's'}`;
+}
+
+function formatSummaryCountLabel(value) {
+  return value >= 1000 ? SUMMARY_COUNT_FORMATTER.format(value) : value.toLocaleString();
+}
+
+function floorToBucketTimestamp(value, bucketMs) {
+  return Math.floor(new Date(value).getTime() / bucketMs) * bucketMs;
+}
+
+function buildSummaryChartBuckets(summary, range) {
+  const apiBuckets = new Map(
+    (summary?.Buckets || []).map((bucket) => [
+      floorToBucketTimestamp(bucket.BucketStartUtc, range.bucketMs),
+      bucket,
+    ])
+  );
+
+  return Array.from({ length: range.sliceCount }, (_, index) => {
+    const bucketStartMs = range.startMs + (index * range.bucketMs);
+    const apiBucket = apiBuckets.get(bucketStartMs);
+
+    return {
+      BucketStartUtc: new Date(bucketStartMs).toISOString(),
+      BucketEndUtc: new Date(bucketStartMs + range.bucketMs).toISOString(),
+      RequestCount: apiBucket?.RequestCount || 0,
+      SuccessCount: apiBucket?.SuccessCount || 0,
+      FailureCount: apiBucket?.FailureCount || 0,
+      AverageDurationMs: apiBucket?.AverageDurationMs || 0,
+    };
+  });
+}
+
+function buildSummaryAxisLabels(buckets, rangeId) {
+  if (!buckets?.length) return [];
+
+  const labelCount = Math.min(MAX_SUMMARY_LABELS, buckets.length);
+  const labelIndices = new Set();
+
+  if (labelCount === 1) {
+    labelIndices.add(0);
+  } else {
+    for (let index = 0; index < labelCount; index += 1) {
+      labelIndices.add(Math.round((index * (buckets.length - 1)) / (labelCount - 1)));
+    }
+  }
+
+  return Array.from(labelIndices)
+    .sort((left, right) => left - right)
+    .map((index, position, values) => ({
+      bucketStartUtc: buckets[index].BucketStartUtc,
+      label: formatSummaryBucketLabel(buckets[index].BucketStartUtc, rangeId),
+      left: values.length === 1 ? 0 : (position / (values.length - 1)) * 100,
+      align: position === 0 ? 'start' : position === values.length - 1 ? 'end' : 'center',
+    }));
+}
+
+function buildSummaryYAxis(rawMaxCount) {
+  const safeMaxCount = Math.max(0, Math.ceil(Number(rawMaxCount) || 0));
+
+  if (safeMaxCount <= 0) {
+    return {
+      chartMax: 1,
+      ticks: [
+        { value: 1, label: '1' },
+        { value: 0, label: '0' },
+      ],
+    };
+  }
+
+  if (safeMaxCount < MAX_SUMMARY_Y_AXIS_LABELS) {
+    const tickValues = Array.from({ length: safeMaxCount + 1 }, (_, index) => safeMaxCount - index);
+
+    return {
+      chartMax: safeMaxCount,
+      ticks: tickValues.map((value) => ({
+        value,
+        label: formatSummaryCountLabel(value),
+      })),
+    };
+  }
+
+  const step = Math.max(1, Math.ceil(safeMaxCount / (MAX_SUMMARY_Y_AXIS_LABELS - 1)));
+  const chartMax = step * (MAX_SUMMARY_Y_AXIS_LABELS - 1);
+  const tickValues = Array.from({ length: MAX_SUMMARY_Y_AXIS_LABELS }, (_, index) => chartMax - (index * step));
+
+  return {
+    chartMax,
+    ticks: tickValues.map((value) => ({
+      value,
+      label: formatSummaryCountLabel(value),
+    })),
+  };
+}
+
+function getTooltipPosition(clientX, clientY) {
+  const tooltipWidth = 300;
+  const tooltipHeight = 110;
+  const offset = 14;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let left = clientX + offset;
+  let top = clientY + offset;
+
+  if (left + tooltipWidth > viewportWidth - 12) left = clientX - tooltipWidth - offset;
+  if (top + tooltipHeight > viewportHeight - 12) top = clientY - tooltipHeight - offset;
+
+  return {
+    left: Math.max(12, left),
+    top: Math.max(12, top),
+  };
+}
+
+function RequestHistorySummaryChart({ buckets, rangeId, rangeWindow }) {
+  const normalizedBuckets = useMemo(() => buildSummaryChartBuckets({ Buckets: buckets }, rangeWindow), [buckets, rangeWindow]);
+  const [tooltipState, setTooltipState] = useState(null);
+  const maxRequestCount = useMemo(() => Math.max(...normalizedBuckets.map((bucket) => bucket.RequestCount || 0), 0), [normalizedBuckets]);
+  const axisLabels = useMemo(() => buildSummaryAxisLabels(normalizedBuckets, rangeId), [normalizedBuckets, rangeId]);
+  const yAxis = useMemo(() => buildSummaryYAxis(maxRequestCount), [maxRequestCount]);
+  const tooltipPosition = tooltipState ? getTooltipPosition(tooltipState.clientX, tooltipState.clientY) : null;
+
+  if (!normalizedBuckets.length) {
     return <div className="empty-state"><p>No request-history activity in the selected range.</p></div>;
   }
 
   return (
-    <div className="request-history-chart">
-      {buckets.map((bucket, index) => {
-        const totalHeight = Math.max(4, Math.round(((bucket.RequestCount || 0) / maxCount) * 100));
-        const successRatio = bucket.RequestCount > 0 ? (bucket.SuccessCount || 0) / bucket.RequestCount : 0;
-        const failureRatio = bucket.RequestCount > 0 ? (bucket.FailureCount || 0) / bucket.RequestCount : 0;
+    <>
+      <div className="request-history-chart-shell">
+        <div className="request-history-chart-frame">
+          <div className="request-history-chart-y-axis" aria-hidden="true">
+            {yAxis.ticks.map((tick) => (
+              <span key={tick.value} className="request-history-chart-y-axis-label">
+                {tick.label}
+              </span>
+            ))}
+          </div>
+          <div className="request-history-chart-plot-shell">
+            <div className="request-history-chart-plot">
+              <div className="request-history-chart-grid" aria-hidden="true">
+                {yAxis.ticks.map((tick) => (
+                  <span key={tick.value} className="request-history-chart-grid-line" />
+                ))}
+              </div>
+              <div
+                className="request-history-chart"
+                style={{ gridTemplateColumns: `repeat(${normalizedBuckets.length}, minmax(0, 1fr))` }}
+              >
+              {normalizedBuckets.map((bucket, index) => {
+                const requestCount = bucket.RequestCount || 0;
+                const totalHeight = Math.max(requestCount > 0 ? 6 : 2, Math.round((requestCount / yAxis.chartMax) * 100));
+                const successRatio = requestCount > 0 ? (bucket.SuccessCount || 0) / requestCount : 0;
+                const failureRatio = requestCount > 0 ? (bucket.FailureCount || 0) / requestCount : 0;
+                const bucketId = `${bucket.BucketStartUtc || 'bucket'}-${index}`;
 
-        return (
-          <div
-            key={`${bucket.BucketStartUtc || 'bucket'}-${index}`}
-            className="request-history-chart-column"
-            title={`${new Date(bucket.BucketStartUtc).toLocaleString()} - ${bucket.RequestCount || 0} requests (${bucket.SuccessCount || 0} success, ${bucket.FailureCount || 0} failure)`}
-          >
-            <div className="request-history-chart-track">
-              <div className="request-history-chart-bar" style={{ height: `${totalHeight}%` }}>
-                <div className="request-history-chart-success" style={{ height: `${Math.round(successRatio * 100)}%` }} />
-                <div className="request-history-chart-failure" style={{ height: `${Math.round(failureRatio * 100)}%` }} />
+                return (
+                  <div
+                    key={bucketId}
+                    className={`request-history-chart-column ${tooltipState?.bucketId === bucketId ? 'active' : ''}`}
+                    onMouseEnter={(event) => setTooltipState({ bucketId, bucket, clientX: event.clientX, clientY: event.clientY })}
+                    onMouseMove={(event) => setTooltipState({
+                      bucketId,
+                      bucket,
+                      clientX: event.clientX,
+                      clientY: event.clientY,
+                    })}
+                    onMouseLeave={() => setTooltipState(null)}
+                  >
+                    <div className="request-history-chart-track">
+                      <div className="request-history-chart-bar" style={{ height: `${totalHeight}%` }}>
+                        <div className="request-history-chart-success" style={{ height: `${Math.round(successRatio * 100)}%` }} />
+                        <div className="request-history-chart-failure" style={{ height: `${Math.round(failureRatio * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
               </div>
             </div>
-            <div className="request-history-chart-label">
-              {new Date(bucket.BucketStartUtc).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            <div className="request-history-chart-axis">
+              {axisLabels.map((label) => (
+                <span
+                  key={label.bucketStartUtc}
+                  className={`request-history-chart-axis-label request-history-chart-axis-label-${label.align}`}
+                  style={{ left: `${label.left}%` }}
+                >
+                  {label.label}
+                </span>
+              ))}
             </div>
           </div>
-        );
-      })}
-    </div>
+        </div>
+      </div>
+      {tooltipState && tooltipPosition && typeof document !== 'undefined' && createPortal(
+        <div
+          className="request-history-chart-tooltip"
+          role="status"
+          aria-live="polite"
+          style={{ left: `${tooltipPosition.left}px`, top: `${tooltipPosition.top}px` }}
+        >
+          <strong>{formatSummaryTooltipWindow(tooltipState.bucket)}</strong>
+          <span>{Number(tooltipState.bucket?.RequestCount || 0).toLocaleString()} requests</span>
+          <span>{Number(tooltipState.bucket?.SuccessCount || 0).toLocaleString()} success</span>
+          <span>{Number(tooltipState.bucket?.FailureCount || 0).toLocaleString()} failure</span>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -86,11 +333,12 @@ function RequestHistoryView() {
   const [tenantFilter, setTenantFilter] = useState('');
   const [startUtcFilter, setStartUtcFilter] = useState(() => toLocalDateTimeInputValue(new Date(Date.now() - 24 * 60 * 60 * 1000)));
   const [endUtcFilter, setEndUtcFilter] = useState(() => toLocalDateTimeInputValue(new Date()));
+  const [summaryRangeId, setSummaryRangeId] = useState('lastDay');
+  const summaryRangeWindow = useMemo(() => getSummaryRangeWindow(summaryRangeId), [summaryRangeId, refresh]);
 
   const buildFilterParams = useCallback((overrides = {}) => {
     const params = {
       maxResults: 1000,
-      bucketMinutes: 60,
       method: methodFilter,
       requestType: requestTypeFilter,
       sourceType: sourceTypeFilter,
@@ -125,6 +373,15 @@ function RequestHistoryView() {
     threadFilter,
   ]);
 
+  const buildSummaryParams = useCallback(() => {
+    return buildFilterParams({
+      maxResults: null,
+      startUtc: summaryRangeWindow.startUtc.toISOString(),
+      endUtc: summaryRangeWindow.endUtc.toISOString(),
+      bucketSeconds: summaryRangeWindow.bucketSeconds,
+    });
+  }, [buildFilterParams, summaryRangeWindow]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -140,14 +397,14 @@ function RequestHistoryView() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await api.getRequestHistorySummary(buildFilterParams());
+        const result = await api.getRequestHistorySummary(buildSummaryParams());
         setSummary(result);
       } catch (err) {
         setSummary(null);
         console.error('Failed to load request-history summary', err);
       }
     })();
-  }, [buildFilterParams, refresh]);
+  }, [buildSummaryParams, refresh]);
 
   const loadDetail = useCallback(async (requestId) => {
     return await api.getRequestHistoryEntryDetail(requestId);
@@ -266,10 +523,11 @@ function RequestHistoryView() {
     setTenantFilter('');
     setStartUtcFilter(toLocalDateTimeInputValue(new Date(Date.now() - 24 * 60 * 60 * 1000)));
     setEndUtcFilter(toLocalDateTimeInputValue(new Date()));
+    setSummaryRangeId('lastDay');
     setRefresh((value) => value + 1);
   };
 
-  const deleteFilteredDisabled = !summary || summary.TotalCount < 1;
+  const selectedSummaryRange = getSummaryRangeConfig(summaryRangeId);
 
   return (
     <div>
@@ -280,7 +538,7 @@ function RequestHistoryView() {
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary" onClick={resetFilters}>Reset Filters</button>
-          <button className="btn btn-danger" onClick={() => setDeleteFilteredConfirm(true)} disabled={deleteFilteredDisabled}>Delete Filtered</button>
+          <button className="btn btn-danger" onClick={() => setDeleteFilteredConfirm(true)}>Delete Filtered</button>
         </div>
       </div>
 
@@ -387,10 +645,24 @@ function RequestHistoryView() {
 
       <div className="request-history-chart-card">
         <div className="request-history-chart-header">
-          <h3>Traffic Summary</h3>
-          <span>Last {summary?.Buckets?.length || 0} buckets</span>
+          <div>
+            <h3>Traffic Summary</h3>
+            <span>{selectedSummaryRange.label} | {summaryRangeWindow.sliceCount} slices | {formatBucketSizeLabel(selectedSummaryRange.bucketSeconds)}</span>
+          </div>
+          <div className="request-history-range-group" role="tablist" aria-label="Traffic summary range">
+            {SUMMARY_RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`request-history-range-btn ${summaryRangeId === option.id ? 'active' : ''}`}
+                onClick={() => setSummaryRangeId(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <RequestHistorySummaryChart buckets={summary?.Buckets || []} />
+        <RequestHistorySummaryChart buckets={summary?.Buckets || []} rangeId={summaryRangeId} rangeWindow={summaryRangeWindow} />
       </div>
 
       <DataTable

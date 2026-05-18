@@ -41,6 +41,21 @@ export class ApiClient {
     return requestHeaders;
   }
 
+  buildDockerDirectOpenApiUrl() {
+    try {
+      const url = new URL(this.serverUrl);
+      if (url.port !== '8801') return null;
+
+      url.port = '8800';
+      url.pathname = '/openapi.json';
+      url.search = '';
+      url.hash = '';
+      return url.toString();
+    } catch {
+      return null;
+    }
+  }
+
   isTextLikeContentType(contentType = '') {
     const lowered = contentType.toLowerCase();
     if (!lowered) return true;
@@ -523,9 +538,40 @@ export class ApiClient {
 
   // OpenAPI
   async getOpenApiSpec() {
-    const response = await this.requestRaw({ method: 'GET', path: '/openapi.json', includeAuth: false });
-    if (!response.ok) throw new Error(response.errorMessage || 'Failed to load OpenAPI spec');
-    return response.json || JSON.parse(response.text || '{}');
+    const directDockerOpenApiUrl = this.buildDockerDirectOpenApiUrl();
+    const candidates = [
+      { path: '/v1.0/openapi.json', includeAuth: true, label: '/v1.0/openapi.json' },
+      { path: '/openapi.json', includeAuth: false, label: '/openapi.json' },
+      ...(directDockerOpenApiUrl ? [{ path: directDockerOpenApiUrl, includeAuth: false, label: directDockerOpenApiUrl }] : []),
+    ];
+    const failures = [];
+
+    for (const candidate of candidates) {
+      const response = await this.requestRaw({
+        method: 'GET',
+        path: candidate.path,
+        includeAuth: candidate.includeAuth,
+      });
+
+      if (!response.ok) {
+        failures.push(`${candidate.label}: ${response.errorMessage || `HTTP ${response.statusCode}`}`);
+        continue;
+      }
+
+      if (response.json && typeof response.json === 'object') {
+        return response.json;
+      }
+
+      const trimmed = (response.text || '').trim();
+      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+        failures.push(`${candidate.label}: returned HTML instead of JSON`);
+        continue;
+      }
+
+      failures.push(`${candidate.label}: returned an unexpected non-JSON response`);
+    }
+
+    throw new Error(`Failed to load OpenAPI spec. Tried ${failures.join('; ')}`);
   }
 
   // Models

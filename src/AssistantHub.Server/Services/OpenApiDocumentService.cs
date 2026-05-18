@@ -104,6 +104,7 @@ namespace AssistantHub.Server.Services
         private void AddOperation(JsonObject paths, string path, string method, bool authenticated)
         {
             if (String.IsNullOrEmpty(path) || String.IsNullOrEmpty(method)) return;
+            if (String.Equals(path, "/v1.0/openapi.json", StringComparison.OrdinalIgnoreCase)) return;
 
             if (!(paths[path] is JsonObject pathItem))
             {

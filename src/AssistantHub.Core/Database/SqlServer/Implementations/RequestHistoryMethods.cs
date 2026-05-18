@@ -168,9 +168,9 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
             filter.StartUtc ??= DateTime.UtcNow.AddHours(-24);
             filter.EndUtc ??= DateTime.UtcNow;
             if (filter.EndUtc <= filter.StartUtc)
-                filter.EndUtc = filter.StartUtc.Value.AddMinutes(filter.BucketMinutes);
+                filter.EndUtc = filter.StartUtc.Value.AddSeconds(filter.BucketSeconds);
 
-            RequestHistorySummaryResult ret = InitializeSummary(filter.StartUtc.Value, filter.EndUtc.Value, filter.BucketMinutes);
+            RequestHistorySummaryResult ret = InitializeSummary(filter.StartUtc.Value, filter.EndUtc.Value, filter.BucketSeconds);
             double[] durationSums = new double[ret.Buckets.Count];
 
             string query =
@@ -192,7 +192,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 else ret.TotalFailure++;
                 ret.AverageDurationMs += durationMs;
 
-                int index = (int)Math.Floor((createdUtc - filter.StartUtc.Value).TotalMinutes / filter.BucketMinutes);
+                int index = (int)Math.Floor((createdUtc - filter.StartUtc.Value).TotalSeconds / filter.BucketSeconds);
                 if (index < 0 || index >= ret.Buckets.Count) continue;
 
                 RequestHistorySummaryBucket bucket = ret.Buckets[index];
@@ -308,13 +308,13 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
             return Int32.TryParse(continuationToken, out int skip) && skip > 0 ? skip : 0;
         }
 
-        private RequestHistorySummaryResult InitializeSummary(DateTime startUtc, DateTime endUtc, int bucketMinutes)
+        private RequestHistorySummaryResult InitializeSummary(DateTime startUtc, DateTime endUtc, int bucketSeconds)
         {
             RequestHistorySummaryResult ret = new RequestHistorySummaryResult();
             DateTime cursor = startUtc;
             while (cursor < endUtc)
             {
-                DateTime next = cursor.AddMinutes(bucketMinutes);
+                DateTime next = cursor.AddSeconds(bucketSeconds);
                 ret.Buckets.Add(new RequestHistorySummaryBucket
                 {
                     BucketStartUtc = cursor,

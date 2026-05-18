@@ -12,6 +12,7 @@
 ### Changed
 - Docker image tags updated to `v0.10.0`
 - Endpoint test workflows can now open directly in the shared API Explorer with prebuilt request presets
+- The dashboard now includes `API Explorer` and `Request History` as built-in `Monitoring` tools for system and assistant API traffic
 - Product and package versions updated to `0.10.0`
 
 ### Breaking

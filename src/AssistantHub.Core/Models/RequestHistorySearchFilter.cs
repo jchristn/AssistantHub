@@ -100,12 +100,21 @@ namespace AssistantHub.Core.Models
         public DateTime? EndUtc { get; set; } = null;
 
         /// <summary>
-        /// Summary bucket width in minutes.
+        /// Summary bucket width in seconds.
+        /// </summary>
+        public int BucketSeconds
+        {
+            get => _BucketSeconds;
+            set => _BucketSeconds = Math.Clamp(value, 1, 86400);
+        }
+
+        /// <summary>
+        /// Legacy summary bucket width in minutes.
         /// </summary>
         public int BucketMinutes
         {
-            get => _BucketMinutes;
-            set => _BucketMinutes = Math.Clamp(value, 1, 1440);
+            get => Math.Max(1, (int)Math.Ceiling(_BucketSeconds / 60d));
+            set => BucketSeconds = Math.Clamp(value, 1, 1440) * 60;
         }
 
         #endregion
@@ -113,7 +122,7 @@ namespace AssistantHub.Core.Models
         #region Private-Members
 
         private int _MaxResults = 100;
-        private int _BucketMinutes = 15;
+        private int _BucketSeconds = 15 * 60;
 
         #endregion
     }

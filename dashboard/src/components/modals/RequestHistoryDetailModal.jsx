@@ -31,7 +31,7 @@ function RequestHistoryDetailModal({ entry, onClose, onReplay }) {
   );
 
   return (
-    <Modal title={`Request History: ${entry.Id}`} onClose={onClose} extraWide footer={footer}>
+    <Modal title={`Request History: ${entry.Id}`} onClose={onClose} fullscreen footer={footer}>
       <div className="request-history-detail">
         <div className="request-history-detail-hero">
           <div className="request-history-detail-status">

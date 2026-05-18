@@ -6,6 +6,10 @@ export default defineConfig({
   server: {
     port: 8501,
     proxy: {
+      '/openapi.json': {
+        target: 'http://localhost:8800',
+        changeOrigin: true
+      },
       '/v1.0': {
         target: 'http://localhost:8800',
         changeOrigin: true

@@ -305,9 +305,17 @@ namespace AssistantHub.Server.Handlers
                 && DateTime.TryParse(endUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedEndUtc))
                 filter.EndUtc = parsedEndUtc;
 
-            string bucketMinutes = ctx.Request.Query.Elements.Get("bucketMinutes");
-            if (!String.IsNullOrEmpty(bucketMinutes) && Int32.TryParse(bucketMinutes, out int parsedBucketMinutes))
-                filter.BucketMinutes = parsedBucketMinutes;
+            string bucketSeconds = ctx.Request.Query.Elements.Get("bucketSeconds");
+            if (!String.IsNullOrEmpty(bucketSeconds) && Int32.TryParse(bucketSeconds, out int parsedBucketSeconds))
+            {
+                filter.BucketSeconds = parsedBucketSeconds;
+            }
+            else
+            {
+                string bucketMinutes = ctx.Request.Query.Elements.Get("bucketMinutes");
+                if (!String.IsNullOrEmpty(bucketMinutes) && Int32.TryParse(bucketMinutes, out int parsedBucketMinutes))
+                    filter.BucketMinutes = parsedBucketMinutes;
+            }
 
             return filter;
         }
@@ -319,12 +327,12 @@ namespace AssistantHub.Server.Handlers
             DateTime startUtc = filter.StartUtc ?? DateTime.UtcNow.AddHours(-24);
             DateTime endUtc = filter.EndUtc ?? DateTime.UtcNow;
             if (endUtc <= startUtc)
-                endUtc = startUtc.AddMinutes(filter.BucketMinutes);
+                endUtc = startUtc.AddSeconds(filter.BucketSeconds);
 
             DateTime cursor = startUtc;
             while (cursor < endUtc)
             {
-                DateTime next = cursor.AddMinutes(filter.BucketMinutes);
+                DateTime next = cursor.AddSeconds(filter.BucketSeconds);
                 ret.Buckets.Add(new RequestHistorySummaryBucket
                 {
                     BucketStartUtc = cursor,

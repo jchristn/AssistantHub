@@ -17,9 +17,11 @@ function UploadProgressPanel({ records, onDismiss }) {
     return s === 'completed' || s === 'indexed' || s === 'active';
   };
 
-  const activeCount = records.filter(r => !isComplete(r) && !isError(r)).length;
-  const completedCount = records.filter(r => isComplete(r)).length;
-  const failedCount = records.filter(r => isError(r)).length;
+  const isDismissible = (r) => isError(r) || isComplete(r);
+
+  const activeCount = records.filter((r) => !isComplete(r) && !isError(r)).length;
+  const completedCount = records.filter((r) => isComplete(r)).length;
+  const failedCount = records.filter((r) => isError(r)).length;
 
   let summary = `${records.length} file${records.length !== 1 ? 's' : ''}`;
   const parts = [];
@@ -31,7 +33,7 @@ function UploadProgressPanel({ records, onDismiss }) {
   return (
     <div className={`upload-progress-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="upload-progress-header" onClick={() => setCollapsed(!collapsed)}>
-        <span className="upload-progress-title">Ingestion Progress — {summary}</span>
+        <span className="upload-progress-title">Ingestion Progress - {summary}</span>
         <button className="upload-progress-toggle" aria-label={collapsed ? 'Expand' : 'Collapse'}>
           {collapsed ? '\u25B2' : '\u25BC'}
         </button>
@@ -45,7 +47,7 @@ function UploadProgressPanel({ records, onDismiss }) {
             <span className="upload-progress-col-action"></span>
           </div>
           <div className="upload-progress-list">
-            {records.map(r => (
+            {records.map((r) => (
               <div key={r.id} className={`upload-progress-item ${isError(r) ? 'error' : isComplete(r) ? 'complete' : ''}`}>
                 <span className="upload-progress-col-name upload-progress-filename" title={r.fileName}>{r.fileName}</span>
                 <span className={`upload-progress-col-step upload-progress-step ${isError(r) ? 'step-error' : isComplete(r) ? 'step-complete' : 'step-active'}`}>
@@ -61,7 +63,9 @@ function UploadProgressPanel({ records, onDismiss }) {
                   <span className="upload-progress-percent">{r.percentage}%</span>
                 </span>
                 <span className="upload-progress-col-action">
-                  <button className="upload-progress-dismiss" onClick={() => onDismiss(r.id)} title="Dismiss">&times;</button>
+                  {isDismissible(r) && (
+                    <button className="upload-progress-dismiss" onClick={() => onDismiss(r.id)} title="Dismiss">&times;</button>
+                  )}
                 </span>
                 {isError(r) && r.error && (
                   <div className="upload-progress-error">{r.error}</div>

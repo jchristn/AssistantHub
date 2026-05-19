@@ -10,7 +10,6 @@ import ProcessingLogModal from '../components/modals/ProcessingLogModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import DropRuleModal from '../components/DropRuleModal';
-import UploadProgressPanel from '../components/UploadProgressPanel';
 import { useUploadQueue } from '../hooks/useUploadQueue';
 import { extractFilesFromDrop } from '../utils/fileDropUtils';
 import Tooltip from '../components/Tooltip';
@@ -54,7 +53,7 @@ function DocumentsView() {
   const [pendingDropFiles, setPendingDropFiles] = useState(null);
   const dragCounter = useRef(0);
 
-  const { records, enqueueFiles, dismissRecord } = useUploadQueue(api);
+  const { records, enqueueFiles } = useUploadQueue(api);
   const prevCompletedCount = useRef(0);
 
   // Auto-refresh table when uploads complete
@@ -272,7 +271,6 @@ function DocumentsView() {
           onClose={() => setPendingDropFiles(null)}
         />
       )}
-      <UploadProgressPanel records={records} onDismiss={dismissRecord} />
     </div>
   );
 }

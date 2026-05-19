@@ -27,13 +27,18 @@ import InferenceEndpointsView from '../views/InferenceEndpointsView';
 import CrawlersView from '../views/CrawlersView';
 import EvaluationView from '../views/EvaluationView';
 import { useAuth } from '../context/AuthContext';
+import { ApiClient } from '../utils/api';
+import { useUploadQueue } from '../hooks/useUploadQueue';
+import UploadProgressPanel from './UploadProgressPanel';
 
 function Dashboard() {
-  const { isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
+  const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const [showTour, setShowTour] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [drawerAssistantId, setDrawerAssistantId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const { records, dismissRecord } = useUploadQueue(api);
 
   const isAdminOrTenantAdmin = isGlobalAdmin || isTenantAdmin;
 
@@ -96,6 +101,7 @@ function Dashboard() {
         </div>
       </div>
       <ChatDrawer assistantId={drawerAssistantId} isOpen={drawerOpen} onClose={closeChatDrawer} />
+      <UploadProgressPanel records={records} onDismiss={dismissRecord} />
       {showTour && <Tour onComplete={handleTourComplete} />}
       {showWizard && <SetupWizard onClose={() => setShowWizard(false)} />}
     </div>

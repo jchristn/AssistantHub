@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const STATUS_PERCENT = {
   uploading: 10,
@@ -31,6 +31,18 @@ const STATUS_LABEL = {
   error: 'Error',
 };
 
+const uploadQueueStore = {
+  api: null,
+  listeners: new Set(),
+  records: [],
+  pollTimers: {},
+  activeCount: 0,
+  queue: [],
+  cleanupTimer: null,
+};
+
+let nextId = 1;
+
 function statusToPercent(status) {
   if (!status) return 0;
   return STATUS_PERCENT[status.toLowerCase()] ?? 10;
@@ -53,148 +65,229 @@ function isErrorStatus(status) {
   return s === 'failed' || s === 'error';
 }
 
-let nextId = 1;
+function isDismissibleStatus(status) {
+  return isFinalStatus(status) || isErrorStatus(status);
+}
 
-export function useUploadQueue(api) {
-  const [records, setRecords] = useState([]);
-  const pollTimers = useRef({});
-  const activeCount = useRef(0);
-  const queue = useRef([]);
-  const unmounted = useRef(false);
-  const CONCURRENCY = Number(window.DASHBOARD_INGEST_MAX_PARALLEL_INGESTIONS) || 5;
+function getConcurrency() {
+  return Number(window.DASHBOARD_INGEST_MAX_PARALLEL_INGESTIONS) || 5;
+}
 
-  const updateRecord = useCallback((id, patch) => {
-    setRecords(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
-  }, []);
+function emit() {
+  const snapshot = uploadQueueStore.records;
+  for (const listener of uploadQueueStore.listeners) {
+    listener(snapshot);
+  }
+}
 
-  const pollDocument = useCallback((id, serverDocId) => {
-    const timer = setInterval(async () => {
-      if (unmounted.current) return;
-      try {
-        const doc = await api.getDocument(serverDocId);
-        if (!doc) return;
-        const status = doc.Status || '';
-        const percent = statusToPercent(status);
-        const stepLabel = statusToLabel(status);
-        const patch = { status, percentage: percent, stepLabel };
-        if (isFinalStatus(status)) {
-          clearInterval(timer);
-          delete pollTimers.current[id];
-          activeCount.current = Math.max(0, activeCount.current - 1);
-          patch.completedAt = Date.now();
-          if (isErrorStatus(status)) {
-            patch.error = doc.ErrorMessage || doc.FailureReason || 'Processing failed';
-          }
-          processQueue();
+function updateRecords(updater) {
+  uploadQueueStore.records = updater(uploadQueueStore.records);
+  emit();
+}
+
+function updateRecord(id, patch) {
+  updateRecords((records) => records.map((record) => (record.id === id ? { ...record, ...patch } : record)));
+}
+
+function removePollTimer(id) {
+  if (uploadQueueStore.pollTimers[id]) {
+    clearInterval(uploadQueueStore.pollTimers[id]);
+    delete uploadQueueStore.pollTimers[id];
+  }
+}
+
+function ensureCleanupTimer() {
+  if (uploadQueueStore.cleanupTimer) return;
+
+  uploadQueueStore.cleanupTimer = setInterval(() => {
+    const cutoff = Date.now() - 180000;
+    const expiredIds = uploadQueueStore.records
+      .filter((record) => record.completedAt && record.completedAt < cutoff)
+      .map((record) => record.id);
+
+    if (expiredIds.length < 1) return;
+
+    for (const id of expiredIds) {
+      removePollTimer(id);
+    }
+
+    const expiredSet = new Set(expiredIds);
+    updateRecords((records) => records.filter((record) => !expiredSet.has(record.id)));
+  }, 10000);
+}
+
+function ensureApi() {
+  if (!uploadQueueStore.api) {
+    throw new Error('Upload queue API client is not initialized.');
+  }
+
+  return uploadQueueStore.api;
+}
+
+function pollDocument(id, serverDocId) {
+  removePollTimer(id);
+
+  const timer = setInterval(async () => {
+    try {
+      const doc = await ensureApi().getDocument(serverDocId);
+      if (!doc) return;
+
+      const status = doc.Status || '';
+      const patch = {
+        status,
+        percentage: statusToPercent(status),
+        stepLabel: statusToLabel(status),
+      };
+
+      if (isFinalStatus(status)) {
+        removePollTimer(id);
+        uploadQueueStore.activeCount = Math.max(0, uploadQueueStore.activeCount - 1);
+        patch.completedAt = Date.now();
+        if (isErrorStatus(status)) {
+          patch.error = doc.ErrorMessage || doc.FailureReason || 'Processing failed';
         }
         updateRecord(id, patch);
-      } catch {
-        // polling error, will retry next interval
-      }
-    }, 3000);
-    pollTimers.current[id] = timer;
-  }, [api, updateRecord]);
-
-  const processOne = useCallback(async (item) => {
-    const { id, file, ruleId, labels, tags } = item;
-    updateRecord(id, { status: 'Uploading', percentage: 10, stepLabel: 'Uploading' });
-    try {
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const payload = {
-        IngestionRuleId: ruleId,
-        Name: file.name,
-        OriginalFilename: file.name,
-        ContentType: file.type || 'application/octet-stream',
-        Base64Content: base64,
-      };
-      if (labels && labels.length > 0) payload.Labels = labels;
-      if (tags && Object.keys(tags).length > 0) payload.Tags = tags;
-
-      const result = await api.uploadDocument(payload);
-      if (result && result.statusCode && result.statusCode >= 400) {
-        throw new Error(result.ErrorMessage || 'Upload failed');
-      }
-      const serverDocId = result?.Id || result?.GUID || result?.id;
-      if (serverDocId) {
-        updateRecord(id, { serverDocId, status: 'Uploaded', percentage: 15, stepLabel: 'Uploaded' });
-        pollDocument(id, serverDocId);
-      } else {
-        updateRecord(id, { status: 'Completed', percentage: 100, stepLabel: 'Completed', completedAt: Date.now() });
-        activeCount.current = Math.max(0, activeCount.current - 1);
         processQueue();
+        return;
       }
-    } catch (err) {
-      updateRecord(id, { status: 'Failed', percentage: 100, stepLabel: 'Failed', error: err.message || 'Upload failed', completedAt: Date.now() });
-      activeCount.current = Math.max(0, activeCount.current - 1);
-      processQueue();
-    }
-  }, [api, updateRecord, pollDocument]);
 
-  const processQueue = useCallback(() => {
-    while (activeCount.current < CONCURRENCY && queue.current.length > 0) {
-      const item = queue.current.shift();
-      activeCount.current++;
-      processOne(item);
+      updateRecord(id, patch);
+    } catch {
+      // polling error, will retry next interval
     }
-  }, [processOne]);
+  }, 3000);
 
-  const enqueueFiles = useCallback((files, ruleId, labels, tags) => {
-    const newRecords = files.map(file => {
-      const id = nextId++;
-      return { id, fileName: file.name, status: 'Queued', stepLabel: 'Queued', serverDocId: null, percentage: 0, error: null, completedAt: null, _file: file, _ruleId: ruleId, _labels: labels, _tags: tags };
+  uploadQueueStore.pollTimers[id] = timer;
+}
+
+async function processOne(item) {
+  const { id, file, ruleId, labels, tags } = item;
+  updateRecord(id, { status: 'Uploading', percentage: 10, stepLabel: 'Uploading' });
+
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
 
-    setRecords(prev => [...prev, ...newRecords.map(({ _file, _ruleId, _labels, _tags, ...r }) => r)]);
+    const payload = {
+      IngestionRuleId: ruleId,
+      Name: file.name,
+      OriginalFilename: file.name,
+      ContentType: file.type || 'application/octet-stream',
+      Base64Content: base64,
+    };
 
-    for (const rec of newRecords) {
-      queue.current.push({ id: rec.id, file: rec._file, ruleId: rec._ruleId, labels: rec._labels, tags: rec._tags });
+    if (labels && labels.length > 0) payload.Labels = labels;
+    if (tags && Object.keys(tags).length > 0) payload.Tags = tags;
+
+    const result = await ensureApi().uploadDocument(payload);
+    if (result && result.statusCode && result.statusCode >= 400) {
+      throw new Error(result.ErrorMessage || 'Upload failed');
     }
+
+    const serverDocId = result?.Id || result?.GUID || result?.id;
+    if (serverDocId) {
+      updateRecord(id, { serverDocId, status: 'Uploaded', percentage: 15, stepLabel: 'Uploaded' });
+      pollDocument(id, serverDocId);
+    } else {
+      updateRecord(id, { status: 'Completed', percentage: 100, stepLabel: 'Completed', completedAt: Date.now() });
+      uploadQueueStore.activeCount = Math.max(0, uploadQueueStore.activeCount - 1);
+      processQueue();
+    }
+  } catch (err) {
+    updateRecord(id, {
+      status: 'Failed',
+      percentage: 100,
+      stepLabel: 'Failed',
+      error: err.message || 'Upload failed',
+      completedAt: Date.now(),
+    });
+    uploadQueueStore.activeCount = Math.max(0, uploadQueueStore.activeCount - 1);
     processQueue();
-  }, [processQueue]);
+  }
+}
+
+function processQueue() {
+  while (uploadQueueStore.activeCount < getConcurrency() && uploadQueueStore.queue.length > 0) {
+    const item = uploadQueueStore.queue.shift();
+    uploadQueueStore.activeCount++;
+    processOne(item);
+  }
+}
+
+function enqueueFilesInternal(files, ruleId, labels, tags) {
+  const newRecords = files.map((file) => {
+    const id = nextId++;
+    return {
+      id,
+      fileName: file.name,
+      status: 'Queued',
+      stepLabel: 'Queued',
+      serverDocId: null,
+      percentage: 0,
+      error: null,
+      completedAt: null,
+      _file: file,
+      _ruleId: ruleId,
+      _labels: labels,
+      _tags: tags,
+    };
+  });
+
+  updateRecords((records) => [
+    ...records,
+    ...newRecords.map(({ _file, _ruleId, _labels, _tags, ...record }) => record),
+  ]);
+
+  for (const record of newRecords) {
+    uploadQueueStore.queue.push({
+      id: record.id,
+      file: record._file,
+      ruleId: record._ruleId,
+      labels: record._labels,
+      tags: record._tags,
+    });
+  }
+
+  processQueue();
+}
+
+function dismissRecordInternal(id) {
+  const record = uploadQueueStore.records.find((item) => item.id === id);
+  if (!record || !isDismissibleStatus(record.status)) return;
+
+  removePollTimer(id);
+  updateRecords((records) => records.filter((item) => item.id !== id));
+}
+
+export function useUploadQueue(api) {
+  if (api) {
+    uploadQueueStore.api = api;
+  }
+
+  const [records, setRecords] = useState(uploadQueueStore.records);
+
+  useEffect(() => {
+    ensureCleanupTimer();
+
+    const listener = (nextRecords) => setRecords(nextRecords);
+    uploadQueueStore.listeners.add(listener);
+    listener(uploadQueueStore.records);
+
+    return () => {
+      uploadQueueStore.listeners.delete(listener);
+    };
+  }, []);
+
+  const enqueueFiles = useCallback((files, ruleId, labels, tags) => {
+    enqueueFilesInternal(files, ruleId, labels, tags);
+  }, []);
 
   const dismissRecord = useCallback((id) => {
-    if (pollTimers.current[id]) {
-      clearInterval(pollTimers.current[id]);
-      delete pollTimers.current[id];
-    }
-    setRecords(prev => prev.filter(r => r.id !== id));
-  }, []);
-
-  // Auto-cleanup completed records after 180s
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const cutoff = Date.now() - 180000;
-      setRecords(prev => {
-        const toRemove = prev.filter(r => r.completedAt && r.completedAt < cutoff);
-        if (toRemove.length === 0) return prev;
-        for (const r of toRemove) {
-          if (pollTimers.current[r.id]) {
-            clearInterval(pollTimers.current[r.id]);
-            delete pollTimers.current[r.id];
-          }
-        }
-        return prev.filter(r => !r.completedAt || r.completedAt >= cutoff);
-      });
-    }, 10000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    unmounted.current = false;
-    return () => {
-      unmounted.current = true;
-      for (const timer of Object.values(pollTimers.current)) {
-        clearInterval(timer);
-      }
-      pollTimers.current = {};
-    };
+    dismissRecordInternal(id);
   }, []);
 
   return { records, enqueueFiles, dismissRecord };

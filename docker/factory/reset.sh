@@ -99,7 +99,8 @@ rm -f "$DOCKER_DIR/partio/data/partio.db"
 rm -f "$DOCKER_DIR/partio/data/partio.db-shm"
 rm -f "$DOCKER_DIR/partio/data/partio.db-wal"
 cp "$FACTORY_DIR/partio.db" "$DOCKER_DIR/partio/data/partio.db"
-echo "        Restored partio.db"
+cp "$FACTORY_DIR/partio.json" "$DOCKER_DIR/partio/partio.json"
+echo "        Restored partio.db and partio.json"
 
 # -------------------------------------------------------------------------
 # Clear object storage

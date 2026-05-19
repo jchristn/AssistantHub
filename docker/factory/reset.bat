@@ -95,7 +95,8 @@ del /q "%DOCKER_DIR%partio\data\partio.db" 2>nul
 del /q "%DOCKER_DIR%partio\data\partio.db-shm" 2>nul
 del /q "%DOCKER_DIR%partio\data\partio.db-wal" 2>nul
 copy /y "%FACTORY_DIR%partio.db" "%DOCKER_DIR%partio\data\partio.db" >nul
-echo         Restored partio.db
+copy /y "%FACTORY_DIR%partio.json" "%DOCKER_DIR%partio\partio.json" >nul
+echo         Restored partio.db and partio.json
 
 REM -------------------------------------------------------------------------
 REM Clear object storage

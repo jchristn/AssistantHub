@@ -168,7 +168,7 @@ namespace AssistantHub.Core.Services
                 if (String.IsNullOrEmpty(detectedType) || String.Equals(detectedType, "unknown", StringComparison.OrdinalIgnoreCase))
                 {
                     if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Type detection failed — could not detect document type").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Type detection failed - could not detect document type").ConfigureAwait(false);
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetectionFailed, "Document type could not be detected.", token).ConfigureAwait(false);
                     _Logging.Warn(_Header + "type detection failed for document " + documentId);
                     return;
@@ -200,7 +200,7 @@ namespace AssistantHub.Core.Services
                     {
                         extractSw?.Stop();
                         string elapsedStr = extractSw != null ? " in " + extractSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms" : "";
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Atom extraction failed" + elapsedStr + " — no content returned").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Atom extraction failed" + elapsedStr + " - no content returned").ConfigureAwait(false);
                     }
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Failed to extract content from document.", token).ConfigureAwait(false);
                     return;
@@ -226,17 +226,17 @@ namespace AssistantHub.Core.Services
                 if (rule == null)
                 {
                     if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — no ingestion rule assigned").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped - no ingestion rule assigned").ConfigureAwait(false);
                 }
                 else if (rule.Summarization == null)
                 {
                     if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — summarization configuration is null in rule \"" + rule.Name + "\"").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped - summarization configuration is null in rule \"" + rule.Name + "\"").ConfigureAwait(false);
                 }
                 else if (String.IsNullOrWhiteSpace(rule.Summarization.CompletionEndpointId))
                 {
                     if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped — CompletionEndpointId is not set in summarization configuration").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization skipped - CompletionEndpointId is not set in summarization configuration").ConfigureAwait(false);
                 }
                 else
                 {
@@ -253,13 +253,13 @@ namespace AssistantHub.Core.Services
                     // Resolve and log embedding endpoint
                     string embEndpointId = rule?.Embedding?.EmbeddingEndpointId ?? _ChunkingSettings.EndpointId;
                     string embEndpointInfo = await ResolveEndpointInfoAsync("embedding", embEndpointId, token).ConfigureAwait(false);
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding endpoint: " + embEndpointId + (embEndpointInfo != null ? " — " + embEndpointInfo : "")).ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding endpoint: " + embEndpointId + (embEndpointInfo != null ? " - " + embEndpointInfo : "")).ConfigureAwait(false);
 
                     // Resolve and log completion endpoint if summarization is enabled
                     if (hasSummarization)
                     {
                         string compEndpointInfo = await ResolveEndpointInfoAsync("completion", rule.Summarization.CompletionEndpointId, token).ConfigureAwait(false);
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Completion endpoint: " + rule.Summarization.CompletionEndpointId + (compEndpointInfo != null ? " — " + compEndpointInfo : "")).ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Completion endpoint: " + rule.Summarization.CompletionEndpointId + (compEndpointInfo != null ? " - " + compEndpointInfo : "")).ConfigureAwait(false);
                     }
                 }
 
@@ -275,7 +275,7 @@ namespace AssistantHub.Core.Services
                             + ", minCellLength: " + rule.Summarization.MinCellLength
                             + ", maxParallelTasks: " + rule.Summarization.MaxParallelTasks
                             + ", timeoutMs: " + rule.Summarization.TimeoutMs;
-                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization enabled — " + sumParams).ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization enabled - " + sumParams).ConfigureAwait(false);
                     }
                 }
 
@@ -289,7 +289,7 @@ namespace AssistantHub.Core.Services
                         if (!String.IsNullOrEmpty(rule.Chunking.OverlapStrategy))
                             chunkParams += ", overlapStrategy: " + rule.Chunking.OverlapStrategy;
                     }
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Processing started — " + chunkParams).ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Processing started - " + chunkParams).ConfigureAwait(false);
                 }
 
                 Stopwatch summarizeSw = hasSummarization && _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Summarization").ConfigureAwait(false) : null;
@@ -302,11 +302,11 @@ namespace AssistantHub.Core.Services
                     if (hasSummarization && _ProcessingLog != null)
                     {
                         summarizeSw?.Stop();
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Summarization and chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms — no chunks returned").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Summarization and chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms - no chunks returned").ConfigureAwait(false);
                     }
                     else if (_ProcessingLog != null)
                     {
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms — no chunks returned").ConfigureAwait(false);
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Chunking failed in " + chunkSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms - no chunks returned").ConfigureAwait(false);
                     }
                     await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Failed to chunk document content.", token).ConfigureAwait(false);
                     return;
@@ -348,7 +348,7 @@ namespace AssistantHub.Core.Services
                 // Step 13: Store chunk embeddings in RecallDB via batch API
                 if (_ProcessingLog != null)
                 {
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started — " + chunks.Count + " chunks to store (batch)").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding storage started - " + chunks.Count + " chunks to store (batch)").ConfigureAwait(false);
                 }
 
                 Stopwatch storeSw = Stopwatch.StartNew();
@@ -373,7 +373,7 @@ namespace AssistantHub.Core.Services
 
                 pipelineSw.Stop();
                 if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline complete — total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline complete - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -382,7 +382,7 @@ namespace AssistantHub.Core.Services
 
                 pipelineSw.Stop();
                 if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "ERROR", "Pipeline failed during step: " + currentStep + " — " + e.Message + " — total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "ERROR", "Pipeline failed during step: " + currentStep + " - " + e.Message + " - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
             }
         }
 
@@ -596,7 +596,7 @@ namespace AssistantHub.Core.Services
                         if (sb.Length > 0) sb.Append(Environment.NewLine);
                         sb.Append(atom.Text);
                         if (_ProcessingLog != null)
-                            await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom [" + atomIndex + "/" + atoms.Count + "] — " + atom.Text.Length + " characters").ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom [" + atomIndex + "/" + atoms.Count + "] - " + atom.Text.Length + " characters").ConfigureAwait(false);
                     }
                 }
 
@@ -665,7 +665,7 @@ namespace AssistantHub.Core.Services
                 && rule.Chunking.Strategy.Equals("None", StringComparison.OrdinalIgnoreCase))
             {
                 if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Chunking strategy is None — skipping chunking, treating entire content as a single chunk").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Chunking strategy is None - skipping chunking, treating entire content as a single chunk").ConfigureAwait(false);
 
                 // Compute embeddings for the single chunk via Partio /v1.0/embed
                 List<float> embeddings = await ComputeEmbeddingAsync(documentId, content, rule, token).ConfigureAwait(false);
@@ -776,7 +776,7 @@ namespace AssistantHub.Core.Services
                     if (_ProcessingLog != null)
                     {
                         await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Step: Chunking/Embedding/Summarization via Partio — HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                                "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
                         await _ProcessingLog.LogAsync(documentId, "ERROR",
                             "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
                         await _ProcessingLog.LogAsync(documentId, "ERROR",
@@ -859,7 +859,7 @@ namespace AssistantHub.Core.Services
                         if (_ProcessingLog != null)
                         {
                             await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Step: Single-chunk embedding via Partio /v1.0/embed — HTTP " + (int)response.StatusCode).ConfigureAwait(false);
+                                "Step: Single-chunk embedding via Partio /v1.0/embed - HTTP " + (int)response.StatusCode).ConfigureAwait(false);
                             await _ProcessingLog.LogAsync(documentId, "ERROR",
                                 "Source content: " + text.Length + " chars, excerpt: " + Excerpt(text)).ConfigureAwait(false);
                             await _ProcessingLog.LogAsync(documentId, "ERROR",
@@ -878,7 +878,7 @@ namespace AssistantHub.Core.Services
                 if (_ProcessingLog != null)
                 {
                     await _ProcessingLog.LogAsync(documentId, "ERROR",
-                        "Step: Single-chunk embedding — exception: " + e.Message).ConfigureAwait(false);
+                        "Step: Single-chunk embedding - exception: " + e.Message).ConfigureAwait(false);
                     await _ProcessingLog.LogAsync(documentId, "ERROR",
                         "Source content: " + text.Length + " chars").ConfigureAwait(false);
                 }

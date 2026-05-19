@@ -760,7 +760,7 @@ namespace AssistantHub.Server.Handlers
                     rerankSw.Stop();
                     rerankDurationMs = Math.Round(rerankSw.Elapsed.TotalMilliseconds, 2);
                     rerankOutputCount = retrievalChunks.Count;
-                    Logging.Info(_Header + "re-ranking: " + rerankInputCount + " → " + rerankOutputCount + " chunks (" + rerankDurationMs + " ms)");
+                    Logging.Info(_Header + "re-ranking: " + rerankInputCount + " -> " + rerankOutputCount + " chunks (" + rerankDurationMs + " ms)");
                 }
 
                 // Extract content strings for system message building (merged with neighbors when present)

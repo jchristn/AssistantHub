@@ -99,7 +99,7 @@ namespace AssistantHub.Core.Services
             string elapsed = sw != null ? sw.Elapsed.TotalMilliseconds.ToString("F2") + "ms" : "unknown";
             string message = stepName + " completed in " + elapsed;
             if (!String.IsNullOrEmpty(result))
-                message += " — " + result;
+                message += " - " + result;
             await LogAsync(documentId, "INFO", message, tenantId).ConfigureAwait(false);
         }
 

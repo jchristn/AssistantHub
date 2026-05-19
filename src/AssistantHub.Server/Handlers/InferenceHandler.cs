@@ -19,6 +19,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Settings;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles inference model listing and pull routes.

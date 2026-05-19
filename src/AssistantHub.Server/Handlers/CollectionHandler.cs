@@ -13,6 +13,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Settings;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles collection CRUD routes by proxying to RecallDB (admin only).

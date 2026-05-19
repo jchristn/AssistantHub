@@ -139,6 +139,10 @@ export interface EnumerationQuery {
   maxResults?: number;
   continuationToken?: string;
   ordering?: EnumerationOrder;
+  assistantId?: string;
+  bucketName?: string;
+  collectionId?: string;
+  threadId?: string;
 }
 
 /** Paginated list response. */
@@ -305,15 +309,26 @@ export interface AssistantPublicInfo {
 
 /** Slack verification request. */
 export interface SlackVerificationRequest {
+  EnableSlack?: boolean;
   SlackAppToken?: string;
   SlackBotToken?: string;
   SlackChannelId?: string;
+  SlackMessagePrefix?: string;
+}
+
+/** Result of an individual Slack verification check. */
+export interface SlackVerificationCheck {
+  Success: boolean;
+  Message?: string;
+  Details?: unknown;
 }
 
 /** Slack verification response. */
 export interface SlackVerificationResponse {
   Success: boolean;
-  Message?: string;
+  BotToken?: SlackVerificationCheck;
+  Channel?: SlackVerificationCheck;
+  SocketMode?: SlackVerificationCheck;
 }
 
 // ============================================================================
@@ -532,6 +547,12 @@ export interface ChatRequest {
   Message?: string;
 }
 
+/** Response from the compaction endpoint. */
+export interface CompactResponse {
+  messages: ChatCompletionMessage[];
+  usage: unknown;
+}
+
 /** Feedback submission request. */
 export interface FeedbackRequest {
   AssistantId?: string;
@@ -590,6 +611,15 @@ export interface ChatHistory {
   AssistantResponse?: string;
   CreatedUtc?: string;
   LastUpdateUtc?: string;
+}
+
+/** Summary of a conversation thread. */
+export interface ThreadSummary {
+  ThreadId: string;
+  AssistantId?: string;
+  FirstMessageUtc?: string;
+  LastMessageUtc?: string;
+  TurnCount: number;
 }
 
 // ============================================================================
@@ -654,26 +684,48 @@ export interface EndpointHealthStatus {
 
 /** Request to test an embedding endpoint. */
 export interface EndpointExplorerEmbeddingRequest {
-  Text: string;
+  EndpointId?: string;
+  Input?: string;
+  L2Normalization?: boolean;
 }
 
 /** Response from testing an embedding endpoint. */
 export interface EndpointExplorerEmbeddingResponse {
-  Embeddings?: number[][];
-  DurationMs?: number;
+  Success: boolean;
+  StatusCode?: number;
+  Error?: string;
+  EndpointId?: string;
+  Model?: string;
+  Input?: string;
+  Embedding?: number[];
+  Dimensions?: number;
+  ResponseTimeMs?: number;
+  RequestHistoryId?: string;
+  EmbeddingCalls?: unknown[];
 }
 
 /** Request to test a completion endpoint. */
 export interface EndpointExplorerCompletionRequest {
-  Messages?: ChatCompletionMessage[];
-  Model?: string;
-  Temperature?: number;
+  EndpointId?: string;
+  Prompt?: string;
+  SystemPrompt?: string;
+  MaxTokens?: number;
+  TimeoutMs?: number;
 }
 
 /** Response from testing a completion endpoint. */
 export interface EndpointExplorerCompletionResponse {
-  Response?: string;
-  DurationMs?: number;
+  Success: boolean;
+  StatusCode?: number;
+  Error?: string;
+  EndpointId?: string;
+  Model?: string;
+  Prompt?: string;
+  SystemPrompt?: string;
+  Output?: string;
+  ResponseTimeMs?: number;
+  RequestHistoryId?: string;
+  CompletionCalls?: unknown[];
 }
 
 // ============================================================================
@@ -728,10 +780,41 @@ export interface BucketCreateRequest {
   Name: string;
 }
 
+/** Bucket summary. */
+export interface BucketSummary {
+  Name: string;
+  CreationDate?: string;
+}
+
+/** Bucket list response. */
+export interface BucketListResponse {
+  Objects: BucketSummary[];
+  TotalRecords: number;
+}
+
 /** Object metadata in a bucket. */
 export interface BucketObject {
   Key?: string;
   [key: string]: unknown;
+}
+
+/** Bucket object listing response. */
+export interface BucketObjectListResponse {
+  Prefix?: string;
+  Delimiter?: string;
+  CommonPrefixes?: Array<{ Prefix: string }>;
+  Objects: BucketObject[];
+  TotalRecords: number;
+}
+
+/** Bucket object metadata response. */
+export interface BucketObjectMetadata {
+  Key: string;
+  ContentLength?: number;
+  ContentType?: string;
+  LastModified?: string;
+  ETag?: string;
+  Metadata?: Record<string, string>;
 }
 
 // ============================================================================

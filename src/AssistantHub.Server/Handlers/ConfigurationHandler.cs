@@ -12,6 +12,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Settings;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles server configuration routes (admin only).

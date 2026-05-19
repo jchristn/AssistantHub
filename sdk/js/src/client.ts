@@ -19,10 +19,11 @@ import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ChatCompletionChunk,
-  ChatRequest,
+  CompactResponse,
   FeedbackRequest,
   AssistantFeedback,
   ChatHistory,
+  ThreadSummary,
   PartioEndpointRequest,
   PartioEndpointConfig,
   EndpointHealthStatus,
@@ -36,7 +37,11 @@ import type {
   Collection,
   CollectionRecord,
   BucketCreateRequest,
+  BucketListResponse,
   BucketObject,
+  BucketObjectListResponse,
+  BucketObjectMetadata,
+  BucketSummary,
   CrawlPlan,
   CrawlOperation,
   EvalFact,
@@ -144,6 +149,25 @@ export class AssistantHubClient {
       method,
       headers: this._headers(extraHeaders),
       body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (!response.ok) {
+      let errorBody: ApiErrorResponse | null = null;
+      try {
+        errorBody = await response.json() as ApiErrorResponse;
+      } catch {
+        // ignore parse failure
+      }
+      throw new AssistantHubApiError(response.status, errorBody);
+    }
+    return response;
+  }
+
+  private async _requestRawBody(method: string, path: string, body: BodyInit, extraHeaders?: Record<string, string>): Promise<Response> {
+    const url = `${this._baseUrl}${path}`;
+    const response = await this._fetch(url, {
+      method,
+      headers: this._headers(extraHeaders),
+      body,
     });
     if (!response.ok) {
       let errorBody: ApiErrorResponse | null = null;
@@ -450,7 +474,7 @@ export class AssistantHubClient {
   async chatCompletion(assistantId: string, request: ChatCompletionRequest, threadId?: string): Promise<ChatCompletionResponse> {
     const extraHeaders: Record<string, string> = {};
     if (threadId) {
-      extraHeaders["X-ThreadId"] = threadId;
+      extraHeaders["X-Thread-ID"] = threadId;
     }
     return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/chat`, { ...request, Stream: false }, extraHeaders);
   }
@@ -464,7 +488,7 @@ export class AssistantHubClient {
   async *chatCompletionStream(assistantId: string, request: ChatCompletionRequest, threadId?: string): AsyncGenerator<ChatCompletionChunk> {
     const extraHeaders: Record<string, string> = {};
     if (threadId) {
-      extraHeaders["X-ThreadId"] = threadId;
+      extraHeaders["X-Thread-ID"] = threadId;
     }
     const response = await this._requestRaw(
       "POST",
@@ -481,12 +505,16 @@ export class AssistantHubClient {
   }
 
   /** Compact/summarize a conversation. */
-  async compact(assistantId: string, request: ChatRequest): Promise<unknown> {
-    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/compact`, request);
+  async compact(assistantId: string, request: ChatCompletionRequest, threadId?: string): Promise<CompactResponse> {
+    const extraHeaders: Record<string, string> = {};
+    if (threadId) {
+      extraHeaders["X-Thread-ID"] = threadId;
+    }
+    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/compact`, request, extraHeaders);
   }
 
   /** Generate a completion with RAG. */
-  async generate(assistantId: string, request: ChatRequest): Promise<unknown> {
+  async generate(assistantId: string, request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
     return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/generate`, request);
   }
 
@@ -504,8 +532,13 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/threads/${encodeURIComponent(threadId)}/history`);
   }
 
+  /** Delete a thread by ID. */
+  async deleteThread(threadId: string): Promise<void> {
+    return this._request("DELETE", `/v1.0/threads/${encodeURIComponent(threadId)}`);
+  }
+
   /** List all threads. */
-  async listThreads(query?: EnumerationQuery): Promise<EnumerationResult<ChatHistory>> {
+  async listThreads(query?: EnumerationQuery): Promise<ThreadSummary[]> {
     return this._request("GET", `/v1.0/threads${this._qs(query)}`);
   }
 
@@ -767,12 +800,12 @@ export class AssistantHubClient {
   }
 
   /** List buckets. */
-  async listBuckets(): Promise<string[]> {
+  async listBuckets(): Promise<BucketListResponse> {
     return this._request("GET", "/v1.0/buckets");
   }
 
   /** Get bucket info. */
-  async getBucket(name: string): Promise<unknown> {
+  async getBucket(name: string): Promise<BucketSummary> {
     return this._request("GET", `/v1.0/buckets/${encodeURIComponent(name)}`);
   }
 
@@ -786,29 +819,44 @@ export class AssistantHubClient {
     return this._head(`/v1.0/buckets/${encodeURIComponent(name)}`);
   }
 
-  /** Put an object in a bucket. */
-  async putBucketObject(bucketName: string, object: BucketObject): Promise<unknown> {
-    return this._request("PUT", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects`, object);
+  /** Put an empty object marker in a bucket. */
+  async putBucketObject(bucketName: string, objectOrKey: BucketObject | string): Promise<{ Key: string }> {
+    const key = typeof objectOrKey === "string" ? objectOrKey : objectOrKey.Key;
+    if (!key) {
+      throw new Error("Bucket object key is required");
+    }
+    return this._request("PUT", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects?key=${encodeURIComponent(key)}`);
   }
 
   /** List objects in a bucket. */
-  async listBucketObjects(bucketName: string, params?: { prefix?: string; maxResults?: number; continuationToken?: string }): Promise<unknown> {
+  async listBucketObjects(bucketName: string, params?: { prefix?: string; delimiter?: string }): Promise<BucketObjectListResponse> {
     return this._request("GET", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects${this._qs(params)}`);
   }
 
   /** Delete an object from a bucket. */
   async deleteBucketObject(bucketName: string, key: string): Promise<void> {
-    return this._request("DELETE", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects?Key=${encodeURIComponent(key)}`);
+    return this._request("DELETE", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects?key=${encodeURIComponent(key)}`);
   }
 
   /** Get object metadata. */
-  async getBucketObjectMetadata(bucketName: string, key: string): Promise<unknown> {
-    return this._request("GET", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects/metadata?Key=${encodeURIComponent(key)}`);
+  async getBucketObjectMetadata(bucketName: string, key: string): Promise<BucketObjectMetadata> {
+    return this._request("GET", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects/metadata?key=${encodeURIComponent(key)}`);
   }
 
   /** Download an object from a bucket. Returns the raw Response for binary handling. */
   async downloadBucketObject(bucketName: string, key: string): Promise<Response> {
-    return this._requestRaw("GET", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects/download?Key=${encodeURIComponent(key)}`);
+    return this._requestRaw("GET", `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects/download?key=${encodeURIComponent(key)}`);
+  }
+
+  /** Upload binary content into a bucket object. */
+  async uploadBucketObject(bucketName: string, key: string, data: BodyInit, contentType = "application/octet-stream"): Promise<{ Key: string; Size: number }> {
+    const response = await this._requestRawBody(
+      "POST",
+      `/v1.0/buckets/${encodeURIComponent(bucketName)}/objects/upload?key=${encodeURIComponent(key)}`,
+      data,
+      { "Content-Type": contentType }
+    );
+    return response.json() as Promise<{ Key: string; Size: number }>;
   }
 
   // --------------------------------------------------------------------------

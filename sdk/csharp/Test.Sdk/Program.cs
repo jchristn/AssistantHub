@@ -5,7 +5,7 @@ namespace Test.Sdk
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Sdk;
-    using Test.Common;
+    using Test.Shared;
     using Test.Sdk.Tests;
 
     public class Program

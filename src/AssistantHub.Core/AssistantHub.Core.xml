@@ -79,6 +79,11 @@
             Chat history identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.RequestHistoryIdentifierPrefix">
+            <summary>
+            Request history identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.TenantIdentifierPrefix">
             <summary>
             Tenant identifier prefix.
@@ -162,6 +167,11 @@
         <member name="F:AssistantHub.Core.Constants.ChatHistoryTable">
             <summary>
             Chat history table name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.RequestHistoryTable">
+            <summary>
+            Request history table name.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Constants.TenantsTable">
@@ -272,6 +282,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistory">
             <summary>
             Chat history methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.RequestHistory">
+            <summary>
+            Request history methods.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.Tenant">
@@ -1061,6 +1076,68 @@
             <param name="token">Cancellation token.</param>
             <returns>Enumeration result containing ingestion rule records.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods">
+            <summary>
+            Request-history database methods interface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.CreateAsync(AssistantHub.Core.Models.RequestHistoryEntry,System.Threading.CancellationToken)">
+            <summary>
+            Create a request-history entry.
+            </summary>
+            <param name="entry">Request-history entry.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Created entry.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.ReadAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Read a request-history entry by identifier.
+            </summary>
+            <param name="id">Entry identifier.</param>
+            <param name="includeDetails">Whether request and response payload fields should be included.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Request-history entry.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate request-history entries.
+            </summary>
+            <param name="filter">Search filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Enumeration result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.SummarizeAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <summary>
+            Summarize request-history entries.
+            </summary>
+            <param name="filter">Search filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Summary result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a request-history entry by identifier.
+            </summary>
+            <param name="id">Entry identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if deleted.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.DeleteByFilterAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <summary>
+            Delete request-history entries matching a filter.
+            </summary>
+            <param name="filter">Search filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Deleted row count.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IRequestHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete expired request-history entries.
+            </summary>
+            <param name="retentionDays">Retention days.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.ITenantMethods">
             <summary>
             Tenant database methods interface.
@@ -1505,6 +1582,37 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods">
+            <summary>
+            MySQL request-history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.CreateAsync(AssistantHub.Core.Models.RequestHistoryEntry,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.ReadAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.SummarizeAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.DeleteByFilterAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.RequestHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.TenantMethods">
             <summary>
             MySQL tenant methods implementation.
@@ -1912,6 +2020,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods">
+            <summary>
+            PostgreSQL request-history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.CreateAsync(AssistantHub.Core.Models.RequestHistoryEntry,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.ReadAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.SummarizeAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.DeleteByFilterAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.RequestHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.TenantMethods">
@@ -2410,6 +2549,40 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods">
+            <summary>
+            SQLite request-history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.CreateAsync(AssistantHub.Core.Models.RequestHistoryEntry,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.ReadAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.SummarizeAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.DeleteByFilterAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.RequestHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.TenantMethods">
             <summary>
             SQLite tenant methods implementation.
@@ -2851,6 +3024,37 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods">
+            <summary>
+            SQL Server request-history methods implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.CreateAsync(AssistantHub.Core.Models.RequestHistoryEntry,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.ReadAsync(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.EnumerateAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.SummarizeAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.DeleteByFilterAsync(AssistantHub.Core.Models.RequestHistorySearchFilter,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.RequestHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.TenantMethods">
@@ -3509,6 +3713,12 @@
             Generate a chat history identifier.
             </summary>
             <returns>Chat history identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewRequestHistoryId">
+            <summary>
+            Generate a request-history identifier.
+            </summary>
+            <returns>Request-history identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCrawlPlanId">
             <summary>
@@ -6946,6 +7156,353 @@
             When the pull operation started (UTC).
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.RequestHistoryEntry">
+            <summary>
+            Captured HTTP request and response entry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.Id">
+            <summary>
+            Entry identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.UserId">
+            <summary>
+            User identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.CredentialId">
+            <summary>
+            Credential identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ThreadId">
+            <summary>
+            Thread identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.PrincipalName">
+            <summary>
+            Principal display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestType">
+            <summary>
+            Request type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.SourceType">
+            <summary>
+            Source classification.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.HttpMethod">
+            <summary>
+            HTTP method.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RouteTemplate">
+            <summary>
+            Matched route template when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestPath">
+            <summary>
+            Request path.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestUrl">
+            <summary>
+            Full request URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.SourceIp">
+            <summary>
+            Source IP address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.StatusCode">
+            <summary>
+            Response status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.Success">
+            <summary>
+            Whether the request succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.DurationMs">
+            <summary>
+            Request duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestContentType">
+            <summary>
+            Request content type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseContentType">
+            <summary>
+            Response content type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestSizeBytes">
+            <summary>
+            Request size in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseSizeBytes">
+            <summary>
+            Response size in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestBodyTruncated">
+            <summary>
+            Whether request body capture was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseBodyTruncated">
+            <summary>
+            Whether response body capture was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestBodyIsBinary">
+            <summary>
+            Whether the request body is represented as a binary placeholder.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseBodyIsBinary">
+            <summary>
+            Whether the response body is represented as a binary placeholder.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RouteParameters">
+            <summary>
+            Route parameters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.QueryParameters">
+            <summary>
+            Query parameters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestHeaders">
+            <summary>
+            Request headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseHeaders">
+            <summary>
+            Response headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.RequestBody">
+            <summary>
+            Request body.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ResponseBody">
+            <summary>
+            Response body.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.CreatedUtc">
+            <summary>
+            Timestamp when the record was created.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.LastUpdateUtc">
+            <summary>
+            Timestamp when the record was last updated.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.RequestHistoryEntry.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.RequestHistoryEntry.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Construct from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>Request history entry.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RequestHistorySearchFilter">
+            <summary>
+            Request-history search filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.MaxResults">
+            <summary>
+            Maximum number of results to return.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.ContinuationToken">
+            <summary>
+            Continuation token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.Ordering">
+            <summary>
+            Ordering.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.RequestType">
+            <summary>
+            Request type filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.HttpMethod">
+            <summary>
+            HTTP method filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.PathContains">
+            <summary>
+            Path substring filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.StatusCode">
+            <summary>
+            Status code filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.Success">
+            <summary>
+            Success filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.TenantId">
+            <summary>
+            Tenant identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.UserId">
+            <summary>
+            User identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.CredentialId">
+            <summary>
+            Credential identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.AssistantId">
+            <summary>
+            Assistant identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.ThreadId">
+            <summary>
+            Thread identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.SourceType">
+            <summary>
+            Source-type filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.SearchText">
+            <summary>
+            Free-text search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.StartUtc">
+            <summary>
+            Start time bound.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.EndUtc">
+            <summary>
+            End time bound.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.BucketSeconds">
+            <summary>
+            Summary bucket width in seconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySearchFilter.BucketMinutes">
+            <summary>
+            Legacy summary bucket width in minutes.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RequestHistorySummaryBucket">
+            <summary>
+            Request-history summary bucket.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.BucketStartUtc">
+            <summary>
+            Bucket start time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.BucketEndUtc">
+            <summary>
+            Bucket end time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.RequestCount">
+            <summary>
+            Total request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.SuccessCount">
+            <summary>
+            Successful request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.FailureCount">
+            <summary>
+            Failed request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryBucket.AverageDurationMs">
+            <summary>
+            Average request duration.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RequestHistorySummaryResult">
+            <summary>
+            Request-history summary result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryResult.TotalCount">
+            <summary>
+            Total request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryResult.TotalSuccess">
+            <summary>
+            Total successful request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryResult.TotalFailure">
+            <summary>
+            Total failed request count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryResult.AverageDurationMs">
+            <summary>
+            Average request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistorySummaryResult.Buckets">
+            <summary>
+            Time buckets.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.RetrievalChunk">
             <summary>
             A retrieved chunk with source identification and scoring.
@@ -8496,6 +9053,11 @@
             Chat history settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.RequestHistory">
+            <summary>
+            Request history settings.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Crawl">
             <summary>
             Crawl settings.
@@ -8539,6 +9101,11 @@
         <member name="P:AssistantHub.Core.Settings.ChunkingSettings.EndpointId">
             <summary>
             Endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.DashboardUrl">
+            <summary>
+            Browser URL for the chunking and embeddings service dashboard.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">
@@ -8663,6 +9230,11 @@
             Access key for the DocumentAtom service.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.DocumentAtomSettings.DashboardUrl">
+            <summary>
+            Browser URL for the DocumentAtom dashboard.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.DocumentAtomSettings.#ctor">
             <summary>
             Instantiate.
@@ -8716,6 +9288,11 @@
         <member name="P:AssistantHub.Core.Settings.InferenceSettings.DefaultModel">
             <summary>
             Default model to use for inference.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.DashboardUrl">
+            <summary>
+            Browser URL for the inference provider dashboard.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.InferenceSettings.#ctor">
@@ -8808,9 +9385,74 @@
             Access key for the RecallDb service.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.DashboardUrl">
+            <summary>
+            Browser URL for the RecallDb dashboard.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.RecallDbSettings.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.RequestHistorySettings">
+            <summary>
+            Request history settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.Enabled">
+            <summary>
+            Enable request-history capture.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.RetentionDays">
+            <summary>
+            Number of days to retain request-history records.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.PurgeIntervalMinutes">
+            <summary>
+            Cleanup interval in minutes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.MaxRequestBodyBytes">
+            <summary>
+            Maximum request body bytes to capture.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.MaxResponseBodyBytes">
+            <summary>
+            Maximum response body bytes to capture.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.CaptureHeaders">
+            <summary>
+            Whether request headers are captured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.CaptureBodies">
+            <summary>
+            Whether request and response bodies are captured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.IncludeUnauthenticatedAssistantTraffic">
+            <summary>
+            Whether unauthenticated assistant traffic should be captured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.ExcludedContentTypes">
+            <summary>
+            Response content types to skip body capture for.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.RedactedHeaders">
+            <summary>
+            Header names to redact.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.RedactedJsonFields">
+            <summary>
+            JSON field names to redact.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Settings.S3Settings">
@@ -8851,6 +9493,11 @@
         <member name="P:AssistantHub.Core.Settings.S3Settings.BaseUrl">
             <summary>
             Base URL for accessing stored objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.S3Settings.DashboardUrl">
+            <summary>
+            Browser URL for the storage service dashboard.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.S3Settings.#ctor">

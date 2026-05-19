@@ -12,6 +12,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Settings;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles feedback list, read, and delete routes.

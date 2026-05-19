@@ -11,6 +11,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Settings;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles user CRUD routes under /v1.0/tenants/{tenantId}/users.

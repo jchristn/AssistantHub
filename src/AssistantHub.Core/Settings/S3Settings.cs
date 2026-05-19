@@ -60,6 +60,15 @@ namespace AssistantHub.Core.Settings
             set { if (!String.IsNullOrEmpty(value)) _BaseUrl = value; }
         }
 
+        /// <summary>
+        /// Browser URL for the storage service dashboard.
+        /// </summary>
+        public string DashboardUrl
+        {
+            get => _DashboardUrl;
+            set { if (value != null) _DashboardUrl = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -68,6 +77,7 @@ namespace AssistantHub.Core.Settings
         private string _BucketName = "assistanthub";
         private string _EndpointUrl = "http://localhost:8000";
         private string _BaseUrl = "http://localhost:8000";
+        private string _DashboardUrl = "";
 
         #endregion
 

@@ -203,6 +203,24 @@ namespace AssistantHub.Sdk
             return response;
         }
 
+        /// <summary>
+        /// Send a HEAD request and return true only if the server responds with a success status code.
+        /// Does not throw for non-success responses.
+        /// </summary>
+        /// <param name="path">Request path (relative to base URL).</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if the resource exists and the caller can access it.</returns>
+        protected async Task<bool> HeadAsync(string path, CancellationToken cancellationToken = default)
+        {
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, _BaseUrl + path))
+            {
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    return response.IsSuccessStatusCode;
+                }
+            }
+        }
+
         #endregion
 
         #region Private-Methods

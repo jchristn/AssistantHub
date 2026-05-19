@@ -15,7 +15,7 @@ namespace AssistantHub.Sdk
     /// Client for the AssistantHub API providing methods for assistants, collections, threads, chat,
     /// endpoints, documents, ingestion rules, and search.
     /// </summary>
-    public class AssistantHubClient : AssistantHubClientBase
+    public partial class AssistantHubClient : AssistantHubClientBase
     {
         #region Private-Members
 
@@ -205,8 +205,31 @@ namespace AssistantHub.Sdk
             if (String.IsNullOrWhiteSpace(assistantId))
                 throw new ArgumentNullException(nameof(assistantId));
 
-            EnumerationQuery query = new EnumerationQuery { AssistantIdFilter = assistantId };
-            return await SendAsync<EnumerationResult<string>>(HttpMethod.Get, "/v1.0/threads", cancellationToken: cancellationToken).ConfigureAwait(false);
+            List<ThreadSummary> summaries = await ListThreadSummariesAsync(
+                new EnumerationQuery { AssistantIdFilter = assistantId },
+                cancellationToken).ConfigureAwait(false);
+
+            List<string> threadIds = new List<string>();
+            if (summaries != null)
+            {
+                foreach (ThreadSummary summary in summaries)
+                {
+                    if (!String.IsNullOrWhiteSpace(summary?.ThreadId))
+                        threadIds.Add(summary.ThreadId);
+                }
+            }
+
+            return new EnumerationResult<string>
+            {
+                Success = true,
+                MaxResults = threadIds.Count,
+                TotalRecords = threadIds.Count,
+                RecordsRemaining = 0,
+                ContinuationToken = null,
+                EndOfResults = true,
+                Objects = threadIds,
+                TotalMs = 0
+            };
         }
 
         /// <summary>
@@ -533,7 +556,7 @@ namespace AssistantHub.Sdk
         /// <returns>Enumeration result containing documents.</returns>
         public async Task<EnumerationResult<AssistantDocument>> ListDocumentsAsync(EnumerationQuery query = null, CancellationToken cancellationToken = default)
         {
-            return await SendAsync<EnumerationResult<AssistantDocument>>(HttpMethod.Get, "/v1.0/documents", cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await SendAsync<EnumerationResult<AssistantDocument>>(HttpMethod.Get, AppendEnumerationQuery("/v1.0/documents", query), cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

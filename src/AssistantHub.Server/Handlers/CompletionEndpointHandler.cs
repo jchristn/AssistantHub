@@ -16,6 +16,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles completion endpoint CRUD routes by proxying to Partio (admin only).

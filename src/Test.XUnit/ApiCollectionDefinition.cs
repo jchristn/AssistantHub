@@ -1,0 +1,9 @@
+namespace Test.XUnit
+{
+    using Xunit;
+
+    [CollectionDefinition("Api", DisableParallelization = true)]
+    public class ApiCollectionDefinition : ICollectionFixture<ApiFixture>
+    {
+    }
+}

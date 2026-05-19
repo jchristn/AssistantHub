@@ -38,12 +38,22 @@ namespace AssistantHub.Core.Settings
             set { if (!String.IsNullOrEmpty(value)) _DefaultModel = value; }
         }
 
+        /// <summary>
+        /// Browser URL for the inference provider dashboard.
+        /// </summary>
+        public string DashboardUrl
+        {
+            get => _DashboardUrl;
+            set { if (value != null) _DashboardUrl = value; }
+        }
+
         #endregion
 
         #region Private-Members
 
         private string _Endpoint = "http://localhost:11434";
         private string _DefaultModel = "gemma3:4b";
+        private string _DashboardUrl = "";
 
         #endregion
 

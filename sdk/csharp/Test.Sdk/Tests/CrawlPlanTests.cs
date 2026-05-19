@@ -7,7 +7,7 @@ namespace Test.Sdk.Tests
     using AssistantHub.Sdk;
     using AssistantHub.Sdk.Enums;
     using AssistantHub.Sdk.Models;
-    using Test.Common;
+    using Test.Shared;
 
     /// <summary>
     /// Tests for crawl plan CRUD lifecycle.

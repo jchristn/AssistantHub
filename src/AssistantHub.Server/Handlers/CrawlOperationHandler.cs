@@ -18,6 +18,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles crawl operation routes under /v1.0/crawlplans/{planId}/operations.

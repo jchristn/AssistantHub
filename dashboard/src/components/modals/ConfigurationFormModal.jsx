@@ -188,15 +188,18 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
           {renderTextField('S3', 'EndpointUrl', 'Endpoint URL', 'text', 'Custom S3-compatible endpoint URL (e.g. MinIO)')}
           {renderToggle('S3', 'UseSsl', 'Use SSL', 'Use HTTPS for S3 connections')}
           {renderTextField('S3', 'BaseUrl', 'Base URL', 'text', 'Public base URL for accessing stored objects')}
+          {renderTextField('S3', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the storage service dashboard')}
         </>)}
 
         {renderSection('DocumentAtom', 'DocumentAtom', <>
           {renderTextField('DocumentAtom', 'Endpoint', 'Endpoint', 'text', 'URL of the DocumentAtom service for document parsing')}
+          {renderTextField('DocumentAtom', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the DocumentAtom dashboard')}
           {renderTextField('DocumentAtom', 'AccessKey', 'Access Key', 'password', 'Authentication key for the DocumentAtom service')}
         </>)}
 
         {renderSection('Chunking', 'Chunking', <>
           {renderTextField('Chunking', 'Endpoint', 'Endpoint', 'text', 'URL of the chunking service endpoint')}
+          {renderTextField('Chunking', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the chunking and embeddings dashboard')}
           {renderTextField('Chunking', 'AccessKey', 'Access Key', 'password', 'Authentication key for the chunking service')}
           {renderTextField('Chunking', 'EndpointId', 'Endpoint ID', 'text', 'Identifier for the specific chunking endpoint to use')}
         </>)}
@@ -204,12 +207,14 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
         {renderSection('Inference', 'Inference', <>
           {renderSelect('Inference', 'Provider', 'Provider', ['Ollama', 'OpenAI', 'Gemini'], 'Default AI inference provider for the system')}
           {renderTextField('Inference', 'Endpoint', 'Endpoint', 'text', 'Default inference API endpoint URL')}
+          {renderTextField('Inference', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the inference provider dashboard or console')}
           {renderTextField('Inference', 'ApiKey', 'API Key', 'password', 'Default API key for inference authentication')}
           {renderTextField('Inference', 'DefaultModel', 'Default Model', 'text', 'Default model name used for inference requests')}
         </>)}
 
         {renderSection('RecallDb', 'RecallDb', <>
           {renderTextField('RecallDb', 'Endpoint', 'Endpoint', 'text', 'URL of the RecallDB vector database endpoint')}
+          {renderTextField('RecallDb', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the RecallDB dashboard')}
           {renderTextField('RecallDb', 'AccessKey', 'Access Key', 'password', 'Authentication key for RecallDB access')}
         </>)}
 

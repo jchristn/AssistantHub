@@ -5,8 +5,7 @@ REM ==========================================================================
 REM reset.bat - Reset AssistantHub docker environment to factory defaults
 REM
 REM This script destroys all runtime data (databases, logs, object storage,
-REM vector data) and restores factory-default databases. Configuration files
-REM are preserved.
+REM vector data) and restores factory-default databases and configuration.
 REM
 REM Usage: factory\reset.bat [--include-models]
 REM   --include-models  Also remove downloaded Ollama models (requires re-download)
@@ -36,11 +35,12 @@ echo     embeddings, tenants, users)
 echo   - All object storage files (uploaded documents)
 echo   - All log files and processing logs
 echo   - All Partio request history
+echo   - AssistantHub configuration changes
 if "%INCLUDE_MODELS%"=="true" (
     echo   - All downloaded Ollama models
 )
 echo.
-echo Configuration files will NOT be modified.
+echo AssistantHub configuration will be restored to factory defaults.
 echo.
 set /p "CONFIRM=Type 'RESET' to confirm: "
 echo.
@@ -83,7 +83,8 @@ del /q "%DOCKER_DIR%assistanthub\data\assistanthub.db-wal" 2>nul
 copy /y "%FACTORY_DIR%assistanthub.db" "%DOCKER_DIR%assistanthub\data\assistanthub.db" >nul
 copy /y "%FACTORY_DIR%assistanthub.db-shm" "%DOCKER_DIR%assistanthub\data\assistanthub.db-shm" >nul 2>nul
 copy /y "%FACTORY_DIR%assistanthub.db-wal" "%DOCKER_DIR%assistanthub\data\assistanthub.db-wal" >nul 2>nul
-echo         Restored assistanthub.db
+copy /y "%FACTORY_DIR%assistanthub.json" "%DOCKER_DIR%assistanthub\assistanthub.json" >nul
+echo         Restored assistanthub.db and assistanthub.json
 
 del /q "%DOCKER_DIR%less3\less3.db" 2>nul
 del /q "%DOCKER_DIR%less3\less3.db-shm" 2>nul

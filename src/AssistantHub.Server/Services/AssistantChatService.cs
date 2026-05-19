@@ -693,14 +693,18 @@ namespace AssistantHub.Server.Services
             }
 
             List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(request.Messages);
+            string baseSystemPrompt = null;
+            int systemMessageIndex = -1;
             bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
             if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
             {
+                baseSystemPrompt = settings.SystemPrompt;
                 messages.Insert(0, new ChatCompletionMessage
                 {
                     Role = "system",
                     Content = _Inference.BuildSystemMessage(settings.SystemPrompt, contextChunks, settings.EnableCitations, chunkLabels)
                 });
+                systemMessageIndex = 0;
             }
             else if (hasSystemMessage && contextChunks.Count > 0)
             {
@@ -708,11 +712,13 @@ namespace AssistantHub.Server.Services
                 {
                     if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase))
                     {
+                        baseSystemPrompt = messages[i].Content;
                         messages[i] = new ChatCompletionMessage
                         {
                             Role = "system",
                             Content = _Inference.BuildSystemMessage(messages[i].Content, contextChunks, settings.EnableCitations, chunkLabels)
                         };
+                        systemMessageIndex = i;
                         break;
                     }
                 }
@@ -722,6 +728,16 @@ namespace AssistantHub.Server.Services
             double temperature = request.Temperature ?? settings.Temperature;
             double topP = request.TopP ?? settings.TopP;
             int maxTokens = request.MaxTokens ?? settings.MaxTokens;
+
+            TrimRetrievalContextToPromptBudget(
+                messages,
+                settings,
+                maxTokens,
+                retrievalChunks,
+                chunkLabels,
+                citationSources,
+                baseSystemPrompt,
+                systemMessageIndex);
 
             Enums.InferenceProviderEnum inferenceProvider = _Settings.Inference.Provider;
             string inferenceEndpoint = _Settings.Inference.Endpoint;
@@ -972,6 +988,65 @@ namespace AssistantHub.Server.Services
             {
                 _Logging.Warn(_Header + "exception resolving completion endpoint " + endpointId + ": " + e.Message);
                 return null;
+            }
+        }
+
+        private void TrimRetrievalContextToPromptBudget(
+            List<ChatCompletionMessage> messages,
+            AssistantSettings settings,
+            int maxTokens,
+            List<RetrievalChunk> retrievalChunks,
+            List<string> chunkLabels,
+            List<CitationSource> citationSources,
+            string baseSystemPrompt,
+            int systemMessageIndex)
+        {
+            if (messages == null || settings == null || retrievalChunks == null || retrievalChunks.Count < 1)
+                return;
+            if (String.IsNullOrEmpty(baseSystemPrompt) || systemMessageIndex < 0 || systemMessageIndex >= messages.Count)
+                return;
+
+            int availablePromptTokens = settings.ContextWindow - maxTokens;
+            if (availablePromptTokens <= 0)
+                return;
+
+            int estimatedTokens = EstimateTokenCount(messages);
+            if (estimatedTokens <= availablePromptTokens)
+                return;
+
+            int originalChunkCount = retrievalChunks.Count;
+
+            while (retrievalChunks.Count > 0 && estimatedTokens > availablePromptTokens)
+            {
+                retrievalChunks.RemoveAt(retrievalChunks.Count - 1);
+
+                if (chunkLabels != null && chunkLabels.Count > retrievalChunks.Count)
+                    chunkLabels.RemoveAt(chunkLabels.Count - 1);
+
+                if (citationSources != null && citationSources.Count > retrievalChunks.Count)
+                    citationSources.RemoveAt(citationSources.Count - 1);
+
+                messages[systemMessageIndex] = new ChatCompletionMessage
+                {
+                    Role = "system",
+                    Content = _Inference.BuildSystemMessage(
+                        baseSystemPrompt,
+                        retrievalChunks.Select(c => c.MergedContent).ToList(),
+                        settings.EnableCitations,
+                        chunkLabels)
+                };
+
+                estimatedTokens = EstimateTokenCount(messages);
+            }
+
+            if (retrievalChunks.Count < originalChunkCount)
+            {
+                _Logging.Warn(
+                    _Header +
+                    "trimmed retrieval context from " + originalChunkCount +
+                    " to " + retrievalChunks.Count +
+                    " chunks to fit prompt budget (" + estimatedTokens +
+                    "/" + availablePromptTokens + " estimated tokens)");
             }
         }
 

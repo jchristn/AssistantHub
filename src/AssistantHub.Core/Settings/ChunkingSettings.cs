@@ -32,12 +32,22 @@ namespace AssistantHub.Core.Settings
             set { if (!String.IsNullOrEmpty(value)) _EndpointId = value; }
         }
 
+        /// <summary>
+        /// Browser URL for the chunking and embeddings service dashboard.
+        /// </summary>
+        public string DashboardUrl
+        {
+            get => _DashboardUrl;
+            set { if (value != null) _DashboardUrl = value; }
+        }
+
         #endregion
 
         #region Private-Members
 
         private string _Endpoint = "http://localhost:8321";
         private string _EndpointId = "default";
+        private string _DashboardUrl = "";
 
         #endregion
 

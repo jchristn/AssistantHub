@@ -1220,6 +1220,62 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.OpenApiHandler">
+            <summary>
+            Handles runtime OpenAPI document requests.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.OpenApiHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Server.Services.OpenApiDocumentService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.OpenApiHandler.GetOpenApiAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /openapi.json - runtime OpenAPI document.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RequestHistoryHandler">
+            <summary>
+            Handles request-history routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.GetRequestHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/requesthistory - enumerate request-history entries.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.GetRequestHistorySummaryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/requesthistory/summary - summarize request-history entries.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.GetRequestHistoryEntryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/requesthistory/{requestId} - get request-history detail.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.GetRequestHistoryEntryDetailAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/requesthistory/{requestId}/detail - get request-history detail.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.DeleteRequestHistoryEntryAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/requesthistory/{requestId} - delete one request-history entry.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.DeleteRequestHistoryBulkAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/requesthistory/bulk - delete request-history entries matching the current filter.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.RootHandler">
             <summary>
             Handles GET / and HEAD / routes.
@@ -1645,6 +1701,40 @@
             <summary>
             Refresh a single assistant worker.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.OpenApiDocumentService">
+            <summary>
+            Builds the runtime OpenAPI document from the actual registered route surface.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.OpenApiDocumentService.#ctor(System.Func{WatsonWebserver.Webserver})">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="serverFactory">Server factory.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.OpenApiDocumentService.BuildDocument(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Build the OpenAPI document for the current request origin.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>OpenAPI document JSON.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.RequestHistoryCaptureService">
+            <summary>
+            Captures request and response history from the HTTP pipeline.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.RequestHistoryCaptureService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.RequestHistoryCaptureService.Capture(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Capture the supplied HTTP context asynchronously.
+            </summary>
+            <param name="ctx">HTTP context.</param>
         </member>
         <member name="T:AssistantHub.Server.Services.SlackAssistantConnectionManager">
             <summary>

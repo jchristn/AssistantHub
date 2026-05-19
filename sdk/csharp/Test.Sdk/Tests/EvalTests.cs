@@ -6,7 +6,7 @@ namespace Test.Sdk.Tests
     using System.Threading.Tasks;
     using AssistantHub.Sdk;
     using AssistantHub.Sdk.Models;
-    using Test.Common;
+    using Test.Shared;
 
     /// <summary>
     /// Tests for eval fact CRUD lifecycle.

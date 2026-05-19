@@ -14,6 +14,7 @@ namespace AssistantHub.Server.Handlers
     using EasySlack;
     using SyslogLogging;
     using WatsonWebserver.Core;
+    using ApiErrorResponse = AssistantHub.Core.Models.ApiErrorResponse;
 
     /// <summary>
     /// Handles assistant settings GET and PUT routes.

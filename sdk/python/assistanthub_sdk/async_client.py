@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import base64
+import json
 import os
 from typing import Any, AsyncIterator, Optional, Union
 
 import httpx
 
+from ._parity_async_mixin import AsyncAssistantHubClientParityMixin
 from .exceptions import (
     AssistantHubError,
     AuthenticationError,
@@ -41,7 +43,7 @@ from .models import (
 )
 
 
-class AsyncAssistantHubClient:
+class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
     """Asynchronous client for the AssistantHub REST API.
 
     Provides async methods for managing assistants, collections, threads, and
@@ -90,7 +92,45 @@ class AsyncAssistantHubClient:
             headers=headers,
         )
         self._raise_for_status(response)
-        return response
+        return self._normalize_response(response)
+
+    @staticmethod
+    def _normalize_json_keys(value: Any) -> Any:
+        """Normalize PascalCase JSON payloads to lower/camel case for Python models."""
+        if isinstance(value, list):
+            return [AsyncAssistantHubClient._normalize_json_keys(item) for item in value]
+        if isinstance(value, dict):
+            normalized: dict[str, Any] = {}
+            for key, item in value.items():
+                normalized_key = key
+                if isinstance(key, str) and key:
+                    if key.isupper():
+                        normalized_key = key.lower()
+                    else:
+                        normalized_key = key[0].lower() + key[1:]
+                normalized[normalized_key] = AsyncAssistantHubClient._normalize_json_keys(item)
+            return normalized
+        return value
+
+    @classmethod
+    def _normalize_response(cls, response: httpx.Response) -> httpx.Response:
+        """Return a response whose JSON body uses the normalized key casing."""
+        content_type = response.headers.get("content-type", "")
+        if response.status_code == 204 or "application/json" not in content_type.lower():
+            return response
+
+        try:
+            normalized = cls._normalize_json_keys(response.json())
+        except Exception:
+            return response
+
+        return httpx.Response(
+            status_code=response.status_code,
+            headers=response.headers,
+            content=json.dumps(normalized),
+            request=response.request,
+            extensions=response.extensions,
+        )
 
     @staticmethod
     def _raise_for_status(response: httpx.Response) -> None:

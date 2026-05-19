@@ -1,89 +1,70 @@
-# Run all AssistantHub test projects sequentially and print a cross-project summary.
+# Run AssistantHub test suites and print a summary.
 # Exit code: 0 only if every project returned 0.
-
-param(
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$ExtraArgs
-)
 
 $ErrorActionPreference = "Continue"
 $ScriptDir = $PSScriptRoot
 
-$Projects = @(
-    "Test.Models",
-    "Test.Database",
-    "Test.Services",
-    "Test.Api",
-    "Test.Integration"
-)
-
-$ProjectResults = @()
-$ProjectTimes = @()
 $OverallExit = 0
 $TotalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 Write-Host "=============================================================="
-Write-Host "  CROSS-PROJECT TEST SUMMARY"
+Write-Host "  AssistantHub Test Runner"
 Write-Host "=============================================================="
+Write-Host ""
 
-foreach ($proj in $Projects) {
-    $projPath = Join-Path (Join-Path $ScriptDir "src") $proj
+# --- Test.Automated (console runner) ---
+Write-Host "Running Test.Automated..."
+$sw1 = [System.Diagnostics.Stopwatch]::StartNew()
 
-    if (-not (Test-Path $projPath)) {
-        Write-Host "  SKIP  $proj  (directory not found)"
-        $ProjectResults += "SKIP"
-        $ProjectTimes += 0
-        continue
-    }
+& dotnet run --project (Join-Path (Join-Path $ScriptDir "src") "Test.Automated")
+$AutomatedExit = $LASTEXITCODE
+$sw1.Stop()
+$AutomatedMs = [math]::Round($sw1.Elapsed.TotalMilliseconds)
 
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+if ($AutomatedExit -ne 0) { $OverallExit = 1 }
 
-    if ($proj -eq "Test.Database" -and $ExtraArgs.Count -gt 0) {
-        & dotnet run --project $projPath -- @ExtraArgs
-    } else {
-        & dotnet run --project $projPath
-    }
-    $exitCode = $LASTEXITCODE
-    $sw.Stop()
+Write-Host ""
 
-    if ($exitCode -eq 0) {
-        $ProjectResults += "PASS"
-    } else {
-        $ProjectResults += "FAIL"
-        $OverallExit = 1
-    }
-    $ProjectTimes += [math]::Round($sw.Elapsed.TotalMilliseconds)
+# --- Test.XUnit (xUnit runner) ---
+Write-Host "Running Test.XUnit..."
+$sw2 = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-Host ""
-}
+& dotnet test (Join-Path (Join-Path $ScriptDir "src") "Test.XUnit") --no-build --verbosity normal
+$XUnitExit = $LASTEXITCODE
+$sw2.Stop()
+$XUnitMs = [math]::Round($sw2.Elapsed.TotalMilliseconds)
+
+if ($XUnitExit -ne 0) { $OverallExit = 1 }
 
 $TotalStopwatch.Stop()
 $TotalMs = [math]::Round($TotalStopwatch.Elapsed.TotalMilliseconds)
 
+Write-Host ""
 Write-Host "=============================================================="
 Write-Host "  CROSS-PROJECT TEST SUMMARY"
 Write-Host "=============================================================="
 
-for ($i = 0; $i -lt $Projects.Count; $i++) {
-    $result = $ProjectResults[$i]
-    $projName = $Projects[$i].PadRight(20)
-    $elapsed = $ProjectTimes[$i]
+$automatedLabel = "Test.Automated".PadRight(20)
+if ($AutomatedExit -eq 0) {
+    Write-Host "  " -NoNewline; Write-Host "PASS" -ForegroundColor Green -NoNewline; Write-Host "  $automatedLabel (${AutomatedMs}ms)"
+} else {
+    Write-Host "  " -NoNewline; Write-Host "FAIL" -ForegroundColor Red -NoNewline; Write-Host "  $automatedLabel (${AutomatedMs}ms)"
+}
 
-    switch ($result) {
-        "PASS" { Write-Host "  " -NoNewline; Write-Host "PASS" -ForegroundColor Green -NoNewline; Write-Host "  $projName (${elapsed}ms)" }
-        "FAIL" { Write-Host "  " -NoNewline; Write-Host "FAIL" -ForegroundColor Red -NoNewline; Write-Host "  $projName (${elapsed}ms)" }
-        "SKIP" { Write-Host "  " -NoNewline; Write-Host "SKIP" -ForegroundColor Yellow -NoNewline; Write-Host "  $projName" }
-    }
+$xunitLabel = "Test.XUnit".PadRight(20)
+if ($XUnitExit -eq 0) {
+    Write-Host "  " -NoNewline; Write-Host "PASS" -ForegroundColor Green -NoNewline; Write-Host "  $xunitLabel (${XUnitMs}ms)"
+} else {
+    Write-Host "  " -NoNewline; Write-Host "FAIL" -ForegroundColor Red -NoNewline; Write-Host "  $xunitLabel (${XUnitMs}ms)"
 }
 
 Write-Host "--------------------------------------------------------------"
 Write-Host "  Total runtime: ${TotalMs}ms"
 
-$failCount = ($ProjectResults | Where-Object { $_ -eq "FAIL" }).Count
-
 if ($OverallExit -eq 0) {
     Write-Host "  " -NoNewline; Write-Host "OVERALL: PASS" -ForegroundColor Green
 } else {
+    $failCount = @($AutomatedExit, $XUnitExit) | Where-Object { $_ -ne 0 } | Measure-Object | Select-Object -ExpandProperty Count
     Write-Host "  " -NoNewline; Write-Host "OVERALL: FAIL ($failCount project(s) failed)" -ForegroundColor Red
 }
 Write-Host "=============================================================="

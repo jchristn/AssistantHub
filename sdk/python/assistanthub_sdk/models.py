@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Generic, Optional, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import (
     ApiError,
@@ -129,6 +129,17 @@ class Assistant(BaseModel):
     active: bool = True
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class AssistantPublicInfo(BaseModel):
+    """Public metadata for an assistant."""
+
+    id: Optional[str] = Field(None, alias="Id")
+    name: Optional[str] = Field(None, alias="Name")
+    description: Optional[str] = Field(None, alias="Description")
+    title: Optional[str] = Field(None, alias="Title")
+    logo_url: Optional[str] = Field(None, alias="LogoUrl")
+    favicon_url: Optional[str] = Field(None, alias="FaviconUrl")
 
 
 class AssistantSettings(BaseModel):
@@ -372,6 +383,16 @@ class ChatHistory(BaseModel):
     assistant_response: Optional[str] = Field(None, alias="assistantResponse")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class ThreadSummary(BaseModel):
+    """Summary information for a thread."""
+
+    thread_id: Optional[str] = Field(None, alias="ThreadId")
+    assistant_id: Optional[str] = Field(None, alias="AssistantId")
+    first_message_utc: Optional[datetime] = Field(None, alias="FirstMessageUtc")
+    last_message_utc: Optional[datetime] = Field(None, alias="LastMessageUtc")
+    turn_count: int = Field(0, alias="TurnCount")
 
 
 # ---------------------------------------------------------------------------
@@ -944,6 +965,20 @@ class SlackVerificationResponse(BaseModel):
     bot_token: Optional[SlackVerificationCheck] = Field(None, alias="botToken")
     channel: Optional[SlackVerificationCheck] = None
     socket_mode: Optional[SlackVerificationCheck] = Field(None, alias="socketMode")
+
+
+class CollectionRecord(BaseModel):
+    """A flexible record stored in a collection."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: Optional[str] = Field(None, alias="Id")
+
+
+class BucketCreateRequest(BaseModel):
+    """Request to create a bucket."""
+
+    name: str = Field(alias="Name")
 
 
 # ---------------------------------------------------------------------------

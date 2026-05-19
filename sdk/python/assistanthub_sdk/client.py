@@ -7,6 +7,7 @@ import os
 from typing import Any, Generator, Iterator, Optional, Union
 
 from ._base_client import BaseClient
+from ._parity_sync_mixin import AssistantHubClientParityMixin
 from .models import (
     Assistant,
     AssistantDocument,
@@ -34,7 +35,7 @@ from .models import (
 )
 
 
-class AssistantHubClient(BaseClient):
+class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
     """Synchronous client for the AssistantHub REST API.
 
     Provides methods for managing assistants, collections, threads, and

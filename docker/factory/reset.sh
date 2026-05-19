@@ -3,8 +3,7 @@
 # reset.sh - Reset AssistantHub docker environment to factory defaults
 #
 # This script destroys all runtime data (databases, logs, object storage,
-# vector data) and restores factory-default databases. Configuration files
-# are preserved.
+# vector data) and restores factory-default databases and configuration.
 #
 # Usage: ./factory/reset.sh [--include-models]
 #   --include-models  Also remove downloaded Ollama models (requires re-download)
@@ -40,11 +39,12 @@ echo "    embeddings, tenants, users)"
 echo "  - All object storage files (uploaded documents)"
 echo "  - All log files and processing logs"
 echo "  - All Partio request history"
+echo "  - AssistantHub configuration changes"
 if [ "$INCLUDE_MODELS" = true ]; then
   echo "  - All downloaded Ollama models"
 fi
 echo ""
-echo "Configuration files will NOT be modified."
+echo "AssistantHub configuration will be restored to factory defaults."
 echo ""
 read -r -p "Type 'RESET' to confirm: " CONFIRM
 echo ""
@@ -85,7 +85,8 @@ rm -f "$DOCKER_DIR/assistanthub/data/assistanthub.db-wal"
 cp "$FACTORY_DIR/assistanthub.db" "$DOCKER_DIR/assistanthub/data/assistanthub.db"
 cp "$FACTORY_DIR/assistanthub.db-shm" "$DOCKER_DIR/assistanthub/data/assistanthub.db-shm" 2>/dev/null || true
 cp "$FACTORY_DIR/assistanthub.db-wal" "$DOCKER_DIR/assistanthub/data/assistanthub.db-wal" 2>/dev/null || true
-echo "        Restored assistanthub.db"
+cp "$FACTORY_DIR/assistanthub.json" "$DOCKER_DIR/assistanthub/assistanthub.json"
+echo "        Restored assistanthub.db and assistanthub.json"
 
 # Less3
 rm -f "$DOCKER_DIR/less3/less3.db"

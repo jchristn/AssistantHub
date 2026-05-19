@@ -480,16 +480,7 @@ async function threadTests(runner, client, baseUrl, apiKey) {
 
   await runner.runTest("Thread: Delete thread", async () => {
     assertNotNull(createdThreadId, "createdThreadId from previous test");
-    // JS SDK does not expose deleteThread -- call the API directly
-    const headers = { "Content-Type": "application/json" };
-    if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
-    const resp = await fetch(baseUrl + "/v1.0/threads/" + encodeURIComponent(createdThreadId), {
-      method: "DELETE",
-      headers,
-    });
-    if (!resp.ok && resp.status !== 204) {
-      throw new Error("Delete thread failed with status " + resp.status);
-    }
+    await client.deleteThread(createdThreadId);
   });
 
   await runner.runTest("Thread: Clean up assistant", async () => {

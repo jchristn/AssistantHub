@@ -112,7 +112,7 @@ services:
   # --- Summarization, Chunking, Embedding (Partio) ---
 
   partio-server:
-    image: jchristn77/partio-server:v0.2.0
+    image: jchristn77/partio-server:v0.3.0
     container_name: assistanthub-partio-server
     ports:
       - "8321:8400"
@@ -133,7 +133,7 @@ services:
     restart: unless-stopped
 
   partio-dashboard:
-    image: jchristn77/partio-dashboard:v0.2.0
+    image: jchristn77/partio-dashboard:v0.3.0
     container_name: assistanthub-partio-dashboard
     ports:
       - "8322:8401"
@@ -288,7 +288,7 @@ services:
       - "8801:8801"
     environment:
       - ASSISTANTHUB_SERVER_URL=http://localhost:8801
-      - DASHBOARD_INGEST_MAX_PARALLEL_INGESTIONS=5
+      - DASHBOARD_INGEST_MAX_PARALLEL_INGESTIONS=10
     volumes:
       - ./dashboard-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

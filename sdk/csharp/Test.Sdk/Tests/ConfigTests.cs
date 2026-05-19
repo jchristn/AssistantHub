@@ -4,7 +4,7 @@ namespace Test.Sdk.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Sdk;
-    using Test.Common;
+    using Test.Shared;
 
     /// <summary>
     /// Tests for configuration endpoint.

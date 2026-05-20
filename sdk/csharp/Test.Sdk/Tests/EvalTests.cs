@@ -68,6 +68,13 @@ namespace Test.Sdk.Tests
                 AssertHelper.IsTrue(found, "Created eval fact should appear in list");
             }, token).ConfigureAwait(false);
 
+            await runner.RunTestAsync("Eval: Default judge prompt returns string", async (CancellationToken ct) =>
+            {
+                string prompt = await client.GetDefaultJudgePromptAsync(ct).ConfigureAwait(false);
+                AssertHelper.IsNotNull(prompt, "GetDefaultJudgePrompt result");
+                AssertHelper.IsTrue(prompt.Length > 0, "Default judge prompt should not be empty");
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("Eval: Delete eval fact", async (CancellationToken ct) =>
             {
                 AssertHelper.IsNotNull(createdFactId, "createdFactId from previous test");

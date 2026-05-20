@@ -212,6 +212,29 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 }
 ```
 
+## Request History and Evaluation
+
+```csharp
+using AssistantHub.Sdk;
+using AssistantHub.Sdk.Models;
+
+using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800", "your-api-key"))
+{
+    RequestHistorySearchFilter filter = new RequestHistorySearchFilter
+    {
+        MaxResults = 25,
+        PathContains = "/v1.0/assistants"
+    };
+
+    RequestHistorySummaryResult summary = await client.GetRequestHistorySummaryAsync(filter);
+    Console.WriteLine($"Requests captured: {summary.TotalCount}");
+
+    List<EvalResult> results = await client.GetEvalRunResultsAsync("erun_your-id");
+    string judgePrompt = await client.GetDefaultJudgePromptAsync();
+    Console.WriteLine($"Eval results: {results.Count}, judge prompt length: {judgePrompt.Length}");
+}
+```
+
 ## Error Handling
 
 The SDK throws typed exceptions that map to HTTP status codes:
@@ -359,8 +382,21 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `ListEvalRunsAsync()` | List all eval runs |
 | `GetEvalRunAsync(runId)` | Get an eval run |
 | `DeleteEvalRunAsync(runId)` | Delete an eval run |
-| `ListEvalResultsAsync(runId)` | List results for a run |
-| `GetDefaultJudgePromptAsync()` | Get the default judge prompt |
+| `ListEvalResultsAsync(runId)` | Compatibility alias for listing results for a run |
+| `GetEvalRunResultsAsync(runId)` | List results for a run |
+| `GetEvalResultAsync(resultId)` | Get a single eval result |
+| `GetDefaultJudgePromptAsync()` | Get the default judge prompt text |
+
+### Request History
+
+| Method | Description |
+|---|---|
+| `ListRequestHistoryAsync(filter?)` | List request-history entries |
+| `GetRequestHistorySummaryAsync(filter?)` | Summarize request-history entries |
+| `GetRequestHistoryAsync(requestId)` | Get a request-history entry |
+| `GetRequestHistoryDetailAsync(requestId)` | Get detailed request/response payloads |
+| `DeleteRequestHistoryAsync(requestId)` | Delete a single request-history entry |
+| `DeleteRequestHistoryBulkAsync(filter?)` | Delete request-history entries matching a filter |
 
 ### Crawl Plans
 

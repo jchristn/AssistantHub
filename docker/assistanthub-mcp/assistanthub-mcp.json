@@ -1,0 +1,48 @@
+{
+  "CreatedUtc": "2026-05-19T00:00:00Z",
+  "CreatedBy": "Setup",
+  "DeploymentType": "Private",
+  "SoftwareVersion": "v0.10.0",
+  "Node": {
+    "Guid": "00000000-0000-0000-0000-000000000001",
+    "Name": "AssistantHub Model Context Protocol Server",
+    "Hostname": "assistanthub-mcp-server",
+    "InstanceType": "McpServer",
+    "LastStartUtc": "2026-05-19T00:00:00Z",
+    "CreatedUtc": "2026-05-19T00:00:00Z"
+  },
+  "Logging": {
+    "Servers": [],
+    "LogDirectory": "/app/logs/",
+    "LogFilename": "assistanthub-mcp.log",
+    "ConsoleLogging": true,
+    "EnableColors": true,
+    "MinimumSeverity": 0
+  },
+  "AssistantHub": {
+    "Endpoint": "http://assistanthub-server:8800",
+    "ApiKey": "changeme"
+  },
+  "Http": {
+    "Hostname": "0.0.0.0",
+    "Port": 8820
+  },
+  "Tcp": {
+    "Address": "0.0.0.0",
+    "Port": 8821
+  },
+  "WebSocket": {
+    "Hostname": "0.0.0.0",
+    "Port": 8822
+  },
+  "Storage": {
+    "BackupsDirectory": "/app/backups/",
+    "TempDirectory": "/app/temp/",
+    "MaxInlineBinaryBytes": 5242880
+  },
+  "Debug": {
+    "Exceptions": true,
+    "Requests": false,
+    "McpOperations": false
+  }
+}

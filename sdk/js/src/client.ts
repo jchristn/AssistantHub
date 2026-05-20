@@ -24,6 +24,10 @@ import type {
   AssistantFeedback,
   ChatHistory,
   ThreadSummary,
+  RequestHistorySearchFilter,
+  RequestHistoryEntry,
+  RequestHistorySummaryResult,
+  RequestHistoryDeleteResult,
   PartioEndpointRequest,
   PartioEndpointConfig,
   EndpointHealthStatus,
@@ -119,6 +123,30 @@ export class AssistantHubClient {
       }
     }
     return parts.length ? `?${parts.join("&")}` : "";
+  }
+
+  private _requestHistoryQs(filter?: RequestHistorySearchFilter): string {
+    if (!filter) return "";
+    return this._qs({
+      maxResults: filter.maxResults,
+      continuationToken: filter.continuationToken,
+      ordering: filter.ordering,
+      requestType: filter.requestType,
+      method: filter.httpMethod,
+      path: filter.pathContains,
+      statusCode: filter.statusCode,
+      success: filter.success,
+      tenantId: filter.tenantId,
+      userId: filter.userId,
+      credentialId: filter.credentialId,
+      assistantId: filter.assistantId,
+      threadId: filter.threadId,
+      sourceType: filter.sourceType,
+      search: filter.searchText,
+      startUtc: filter.startUtc,
+      endUtc: filter.endUtc,
+      bucketSeconds: filter.bucketSeconds,
+    });
   }
 
   private async _request<T>(method: string, path: string, body?: unknown, extraHeaders?: Record<string, string>): Promise<T> {
@@ -1017,6 +1045,40 @@ export class AssistantHubClient {
   /** Get the default judge prompt. */
   async getDefaultJudgePrompt(): Promise<{ Prompt: string }> {
     return this._request("GET", "/v1.0/eval/judge-prompt/default");
+  }
+
+  // --------------------------------------------------------------------------
+  // Request History
+  // --------------------------------------------------------------------------
+
+  /** List request-history entries. */
+  async listRequestHistory(filter?: RequestHistorySearchFilter): Promise<EnumerationResult<RequestHistoryEntry>> {
+    return this._request("GET", `/v1.0/requesthistory${this._requestHistoryQs(filter)}`);
+  }
+
+  /** Summarize request-history entries into time buckets. */
+  async getRequestHistorySummary(filter?: RequestHistorySearchFilter): Promise<RequestHistorySummaryResult> {
+    return this._request("GET", `/v1.0/requesthistory/summary${this._requestHistoryQs(filter)}`);
+  }
+
+  /** Get a request-history entry by ID. */
+  async getRequestHistory(requestId: string): Promise<RequestHistoryEntry> {
+    return this._request("GET", `/v1.0/requesthistory/${encodeURIComponent(requestId)}`);
+  }
+
+  /** Get the detail alias payload for a request-history entry. */
+  async getRequestHistoryDetail(requestId: string): Promise<RequestHistoryEntry> {
+    return this._request("GET", `/v1.0/requesthistory/${encodeURIComponent(requestId)}/detail`);
+  }
+
+  /** Delete a request-history entry by ID. */
+  async deleteRequestHistory(requestId: string): Promise<void> {
+    return this._request("DELETE", `/v1.0/requesthistory/${encodeURIComponent(requestId)}`);
+  }
+
+  /** Bulk delete request-history entries matching the supplied filter. */
+  async deleteRequestHistoryBulk(filter?: RequestHistorySearchFilter): Promise<RequestHistoryDeleteResult> {
+    return this._request("DELETE", `/v1.0/requesthistory/bulk${this._requestHistoryQs(filter)}`);
   }
 
   // --------------------------------------------------------------------------

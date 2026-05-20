@@ -26,3 +26,5 @@ From `sdk/csharp`:
 ```bash
 dotnet run --project Test.Sdk/Test.Sdk.csproj
 ```
+
+The integration runner now covers request-history methods and the eval judge-prompt/eval-results contracts used by the MCP server.

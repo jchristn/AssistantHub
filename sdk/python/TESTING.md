@@ -24,3 +24,5 @@ From `sdk/python`:
 pip install -e .
 python test_sdk.py
 ```
+
+The integration runner covers request-history read paths and the eval judge-prompt contract used by the MCP server.

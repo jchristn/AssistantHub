@@ -623,6 +623,93 @@ export interface ThreadSummary {
 }
 
 // ============================================================================
+// Request History
+// ============================================================================
+
+/** Query parameters for request-history search and summary endpoints. */
+export interface RequestHistorySearchFilter {
+  maxResults?: number;
+  continuationToken?: string;
+  ordering?: EnumerationOrder;
+  requestType?: string;
+  httpMethod?: string;
+  pathContains?: string;
+  statusCode?: number;
+  success?: boolean;
+  tenantId?: string;
+  userId?: string;
+  credentialId?: string;
+  assistantId?: string;
+  threadId?: string;
+  sourceType?: string;
+  searchText?: string;
+  startUtc?: string;
+  endUtc?: string;
+  bucketSeconds?: number;
+}
+
+/** Captured HTTP request/response entry. */
+export interface RequestHistoryEntry {
+  Id?: string;
+  TenantId?: string;
+  UserId?: string;
+  CredentialId?: string;
+  AssistantId?: string;
+  ThreadId?: string;
+  PrincipalName?: string;
+  RequestType?: string;
+  SourceType?: string;
+  HttpMethod?: string;
+  RouteTemplate?: string;
+  RequestPath?: string;
+  RequestUrl?: string;
+  SourceIp?: string;
+  StatusCode?: number;
+  Success?: boolean;
+  DurationMs?: number;
+  RequestContentType?: string;
+  ResponseContentType?: string;
+  RequestSizeBytes?: number;
+  ResponseSizeBytes?: number;
+  RequestBodyTruncated?: boolean;
+  ResponseBodyTruncated?: boolean;
+  RequestBodyIsBinary?: boolean;
+  ResponseBodyIsBinary?: boolean;
+  RouteParameters?: Record<string, string>;
+  QueryParameters?: Record<string, string>;
+  RequestHeaders?: Record<string, string>;
+  ResponseHeaders?: Record<string, string>;
+  RequestBody?: string;
+  ResponseBody?: string;
+  CreatedUtc?: string;
+  LastUpdateUtc?: string;
+}
+
+/** Aggregated request-history summary bucket. */
+export interface RequestHistorySummaryBucket {
+  BucketStartUtc?: string;
+  BucketEndUtc?: string;
+  RequestCount?: number;
+  SuccessCount?: number;
+  FailureCount?: number;
+  AverageDurationMs?: number;
+}
+
+/** Request-history summary response. */
+export interface RequestHistorySummaryResult {
+  TotalCount?: number;
+  TotalSuccess?: number;
+  TotalFailure?: number;
+  AverageDurationMs?: number;
+  Buckets?: RequestHistorySummaryBucket[];
+}
+
+/** Bulk request-history deletion response. */
+export interface RequestHistoryDeleteResult {
+  DeletedCount?: number;
+}
+
+// ============================================================================
 // Endpoint Configuration (Partio)
 // ============================================================================
 

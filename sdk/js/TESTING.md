@@ -25,3 +25,5 @@ npm install
 npm run build
 node test_sdk.mjs
 ```
+
+The integration runner covers the request-history read paths and the eval judge-prompt contract used by the MCP server.

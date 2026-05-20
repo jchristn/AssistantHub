@@ -4,6 +4,8 @@ Base URL: `http://localhost:8800`
 
 All API endpoints are versioned under `/v1.0/`. Responses use `application/json` content type unless otherwise noted.
 
+AssistantHub also ships a standalone MCP server that maps the management surface in this document to MCP tools. See [MCP_API.md](MCP_API.md) for the MCP transport endpoints, tool names, redaction rules, and route coverage matrix.
+
 ## Table of Contents
 
 - [Authentication](#authentication)

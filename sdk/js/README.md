@@ -14,7 +14,7 @@ npm install assistanthub-sdk
 import { AssistantHubClient } from "assistanthub-sdk";
 
 const client = new AssistantHubClient({
-  baseUrl: "http://localhost:8000",
+  baseUrl: "http://localhost:8800",
   apiKey: "your-api-key",
 });
 
@@ -33,12 +33,12 @@ The SDK supports bearer token authentication. You can either pass an API key dir
 ```typescript
 // Direct API key
 const client = new AssistantHubClient({
-  baseUrl: "http://localhost:8000",
+  baseUrl: "http://localhost:8800",
   apiKey: "your-bearer-token",
 });
 
 // Or authenticate to get a token
-const unauthClient = new AssistantHubClient({ baseUrl: "http://localhost:8000" });
+const unauthClient = new AssistantHubClient({ baseUrl: "http://localhost:8800" });
 const authResult = await unauthClient.authenticate({
   Email: "user@example.com",
   Password: "password",
@@ -46,7 +46,7 @@ const authResult = await unauthClient.authenticate({
 });
 
 const client = new AssistantHubClient({
-  baseUrl: "http://localhost:8000",
+  baseUrl: "http://localhost:8800",
   apiKey: authResult.Credential?.BearerToken,
 });
 ```
@@ -216,6 +216,24 @@ for await (const result of client.streamEvalRunResults(run.Id!)) {
 }
 ```
 
+### Request History
+
+```typescript
+const summary = await client.getRequestHistorySummary({
+  maxResults: 25,
+  pathContains: "/v1.0/assistants",
+});
+
+console.log(summary.TotalCount);
+
+const entries = await client.listRequestHistory({ maxResults: 10 });
+const first = entries.Objects[0];
+if (first?.Id) {
+  const detail = await client.getRequestHistoryDetail(first.Id);
+  console.log(detail.Path, detail.StatusCode);
+}
+```
+
 ### Tenants, Users, and Credentials
 
 ```typescript
@@ -291,6 +309,7 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Labels/Tags | `getDistinctLabels()`, `getDistinctTags()` |
 | Feedback | `listFeedback()`, `getFeedback()`, `deleteFeedback()` |
 | History | `listHistory()`, `getHistory()`, `deleteHistory()` |
+| Request History | `listRequestHistory()`, `getRequestHistorySummary()`, `getRequestHistory()`, `getRequestHistoryDetail()`, `deleteRequestHistory()`, `deleteRequestHistoryBulk()` |
 | Embedding Endpoints | `createEmbeddingEndpoint()`, `listEmbeddingEndpoints()`, `getEmbeddingEndpoint()`, `updateEmbeddingEndpoint()`, `deleteEmbeddingEndpoint()`, `embeddingEndpointExists()`, `getEmbeddingEndpointHealth()`, `getEmbeddingEndpointHealthById()`, `testEmbeddingEndpoint()` |
 | Completion Endpoints | `createCompletionEndpoint()`, `listCompletionEndpoints()`, `getCompletionEndpoint()`, `updateCompletionEndpoint()`, `deleteCompletionEndpoint()`, `completionEndpointExists()`, `getCompletionEndpointHealth()`, `getCompletionEndpointHealthById()`, `testCompletionEndpoint()` |
 | Models | `listModels()`, `pullModel()`, `getPullStatus()`, `deleteModel()` |

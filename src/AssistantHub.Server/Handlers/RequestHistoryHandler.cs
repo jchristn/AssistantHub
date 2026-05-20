@@ -260,33 +260,33 @@ namespace AssistantHub.Server.Handlers
         {
             RequestHistorySearchFilter filter = new RequestHistorySearchFilter();
 
-            string maxResults = ctx.Request.Query.Elements.Get("maxResults");
+            string maxResults = GetDecodedQueryValue(ctx, "maxResults");
             if (!String.IsNullOrEmpty(maxResults) && Int32.TryParse(maxResults, out int parsedMaxResults))
                 filter.MaxResults = parsedMaxResults;
 
-            filter.ContinuationToken = ctx.Request.Query.Elements.Get("continuationToken");
+            filter.ContinuationToken = GetDecodedQueryValue(ctx, "continuationToken");
 
-            string ordering = ctx.Request.Query.Elements.Get("ordering");
+            string ordering = GetDecodedQueryValue(ctx, "ordering");
             if (!String.IsNullOrEmpty(ordering)
                 && Enum.TryParse<Enums.EnumerationOrderEnum>(ordering, true, out Enums.EnumerationOrderEnum parsedOrdering))
                 filter.Ordering = parsedOrdering;
 
-            filter.RequestType = ctx.Request.Query.Elements.Get("requestType");
-            filter.HttpMethod = ctx.Request.Query.Elements.Get("method");
-            filter.PathContains = ctx.Request.Query.Elements.Get("path");
-            filter.TenantId = auth.IsGlobalAdmin ? ctx.Request.Query.Elements.Get("tenantId") : auth.TenantId;
-            filter.UserId = ctx.Request.Query.Elements.Get("userId");
-            filter.CredentialId = ctx.Request.Query.Elements.Get("credentialId");
-            filter.AssistantId = ctx.Request.Query.Elements.Get("assistantId");
-            filter.ThreadId = ctx.Request.Query.Elements.Get("threadId");
-            filter.SourceType = ctx.Request.Query.Elements.Get("sourceType");
-            filter.SearchText = ctx.Request.Query.Elements.Get("search");
+            filter.RequestType = GetDecodedQueryValue(ctx, "requestType");
+            filter.HttpMethod = GetDecodedQueryValue(ctx, "method");
+            filter.PathContains = GetDecodedQueryValue(ctx, "path");
+            filter.TenantId = auth.IsGlobalAdmin ? GetDecodedQueryValue(ctx, "tenantId") : auth.TenantId;
+            filter.UserId = GetDecodedQueryValue(ctx, "userId");
+            filter.CredentialId = GetDecodedQueryValue(ctx, "credentialId");
+            filter.AssistantId = GetDecodedQueryValue(ctx, "assistantId");
+            filter.ThreadId = GetDecodedQueryValue(ctx, "threadId");
+            filter.SourceType = GetDecodedQueryValue(ctx, "sourceType");
+            filter.SearchText = GetDecodedQueryValue(ctx, "search");
 
-            string statusCode = ctx.Request.Query.Elements.Get("statusCode");
+            string statusCode = GetDecodedQueryValue(ctx, "statusCode");
             if (!String.IsNullOrEmpty(statusCode) && Int32.TryParse(statusCode, out int parsedStatusCode))
                 filter.StatusCode = parsedStatusCode;
 
-            string success = ctx.Request.Query.Elements.Get("success");
+            string success = GetDecodedQueryValue(ctx, "success");
             if (!String.IsNullOrEmpty(success))
             {
                 if (Boolean.TryParse(success, out bool parsedSuccess))
@@ -295,29 +295,45 @@ namespace AssistantHub.Server.Handlers
                 else if (success == "0") filter.Success = false;
             }
 
-            string startUtc = ctx.Request.Query.Elements.Get("startUtc");
+            string startUtc = GetDecodedQueryValue(ctx, "startUtc");
             if (!String.IsNullOrEmpty(startUtc)
                 && DateTime.TryParse(startUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedStartUtc))
                 filter.StartUtc = parsedStartUtc;
 
-            string endUtc = ctx.Request.Query.Elements.Get("endUtc");
+            string endUtc = GetDecodedQueryValue(ctx, "endUtc");
             if (!String.IsNullOrEmpty(endUtc)
                 && DateTime.TryParse(endUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedEndUtc))
                 filter.EndUtc = parsedEndUtc;
 
-            string bucketSeconds = ctx.Request.Query.Elements.Get("bucketSeconds");
+            string bucketSeconds = GetDecodedQueryValue(ctx, "bucketSeconds");
             if (!String.IsNullOrEmpty(bucketSeconds) && Int32.TryParse(bucketSeconds, out int parsedBucketSeconds))
             {
                 filter.BucketSeconds = parsedBucketSeconds;
             }
             else
             {
-                string bucketMinutes = ctx.Request.Query.Elements.Get("bucketMinutes");
+                string bucketMinutes = GetDecodedQueryValue(ctx, "bucketMinutes");
                 if (!String.IsNullOrEmpty(bucketMinutes) && Int32.TryParse(bucketMinutes, out int parsedBucketMinutes))
                     filter.BucketMinutes = parsedBucketMinutes;
             }
 
             return filter;
+        }
+
+        private static string? GetDecodedQueryValue(HttpContextBase ctx, string key)
+        {
+            string? value = ctx.Request.Query.Elements.Get(key);
+            if (String.IsNullOrEmpty(value))
+                return value;
+
+            try
+            {
+                return Uri.UnescapeDataString(value);
+            }
+            catch
+            {
+                return value;
+            }
         }
 
         private RequestHistorySummaryResult BuildEmptySummary(RequestHistorySearchFilter filter)

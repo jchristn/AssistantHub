@@ -1022,7 +1022,19 @@ namespace AssistantHub.Sdk
             if (String.IsNullOrWhiteSpace(runId))
                 throw new ArgumentNullException(nameof(runId));
 
-            return await SendAsync<EnumerationResult<EvalResult>>(HttpMethod.Get, "/v1.0/eval/runs/" + runId + "/results", cancellationToken: cancellationToken).ConfigureAwait(false);
+            List<EvalResult> results = await GetEvalRunResultsAsync(runId, cancellationToken).ConfigureAwait(false);
+
+            return new EnumerationResult<EvalResult>
+            {
+                Success = true,
+                MaxResults = results?.Count ?? 0,
+                TotalRecords = results?.Count ?? 0,
+                RecordsRemaining = 0,
+                ContinuationToken = null,
+                EndOfResults = true,
+                Objects = results ?? new List<EvalResult>(),
+                TotalMs = 0
+            };
         }
 
         /// <summary>
@@ -1032,7 +1044,11 @@ namespace AssistantHub.Sdk
         /// <returns>The default judge prompt string.</returns>
         public async Task<string> GetDefaultJudgePromptAsync(CancellationToken cancellationToken = default)
         {
-            return await SendAsync<string>(HttpMethod.Get, "/v1.0/eval/judge-prompt/default", cancellationToken: cancellationToken).ConfigureAwait(false);
+            Dictionary<string, string> response = await SendAsync<Dictionary<string, string>>(HttpMethod.Get, "/v1.0/eval/judge-prompt/default", cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (response != null && response.TryGetValue("Prompt", out string prompt) && !String.IsNullOrEmpty(prompt))
+                return prompt;
+
+            return String.Empty;
         }
 
         #endregion

@@ -12,6 +12,13 @@ TOTAL_START=$(date +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.
 echo "=============================================================="
 echo "  AssistantHub Test Runner"
 echo "=============================================================="
+if [ -n "${ASSISTANTHUB_TEST_SUITES:-}" ]; then
+    echo "  ASSISTANTHUB_TEST_SUITES=${ASSISTANTHUB_TEST_SUITES}"
+    echo "  Note: suite filtering applies to Test.Automated."
+fi
+if [ -n "${ASSISTANTHUB_TEST_KEEP_ARTIFACTS:-}" ]; then
+    echo "  ASSISTANTHUB_TEST_KEEP_ARTIFACTS=${ASSISTANTHUB_TEST_KEEP_ARTIFACTS}"
+fi
 echo ""
 
 # --- Test.Automated (console runner) ---

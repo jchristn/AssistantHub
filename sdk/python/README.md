@@ -16,7 +16,7 @@ pip install assistanthub-sdk
 from assistanthub_sdk import AssistantHubClient
 
 client = AssistantHubClient(
-    base_url="http://localhost:8000",
+    base_url="http://localhost:8800",
     api_key="your-api-key",
 )
 
@@ -40,7 +40,7 @@ client.close()
 ### Using a Context Manager
 
 ```python
-with AssistantHubClient(base_url="http://localhost:8000", api_key="key") as client:
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
     assistant = client.get_assistant("ast_123")
     print(assistant.name)
 ```
@@ -53,7 +53,7 @@ from assistanthub_sdk import AsyncAssistantHubClient, ChatCompletionMessage
 
 async def main():
     async with AsyncAssistantHubClient(
-        base_url="http://localhost:8000",
+        base_url="http://localhost:8800",
         api_key="your-api-key",
     ) as client:
         # List assistants
@@ -80,7 +80,7 @@ Both clients support streaming responses via SSE.
 ```python
 from assistanthub_sdk import AssistantHubClient, ChatCompletionMessage
 
-with AssistantHubClient(base_url="http://localhost:8000", api_key="key") as client:
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
     for chunk in client.send_message_stream(
         assistant_id="ast_123",
         messages=[ChatCompletionMessage(role="user", content="Tell me a story")],
@@ -91,7 +91,7 @@ with AssistantHubClient(base_url="http://localhost:8000", api_key="key") as clie
 ### Async Streaming
 
 ```python
-async with AsyncAssistantHubClient(base_url="http://localhost:8000", api_key="key") as client:
+async with AsyncAssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
     async for chunk in client.send_message_stream(
         assistant_id="ast_123",
         messages=[ChatCompletionMessage(role="user", content="Tell me a story")],
@@ -112,7 +112,7 @@ from assistanthub_sdk import (
     ValidationError,
 )
 
-client = AssistantHubClient(base_url="http://localhost:8000", api_key="key")
+client = AssistantHubClient(base_url="http://localhost:8800", api_key="key")
 
 try:
     assistant = client.get_assistant("nonexistent")
@@ -124,6 +124,24 @@ except ValidationError as e:
     print(f"Bad request: {e}")
 except AssistantHubError as e:
     print(f"API error: {e} (status={e.status_code})")
+```
+
+## Request History
+
+```python
+from assistanthub_sdk import AssistantHubClient, RequestHistorySearchFilter
+
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
+    summary = client.get_request_history_summary(
+        RequestHistorySearchFilter(max_results=25, path_contains="/v1.0/assistants")
+    )
+    print(summary.total_count)
+
+    page = client.list_request_history(RequestHistorySearchFilter(max_results=10))
+    first = page.objects[0] if page.objects else None
+    if first:
+        detail = client.get_request_history_detail(first.id)
+        print(detail.path, detail.status_code)
 ```
 
 ## Available Methods
@@ -214,9 +232,19 @@ except AssistantHubError as e:
 - `get_eval_run(run_id)` -- Get a single run
 - `delete_eval_run(run_id)` -- Delete a run
 - `list_eval_results(run_id)` -- Get run results
+- `get_eval_run_results(run_id)` -- Get run results
 - `get_eval_result(result_id)` -- Get a single result
 - `stream_eval_run(run_id)` -- Stream run updates via SSE
 - `get_default_judge_prompt()` -- Get the default judge prompt
+
+### Request History
+
+- `list_request_history(filter=None)` -- List request-history entries
+- `get_request_history_summary(filter=None)` -- Summarize request-history entries
+- `get_request_history(request_id)` -- Get a request-history entry
+- `get_request_history_detail(request_id)` -- Get detailed request/response payloads
+- `delete_request_history(request_id)` -- Delete a single request-history entry
+- `delete_request_history_bulk(filter=None)` -- Delete request-history entries matching a filter
 
 ### Crawl Plans
 

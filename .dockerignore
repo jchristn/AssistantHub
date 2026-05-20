@@ -11,3 +11,14 @@ dist/
 *.suo
 logs/
 *.db
+*.db-shm
+*.db-wal
+archive/
+assets/
+dashboard/
+docker/
+docs/
+postman/
+sdk/js/
+sdk/python/
+tmp_*

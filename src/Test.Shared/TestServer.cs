@@ -1,7 +1,9 @@
 namespace Test.Shared
 {
     using System;
+    using System.Net;
     using System.Net.Http;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
@@ -53,8 +55,8 @@ namespace Test.Shared
 
         private async Task InitializeAsync(int port)
         {
-            // Use a random port if 0
-            _port = port == 0 ? new Random().Next(10000, 60000) : port;
+            // Reserve a loopback port instead of guessing one to avoid bind collisions.
+            _port = port == 0 ? ReserveAvailablePort() : port;
 
             // Setup SQLite database
             _dbFilename = "integration_test_" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".db";
@@ -67,7 +69,7 @@ namespace Test.Shared
             };
             Settings.Webserver = new AssistantHub.Core.Settings.WebserverSettings
             {
-                Hostname = "localhost",
+                Hostname = "127.0.0.1",
                 Port = _port
             };
             Settings.Inference = new InferenceSettings
@@ -124,7 +126,7 @@ namespace Test.Shared
             Inference = new InferenceService(Settings.Inference, Logging);
 
             // Create and configure Watson Webserver
-            WatsonWebserver.Core.WebserverSettings wsSettings = new WatsonWebserver.Core.WebserverSettings("localhost", _port, false);
+            WatsonWebserver.Core.WebserverSettings wsSettings = new WatsonWebserver.Core.WebserverSettings("127.0.0.1", _port, false);
             _server = new Webserver(wsSettings, DefaultRouteAsync);
 
             // Create handlers
@@ -211,7 +213,7 @@ namespace Test.Shared
 
             // Start the server
             _server.Start();
-            BaseUrl = $"http://localhost:{_port}";
+            BaseUrl = $"http://127.0.0.1:{_port}";
 
             // Create HttpClient with auth header
             Client = new HttpClient();
@@ -227,6 +229,21 @@ namespace Test.Shared
             ctx.Response.StatusCode = 404;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.Send("{\"Error\":\"NotFound\"}").ConfigureAwait(false);
+        }
+
+        private static int ReserveAvailablePort()
+        {
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+
+            try
+            {
+                return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+            finally
+            {
+                listener.Stop();
+            }
         }
 
         public void Dispose()

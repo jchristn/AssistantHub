@@ -38,6 +38,10 @@ from .models import (
     PartioEndpointConfig,
     PartioEndpointRequest,
     PullProgress,
+    RequestHistoryDeleteResult,
+    RequestHistoryEntry,
+    RequestHistorySearchFilter,
+    RequestHistorySummaryResult,
     TenantMetadata,
     UserMaster,
 )
@@ -70,6 +74,16 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             headers=headers,
             timeout=timeout,
         )
+
+    @staticmethod
+    def _request_history_params(
+        filter: Optional[RequestHistorySearchFilter],
+    ) -> Optional[dict[str, Any]]:
+        """Serialize a request-history filter into query-string parameters."""
+        if filter is None:
+            return None
+
+        return filter.model_dump(by_alias=True, exclude_none=True, mode="json")
 
     async def _request(
         self,
@@ -1350,6 +1364,66 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         response = await self._request("GET", "/v1.0/eval/judge-prompt/default")
         data = response.json()
         return data.get("Prompt", "")
+
+    # ------------------------------------------------------------------
+    # Request History
+    # ------------------------------------------------------------------
+
+    async def list_request_history(
+        self, filter: Optional[RequestHistorySearchFilter] = None
+    ) -> EnumerationResult[RequestHistoryEntry]:
+        """List request-history entries."""
+        response = await self._request(
+            "GET",
+            "/v1.0/requesthistory",
+            params=self._request_history_params(filter),
+        )
+        data = response.json()
+        objects = [
+            RequestHistoryEntry.model_validate(obj)
+            for obj in (data.get("objects") or [])
+        ]
+        result = EnumerationResult[RequestHistoryEntry].model_validate(data)
+        result.objects = objects
+        return result
+
+    async def get_request_history_summary(
+        self, filter: Optional[RequestHistorySearchFilter] = None
+    ) -> RequestHistorySummaryResult:
+        """Summarize request-history entries into time buckets."""
+        response = await self._request(
+            "GET",
+            "/v1.0/requesthistory/summary",
+            params=self._request_history_params(filter),
+        )
+        return RequestHistorySummaryResult.model_validate(response.json())
+
+    async def get_request_history(self, request_id: str) -> RequestHistoryEntry:
+        """Get a single request-history entry by ID."""
+        response = await self._request("GET", f"/v1.0/requesthistory/{request_id}")
+        return RequestHistoryEntry.model_validate(response.json())
+
+    async def get_request_history_detail(self, request_id: str) -> RequestHistoryEntry:
+        """Get the detail alias payload for a request-history entry."""
+        response = await self._request(
+            "GET", f"/v1.0/requesthistory/{request_id}/detail"
+        )
+        return RequestHistoryEntry.model_validate(response.json())
+
+    async def delete_request_history(self, request_id: str) -> None:
+        """Delete a single request-history entry by ID."""
+        await self._request("DELETE", f"/v1.0/requesthistory/{request_id}")
+
+    async def delete_request_history_bulk(
+        self, filter: Optional[RequestHistorySearchFilter] = None
+    ) -> RequestHistoryDeleteResult:
+        """Delete request-history entries matching the supplied filter."""
+        response = await self._request(
+            "DELETE",
+            "/v1.0/requesthistory/bulk",
+            params=self._request_history_params(filter),
+        )
+        return RequestHistoryDeleteResult.model_validate(response.json())
 
     # ------------------------------------------------------------------
     # Crawl Plans

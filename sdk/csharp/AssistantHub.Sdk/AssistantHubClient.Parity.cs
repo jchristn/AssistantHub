@@ -68,6 +68,52 @@ namespace AssistantHub.Sdk
             return AppendQueryString(path, parameters);
         }
 
+        private string AppendRequestHistoryFilter(string path, RequestHistorySearchFilter filter)
+        {
+            if (filter == null)
+                return path;
+
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
+
+            if (filter.MaxResults > 0)
+                parameters["maxResults"] = filter.MaxResults.ToString();
+            if (!String.IsNullOrWhiteSpace(filter.ContinuationToken))
+                parameters["continuationToken"] = filter.ContinuationToken;
+            parameters["ordering"] = filter.Ordering.ToString();
+            if (!String.IsNullOrWhiteSpace(filter.RequestType))
+                parameters["requestType"] = filter.RequestType;
+            if (!String.IsNullOrWhiteSpace(filter.HttpMethod))
+                parameters["method"] = filter.HttpMethod;
+            if (!String.IsNullOrWhiteSpace(filter.PathContains))
+                parameters["path"] = filter.PathContains;
+            if (filter.StatusCode.HasValue)
+                parameters["statusCode"] = filter.StatusCode.Value.ToString();
+            if (filter.Success.HasValue)
+                parameters["success"] = filter.Success.Value ? "true" : "false";
+            if (!String.IsNullOrWhiteSpace(filter.TenantId))
+                parameters["tenantId"] = filter.TenantId;
+            if (!String.IsNullOrWhiteSpace(filter.UserId))
+                parameters["userId"] = filter.UserId;
+            if (!String.IsNullOrWhiteSpace(filter.CredentialId))
+                parameters["credentialId"] = filter.CredentialId;
+            if (!String.IsNullOrWhiteSpace(filter.AssistantId))
+                parameters["assistantId"] = filter.AssistantId;
+            if (!String.IsNullOrWhiteSpace(filter.ThreadId))
+                parameters["threadId"] = filter.ThreadId;
+            if (!String.IsNullOrWhiteSpace(filter.SourceType))
+                parameters["sourceType"] = filter.SourceType;
+            if (!String.IsNullOrWhiteSpace(filter.SearchText))
+                parameters["search"] = filter.SearchText;
+            if (filter.StartUtc.HasValue)
+                parameters["startUtc"] = filter.StartUtc.Value.ToString("O");
+            if (filter.EndUtc.HasValue)
+                parameters["endUtc"] = filter.EndUtc.Value.ToString("O");
+            if (filter.BucketSeconds > 0)
+                parameters["bucketSeconds"] = filter.BucketSeconds.ToString();
+
+            return AppendQueryString(path, parameters);
+        }
+
         private async Task<byte[]> DownloadBytesAsync(string path, CancellationToken cancellationToken = default)
         {
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, BaseUrl + path))
@@ -867,6 +913,17 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Get all evaluation results for a run.
+        /// </summary>
+        public async Task<List<EvalResult>> GetEvalRunResultsAsync(string runId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(runId))
+                throw new ArgumentNullException(nameof(runId));
+
+            return await SendAsync<List<EvalResult>>(HttpMethod.Get, "/v1.0/eval/runs/" + UrlEncode(runId) + "/results", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Stream evaluation run updates via SSE.
         /// </summary>
         public async IAsyncEnumerable<string> StreamEvalRunAsync(string runId, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -901,6 +958,67 @@ namespace AssistantHub.Sdk
                     }
                 }
             }
+        }
+
+        #endregion
+
+        #region Request-History
+
+        /// <summary>
+        /// List request-history entries.
+        /// </summary>
+        public async Task<EnumerationResult<RequestHistoryEntry>> ListRequestHistoryAsync(RequestHistorySearchFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<EnumerationResult<RequestHistoryEntry>>(HttpMethod.Get, AppendRequestHistoryFilter("/v1.0/requesthistory", filter), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Summarize request-history entries into time buckets.
+        /// </summary>
+        public async Task<RequestHistorySummaryResult> GetRequestHistorySummaryAsync(RequestHistorySearchFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<RequestHistorySummaryResult>(HttpMethod.Get, AppendRequestHistoryFilter("/v1.0/requesthistory/summary", filter), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get a fully hydrated request-history entry.
+        /// </summary>
+        public async Task<RequestHistoryEntry> GetRequestHistoryAsync(string requestId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(requestId))
+                throw new ArgumentNullException(nameof(requestId));
+
+            return await SendAsync<RequestHistoryEntry>(HttpMethod.Get, "/v1.0/requesthistory/" + UrlEncode(requestId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get the alias detail payload for a request-history entry.
+        /// </summary>
+        public async Task<RequestHistoryEntry> GetRequestHistoryDetailAsync(string requestId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(requestId))
+                throw new ArgumentNullException(nameof(requestId));
+
+            return await SendAsync<RequestHistoryEntry>(HttpMethod.Get, "/v1.0/requesthistory/" + UrlEncode(requestId) + "/detail", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete a single request-history entry.
+        /// </summary>
+        public async Task DeleteRequestHistoryAsync(string requestId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(requestId))
+                throw new ArgumentNullException(nameof(requestId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/requesthistory/" + UrlEncode(requestId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete request-history entries matching the supplied filter.
+        /// </summary>
+        public async Task<RequestHistoryDeleteResult> DeleteRequestHistoryBulkAsync(RequestHistorySearchFilter filter = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<RequestHistoryDeleteResult>(HttpMethod.Delete, AppendRequestHistoryFilter("/v1.0/requesthistory/bulk", filter), cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

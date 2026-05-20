@@ -10,6 +10,13 @@ $TotalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 Write-Host "=============================================================="
 Write-Host "  AssistantHub Test Runner"
 Write-Host "=============================================================="
+if ($env:ASSISTANTHUB_TEST_SUITES) {
+    Write-Host "  ASSISTANTHUB_TEST_SUITES=$($env:ASSISTANTHUB_TEST_SUITES)"
+    Write-Host "  Note: suite filtering applies to Test.Automated."
+}
+if ($env:ASSISTANTHUB_TEST_KEEP_ARTIFACTS) {
+    Write-Host "  ASSISTANTHUB_TEST_KEEP_ARTIFACTS=$($env:ASSISTANTHUB_TEST_KEEP_ARTIFACTS)"
+}
 Write-Host ""
 
 # --- Test.Automated (console runner) ---

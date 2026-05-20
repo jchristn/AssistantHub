@@ -114,6 +114,10 @@ function btoa64(str) {
   return Buffer.from(str, "utf-8").toString("base64");
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ---------------------------------------------------------------------------
 // Test groups
 // ---------------------------------------------------------------------------
@@ -647,6 +651,12 @@ async function evalTests(runner, client) {
     assertTrue(found, "Created eval fact should appear in list");
   });
 
+  await runner.runTest("Eval: Default judge prompt returns prompt payload", async () => {
+    const result = await client.getDefaultJudgePrompt();
+    assertNotNull(result, "GetDefaultJudgePrompt result");
+    assertTrue(typeof result.Prompt === "string", "Default judge prompt should be a string");
+  });
+
   await runner.runTest("Eval: Delete eval fact", async () => {
     assertNotNull(createdFactId, "createdFactId from previous test");
     await client.deleteEvalFact(createdFactId);
@@ -655,6 +665,63 @@ async function evalTests(runner, client) {
   await runner.runTest("Eval: Cleanup assistant", async () => {
     assertNotNull(createdAssistantId, "createdAssistantId from previous test");
     await client.deleteAssistant(createdAssistantId);
+  });
+}
+
+async function requestHistoryTests(runner, client) {
+  let capturedRequestId = null;
+  const startUtc = new Date(Date.now() - 5_000).toISOString();
+
+  await runner.runTest("RequestHistory: Capture and list whoami request", async () => {
+    await client.whoami();
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const result = await client.listRequestHistory({
+        maxResults: 25,
+        pathContains: "/v1.0/whoami",
+        startUtc,
+      });
+      assertNotNull(result, "ListRequestHistory result");
+      assertNotNull(result.Objects, "ListRequestHistory Objects");
+
+      const entry = result.Objects.find((item) =>
+        typeof item.RequestPath === "string" && item.RequestPath.includes("/v1.0/whoami")
+      );
+
+      if (entry && entry.Id) {
+        capturedRequestId = entry.Id;
+        return;
+      }
+
+      await sleep(500);
+    }
+
+    throw new Error("Timed out waiting for request-history capture of /v1.0/whoami");
+  });
+
+  await runner.runTest("RequestHistory: Get request-history entry by ID", async () => {
+    assertNotNull(capturedRequestId, "capturedRequestId from previous test");
+    const result = await client.getRequestHistory(capturedRequestId);
+    assertNotNull(result, "GetRequestHistory result");
+    assertEqual(capturedRequestId, result.Id, "RequestHistory ID");
+    assertTrue(typeof result.RequestPath === "string" && result.RequestPath.includes("/v1.0/whoami"), "Request path should reference whoami");
+  });
+
+  await runner.runTest("RequestHistory: Get detailed request-history entry by ID", async () => {
+    assertNotNull(capturedRequestId, "capturedRequestId from previous test");
+    const result = await client.getRequestHistoryDetail(capturedRequestId);
+    assertNotNull(result, "GetRequestHistoryDetail result");
+    assertEqual(capturedRequestId, result.Id, "RequestHistory detail ID");
+  });
+
+  await runner.runTest("RequestHistory: Get request-history summary", async () => {
+    const result = await client.getRequestHistorySummary({
+      pathContains: "/v1.0/whoami",
+      startUtc,
+      bucketSeconds: 60,
+    });
+    assertNotNull(result, "GetRequestHistorySummary result");
+    assertTrue((result.TotalCount || 0) >= 1, "RequestHistory summary should include at least one entry");
   });
 }
 
@@ -782,6 +849,7 @@ async function main() {
     await endpointTests(runner, client);
     await inferenceTests(runner, client);
     await evalTests(runner, client);
+    await requestHistoryTests(runner, client);
     await crawlPlanTests(runner, client);
     await configTests(runner, client);
   } catch (err) {

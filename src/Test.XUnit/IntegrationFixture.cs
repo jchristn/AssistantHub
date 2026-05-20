@@ -31,14 +31,21 @@ namespace Test.XUnit
                     Console.SetError(TextWriter.Null);
 
                     IntegrationSuite suite = new IntegrationSuite();
-                    IReadOnlyList<AutomatedTestResult> results = suite.RunAsync()
+                    McpSuite mcpSuite = new McpSuite();
+                    IReadOnlyList<AutomatedTestResult> integrationResults = suite.RunAsync()
+                        .GetAwaiter()
+                        .GetResult();
+                    IReadOnlyList<AutomatedTestResult> mcpResults = mcpSuite.RunAsync()
                         .GetAwaiter()
                         .GetResult();
 
                     Dictionary<string, AutomatedTestResult> cachedResults =
                         new Dictionary<string, AutomatedTestResult>(StringComparer.Ordinal);
 
-                    foreach (var result in results)
+                    foreach (var result in integrationResults)
+                        cachedResults[result.TestName] = result;
+
+                    foreach (var result in mcpResults)
                         cachedResults[result.TestName] = result;
 
                     _CachedResults = cachedResults;

@@ -743,6 +743,10 @@ def run_eval_tests(runner: TestRunner, client: AssistantHubClient) -> None:
         found = any(f.id == created_fact_id[0] for f in result.objects)
         assert_true(found, "Created eval fact should appear in list")
 
+    def test_default_judge_prompt() -> None:
+        prompt = client.get_default_judge_prompt()
+        assert_true(isinstance(prompt, str), "Default judge prompt should be a string")
+
     def test_delete_fact() -> None:
         assert_not_none(created_fact_id[0], "createdFactId from previous test")
         client.delete_eval_fact(created_fact_id[0])
@@ -754,8 +758,80 @@ def run_eval_tests(runner: TestRunner, client: AssistantHubClient) -> None:
     runner.run_test("Eval: Create assistant for eval tests", test_create_assistant)
     runner.run_test("Eval: Create eval fact", test_create_fact)
     runner.run_test("Eval: List eval facts includes created one", test_list_facts)
+    runner.run_test("Eval: Default judge prompt returns string", test_default_judge_prompt)
     runner.run_test("Eval: Delete eval fact", test_delete_fact)
     runner.run_test("Eval: Cleanup assistant", test_cleanup_assistant)
+
+
+def run_request_history_tests(runner: TestRunner, client: AssistantHubClient) -> None:
+    captured_request_id: list[Optional[str]] = [None]
+    start_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 5))
+
+    def test_capture_and_list() -> None:
+        from assistanthub_sdk.models import RequestHistorySearchFilter
+
+        client.whoami()
+
+        for _ in range(20):
+            result = client.list_request_history(
+                RequestHistorySearchFilter(
+                    max_results=25,
+                    path_contains="/v1.0/whoami",
+                    start_utc=start_utc,
+                )
+            )
+            assert_not_none(result, "ListRequestHistory result")
+            assert_not_none(result.objects, "ListRequestHistory result.objects")
+
+            entry = next(
+                (
+                    item
+                    for item in result.objects
+                    if item.request_path and "/v1.0/whoami" in item.request_path
+                ),
+                None,
+            )
+            if entry is not None and entry.id is not None:
+                captured_request_id[0] = entry.id
+                return
+
+            time.sleep(0.5)
+
+        raise AssertionError("Timed out waiting for request-history capture of /v1.0/whoami")
+
+    def test_get_request_history() -> None:
+        assert_not_none(captured_request_id[0], "capturedRequestId from previous test")
+        entry = client.get_request_history(captured_request_id[0])
+        assert_not_none(entry, "GetRequestHistory result")
+        assert_equal(captured_request_id[0], entry.id, "RequestHistory ID")
+        assert_true(
+            entry.request_path is not None and "/v1.0/whoami" in entry.request_path,
+            "Request path should reference whoami",
+        )
+
+    def test_get_request_history_detail() -> None:
+        assert_not_none(captured_request_id[0], "capturedRequestId from previous test")
+        entry = client.get_request_history_detail(captured_request_id[0])
+        assert_not_none(entry, "GetRequestHistoryDetail result")
+        assert_equal(captured_request_id[0], entry.id, "RequestHistory detail ID")
+
+    def test_get_request_history_summary() -> None:
+        from assistanthub_sdk.models import RequestHistorySearchFilter
+
+        summary = client.get_request_history_summary(
+            RequestHistorySearchFilter(
+                path_contains="/v1.0/whoami",
+                start_utc=start_utc,
+                bucket_seconds=60,
+            )
+        )
+        assert_not_none(summary, "GetRequestHistorySummary result")
+        assert_true(summary.total_count >= 1, "RequestHistory summary should include at least one entry")
+
+    runner.run_test("RequestHistory: Capture and list whoami request", test_capture_and_list)
+    runner.run_test("RequestHistory: Get request-history entry by ID", test_get_request_history)
+    runner.run_test("RequestHistory: Get detailed request-history entry by ID", test_get_request_history_detail)
+    runner.run_test("RequestHistory: Get request-history summary", test_get_request_history_summary)
 
 
 def run_crawl_plan_tests(runner: TestRunner, client: AssistantHubClient) -> None:
@@ -891,6 +967,7 @@ def main() -> int:
             run_endpoint_tests(runner, client)
             run_inference_tests(runner, client)
             run_eval_tests(runner, client)
+            run_request_history_tests(runner, client)
             run_crawl_plan_tests(runner, client)
             run_config_tests(runner, client)
     except Exception as ex:

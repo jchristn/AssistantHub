@@ -39,6 +39,7 @@ namespace Test.Sdk
                     await EndpointTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await InferenceTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await EvalTests.RunAsync(runner, client, token).ConfigureAwait(false);
+                    await RequestHistoryTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await CrawlPlanTests.RunAsync(runner, client, token).ConfigureAwait(false);
                     await ConfigTests.RunAsync(runner, client, token).ConfigureAwait(false);
                 }

@@ -396,6 +396,101 @@ class ThreadSummary(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Request History
+# ---------------------------------------------------------------------------
+
+
+class RequestHistorySearchFilter(BaseModel):
+    """Filter parameters for request-history search and summary endpoints."""
+
+    max_results: int = Field(100, alias="maxResults")
+    continuation_token: Optional[str] = Field(None, alias="continuationToken")
+    ordering: EnumerationOrder = Field(
+        EnumerationOrder.CREATED_DESCENDING, alias="ordering"
+    )
+    request_type: Optional[str] = Field(None, alias="requestType")
+    http_method: Optional[str] = Field(None, alias="method")
+    path_contains: Optional[str] = Field(None, alias="path")
+    status_code: Optional[int] = Field(None, alias="statusCode")
+    success: Optional[bool] = None
+    tenant_id: Optional[str] = Field(None, alias="tenantId")
+    user_id: Optional[str] = Field(None, alias="userId")
+    credential_id: Optional[str] = Field(None, alias="credentialId")
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    thread_id: Optional[str] = Field(None, alias="threadId")
+    source_type: Optional[str] = Field(None, alias="sourceType")
+    search_text: Optional[str] = Field(None, alias="search")
+    start_utc: Optional[datetime] = Field(None, alias="startUtc")
+    end_utc: Optional[datetime] = Field(None, alias="endUtc")
+    bucket_seconds: int = Field(900, alias="bucketSeconds")
+
+
+class RequestHistoryEntry(BaseModel):
+    """Captured HTTP request and response record."""
+
+    id: Optional[str] = None
+    tenant_id: Optional[str] = Field(None, alias="tenantId")
+    user_id: Optional[str] = Field(None, alias="userId")
+    credential_id: Optional[str] = Field(None, alias="credentialId")
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    thread_id: Optional[str] = Field(None, alias="threadId")
+    principal_name: Optional[str] = Field(None, alias="principalName")
+    request_type: Optional[str] = Field(None, alias="requestType")
+    source_type: Optional[str] = Field(None, alias="sourceType")
+    http_method: Optional[str] = Field(None, alias="httpMethod")
+    route_template: Optional[str] = Field(None, alias="routeTemplate")
+    request_path: Optional[str] = Field(None, alias="requestPath")
+    request_url: Optional[str] = Field(None, alias="requestUrl")
+    source_ip: Optional[str] = Field(None, alias="sourceIp")
+    status_code: int = Field(0, alias="statusCode")
+    success: bool = False
+    duration_ms: float = Field(0.0, alias="durationMs")
+    request_content_type: Optional[str] = Field(None, alias="requestContentType")
+    response_content_type: Optional[str] = Field(None, alias="responseContentType")
+    request_size_bytes: int = Field(0, alias="requestSizeBytes")
+    response_size_bytes: int = Field(0, alias="responseSizeBytes")
+    request_body_truncated: bool = Field(False, alias="requestBodyTruncated")
+    response_body_truncated: bool = Field(False, alias="responseBodyTruncated")
+    request_body_is_binary: bool = Field(False, alias="requestBodyIsBinary")
+    response_body_is_binary: bool = Field(False, alias="responseBodyIsBinary")
+    route_parameters: Optional[dict[str, str]] = Field(None, alias="routeParameters")
+    query_parameters: Optional[dict[str, str]] = Field(None, alias="queryParameters")
+    request_headers: Optional[dict[str, str]] = Field(None, alias="requestHeaders")
+    response_headers: Optional[dict[str, str]] = Field(None, alias="responseHeaders")
+    request_body: Optional[str] = Field(None, alias="requestBody")
+    response_body: Optional[str] = Field(None, alias="responseBody")
+    created_utc: Optional[datetime] = Field(None, alias="createdUtc")
+    last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class RequestHistorySummaryBucket(BaseModel):
+    """Aggregated request-history bucket."""
+
+    bucket_start_utc: Optional[datetime] = Field(None, alias="bucketStartUtc")
+    bucket_end_utc: Optional[datetime] = Field(None, alias="bucketEndUtc")
+    request_count: int = Field(0, alias="requestCount")
+    success_count: int = Field(0, alias="successCount")
+    failure_count: int = Field(0, alias="failureCount")
+    average_duration_ms: float = Field(0.0, alias="averageDurationMs")
+
+
+class RequestHistorySummaryResult(BaseModel):
+    """Summary of request-history matches."""
+
+    total_count: int = Field(0, alias="totalCount")
+    total_success: int = Field(0, alias="totalSuccess")
+    total_failure: int = Field(0, alias="totalFailure")
+    average_duration_ms: float = Field(0.0, alias="averageDurationMs")
+    buckets: Optional[list[RequestHistorySummaryBucket]] = None
+
+
+class RequestHistoryDeleteResult(BaseModel):
+    """Bulk request-history deletion result."""
+
+    deleted_count: int = Field(0, alias="deletedCount")
+
+
+# ---------------------------------------------------------------------------
 # Feedback
 # ---------------------------------------------------------------------------
 

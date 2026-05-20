@@ -154,6 +154,7 @@ Operational notes:
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
 - **Dashboard** -- Browser-based management UI for configuring assistants, uploading documents, viewing feedback, managing endpoints, and testing chat.
+- **Model Context Protocol (MCP)** -- Standalone MCP server for the platform management surface with HTTP, TCP, and WebSocket transports, Claude/Cursor install support, default secret redaction for sensitive fields, and binary wrappers for document and bucket-object flows.
 - **Query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval to broaden recall and capture synonyms, alternate phrasing, and conceptual restatements
 - **LLM-based re-ranking** -- Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
 - **Metadata filtering** -- Filter RAG retrieval by document labels (required/excluded string lists) and tags (key-value conditions with conditional operators). Configure default filters per assistant and/or override per-conversation via the `metadata_filter` field on chat completion requests.
@@ -184,6 +185,7 @@ The Docker Compose stack orchestrates the following services:
 | Service | Port | Description |
 |---|---|---|
 | **assistanthub-server** | 8800 | The core AssistantHub REST API server (.NET 10). Handles all business logic: assistant management, document ingestion orchestration, chat with RAG, user authentication, and integration with all downstream services. |
+| **assistanthub-mcp-server** | 8820 / 8821 / 8822 | Standalone Voltaic-based MCP server for AssistantHub. Exposes tenants, users, credentials, assistants, settings, storage, ingestion, endpoints, crawl, eval, history, request history, and runtime configuration over HTTP, TCP, and WebSocket MCP transports. |
 | **assistanthub-dashboard** | 8801 | Browser-based management dashboard (React 19, served by nginx). Provides a full UI for configuring assistants, uploading documents, managing endpoints, viewing feedback/history, and live chat testing. Proxies API requests to the server. |
 | **ollama** | 11434 | Local LLM inference engine. Runs language models (e.g., `gemma3:4b`) for chat completion, conversation compaction, retrieval gate classification, and title generation. Models are persisted in a Docker volume. |
 | **less3** | 8000 | S3-compatible object storage server. Stores uploaded document files. AssistantHub uses the S3 API to write, read, and delete document objects during ingestion and cleanup. |
@@ -472,6 +474,64 @@ For complete endpoint documentation including request/response schemas and examp
 | Public Info | `GET /v1.0/assistants/{id}/public` | Get assistant public info and appearance (unauthenticated) |
 | Public Metadata | `GET /v1.0/assistants/{id}/labels/distinct`, `GET .../tags/distinct` | Discover available label and tag filter values for an assistant's collection (unauthenticated) |
 | Public Threads | `POST /v1.0/assistants/{id}/threads` | Create a conversation thread (unauthenticated) |
+
+---
+
+## MCP Server
+
+AssistantHub also includes a standalone MCP server under [`src/AssistantHub.McpServer/`](src/AssistantHub.McpServer/) for management and operator workflows. It mirrors the main REST control plane as MCP tools over Voltaic transports.
+
+Default transport endpoints:
+
+| Transport | Default endpoint |
+|---|---|
+| HTTP JSON-RPC | `http://127.0.0.1:8820/rpc` |
+| HTTP events | `http://127.0.0.1:8820/events` |
+| TCP | `tcp://127.0.0.1:8821` |
+| WebSocket | `ws://127.0.0.1:8822/mcp` |
+
+Supported tool families include:
+
+- `system/*`, `auth/*`
+- `tenant/*`, `user/*`, `credential/*`
+- `assistant/*`, `assistant/settings/*`
+- `bucket/*`, `bucket/object/*`, `collection/*`, `collection/record/*`
+- `document/*`, `ingestionrule/*`
+- `embeddingendpoint/*`, `completionendpoint/*`, `model/*`
+- `crawlplan/*`, `crawloperation/*`
+- `history/*`, `thread/*`, `requesthistory/*`
+- `eval/*`
+- `configuration/*`
+
+Operational notes:
+
+- `configuration/get`, `assistant/settings/*`, and `credential/*` redact secret-bearing fields by default.
+- Document and bucket-object binary transfers use base64 envelopes and enforce `Storage.MaxInlineBinaryBytes`.
+- Eval SSE and public assistant chat/generate/compact/feedback/download routes remain REST-only in the current MCP release.
+
+Quick start:
+
+```bash
+dotnet build src/AssistantHub.sln
+dotnet run --project src/AssistantHub.Server/AssistantHub.Server.csproj
+dotnet run --project src/AssistantHub.McpServer/AssistantHub.McpServer.csproj
+```
+
+Install Claude/Cursor snippets from the built output:
+
+```bash
+cd src/AssistantHub.McpServer/bin/Debug/net10.0
+./AssistantHub.McpServer install --dry-run
+./AssistantHub.McpServer install
+```
+
+Docker assets are included for the MCP server:
+
+- image build script: [`build-mcp.bat`](build-mcp.bat)
+- Dockerfile: [`src/AssistantHub.McpServer/Dockerfile`](src/AssistantHub.McpServer/Dockerfile)
+- compose config: [`docker/assistanthub-mcp/assistanthub-mcp.json`](docker/assistanthub-mcp/assistanthub-mcp.json)
+
+See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix, and [docs/CLAUDE_MCP.md](docs/CLAUDE_MCP.md) for Claude/Cursor setup guidance.
 
 ---
 

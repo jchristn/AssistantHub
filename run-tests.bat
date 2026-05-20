@@ -13,6 +13,13 @@ set "R2=SKIP"
 echo ==============================================================
 echo   AssistantHub Test Runner
 echo ==============================================================
+if defined ASSISTANTHUB_TEST_SUITES (
+    echo   ASSISTANTHUB_TEST_SUITES=%ASSISTANTHUB_TEST_SUITES%
+    echo   Note: suite filtering applies to Test.Automated.
+)
+if defined ASSISTANTHUB_TEST_KEEP_ARTIFACTS (
+    echo   ASSISTANTHUB_TEST_KEEP_ARTIFACTS=%ASSISTANTHUB_TEST_KEEP_ARTIFACTS%
+)
 echo.
 
 REM --- Test.Automated (console runner) ---

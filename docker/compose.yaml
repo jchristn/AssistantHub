@@ -281,6 +281,23 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  assistanthub-mcp-server:
+    image: jchristn77/assistanthub-mcp:v0.10.0
+    container_name: assistanthub-mcp-server
+    ports:
+      - "8820:8820"
+      - "8821:8821"
+      - "8822:8822"
+    volumes:
+      - ./assistanthub-mcp/assistanthub-mcp.json:/app/assistanthub-mcp.json
+      - ./assistanthub-mcp/logs/:/app/logs/
+      - ./assistanthub-mcp/backups/:/app/backups/
+      - ./assistanthub-mcp/temp/:/app/temp/
+    depends_on:
+      assistanthub-server:
+        condition: service_healthy
+    restart: unless-stopped
+
   assistanthub-dashboard:
     image: jchristn77/assistanthub-dashboard:v0.10.0
     container_name: assistanthub-dashboard

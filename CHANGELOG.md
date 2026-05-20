@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **AssistantHub MCP server**: Added standalone `AssistantHub.McpServer` with Voltaic HTTP, TCP, and WebSocket transports plus install support for Claude/Cursor MCP clients.
+- **MCP management surface**: Added MCP tools for system/runtime inspection, authentication, tenants, users, credentials, buckets, bucket objects, collections, assistants, assistant settings, documents, ingestion rules, feedback, history, request history, endpoints, models, crawl plans, crawl operations, evaluation, and runtime configuration.
+- **MCP integration coverage**: Added shared MCP host/test harness support and automated MCP transport, CRUD, configuration-redaction, request-history, and install-path coverage.
+- **MCP docs and Docker assets**: Added `MCP_API.md`, `docs/CLAUDE_MCP.md`, `src/AssistantHub.McpServer/Dockerfile`, `build-mcp.bat`, and Docker compose/config assets for running the MCP server alongside the platform.
+
+### Changed
+- **SDK parity for MCP-backed routes**: C#, JavaScript, and Python SDKs now expose request-history APIs and align the eval judge-prompt/eval-results contracts used by the MCP server.
+- **Testing documentation and runners**: Root test docs and wrappers now document the current `Test.Automated`/`Test.XUnit` layout plus MCP-focused environment controls.
+
+### Fixed
+- **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
+
 ## v0.10.0 - API Explorer And Request History
 
 ### Added

@@ -1,59 +1,136 @@
 # Running Tests
 
-Five test projects, all console applications. Exit code `0` = all passed, `1` = any failed.
+AssistantHub currently uses two primary .NET test entrypoints plus per-SDK integration runners:
 
-## Test.Models — unit tests, no dependencies
+- `src/Test.Automated` for console-driven suite execution and summaries
+- `src/Test.XUnit` for xUnit integration coverage
+- `sdk/csharp/Test.Sdk`, `sdk/js/test_sdk.mjs`, and `sdk/python/test_sdk.py` for SDK integration coverage
 
-```bash
-cd src/Test.Models
-dotnet run
-```
-
-## Test.Database — SQLite by default
+## Build First
 
 ```bash
-cd src/Test.Database
-dotnet run -- --type sqlite
+dotnet build src/AssistantHub.sln
 ```
 
-Creates a temporary `test_database_<guid>.db` file, deleted automatically on exit.
-Use `--no-cleanup` to preserve test data for inspection.
+## Root Test Runners
 
-Other databases (require running instances):
+Run both primary .NET test projects:
 
 ```bash
-dotnet run -- --type postgres --host 127.0.0.1 --user postgres --pass <pw> --name testdb
-dotnet run -- --type mysql --host 127.0.0.1 --user root --pass <pw> --name testdb
-dotnet run -- --type sqlserver --host 127.0.0.1 --user sa --pass <pw> --name testdb
+./run-tests.sh
+run-tests.bat
+./run-tests.ps1
 ```
 
-## Test.Services — unit tests, mocked dependencies
+These wrappers execute:
+
+- `dotnet run --project src/Test.Automated`
+- `dotnet test src/Test.XUnit --no-build`
+
+## Test.Automated
+
+Run all automated suites:
 
 ```bash
-cd src/Test.Services
-dotnet run
+dotnet run --project src/Test.Automated/Test.Automated.csproj
 ```
 
-## Test.Api — unit tests, mocked dependencies
+Optional environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `ASSISTANTHUB_TEST_SUITES` | Comma/semicolon/space-delimited subset of suites to run. Supported values: `model`, `service`, `api`, `integration`, `mcp`. |
+| `ASSISTANTHUB_TEST_KEEP_ARTIFACTS` | Preserve spawned server/MCP temp directories, logs, and databases for inspection when set to `1`, `true`, or `yes`. |
+
+Examples:
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "mcp"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "api integration mcp"
+$env:ASSISTANTHUB_TEST_KEEP_ARTIFACTS = "1"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+## Test.XUnit
+
+Run the xUnit integration project:
 
 ```bash
-cd src/Test.Api
-dotnet run
+dotnet test src/Test.XUnit/Test.XUnit.csproj --no-build --verbosity normal
 ```
 
-## Test.Integration — in-process HTTP server with SQLite
+## MCP-Focused Validation
+
+The MCP suite exercises:
+
+- HTTP, TCP, and WebSocket MCP server startup
+- `system/health` and `system/openapi`
+- tenant CRUD
+- assistant CRUD
+- configuration redaction and `includeSecrets=true`
+- request-history capture, detail, and summary
+- `install --dry-run`
+
+Focused MCP run:
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "mcp"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+Keep artifacts for live inspection:
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "mcp"
+$env:ASSISTANTHUB_TEST_KEEP_ARTIFACTS = "1"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+## SDK Tests
+
+### C# SDK
+
+From `sdk/csharp`:
 
 ```bash
-cd src/Test.Integration
-dotnet run
+dotnet run --project Test.Sdk/Test.Sdk.csproj
 ```
 
-Starts a Watson Webserver on a random port with a temporary SQLite database. Both are cleaned up on exit.
+Optional environment variables:
 
-## Run all tests
+- `ASSISTANTHUB_BASE_URL` default: `http://localhost:6600`
+- `ASSISTANTHUB_API_KEY` default: `default`
+- `ASSISTANTHUB_TENANT_ID` default: `default`
+
+### JavaScript SDK
+
+From `sdk/js`:
 
 ```bash
-./run-tests.sh    # Linux/macOS/Git Bash
-run-tests.bat     # Windows cmd
-./run-tests.ps1   # PowerShell
+npm install
+npm run build
+node test_sdk.mjs
 ```
+
+Optional environment variables:
+
+- `ASSISTANTHUB_URL` default: `http://localhost:6600`
+- `ASSISTANTHUB_API_KEY` default: `default`
+
+### Python SDK
+
+From `sdk/python`:
+
+```bash
+pip install -e .
+python test_sdk.py
+```
+
+Optional environment variables:
+
+- `ASSISTANTHUB_URL` default: `http://localhost:6600`
+- `ASSISTANTHUB_API_KEY` default: `default`

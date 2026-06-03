@@ -49,6 +49,11 @@ namespace AssistantHub.Core.Models
         public bool Active { get; set; } = false;
 
         /// <summary>
+        /// Maximum concurrent requests allowed for this endpoint.
+        /// </summary>
+        public int MaxConcurrentRequests { get; set; } = 2;
+
+        /// <summary>
         /// Whether health checks are enabled.
         /// </summary>
         public bool HealthCheckEnabled { get; set; } = false;

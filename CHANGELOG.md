@@ -10,10 +10,26 @@
 
 ### Changed
 - **SDK parity for MCP-backed routes**: C#, JavaScript, and Python SDKs now expose request-history APIs and align the eval judge-prompt/eval-results contracts used by the MCP server.
-- **Testing documentation and runners**: Root test docs and wrappers now document the current `Test.Automated`/`Test.XUnit` layout plus MCP-focused environment controls.
+- **Testing documentation and runners**: Root test docs and wrappers document the Touchstone-backed `Test.Automated`, `Test.Xunit`, and `Test.Nunit` layout plus MCP-focused environment controls.
 
 ### Fixed
 - **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
+
+## v0.11.0 - Assistant Utility Endpoint Routing
+
+### Added
+- **Specialized assistant inference endpoints**: Assistant settings now include optional `RetrievalGateInferenceEndpointId`, `QueryRewriteInferenceEndpointId`, and `RerankInferenceEndpointId` fields for routing RAG utility LLM calls to dedicated completion endpoints.
+- **Dashboard endpoint selectors**: Assistant Settings exposes dropdowns for retrieval gate, query rewrite, and re-rank endpoints alongside the required response inference endpoint.
+- **Schema migration**: Added startup migrations and standalone provider migration scripts for SQLite, PostgreSQL, MySQL, and SQL Server for the new assistant settings columns.
+
+### Changed
+- Retrieval gate, query rewrite, and re-ranking now honor their dedicated endpoint settings while falling back to `InferenceEndpointId` when unset.
+- C#, JavaScript, and Python SDK models include the new assistant settings fields.
+- .NET test projects now use Touchstone NuGet packages with shared suites, a console runner, xUnit adapter, and NUnit adapter.
+- OpenAPI, Postman, REST API docs, and package/product versions updated to `0.11.0`.
+
+### Breaking
+- Database schema changes require running the matching `migrations/009_upgrade_to_v0.11.0.*.sql` provider script for existing installations when startup migrations are not used.
 
 ## v0.10.0 - API Explorer And Request History
 

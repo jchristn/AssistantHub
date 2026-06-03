@@ -33,6 +33,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     ApiFormat: initialApiFormat,
     ApiKey: source?.ApiKey || '',
     Active: source?.Active !== undefined ? source.Active : true,
+    MaxConcurrentRequests: source?.MaxConcurrentRequests !== undefined ? source.MaxConcurrentRequests : 2,
     HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
     HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
     HealthCheckMethod: source?.HealthCheckMethod || initialDefaults.HealthCheckMethod,
@@ -97,6 +98,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiFormat: form.ApiFormat,
         ApiKey: form.ApiKey,
         Active: form.Active,
+        MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
         HealthCheckMethod: form.HealthCheckMethod,
@@ -204,6 +206,16 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </label>
             <span><Tooltip text="Whether this endpoint is active and available for inference requests">Active</Tooltip></span>
           </div>
+        </div>
+
+        <div className="form-group">
+          <label><Tooltip text="Maximum number of concurrent requests Partio will allow for this inference endpoint">Max Concurrent Requests</Tooltip></label>
+          <input
+            type="number"
+            value={form.MaxConcurrentRequests}
+            onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
+            min="1"
+          />
         </div>
 
         {/* Health Check */}

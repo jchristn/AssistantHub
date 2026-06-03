@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
+                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -87,6 +87,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 (assistantSettings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(assistantSettings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 assistantSettings.RetrievalIncludeNeighbors + ", " +
                 _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RetrievalGateInferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.QueryRewriteInferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RerankInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +
@@ -167,6 +170,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "fulltext_minimum_score = " + (assistantSettings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(assistantSettings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 "retrieval_include_neighbors = " + assistantSettings.RetrievalIncludeNeighbors + ", " +
                 "inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.InferenceEndpointId) + ", " +
+                "retrieval_gate_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.RetrievalGateInferenceEndpointId) + ", " +
+                "query_rewrite_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.QueryRewriteInferenceEndpointId) + ", " +
+                "rerank_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.RerankInferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 "title = " + _Driver.FormatNullableString(assistantSettings.Title) + ", " +
                 "logo_url = " + _Driver.FormatNullableString(assistantSettings.LogoUrl) + ", " +

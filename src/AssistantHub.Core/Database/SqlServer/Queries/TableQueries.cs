@@ -100,6 +100,9 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 fulltext_minimum_score FLOAT NULL,
                 retrieval_include_neighbors INT NOT NULL DEFAULT 0,
                 inference_endpoint_id NVARCHAR(MAX) NULL,
+                retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL,
+                query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
+                rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
                 title NVARCHAR(MAX) NULL,
                 logo_url NVARCHAR(MAX) NULL,
@@ -116,6 +119,18 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_settings PRIMARY KEY (id)
             );";
+
+        internal static readonly string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'retrieval_gate_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'query_rewrite_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsRerankInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'rerank_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD rerank_inference_endpoint_id NVARCHAR(MAX) NULL;";
 
         internal static readonly string CreateAssistantDocumentsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')

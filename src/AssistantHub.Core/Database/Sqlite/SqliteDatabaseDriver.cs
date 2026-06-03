@@ -84,6 +84,7 @@ namespace AssistantHub.Core.Database.Sqlite
 
             await ExecuteQueryAsync(pragmas, false, token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateTables(), false, token).ConfigureAwait(false);
+            await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateIndices(), false, token).ConfigureAwait(false);
 
             _Logging.Info(_Header + "initialized SQLite database at " + _Settings.Filename);
@@ -192,6 +193,33 @@ namespace AssistantHub.Core.Database.Sqlite
         #endregion
 
         #region Private-Methods
+
+        private async Task EnsureAssistantSettingsEndpointColumnsAsync(CancellationToken token)
+        {
+            DataTable columns = await ExecuteQueryAsync("PRAGMA table_info(assistant_settings);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "retrieval_gate_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "query_rewrite_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "rerank_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+        }
+
+        private static bool HasColumn(DataTable columns, string columnName)
+        {
+            if (columns == null) return false;
+
+            foreach (DataRow row in columns.Rows)
+            {
+                if (String.Equals(row["name"]?.ToString(), columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Dispose of resources.

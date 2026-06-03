@@ -1,6 +1,6 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
-    using Xunit;
+    using global::Xunit;
 
     [CollectionDefinition("Integration", DisableParallelization = true)]
     public class IntegrationCollectionDefinition : ICollectionFixture<IntegrationFixture>

@@ -91,6 +91,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  fulltext_minimum_score DOUBLE PRECISION DEFAULT NULL, " +
             "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
             "  inference_endpoint_id TEXT, " +
+            "  retrieval_gate_inference_endpoint_id TEXT, " +
+            "  query_rewrite_inference_endpoint_id TEXT, " +
+            "  rerank_inference_endpoint_id TEXT, " +
             "  embedding_endpoint_id TEXT, " +
             "  title TEXT, " +
             "  logo_url TEXT, " +
@@ -106,6 +109,15 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
+
+        internal static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS retrieval_gate_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS query_rewrite_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_inference_endpoint_id TEXT";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +

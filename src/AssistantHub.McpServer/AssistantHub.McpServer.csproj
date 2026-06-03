@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Title>AssistantHub.McpServer</Title>
-    <Version>0.10.0</Version>
+    <Version>0.11.0</Version>
     <Authors>Joel Christner</Authors>
     <Description>MCP server for AssistantHub.</Description>
     <Copyright>(c)2025 Joel Christner</Copyright>

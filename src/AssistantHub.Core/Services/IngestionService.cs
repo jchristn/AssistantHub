@@ -1,6 +1,7 @@
 namespace AssistantHub.Core.Services
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
@@ -37,6 +38,7 @@ namespace AssistantHub.Core.Services
         private LoggingModule _Logging = null;
         private ProcessingLogService _ProcessingLog = null;
         private HttpClient _HttpClient = null;
+        private static readonly ConcurrentDictionary<string, AsyncEndpointLimiter> _EndpointLimiters = new ConcurrentDictionary<string, AsyncEndpointLimiter>(StringComparer.OrdinalIgnoreCase);
 
         private JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -712,7 +714,20 @@ namespace AssistantHub.Core.Services
                     sumConfig["Order"] = rule.Summarization.Order.ToString();
                     sumConfig["MaxSummaryTokens"] = rule.Summarization.MaxSummaryTokens;
                     sumConfig["MinCellLength"] = rule.Summarization.MinCellLength;
-                    sumConfig["MaxParallelTasks"] = rule.Summarization.MaxParallelTasks;
+
+                    int summarizationMaxParallelTasks = rule.Summarization.MaxParallelTasks;
+                    if (!String.IsNullOrWhiteSpace(rule.Summarization.CompletionEndpointId))
+                    {
+                        int completionMaxConcurrent = await ResolveEndpointMaxConcurrencyAsync("completion", rule.Summarization.CompletionEndpointId, token).ConfigureAwait(false);
+                        if (summarizationMaxParallelTasks > completionMaxConcurrent)
+                        {
+                            if (_ProcessingLog != null)
+                                await _ProcessingLog.LogAsync(documentId, "INFO", "Summarization MaxParallelTasks clamped from " + summarizationMaxParallelTasks + " to completion endpoint maxConcurrentRequests " + completionMaxConcurrent).ConfigureAwait(false);
+                            summarizationMaxParallelTasks = completionMaxConcurrent;
+                        }
+                    }
+                    sumConfig["MaxParallelTasks"] = summarizationMaxParallelTasks;
+
                     sumConfig["MaxRetriesPerSummary"] = rule.Summarization.MaxRetriesPerSummary;
                     sumConfig["MaxRetries"] = rule.Summarization.MaxRetries;
                     sumConfig["TimeoutMs"] = rule.Summarization.TimeoutMs;
@@ -766,42 +781,53 @@ namespace AssistantHub.Core.Services
                 }
 
                 Stopwatch apiSw = Stopwatch.StartNew();
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                apiSw.Stop();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
-                    if (_ProcessingLog != null)
+                string completionEndpointId = rule?.Summarization?.CompletionEndpointId;
+                using (EndpointLimiterLease limiterLease = await AcquireEndpointLimitersAsync(
+                    documentId,
+                    new List<EndpointLimiterTarget>
                     {
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Request config: embeddingEndpoint=" + embEndpointId
-                            + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
-                            + ", strategy=" + chunkStrategy).ConfigureAwait(false);
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Response body: " + responseBody).ConfigureAwait(false);
-                    }
-                    return null;
-                }
-
-                SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
-                if (cellResult == null)
+                        new EndpointLimiterTarget("embedding", embEndpointId),
+                        !String.IsNullOrWhiteSpace(completionEndpointId) ? new EndpointLimiterTarget("completion", completionEndpointId) : null
+                    },
+                    token).ConfigureAwait(false))
                 {
-                    if (_ProcessingLog != null)
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    apiSw.Stop();
+
+                    if (!response.IsSuccessStatusCode)
                     {
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
-                        await _ProcessingLog.LogAsync(documentId, "ERROR",
-                            "Response body: " + responseBody).ConfigureAwait(false);
+                        _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
+                        if (_ProcessingLog != null)
+                        {
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Request config: embeddingEndpoint=" + embEndpointId
+                                + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
+                                + ", strategy=" + chunkStrategy).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Response body: " + responseBody).ConfigureAwait(false);
+                        }
+                        return null;
                     }
-                    return null;
+
+                    SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
+                    if (cellResult == null)
+                    {
+                        if (_ProcessingLog != null)
+                        {
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Response body: " + responseBody).ConfigureAwait(false);
+                        }
+                        return null;
+                    }
+                    return FlattenChunks(cellResult);
                 }
-                return FlattenChunks(cellResult);
             }
         }
 
@@ -850,26 +876,32 @@ namespace AssistantHub.Core.Services
                     if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
 
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                    if (!response.IsSuccessStatusCode)
+                    using (EndpointLimiterLease limiterLease = await AcquireEndpointLimitersAsync(
+                        documentId,
+                        new List<EndpointLimiterTarget> { new EndpointLimiterTarget("embedding", endpointId) },
+                        token).ConfigureAwait(false))
                     {
-                        _Logging.Warn(_Header + "embedding service returned " + (int)response.StatusCode + ": " + responseBody);
-                        if (_ProcessingLog != null)
-                        {
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Step: Single-chunk embedding via Partio /v1.0/embed - HTTP " + (int)response.StatusCode).ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Source content: " + text.Length + " chars, excerpt: " + Excerpt(text)).ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Response body: " + responseBody).ConfigureAwait(false);
-                        }
-                        return null;
-                    }
+                        HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                        string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
-                    PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody);
-                    return embedResponse?.Embeddings;
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            _Logging.Warn(_Header + "embedding service returned " + (int)response.StatusCode + ": " + responseBody);
+                            if (_ProcessingLog != null)
+                            {
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Step: Single-chunk embedding via Partio /v1.0/embed - HTTP " + (int)response.StatusCode).ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Source content: " + text.Length + " chars, excerpt: " + Excerpt(text)).ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Response body: " + responseBody).ConfigureAwait(false);
+                            }
+                            return null;
+                        }
+
+                        PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody);
+                        return embedResponse?.Embeddings;
+                    }
                 }
             }
             catch (Exception e)
@@ -1146,6 +1178,79 @@ namespace AssistantHub.Core.Services
             }
         }
 
+        private async Task<EndpointLimiterLease> AcquireEndpointLimitersAsync(string documentId, List<EndpointLimiterTarget> targets, CancellationToken token)
+        {
+            List<EndpointLimiterTarget> normalized = targets?
+                .Where(t => t != null && !String.IsNullOrWhiteSpace(t.EndpointType) && !String.IsNullOrWhiteSpace(t.EndpointId))
+                .GroupBy(t => t.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .OrderBy(t => t.Key, StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<EndpointLimiterTarget>();
+
+            List<IDisposable> leases = new List<IDisposable>();
+
+            try
+            {
+                foreach (EndpointLimiterTarget target in normalized)
+                {
+                    int maxConcurrent = await ResolveEndpointMaxConcurrencyAsync(target.EndpointType, target.EndpointId, token).ConfigureAwait(false);
+                    AsyncEndpointLimiter limiter = _EndpointLimiters.GetOrAdd(target.Key, _ => new AsyncEndpointLimiter(maxConcurrent));
+                    limiter.UpdateMax(maxConcurrent);
+
+                    Stopwatch waitSw = Stopwatch.StartNew();
+                    IDisposable lease = await limiter.AcquireAsync(token).ConfigureAwait(false);
+                    waitSw.Stop();
+                    leases.Add(lease);
+
+                    if (_ProcessingLog != null)
+                    {
+                        string message = "Endpoint concurrency slot acquired: " + target.Key + ", maxConcurrentRequests=" + maxConcurrent;
+                        if (waitSw.ElapsedMilliseconds > 0)
+                            message += ", waitedMs=" + waitSw.ElapsedMilliseconds;
+                        await _ProcessingLog.LogAsync(documentId, "INFO", message).ConfigureAwait(false);
+                    }
+                }
+
+                return new EndpointLimiterLease(leases);
+            }
+            catch
+            {
+                for (int i = leases.Count - 1; i >= 0; i--)
+                    leases[i].Dispose();
+                throw;
+            }
+        }
+
+        private async Task<int> ResolveEndpointMaxConcurrencyAsync(string endpointType, string endpointId, CancellationToken token)
+        {
+            try
+            {
+                string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + endpointType + "/" + endpointId;
+
+                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
+
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "could not resolve max concurrency for " + endpointType + " endpoint " + endpointId + ": HTTP " + (int)response.StatusCode);
+                        return 1;
+                    }
+
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    PartioEndpointConfig endpointConfig = JsonSerializer.Deserialize<PartioEndpointConfig>(responseBody, _JsonOptions);
+                    return Math.Max(1, endpointConfig?.MaxConcurrentRequests ?? 1);
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception resolving max concurrency for " + endpointType + " endpoint " + endpointId + ": " + e.Message);
+                return 1;
+            }
+        }
+
         /// <summary>
         /// Merge labels from ingestion rule and document.
         /// Document labels are appended to rule labels.
@@ -1267,6 +1372,122 @@ namespace AssistantHub.Core.Services
             /// Document key (unique identifier within the collection).
             /// </summary>
             public string DocumentKey { get; set; } = null;
+        }
+
+        private class EndpointLimiterTarget
+        {
+            public string EndpointType { get; }
+            public string EndpointId { get; }
+            public string Key => EndpointType + ":" + EndpointId;
+
+            public EndpointLimiterTarget(string endpointType, string endpointId)
+            {
+                EndpointType = endpointType;
+                EndpointId = endpointId;
+            }
+        }
+
+        private class EndpointLimiterLease : IDisposable
+        {
+            private readonly List<IDisposable> _Leases;
+            private bool _Disposed = false;
+
+            public EndpointLimiterLease(List<IDisposable> leases)
+            {
+                _Leases = leases ?? new List<IDisposable>();
+            }
+
+            public void Dispose()
+            {
+                if (_Disposed) return;
+                _Disposed = true;
+
+                for (int i = _Leases.Count - 1; i >= 0; i--)
+                    _Leases[i].Dispose();
+            }
+        }
+
+        private class AsyncEndpointLimiter
+        {
+            private readonly object _Lock = new object();
+            private readonly Queue<TaskCompletionSource<IDisposable>> _Queue = new Queue<TaskCompletionSource<IDisposable>>();
+            private int _Max;
+            private int _Active = 0;
+
+            public AsyncEndpointLimiter(int max)
+            {
+                _Max = Math.Max(1, max);
+            }
+
+            public void UpdateMax(int max)
+            {
+                lock (_Lock)
+                {
+                    _Max = Math.Max(1, max);
+                    DrainQueue();
+                }
+            }
+
+            public Task<IDisposable> AcquireAsync(CancellationToken token)
+            {
+                lock (_Lock)
+                {
+                    if (_Active < _Max)
+                    {
+                        _Active++;
+                        return Task.FromResult<IDisposable>(new Lease(this));
+                    }
+
+                    TaskCompletionSource<IDisposable> tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    if (token.CanBeCanceled)
+                        token.Register(() => tcs.TrySetCanceled(token));
+
+                    _Queue.Enqueue(tcs);
+                    return tcs.Task;
+                }
+            }
+
+            private void Release()
+            {
+                lock (_Lock)
+                {
+                    if (_Active > 0)
+                        _Active--;
+                    DrainQueue();
+                }
+            }
+
+            private void DrainQueue()
+            {
+                while (_Active < _Max && _Queue.Count > 0)
+                {
+                    TaskCompletionSource<IDisposable> tcs = _Queue.Dequeue();
+                    if (tcs.Task.IsCanceled)
+                        continue;
+
+                    _Active++;
+                    if (!tcs.TrySetResult(new Lease(this)))
+                        _Active--;
+                }
+            }
+
+            private class Lease : IDisposable
+            {
+                private readonly AsyncEndpointLimiter _Owner;
+                private bool _Disposed = false;
+
+                public Lease(AsyncEndpointLimiter owner)
+                {
+                    _Owner = owner;
+                }
+
+                public void Dispose()
+                {
+                    if (_Disposed) return;
+                    _Disposed = true;
+                    _Owner.Release();
+                }
+            }
         }
 
         #endregion

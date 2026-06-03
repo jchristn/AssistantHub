@@ -356,7 +356,8 @@ namespace AssistantHub.Server.Services
                 if (userMessageCount > 1)
                 {
                     string gatePrompt = BuildRetrievalGatePrompt(request.Messages, lastUserMessage);
-                    var gateEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                    string gateEndpointId = ResolveUtilityInferenceEndpointId(settings.RetrievalGateInferenceEndpointId, settings.InferenceEndpointId);
+                    var gateEndpoint = await ResolveCompletionEndpointAsync(gateEndpointId, token).ConfigureAwait(false);
                     string gateModel = gateEndpoint?.Model ?? _Settings.Inference.DefaultModel;
 
                     Stopwatch gateSw = Stopwatch.StartNew();
@@ -410,7 +411,8 @@ namespace AssistantHub.Server.Services
             if (settings.EnableRag && settings.EnableQueryRewrite && shouldRetrieve
                 && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
             {
-                var rewriteEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                string rewriteEndpointId = ResolveUtilityInferenceEndpointId(settings.QueryRewriteInferenceEndpointId, settings.InferenceEndpointId);
+                var rewriteEndpoint = await ResolveCompletionEndpointAsync(rewriteEndpointId, token).ConfigureAwait(false);
                 string rewriteModel = rewriteEndpoint?.Model ?? _Settings.Inference.DefaultModel;
                 string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
                     ? settings.QueryRewritePrompt
@@ -569,7 +571,8 @@ namespace AssistantHub.Server.Services
 
                 try
                 {
-                    var rerankEndpoint = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId, token).ConfigureAwait(false);
+                    string rerankEndpointId = ResolveUtilityInferenceEndpointId(settings.RerankInferenceEndpointId, settings.InferenceEndpointId);
+                    var rerankEndpoint = await ResolveCompletionEndpointAsync(rerankEndpointId, token).ConfigureAwait(false);
                     string rerankModel = rerankEndpoint?.Model ?? _Settings.Inference.DefaultModel;
                     string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
                         ? settings.RerankPrompt
@@ -1054,6 +1057,11 @@ namespace AssistantHub.Server.Services
         {
             if (String.IsNullOrEmpty(text)) return 0;
             return (int)Math.Ceiling(text.Length / 4.0);
+        }
+
+        private static string ResolveUtilityInferenceEndpointId(string utilityEndpointId, string fallbackEndpointId)
+        {
+            return !String.IsNullOrWhiteSpace(utilityEndpointId) ? utilityEndpointId : fallbackEndpointId;
         }
 
         private static int EstimateTokenCount(List<ChatCompletionMessage> messages)

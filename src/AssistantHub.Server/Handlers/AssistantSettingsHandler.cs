@@ -180,6 +180,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                NormalizeEndpointSettings(updated);
                 NormalizeSlackSettings(updated);
 
                 string slackValidationError = ValidateSlackSettings(updated);
@@ -353,6 +354,27 @@ namespace AssistantHub.Server.Handlers
             settings.SlackBotToken = settings.SlackBotToken?.Trim();
             settings.SlackChannelId = settings.SlackChannelId?.Trim();
             settings.SlackMessagePrefix = settings.SlackMessagePrefix?.Trim();
+        }
+
+        private static void NormalizeEndpointSettings(AssistantSettings settings)
+        {
+            if (settings == null) return;
+            settings.InferenceEndpointId = NormalizeRequiredEndpointId(settings.InferenceEndpointId);
+            settings.EmbeddingEndpointId = NormalizeOptionalEndpointId(settings.EmbeddingEndpointId);
+            settings.RetrievalGateInferenceEndpointId = NormalizeOptionalEndpointId(settings.RetrievalGateInferenceEndpointId);
+            settings.QueryRewriteInferenceEndpointId = NormalizeOptionalEndpointId(settings.QueryRewriteInferenceEndpointId);
+            settings.RerankInferenceEndpointId = NormalizeOptionalEndpointId(settings.RerankInferenceEndpointId);
+        }
+
+        private static string NormalizeRequiredEndpointId(string endpointId)
+        {
+            return endpointId?.Trim();
+        }
+
+        private static string NormalizeOptionalEndpointId(string endpointId)
+        {
+            string trimmed = endpointId?.Trim();
+            return String.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
         }
 
         private static void NormalizeSlackSettings(SlackVerificationRequest request)

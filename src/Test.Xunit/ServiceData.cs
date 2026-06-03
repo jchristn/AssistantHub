@@ -1,14 +1,14 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using System.Collections.Generic;
 
-    public static class IntegrationData
+    public static class ServiceData
     {
         public static IEnumerable<object[]> Cases
         {
             get
             {
-                IntegrationFixture fixture = new IntegrationFixture();
+                ServiceFixture fixture = new ServiceFixture();
                 List<string> names = new List<string>(fixture.Results.Keys);
                 names.Sort(System.StringComparer.Ordinal);
 

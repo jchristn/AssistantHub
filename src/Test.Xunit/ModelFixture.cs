@@ -1,11 +1,11 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using Test.Automated;
 
-    public class ApiFixture
+    public class ModelFixture
     {
         private static readonly object _Sync = new object();
         private static IReadOnlyDictionary<string, AutomatedTestResult> _CachedResults = null;
@@ -30,7 +30,7 @@ namespace Test.XUnit
                     Console.SetOut(TextWriter.Null);
                     Console.SetError(TextWriter.Null);
 
-                    ApiSuite suite = new ApiSuite();
+                    ModelSuite suite = new ModelSuite();
                     IReadOnlyList<AutomatedTestResult> results = suite.RunAsync()
                         .GetAwaiter()
                         .GetResult();

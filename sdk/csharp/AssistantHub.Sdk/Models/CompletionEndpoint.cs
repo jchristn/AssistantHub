@@ -56,6 +56,12 @@ namespace AssistantHub.Sdk.Models
         public bool Active { get; set; }
 
         /// <summary>
+        /// Maximum concurrent requests allowed for this endpoint.
+        /// </summary>
+        [JsonPropertyName("MaxConcurrentRequests")]
+        public int MaxConcurrentRequests { get; set; }
+
+        /// <summary>
         /// Whether health checks are enabled.
         /// </summary>
         [JsonPropertyName("HealthCheckEnabled")]

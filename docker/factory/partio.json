@@ -51,6 +51,7 @@
       "Endpoint": "http://ollama:11434",
       "ApiFormat": "Ollama",
       "ApiKey": null,
+      "MaxConcurrentRequests": 2,
       "Tokenization": {
         "TokenizerKind": "BertWordPiece",
         "TokenizerModel": "bert-base-uncased",
@@ -67,7 +68,8 @@
       "Name": "gemma3:4b",
       "Model": "gemma3:4b",
       "Endpoint": "http://ollama:11434",
-      "ApiFormat": "Ollama"
+      "ApiFormat": "Ollama",
+      "MaxConcurrentRequests": 2
     }
   ]
 }

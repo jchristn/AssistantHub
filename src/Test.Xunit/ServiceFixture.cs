@@ -1,11 +1,11 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using Test.Automated;
 
-    public class IntegrationFixture
+    public class ServiceFixture
     {
         private static readonly object _Sync = new object();
         private static IReadOnlyDictionary<string, AutomatedTestResult> _CachedResults = null;
@@ -30,22 +30,15 @@ namespace Test.XUnit
                     Console.SetOut(TextWriter.Null);
                     Console.SetError(TextWriter.Null);
 
-                    IntegrationSuite suite = new IntegrationSuite();
-                    McpSuite mcpSuite = new McpSuite();
-                    IReadOnlyList<AutomatedTestResult> integrationResults = suite.RunAsync()
-                        .GetAwaiter()
-                        .GetResult();
-                    IReadOnlyList<AutomatedTestResult> mcpResults = mcpSuite.RunAsync()
+                    ServiceSuite suite = new ServiceSuite();
+                    IReadOnlyList<AutomatedTestResult> results = suite.RunAsync()
                         .GetAwaiter()
                         .GetResult();
 
                     Dictionary<string, AutomatedTestResult> cachedResults =
                         new Dictionary<string, AutomatedTestResult>(StringComparer.Ordinal);
 
-                    foreach (var result in integrationResults)
-                        cachedResults[result.TestName] = result;
-
-                    foreach (var result in mcpResults)
+                    foreach (var result in results)
                         cachedResults[result.TestName] = result;
 
                     _CachedResults = cachedResults;

@@ -385,15 +385,16 @@ namespace AssistantHub.Server.Handlers
                             .Replace("{recentMessages}", recentMessages.ToString())
                             .Replace("{lastUserMessage}", lastUserMessage);
 
-                        // Resolve inference endpoint for the gate call (same as chat completion)
+                        // Resolve inference endpoint for the gate call.
                         Enums.InferenceProviderEnum gateProvider = Settings.Inference.Provider;
                         string gateEndpoint = Settings.Inference.Endpoint;
                         string gateApiKey = Settings.Inference.ApiKey;
                         string gateModel = Settings.Inference.DefaultModel;
+                        string gateEndpointId = ResolveUtilityInferenceEndpointId(settings.RetrievalGateInferenceEndpointId, settings.InferenceEndpointId);
 
-                        if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                        if (!String.IsNullOrEmpty(gateEndpointId))
                         {
-                            var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                            var resolved = await ResolveCompletionEndpointAsync(gateEndpointId).ConfigureAwait(false);
                             if (resolved != null)
                             {
                                 gateProvider = resolved.Value.Provider;
@@ -459,15 +460,16 @@ namespace AssistantHub.Server.Handlers
                 if (settings.EnableRag && settings.EnableQueryRewrite && shouldRetrieve
                     && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
                 {
-                    // Resolve inference endpoint (same as retrieval gate)
+                    // Resolve inference endpoint for query rewrite.
                     Enums.InferenceProviderEnum rewriteProvider = Settings.Inference.Provider;
                     string rewriteEndpoint = Settings.Inference.Endpoint;
                     string rewriteApiKey = Settings.Inference.ApiKey;
                     string rewriteModel = Settings.Inference.DefaultModel;
+                    string rewriteEndpointId = ResolveUtilityInferenceEndpointId(settings.QueryRewriteInferenceEndpointId, settings.InferenceEndpointId);
 
-                    if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                    if (!String.IsNullOrEmpty(rewriteEndpointId))
                     {
-                        var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                        var resolved = await ResolveCompletionEndpointAsync(rewriteEndpointId).ConfigureAwait(false);
                         if (resolved != null)
                         {
                             rewriteProvider = resolved.Value.Provider;
@@ -652,15 +654,16 @@ namespace AssistantHub.Server.Handlers
 
                     try
                     {
-                        // Resolve inference endpoint (same as retrieval gate / query rewrite)
+                        // Resolve inference endpoint for reranking.
                         Enums.InferenceProviderEnum rerankProvider = Settings.Inference.Provider;
                         string rerankEndpoint = Settings.Inference.Endpoint;
                         string rerankApiKey = Settings.Inference.ApiKey;
                         string rerankModel = Settings.Inference.DefaultModel;
+                        string rerankEndpointId = ResolveUtilityInferenceEndpointId(settings.RerankInferenceEndpointId, settings.InferenceEndpointId);
 
-                        if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
+                        if (!String.IsNullOrEmpty(rerankEndpointId))
                         {
-                            var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                            var resolved = await ResolveCompletionEndpointAsync(rerankEndpointId).ConfigureAwait(false);
                             if (resolved != null)
                             {
                                 rerankProvider = resolved.Value.Provider;
@@ -2244,6 +2247,11 @@ namespace AssistantHub.Server.Handlers
             public string Endpoint;
             public string ApiKey;
             public string Model;
+        }
+
+        private static string ResolveUtilityInferenceEndpointId(string utilityEndpointId, string fallbackEndpointId)
+        {
+            return !String.IsNullOrWhiteSpace(utilityEndpointId) ? utilityEndpointId : fallbackEndpointId;
         }
 
         private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)

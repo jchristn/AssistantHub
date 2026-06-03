@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.10.0` adds first-class API observability and testing inside the product: a live API Explorer, a full HTTP Request History surface, runtime `/openapi.json`, and request replay between the two operator views.
+`v0.11.0` adds dedicated assistant-level inference endpoint routing for RAG utility calls. Retrieval gate, query rewrite, and re-ranking can each use their own managed completion endpoint, while falling back to the assistant response endpoint when unset.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,13 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 </details>
 
 ---
+
+## New in v0.11.0
+
+- **Specialized RAG utility endpoints** -- Assistant Settings now has dedicated dropdowns for retrieval gate, query rewrite, and re-rank inference endpoints.
+- **Hot-path endpoint honoring** -- Chat execution uses those dedicated endpoints for their matching utility calls and falls back to the response inference endpoint when the specialized selector is empty.
+- **API and SDK support** -- `RetrievalGateInferenceEndpointId`, `QueryRewriteInferenceEndpointId`, and `RerankInferenceEndpointId` are available through REST, OpenAPI, Postman, and the C#, JavaScript, and Python SDK models.
+- **Migration scripts** -- Existing deployments can add the new assistant settings columns with the matching `migrations/009_upgrade_to_v0.11.0.*.sql` provider script.
 
 ## New in v0.10.0
 

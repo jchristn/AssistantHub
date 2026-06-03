@@ -389,6 +389,31 @@ namespace Test.Automated
                 AssertHelper.AreEqual("Test prompt {query} {chunks}", d.RerankPrompt, "round-trip RerankPrompt");
             });
 
+            await ExecuteTestAsync("AssistantSettings utility endpoint IDs: default to null", async () =>
+            {
+                var s = new AssistantSettings();
+                AssertHelper.IsNull(s.RetrievalGateInferenceEndpointId, "RetrievalGateInferenceEndpointId default");
+                AssertHelper.IsNull(s.QueryRewriteInferenceEndpointId, "QueryRewriteInferenceEndpointId default");
+                AssertHelper.IsNull(s.RerankInferenceEndpointId, "RerankInferenceEndpointId default");
+            });
+
+            await ExecuteTestAsync("AssistantSettings utility endpoint IDs: JSON round-trip", async () =>
+            {
+                var s = new AssistantSettings();
+                s.InferenceEndpointId = "ep_response";
+                s.RetrievalGateInferenceEndpointId = "ep_gate";
+                s.QueryRewriteInferenceEndpointId = "ep_rewrite";
+                s.RerankInferenceEndpointId = "ep_rerank";
+
+                string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
+                var d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
+
+                AssertHelper.AreEqual("ep_response", d.InferenceEndpointId, "round-trip InferenceEndpointId");
+                AssertHelper.AreEqual("ep_gate", d.RetrievalGateInferenceEndpointId, "round-trip RetrievalGateInferenceEndpointId");
+                AssertHelper.AreEqual("ep_rewrite", d.QueryRewriteInferenceEndpointId, "round-trip QueryRewriteInferenceEndpointId");
+                AssertHelper.AreEqual("ep_rerank", d.RerankInferenceEndpointId, "round-trip RerankInferenceEndpointId");
+            });
+
             await ExecuteTestAsync("ChatHistory.RerankDurationMs: defaults to 0", async () =>
             {
                 var ch = new ChatHistory();

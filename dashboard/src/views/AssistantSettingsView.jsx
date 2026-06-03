@@ -95,6 +95,9 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         FullTextNormalization: result?.FullTextNormalization ?? 32,
         FullTextMinimumScore: result?.FullTextMinimumScore ?? '',
         InferenceEndpointId: result?.InferenceEndpointId || '',
+        RetrievalGateInferenceEndpointId: result?.RetrievalGateInferenceEndpointId || '',
+        QueryRewriteInferenceEndpointId: result?.QueryRewriteInferenceEndpointId || '',
+        RerankInferenceEndpointId: result?.RerankInferenceEndpointId || '',
         EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         Title: result?.Title || '',
         LogoUrl: result?.LogoUrl || '',
@@ -145,6 +148,10 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
           ? null
           : parseFloat(settings.FullTextMinimumScore),
+        RetrievalGateInferenceEndpointId: settings.RetrievalGateInferenceEndpointId || null,
+        QueryRewriteInferenceEndpointId: settings.QueryRewriteInferenceEndpointId || null,
+        RerankInferenceEndpointId: settings.RerankInferenceEndpointId || null,
+        EmbeddingEndpointId: settings.EmbeddingEndpointId || null,
         RerankerTopK: parseInt(settings.RerankerTopK) || 5,
         RerankerScoreThreshold: parseFloat(settings.RerankerScoreThreshold) || 3.0
       };
@@ -223,6 +230,19 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
   };
 
   const selectedAssistant = assistants.find(a => a.Id === selectedId);
+  const formatInferenceEndpointLabel = (endpoint) => {
+    const name = endpoint.Name || endpoint.Model || endpoint.Id;
+    if (endpoint.Model && endpoint.Model !== name) return `${name} (${endpoint.Model})`;
+    return name;
+  };
+  const renderInferenceEndpointOptions = (fallbackLabel) => (
+    <>
+      <option value="">{fallbackLabel}</option>
+      {(inferenceEndpoints || []).map(ep => (
+        <option key={ep.Id} value={ep.Id}>{formatInferenceEndpointLabel(ep)}</option>
+      ))}
+    </>
+  );
 
   return (
     <div>
@@ -291,26 +311,48 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
 
             <div className="settings-section">
               <h3 className="settings-section-title">Endpoints</h3>
-              <div className="form-group">
-                <label className="form-label"><Tooltip text="Managed completion endpoint used for inference. Assistant responses always use the model configured on this endpoint.">Inference Endpoint</Tooltip></label>
-                <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
-                  <option value="">-- Select an inference endpoint --</option>
-                  {(inferenceEndpoints || []).map(ep => (
-                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
-                  ))}
-                </select>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Managed completion endpoint used for assistant responses. The model configured on this endpoint is used unless a chat request explicitly overrides it.">Response Inference Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.InferenceEndpointId} onChange={(e) => handleChange('InferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Select an inference endpoint --')}
+                  </select>
+                </div>
+                {(!settings || settings.SearchMode !== 'FullText') && (
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Managed embedding endpoint used for vector and hybrid retrieval queries. Leave blank to use the server default.">Embedding Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
+                    <option value="">-- Use server default --</option>
+                    {(embeddingEndpoints || []).map(ep => (
+                      <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
+                    ))}
+                  </select>
+                </div>
+                )}
               </div>
-              {(!settings || settings.SearchMode !== 'FullText') && (
-              <div className="form-group">
-                <label className="form-label"><Tooltip text="Managed embedding endpoint used for RAG retrieval queries. Leave blank to use the server default">Embedding Endpoint</Tooltip></label>
-                <select className="form-input" value={settings.EmbeddingEndpointId} onChange={(e) => handleChange('EmbeddingEndpointId', e.target.value)}>
-                  <option value="">-- Use server default --</option>
-                  {(embeddingEndpoints || []).map(ep => (
-                    <option key={ep.Id} value={ep.Id}>{ep.Name || ep.Model || ep.Id}</option>
-                  ))}
-                </select>
+              <div className="form-section-header" style={{ marginTop: '0.75rem' }}>
+                <Tooltip text="Optional utility endpoints for RAG-related LLM calls. Leave a selector on response endpoint to keep current behavior.">Specialized Inference Endpoints</Tooltip>
               </div>
-              )}
+              <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Inference endpoint used to decide whether a follow-up message needs new retrieval. Leave blank to use the response endpoint.">Retrieval Gate Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.RetrievalGateInferenceEndpointId} onChange={(e) => handleChange('RetrievalGateInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Inference endpoint used to rewrite a user prompt into retrieval queries. Leave blank to use the response endpoint.">Query Rewrite Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.QueryRewriteInferenceEndpointId} onChange={(e) => handleChange('QueryRewriteInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Inference endpoint used to score and filter retrieved chunks before context injection. Leave blank to use the response endpoint.">Re-Rank Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.RerankInferenceEndpointId} onChange={(e) => handleChange('RerankInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="settings-section">

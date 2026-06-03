@@ -61,6 +61,7 @@ function InferenceEndpointsView() {
     { key: 'Model', label: 'Model', tooltip: 'Model used for completion and inference', filterable: true },
     { key: 'Endpoint', label: 'Endpoint', tooltip: 'URL of the inference endpoint', filterable: true },
     { key: 'ApiFormat', label: 'Format', tooltip: 'API format used by this endpoint' },
+    { key: 'MaxConcurrentRequests', label: 'Max Concurrency', tooltip: 'Maximum concurrent requests allowed by Partio for this endpoint', render: (row) => row.MaxConcurrentRequests ?? '-' },
     { key: 'Active', label: 'Active', tooltip: 'Whether this endpoint is currently active', render: (row) => row.Active ? 'Yes' : 'No' },
     {
       key: 'Health',

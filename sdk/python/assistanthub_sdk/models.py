@@ -173,6 +173,15 @@ class AssistantSettings(BaseModel):
     full_text_minimum_score: Optional[float] = Field(None, alias="fullTextMinimumScore")
     retrieval_include_neighbors: int = Field(0, alias="retrievalIncludeNeighbors")
     inference_endpoint_id: Optional[str] = Field(None, alias="inferenceEndpointId")
+    retrieval_gate_inference_endpoint_id: Optional[str] = Field(
+        None, alias="retrievalGateInferenceEndpointId"
+    )
+    query_rewrite_inference_endpoint_id: Optional[str] = Field(
+        None, alias="queryRewriteInferenceEndpointId"
+    )
+    rerank_inference_endpoint_id: Optional[str] = Field(
+        None, alias="rerankInferenceEndpointId"
+    )
     embedding_endpoint_id: Optional[str] = Field(None, alias="embeddingEndpointId")
     title: Optional[str] = None
     logo_url: Optional[str] = Field(None, alias="logoUrl")
@@ -537,6 +546,7 @@ class PartioEndpointConfig(BaseModel):
     api_format: Optional[str] = Field(None, alias="apiFormat")
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
+    max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     health_check_enabled: bool = Field(False, alias="healthCheckEnabled")
     health_check_url: Optional[str] = Field(None, alias="healthCheckUrl")
     health_check_method: Optional[str] = Field(None, alias="healthCheckMethod")
@@ -560,6 +570,7 @@ class PartioEndpointRequest(BaseModel):
     api_format: Optional[str] = Field(None, alias="apiFormat")
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
+    max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     enable_request_history: bool = Field(False, alias="enableRequestHistory")
     labels: Optional[list[str]] = None
     tags: Optional[dict[str, str]] = None

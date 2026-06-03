@@ -1,6 +1,6 @@
 {
   "name": "assistanthub-sdk",
-  "version": "1.0.0",
+  "version": "0.11.0",
   "description": "JavaScript/TypeScript SDK for the AssistantHub REST API",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

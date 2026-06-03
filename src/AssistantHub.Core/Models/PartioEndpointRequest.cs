@@ -1,6 +1,7 @@
 namespace AssistantHub.Core.Models
 {
     using System.Collections.Generic;
+    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Typed request payload for creating or updating a Partio-managed endpoint.
@@ -41,6 +42,12 @@ namespace AssistantHub.Core.Models
         /// Whether the endpoint is active.
         /// </summary>
         public bool Active { get; set; } = true;
+
+        /// <summary>
+        /// Maximum concurrent requests allowed for this endpoint.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaxConcurrentRequests { get; set; } = null;
 
         /// <summary>
         /// Whether request history is enabled.

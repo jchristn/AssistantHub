@@ -280,6 +280,9 @@ export interface AssistantSettings {
   FullTextMinimumScore?: number | null;
   RetrievalIncludeNeighbors?: number;
   InferenceEndpointId?: string;
+  RetrievalGateInferenceEndpointId?: string;
+  QueryRewriteInferenceEndpointId?: string;
+  RerankInferenceEndpointId?: string;
   EmbeddingEndpointId?: string;
   Title?: string;
   LogoUrl?: string;
@@ -722,6 +725,7 @@ export interface PartioEndpointRequest {
   ApiFormat?: ApiFormat;
   ApiKey?: string;
   Active?: boolean;
+  MaxConcurrentRequests?: number;
   EnableRequestHistory?: boolean;
   Labels?: string[];
   Tags?: Record<string, string>;
@@ -746,6 +750,7 @@ export interface PartioEndpointConfig {
   ApiFormat?: string;
   ApiKey?: string;
   Active?: boolean;
+  MaxConcurrentRequests?: number;
   HealthCheckEnabled?: boolean;
   HealthCheckUrl?: string;
   HealthCheckMethod?: string;

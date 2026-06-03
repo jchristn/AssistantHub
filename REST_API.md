@@ -208,7 +208,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.10.0",
+  "Version": "0.11.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -1776,6 +1776,9 @@ Retrieve settings for an assistant.
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 0,
   "InferenceEndpointId": "ep_abc123...",
+  "RetrievalGateInferenceEndpointId": null,
+  "QueryRewriteInferenceEndpointId": null,
+  "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": "ep_def456...",
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
@@ -1823,7 +1826,10 @@ Retrieve settings for an assistant.
 | `FullTextNormalization`    | int     | Score normalization bitmask. `32` = normalized 0-1 (recommended). `0` = raw scores. Default `32`. |
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
 | `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
-| `InferenceEndpointId`      | string  | Managed completion endpoint ID for inference. Assistant responses use the provider and model configured on this endpoint. Required for assistant settings. |
+| `InferenceEndpointId`      | string  | Managed completion endpoint ID for assistant responses. Required for assistant settings. |
+| `RetrievalGateInferenceEndpointId` | string? | Optional managed completion endpoint ID for retrieval gate calls. Null or empty falls back to `InferenceEndpointId`. |
+| `QueryRewriteInferenceEndpointId` | string? | Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to `InferenceEndpointId`. |
+| `RerankInferenceEndpointId` | string? | Optional managed completion endpoint ID for re-ranking calls. Null or empty falls back to `InferenceEndpointId`. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
@@ -1878,6 +1884,9 @@ Create or update settings for an assistant. If settings already exist, they are 
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 2,
   "InferenceEndpointId": "ep_abc123...",
+  "RetrievalGateInferenceEndpointId": null,
+  "QueryRewriteInferenceEndpointId": null,
+  "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": null,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
@@ -1896,7 +1905,7 @@ Create or update settings for an assistant. If settings already exist, they are 
 
 **Response (200 OK):** The created or updated `AssistantSettings` object.
 
-`InferenceEndpointId` is required. Assistant settings do not define a separate model; the selected completion endpoint is the source of truth for provider and model selection.
+`InferenceEndpointId` is required. Assistant settings do not define a separate response model; the selected completion endpoint is the source of truth for provider and model selection. Retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`.
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.

@@ -234,10 +234,10 @@ Use these AssistantHub files to drive scope and parity checks:
 ## Phase 10: Test Project And Runner Updates
 
 - [x] Decide where MCP tests live:
-  `Test.XUnit`, `Test.Automated`, or both.
+  `Test.Xunit`, `Test.Automated`, or both.
   Decision: add an automated `McpSuite` and surface its results through the existing xUnit integration fixture so MCP coverage runs in both paths.
 - [x] If using `Test.Automated`, add a dedicated MCP suite and summary reporting.
-- [x] If using `Test.XUnit`, add explicit MCP test classes and fixtures.
+- [x] If using `Test.Xunit`, add explicit MCP test classes and fixtures.
 - [x] Update `run-tests.ps1`.
 - [x] Update `run-tests.sh`.
 - [x] Update `run-tests.bat`.

@@ -1,14 +1,14 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using System.Collections.Generic;
 
-    public static class ServiceData
+    public static class ModelData
     {
         public static IEnumerable<object[]> Cases
         {
             get
             {
-                ServiceFixture fixture = new ServiceFixture();
+                ModelFixture fixture = new ModelFixture();
                 List<string> names = new List<string>(fixture.Results.Keys);
                 names.Sort(System.StringComparer.Ordinal);
 

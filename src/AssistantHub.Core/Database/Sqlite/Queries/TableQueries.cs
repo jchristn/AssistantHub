@@ -86,6 +86,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  fulltext_minimum_score REAL DEFAULT NULL, " +
                 "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
                 "  inference_endpoint_id TEXT, " +
+                "  retrieval_gate_inference_endpoint_id TEXT, " +
+                "  query_rewrite_inference_endpoint_id TEXT, " +
+                "  rerank_inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
@@ -309,6 +312,24 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  created_utc TEXT NOT NULL" +
                 "); ";
         }
+
+        /// <summary>
+        /// Add the retrieval gate inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN retrieval_gate_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the query rewrite inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN query_rewrite_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the rerank inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN rerank_inference_endpoint_id TEXT;";
 
         /// <summary>
         /// Get the CREATE INDEX statements.

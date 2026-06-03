@@ -2,15 +2,17 @@ namespace Test.Automated
 {
     using System;
     using System.Threading.Tasks;
+    using Test.Shared;
+    using Touchstone.Cli;
 
     internal static class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             string resultsPath = ParseResultsPath(args);
-            AutomatedConsoleRunner runner = new AutomatedConsoleRunner(resultsPath);
-            AutomatedRunSummary summary = await runner.RunAsync().ConfigureAwait(false);
-            Environment.Exit(summary.FailedCount > 0 ? 1 : 0);
+            return await ConsoleRunner.RunAsync(
+                TouchstoneSuiteCatalog.GetSuites(),
+                resultsPath: resultsPath).ConfigureAwait(false);
         }
 
         private static string ParseResultsPath(string[] args)

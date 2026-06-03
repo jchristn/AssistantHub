@@ -1,14 +1,14 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using System.Collections.Generic;
 
-    public static class ApiData
+    public static class IntegrationData
     {
         public static IEnumerable<object[]> Cases
         {
             get
             {
-                ApiFixture fixture = new ApiFixture();
+                IntegrationFixture fixture = new IntegrationFixture();
                 List<string> names = new List<string>(fixture.Results.Keys);
                 names.Sort(System.StringComparer.Ordinal);
 

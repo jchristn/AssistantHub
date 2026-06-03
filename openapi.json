@@ -3,7 +3,7 @@
   "info": {
     "title": "AssistantHub REST API",
     "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
-    "version": "1.0"
+    "version": "0.11.0"
   },
   "servers": [
     {
@@ -57,7 +57,7 @@
                   "type": "object",
                   "properties": {
                     "Product": { "type": "string", "example": "AssistantHub" },
-                    "Version": { "type": "string", "example": "0.10.0" },
+                    "Version": { "type": "string", "example": "0.11.0" },
                     "Timestamp": { "type": "string", "format": "date-time" }
                   }
                 }
@@ -2794,7 +2794,10 @@
           "CollectionId": { "type": "string", "nullable": true, "description": "Collection ID for RAG retrieval." },
           "RetrievalTopK": { "type": "integer", "default": 10, "minimum": 1, "description": "Number of top results to retrieve." },
           "RetrievalScoreThreshold": { "type": "number", "format": "double", "default": 0.3, "minimum": 0, "maximum": 1.0, "description": "Minimum retrieval score threshold." },
-          "InferenceEndpointId": { "type": "string", "nullable": true, "description": "Managed completion endpoint ID for inference. Assistant responses use the provider and model configured on this endpoint. Required when saving assistant settings." },
+          "InferenceEndpointId": { "type": "string", "nullable": true, "description": "Managed completion endpoint ID for assistant responses. Required when saving assistant settings." },
+          "RetrievalGateInferenceEndpointId": { "type": "string", "nullable": true, "description": "Optional managed completion endpoint ID used for retrieval gate calls. Falls back to InferenceEndpointId when unset." },
+          "QueryRewriteInferenceEndpointId": { "type": "string", "nullable": true, "description": "Optional managed completion endpoint ID used for query rewrite calls. Falls back to InferenceEndpointId when unset." },
+          "RerankInferenceEndpointId": { "type": "string", "nullable": true, "description": "Optional managed completion endpoint ID used for reranking calls. Falls back to InferenceEndpointId when unset." },
           "EmbeddingEndpointId": { "type": "string", "nullable": true, "description": "Managed embedding endpoint ID for RAG retrieval (overrides global setting)." },
           "Title": { "type": "string", "nullable": true, "description": "Chat window heading." },
           "LogoUrl": { "type": "string", "nullable": true, "description": "Logo image URL (max 192x192)." },

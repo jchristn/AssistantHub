@@ -1,9 +1,11 @@
 # Running Tests
 
-AssistantHub currently uses two primary .NET test entrypoints plus per-SDK integration runners:
+AssistantHub uses Touchstone-backed .NET test projects plus per-SDK integration runners:
 
-- `src/Test.Automated` for console-driven suite execution and summaries
-- `src/Test.XUnit` for xUnit integration coverage
+- `src/Test.Shared` holds the shared test suites and the Touchstone suite catalog
+- `src/Test.Automated` runs the shared suites through `Touchstone.Cli`
+- `src/Test.Xunit` adapts the shared Touchstone catalog to xUnit
+- `src/Test.Nunit` adapts the shared Touchstone catalog to NUnit
 - `sdk/csharp/Test.Sdk`, `sdk/js/test_sdk.mjs`, and `sdk/python/test_sdk.py` for SDK integration coverage
 
 ## Build First
@@ -14,7 +16,7 @@ dotnet build src/AssistantHub.sln
 
 ## Root Test Runners
 
-Run both primary .NET test projects:
+Run all primary .NET test projects:
 
 ```bash
 ./run-tests.sh
@@ -25,7 +27,8 @@ run-tests.bat
 These wrappers execute:
 
 - `dotnet run --project src/Test.Automated`
-- `dotnet test src/Test.XUnit --no-build`
+- `dotnet test src/Test.Xunit --no-build`
+- `dotnet test src/Test.Nunit --no-build`
 
 ## Test.Automated
 
@@ -55,12 +58,20 @@ $env:ASSISTANTHUB_TEST_KEEP_ARTIFACTS = "1"
 dotnet run --project src/Test.Automated/Test.Automated.csproj
 ```
 
-## Test.XUnit
+## Test.Xunit
 
-Run the xUnit integration project:
+Run the xUnit adapter project:
 
 ```bash
-dotnet test src/Test.XUnit/Test.XUnit.csproj --no-build --verbosity normal
+dotnet test src/Test.Xunit/Test.Xunit.csproj --no-build --verbosity normal
+```
+
+## Test.Nunit
+
+Run the NUnit adapter project:
+
+```bash
+dotnet test src/Test.Nunit/Test.Nunit.csproj --no-build --verbosity normal
 ```
 
 ## MCP-Focused Validation

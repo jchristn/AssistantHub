@@ -1,6 +1,6 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
-    using Xunit;
+    using global::Xunit;
 
     [CollectionDefinition("Model", DisableParallelization = true)]
     public class ModelCollectionDefinition : ICollectionFixture<ModelFixture>

@@ -1,6 +1,6 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
-    using Xunit;
+    using global::Xunit;
 
     [CollectionDefinition("Service", DisableParallelization = true)]
     public class ServiceCollectionDefinition : ICollectionFixture<ServiceFixture>

@@ -215,6 +215,24 @@ namespace AssistantHub.Core.Models
         public string InferenceEndpointId { get; set; } = null;
 
         /// <summary>
+        /// Completion endpoint identifier used for retrieval gate decisions.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string RetrievalGateInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Completion endpoint identifier used for query rewriting.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string QueryRewriteInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Completion endpoint identifier used for LLM re-ranking.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string RerankInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
         /// Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
         /// </summary>
         public string EmbeddingEndpointId { get; set; } = null;
@@ -355,6 +373,9 @@ namespace AssistantHub.Core.Models
             obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
             obj.RetrievalIncludeNeighbors = DataTableHelper.GetIntValue(row, "retrieval_include_neighbors", 0);
             obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
+            obj.RetrievalGateInferenceEndpointId = DataTableHelper.GetStringValue(row, "retrieval_gate_inference_endpoint_id");
+            obj.QueryRewriteInferenceEndpointId = DataTableHelper.GetStringValue(row, "query_rewrite_inference_endpoint_id");
+            obj.RerankInferenceEndpointId = DataTableHelper.GetStringValue(row, "rerank_inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");

@@ -1,6 +1,6 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
-    using Xunit;
+    using global::Xunit;
 
     [CollectionDefinition("Api", DisableParallelization = true)]
     public class ApiCollectionDefinition : ICollectionFixture<ApiFixture>

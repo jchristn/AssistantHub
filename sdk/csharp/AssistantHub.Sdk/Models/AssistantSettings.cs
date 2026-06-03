@@ -177,6 +177,24 @@ namespace AssistantHub.Sdk.Models
         public string InferenceEndpointId { get; set; }
 
         /// <summary>
+        /// Completion endpoint identifier used for retrieval gate calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("RetrievalGateInferenceEndpointId")]
+        public string RetrievalGateInferenceEndpointId { get; set; }
+
+        /// <summary>
+        /// Completion endpoint identifier used for query rewrite calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("QueryRewriteInferenceEndpointId")]
+        public string QueryRewriteInferenceEndpointId { get; set; }
+
+        /// <summary>
+        /// Completion endpoint identifier used for reranking calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("RerankInferenceEndpointId")]
+        public string RerankInferenceEndpointId { get; set; }
+
+        /// <summary>
         /// Embedding endpoint identifier.
         /// </summary>
         [JsonPropertyName("EmbeddingEndpointId")]

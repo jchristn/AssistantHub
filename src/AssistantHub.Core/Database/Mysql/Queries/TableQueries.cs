@@ -95,6 +95,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
             "  `retrieval_include_neighbors` INT NOT NULL DEFAULT 0, " +
             "  `inference_endpoint_id` TEXT, " +
+            "  `retrieval_gate_inference_endpoint_id` TEXT, " +
+            "  `query_rewrite_inference_endpoint_id` TEXT, " +
+            "  `rerank_inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
@@ -111,6 +114,15 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
             ")";
+
+        internal static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `retrieval_gate_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `query_rewrite_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_inference_endpoint_id` TEXT";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +

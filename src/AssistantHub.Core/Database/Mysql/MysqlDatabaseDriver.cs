@@ -87,6 +87,7 @@ namespace AssistantHub.Core.Database.Mysql
             };
 
             await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
+            await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
 
             // MySQL does not support CREATE INDEX IF NOT EXISTS;
             // create indices individually and ignore duplicate key errors
@@ -236,6 +237,37 @@ namespace AssistantHub.Core.Database.Mysql
         public override string FormatBoolean(bool value)
         {
             return value ? "1" : "0";
+        }
+
+        #endregion
+
+        #region Private-Methods
+
+        private async Task EnsureAssistantSettingsEndpointColumnsAsync(CancellationToken token)
+        {
+            await EnsureAssistantSettingsColumnAsync("retrieval_gate_inference_endpoint_id", TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureAssistantSettingsColumnAsync("query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureAssistantSettingsColumnAsync("rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
+        }
+
+        private async Task EnsureAssistantSettingsColumnAsync(string columnName, string alterQuery, CancellationToken token)
+        {
+            string query =
+                "SELECT COUNT(*) AS column_count FROM INFORMATION_SCHEMA.COLUMNS " +
+                "WHERE TABLE_SCHEMA = DATABASE() " +
+                "AND TABLE_NAME = 'assistant_settings' " +
+                "AND COLUMN_NAME = '" + Sanitize(columnName) + "'";
+
+            DataTable result = await ExecuteQueryAsync(query, false, token).ConfigureAwait(false);
+            if (result != null
+                && result.Rows.Count > 0
+                && Int32.TryParse(result.Rows[0]["column_count"]?.ToString(), out int count)
+                && count > 0)
+            {
+                return;
+            }
+
+            await ExecuteQueryAsync(alterQuery, false, token).ConfigureAwait(false);
         }
 
         #endregion

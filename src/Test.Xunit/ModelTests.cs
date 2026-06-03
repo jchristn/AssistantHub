@@ -1,26 +1,26 @@
-namespace Test.XUnit
+namespace Test.Xunit
 {
     using Test.Automated;
-    using Xunit;
+    using global::Xunit;
 
-    [Collection("Integration")]
-    public class IntegrationTests
+    [Collection("Model")]
+    public class ModelTests
     {
-        private readonly IntegrationFixture _Fixture;
+        private readonly ModelFixture _Fixture;
 
-        public IntegrationTests(IntegrationFixture fixture)
+        public ModelTests(ModelFixture fixture)
         {
             _Fixture = fixture ?? throw new System.ArgumentNullException(nameof(fixture));
         }
 
         public static IEnumerable<object[]> TestCases
         {
-            get { return IntegrationData.Cases; }
+            get { return ModelData.Cases; }
         }
 
         [Theory]
         [MemberData(nameof(TestCases), DisableDiscoveryEnumeration = true)]
-        public void IntegrationCasePasses(string testName)
+        public void ModelCasePasses(string testName)
         {
             bool found = _Fixture.Results.TryGetValue(testName, out AutomatedTestResult result);
             Assert.True(found, $"Result not found for '{testName}'.");

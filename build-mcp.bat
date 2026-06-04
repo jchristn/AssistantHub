@@ -1,16 +1,24 @@
-@ECHO OFF
-IF "%1" == "" GOTO :Usage
-ECHO.
-ECHO Building for linux/amd64 and linux/arm64/v8...
-docker buildx build -f src/AssistantHub.McpServer/Dockerfile --builder cloud-jchristn77-jchristn77 --platform linux/amd64,linux/arm64/v8 --tag jchristn77/assistanthub-mcp:%1 --tag jchristn77/assistanthub-mcp:latest --push .
-GOTO :Done
+@echo off
+setlocal
 
-:Usage
-ECHO.
-ECHO Provide a tag argument.
-ECHO Example: build-mcp.bat v0.11.0
+if "%~1"=="" (
+    echo Usage: build-mcp.bat ^<tag^>
+    echo Example: build-mcp.bat v0.11.0
+    exit /b 1
+)
 
-:Done
-ECHO.
-ECHO Done
-@ECHO ON
+set TAG=%~1
+set IMAGE=jchristn77/assistanthub-mcp
+
+echo Building %IMAGE%:latest and %IMAGE%:%TAG%...
+docker buildx build ^
+    --builder cloud-jchristn77-jchristn77 ^
+    --platform linux/amd64,linux/arm64/v8 ^
+    -t %IMAGE%:latest ^
+    -t %IMAGE%:%TAG% ^
+    -f src/AssistantHub.McpServer/Dockerfile ^
+    --push ^
+    .
+
+echo Done.
+endlocal

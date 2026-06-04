@@ -1,6 +1,6 @@
 #
 #
-# Run the docker build command from the repository root, not from src or the project directory.
+# Run the docker build command from the repository root.
 #
 #
 
@@ -13,12 +13,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /repo
 
-# Copy source
-COPY src ./src
-COPY sdk/csharp ./sdk/csharp
-
 # Restore dependencies
+COPY src/AssistantHub.Core/AssistantHub.Core.csproj src/AssistantHub.Core/
+COPY sdk/csharp/AssistantHub.Sdk/AssistantHub.Sdk.csproj sdk/csharp/AssistantHub.Sdk/
+COPY src/AssistantHub.McpServer/AssistantHub.McpServer.csproj src/AssistantHub.McpServer/
 RUN dotnet restore "src/AssistantHub.McpServer/AssistantHub.McpServer.csproj"
+
+# Copy source
+COPY src/AssistantHub.Core src/AssistantHub.Core
+COPY sdk/csharp/AssistantHub.Sdk sdk/csharp/AssistantHub.Sdk
+COPY src/AssistantHub.McpServer src/AssistantHub.McpServer
 
 # Build the application
 WORKDIR /repo/src/AssistantHub.McpServer

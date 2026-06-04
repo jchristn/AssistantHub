@@ -1,24 +1,43 @@
-bin/
-obj/
-node_modules/
-dist/
+# Build outputs and dependency caches
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.playwright/
+**/TestResults/
 .git/
 .vs/
 .vscode/
 .idea/
-*.md
-*.user
-*.suo
+
+# Local/runtime data
 logs/
+**/logs/
+docker/
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+tmp_*
+
+# Repository content not needed by Docker image builds
 archive/
 assets/
-dashboard/
-docker/
 docs/
+migrations/
 postman/
 sdk/js/
 sdk/python/
-tmp_*
+sdk/csharp/Test.Sdk/
+src/Test.*/
+
+# Local/editor/package artifacts
+*.md
+*.user
+*.suo
+*.sln.docstates
+*.nupkg
+*.snupkg
+*.log

@@ -18,7 +18,7 @@ docker buildx build ^
     -t %IMAGE%:%TAG% ^
     -f src/AssistantHub.Server/Dockerfile ^
     --push ^
-    src/
+    .
 
 echo Done.
 endlocal

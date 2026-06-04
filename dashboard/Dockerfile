@@ -1,15 +1,15 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install
-COPY . .
+COPY dashboard/package.json dashboard/package-lock.json* ./
+RUN npm ci
+COPY dashboard/ .
 RUN npm run build
 
 FROM nginx:alpine AS runtime
 RUN apk add --no-cache curl wget busybox-extras bind-tools vim
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY dashboard/nginx.conf /etc/nginx/conf.d/default.conf
+COPY dashboard/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 EXPOSE 8801
 ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -18,7 +18,7 @@ docker buildx build ^
     -t %IMAGE%:%TAG% ^
     -f dashboard/Dockerfile ^
     --push ^
-    dashboard/
+    .
 
 echo Done.
 endlocal

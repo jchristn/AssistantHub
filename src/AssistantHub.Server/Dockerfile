@@ -5,16 +5,17 @@
 #
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+WORKDIR /repo
 
 # Restore dependencies
-COPY AssistantHub.Core/AssistantHub.Core.csproj AssistantHub.Core/
-COPY AssistantHub.Server/AssistantHub.Server.csproj AssistantHub.Server/
-RUN dotnet restore AssistantHub.Server/AssistantHub.Server.csproj
+COPY src/AssistantHub.Core/AssistantHub.Core.csproj src/AssistantHub.Core/
+COPY src/AssistantHub.Server/AssistantHub.Server.csproj src/AssistantHub.Server/
+RUN dotnet restore src/AssistantHub.Server/AssistantHub.Server.csproj
 
 # Build and publish
-COPY . .
-RUN dotnet publish AssistantHub.Server/AssistantHub.Server.csproj -c Release -o /app/publish
+COPY src/AssistantHub.Core src/AssistantHub.Core
+COPY src/AssistantHub.Server src/AssistantHub.Server
+RUN dotnet publish src/AssistantHub.Server/AssistantHub.Server.csproj -c Release -o /app/publish /p:GeneratePackageOnBuild=false
 
 # Pre-install Playwright Firefox browser.
 # CrawlSharp uses Playwright Firefox for headless browser crawling.
@@ -78,7 +79,7 @@ RUN useradd -m -u 1001 appuser \
     && chown -R appuser:appuser /app \
     && chown -R appuser:appuser /home/appuser
 
-COPY AssistantHub.Server/entrypoint.sh /entrypoint.sh
+COPY src/AssistantHub.Server/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 8800

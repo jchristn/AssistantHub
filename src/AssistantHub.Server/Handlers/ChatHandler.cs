@@ -365,6 +365,7 @@ namespace AssistantHub.Server.Handlers
                 // Retrieval gate: determine if retrieval is needed
                 string retrievalGateDecision = null;
                 double retrievalGateDurationMs = 0;
+                AssistantPerformanceStage retrievalGateTelemetry = null;
                 bool shouldRetrieve = true;
 
                 if (settings.EnableRag && settings.EnableRetrievalGate
@@ -419,6 +420,7 @@ namespace AssistantHub.Server.Handlers
                                 gateEndpoint.ApiKey,
                                 gateEndpoint.EndpointId,
                                 gateEndpoint.MaxConcurrentRequests).ConfigureAwait(false);
+                            retrievalGateTelemetry = gateResult?.Telemetry;
 
                             gateSw.Stop();
                             retrievalGateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
@@ -456,6 +458,7 @@ namespace AssistantHub.Server.Handlers
                 // Query rewrite: generate alternate phrasings for improved retrieval recall
                 string queryRewriteResult = null;
                 double queryRewriteDurationMs = 0;
+                AssistantPerformanceStage queryRewriteTelemetry = null;
                 List<string> retrievalQueries = new List<string> { lastUserMessage };
 
                 if (settings.EnableRag && settings.EnableQueryRewrite && shouldRetrieve
@@ -486,6 +489,7 @@ namespace AssistantHub.Server.Handlers
                             rewriteEndpoint.ApiKey,
                             rewriteEndpoint.EndpointId,
                             rewriteEndpoint.MaxConcurrentRequests).ConfigureAwait(false);
+                        queryRewriteTelemetry = rewriteResult?.Telemetry;
 
                         rewriteSw.Stop();
                         queryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
@@ -635,6 +639,7 @@ namespace AssistantHub.Server.Handlers
                 double rerankDurationMs = 0;
                 int rerankInputCount = 0;
                 int rerankOutputCount = 0;
+                AssistantPerformanceStage rerankTelemetry = null;
 
                 if (settings.EnableRag && settings.EnableReranking && shouldRetrieve && retrievalChunks.Count > 0)
                 {
@@ -676,6 +681,7 @@ namespace AssistantHub.Server.Handlers
                             rerankEndpoint.ApiKey,
                             rerankEndpoint.EndpointId,
                             rerankEndpoint.MaxConcurrentRequests).ConfigureAwait(false);
+                        rerankTelemetry = rerankResult?.Telemetry;
 
                         if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
                         {
@@ -923,6 +929,9 @@ namespace AssistantHub.Server.Handlers
                         metadataFilterJson,
                         telemetryContext.TraceId,
                         telemetryContext.RequestHistoryId,
+                        retrievalGateTelemetry,
+                        queryRewriteTelemetry,
+                        rerankTelemetry,
                         retrievalQueries.Count).ConfigureAwait(false);
                 }
                 else
@@ -939,6 +948,9 @@ namespace AssistantHub.Server.Handlers
                         metadataFilterJson,
                         telemetryContext.TraceId,
                         telemetryContext.RequestHistoryId,
+                        retrievalGateTelemetry,
+                        queryRewriteTelemetry,
+                        rerankTelemetry,
                         retrievalQueries.Count).ConfigureAwait(false);
                 }
             }
@@ -1747,6 +1759,9 @@ namespace AssistantHub.Server.Handlers
             string metadataFilterJson = null,
             string traceId = null,
             string requestHistoryId = null,
+            AssistantPerformanceStage retrievalGateTelemetry = null,
+            AssistantPerformanceStage queryRewriteTelemetry = null,
+            AssistantPerformanceStage rerankTelemetry = null,
             int retrievalQueryCount = 1)
         {
             InferenceResult inferenceResult = await GenerateWithCompletionEndpointLimitAsync(
@@ -1831,6 +1846,9 @@ namespace AssistantHub.Server.Handlers
                         traceId,
                         requestHistoryId,
                         inferenceResult.Telemetry,
+                        retrievalGateTelemetry,
+                        queryRewriteTelemetry,
+                        rerankTelemetry,
                         retrievalQueryCount,
                         retrievalChunks?.Count ?? 0);
                     if (history != null)
@@ -1886,6 +1904,9 @@ namespace AssistantHub.Server.Handlers
             string metadataFilterJson = null,
             string traceId = null,
             string requestHistoryId = null,
+            AssistantPerformanceStage retrievalGateTelemetry = null,
+            AssistantPerformanceStage queryRewriteTelemetry = null,
+            AssistantPerformanceStage rerankTelemetry = null,
             int retrievalQueryCount = 1)
         {
             string completionId = IdGenerator.NewChatCompletionId();
@@ -1985,6 +2006,9 @@ namespace AssistantHub.Server.Handlers
                             traceId,
                             requestHistoryId,
                             finalInferenceTelemetry,
+                            retrievalGateTelemetry,
+                            queryRewriteTelemetry,
+                            rerankTelemetry,
                             retrievalQueryCount,
                             retrievalChunks?.Count ?? 0);
                         if (history != null)
@@ -2280,6 +2304,9 @@ namespace AssistantHub.Server.Handlers
             string traceId = null,
             string requestHistoryId = null,
             AssistantPerformanceStage finalInferenceTelemetry = null,
+            AssistantPerformanceStage retrievalGateTelemetry = null,
+            AssistantPerformanceStage queryRewriteTelemetry = null,
+            AssistantPerformanceStage rerankTelemetry = null,
             int retrievalQueryCount = 1,
             int retrievalChunksReturned = 0)
         {
@@ -2332,7 +2359,10 @@ namespace AssistantHub.Server.Handlers
                     history,
                     finalInferenceTelemetry,
                     retrievalQueryCount,
-                    retrievalChunksReturned);
+                    retrievalChunksReturned,
+                    retrievalGateTelemetry,
+                    queryRewriteTelemetry,
+                    rerankTelemetry);
                 history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
 
                 await Database.ChatHistory.CreateAsync(history).ConfigureAwait(false);

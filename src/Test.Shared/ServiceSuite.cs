@@ -176,7 +176,52 @@ namespace Test.Automated
                     }
                 };
 
-                AssistantPerformanceTelemetry telemetry = AssistantPerformanceTelemetryBuilder.Build(history, finalStage, 3, 8);
+                AssistantPerformanceStage rewriteStage = new AssistantPerformanceStage
+                {
+                    Name = "inference",
+                    Kind = "inference",
+                    DurationMs = 22,
+                    EndpointId = "cep_rewrite",
+                    EndpointName = "rewrite-local",
+                    EndpointType = "completion",
+                    Provider = "Ollama",
+                    ApiFormat = "Ollama",
+                    Model = "gemma3:4b",
+                    ClientTimings = new AssistantPerformanceClientTimings
+                    {
+                        EndpointLimiterWaitMs = 2,
+                        RequestToHeadersMs = 15,
+                        TotalMs = 22
+                    }
+                };
+
+                AssistantPerformanceStage rerankStage = new AssistantPerformanceStage
+                {
+                    Name = "inference",
+                    Kind = "inference",
+                    DurationMs = 44,
+                    EndpointId = "cep_rerank",
+                    EndpointName = "rerank-local",
+                    EndpointType = "completion",
+                    Provider = "Ollama",
+                    ApiFormat = "Ollama",
+                    Model = "gemma3:4b",
+                    ClientTimings = new AssistantPerformanceClientTimings
+                    {
+                        EndpointLimiterWaitMs = 3,
+                        RequestToHeadersMs = 25,
+                        TotalMs = 44
+                    }
+                };
+
+                AssistantPerformanceTelemetry telemetry = AssistantPerformanceTelemetryBuilder.Build(
+                    history,
+                    finalStage,
+                    3,
+                    8,
+                    null,
+                    rewriteStage,
+                    rerankStage);
                 string json = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
                 List<ChatHistoryPerformanceEvent> events = AssistantPerformanceTelemetryBuilder.ToEvents(telemetry, history.TenantId);
 
@@ -197,6 +242,22 @@ namespace Test.Automated
                 AssertHelper.IsNotNull(retrievalEvent, "retrieval event");
                 AssertHelper.AreEqual(3, retrievalEvent.RetrievalQueryCount.Value, "RetrievalQueryCount");
                 AssertHelper.AreEqual(8, retrievalEvent.ChunksOutput.Value, "ChunksOutput");
+
+                ChatHistoryPerformanceEvent rewriteEvent = events.Find(evt => evt.Stage == "query_rewrite");
+                AssertHelper.IsNotNull(rewriteEvent, "query rewrite event");
+                AssertHelper.AreEqual("cep_rewrite", rewriteEvent.EndpointId, "QueryRewrite EndpointId");
+                AssertHelper.AreEqual("Ollama", rewriteEvent.Provider, "QueryRewrite Provider");
+                AssertHelper.AreEqual("gemma3:4b", rewriteEvent.Model, "QueryRewrite Model");
+                AssertHelper.AreEqual(2.0, rewriteEvent.EndpointLimiterWaitMs.Value, "QueryRewrite EndpointLimiterWaitMs");
+
+                ChatHistoryPerformanceEvent rerankEvent = events.Find(evt => evt.Stage == "rerank");
+                AssertHelper.IsNotNull(rerankEvent, "rerank event");
+                AssertHelper.AreEqual("cep_rerank", rerankEvent.EndpointId, "Rerank EndpointId");
+                AssertHelper.AreEqual("Ollama", rerankEvent.Provider, "Rerank Provider");
+                AssertHelper.AreEqual("gemma3:4b", rerankEvent.Model, "Rerank Model");
+                AssertHelper.AreEqual(3.0, rerankEvent.EndpointLimiterWaitMs.Value, "Rerank EndpointLimiterWaitMs");
+                AssertHelper.AreEqual(5, rerankEvent.ChunksInput.Value, "Rerank ChunksInput");
+                AssertHelper.AreEqual(2, rerankEvent.ChunksOutput.Value, "Rerank ChunksOutput");
             });
 
             await ExecuteTestAsync("MockDatabaseDriver: persists telemetry correlation and performance events", async () =>

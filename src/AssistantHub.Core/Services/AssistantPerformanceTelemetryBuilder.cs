@@ -23,7 +23,10 @@ namespace AssistantHub.Core.Services
             ChatHistory history,
             AssistantPerformanceStage finalInferenceStage,
             int retrievalQueryCount,
-            int retrievalChunksReturned)
+            int retrievalChunksReturned,
+            AssistantPerformanceStage retrievalGateStage = null,
+            AssistantPerformanceStage queryRewriteStage = null,
+            AssistantPerformanceStage rerankStage = null)
         {
             if (history == null) throw new ArgumentNullException(nameof(history));
 
@@ -37,7 +40,7 @@ namespace AssistantHub.Core.Services
                 WallTimeMs = Math.Round(history.TimeToLastTokenMs, 2)
             };
 
-            AddLegacyStage(
+            AddMeasuredOrLegacyStage(
                 telemetry,
                 "retrieval_gate",
                 "inference",
@@ -47,9 +50,10 @@ namespace AssistantHub.Core.Services
                 new Dictionary<string, object>
                 {
                     ["decision"] = history.RetrievalGateDecision
-                });
+                },
+                retrievalGateStage);
 
-            AddLegacyStage(
+            AddMeasuredOrLegacyStage(
                 telemetry,
                 "query_rewrite",
                 "inference",
@@ -59,7 +63,8 @@ namespace AssistantHub.Core.Services
                 new Dictionary<string, object>
                 {
                     ["retrieval_query_count"] = retrievalQueryCount
-                });
+                },
+                queryRewriteStage);
 
             AddLegacyStage(
                 telemetry,
@@ -75,7 +80,7 @@ namespace AssistantHub.Core.Services
                     ["metadata_filter"] = history.MetadataFilter
                 });
 
-            AddLegacyStage(
+            AddMeasuredOrLegacyStage(
                 telemetry,
                 "rerank",
                 "inference",
@@ -86,7 +91,8 @@ namespace AssistantHub.Core.Services
                 {
                     ["chunks_input"] = history.RerankInputCount,
                     ["chunks_output"] = history.RerankOutputCount
-                });
+                },
+                rerankStage);
 
             AddLegacyStage(telemetry, "endpoint_resolution", "network", 50, history.EndpointResolutionDurationMs, null, null);
             AddLegacyStage(telemetry, "context_compaction", "inference", 60, history.CompactionDurationMs, null, null);
@@ -215,6 +221,71 @@ namespace AssistantHub.Core.Services
                 Success = true,
                 Metadata = NormalizeMetadata(metadata)
             });
+        }
+
+        private static void AddMeasuredOrLegacyStage(
+            AssistantPerformanceTelemetry telemetry,
+            string name,
+            string kind,
+            int sequence,
+            double durationMs,
+            DateTime? startedUtc,
+            Dictionary<string, object> metadata,
+            AssistantPerformanceStage measuredStage)
+        {
+            if (measuredStage == null)
+            {
+                AddLegacyStage(telemetry, name, kind, sequence, durationMs, startedUtc, metadata);
+                return;
+            }
+
+            AssistantPerformanceStage stage = CloneStage(measuredStage);
+            stage.Name = name;
+            stage.Kind = !String.IsNullOrWhiteSpace(kind) ? kind : stage.Kind;
+            stage.Sequence = sequence;
+            stage.DurationMs = RoundPositive(stage.DurationMs > 0 ? stage.DurationMs : durationMs);
+
+            if (!stage.StartedUtc.HasValue)
+                stage.StartedUtc = startedUtc;
+
+            if (!stage.FinishedUtc.HasValue && stage.StartedUtc.HasValue && stage.DurationMs > 0)
+                stage.FinishedUtc = stage.StartedUtc.Value.AddMilliseconds(stage.DurationMs);
+
+            stage.Success = stage.Success || String.IsNullOrEmpty(stage.ErrorMessage);
+            stage.Metadata = MergeMetadata(stage.Metadata, metadata);
+
+            bool hasMetadata = stage.Metadata != null && stage.Metadata.Count > 0;
+            bool hasMeaningfulDuration = stage.DurationMs > 0;
+            bool hasEndpointDetails =
+                !String.IsNullOrWhiteSpace(stage.EndpointId)
+                || !String.IsNullOrWhiteSpace(stage.EndpointName)
+                || !String.IsNullOrWhiteSpace(stage.Provider)
+                || !String.IsNullOrWhiteSpace(stage.Model);
+
+            if (!hasMeaningfulDuration && !hasMetadata && !hasEndpointDetails) return;
+
+            telemetry.Stages.Add(stage);
+        }
+
+        private static Dictionary<string, object> MergeMetadata(Dictionary<string, object> existing, Dictionary<string, object> additional)
+        {
+            Dictionary<string, object> ret = new Dictionary<string, object>();
+
+            Dictionary<string, object> normalizedExisting = NormalizeMetadata(existing);
+            if (normalizedExisting != null)
+            {
+                foreach (KeyValuePair<string, object> kvp in normalizedExisting)
+                    ret[kvp.Key] = kvp.Value;
+            }
+
+            Dictionary<string, object> normalizedAdditional = NormalizeMetadata(additional);
+            if (normalizedAdditional != null)
+            {
+                foreach (KeyValuePair<string, object> kvp in normalizedAdditional)
+                    ret[kvp.Key] = kvp.Value;
+            }
+
+            return ret.Count > 0 ? ret : null;
         }
 
         private static Dictionary<string, object> NormalizeMetadata(Dictionary<string, object> metadata)

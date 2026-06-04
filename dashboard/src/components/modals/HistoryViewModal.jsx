@@ -35,6 +35,70 @@ function formatStageLabel(name) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const stageColumnTooltips = {
+  Stage: 'The assistant pipeline step that was measured for this chat turn.',
+  Endpoint: 'The configured inference endpoint, provider, and model used by this stage when an upstream model call was made.',
+  Duration: 'Total elapsed time for this stage as captured by AssistantHub.',
+  Queue: 'Time spent waiting for AssistantHub endpoint concurrency limits before the provider request was allowed to run.',
+  Headers: 'Client-observed time from sending the provider HTTP request to receiving response headers.',
+  'First Token': 'Client-observed time from response headers to the first streamed token.',
+  Generation: 'Time spent generating output after the first token, or the provider-reported generation duration when available.',
+  'Provider Load': 'Provider-reported model-load time. Ollama can report this; OpenAI-compatible providers often cannot.',
+  'Prompt Eval': 'Provider-reported prompt-evaluation time, when the provider exposes it.',
+  Tokens: 'Input and output token counts for this stage, shown as input / output when known.'
+};
+
+const identifierTooltips = {
+  History: 'Unique identifier for this assistant history turn.',
+  Thread: 'Conversation thread identifier for this chat turn.',
+  Assistant: 'Assistant identifier that handled this chat turn.',
+  Trace: 'Correlation identifier shared by chat history, request history, telemetry rows, and logs.',
+  Request: 'Captured request-history identifier associated with this chat turn.',
+  Collection: 'Vector collection used for retrieval by this assistant turn.'
+};
+
+function valueTooltip(label, description, value) {
+  return `${label}: ${description} Current value: ${value || 'N/A'}.`;
+}
+
+function stageSummary(stage) {
+  const parts = [
+    `${formatStageLabel(stage?.Name)} stage.`,
+    stage?.Kind ? `Kind: ${stage.Kind}.` : null,
+    stage?.EndpointId ? `Endpoint: ${stage.EndpointId}.` : null,
+    stage?.Provider ? `Provider: ${stage.Provider}.` : null,
+    stage?.Model ? `Model: ${stage.Model}.` : null,
+    `Duration: ${formatMs(getStageDuration(stage))}.`
+  ];
+  return parts.filter(Boolean).join(' ');
+}
+
+function IdentifierItem({ label, id }) {
+  if (!id) return null;
+  return (
+    <div className="history-id-item">
+      <Tooltip className="history-id-label" text={identifierTooltips[label]}>{label}</Tooltip>
+      <Tooltip text={`${identifierTooltips[label]} Value: ${id}.`}>
+        <CopyableId id={id} />
+      </Tooltip>
+    </div>
+  );
+}
+
+function Metric({ label, tooltip, value, valueClassName = '' }) {
+  return (
+    <div className="history-metric">
+      <Tooltip className="history-metric-label" text={tooltip}>{label}</Tooltip>
+      <Tooltip
+        className={['history-metric-value', valueClassName].filter(Boolean).join(' ')}
+        text={valueTooltip(label, tooltip, value)}
+      >
+        {value}
+      </Tooltip>
+    </div>
+  );
+}
+
 function parsePerformanceTelemetry(history) {
   if (!history?.PerformanceJson) return null;
   try {
@@ -59,10 +123,16 @@ function getProviderMetric(stage, key) {
 
 function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
   const pct = totalMs > 0 && durationMs > 0 ? Math.max(1, (durationMs / totalMs) * 100) : 0;
+  const formattedDuration = formatMs(durationMs);
+  const share = totalMs > 0 && durationMs > 0 ? `${Math.min(100, (durationMs / totalMs) * 100).toFixed(1)}% of measured stage time.` : 'No measurable share for this request.';
   return (
-    <div className="history-timing-row">
+    <Tooltip
+      as="div"
+      className="history-timing-row"
+      text={`${label}: ${tooltip}. Current value: ${formattedDuration}. ${share}`}
+    >
       <div className="history-timing-label">
-        <Tooltip text={tooltip}>{label}</Tooltip>
+        {label}
       </div>
       <div className="history-timing-bar-track">
         {pct > 0 && (
@@ -72,8 +142,8 @@ function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
           />
         )}
       </div>
-      <div className="history-timing-value">{formatMs(durationMs)}</div>
-    </div>
+      <div className="history-timing-value">{formattedDuration}</div>
+    </Tooltip>
   );
 }
 
@@ -85,16 +155,11 @@ function StageTable({ stages }) {
       <table className="history-stage-table">
         <thead>
           <tr>
-            <th>Stage</th>
-            <th>Endpoint</th>
-            <th>Duration</th>
-            <th>Queue</th>
-            <th>Headers</th>
-            <th>First Token</th>
-            <th>Generation</th>
-            <th>Provider Load</th>
-            <th>Prompt Eval</th>
-            <th>Tokens</th>
+            {Object.keys(stageColumnTooltips).map((column) => (
+              <th key={column}>
+                <Tooltip text={stageColumnTooltips[column]}>{column}</Tooltip>
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -102,26 +167,39 @@ function StageTable({ stages }) {
             const tokens = stage.Tokens || {};
             const inputTokens = tokens.Input ?? tokens.PromptEvalCount;
             const outputTokens = tokens.Output ?? tokens.EvalCount;
+            const stageText = stageSummary(stage);
+            const endpointText = stage.EndpointId || stage.EndpointName || '-';
+            const providerText = [stage.Provider, stage.Model].filter(Boolean).join(' / ');
+            const generationMs = getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs');
+            const tokenText = inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A';
             return (
               <tr key={`${stage.Name || 'stage'}-${idx}`}>
                 <td>
-                  <div className="history-stage-name">{formatStageLabel(stage.Name)}</div>
-                  <div className="history-stage-kind">{stage.Kind || 'stage'}</div>
+                  <Tooltip as="div" className="history-stage-name" text={stageText}>{formatStageLabel(stage.Name)}</Tooltip>
+                  <Tooltip as="div" className="history-stage-kind" text={`Stage kind. ${stageText}`}>{stage.Kind || 'stage'}</Tooltip>
                 </td>
                 <td>
-                  <div className="history-stage-endpoint">{stage.EndpointId || stage.EndpointName || '-'}</div>
+                  <Tooltip
+                    as="div"
+                    className="history-stage-endpoint"
+                    text={`Endpoint used for this stage. Value: ${endpointText}. ${providerText ? `Provider/model: ${providerText}.` : 'No provider/model was recorded for this stage.'}`}
+                  >
+                    {endpointText}
+                  </Tooltip>
                   {(stage.Provider || stage.Model) && (
-                    <div className="history-stage-kind">{[stage.Provider, stage.Model].filter(Boolean).join(' / ')}</div>
+                    <Tooltip as="div" className="history-stage-kind" text="Provider and model reported for this stage.">
+                      {providerText}
+                    </Tooltip>
                   )}
                 </td>
-                <td>{formatMs(getStageDuration(stage))}</td>
-                <td>{formatMs(getClientTiming(stage, 'EndpointLimiterWaitMs'))}</td>
-                <td>{formatMs(getClientTiming(stage, 'RequestToHeadersMs'))}</td>
-                <td>{formatMs(getClientTiming(stage, 'HeadersToFirstTokenMs'))}</td>
-                <td>{formatMs(getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs'))}</td>
-                <td>{formatMs(getProviderMetric(stage, 'LoadMs'))}</td>
-                <td>{formatMs(getProviderMetric(stage, 'PromptEvalMs'))}</td>
-                <td>{inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A'}</td>
+                <td><Tooltip text={valueTooltip('Duration', stageColumnTooltips.Duration, formatMs(getStageDuration(stage)))}>{formatMs(getStageDuration(stage))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Queue', stageColumnTooltips.Queue, formatMs(getClientTiming(stage, 'EndpointLimiterWaitMs')))}>{formatMs(getClientTiming(stage, 'EndpointLimiterWaitMs'))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Headers', stageColumnTooltips.Headers, formatMs(getClientTiming(stage, 'RequestToHeadersMs')))}>{formatMs(getClientTiming(stage, 'RequestToHeadersMs'))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('First Token', stageColumnTooltips['First Token'], formatMs(getClientTiming(stage, 'HeadersToFirstTokenMs')))}>{formatMs(getClientTiming(stage, 'HeadersToFirstTokenMs'))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Generation', stageColumnTooltips.Generation, formatMs(generationMs))}>{formatMs(generationMs)}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Provider Load', stageColumnTooltips['Provider Load'], formatMs(getProviderMetric(stage, 'LoadMs')))}>{formatMs(getProviderMetric(stage, 'LoadMs'))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Prompt Eval', stageColumnTooltips['Prompt Eval'], formatMs(getProviderMetric(stage, 'PromptEvalMs')))}>{formatMs(getProviderMetric(stage, 'PromptEvalMs'))}</Tooltip></td>
+                <td><Tooltip text={valueTooltip('Tokens', stageColumnTooltips.Tokens, tokenText)}>{tokenText}</Tooltip></td>
               </tr>
             );
           })}
@@ -252,36 +330,12 @@ function HistoryViewModal({ history, onClose }) {
     }>
       {/* === Identifiers row === */}
       <div className="history-ids-row">
-        <div className="history-id-item">
-          <span className="history-id-label">History</span>
-          <CopyableId id={history.Id} />
-        </div>
-        <div className="history-id-item">
-          <span className="history-id-label">Thread</span>
-          <CopyableId id={history.ThreadId} />
-        </div>
-        <div className="history-id-item">
-          <span className="history-id-label">Assistant</span>
-          <CopyableId id={history.AssistantId} />
-        </div>
-        {history.TraceId && (
-          <div className="history-id-item">
-            <span className="history-id-label">Trace</span>
-            <CopyableId id={history.TraceId} />
-          </div>
-        )}
-        {history.RequestHistoryId && (
-          <div className="history-id-item">
-            <span className="history-id-label">Request</span>
-            <CopyableId id={history.RequestHistoryId} />
-          </div>
-        )}
-        {history.CollectionId && (
-          <div className="history-id-item">
-            <span className="history-id-label">Collection</span>
-            <CopyableId id={history.CollectionId} />
-          </div>
-        )}
+        <IdentifierItem label="History" id={history.Id} />
+        <IdentifierItem label="Thread" id={history.ThreadId} />
+        <IdentifierItem label="Assistant" id={history.AssistantId} />
+        <IdentifierItem label="Trace" id={history.TraceId} />
+        <IdentifierItem label="Request" id={history.RequestHistoryId} />
+        <IdentifierItem label="Collection" id={history.CollectionId} />
       </div>
 
       {/* === Metadata Filters === */}
@@ -291,40 +345,58 @@ function HistoryViewModal({ history, onClose }) {
         if (!filter) return null;
         return (
           <div className="history-section" style={{ marginTop: '1rem' }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Metadata Filters Applied</h4>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <Tooltip text="Metadata constraints that were applied to retrieval for this chat turn.">Metadata Filters Applied</Tooltip>
+            </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {filter.required_labels && filter.required_labels.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Labels: </span>
+                  <Tooltip text="Documents had to include these labels to be eligible for retrieval.">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Labels: </span>
+                  </Tooltip>
                   {filter.required_labels.map((l, i) => (
-                    <span key={i} style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #e8f5e9)', borderRadius: '4px' }}>{l}</span>
+                    <Tooltip key={i} text={`Required label applied during retrieval: ${l}.`}>
+                      <span style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #e8f5e9)', borderRadius: '4px' }}>{l}</span>
+                    </Tooltip>
                   ))}
                 </div>
               )}
               {filter.excluded_labels && filter.excluded_labels.length > 0 && (
                 <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Labels: </span>
+                  <Tooltip text="Documents with these labels were excluded from retrieval.">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Labels: </span>
+                  </Tooltip>
                   {filter.excluded_labels.map((l, i) => (
-                    <span key={i} style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #ffebee)', borderRadius: '4px', textDecoration: 'line-through' }}>{l}</span>
+                    <Tooltip key={i} text={`Excluded label applied during retrieval: ${l}.`}>
+                      <span style={{ display: 'inline-block', padding: '0.1rem 0.4rem', margin: '0.1rem', fontSize: '0.75rem', background: 'var(--bg-tertiary, #ffebee)', borderRadius: '4px', textDecoration: 'line-through' }}>{l}</span>
+                    </Tooltip>
                   ))}
                 </div>
               )}
               {filter.required_tags && filter.required_tags.length > 0 && (
                 <div style={{ width: '100%' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Tags:</span>
+                  <Tooltip text="Tag predicates that documents had to satisfy to be eligible for retrieval.">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Tags:</span>
+                  </Tooltip>
                   <div style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
                     {filter.required_tags.map((t, i) => (
-                      <div key={i} style={{ fontFamily: 'monospace' }}>{t.key} {t.condition} {t.value || ''}</div>
+                      <Tooltip key={i} as="div" text={`Required tag filter: ${t.key} ${t.condition} ${t.value || ''}.`} style={{ fontFamily: 'monospace' }}>
+                        {t.key} {t.condition} {t.value || ''}
+                      </Tooltip>
                     ))}
                   </div>
                 </div>
               )}
               {filter.excluded_tags && filter.excluded_tags.length > 0 && (
                 <div style={{ width: '100%' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Tags:</span>
+                  <Tooltip text="Tag predicates that caused documents to be excluded from retrieval.">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Excluded Tags:</span>
+                  </Tooltip>
                   <div style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
                     {filter.excluded_tags.map((t, i) => (
-                      <div key={i} style={{ fontFamily: 'monospace', textDecoration: 'line-through' }}>{t.key} {t.condition} {t.value || ''}</div>
+                      <Tooltip key={i} as="div" text={`Excluded tag filter: ${t.key} ${t.condition} ${t.value || ''}.`} style={{ fontFamily: 'monospace', textDecoration: 'line-through' }}>
+                        {t.key} {t.condition} {t.value || ''}
+                      </Tooltip>
                     ))}
                   </div>
                 </div>
@@ -339,7 +411,9 @@ function HistoryViewModal({ history, onClose }) {
         <div className="history-section-header">
           <Tooltip text="End-to-end timing breakdown for this chat turn">Performance Timing</Tooltip>
           {performanceTelemetry && (
-            <span className="history-section-badge">Telemetry v{performanceTelemetry.SchemaVersion || 1}</span>
+            <Tooltip className="history-section-badge" text="This history entry includes the v0.12 provider-agnostic telemetry payload.">
+              Telemetry v{performanceTelemetry.SchemaVersion || 1}
+            </Tooltip>
           )}
         </div>
         <div className="history-timing-container">
@@ -410,51 +484,22 @@ function HistoryViewModal({ history, onClose }) {
 
         {/* Summary metrics row */}
         <div className="history-metrics-row">
-          <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Time to first token - measured from when the prompt was sent to when the first token was received">TTFT</Tooltip></span>
-            <span className="history-metric-value">{formatMs(history.TimeToFirstTokenMs)}</span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Time to last token - total time from prompt sent to the final token received">TTLT</Tooltip></span>
-            <span className="history-metric-value">{formatMs(history.TimeToLastTokenMs)}</span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Estimated number of tokens in the prompt (system + RAG context + conversation)">Prompt Tokens</Tooltip></span>
-            <span className="history-metric-value">{history.PromptTokens > 0 ? `~${history.PromptTokens.toLocaleString()}` : 'N/A'}</span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label">
-              <Tooltip text="Estimated completion tokens in the assistant's response">Completion Tokens</Tooltip>
-            </span>
-            <span className="history-metric-value">
-              {history.CompletionTokens > 0 ? `~${history.CompletionTokens.toLocaleString()}` : 'N/A'}
-            </span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label">
-              <Tooltip text="Tokens per second - completion tokens divided by total time from prompt sent to last token (TTLT)">TPS (Overall)</Tooltip>
-            </span>
-            <span className="history-metric-value">{formatTps(overallTps)}</span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label">
-              <Tooltip text="Tokens per second - completion tokens divided by generation time (first token to last token)">TPS (Generation)</Tooltip>
-            </span>
-            <span className="history-metric-value">{formatTps(generationTps)}</span>
-          </div>
-          <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Timestamp when the assembled prompt was sent to the inference endpoint">Prompt Sent</Tooltip></span>
-            <span className="history-metric-value history-metric-timestamp">{formatTimestamp(history.PromptSentUtc)}</span>
-          </div>
+          <Metric label="TTFT" tooltip="Time to first token, measured from when the prompt was sent to when the first token was received." value={formatMs(history.TimeToFirstTokenMs)} />
+          <Metric label="TTLT" tooltip="Time to last token, measured from when the prompt was sent to when the final token was received." value={formatMs(history.TimeToLastTokenMs)} />
+          <Metric label="Prompt Tokens" tooltip="Estimated number of tokens in the assembled prompt, including system instructions, RAG context, and conversation." value={history.PromptTokens > 0 ? `~${history.PromptTokens.toLocaleString()}` : 'N/A'} />
+          <Metric label="Completion Tokens" tooltip="Estimated number of tokens in the assistant response." value={history.CompletionTokens > 0 ? `~${history.CompletionTokens.toLocaleString()}` : 'N/A'} />
+          <Metric label="TPS (Overall)" tooltip="Completion tokens per second using total time from prompt sent to final token." value={formatTps(overallTps)} />
+          <Metric label="TPS (Generation)" tooltip="Completion tokens per second using only the first-token-to-last-token generation window." value={formatTps(generationTps)} />
+          <Metric label="Prompt Sent" tooltip="Timestamp when AssistantHub sent the assembled prompt to the inference endpoint." value={formatTimestamp(history.PromptSentUtc)} valueClassName="history-metric-timestamp" />
         </div>
 
         <div className="history-stage-summary">
           <div className="history-stage-summary-heading">
-            <span>Stage Details</span>
+            <Tooltip text="Detailed per-stage telemetry used to explain where this assistant turn spent time.">Stage Details</Tooltip>
             {finalInferenceStage?.Provider && (
-              <span className="history-section-badge">
+              <Tooltip className="history-section-badge" text="Provider and model used by the final inference stage.">
                 {finalInferenceStage.Provider}{finalInferenceStage.Model ? ` / ${finalInferenceStage.Model}` : ''}
-              </span>
+              </Tooltip>
             )}
           </div>
           <StageTable stages={displayStages} />
@@ -468,20 +513,28 @@ function HistoryViewModal({ history, onClose }) {
           onClick={() => setMessagesOpen(!messagesOpen)}
         >
           <Tooltip text="User message and assistant response for this conversation turn">Messages</Tooltip>
-          <span className="history-toggle-icon">{messagesOpen ? '\u25BC' : '\u25B6'}</span>
+          <Tooltip className="history-toggle-icon" text={messagesOpen ? 'Collapse the message section.' : 'Expand the message section.'}>{messagesOpen ? '\u25BC' : '\u25B6'}</Tooltip>
         </div>
         {messagesOpen && (
           <div className="history-messages-grid">
             <div className="history-message-panel">
               <div className="history-message-heading">
-                User Message
-                <span className="history-message-ts">{formatTimestamp(history.UserMessageUtc)}</span>
+                <Tooltip text="The user prompt that started this assistant turn.">User Message</Tooltip>
+                <Tooltip className="history-message-ts" text="UTC timestamp when AssistantHub received the user message.">
+                  {formatTimestamp(history.UserMessageUtc)}
+                </Tooltip>
               </div>
-              <div className="json-view history-message-body">{history.UserMessage || '(none)'}</div>
+              <Tooltip as="div" className="json-view history-message-body" text="Raw user message content recorded for this assistant history item.">
+                {history.UserMessage || '(none)'}
+              </Tooltip>
             </div>
             <div className="history-message-panel">
-              <div className="history-message-heading">Assistant Response</div>
-              <div className="json-view history-message-body">{history.AssistantResponse || '(none)'}</div>
+              <div className="history-message-heading">
+                <Tooltip text="The final assistant response returned to the user.">Assistant Response</Tooltip>
+              </div>
+              <Tooltip as="div" className="json-view history-message-body" text="Raw assistant response content recorded for this assistant history item.">
+                {history.AssistantResponse || '(none)'}
+              </Tooltip>
             </div>
           </div>
         )}
@@ -495,17 +548,23 @@ function HistoryViewModal({ history, onClose }) {
             onClick={() => setQueryRewriteOpen(!queryRewriteOpen)}
           >
             <Tooltip text="LLM-based query rewrite - the original prompt was rewritten into multiple queries for broader retrieval">Query Rewrite</Tooltip>
-            <span className="history-toggle-icon">{queryRewriteOpen ? '\u25BC' : '\u25B6'}</span>
-            <span className="history-section-badge">{formatMs(history.QueryRewriteDurationMs)}</span>
+            <Tooltip className="history-toggle-icon" text={queryRewriteOpen ? 'Collapse the query rewrite details.' : 'Expand the query rewrite details.'}>{queryRewriteOpen ? '\u25BC' : '\u25B6'}</Tooltip>
+            <Tooltip className="history-section-badge" text="Elapsed time spent generating query variants before retrieval.">
+              {formatMs(history.QueryRewriteDurationMs)}
+            </Tooltip>
           </div>
           {queryRewriteOpen && (
             <div className="history-retrieval-body">
               {history.QueryRewriteResult.split('\n').filter(q => q.trim()).map((query, idx) => (
                 <div key={idx} className="history-chunk-card">
                   <div className="history-chunk-header">
-                    <span className="history-chunk-num">{idx === 0 ? 'Original' : `Variant ${idx}`}</span>
+                    <Tooltip className="history-chunk-num" text={idx === 0 ? 'Original query text used as part of retrieval.' : `Query rewrite variant ${idx} generated to improve retrieval recall.`}>
+                      {idx === 0 ? 'Original' : `Variant ${idx}`}
+                    </Tooltip>
                   </div>
-                  <div className="json-view history-chunk-content">{query.trim()}</div>
+                  <Tooltip as="div" className="json-view history-chunk-content" text={idx === 0 ? 'Original retrieval query text.' : `Generated retrieval query variant ${idx}.`}>
+                    {query.trim()}
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -520,47 +579,55 @@ function HistoryViewModal({ history, onClose }) {
           onClick={() => setRetrievalOpen(!retrievalOpen)}
         >
           <Tooltip text="Document retrieval phase - context fetched from the collection for RAG">Retrieval Context</Tooltip>
-          <span className="history-toggle-icon">{retrievalOpen ? '\u25BC' : '\u25B6'}</span>
-          <span className="history-section-badge">{formatMs(history.RetrievalDurationMs)}</span>
+          <Tooltip className="history-toggle-icon" text={retrievalOpen ? 'Collapse the retrieval context details.' : 'Expand the retrieval context details.'}>{retrievalOpen ? '\u25BC' : '\u25B6'}</Tooltip>
+          <Tooltip className="history-section-badge" text="Elapsed time spent retrieving context from the configured collection.">
+            {formatMs(history.RetrievalDurationMs)}
+          </Tooltip>
           {history.RerankInputCount > 0 && (
-            <span className="history-section-badge" style={{ background: 'var(--timing-rerank, #ffa94d)', color: '#000' }}>
+            <Tooltip className="history-section-badge" style={{ background: 'var(--timing-rerank, #ffa94d)', color: '#000' }} text="Number of chunks sent to reranking, number retained after reranking, and elapsed rerank time.">
               Re-ranked: {history.RerankInputCount} to {history.RerankOutputCount} chunks in {formatMs(history.RerankDurationMs)}
-            </span>
+            </Tooltip>
           )}
           {history.RetrievalStartUtc && (
-            <span className="history-section-meta">started {formatTimestamp(history.RetrievalStartUtc)}</span>
+            <Tooltip className="history-section-meta" text="UTC timestamp when retrieval started.">
+              started {formatTimestamp(history.RetrievalStartUtc)}
+            </Tooltip>
           )}
         </div>
         {retrievalOpen && (
           <div className="history-retrieval-body">
             {!history.RetrievalContext ? (
-              <div className="json-view">(no context retrieved)</div>
+              <Tooltip as="div" className="json-view" text="No retrieval context was stored for this assistant turn.">
+                (no context retrieved)
+              </Tooltip>
             ) : !retrievalChunks ? (
-              <div className="json-view" style={{ maxHeight: '300px' }}>{history.RetrievalContext}</div>
+              <Tooltip as="div" className="json-view" style={{ maxHeight: '300px' }} text="Raw retrieval context payload. It could not be parsed as the structured chunk array.">
+                {history.RetrievalContext}
+              </Tooltip>
             ) : (
               <>
                 {/* Retrieval summary stats */}
                 {retrievalStats && (
                   <div className="history-retrieval-summary">
                     <div className="history-retrieval-summary-stats">
-                      <div className="history-metric">
-                        <span className="history-metric-label">Documents</span>
-                        <span className="history-metric-value">{retrievalStats.uniqueDocIds.length}</span>
-                      </div>
-                      <div className="history-metric">
-                        <span className="history-metric-label">Chunks</span>
-                        <span className="history-metric-value">{retrievalStats.totalChunks}</span>
-                      </div>
+                      <Metric label="Documents" tooltip="Number of unique source documents represented in the retrieved context." value={retrievalStats.uniqueDocIds.length.toLocaleString()} />
+                      <Metric label="Chunks" tooltip="Number of retrieved chunks and neighbor chunks represented in the context payload." value={retrievalStats.totalChunks.toLocaleString()} />
                     </div>
                     {retrievalStats.uniqueDocIds.length > 0 && (
                       <div className="history-retrieval-doc-list">
-                        <div className="history-retrieval-doc-list-label">Source Documents</div>
+                        <Tooltip as="div" className="history-retrieval-doc-list-label" text="Documents that supplied retrieved context for this assistant response.">
+                          Source Documents
+                        </Tooltip>
                         <ul className="history-retrieval-doc-items">
                           {retrievalStats.uniqueDocIds.map((docId) => (
                             <li key={docId} className="history-retrieval-doc-item">
-                              <CopyableId id={docId} />
+                              <Tooltip text={`Source document identifier used during retrieval: ${docId}.`}>
+                                <CopyableId id={docId} />
+                              </Tooltip>
                               {docNames[docId] && (
-                                <span className="history-retrieval-doc-name">{docNames[docId]}</span>
+                                <Tooltip className="history-retrieval-doc-name" text="Original filename or display name for this source document.">
+                                  {docNames[docId]}
+                                </Tooltip>
                               )}
                             </li>
                           ))}
@@ -573,37 +640,43 @@ function HistoryViewModal({ history, onClose }) {
                 {(() => {
                   const hasBracketCitations = history.AssistantResponse && /\[\d+\]/.test(history.AssistantResponse);
                   return retrievalChunks.length > 0 && !hasBracketCitations ? (
-                    <div className="history-auto-populated-tag">
+                    <Tooltip as="div" className="history-auto-populated-tag" text="The assistant response did not include inline bracket citations, so the dashboard associated citations from retrieved context automatically.">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                       </svg>
                       Citations auto-populated - model did not produce inline [N] references
-                    </div>
+                    </Tooltip>
                   ) : null;
                 })()}
                 {/* Individual chunks */}
                 {retrievalChunks.map((chunk, idx) => (
                   <div key={idx} className="history-chunk-card">
                     <div className="history-chunk-header">
-                      <span className="history-chunk-num">Chunk {idx + 1}</span>
+                      <Tooltip className="history-chunk-num" text={`Retrieved context chunk ${idx + 1}.`}>
+                        Chunk {idx + 1}
+                      </Tooltip>
                       {chunk.score != null && (
-                        <span className="history-chunk-score">Score: <strong>{chunk.score.toFixed(4)}</strong></span>
+                        <Tooltip className="history-chunk-score" text="Vector retrieval similarity score reported for this chunk. Higher usually means a closer semantic match.">
+                          Score: <strong>{chunk.score.toFixed(4)}</strong>
+                        </Tooltip>
                       )}
                       {chunk.rerank_score != null && (
-                        <span className="history-chunk-score">Relevance: <strong>{chunk.rerank_score.toFixed(1)}/10</strong></span>
+                        <Tooltip className="history-chunk-score" text="LLM reranker relevance score for this chunk on a 1 to 10 scale.">
+                          Relevance: <strong>{chunk.rerank_score.toFixed(1)}/10</strong>
+                        </Tooltip>
                       )}
                       {chunk.document_id && (
-                        <span className="history-chunk-source">
+                        <Tooltip className="history-chunk-source" text={`Source document for this retrieved chunk: ${chunk.document_id}.`}>
                           Source: <CopyableId id={chunk.document_id} />
                           {docNames[chunk.document_id] && (
                             <span className="history-retrieval-doc-name">{docNames[chunk.document_id]}</span>
                           )}
-                        </span>
+                        </Tooltip>
                       )}
                     </div>
-                    <div className="json-view history-chunk-content">
+                    <Tooltip as="div" className="json-view history-chunk-content" text="Text content from this retrieved chunk that was available to the assistant as context.">
                       {chunk.content || '(empty)'}
-                    </div>
+                    </Tooltip>
                   </div>
                 ))}
               </>

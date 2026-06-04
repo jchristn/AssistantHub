@@ -3,7 +3,7 @@ services:
   # --- Infrastructure ---
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.30.4
     container_name: ollama
     ports:
       - "11434:11434"
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   ollama-init:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.30.4
     container_name: ollama-init
     entrypoint:
       - bash

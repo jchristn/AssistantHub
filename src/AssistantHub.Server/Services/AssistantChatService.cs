@@ -352,6 +352,7 @@ namespace AssistantHub.Server.Services
 
             string retrievalGateDecision = null;
             double retrievalGateDurationMs = 0;
+            AssistantPerformanceStage retrievalGateTelemetry = null;
             bool shouldRetrieve = true;
 
             if (settings.EnableRag && settings.EnableRetrievalGate
@@ -382,6 +383,7 @@ namespace AssistantHub.Server.Services
                             gateEndpoint.EndpointId,
                             gateEndpoint.MaxConcurrentRequests,
                             token).ConfigureAwait(false);
+                        retrievalGateTelemetry = gateResult?.Telemetry;
 
                         gateSw.Stop();
                         retrievalGateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
@@ -416,6 +418,7 @@ namespace AssistantHub.Server.Services
 
             string queryRewriteResult = null;
             double queryRewriteDurationMs = 0;
+            AssistantPerformanceStage queryRewriteTelemetry = null;
             List<string> retrievalQueries = !String.IsNullOrEmpty(lastUserMessage) ? new List<string> { lastUserMessage } : new List<string>();
 
             if (settings.EnableRag && settings.EnableQueryRewrite && shouldRetrieve
@@ -445,6 +448,7 @@ namespace AssistantHub.Server.Services
                         rewriteEndpoint.EndpointId,
                         rewriteEndpoint.MaxConcurrentRequests,
                         token).ConfigureAwait(false);
+                    queryRewriteTelemetry = rewriteResult?.Telemetry;
 
                     rewriteSw.Stop();
                     queryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
@@ -576,6 +580,7 @@ namespace AssistantHub.Server.Services
             double rerankDurationMs = 0;
             int rerankInputCount = 0;
             int rerankOutputCount = 0;
+            AssistantPerformanceStage rerankTelemetry = null;
 
             if (settings.EnableRag && settings.EnableReranking && shouldRetrieve && retrievalChunks.Count > 0)
             {
@@ -615,6 +620,7 @@ namespace AssistantHub.Server.Services
                         rerankEndpoint.EndpointId,
                         rerankEndpoint.MaxConcurrentRequests,
                         token).ConfigureAwait(false);
+                    rerankTelemetry = rerankResult?.Telemetry;
 
                     if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
                     {
@@ -896,6 +902,9 @@ namespace AssistantHub.Server.Services
                     request.TraceId,
                     request.RequestHistoryId,
                     inferenceResult.Telemetry,
+                    retrievalGateTelemetry,
+                    queryRewriteTelemetry,
+                    rerankTelemetry,
                     retrievalQueries.Count,
                     retrievalChunks.Count,
                     token);
@@ -949,6 +958,9 @@ namespace AssistantHub.Server.Services
             string traceId,
             string requestHistoryId,
             AssistantPerformanceStage finalInferenceTelemetry,
+            AssistantPerformanceStage retrievalGateTelemetry,
+            AssistantPerformanceStage queryRewriteTelemetry,
+            AssistantPerformanceStage rerankTelemetry,
             int retrievalQueryCount,
             int retrievalChunksReturned,
             CancellationToken token)
@@ -1001,7 +1013,10 @@ namespace AssistantHub.Server.Services
                     history,
                     finalInferenceTelemetry,
                     retrievalQueryCount,
-                    retrievalChunksReturned);
+                    retrievalChunksReturned,
+                    retrievalGateTelemetry,
+                    queryRewriteTelemetry,
+                    rerankTelemetry);
                 history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
 
                 await _Database.ChatHistory.CreateAsync(history, token).ConfigureAwait(false);

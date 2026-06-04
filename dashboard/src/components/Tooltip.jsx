@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
-function Tooltip({ text, children }) {
+function Tooltip({ text, children, as: Component = 'span', className = '', ...rest }) {
   const [visible, setVisible] = useState(false);
   const [style, setStyle] = useState({ top: 0, left: 0 });
   const wrapperRef = useRef(null);
@@ -38,11 +38,12 @@ function Tooltip({ text, children }) {
   if (!text) return children;
 
   return (
-    <span
-      className="tooltip-wrapper"
+    <Component
+      className={['tooltip-wrapper', className].filter(Boolean).join(' ')}
       ref={wrapperRef}
       onMouseEnter={show}
       onMouseLeave={hide}
+      {...rest}
     >
       {children}
       {visible && createPortal(
@@ -51,7 +52,7 @@ function Tooltip({ text, children }) {
         </span>,
         document.body
       )}
-    </span>
+    </Component>
   );
 }
 

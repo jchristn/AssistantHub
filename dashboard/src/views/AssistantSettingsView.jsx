@@ -330,9 +330,6 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                 </div>
                 )}
               </div>
-              <div className="form-section-header" style={{ marginTop: '0.75rem' }}>
-                <Tooltip text="Optional utility endpoints for RAG-related LLM calls. Leave a selector on response endpoint to keep current behavior.">Specialized Inference Endpoints</Tooltip>
-              </div>
               <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                 <div className="form-group">
                   <label className="form-label"><Tooltip text="Inference endpoint used to decide whether a follow-up message needs new retrieval. Leave blank to use the response endpoint.">Retrieval Gate Endpoint</Tooltip></label>

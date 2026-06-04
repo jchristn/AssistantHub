@@ -23,7 +23,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
         private readonly MysqlDatabaseDriver _Driver;
 
         private const string _SummaryColumns =
-            "id, tenant_id, user_id, credential_id, assistant_id, thread_id, principal_name, " +
+            "id, trace_id, chat_history_id, tenant_id, user_id, credential_id, assistant_id, thread_id, principal_name, " +
             "request_type, source_type, http_method, route_template, request_path, request_url, source_ip, " +
             "status_code, success, duration_ms, request_content_type, response_content_type, " +
             "request_size_bytes, response_size_bytes, request_body_truncated, response_body_truncated, " +
@@ -56,7 +56,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
 
             string query =
                 "INSERT INTO request_history " +
-                "(id, tenant_id, user_id, credential_id, assistant_id, thread_id, principal_name, " +
+                "(id, trace_id, chat_history_id, tenant_id, user_id, credential_id, assistant_id, thread_id, principal_name, " +
                 "request_type, source_type, http_method, route_template, request_path, request_url, source_ip, " +
                 "status_code, success, duration_ms, request_content_type, response_content_type, " +
                 "request_size_bytes, response_size_bytes, request_body_truncated, response_body_truncated, " +
@@ -64,6 +64,8 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "request_headers_json, response_headers_json, request_body, response_body, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(entry.Id) + "', " +
+                _Driver.FormatNullableString(entry.TraceId) + ", " +
+                _Driver.FormatNullableString(entry.ChatHistoryId) + ", " +
                 _Driver.FormatNullableString(entry.TenantId) + ", " +
                 _Driver.FormatNullableString(entry.UserId) + ", " +
                 _Driver.FormatNullableString(entry.CredentialId) + ", " +

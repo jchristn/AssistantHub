@@ -208,7 +208,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.11.0",
+  "Version": "0.12.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -2203,6 +2203,8 @@ Delete a feedback record.
 
 Authenticated users can view and manage chat history for their assistants. Admin users can see all history. History entries are created automatically when the `X-Thread-ID` header is provided on chat requests.
 
+In v0.12.0, assistant history records also include provider-agnostic performance telemetry. `TraceId` links the chat history row to request history and logs. `RequestHistoryId` links directly to the captured HTTP request. `PerformanceJson` stores a versioned `AssistantPerformanceTelemetry` payload with per-stage timings, endpoint limiter wait time, request-to-headers timing, time to first token, generation timing, token counts, and provider-native metrics when available.
+
 ### GET /v1.0/history
 
 List all chat history records with pagination.
@@ -2224,6 +2226,11 @@ Retrieve a single chat history record by ID.
 ```json
 {
   "Id": "chist_abc123...",
+  "TraceId": "trace_abc123...",
+  "RequestHistoryId": "req_abc123...",
+  "PerformanceSchemaVersion": 1,
+  "PerformanceJson": "{\"SchemaVersion\":1,\"TraceId\":\"trace_abc123...\",\"Stages\":[{\"Name\":\"final_inference\",\"Kind\":\"inference\",\"DurationMs\":890.75,\"ClientTimings\":{\"RequestToHeadersMs\":850.0,\"HeadersToFirstTokenMs\":120.5,\"FirstTokenToLastTokenMs\":770.25},\"ProviderMetrics\":{\"LoadMs\":0,\"PromptEvalMs\":110.0,\"GenerationMs\":770.25}}]}",
+  "TenantId": "default",
   "ThreadId": "thr_abc123...",
   "AssistantId": "asst_abc123...",
   "CollectionId": "collection-uuid",
@@ -2262,6 +2269,11 @@ Retrieve a single chat history record by ID.
 | Field                  | Type     | Description                                                  |
 |------------------------|----------|--------------------------------------------------------------|
 | `Id`                   | string   | Unique identifier (chist_ prefix).                           |
+| `TraceId`              | string   | Correlation identifier shared by chat history, request history, telemetry events, and logs. |
+| `RequestHistoryId`     | string   | Linked request-history record ID when the chat request was captured. |
+| `PerformanceSchemaVersion` | int  | Version number for the `PerformanceJson` payload.            |
+| `PerformanceJson`      | string   | Serialized provider-agnostic `AssistantPerformanceTelemetry` payload. Null for old rows or rows without telemetry. |
+| `TenantId`             | string   | Tenant that owns the history row.                            |
 | `ThreadId`             | string   | Conversation thread identifier (thr_ prefix).                |
 | `AssistantId`          | string   | The assistant that handled the conversation.                 |
 | `CollectionId`         | string   | RecallDB collection used for retrieval (may be null).        |
@@ -2290,6 +2302,60 @@ Retrieve a single chat history record by ID.
 | `MetadataFilter`       | string   | JSON-serialized metadata filter applied during retrieval (null if none). |
 | `Origin`               | string   | Origin of the chat request (e.g. `web`, `slack`, `api`). Null if not set. |
 | `AssistantResponse`    | string   | The assistant's full response text.                          |
+
+**PerformanceJson Contract:**
+
+`PerformanceJson` is serialized JSON. Clients can parse it as:
+
+```json
+{
+  "SchemaVersion": 1,
+  "TraceId": "trace_abc123...",
+  "ChatHistoryId": "chist_abc123...",
+  "RequestHistoryId": "req_abc123...",
+  "WallTimeMs": 890.75,
+  "CreatedUtc": "2025-01-01T12:00:00Z",
+  "Stages": [
+    {
+      "Name": "final_inference",
+      "Kind": "inference",
+      "Sequence": 70,
+      "EndpointId": "cep_abc123...",
+      "EndpointName": "local-gemma",
+      "EndpointType": "inference",
+      "Provider": "Ollama",
+      "ApiFormat": "Ollama",
+      "Model": "gemma3:4b",
+      "DurationMs": 890.75,
+      "Success": true,
+      "HttpStatusCode": 200,
+      "ClientTimings": {
+        "EndpointLimiterWaitMs": 0,
+        "RequestToHeadersMs": 850,
+        "HeadersToFirstTokenMs": 120.5,
+        "FirstTokenToLastTokenMs": 770.25,
+        "TotalMs": 890.75
+      },
+      "Tokens": {
+        "Input": 1250,
+        "Output": 87,
+        "Total": 1337
+      },
+      "ProviderMetrics": {
+        "QueueMs": null,
+        "LoadMs": 0,
+        "PromptEvalMs": 110,
+        "GenerationMs": 770.25,
+        "TotalMs": 880.25,
+        "TokensPerSecond": 112.9,
+        "RequestId": null
+      }
+    }
+  ]
+}
+```
+
+Known stage names include `retrieval_gate`, `query_rewrite`, `retrieval`, `rerank`, `endpoint_resolution`, `context_compaction`, and `final_inference`. Provider-specific fields that are not available are returned as null or omitted; they are not coerced to zero.
 
 **Error Responses:**
 - `404` -- History entry not found.
@@ -2417,6 +2483,8 @@ Get a fully hydrated request-history entry by ID.
 ```json
 {
   "Id": "req_abc123...",
+  "TraceId": "trace_abc123...",
+  "ChatHistoryId": "chist_abc123...",
   "TenantId": "default",
   "AssistantId": "asst_abc123...",
   "ThreadId": "thr_abc123...",
@@ -2441,6 +2509,8 @@ Get a fully hydrated request-history entry by ID.
   "LastUpdateUtc": "2025-01-01T12:00:00Z"
 }
 ```
+
+`TraceId` and `ChatHistoryId` are populated for assistant chat requests when a chat history row is produced. The dashboard uses `ChatHistoryId` to load the linked chat row and display the same v0.12.0 performance timing breakdown in the request-history detail view.
 
 ### GET /v1.0/requesthistory/{requestId}/detail
 

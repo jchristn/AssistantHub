@@ -116,6 +116,24 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate a trace identifier.
+        /// </summary>
+        /// <returns>Trace identifier.</returns>
+        public static string NewTraceId()
+        {
+            return _Generator.GenerateKSortable(Constants.TraceIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
+        /// Generate a chat history performance event identifier.
+        /// </summary>
+        /// <returns>Chat history performance event identifier.</returns>
+        public static string NewChatHistoryPerformanceEventId()
+        {
+            return _Generator.GenerateKSortable(Constants.ChatHistoryPerformanceEventIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a crawl plan identifier.
         /// </summary>
         /// <returns>Crawl plan identifier.</returns>

@@ -21,6 +21,26 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Trace identifier shared by request history and telemetry events.
+        /// </summary>
+        public string TraceId { get; set; } = null;
+
+        /// <summary>
+        /// Request-history identifier associated with this chat turn, when available.
+        /// </summary>
+        public string RequestHistoryId { get; set; } = null;
+
+        /// <summary>
+        /// Performance telemetry schema version.
+        /// </summary>
+        public int PerformanceSchemaVersion { get; set; } = 1;
+
+        /// <summary>
+        /// JSON-serialized provider-agnostic performance telemetry.
+        /// </summary>
+        public string PerformanceJson { get; set; } = null;
+
+        /// <summary>
         /// Tenant identifier.
         /// </summary>
         public string TenantId
@@ -222,6 +242,10 @@ namespace AssistantHub.Core.Models
             if (row == null) return null;
             ChatHistory obj = new ChatHistory();
             obj.Id = DataTableHelper.GetStringValue(row, "id");
+            obj.TraceId = DataTableHelper.GetStringValue(row, "trace_id");
+            obj.RequestHistoryId = DataTableHelper.GetStringValue(row, "request_history_id");
+            obj.PerformanceSchemaVersion = DataTableHelper.GetIntValue(row, "performance_schema_version", 1);
+            obj.PerformanceJson = DataTableHelper.GetStringValue(row, "performance_json");
             obj.TenantId = DataTableHelper.GetStringValue(row, "tenant_id");
             obj.ThreadId = DataTableHelper.GetStringValue(row, "thread_id");
             obj.AssistantId = DataTableHelper.GetStringValue(row, "assistant_id");

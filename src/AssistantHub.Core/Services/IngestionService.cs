@@ -1,7 +1,6 @@
 namespace AssistantHub.Core.Services
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
@@ -38,7 +37,6 @@ namespace AssistantHub.Core.Services
         private LoggingModule _Logging = null;
         private ProcessingLogService _ProcessingLog = null;
         private HttpClient _HttpClient = null;
-        private static readonly ConcurrentDictionary<string, AsyncEndpointLimiter> _EndpointLimiters = new ConcurrentDictionary<string, AsyncEndpointLimiter>(StringComparer.OrdinalIgnoreCase);
 
         private JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -782,7 +780,7 @@ namespace AssistantHub.Core.Services
 
                 Stopwatch apiSw = Stopwatch.StartNew();
                 string completionEndpointId = rule?.Summarization?.CompletionEndpointId;
-                using (EndpointLimiterLease limiterLease = await AcquireEndpointLimitersAsync(
+                using (IDisposable limiterLease = await AcquireEndpointLimitersAsync(
                     documentId,
                     new List<EndpointLimiterTarget>
                     {
@@ -876,7 +874,7 @@ namespace AssistantHub.Core.Services
                     if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
 
-                    using (EndpointLimiterLease limiterLease = await AcquireEndpointLimitersAsync(
+                    using (IDisposable limiterLease = await AcquireEndpointLimitersAsync(
                         documentId,
                         new List<EndpointLimiterTarget> { new EndpointLimiterTarget("embedding", endpointId) },
                         token).ConfigureAwait(false))
@@ -1178,7 +1176,7 @@ namespace AssistantHub.Core.Services
             }
         }
 
-        private async Task<EndpointLimiterLease> AcquireEndpointLimitersAsync(string documentId, List<EndpointLimiterTarget> targets, CancellationToken token)
+        private async Task<IDisposable> AcquireEndpointLimitersAsync(string documentId, List<EndpointLimiterTarget> targets, CancellationToken token)
         {
             List<EndpointLimiterTarget> normalized = targets?
                 .Where(t => t != null && !String.IsNullOrWhiteSpace(t.EndpointType) && !String.IsNullOrWhiteSpace(t.EndpointId))
@@ -1194,11 +1192,8 @@ namespace AssistantHub.Core.Services
                 foreach (EndpointLimiterTarget target in normalized)
                 {
                     int maxConcurrent = await ResolveEndpointMaxConcurrencyAsync(target.EndpointType, target.EndpointId, token).ConfigureAwait(false);
-                    AsyncEndpointLimiter limiter = _EndpointLimiters.GetOrAdd(target.Key, _ => new AsyncEndpointLimiter(maxConcurrent));
-                    limiter.UpdateMax(maxConcurrent);
-
                     Stopwatch waitSw = Stopwatch.StartNew();
-                    IDisposable lease = await limiter.AcquireAsync(token).ConfigureAwait(false);
+                    IDisposable lease = await EndpointConcurrencyLimiter.AcquireAsync(target.Key, maxConcurrent, token).ConfigureAwait(false);
                     waitSw.Stop();
                     leases.Add(lease);
 
@@ -1211,7 +1206,7 @@ namespace AssistantHub.Core.Services
                     }
                 }
 
-                return new EndpointLimiterLease(leases);
+                return EndpointConcurrencyLimiter.CreateCompositeLease(leases);
             }
             catch
             {
@@ -1384,109 +1379,6 @@ namespace AssistantHub.Core.Services
             {
                 EndpointType = endpointType;
                 EndpointId = endpointId;
-            }
-        }
-
-        private class EndpointLimiterLease : IDisposable
-        {
-            private readonly List<IDisposable> _Leases;
-            private bool _Disposed = false;
-
-            public EndpointLimiterLease(List<IDisposable> leases)
-            {
-                _Leases = leases ?? new List<IDisposable>();
-            }
-
-            public void Dispose()
-            {
-                if (_Disposed) return;
-                _Disposed = true;
-
-                for (int i = _Leases.Count - 1; i >= 0; i--)
-                    _Leases[i].Dispose();
-            }
-        }
-
-        private class AsyncEndpointLimiter
-        {
-            private readonly object _Lock = new object();
-            private readonly Queue<TaskCompletionSource<IDisposable>> _Queue = new Queue<TaskCompletionSource<IDisposable>>();
-            private int _Max;
-            private int _Active = 0;
-
-            public AsyncEndpointLimiter(int max)
-            {
-                _Max = Math.Max(1, max);
-            }
-
-            public void UpdateMax(int max)
-            {
-                lock (_Lock)
-                {
-                    _Max = Math.Max(1, max);
-                    DrainQueue();
-                }
-            }
-
-            public Task<IDisposable> AcquireAsync(CancellationToken token)
-            {
-                lock (_Lock)
-                {
-                    if (_Active < _Max)
-                    {
-                        _Active++;
-                        return Task.FromResult<IDisposable>(new Lease(this));
-                    }
-
-                    TaskCompletionSource<IDisposable> tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    if (token.CanBeCanceled)
-                        token.Register(() => tcs.TrySetCanceled(token));
-
-                    _Queue.Enqueue(tcs);
-                    return tcs.Task;
-                }
-            }
-
-            private void Release()
-            {
-                lock (_Lock)
-                {
-                    if (_Active > 0)
-                        _Active--;
-                    DrainQueue();
-                }
-            }
-
-            private void DrainQueue()
-            {
-                while (_Active < _Max && _Queue.Count > 0)
-                {
-                    TaskCompletionSource<IDisposable> tcs = _Queue.Dequeue();
-                    if (tcs.Task.IsCanceled)
-                        continue;
-
-                    _Active++;
-                    if (!tcs.TrySetResult(new Lease(this)))
-                        _Active--;
-                }
-            }
-
-            private class Lease : IDisposable
-            {
-                private readonly AsyncEndpointLimiter _Owner;
-                private bool _Disposed = false;
-
-                public Lease(AsyncEndpointLimiter owner)
-                {
-                    _Owner = owner;
-                }
-
-                public void Dispose()
-                {
-                    if (_Disposed) return;
-                    _Disposed = true;
-                    _Owner.Release();
-                }
             }
         }
 

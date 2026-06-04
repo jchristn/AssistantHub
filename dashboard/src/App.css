@@ -2839,6 +2839,76 @@ body {
   font-size: 0.8rem;
 }
 
+.history-stage-summary {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.history-stage-summary-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.history-stage-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.history-stage-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.history-stage-table th,
+.history-stage-table td {
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+
+.history-stage-table th {
+  background: var(--bg-tertiary, var(--bg-secondary));
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-stage-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.history-stage-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.history-stage-kind {
+  margin-top: 0.15rem;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.history-stage-endpoint {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  color: var(--text-primary);
+}
+
 /* Messages grid */
 .history-messages-grid {
   display: grid;
@@ -3477,6 +3547,25 @@ body {
 .api-explorer-card h3 {
   font-size: 0.95rem;
   font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.request-history-performance-section {
+  margin: 1rem 0;
+}
+
+.request-history-performance-section .request-history-detail-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.request-history-performance-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 

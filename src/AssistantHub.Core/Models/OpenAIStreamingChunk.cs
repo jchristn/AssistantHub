@@ -11,5 +11,10 @@ namespace AssistantHub.Core.Models
         /// Chunk choices.
         /// </summary>
         public List<OpenAIStreamingChoice> Choices { get; set; } = new List<OpenAIStreamingChoice>();
+
+        /// <summary>
+        /// Optional token usage included by OpenAI-compatible providers when requested.
+        /// </summary>
+        public ChatCompletionUsage Usage { get; set; } = null;
     }
 }

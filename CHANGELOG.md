@@ -15,6 +15,25 @@
 ### Fixed
 - **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
 
+## v0.12.0 - Assistant Performance Telemetry
+
+### Added
+- **Provider-agnostic chat telemetry**: Chat history now captures `TraceId`, `RequestHistoryId`, `PerformanceSchemaVersion`, and `PerformanceJson` with versioned assistant hot-path telemetry.
+- **Queryable performance events**: Added `chat_history_performance_events` table and data access implementations for SQLite, PostgreSQL, MySQL, and SQL Server.
+- **Request/history correlation**: Request history now stores `TraceId` and `ChatHistoryId` so HTTP request details can be correlated with assistant chat history and logs.
+- **Inference timing detail**: Final inference telemetry captures endpoint limiter wait, request-to-headers, headers-to-first-token, first-token-to-last-token, total client time, HTTP status, endpoint/model metadata, token counts, and provider-native metrics when available.
+- **Dashboard performance drill-down**: Assistant history details and request-history details show expanded stage timing, token, endpoint, and provider metric tables.
+- **Migration scripts**: Added `migrations/010_upgrade_to_v0.12.0.*.sql` provider scripts for existing installations.
+
+### Changed
+- Chat history writes now persist telemetry and normalized performance events as part of the hot path instead of dropping timing detail after response completion.
+- Request-history capture preserves preassigned request IDs and trace IDs for assistant chat requests.
+- C#, JavaScript, and Python SDKs include the new history correlation fields and assistant telemetry DTOs.
+- Docker compose image tags and package/product versions updated to `0.12.0`.
+
+### Breaking
+- Database schema changes require running the matching `migrations/010_upgrade_to_v0.12.0.*.sql` provider script for existing installations when startup migrations are not used.
+
 ## v0.11.0 - Assistant Utility Endpoint Routing
 
 ### Added

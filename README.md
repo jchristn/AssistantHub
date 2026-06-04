@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.11.0` adds dedicated assistant-level inference endpoint routing for RAG utility calls. Retrieval gate, query rewrite, and re-ranking can each use their own managed completion endpoint, while falling back to the assistant response endpoint when unset.
+`v0.12.0` adds provider-agnostic assistant performance telemetry. Chat history and request history are linked by trace IDs, and the dashboard now exposes detailed hot-path timing for retrieval, utility inference, endpoint limiter wait, request-to-headers latency, first-token wait, generation, token counts, and provider metrics when available.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,15 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 </details>
 
 ---
+
+## New in v0.12.0
+
+- **Assistant performance telemetry** -- Chat history now stores `TraceId`, `RequestHistoryId`, `PerformanceSchemaVersion`, and serialized `PerformanceJson` with per-stage timings.
+- **Provider-agnostic hot-path detail** -- Final inference telemetry captures endpoint limiter wait, request-to-headers, headers-to-first-token, first-token-to-last-token, token counts, status, endpoint/model metadata, and provider-native metrics when available.
+- **Request/history correlation** -- Request history stores `TraceId` and `ChatHistoryId`, allowing assistant request detail views to drill into linked chat timing.
+- **Dashboard drill-down** -- History details and request-history details now include expanded performance timing tables for cold-load and hot-load analysis.
+- **Schema migration** -- Existing deployments can add the new telemetry columns and `chat_history_performance_events` table with the matching `migrations/010_upgrade_to_v0.12.0.*.sql` provider script.
+- **SDK and API surface** -- C#, JavaScript, and Python SDKs include the new history correlation fields and telemetry DTOs.
 
 ## New in v0.11.0
 

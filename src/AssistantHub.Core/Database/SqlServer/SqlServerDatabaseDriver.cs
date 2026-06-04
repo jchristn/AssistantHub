@@ -58,6 +58,7 @@ namespace AssistantHub.Core.Database.SqlServer
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
@@ -84,7 +85,14 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateAssistantFeedbackTable,
                 TableQueries.CreateIngestionRulesTable,
                 TableQueries.CreateChatHistoryTable,
+                TableQueries.AddChatHistoryTraceIdColumn,
+                TableQueries.AddChatHistoryRequestHistoryIdColumn,
+                TableQueries.AddChatHistoryPerformanceSchemaVersionColumn,
+                TableQueries.AddChatHistoryPerformanceJsonColumn,
                 TableQueries.CreateRequestHistoryTable,
+                TableQueries.AddRequestHistoryTraceIdColumn,
+                TableQueries.AddRequestHistoryChatHistoryIdColumn,
+                TableQueries.CreateChatHistoryPerformanceEventsTable,
                 TableQueries.CreateCrawlPlansTable,
                 TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateTenantsNameIndex,
@@ -108,6 +116,8 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
                 TableQueries.CreateChatHistoryTenantIdIndex,
+                TableQueries.CreateChatHistoryTraceIdIndex,
+                TableQueries.CreateChatHistoryRequestHistoryIdIndex,
                 TableQueries.CreateRequestHistoryTenantIdIndex,
                 TableQueries.CreateRequestHistoryUserIdIndex,
                 TableQueries.CreateRequestHistoryCredentialIdIndex,
@@ -117,6 +127,19 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.CreateRequestHistorySuccessIndex,
                 TableQueries.CreateRequestHistoryCreatedUtcIndex,
                 TableQueries.CreateRequestHistoryPathIndex,
+                TableQueries.CreateRequestHistoryTraceIdIndex,
+                TableQueries.CreateRequestHistoryChatHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsChatHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsRequestHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTraceIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsStageIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsStartedUtcIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsEndpointIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsProviderModelIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsCreatedUtcIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsDurationMsIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantCreatedIndex,
                 TableQueries.CreateCrawlPlansTenantIdIndex,
                 TableQueries.CreateCrawlPlansStateIndex,
                 TableQueries.CreateCrawlOperationsTenantIdIndex,

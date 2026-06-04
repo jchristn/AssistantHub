@@ -7,6 +7,7 @@ namespace Test.Automated
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Enums;
+    using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using Test.Shared;
@@ -250,6 +251,10 @@ namespace Test.Automated
                 var ch = new ChatHistory();
                 AssertHelper.IsNotNull(ch.Id, "Id");
                 AssertHelper.StartsWith(ch.Id, "chist_", "Id prefix");
+                AssertHelper.IsNull(ch.TraceId, "default TraceId");
+                AssertHelper.IsNull(ch.RequestHistoryId, "default RequestHistoryId");
+                AssertHelper.AreEqual(1, ch.PerformanceSchemaVersion, "default PerformanceSchemaVersion");
+                AssertHelper.IsNull(ch.PerformanceJson, "default PerformanceJson");
                 AssertHelper.AreEqual(Constants.DefaultTenantId, ch.TenantId, "default TenantId");
                 AssertHelper.DateTimeRecent(ch.CreatedUtc, "CreatedUtc");
             });
@@ -445,6 +450,87 @@ namespace Test.Automated
                 AssertHelper.AreEqual(123.4, d.RerankDurationMs, "round-trip RerankDurationMs");
                 AssertHelper.AreEqual(10, d.RerankInputCount, "round-trip RerankInputCount");
                 AssertHelper.AreEqual(3, d.RerankOutputCount, "round-trip RerankOutputCount");
+            });
+
+            await ExecuteTestAsync("ChatHistory: JSON round-trip preserves telemetry fields", async () =>
+            {
+                var ch = new ChatHistory();
+                ch.TraceId = IdGenerator.NewTraceId();
+                ch.RequestHistoryId = "req_test";
+                ch.PerformanceSchemaVersion = 1;
+                ch.PerformanceJson = "{\"SchemaVersion\":1,\"Stages\":[]}";
+
+                string json = JsonSerializer.Serialize(ch, _jsonOptionsIgnoreNever);
+                var d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
+
+                AssertHelper.StartsWith(d.TraceId, "trace_", "round-trip TraceId");
+                AssertHelper.AreEqual("req_test", d.RequestHistoryId, "round-trip RequestHistoryId");
+                AssertHelper.AreEqual(1, d.PerformanceSchemaVersion, "round-trip PerformanceSchemaVersion");
+                AssertHelper.StringContains(d.PerformanceJson, "SchemaVersion", "round-trip PerformanceJson");
+            });
+
+            await ExecuteTestAsync("RequestHistoryEntry: JSON round-trip preserves telemetry correlation", async () =>
+            {
+                var entry = new RequestHistoryEntry();
+                entry.TraceId = IdGenerator.NewTraceId();
+                entry.ChatHistoryId = "chist_test";
+
+                string json = JsonSerializer.Serialize(entry, _jsonOptionsIgnoreNever);
+                var d = JsonSerializer.Deserialize<RequestHistoryEntry>(json, _jsonOptionsIgnoreNever);
+
+                AssertHelper.StartsWith(d.TraceId, "trace_", "round-trip TraceId");
+                AssertHelper.AreEqual("chist_test", d.ChatHistoryId, "round-trip ChatHistoryId");
+            });
+
+            await ExecuteTestAsync("AssistantPerformanceTelemetry: JSON round-trip preserves provider metrics", async () =>
+            {
+                var telemetry = new AssistantPerformanceTelemetry
+                {
+                    TraceId = "trace_test",
+                    ChatHistoryId = "chist_test",
+                    RequestHistoryId = "req_test",
+                    WallTimeMs = 123.4,
+                    Stages = new List<AssistantPerformanceStage>
+                    {
+                        new AssistantPerformanceStage
+                        {
+                            Name = "final_inference",
+                            Kind = "inference",
+                            Sequence = 70,
+                            DurationMs = 123.4,
+                            ClientTimings = new AssistantPerformanceClientTimings
+                            {
+                                RequestToHeadersMs = 10.1,
+                                HeadersToFirstTokenMs = 20.2,
+                                FirstTokenToLastTokenMs = 93.1,
+                                EndpointLimiterWaitMs = 3.0,
+                                TotalMs = 123.4
+                            },
+                            Tokens = new AssistantTokenUsageTelemetry
+                            {
+                                Input = 100,
+                                Output = 20,
+                                Total = 120
+                            },
+                            ProviderMetrics = new AssistantProviderMetrics
+                            {
+                                LoadMs = 50,
+                                PromptEvalMs = 40,
+                                GenerationMs = 30,
+                                TokensPerSecond = 12.5
+                            }
+                        }
+                    }
+                };
+
+                string json = JsonSerializer.Serialize(telemetry, _jsonOptionsIgnoreNever);
+                var d = JsonSerializer.Deserialize<AssistantPerformanceTelemetry>(json, _jsonOptionsIgnoreNever);
+
+                AssertHelper.AreEqual("trace_test", d.TraceId, "TraceId");
+                AssertHelper.HasCount(d.Stages, 1, "Stages");
+                AssertHelper.AreEqual("final_inference", d.Stages[0].Name, "stage name");
+                AssertHelper.AreEqual(10.1, d.Stages[0].ClientTimings.RequestToHeadersMs.Value, "request-to-headers");
+                AssertHelper.AreEqual(12.5, d.Stages[0].ProviderMetrics.TokensPerSecond.Value, "provider TPS");
             });
 
             await ExecuteTestAsync("RetrievalChunk.RerankScore: defaults to null", async () =>

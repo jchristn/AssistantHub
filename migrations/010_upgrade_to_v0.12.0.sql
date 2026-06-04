@@ -1,0 +1,8 @@
+-- Migration script for AssistantHub v0.12.0
+-- Provider-agnostic assistant performance telemetry
+--
+-- Use the provider-specific script that matches your backend:
+--   010_upgrade_to_v0.12.0.sqlite.sql
+--   010_upgrade_to_v0.12.0.postgresql.sql
+--   010_upgrade_to_v0.12.0.mysql.sql
+--   010_upgrade_to_v0.12.0.sqlserver.sql

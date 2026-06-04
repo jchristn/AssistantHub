@@ -55,6 +55,11 @@ namespace AssistantHub.Core.Database
         public IChatHistoryMethods ChatHistory { get; protected set; }
 
         /// <summary>
+        /// Chat history performance event methods.
+        /// </summary>
+        public IChatHistoryPerformanceEventMethods ChatHistoryPerformanceEvent { get; protected set; }
+
+        /// <summary>
         /// Request history methods.
         /// </summary>
         public IRequestHistoryMethods RequestHistory { get; protected set; }

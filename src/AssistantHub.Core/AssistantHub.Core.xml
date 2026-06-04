@@ -84,6 +84,16 @@
             Request history identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.TraceIdentifierPrefix">
+            <summary>
+            Trace identifier prefix.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.ChatHistoryPerformanceEventIdentifierPrefix">
+            <summary>
+            Chat history performance event identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.TenantIdentifierPrefix">
             <summary>
             Tenant identifier prefix.
@@ -282,6 +292,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistory">
             <summary>
             Chat history methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistoryPerformanceEvent">
+            <summary>
+            Chat history performance event methods.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.RequestHistory">
@@ -699,6 +714,36 @@
             <param name="retentionDays">Number of days to retain.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods">
+            <summary>
+            Chat history performance event database methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.ChatHistoryPerformanceEvent,System.Threading.CancellationToken)">
+            <summary>
+            Create a performance event.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatHistoryPerformanceEvent},System.Threading.CancellationToken)">
+            <summary>
+            Create multiple performance events.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            List performance events for a chat history record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods.DeleteByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete performance events for a chat history record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IChatHistoryPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete performance events older than a retention period.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.ICrawlOperationMethods">
             <summary>
@@ -1437,6 +1482,34 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods">
+            <summary>
+            MySQL chat history performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the MySQL performance-event data access layer.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.ChatHistoryPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatHistoryPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.DeleteByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.CrawlOperationMethods">
             <summary>
             MySQL crawl operation methods implementation.
@@ -1875,6 +1948,34 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods">
+            <summary>
+            PostgreSQL chat history performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the PostgreSQL performance-event data access layer.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.ChatHistoryPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatHistoryPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.DeleteByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.CrawlOperationMethods">
@@ -2323,6 +2424,34 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods">
+            <summary>
+            SQLite chat history performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the SQLite performance-event data access layer.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.ChatHistoryPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatHistoryPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.DeleteByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.CrawlOperationMethods">
             <summary>
             SQLite crawl operation methods implementation.
@@ -2667,6 +2796,51 @@
             Get the CREATE TABLE statements.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn">
+            <summary>
+            Add the retrieval gate inference endpoint ID column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn">
+            <summary>
+            Add the query rewrite inference endpoint ID column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn">
+            <summary>
+            Add the rerank inference endpoint ID column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryTraceIdColumn">
+            <summary>
+            Add the trace ID column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryRequestHistoryIdColumn">
+            <summary>
+            Add the request-history ID column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryPerformanceSchemaVersionColumn">
+            <summary>
+            Add the performance schema-version column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryPerformanceJsonColumn">
+            <summary>
+            Add the performance JSON column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddRequestHistoryTraceIdColumn">
+            <summary>
+            Add the trace ID column to request history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddRequestHistoryChatHistoryIdColumn">
+            <summary>
+            Add the chat-history ID column to request history.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.CreateIndices">
             <summary>
             Get the CREATE INDEX statements.
@@ -2879,6 +3053,34 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods">
+            <summary>
+            SQL Server chat history performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the SQL Server performance-event data access layer.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.ChatHistoryPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatHistoryPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.DeleteByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.CrawlOperationMethods">
@@ -3573,6 +3775,14 @@
             <param name="defaultValue">Default value.</param>
             <returns>Integer value.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetNullableIntValue(System.Data.DataRow,System.String)">
+            <summary>
+            Get a nullable integer value from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <param name="columnName">Column name.</param>
+            <returns>Nullable integer value.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.DataTableHelper.GetLongValue(System.Data.DataRow,System.String,System.Int64)">
             <summary>
             Get a long value from a data row.
@@ -3719,6 +3929,18 @@
             Generate a request-history identifier.
             </summary>
             <returns>Request-history identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewTraceId">
+            <summary>
+            Generate a trace identifier.
+            </summary>
+            <returns>Trace identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewChatHistoryPerformanceEventId">
+            <summary>
+            Generate a chat history performance event identifier.
+            </summary>
+            <returns>Chat history performance event identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCrawlPlanId">
             <summary>
@@ -4121,6 +4343,256 @@
             <param name="row">Data row.</param>
             <returns>AssistantFeedback instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.AssistantPerformanceTelemetry">
+            <summary>
+            Versioned provider-agnostic performance telemetry for a chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.SchemaVersion">
+            <summary>
+            Telemetry schema version.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.TraceId">
+            <summary>
+            Correlation identifier shared by chat history, request history, and logs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.ChatHistoryId">
+            <summary>
+            Chat history identifier when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.RequestHistoryId">
+            <summary>
+            Request history identifier when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.WallTimeMs">
+            <summary>
+            Approximate wall-clock time for the assistant pipeline.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.CreatedUtc">
+            <summary>
+            Timestamp when telemetry was created.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.Stages">
+            <summary>
+            Ordered stage timings.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantPerformanceStage">
+            <summary>
+            A measured stage or phase in the assistant pipeline.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Name">
+            <summary>
+            Display name for the measured stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Kind">
+            <summary>
+            Stage kind, such as operation, inference, retrieval, or persistence.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Sequence">
+            <summary>
+            Ordering value within the telemetry payload.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.EndpointId">
+            <summary>
+            Endpoint identifier used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.EndpointName">
+            <summary>
+            Endpoint display name used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.EndpointType">
+            <summary>
+            Endpoint type used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Provider">
+            <summary>
+            Provider name, such as Ollama or OpenAI-compatible.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ApiFormat">
+            <summary>
+            API format used for the provider call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Model">
+            <summary>
+            Model name used for the provider call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.StartedUtc">
+            <summary>
+            UTC timestamp when the stage started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.FinishedUtc">
+            <summary>
+            UTC timestamp when the stage finished.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.DurationMs">
+            <summary>
+            Stage duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Success">
+            <summary>
+            Indicates whether the stage completed successfully.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.HttpStatusCode">
+            <summary>
+            HTTP status code returned by the provider or service, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ErrorType">
+            <summary>
+            Machine-readable error type, when the stage failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ErrorMessage">
+            <summary>
+            Error message, when the stage failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ClientTimings">
+            <summary>
+            Client-observed timing breakdown for provider calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Tokens">
+            <summary>
+            Normalized token counters for the stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ProviderMetrics">
+            <summary>
+            Normalized provider-native metrics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.Metadata">
+            <summary>
+            Additional provider-agnostic metadata.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceStage.ProviderRaw">
+            <summary>
+            Provider-specific raw metrics retained for troubleshooting.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantPerformanceClientTimings">
+            <summary>
+            Client-observed timings for an upstream provider request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.EndpointLimiterWaitMs">
+            <summary>
+            Time spent waiting for the endpoint concurrency limiter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.RequestToHeadersMs">
+            <summary>
+            Time from sending the request to receiving response headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.HeadersToFirstTokenMs">
+            <summary>
+            Time from response headers to first streamed token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.FirstTokenToLastTokenMs">
+            <summary>
+            Time from first streamed token to the final streamed token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.TotalMs">
+            <summary>
+            Total client-observed duration.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantTokenUsageTelemetry">
+            <summary>
+            Normalized token counters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Input">
+            <summary>
+            Input token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Output">
+            <summary>
+            Output token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Total">
+            <summary>
+            Total token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.PromptEvalCount">
+            <summary>
+            Provider prompt-evaluation token count, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.EvalCount">
+            <summary>
+            Provider generation token count, when reported.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantProviderMetrics">
+            <summary>
+            Provider-native metrics normalized into common fields.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.QueueMs">
+            <summary>
+            Provider queue duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.LoadMs">
+            <summary>
+            Provider model-load duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.PromptEvalMs">
+            <summary>
+            Provider prompt-evaluation duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.GenerationMs">
+            <summary>
+            Provider generation duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.TotalMs">
+            <summary>
+            Provider-reported total duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.TokensPerSecond">
+            <summary>
+            Provider generation throughput in tokens per second, when derivable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantProviderMetrics.RequestId">
+            <summary>
+            Provider request identifier, when reported.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantSettings">
             <summary>
             Assistant settings record.
@@ -4283,6 +4755,24 @@
         <member name="P:AssistantHub.Core.Models.AssistantSettings.InferenceEndpointId">
             <summary>
             Completion endpoint identifier (references a managed Partio completion endpoint).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalGateInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used for retrieval gate decisions.
+            When null or empty, the primary inference endpoint is used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.QueryRewriteInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used for query rewriting.
+            When null or empty, the primary inference endpoint is used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used for LLM re-ranking.
+            When null or empty, the primary inference endpoint is used.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingEndpointId">
@@ -4789,6 +5279,26 @@
             Unique identifier with prefix chist_.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.TraceId">
+            <summary>
+            Trace identifier shared by request history and telemetry events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.RequestHistoryId">
+            <summary>
+            Request-history identifier associated with this chat turn, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.PerformanceSchemaVersion">
+            <summary>
+            Performance telemetry schema version.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.PerformanceJson">
+            <summary>
+            JSON-serialized provider-agnostic performance telemetry.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.TenantId">
             <summary>
             Tenant identifier.
@@ -4960,6 +5470,236 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>ChatHistory instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatHistoryPerformanceEvent">
+            <summary>
+            Queryable performance event derived from a chat history telemetry payload.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Id">
+            <summary>
+            Event identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ChatHistoryId">
+            <summary>
+            Associated chat history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.RequestHistoryId">
+            <summary>
+            Associated request history identifier, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.TraceId">
+            <summary>
+            Correlation identifier shared by chat history, request history, and logs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.SequenceNumber">
+            <summary>
+            Ordering value within the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Stage">
+            <summary>
+            Stage name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Phase">
+            <summary>
+            Stage phase, when a stage has finer-grained phases.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Kind">
+            <summary>
+            Stage kind, such as operation, inference, retrieval, or persistence.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.EndpointId">
+            <summary>
+            Endpoint identifier used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.EndpointName">
+            <summary>
+            Endpoint display name used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.EndpointType">
+            <summary>
+            Endpoint type used by the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Provider">
+            <summary>
+            Provider name, when the stage calls an upstream provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ApiFormat">
+            <summary>
+            API format used for the upstream provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Model">
+            <summary>
+            Model name used for the upstream provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.StartedUtc">
+            <summary>
+            UTC timestamp when the stage started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.FinishedUtc">
+            <summary>
+            UTC timestamp when the stage finished.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.DurationMs">
+            <summary>
+            Stage duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.Success">
+            <summary>
+            Indicates whether the stage completed successfully.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.HttpStatusCode">
+            <summary>
+            HTTP status code returned by the provider or service, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ErrorType">
+            <summary>
+            Machine-readable error type, when the stage failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ErrorMessage">
+            <summary>
+            Error message, when the stage failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.InputTokens">
+            <summary>
+            Input token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.OutputTokens">
+            <summary>
+            Output token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.TotalTokens">
+            <summary>
+            Total token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ChunksInput">
+            <summary>
+            Number of chunks entering the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ChunksOutput">
+            <summary>
+            Number of chunks leaving the stage, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.RetrievalQueryCount">
+            <summary>
+            Number of retrieval queries executed, when applicable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.EndpointLimiterWaitMs">
+            <summary>
+            Time spent waiting for the endpoint concurrency limiter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.RequestToHeadersMs">
+            <summary>
+            Time from sending the request to receiving response headers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.HeadersToFirstTokenMs">
+            <summary>
+            Time from response headers to first streamed token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.FirstTokenToLastTokenMs">
+            <summary>
+            Time from first streamed token to final streamed token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ClientTotalMs">
+            <summary>
+            Total client-observed duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderQueueMs">
+            <summary>
+            Provider queue duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderLoadMs">
+            <summary>
+            Provider model-load duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderPromptEvalMs">
+            <summary>
+            Provider prompt-evaluation duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderGenerationMs">
+            <summary>
+            Provider generation duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderTotalMs">
+            <summary>
+            Provider-reported total duration in milliseconds, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderTokensPerSecond">
+            <summary>
+            Provider generation throughput in tokens per second, when derivable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderRequestId">
+            <summary>
+            Provider request identifier, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.MetadataJson">
+            <summary>
+            JSON-serialized additional metadata.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderMetricsJson">
+            <summary>
+            JSON-serialized normalized provider metrics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ProviderRawJson">
+            <summary>
+            JSON-serialized provider-specific raw metrics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.CreatedUtc">
+            <summary>
+            UTC timestamp when the event row was created.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Build an event from a data row.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatMetadataFilter">
             <summary>
@@ -6474,6 +7214,31 @@
             Response candidates.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.GeminiResponse.UsageMetadata">
+            <summary>
+            Optional token usage metadata returned by Gemini.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.GeminiUsageMetadata">
+            <summary>
+            Token usage metadata returned by Gemini.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiUsageMetadata.PromptTokenCount">
+            <summary>
+            Prompt token count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiUsageMetadata.CandidatesTokenCount">
+            <summary>
+            Candidate token count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GeminiUsageMetadata.TotalTokenCount">
+            <summary>
+            Total token count.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.HealthCheckRecord">
             <summary>
             A single health check result record.
@@ -6554,23 +7319,30 @@
             Error message describing what went wrong, or null on success.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.Telemetry">
+            <summary>
+            Provider-agnostic telemetry captured while servicing the inference call.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.InferenceResult.#ctor">
             <summary>
             Instantiate.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String)">
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String,AssistantHub.Core.Models.AssistantPerformanceStage)">
             <summary>
             Create a successful result.
             </summary>
             <param name="content">Generated response content.</param>
+            <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
             <returns>InferenceResult.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Models.InferenceResult.FromError(System.String)">
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromError(System.String,AssistantHub.Core.Models.AssistantPerformanceStage)">
             <summary>
             Create a failed result.
             </summary>
             <param name="errorMessage">Error message.</param>
+            <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
             <returns>InferenceResult.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.IngestionChunkingConfig">
@@ -6840,6 +7612,36 @@
             Message payload.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.TotalDuration">
+            <summary>
+            Total request duration reported by Ollama in nanoseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.LoadDuration">
+            <summary>
+            Model load duration reported by Ollama in nanoseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.PromptEvalCount">
+            <summary>
+            Prompt evaluation token count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.PromptEvalDuration">
+            <summary>
+            Prompt evaluation duration reported by Ollama in nanoseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.EvalCount">
+            <summary>
+            Generation token count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OllamaChatStreamLine.EvalDuration">
+            <summary>
+            Generation duration reported by Ollama in nanoseconds.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.OllamaStreamMessage">
             <summary>
             Message payload within an Ollama chat stream line.
@@ -6868,6 +7670,11 @@
         <member name="P:AssistantHub.Core.Models.OpenAIStreamingChunk.Choices">
             <summary>
             Chunk choices.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingChunk.Usage">
+            <summary>
+            Optional token usage included by OpenAI-compatible providers when requested.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.OpenAIStreamingDelta">
@@ -6933,6 +7740,11 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Active">
             <summary>
             Whether the endpoint is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaxConcurrentRequests">
+            <summary>
+            Maximum concurrent requests allowed for this endpoint.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckEnabled">
@@ -7018,6 +7830,11 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.Active">
             <summary>
             Whether the endpoint is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaxConcurrentRequests">
+            <summary>
+            Maximum concurrent requests allowed for this endpoint.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.EnableRequestHistory">
@@ -7164,6 +7981,16 @@
         <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.Id">
             <summary>
             Entry identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.TraceId">
+            <summary>
+            Trace identifier shared by chat history, request history, and logs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.ChatHistoryId">
+            <summary>
+            Chat history identifier associated with this request, when available.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.RequestHistoryEntry.TenantId">
@@ -8259,6 +9086,45 @@
             <param name="filename">Filename.</param>
             <returns>Always false.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.EndpointConcurrencyLimiter">
+            <summary>
+            Shared in-process concurrency limiter for Partio-managed upstream endpoints.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EndpointConcurrencyLimiter.BuildKey(System.String,System.String)">
+            <summary>
+            Build the canonical limiter key for an endpoint.
+            </summary>
+            <param name="endpointType">Endpoint type, for example completion or embedding.</param>
+            <param name="endpointId">Endpoint identifier.</param>
+            <returns>Canonical limiter key.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EndpointConcurrencyLimiter.AcquireAsync(System.String,System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Acquire a concurrency slot for an endpoint.
+            </summary>
+            <param name="endpointType">Endpoint type, for example completion or embedding.</param>
+            <param name="endpointId">Endpoint identifier.</param>
+            <param name="maxConcurrentRequests">Maximum concurrent requests for the endpoint.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Disposable lease that releases the slot.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EndpointConcurrencyLimiter.AcquireAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Acquire a concurrency slot for a canonical endpoint key.
+            </summary>
+            <param name="key">Canonical endpoint key.</param>
+            <param name="maxConcurrentRequests">Maximum concurrent requests for the endpoint.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Disposable lease that releases the slot.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EndpointConcurrencyLimiter.CreateCompositeLease(System.Collections.Generic.IEnumerable{System.IDisposable})">
+            <summary>
+            Create a lease that disposes a set of endpoint leases in reverse acquisition order.
+            </summary>
+            <param name="leases">Endpoint leases.</param>
+            <returns>Composite lease.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.EvalService">
             <summary>
             Service for running RAG evaluation against the inference pipeline.
@@ -8366,7 +9232,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Inference result containing the response or error details.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Action{AssistantHub.Core.Models.AssistantPerformanceStage},System.Threading.CancellationToken)">
             <summary>
             Generate a streaming response from a language model using a multi-message conversation.
             </summary>
@@ -8382,6 +9248,7 @@
             <param name="onComplete">Callback invoked when generation is complete, with the full accumulated content.</param>
             <param name="onError">Callback invoked on error.</param>
             <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
+            <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
             <param name="token">Cancellation token.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String},System.Boolean,System.Collections.Generic.List{System.String})">
@@ -8447,6 +9314,11 @@
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Choices">
             <summary>
             Response choices.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Usage">
+            <summary>
+            Token usage reported by OpenAI-compatible providers.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChoice.Message">

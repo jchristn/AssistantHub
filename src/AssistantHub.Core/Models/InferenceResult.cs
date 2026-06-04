@@ -22,6 +22,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string ErrorMessage { get; set; } = null;
 
+        /// <summary>
+        /// Provider-agnostic telemetry captured while servicing the inference call.
+        /// </summary>
+        public AssistantPerformanceStage Telemetry { get; set; } = null;
+
         #endregion
 
         #region Constructors-and-Factories
@@ -37,13 +42,15 @@ namespace AssistantHub.Core.Models
         /// Create a successful result.
         /// </summary>
         /// <param name="content">Generated response content.</param>
+        /// <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
         /// <returns>InferenceResult.</returns>
-        public static InferenceResult FromSuccess(string content)
+        public static InferenceResult FromSuccess(string content, AssistantPerformanceStage telemetry = null)
         {
             return new InferenceResult
             {
                 Success = true,
-                Content = content
+                Content = content,
+                Telemetry = telemetry
             };
         }
 
@@ -51,13 +58,15 @@ namespace AssistantHub.Core.Models
         /// Create a failed result.
         /// </summary>
         /// <param name="errorMessage">Error message.</param>
+        /// <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
         /// <returns>InferenceResult.</returns>
-        public static InferenceResult FromError(string errorMessage)
+        public static InferenceResult FromError(string errorMessage, AssistantPerformanceStage telemetry = null)
         {
             return new InferenceResult
             {
                 Success = false,
-                ErrorMessage = errorMessage
+                ErrorMessage = errorMessage,
+                Telemetry = telemetry
             };
         }
 

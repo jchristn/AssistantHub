@@ -11,5 +11,10 @@ namespace AssistantHub.Core.Models
         /// Response candidates.
         /// </summary>
         public List<GeminiCandidate> Candidates { get; set; } = new List<GeminiCandidate>();
+
+        /// <summary>
+        /// Optional token usage metadata returned by Gemini.
+        /// </summary>
+        public GeminiUsageMetadata UsageMetadata { get; set; } = null;
     }
 }

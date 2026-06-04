@@ -3,7 +3,7 @@ setlocal
 
 if "%~1"=="" (
     echo Usage: build-dashboard.bat ^<tag^>
-    echo Example: build-dashboard.bat v0.11.0
+    echo Example: build-dashboard.bat v0.12.0
     exit /b 1
 )
 

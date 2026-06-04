@@ -21,6 +21,42 @@ function formatTimestamp(utc) {
   return new Date(utc).toLocaleString();
 }
 
+function formatNumber(value) {
+  if (value == null || value === '') return 'N/A';
+  const number = Number(value);
+  if (!isFinite(number)) return 'N/A';
+  return number.toLocaleString();
+}
+
+function formatStageLabel(name) {
+  if (!name) return 'Unknown';
+  return String(name)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function parsePerformanceTelemetry(history) {
+  if (!history?.PerformanceJson) return null;
+  try {
+    const parsed = JSON.parse(history.PerformanceJson);
+    return parsed && Array.isArray(parsed.Stages) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function getStageDuration(stage) {
+  return Number(stage?.DurationMs || 0);
+}
+
+function getClientTiming(stage, key) {
+  return Number(stage?.ClientTimings?.[key] || 0);
+}
+
+function getProviderMetric(stage, key) {
+  return Number(stage?.ProviderMetrics?.[key] || 0);
+}
+
 function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
   const pct = totalMs > 0 && durationMs > 0 ? Math.max(1, (durationMs / totalMs) * 100) : 0;
   return (
@@ -37,6 +73,60 @@ function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
         )}
       </div>
       <div className="history-timing-value">{formatMs(durationMs)}</div>
+    </div>
+  );
+}
+
+function StageTable({ stages }) {
+  if (!stages || stages.length < 1) return null;
+
+  return (
+    <div className="history-stage-table-wrap">
+      <table className="history-stage-table">
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Endpoint</th>
+            <th>Duration</th>
+            <th>Queue</th>
+            <th>Headers</th>
+            <th>First Token</th>
+            <th>Generation</th>
+            <th>Provider Load</th>
+            <th>Prompt Eval</th>
+            <th>Tokens</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stages.map((stage, idx) => {
+            const tokens = stage.Tokens || {};
+            const inputTokens = tokens.Input ?? tokens.PromptEvalCount;
+            const outputTokens = tokens.Output ?? tokens.EvalCount;
+            return (
+              <tr key={`${stage.Name || 'stage'}-${idx}`}>
+                <td>
+                  <div className="history-stage-name">{formatStageLabel(stage.Name)}</div>
+                  <div className="history-stage-kind">{stage.Kind || 'stage'}</div>
+                </td>
+                <td>
+                  <div className="history-stage-endpoint">{stage.EndpointId || stage.EndpointName || '-'}</div>
+                  {(stage.Provider || stage.Model) && (
+                    <div className="history-stage-kind">{[stage.Provider, stage.Model].filter(Boolean).join(' / ')}</div>
+                  )}
+                </td>
+                <td>{formatMs(getStageDuration(stage))}</td>
+                <td>{formatMs(getClientTiming(stage, 'EndpointLimiterWaitMs'))}</td>
+                <td>{formatMs(getClientTiming(stage, 'RequestToHeadersMs'))}</td>
+                <td>{formatMs(getClientTiming(stage, 'HeadersToFirstTokenMs'))}</td>
+                <td>{formatMs(getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs'))}</td>
+                <td>{formatMs(getProviderMetric(stage, 'LoadMs'))}</td>
+                <td>{formatMs(getProviderMetric(stage, 'PromptEvalMs'))}</td>
+                <td>{inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -92,15 +182,44 @@ function HistoryViewModal({ history, onClose }) {
     return () => { cancelled = true; };
   }, [retrievalStats, serverUrl, credential]);
 
-  // Compute total pipeline duration for proportional bars
-  const totalPipelineMs =
-    (history.RetrievalGateDurationMs || 0) +
-    (history.QueryRewriteDurationMs || 0) +
-    (history.RetrievalDurationMs || 0) +
-    (history.RerankDurationMs || 0) +
-    (history.EndpointResolutionDurationMs || 0) +
-    (history.CompactionDurationMs || 0) +
-    (history.TimeToLastTokenMs || 0);
+  const performanceTelemetry = useMemo(() => parsePerformanceTelemetry(history), [history]);
+  const performanceStages = performanceTelemetry?.Stages || [];
+
+  const legacyStages = useMemo(() => ([
+    { Name: 'retrieval_gate', Kind: 'inference', DurationMs: history.RetrievalGateDurationMs, Metadata: { decision: history.RetrievalGateDecision } },
+    { Name: 'query_rewrite', Kind: 'inference', DurationMs: history.QueryRewriteDurationMs },
+    { Name: 'retrieval', Kind: 'retrieval', DurationMs: history.RetrievalDurationMs },
+    { Name: 'rerank', Kind: 'inference', DurationMs: history.RerankDurationMs, Metadata: { chunks_input: history.RerankInputCount, chunks_output: history.RerankOutputCount } },
+    { Name: 'endpoint_resolution', Kind: 'network', DurationMs: history.EndpointResolutionDurationMs },
+    { Name: 'context_compaction', Kind: 'inference', DurationMs: history.CompactionDurationMs },
+    {
+      Name: 'final_inference',
+      Kind: 'inference',
+      DurationMs: history.TimeToLastTokenMs,
+      ClientTimings: {
+        RequestToHeadersMs: history.InferenceConnectionDurationMs,
+        HeadersToFirstTokenMs: history.TimeToFirstTokenMs > 0 && history.InferenceConnectionDurationMs > 0
+          ? Math.max(0, history.TimeToFirstTokenMs - history.InferenceConnectionDurationMs)
+          : 0,
+        FirstTokenToLastTokenMs: history.TimeToLastTokenMs > 0 && history.TimeToFirstTokenMs > 0
+          ? Math.max(0, history.TimeToLastTokenMs - history.TimeToFirstTokenMs)
+          : 0,
+        TotalMs: history.TimeToLastTokenMs
+      },
+      Tokens: {
+        Input: history.PromptTokens,
+        Output: history.CompletionTokens,
+        Total: (history.PromptTokens || 0) + (history.CompletionTokens || 0)
+      }
+    }
+  ]).filter((stage) => getStageDuration(stage) > 0 || Object.keys(stage.Metadata || {}).length > 0), [history]);
+
+  const displayStages = performanceStages.length > 0 ? performanceStages : legacyStages;
+  const finalInferenceStage = displayStages.find((stage) => stage.Name === 'final_inference')
+    || displayStages.find((stage) => stage.Name === 'streaming_inference')
+    || displayStages.find((stage) => stage.Kind === 'inference' && getStageDuration(stage) > 0);
+
+  const totalPipelineMs = displayStages.reduce((sum, stage) => sum + getStageDuration(stage), 0);
 
   // Infer prompt processing time: TTFT minus connection time (if both available)
   const promptProcessingMs =
@@ -145,6 +264,18 @@ function HistoryViewModal({ history, onClose }) {
           <span className="history-id-label">Assistant</span>
           <CopyableId id={history.AssistantId} />
         </div>
+        {history.TraceId && (
+          <div className="history-id-item">
+            <span className="history-id-label">Trace</span>
+            <CopyableId id={history.TraceId} />
+          </div>
+        )}
+        {history.RequestHistoryId && (
+          <div className="history-id-item">
+            <span className="history-id-label">Request</span>
+            <CopyableId id={history.RequestHistoryId} />
+          </div>
+        )}
         {history.CollectionId && (
           <div className="history-id-item">
             <span className="history-id-label">Collection</span>
@@ -207,18 +338,21 @@ function HistoryViewModal({ history, onClose }) {
       <div className="history-section">
         <div className="history-section-header">
           <Tooltip text="End-to-end timing breakdown for this chat turn">Performance Timing</Tooltip>
+          {performanceTelemetry && (
+            <span className="history-section-badge">Telemetry v{performanceTelemetry.SchemaVersion || 1}</span>
+          )}
         </div>
         <div className="history-timing-container">
           <TimingBar
             label="Retrieval Gate"
-            tooltip={'LLM-based retrieval gate — classifies whether retrieval is needed or can be skipped' + (history.RetrievalGateDecision ? '. Decision: ' + history.RetrievalGateDecision : '')}
+            tooltip={'LLM-based retrieval gate - classifies whether retrieval is needed or can be skipped' + (history.RetrievalGateDecision ? '. Decision: ' + history.RetrievalGateDecision : '')}
             durationMs={history.RetrievalGateDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-gate, #a9e34b)"
           />
           <TimingBar
             label="Query Rewrite"
-            tooltip="LLM-based query rewrite — rewrites the user prompt into multiple semantically varied queries to improve retrieval recall"
+            tooltip="LLM-based query rewrite - rewrites the user prompt into multiple semantically varied queries to improve retrieval recall"
             durationMs={history.QueryRewriteDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-rewrite, #74c0fc)"
@@ -232,7 +366,7 @@ function HistoryViewModal({ history, onClose }) {
           />
           <TimingBar
             label="Re-Ranking"
-            tooltip="LLM-based re-ranking — scores each retrieved chunk for relevance and filters low-scoring chunks"
+            tooltip="LLM-based re-ranking - scores each retrieved chunk for relevance and filters low-scoring chunks"
             durationMs={history.RerankDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-rerank, #ffa94d)"
@@ -252,8 +386,8 @@ function HistoryViewModal({ history, onClose }) {
             color="var(--timing-compaction, #ffd43b)"
           />
           <TimingBar
-            label="Connection"
-            tooltip="Time from HTTP request sent to response headers received — includes network latency and model loading"
+            label="Request to Headers"
+            tooltip="Time from HTTP request sent to response headers received - includes network latency and model loading"
             durationMs={history.InferenceConnectionDurationMs}
             totalMs={totalPipelineMs}
             color="var(--timing-connection, #ff922b)"
@@ -267,7 +401,7 @@ function HistoryViewModal({ history, onClose }) {
           />
           <TimingBar
             label="Token Generation"
-            tooltip="Time from the first token to the last token — the streaming generation phase"
+            tooltip="Time from the first token to the last token - the streaming generation phase"
             durationMs={tokenGenMs}
             totalMs={totalPipelineMs}
             color="var(--timing-generation, #ff6b6b)"
@@ -277,11 +411,11 @@ function HistoryViewModal({ history, onClose }) {
         {/* Summary metrics row */}
         <div className="history-metrics-row">
           <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Time to first token — measured from when the prompt was sent to when the first token was received">TTFT</Tooltip></span>
+            <span className="history-metric-label"><Tooltip text="Time to first token - measured from when the prompt was sent to when the first token was received">TTFT</Tooltip></span>
             <span className="history-metric-value">{formatMs(history.TimeToFirstTokenMs)}</span>
           </div>
           <div className="history-metric">
-            <span className="history-metric-label"><Tooltip text="Time to last token — total time from prompt sent to the final token received">TTLT</Tooltip></span>
+            <span className="history-metric-label"><Tooltip text="Time to last token - total time from prompt sent to the final token received">TTLT</Tooltip></span>
             <span className="history-metric-value">{formatMs(history.TimeToLastTokenMs)}</span>
           </div>
           <div className="history-metric">
@@ -298,13 +432,13 @@ function HistoryViewModal({ history, onClose }) {
           </div>
           <div className="history-metric">
             <span className="history-metric-label">
-              <Tooltip text="Tokens per second — completion tokens divided by total time from prompt sent to last token (TTLT)">TPS (Overall)</Tooltip>
+              <Tooltip text="Tokens per second - completion tokens divided by total time from prompt sent to last token (TTLT)">TPS (Overall)</Tooltip>
             </span>
             <span className="history-metric-value">{formatTps(overallTps)}</span>
           </div>
           <div className="history-metric">
             <span className="history-metric-label">
-              <Tooltip text="Tokens per second — completion tokens divided by generation time (first token to last token)">TPS (Generation)</Tooltip>
+              <Tooltip text="Tokens per second - completion tokens divided by generation time (first token to last token)">TPS (Generation)</Tooltip>
             </span>
             <span className="history-metric-value">{formatTps(generationTps)}</span>
           </div>
@@ -312,6 +446,18 @@ function HistoryViewModal({ history, onClose }) {
             <span className="history-metric-label"><Tooltip text="Timestamp when the assembled prompt was sent to the inference endpoint">Prompt Sent</Tooltip></span>
             <span className="history-metric-value history-metric-timestamp">{formatTimestamp(history.PromptSentUtc)}</span>
           </div>
+        </div>
+
+        <div className="history-stage-summary">
+          <div className="history-stage-summary-heading">
+            <span>Stage Details</span>
+            {finalInferenceStage?.Provider && (
+              <span className="history-section-badge">
+                {finalInferenceStage.Provider}{finalInferenceStage.Model ? ` / ${finalInferenceStage.Model}` : ''}
+              </span>
+            )}
+          </div>
+          <StageTable stages={displayStages} />
         </div>
       </div>
 
@@ -348,7 +494,7 @@ function HistoryViewModal({ history, onClose }) {
             className="history-section-header history-section-toggle"
             onClick={() => setQueryRewriteOpen(!queryRewriteOpen)}
           >
-            <Tooltip text="LLM-based query rewrite — the original prompt was rewritten into multiple queries for broader retrieval">Query Rewrite</Tooltip>
+            <Tooltip text="LLM-based query rewrite - the original prompt was rewritten into multiple queries for broader retrieval">Query Rewrite</Tooltip>
             <span className="history-toggle-icon">{queryRewriteOpen ? '\u25BC' : '\u25B6'}</span>
             <span className="history-section-badge">{formatMs(history.QueryRewriteDurationMs)}</span>
           </div>
@@ -373,12 +519,12 @@ function HistoryViewModal({ history, onClose }) {
           className="history-section-header history-section-toggle"
           onClick={() => setRetrievalOpen(!retrievalOpen)}
         >
-          <Tooltip text="Document retrieval phase — context fetched from the collection for RAG">Retrieval Context</Tooltip>
+          <Tooltip text="Document retrieval phase - context fetched from the collection for RAG">Retrieval Context</Tooltip>
           <span className="history-toggle-icon">{retrievalOpen ? '\u25BC' : '\u25B6'}</span>
           <span className="history-section-badge">{formatMs(history.RetrievalDurationMs)}</span>
           {history.RerankInputCount > 0 && (
             <span className="history-section-badge" style={{ background: 'var(--timing-rerank, #ffa94d)', color: '#000' }}>
-              Re-ranked: {history.RerankInputCount} → {history.RerankOutputCount} chunks in {formatMs(history.RerankDurationMs)}
+              Re-ranked: {history.RerankInputCount} to {history.RerankOutputCount} chunks in {formatMs(history.RerankDurationMs)}
             </span>
           )}
           {history.RetrievalStartUtc && (
@@ -431,7 +577,7 @@ function HistoryViewModal({ history, onClose }) {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                       </svg>
-                      Citations auto-populated — model did not produce inline [N] references
+                      Citations auto-populated - model did not produce inline [N] references
                     </div>
                   ) : null;
                 })()}

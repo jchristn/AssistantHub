@@ -193,6 +193,8 @@ namespace AssistantHub.Server.Services
             string model,
             string inferenceEndpoint,
             string inferenceApiKey,
+            string inferenceEndpointId,
+            int inferenceMaxConcurrentRequests,
             CancellationToken token)
         {
             int estimatedTokens = EstimateTokenCount(messages);
@@ -233,7 +235,7 @@ namespace AssistantHub.Server.Services
                 foreach (ChatCompletionMessage msg in compactableMessages)
                     conversationText.AppendLine(msg.Role + ": " + msg.Content);
 
-                InferenceResult summaryResult = await _Inference.GenerateResponseAsync(
+                InferenceResult summaryResult = await GenerateWithCompletionEndpointLimitAsync(
                     new List<ChatCompletionMessage>
                     {
                         new ChatCompletionMessage
@@ -253,7 +255,10 @@ namespace AssistantHub.Server.Services
                     1.0,
                     inferenceProvider,
                     inferenceEndpoint,
-                    inferenceApiKey).ConfigureAwait(false);
+                    inferenceApiKey,
+                    inferenceEndpointId,
+                    inferenceMaxConcurrentRequests,
+                    token).ConfigureAwait(false);
 
                 if (summaryResult == null || !summaryResult.Success || String.IsNullOrEmpty(summaryResult.Content))
                     return messages;
@@ -282,10 +287,12 @@ namespace AssistantHub.Server.Services
 
         private struct ResolvedEndpoint
         {
+            public string EndpointId;
             public Enums.InferenceProviderEnum Provider;
             public string Endpoint;
             public string ApiKey;
             public string Model;
+            public int MaxConcurrentRequests;
         }
 
         /// <summary>
@@ -357,21 +364,24 @@ namespace AssistantHub.Server.Services
                 {
                     string gatePrompt = BuildRetrievalGatePrompt(request.Messages, lastUserMessage);
                     string gateEndpointId = ResolveUtilityInferenceEndpointId(settings.RetrievalGateInferenceEndpointId, settings.InferenceEndpointId);
-                    var gateEndpoint = await ResolveCompletionEndpointAsync(gateEndpointId, token).ConfigureAwait(false);
-                    string gateModel = gateEndpoint?.Model ?? _Settings.Inference.DefaultModel;
+                    ResolvedEndpoint gateEndpoint = await ResolveCompletionEndpointOrFallbackAsync(gateEndpointId, token).ConfigureAwait(false);
+                    string gateModel = !String.IsNullOrEmpty(gateEndpoint.Model) ? gateEndpoint.Model : _Settings.Inference.DefaultModel;
 
                     Stopwatch gateSw = Stopwatch.StartNew();
                     try
                     {
-                        InferenceResult gateResult = await _Inference.GenerateResponseAsync(
+                        InferenceResult gateResult = await GenerateWithCompletionEndpointLimitAsync(
                             new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = gatePrompt } },
                             gateModel,
                             3,
                             0.0,
                             1.0,
-                            gateEndpoint?.Provider ?? _Settings.Inference.Provider,
-                            gateEndpoint?.Endpoint ?? _Settings.Inference.Endpoint,
-                            gateEndpoint?.ApiKey ?? _Settings.Inference.ApiKey).ConfigureAwait(false);
+                            gateEndpoint.Provider,
+                            gateEndpoint.Endpoint,
+                            gateEndpoint.ApiKey,
+                            gateEndpoint.EndpointId,
+                            gateEndpoint.MaxConcurrentRequests,
+                            token).ConfigureAwait(false);
 
                         gateSw.Stop();
                         retrievalGateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
@@ -412,8 +422,8 @@ namespace AssistantHub.Server.Services
                 && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
             {
                 string rewriteEndpointId = ResolveUtilityInferenceEndpointId(settings.QueryRewriteInferenceEndpointId, settings.InferenceEndpointId);
-                var rewriteEndpoint = await ResolveCompletionEndpointAsync(rewriteEndpointId, token).ConfigureAwait(false);
-                string rewriteModel = rewriteEndpoint?.Model ?? _Settings.Inference.DefaultModel;
+                ResolvedEndpoint rewriteEndpoint = await ResolveCompletionEndpointOrFallbackAsync(rewriteEndpointId, token).ConfigureAwait(false);
+                string rewriteModel = !String.IsNullOrEmpty(rewriteEndpoint.Model) ? rewriteEndpoint.Model : _Settings.Inference.DefaultModel;
                 string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
                     ? settings.QueryRewritePrompt
                     : _DefaultQueryRewritePrompt;
@@ -423,15 +433,18 @@ namespace AssistantHub.Server.Services
 
                 try
                 {
-                    InferenceResult rewriteResult = await _Inference.GenerateResponseAsync(
+                    InferenceResult rewriteResult = await GenerateWithCompletionEndpointLimitAsync(
                         new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rewritePrompt } },
                         rewriteModel,
                         512,
                         0.7,
                         1.0,
-                        rewriteEndpoint?.Provider ?? _Settings.Inference.Provider,
-                        rewriteEndpoint?.Endpoint ?? _Settings.Inference.Endpoint,
-                        rewriteEndpoint?.ApiKey ?? _Settings.Inference.ApiKey).ConfigureAwait(false);
+                        rewriteEndpoint.Provider,
+                        rewriteEndpoint.Endpoint,
+                        rewriteEndpoint.ApiKey,
+                        rewriteEndpoint.EndpointId,
+                        rewriteEndpoint.MaxConcurrentRequests,
+                        token).ConfigureAwait(false);
 
                     rewriteSw.Stop();
                     queryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
@@ -572,8 +585,8 @@ namespace AssistantHub.Server.Services
                 try
                 {
                     string rerankEndpointId = ResolveUtilityInferenceEndpointId(settings.RerankInferenceEndpointId, settings.InferenceEndpointId);
-                    var rerankEndpoint = await ResolveCompletionEndpointAsync(rerankEndpointId, token).ConfigureAwait(false);
-                    string rerankModel = rerankEndpoint?.Model ?? _Settings.Inference.DefaultModel;
+                    ResolvedEndpoint rerankEndpoint = await ResolveCompletionEndpointOrFallbackAsync(rerankEndpointId, token).ConfigureAwait(false);
+                    string rerankModel = !String.IsNullOrEmpty(rerankEndpoint.Model) ? rerankEndpoint.Model : _Settings.Inference.DefaultModel;
                     string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
                         ? settings.RerankPrompt
                         : _DefaultRerankPrompt;
@@ -590,15 +603,18 @@ namespace AssistantHub.Server.Services
                         .Replace("{query}", lastUserMessage)
                         .Replace("{chunks}", chunksBuilder.ToString());
 
-                    InferenceResult rerankResult = await _Inference.GenerateResponseAsync(
+                    InferenceResult rerankResult = await GenerateWithCompletionEndpointLimitAsync(
                         new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rerankPrompt } },
                         rerankModel,
                         512,
                         0.0,
                         1.0,
-                        rerankEndpoint?.Provider ?? _Settings.Inference.Provider,
-                        rerankEndpoint?.Endpoint ?? _Settings.Inference.Endpoint,
-                        rerankEndpoint?.ApiKey ?? _Settings.Inference.ApiKey).ConfigureAwait(false);
+                        rerankEndpoint.Provider,
+                        rerankEndpoint.Endpoint,
+                        rerankEndpoint.ApiKey,
+                        rerankEndpoint.EndpointId,
+                        rerankEndpoint.MaxConcurrentRequests,
+                        token).ConfigureAwait(false);
 
                     if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
                     {
@@ -745,6 +761,8 @@ namespace AssistantHub.Server.Services
             Enums.InferenceProviderEnum inferenceProvider = _Settings.Inference.Provider;
             string inferenceEndpoint = _Settings.Inference.Endpoint;
             string inferenceApiKey = _Settings.Inference.ApiKey;
+            string inferenceEndpointId = settings.InferenceEndpointId;
+            int inferenceMaxConcurrentRequests = 1;
 
             double endpointResolutionMs = 0;
             if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
@@ -758,13 +776,24 @@ namespace AssistantHub.Server.Services
                     inferenceProvider = resolved.Value.Provider;
                     inferenceEndpoint = resolved.Value.Endpoint;
                     inferenceApiKey = resolved.Value.ApiKey;
+                    inferenceEndpointId = resolved.Value.EndpointId;
+                    inferenceMaxConcurrentRequests = resolved.Value.MaxConcurrentRequests;
                     if (String.IsNullOrEmpty(request.Model) && !String.IsNullOrEmpty(resolved.Value.Model))
                         model = resolved.Value.Model;
                 }
             }
 
             Stopwatch compactionSw = Stopwatch.StartNew();
-            messages = await CompactIfNeeded(messages, settings, inferenceProvider, model, inferenceEndpoint, inferenceApiKey, token).ConfigureAwait(false);
+            messages = await CompactIfNeeded(
+                messages,
+                settings,
+                inferenceProvider,
+                model,
+                inferenceEndpoint,
+                inferenceApiKey,
+                inferenceEndpointId,
+                inferenceMaxConcurrentRequests,
+                token).ConfigureAwait(false);
             compactionSw.Stop();
             double compactionMs = Math.Round(compactionSw.Elapsed.TotalMilliseconds, 2);
 
@@ -772,9 +801,10 @@ namespace AssistantHub.Server.Services
             DateTime promptSentUtc = DateTime.UtcNow;
             Stopwatch inferenceSw = Stopwatch.StartNew();
 
-            InferenceResult inferenceResult = await _Inference.GenerateResponseAsync(
+            InferenceResult inferenceResult = await GenerateWithCompletionEndpointLimitAsync(
                 messages, model, maxTokens, temperature, topP,
-                inferenceProvider, inferenceEndpoint, inferenceApiKey).ConfigureAwait(false);
+                inferenceProvider, inferenceEndpoint, inferenceApiKey,
+                inferenceEndpointId, inferenceMaxConcurrentRequests, token).ConfigureAwait(false);
 
             inferenceSw.Stop();
             double timeToLastTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
@@ -832,9 +862,10 @@ namespace AssistantHub.Server.Services
                     : null
             };
 
+            string persistedChatHistoryId = null;
             if (!String.IsNullOrEmpty(request.ThreadId))
             {
-                _ = WriteChatHistoryAsync(
+                ChatHistory history = await WriteChatHistoryAsync(
                     assistant.TenantId,
                     request.ThreadId,
                     assistant.Id,
@@ -862,7 +893,18 @@ namespace AssistantHub.Server.Services
                     rerankOutputCount,
                     metadataFilterJson,
                     request.Origin,
+                    request.TraceId,
+                    request.RequestHistoryId,
+                    inferenceResult.Telemetry,
+                    retrievalQueries.Count,
+                    retrievalChunks.Count,
                     token);
+
+                if (history != null)
+                {
+                    persistedChatHistoryId = history.Id;
+                    request.ChatHistoryPersisted?.Invoke(history.Id);
+                }
             }
 
             return new AssistantChatExecutionResult
@@ -871,11 +913,12 @@ namespace AssistantHub.Server.Services
                 Assistant = assistant,
                 AssistantSettings = settings,
                 Response = response,
-                CanonicalResponseText = canonicalResponseText
+                CanonicalResponseText = canonicalResponseText,
+                ChatHistoryId = persistedChatHistoryId
             };
         }
 
-        private async Task WriteChatHistoryAsync(
+        private async Task<ChatHistory> WriteChatHistoryAsync(
             string tenantId,
             string threadId,
             string assistantId,
@@ -903,6 +946,11 @@ namespace AssistantHub.Server.Services
             int rerankOutputCount,
             string metadataFilterJson,
             string origin,
+            string traceId,
+            string requestHistoryId,
+            AssistantPerformanceStage finalInferenceTelemetry,
+            int retrievalQueryCount,
+            int retrievalChunksReturned,
             CancellationToken token)
         {
             try
@@ -936,7 +984,10 @@ namespace AssistantHub.Server.Services
                     MetadataFilter = metadataFilterJson,
                     AssistantResponse = assistantResponse,
                     CompletionTokens = completionTokens,
-                    Origin = origin
+                    Origin = origin,
+                    TraceId = traceId,
+                    RequestHistoryId = requestHistoryId,
+                    PerformanceSchemaVersion = 1
                 };
 
                 if (completionTokens > 0 && timeToLastTokenMs > 0)
@@ -946,11 +997,28 @@ namespace AssistantHub.Server.Services
                 if (completionTokens > 0 && generationMs > 0)
                     history.TokensPerSecondGeneration = Math.Round(completionTokens / (generationMs / 1000.0), 2);
 
+                AssistantPerformanceTelemetry telemetry = AssistantPerformanceTelemetryBuilder.Build(
+                    history,
+                    finalInferenceTelemetry,
+                    retrievalQueryCount,
+                    retrievalChunksReturned);
+                history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
+
                 await _Database.ChatHistory.CreateAsync(history, token).ConfigureAwait(false);
+
+                if (_Database.ChatHistoryPerformanceEvent != null)
+                {
+                    List<ChatHistoryPerformanceEvent> events =
+                        AssistantPerformanceTelemetryBuilder.ToEvents(telemetry, history.TenantId);
+                    await _Database.ChatHistoryPerformanceEvent.CreateManyAsync(events, token).ConfigureAwait(false);
+                }
+
+                return history;
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "failed to write chat history: " + e.Message);
+                return null;
             }
         }
 
@@ -980,10 +1048,12 @@ namespace AssistantHub.Server.Services
 
                     return new ResolvedEndpoint
                     {
+                        EndpointId = endpointId,
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
                         ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
-                        Model = ep?.Model
+                        Model = ep?.Model,
+                        MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1)
                     };
                 }
             }
@@ -992,6 +1062,85 @@ namespace AssistantHub.Server.Services
                 _Logging.Warn(_Header + "exception resolving completion endpoint " + endpointId + ": " + e.Message);
                 return null;
             }
+        }
+
+        private ResolvedEndpoint BuildFallbackCompletionEndpoint(string endpointId)
+        {
+            return new ResolvedEndpoint
+            {
+                EndpointId = endpointId,
+                Provider = _Settings.Inference.Provider,
+                Endpoint = _Settings.Inference.Endpoint,
+                ApiKey = _Settings.Inference.ApiKey,
+                Model = _Settings.Inference.DefaultModel,
+                MaxConcurrentRequests = 1
+            };
+        }
+
+        private async Task<ResolvedEndpoint> ResolveCompletionEndpointOrFallbackAsync(string endpointId, CancellationToken token)
+        {
+            ResolvedEndpoint? resolved = await ResolveCompletionEndpointAsync(endpointId, token).ConfigureAwait(false);
+            return resolved ?? BuildFallbackCompletionEndpoint(endpointId);
+        }
+
+        private async Task<InferenceResult> GenerateWithCompletionEndpointLimitAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            Enums.InferenceProviderEnum provider,
+            string endpoint,
+            string apiKey,
+            string endpointId,
+            int maxConcurrentRequests,
+            CancellationToken token)
+        {
+            int max = Math.Max(1, maxConcurrentRequests);
+            Stopwatch waitSw = Stopwatch.StartNew();
+            using (IDisposable lease = await EndpointConcurrencyLimiter.AcquireAsync("completion", endpointId, max, token).ConfigureAwait(false))
+            {
+                waitSw.Stop();
+                if (waitSw.ElapsedMilliseconds > 0)
+                {
+                    _Logging.Info(
+                        _Header +
+                        "completion endpoint concurrency slot acquired: " +
+                        EndpointConcurrencyLimiter.BuildKey("completion", endpointId) +
+                        ", maxConcurrentRequests=" + max +
+                        ", waitedMs=" + waitSw.ElapsedMilliseconds);
+                }
+
+                InferenceResult result = await _Inference.GenerateResponseAsync(
+                    messages, model, maxTokens, temperature, topP,
+                    provider, endpoint, apiKey, token).ConfigureAwait(false);
+
+                AttachEndpointTelemetry(result?.Telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
+                return result;
+            }
+        }
+
+        private static void AttachEndpointTelemetry(
+            AssistantPerformanceStage telemetry,
+            string endpointId,
+            string endpoint,
+            Enums.InferenceProviderEnum provider,
+            string model,
+            int maxConcurrentRequests,
+            double waitMs)
+        {
+            if (telemetry == null) return;
+
+            telemetry.EndpointId = endpointId;
+            telemetry.EndpointName ??= endpoint;
+            telemetry.EndpointType ??= "completion";
+            telemetry.Provider ??= provider.ToString();
+            telemetry.ApiFormat ??= provider.ToString();
+            telemetry.Model ??= model;
+            telemetry.ClientTimings ??= new AssistantPerformanceClientTimings();
+            telemetry.ClientTimings.EndpointLimiterWaitMs = Math.Round(Math.Max(0, waitMs), 2);
+            telemetry.Metadata ??= new Dictionary<string, object>();
+            telemetry.Metadata["max_concurrent_requests"] = Math.Max(1, maxConcurrentRequests);
         }
 
         private void TrimRetrievalContextToPromptBudget(
@@ -1109,6 +1258,21 @@ namespace AssistantHub.Server.Services
         public string ThreadId { get; set; } = null;
 
         /// <summary>
+        /// Trace identifier used to correlate chat, request history, and performance events.
+        /// </summary>
+        public string TraceId { get; set; } = null;
+
+        /// <summary>
+        /// Request-history identifier assigned by the HTTP pipeline when available.
+        /// </summary>
+        public string RequestHistoryId { get; set; } = null;
+
+        /// <summary>
+        /// Callback invoked after chat history is persisted.
+        /// </summary>
+        public Action<string> ChatHistoryPersisted { get; set; } = null;
+
+        /// <summary>
         /// Optional model override.
         /// </summary>
         public string Model { get; set; } = null;
@@ -1178,5 +1342,10 @@ namespace AssistantHub.Server.Services
         /// Canonical assistant response text after transport-agnostic cleanup.
         /// </summary>
         public string CanonicalResponseText { get; set; } = null;
+
+        /// <summary>
+        /// Persisted chat-history identifier when history was written.
+        /// </summary>
+        public string ChatHistoryId { get; set; } = null;
     }
 }

@@ -60,6 +60,7 @@ namespace AssistantHub.Core.Database.Mysql
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
         }
 
@@ -83,11 +84,13 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateCrawlPlansTable,
                 TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateChatHistoryTable,
-                TableQueries.CreateRequestHistoryTable
+                TableQueries.CreateRequestHistoryTable,
+                TableQueries.CreateChatHistoryPerformanceEventsTable
             };
 
             await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
             await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
+            await EnsureTelemetryColumnsAsync(token).ConfigureAwait(false);
 
             // MySQL does not support CREATE INDEX IF NOT EXISTS;
             // create indices individually and ignore duplicate key errors
@@ -121,6 +124,8 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryThreadIdIndex,
                 TableQueries.CreateChatHistoryCreatedUtcIndex,
                 TableQueries.CreateChatHistoryTenantIdIndex,
+                TableQueries.CreateChatHistoryTraceIdIndex,
+                TableQueries.CreateChatHistoryRequestHistoryIdIndex,
                 TableQueries.CreateRequestHistoryTenantIdIndex,
                 TableQueries.CreateRequestHistoryUserIdIndex,
                 TableQueries.CreateRequestHistoryCredentialIdIndex,
@@ -129,7 +134,20 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateRequestHistoryStatusCodeIndex,
                 TableQueries.CreateRequestHistorySuccessIndex,
                 TableQueries.CreateRequestHistoryCreatedUtcIndex,
-                TableQueries.CreateRequestHistoryPathIndex
+                TableQueries.CreateRequestHistoryPathIndex,
+                TableQueries.CreateRequestHistoryTraceIdIndex,
+                TableQueries.CreateRequestHistoryChatHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsChatHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsRequestHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTraceIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsStageIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsStartedUtcIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsEndpointIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsProviderModelIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsCreatedUtcIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsDurationMsIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantCreatedIndex
             };
 
             foreach (string indexQuery in indexQueries)
@@ -245,17 +263,27 @@ namespace AssistantHub.Core.Database.Mysql
 
         private async Task EnsureAssistantSettingsEndpointColumnsAsync(CancellationToken token)
         {
-            await EnsureAssistantSettingsColumnAsync("retrieval_gate_inference_endpoint_id", TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, token).ConfigureAwait(false);
-            await EnsureAssistantSettingsColumnAsync("query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
-            await EnsureAssistantSettingsColumnAsync("rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "retrieval_gate_inference_endpoint_id", TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
         }
 
-        private async Task EnsureAssistantSettingsColumnAsync(string columnName, string alterQuery, CancellationToken token)
+        private async Task EnsureTelemetryColumnsAsync(CancellationToken token)
+        {
+            await EnsureColumnAsync("chat_history", "trace_id", TableQueries.AddChatHistoryTraceIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "request_history_id", TableQueries.AddChatHistoryRequestHistoryIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "performance_schema_version", TableQueries.AddChatHistoryPerformanceSchemaVersionColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "performance_json", TableQueries.AddChatHistoryPerformanceJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("request_history", "trace_id", TableQueries.AddRequestHistoryTraceIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("request_history", "chat_history_id", TableQueries.AddRequestHistoryChatHistoryIdColumn, token).ConfigureAwait(false);
+        }
+
+        private async Task EnsureColumnAsync(string tableName, string columnName, string alterQuery, CancellationToken token)
         {
             string query =
                 "SELECT COUNT(*) AS column_count FROM INFORMATION_SCHEMA.COLUMNS " +
                 "WHERE TABLE_SCHEMA = DATABASE() " +
-                "AND TABLE_NAME = 'assistant_settings' " +
+                "AND TABLE_NAME = '" + Sanitize(tableName) + "' " +
                 "AND COLUMN_NAME = '" + Sanitize(columnName) + "'";
 
             DataTable result = await ExecuteQueryAsync(query, false, token).ConfigureAwait(false);

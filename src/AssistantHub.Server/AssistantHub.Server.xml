@@ -1473,6 +1473,21 @@
             Conversation thread identifier used for history persistence.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.TraceId">
+            <summary>
+            Trace identifier used to correlate chat, request history, and performance events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.RequestHistoryId">
+            <summary>
+            Request-history identifier assigned by the HTTP pipeline when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ChatHistoryPersisted">
+            <summary>
+            Callback invoked after chat history is persisted.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Model">
             <summary>
             Optional model override.
@@ -1541,6 +1556,11 @@
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.CanonicalResponseText">
             <summary>
             Canonical assistant response text after transport-agnostic cleanup.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.ChatHistoryId">
+            <summary>
+            Persisted chat-history identifier when history was written.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.CrawlOperationCleanupService">

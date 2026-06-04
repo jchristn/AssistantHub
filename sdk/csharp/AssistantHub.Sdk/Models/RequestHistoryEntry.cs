@@ -16,6 +16,18 @@ namespace AssistantHub.Sdk.Models
         public string Id { get; set; }
 
         /// <summary>
+        /// Trace identifier shared by request history and assistant history.
+        /// </summary>
+        [JsonPropertyName("TraceId")]
+        public string TraceId { get; set; }
+
+        /// <summary>
+        /// Chat history identifier associated with this request.
+        /// </summary>
+        [JsonPropertyName("ChatHistoryId")]
+        public string ChatHistoryId { get; set; }
+
+        /// <summary>
         /// Tenant identifier.
         /// </summary>
         [JsonPropertyName("TenantId")]

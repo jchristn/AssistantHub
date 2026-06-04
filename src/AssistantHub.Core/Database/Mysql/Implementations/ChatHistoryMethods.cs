@@ -55,7 +55,8 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
 
             string query =
                 "INSERT INTO chat_history " +
-                "(id, tenant_id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
+                "(id, trace_id, request_history_id, performance_schema_version, performance_json, " +
+                "tenant_id, thread_id, assistant_id, collection_id, user_message_utc, user_message, " +
                 "retrieval_start_utc, retrieval_duration_ms, retrieval_gate_decision, retrieval_gate_duration_ms, " +
                 "query_rewrite_result, query_rewrite_duration_ms, " +
 "rerank_duration_ms, rerank_input_count, rerank_output_count, " +
@@ -67,6 +68,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "metadata_filter, origin, assistant_response, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(history.Id) + "', " +
+                _Driver.FormatNullableString(history.TraceId) + ", " +
+                _Driver.FormatNullableString(history.RequestHistoryId) + ", " +
+                history.PerformanceSchemaVersion + ", " +
+                _Driver.FormatNullableString(history.PerformanceJson) + ", " +
                 "'" + _Driver.Sanitize(history.TenantId) + "', " +
                 "'" + _Driver.Sanitize(history.ThreadId) + "', " +
                 "'" + _Driver.Sanitize(history.AssistantId) + "', " +
@@ -121,7 +126,9 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
         {
             if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
 
-            string query = "DELETE FROM chat_history WHERE id = '" + _Driver.Sanitize(id) + "'";
+            string query =
+                "DELETE FROM chat_history_performance_events WHERE chat_history_id = '" + _Driver.Sanitize(id) + "'; " +
+                "DELETE FROM chat_history WHERE id = '" + _Driver.Sanitize(id) + "'";
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
         }
 
@@ -198,7 +205,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
         {
             if (String.IsNullOrEmpty(assistantId)) throw new ArgumentNullException(nameof(assistantId));
 
-            string query = "DELETE FROM chat_history WHERE assistant_id = '" + _Driver.Sanitize(assistantId) + "'";
+            string query =
+                "DELETE FROM chat_history_performance_events WHERE chat_history_id IN " +
+                "(SELECT id FROM chat_history WHERE assistant_id = '" + _Driver.Sanitize(assistantId) + "'); " +
+                "DELETE FROM chat_history WHERE assistant_id = '" + _Driver.Sanitize(assistantId) + "'";
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
         }
 
@@ -206,7 +216,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
         public async Task DeleteExpiredAsync(int retentionDays, CancellationToken token = default)
         {
             DateTime cutoff = DateTime.UtcNow.AddDays(-retentionDays);
-            string query = "DELETE FROM chat_history WHERE created_utc < '" + _Driver.FormatDateTime(cutoff) + "'";
+            string query =
+                "DELETE FROM chat_history_performance_events WHERE chat_history_id IN " +
+                "(SELECT id FROM chat_history WHERE created_utc < '" + _Driver.FormatDateTime(cutoff) + "'); " +
+                "DELETE FROM chat_history WHERE created_utc < '" + _Driver.FormatDateTime(cutoff) + "'";
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
         }
 

@@ -50,6 +50,21 @@
 			"key": "slackMessagePrefix",
 			"value": "Hey bot,",
 			"type": "string"
+		},
+		{
+			"key": "historyId",
+			"value": "chist_abc123",
+			"type": "string"
+		},
+		{
+			"key": "requestHistoryId",
+			"value": "req_abc123",
+			"type": "string"
+		},
+		{
+			"key": "traceId",
+			"value": "trace_abc123",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -2034,7 +2049,7 @@
 							"variable": [
 								{
 									"key": "historyId",
-									"value": "history-guid-here"
+									"value": "{{historyId}}"
 								}
 							]
 						}
@@ -2052,7 +2067,122 @@
 							"variable": [
 								{
 									"key": "historyId",
-									"value": "history-guid-here"
+									"value": "{{historyId}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Request History",
+			"item": [
+				{
+					"name": "List Request History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory?maxResults=100",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory"],
+							"query": [
+								{
+									"key": "maxResults",
+									"value": "100"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Summarize Request History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory/summary?bucketSeconds=900",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory", "summary"],
+							"query": [
+								{
+									"key": "bucketSeconds",
+									"value": "900"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Request History Entry",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory", ":requestHistoryId"],
+							"variable": [
+								{
+									"key": "requestHistoryId",
+									"value": "{{requestHistoryId}}"
+								}
+							]
+						},
+						"description": "Returns TraceId and ChatHistoryId when the captured request produced an assistant history row."
+					}
+				},
+				{
+					"name": "Get Request History Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId/detail",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory", ":requestHistoryId", "detail"],
+							"variable": [
+								{
+									"key": "requestHistoryId",
+									"value": "{{requestHistoryId}}"
+								}
+							]
+						},
+						"description": "Hydrated request-history detail. Use the returned ChatHistoryId with the History folder to inspect PerformanceJson telemetry."
+					}
+				},
+				{
+					"name": "Delete Request History Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory", ":requestHistoryId"],
+							"variable": [
+								{
+									"key": "requestHistoryId",
+									"value": "{{requestHistoryId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Filtered Request History",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/requesthistory/bulk?requestType=AssistantApi",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1.0", "requesthistory", "bulk"],
+							"query": [
+								{
+									"key": "requestType",
+									"value": "AssistantApi"
 								}
 							]
 						}

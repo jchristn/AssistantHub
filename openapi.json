@@ -3,7 +3,7 @@
   "info": {
     "title": "AssistantHub REST API",
     "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "servers": [
     {
@@ -57,7 +57,7 @@
                   "type": "object",
                   "properties": {
                     "Product": { "type": "string", "example": "AssistantHub" },
-                    "Version": { "type": "string", "example": "0.11.0" },
+                    "Version": { "type": "string", "example": "0.12.0" },
                     "Timestamp": { "type": "string", "format": "date-time" }
                   }
                 }
@@ -87,7 +87,20 @@
             "description": "OpenAPI document",
             "content": {
               "application/json": {
-                "schema": { "type": "object" }
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/EnumerationResult" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/RequestHistoryEntry" }
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           }
@@ -459,7 +472,7 @@
             "description": "Bucket metadata",
             "content": {
               "application/json": {
-                "schema": { "type": "object" }
+                "schema": { "$ref": "#/components/schemas/RequestHistorySummaryResult" }
               }
             }
           },
@@ -581,7 +594,7 @@
             "description": "Object metadata",
             "content": {
               "application/json": {
-                "schema": { "type": "object" }
+                "schema": { "$ref": "#/components/schemas/RequestHistoryEntry" }
               }
             }
           },
@@ -671,7 +684,7 @@
             "description": "Collection created",
             "content": {
               "application/json": {
-                "schema": { "type": "object" }
+                "schema": { "$ref": "#/components/schemas/RequestHistoryEntry" }
               }
             }
           },
@@ -3037,11 +3050,91 @@
           "RerankScore": { "type": "number", "nullable": true, "description": "LLM-assigned relevance score (0-10)" }
         }
       },
+      "AssistantPerformanceTelemetry": {
+        "type": "object",
+        "description": "Versioned provider-agnostic assistant performance telemetry stored in ChatHistory.PerformanceJson.",
+        "properties": {
+          "SchemaVersion": { "type": "integer", "default": 1 },
+          "TraceId": { "type": "string", "nullable": true },
+          "ChatHistoryId": { "type": "string", "nullable": true },
+          "RequestHistoryId": { "type": "string", "nullable": true },
+          "WallTimeMs": { "type": "number", "format": "double" },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "Stages": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AssistantPerformanceStage" }
+          }
+        }
+      },
+      "AssistantPerformanceStage": {
+        "type": "object",
+        "description": "One measured assistant hot-path stage.",
+        "properties": {
+          "Name": { "type": "string" },
+          "Kind": { "type": "string", "description": "operation, inference, retrieval, network, or similar stage kind." },
+          "Sequence": { "type": "integer" },
+          "EndpointId": { "type": "string", "nullable": true },
+          "EndpointName": { "type": "string", "nullable": true },
+          "EndpointType": { "type": "string", "nullable": true },
+          "Provider": { "type": "string", "nullable": true },
+          "ApiFormat": { "type": "string", "nullable": true },
+          "Model": { "type": "string", "nullable": true },
+          "StartedUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "FinishedUtc": { "type": "string", "format": "date-time", "nullable": true },
+          "DurationMs": { "type": "number", "format": "double" },
+          "Success": { "type": "boolean" },
+          "HttpStatusCode": { "type": "integer", "nullable": true },
+          "ErrorType": { "type": "string", "nullable": true },
+          "ErrorMessage": { "type": "string", "nullable": true },
+          "ClientTimings": { "$ref": "#/components/schemas/AssistantPerformanceClientTimings" },
+          "Tokens": { "$ref": "#/components/schemas/AssistantTokenUsageTelemetry" },
+          "ProviderMetrics": { "$ref": "#/components/schemas/AssistantProviderMetrics" },
+          "Metadata": { "type": "object", "additionalProperties": true, "nullable": true },
+          "ProviderRaw": { "type": "object", "additionalProperties": true, "nullable": true }
+        }
+      },
+      "AssistantPerformanceClientTimings": {
+        "type": "object",
+        "properties": {
+          "EndpointLimiterWaitMs": { "type": "number", "format": "double", "nullable": true },
+          "RequestToHeadersMs": { "type": "number", "format": "double", "nullable": true },
+          "HeadersToFirstTokenMs": { "type": "number", "format": "double", "nullable": true },
+          "FirstTokenToLastTokenMs": { "type": "number", "format": "double", "nullable": true },
+          "TotalMs": { "type": "number", "format": "double", "nullable": true }
+        }
+      },
+      "AssistantTokenUsageTelemetry": {
+        "type": "object",
+        "properties": {
+          "Input": { "type": "integer", "nullable": true },
+          "Output": { "type": "integer", "nullable": true },
+          "Total": { "type": "integer", "nullable": true },
+          "PromptEvalCount": { "type": "integer", "nullable": true },
+          "EvalCount": { "type": "integer", "nullable": true }
+        }
+      },
+      "AssistantProviderMetrics": {
+        "type": "object",
+        "properties": {
+          "QueueMs": { "type": "number", "format": "double", "nullable": true },
+          "LoadMs": { "type": "number", "format": "double", "nullable": true },
+          "PromptEvalMs": { "type": "number", "format": "double", "nullable": true },
+          "GenerationMs": { "type": "number", "format": "double", "nullable": true },
+          "TotalMs": { "type": "number", "format": "double", "nullable": true },
+          "TokensPerSecond": { "type": "number", "format": "double", "nullable": true },
+          "RequestId": { "type": "string", "nullable": true }
+        }
+      },
       "ChatHistory": {
         "type": "object",
         "description": "Chat history record for a single conversation turn.",
         "properties": {
           "Id": { "type": "string", "description": "Unique identifier (prefix: chist_)." },
+          "TraceId": { "type": "string", "nullable": true, "description": "Correlation identifier shared by chat history, request history, telemetry events, and logs." },
+          "RequestHistoryId": { "type": "string", "nullable": true, "description": "Linked HTTP request-history entry ID when available." },
+          "PerformanceSchemaVersion": { "type": "integer", "default": 1, "description": "Version for the PerformanceJson telemetry payload." },
+          "PerformanceJson": { "type": "string", "nullable": true, "description": "Serialized AssistantPerformanceTelemetry JSON payload." },
+          "TenantId": { "type": "string", "description": "Tenant identifier." },
           "ThreadId": { "type": "string", "description": "Thread identifier (prefix: thr_)." },
           "AssistantId": { "type": "string", "description": "Associated assistant ID." },
           "CollectionId": { "type": "string", "nullable": true },
@@ -3066,6 +3159,71 @@
           "LastUpdateUtc": { "type": "string", "format": "date-time" }
         },
         "required": ["ThreadId", "AssistantId"]
+      },
+      "RequestHistoryEntry": {
+        "type": "object",
+        "description": "Captured HTTP request and response metadata.",
+        "properties": {
+          "Id": { "type": "string", "description": "Unique identifier (prefix: req_)." },
+          "TraceId": { "type": "string", "nullable": true, "description": "Correlation identifier shared with chat history and telemetry events." },
+          "ChatHistoryId": { "type": "string", "nullable": true, "description": "Linked chat history entry when this request produced an assistant turn." },
+          "TenantId": { "type": "string", "nullable": true },
+          "UserId": { "type": "string", "nullable": true },
+          "CredentialId": { "type": "string", "nullable": true },
+          "AssistantId": { "type": "string", "nullable": true },
+          "ThreadId": { "type": "string", "nullable": true },
+          "PrincipalName": { "type": "string", "nullable": true },
+          "RequestType": { "type": "string", "nullable": true },
+          "SourceType": { "type": "string", "nullable": true },
+          "HttpMethod": { "type": "string" },
+          "RouteTemplate": { "type": "string", "nullable": true },
+          "RequestPath": { "type": "string" },
+          "RequestUrl": { "type": "string" },
+          "SourceIp": { "type": "string", "nullable": true },
+          "StatusCode": { "type": "integer" },
+          "Success": { "type": "boolean" },
+          "DurationMs": { "type": "number", "format": "double" },
+          "RequestContentType": { "type": "string", "nullable": true },
+          "ResponseContentType": { "type": "string", "nullable": true },
+          "RequestSizeBytes": { "type": "integer", "format": "int64" },
+          "ResponseSizeBytes": { "type": "integer", "format": "int64" },
+          "RequestBodyTruncated": { "type": "boolean" },
+          "ResponseBodyTruncated": { "type": "boolean" },
+          "RequestBodyIsBinary": { "type": "boolean" },
+          "ResponseBodyIsBinary": { "type": "boolean" },
+          "RouteParameters": { "type": "object", "additionalProperties": { "type": "string" } },
+          "QueryParameters": { "type": "object", "additionalProperties": { "type": "string" } },
+          "RequestHeaders": { "type": "object", "additionalProperties": { "type": "string" } },
+          "ResponseHeaders": { "type": "object", "additionalProperties": { "type": "string" } },
+          "RequestBody": { "type": "string", "nullable": true },
+          "ResponseBody": { "type": "string", "nullable": true },
+          "CreatedUtc": { "type": "string", "format": "date-time" },
+          "LastUpdateUtc": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RequestHistorySummaryBucket": {
+        "type": "object",
+        "properties": {
+          "BucketStartUtc": { "type": "string", "format": "date-time" },
+          "BucketEndUtc": { "type": "string", "format": "date-time" },
+          "RequestCount": { "type": "integer", "format": "int64" },
+          "SuccessCount": { "type": "integer", "format": "int64" },
+          "FailureCount": { "type": "integer", "format": "int64" },
+          "AverageDurationMs": { "type": "number", "format": "double" }
+        }
+      },
+      "RequestHistorySummaryResult": {
+        "type": "object",
+        "properties": {
+          "TotalCount": { "type": "integer", "format": "int64" },
+          "TotalSuccess": { "type": "integer", "format": "int64" },
+          "TotalFailure": { "type": "integer", "format": "int64" },
+          "AverageDurationMs": { "type": "number", "format": "double" },
+          "Buckets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RequestHistorySummaryBucket" }
+          }
+        }
       },
       "InferenceModel": {
         "type": "object",

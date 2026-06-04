@@ -232,6 +232,10 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateChatHistoryTable =
             "CREATE TABLE IF NOT EXISTS chat_history (" +
             "  id TEXT PRIMARY KEY, " +
+            "  trace_id TEXT, " +
+            "  request_history_id TEXT, " +
+            "  performance_schema_version INTEGER NOT NULL DEFAULT 1, " +
+            "  performance_json TEXT, " +
             "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
             "  thread_id TEXT NOT NULL, " +
             "  assistant_id TEXT NOT NULL, " +
@@ -265,9 +269,23 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  last_update_utc TEXT NOT NULL " +
             ")";
 
+        internal static string AddChatHistoryTraceIdColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS trace_id TEXT";
+
+        internal static string AddChatHistoryRequestHistoryIdColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS request_history_id TEXT";
+
+        internal static string AddChatHistoryPerformanceSchemaVersionColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS performance_schema_version INTEGER NOT NULL DEFAULT 1";
+
+        internal static string AddChatHistoryPerformanceJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS performance_json TEXT";
+
         internal static string CreateRequestHistoryTable =
             "CREATE TABLE IF NOT EXISTS request_history (" +
             "  id TEXT PRIMARY KEY, " +
+            "  trace_id TEXT, " +
+            "  chat_history_id TEXT, " +
             "  tenant_id TEXT, " +
             "  user_id TEXT, " +
             "  credential_id TEXT, " +
@@ -300,6 +318,60 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  response_body TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string AddRequestHistoryTraceIdColumn =
+            "ALTER TABLE request_history ADD COLUMN IF NOT EXISTS trace_id TEXT";
+
+        internal static string AddRequestHistoryChatHistoryIdColumn =
+            "ALTER TABLE request_history ADD COLUMN IF NOT EXISTS chat_history_id TEXT";
+
+        internal static string CreateChatHistoryPerformanceEventsTable =
+            "CREATE TABLE IF NOT EXISTS chat_history_performance_events (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  chat_history_id TEXT NOT NULL, " +
+            "  request_history_id TEXT, " +
+            "  trace_id TEXT, " +
+            "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+            "  stage TEXT NOT NULL, " +
+            "  phase TEXT, " +
+            "  kind TEXT, " +
+            "  endpoint_id TEXT, " +
+            "  endpoint_name TEXT, " +
+            "  endpoint_type TEXT, " +
+            "  provider TEXT, " +
+            "  api_format TEXT, " +
+            "  model TEXT, " +
+            "  started_utc TEXT, " +
+            "  finished_utc TEXT, " +
+            "  duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  success INTEGER NOT NULL DEFAULT 1, " +
+            "  http_status_code INTEGER, " +
+            "  error_type TEXT, " +
+            "  error_message TEXT, " +
+            "  input_tokens INTEGER, " +
+            "  output_tokens INTEGER, " +
+            "  total_tokens INTEGER, " +
+            "  chunks_input INTEGER, " +
+            "  chunks_output INTEGER, " +
+            "  retrieval_query_count INTEGER, " +
+            "  endpoint_limiter_wait_ms DOUBLE PRECISION, " +
+            "  request_to_headers_ms DOUBLE PRECISION, " +
+            "  headers_to_first_token_ms DOUBLE PRECISION, " +
+            "  first_token_to_last_token_ms DOUBLE PRECISION, " +
+            "  client_total_ms DOUBLE PRECISION, " +
+            "  provider_queue_ms DOUBLE PRECISION, " +
+            "  provider_load_ms DOUBLE PRECISION, " +
+            "  provider_prompt_eval_ms DOUBLE PRECISION, " +
+            "  provider_generation_ms DOUBLE PRECISION, " +
+            "  provider_total_ms DOUBLE PRECISION, " +
+            "  provider_tokens_per_second DOUBLE PRECISION, " +
+            "  provider_request_id TEXT, " +
+            "  metadata_json TEXT, " +
+            "  provider_metrics_json TEXT, " +
+            "  provider_raw_json TEXT, " +
+            "  created_utc TEXT NOT NULL " +
             ")";
 
         #endregion
@@ -369,6 +441,12 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateChatHistoryCreatedUtcIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc)";
 
+        internal static string CreateChatHistoryTraceIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_trace_id ON chat_history (trace_id)";
+
+        internal static string CreateChatHistoryRequestHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_request_history_id ON chat_history (request_history_id)";
+
         internal static string CreateRequestHistoryTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_id ON request_history (tenant_id)";
 
@@ -395,6 +473,45 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateRequestHistoryPathIndex =
             "CREATE INDEX IF NOT EXISTS idx_request_history_request_path ON request_history (request_path)";
+
+        internal static string CreateRequestHistoryTraceIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_trace_id ON request_history (trace_id)";
+
+        internal static string CreateRequestHistoryChatHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_chat_history_id ON request_history (chat_history_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsChatHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_chat_history_id ON chat_history_performance_events (chat_history_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsRequestHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_request_history_id ON chat_history_performance_events (request_history_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsTraceIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_trace_id ON chat_history_performance_events (trace_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsStageIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_stage ON chat_history_performance_events (stage)";
+
+        internal static string CreateChatHistoryPerformanceEventsStartedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_started_utc ON chat_history_performance_events (started_utc)";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_id ON chat_history_performance_events (tenant_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsEndpointIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_endpoint_id ON chat_history_performance_events (endpoint_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsProviderModelIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_provider_model ON chat_history_performance_events (provider, model)";
+
+        internal static string CreateChatHistoryPerformanceEventsCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_created_utc ON chat_history_performance_events (created_utc)";
+
+        internal static string CreateChatHistoryPerformanceEventsDurationMsIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_duration_ms ON chat_history_performance_events (duration_ms)";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_created ON chat_history_performance_events (tenant_id, created_utc)";
 
         internal static string CreateCrawlPlansTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans (tenant_id)";

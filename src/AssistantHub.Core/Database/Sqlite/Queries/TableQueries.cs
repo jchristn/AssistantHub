@@ -207,6 +207,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "); " +
                 "CREATE TABLE IF NOT EXISTS chat_history (" +
                 "  id TEXT PRIMARY KEY, " +
+                "  trace_id TEXT, " +
+                "  request_history_id TEXT, " +
+                "  performance_schema_version INTEGER NOT NULL DEFAULT 1, " +
+                "  performance_json TEXT, " +
                 "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
                 "  thread_id TEXT NOT NULL, " +
                 "  assistant_id TEXT NOT NULL, " +
@@ -241,6 +245,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "); " +
                 "CREATE TABLE IF NOT EXISTS request_history (" +
                 "  id TEXT PRIMARY KEY, " +
+                "  trace_id TEXT, " +
+                "  chat_history_id TEXT, " +
                 "  tenant_id TEXT, " +
                 "  user_id TEXT, " +
                 "  credential_id TEXT, " +
@@ -273,6 +279,52 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  response_body TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
+                "); " +
+                "CREATE TABLE IF NOT EXISTS chat_history_performance_events (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  chat_history_id TEXT NOT NULL, " +
+                "  request_history_id TEXT, " +
+                "  trace_id TEXT, " +
+                "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+                "  stage TEXT NOT NULL, " +
+                "  phase TEXT, " +
+                "  kind TEXT, " +
+                "  endpoint_id TEXT, " +
+                "  endpoint_name TEXT, " +
+                "  endpoint_type TEXT, " +
+                "  provider TEXT, " +
+                "  api_format TEXT, " +
+                "  model TEXT, " +
+                "  started_utc TEXT, " +
+                "  finished_utc TEXT, " +
+                "  duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  success INTEGER NOT NULL DEFAULT 1, " +
+                "  http_status_code INTEGER, " +
+                "  error_type TEXT, " +
+                "  error_message TEXT, " +
+                "  input_tokens INTEGER, " +
+                "  output_tokens INTEGER, " +
+                "  total_tokens INTEGER, " +
+                "  chunks_input INTEGER, " +
+                "  chunks_output INTEGER, " +
+                "  retrieval_query_count INTEGER, " +
+                "  endpoint_limiter_wait_ms REAL, " +
+                "  request_to_headers_ms REAL, " +
+                "  headers_to_first_token_ms REAL, " +
+                "  first_token_to_last_token_ms REAL, " +
+                "  client_total_ms REAL, " +
+                "  provider_queue_ms REAL, " +
+                "  provider_load_ms REAL, " +
+                "  provider_prompt_eval_ms REAL, " +
+                "  provider_generation_ms REAL, " +
+                "  provider_total_ms REAL, " +
+                "  provider_tokens_per_second REAL, " +
+                "  provider_request_id TEXT, " +
+                "  metadata_json TEXT, " +
+                "  provider_metrics_json TEXT, " +
+                "  provider_raw_json TEXT, " +
+                "  created_utc TEXT NOT NULL" +
                 "); " +
                 "CREATE TABLE IF NOT EXISTS eval_facts (" +
                 "  id TEXT PRIMARY KEY, " +
@@ -332,6 +384,42 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE assistant_settings ADD COLUMN rerank_inference_endpoint_id TEXT;";
 
         /// <summary>
+        /// Add the trace ID column to chat history.
+        /// </summary>
+        public static string AddChatHistoryTraceIdColumn =
+            "ALTER TABLE chat_history ADD COLUMN trace_id TEXT;";
+
+        /// <summary>
+        /// Add the request-history ID column to chat history.
+        /// </summary>
+        public static string AddChatHistoryRequestHistoryIdColumn =
+            "ALTER TABLE chat_history ADD COLUMN request_history_id TEXT;";
+
+        /// <summary>
+        /// Add the performance schema-version column to chat history.
+        /// </summary>
+        public static string AddChatHistoryPerformanceSchemaVersionColumn =
+            "ALTER TABLE chat_history ADD COLUMN performance_schema_version INTEGER NOT NULL DEFAULT 1;";
+
+        /// <summary>
+        /// Add the performance JSON column to chat history.
+        /// </summary>
+        public static string AddChatHistoryPerformanceJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN performance_json TEXT;";
+
+        /// <summary>
+        /// Add the trace ID column to request history.
+        /// </summary>
+        public static string AddRequestHistoryTraceIdColumn =
+            "ALTER TABLE request_history ADD COLUMN trace_id TEXT;";
+
+        /// <summary>
+        /// Add the chat-history ID column to request history.
+        /// </summary>
+        public static string AddRequestHistoryChatHistoryIdColumn =
+            "ALTER TABLE request_history ADD COLUMN chat_history_id TEXT;";
+
+        /// <summary>
         /// Get the CREATE INDEX statements.
         /// </summary>
         public static string CreateIndices()
@@ -360,6 +448,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_thread_id ON chat_history (thread_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_created_utc ON chat_history (created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_tenant_id ON chat_history(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_trace_id ON chat_history(trace_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_request_history_id ON chat_history(request_history_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_id ON request_history(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_user_id ON request_history(user_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_credential_id ON request_history(credential_id); " +
@@ -369,6 +459,19 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_request_history_success ON request_history(success); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_created_utc ON request_history(created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_request_path ON request_history(request_path); " +
+                "CREATE INDEX IF NOT EXISTS idx_request_history_trace_id ON request_history(trace_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_request_history_chat_history_id ON request_history(chat_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_chat_history_id ON chat_history_performance_events(chat_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_request_history_id ON chat_history_performance_events(request_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_trace_id ON chat_history_performance_events(trace_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_stage ON chat_history_performance_events(stage); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_started_utc ON chat_history_performance_events(started_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_id ON chat_history_performance_events(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_endpoint_id ON chat_history_performance_events(endpoint_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_provider_model ON chat_history_performance_events(provider, model); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_created_utc ON chat_history_performance_events(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_duration_ms ON chat_history_performance_events(duration_ms); " +
+                "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_created ON chat_history_performance_events(tenant_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_state ON crawl_plans(state); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_operations_tenant_id ON crawl_operations(tenant_id); " +

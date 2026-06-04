@@ -56,6 +56,7 @@ namespace AssistantHub.Core.Database.Sqlite
             AssistantFeedback = new AssistantFeedbackMethods(this, _Settings, _Logging);
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
+            ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
@@ -85,6 +86,7 @@ namespace AssistantHub.Core.Database.Sqlite
             await ExecuteQueryAsync(pragmas, false, token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateTables(), false, token).ConfigureAwait(false);
             await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
+            await EnsureTelemetryColumnsAsync(token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateIndices(), false, token).ConfigureAwait(false);
 
             _Logging.Info(_Header + "initialized SQLite database at " + _Settings.Filename);
@@ -206,6 +208,31 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "rerank_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+        }
+
+        private async Task EnsureTelemetryColumnsAsync(CancellationToken token)
+        {
+            DataTable chatHistoryColumns = await ExecuteQueryAsync("PRAGMA table_info(chat_history);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "trace_id"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryTraceIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "request_history_id"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryRequestHistoryIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "performance_schema_version"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryPerformanceSchemaVersionColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "performance_json"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryPerformanceJsonColumn, true, token).ConfigureAwait(false);
+
+            DataTable requestHistoryColumns = await ExecuteQueryAsync("PRAGMA table_info(request_history);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(requestHistoryColumns, "trace_id"))
+                await ExecuteQueryAsync(TableQueries.AddRequestHistoryTraceIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(requestHistoryColumns, "chat_history_id"))
+                await ExecuteQueryAsync(TableQueries.AddRequestHistoryChatHistoryIdColumn, true, token).ConfigureAwait(false);
         }
 
         private static bool HasColumn(DataTable columns, string columnName)

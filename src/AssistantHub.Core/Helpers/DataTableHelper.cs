@@ -60,6 +60,20 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Get a nullable integer value from a data row.
+        /// </summary>
+        /// <param name="row">Data row.</param>
+        /// <param name="columnName">Column name.</param>
+        /// <returns>Nullable integer value.</returns>
+        public static int? GetNullableIntValue(DataRow row, string columnName)
+        {
+            string val = GetStringValue(row, columnName);
+            if (String.IsNullOrEmpty(val)) return null;
+            if (Int32.TryParse(val, out int result)) return result;
+            return null;
+        }
+
+        /// <summary>
         /// Get a long value from a data row.
         /// </summary>
         /// <param name="row">Data row.</param>

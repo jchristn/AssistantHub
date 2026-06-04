@@ -351,10 +351,94 @@ class ChatCompletionResponse(BaseModel):
     citations: Optional[ChatCompletionCitations] = None
 
 
+class AssistantPerformanceClientTimings(BaseModel):
+    """Client-observed timings for an upstream provider call."""
+
+    endpoint_limiter_wait_ms: Optional[float] = Field(
+        None, alias="EndpointLimiterWaitMs"
+    )
+    request_to_headers_ms: Optional[float] = Field(None, alias="RequestToHeadersMs")
+    headers_to_first_token_ms: Optional[float] = Field(
+        None, alias="HeadersToFirstTokenMs"
+    )
+    first_token_to_last_token_ms: Optional[float] = Field(
+        None, alias="FirstTokenToLastTokenMs"
+    )
+    total_ms: Optional[float] = Field(None, alias="TotalMs")
+
+
+class AssistantTokenUsageTelemetry(BaseModel):
+    """Normalized token counters."""
+
+    input: Optional[int] = Field(None, alias="Input")
+    output: Optional[int] = Field(None, alias="Output")
+    total: Optional[int] = Field(None, alias="Total")
+    prompt_eval_count: Optional[int] = Field(None, alias="PromptEvalCount")
+    eval_count: Optional[int] = Field(None, alias="EvalCount")
+
+
+class AssistantProviderMetrics(BaseModel):
+    """Provider-native metrics normalized into common fields."""
+
+    queue_ms: Optional[float] = Field(None, alias="QueueMs")
+    load_ms: Optional[float] = Field(None, alias="LoadMs")
+    prompt_eval_ms: Optional[float] = Field(None, alias="PromptEvalMs")
+    generation_ms: Optional[float] = Field(None, alias="GenerationMs")
+    total_ms: Optional[float] = Field(None, alias="TotalMs")
+    tokens_per_second: Optional[float] = Field(None, alias="TokensPerSecond")
+    request_id: Optional[str] = Field(None, alias="RequestId")
+
+
+class AssistantPerformanceStage(BaseModel):
+    """A measured stage in the assistant pipeline."""
+
+    name: Optional[str] = Field(None, alias="Name")
+    kind: Optional[str] = Field(None, alias="Kind")
+    sequence: int = Field(0, alias="Sequence")
+    endpoint_id: Optional[str] = Field(None, alias="EndpointId")
+    endpoint_name: Optional[str] = Field(None, alias="EndpointName")
+    endpoint_type: Optional[str] = Field(None, alias="EndpointType")
+    provider: Optional[str] = Field(None, alias="Provider")
+    api_format: Optional[str] = Field(None, alias="ApiFormat")
+    model: Optional[str] = Field(None, alias="Model")
+    started_utc: Optional[datetime] = Field(None, alias="StartedUtc")
+    finished_utc: Optional[datetime] = Field(None, alias="FinishedUtc")
+    duration_ms: float = Field(0.0, alias="DurationMs")
+    success: bool = Field(True, alias="Success")
+    http_status_code: Optional[int] = Field(None, alias="HttpStatusCode")
+    error_type: Optional[str] = Field(None, alias="ErrorType")
+    error_message: Optional[str] = Field(None, alias="ErrorMessage")
+    client_timings: Optional[AssistantPerformanceClientTimings] = Field(
+        None, alias="ClientTimings"
+    )
+    tokens: Optional[AssistantTokenUsageTelemetry] = Field(None, alias="Tokens")
+    provider_metrics: Optional[AssistantProviderMetrics] = Field(
+        None, alias="ProviderMetrics"
+    )
+    metadata: Optional[dict[str, Any]] = Field(None, alias="Metadata")
+    provider_raw: Optional[dict[str, Any]] = Field(None, alias="ProviderRaw")
+
+
+class AssistantPerformanceTelemetry(BaseModel):
+    """Versioned provider-agnostic performance telemetry for a chat turn."""
+
+    schema_version: int = Field(1, alias="SchemaVersion")
+    trace_id: Optional[str] = Field(None, alias="TraceId")
+    chat_history_id: Optional[str] = Field(None, alias="ChatHistoryId")
+    request_history_id: Optional[str] = Field(None, alias="RequestHistoryId")
+    wall_time_ms: float = Field(0.0, alias="WallTimeMs")
+    created_utc: Optional[datetime] = Field(None, alias="CreatedUtc")
+    stages: Optional[list[AssistantPerformanceStage]] = Field(None, alias="Stages")
+
+
 class ChatHistory(BaseModel):
     """A chat history record."""
 
     id: Optional[str] = None
+    trace_id: Optional[str] = Field(None, alias="TraceId")
+    request_history_id: Optional[str] = Field(None, alias="RequestHistoryId")
+    performance_schema_version: int = Field(1, alias="PerformanceSchemaVersion")
+    performance_json: Optional[str] = Field(None, alias="PerformanceJson")
     tenant_id: Optional[str] = Field(None, alias="tenantId")
     thread_id: Optional[str] = Field(None, alias="threadId")
     assistant_id: Optional[str] = Field(None, alias="assistantId")
@@ -438,6 +522,8 @@ class RequestHistoryEntry(BaseModel):
     """Captured HTTP request and response record."""
 
     id: Optional[str] = None
+    trace_id: Optional[str] = Field(None, alias="TraceId")
+    chat_history_id: Optional[str] = Field(None, alias="ChatHistoryId")
     tenant_id: Optional[str] = Field(None, alias="tenantId")
     user_id: Optional[str] = Field(None, alias="userId")
     credential_id: Optional[str] = Field(None, alias="credentialId")

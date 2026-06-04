@@ -3,7 +3,7 @@ setlocal
 
 if "%~1"=="" (
     echo Usage: build-mcp.bat ^<tag^>
-    echo Example: build-mcp.bat v0.11.0
+    echo Example: build-mcp.bat v0.12.0
     exit /b 1
 )
 

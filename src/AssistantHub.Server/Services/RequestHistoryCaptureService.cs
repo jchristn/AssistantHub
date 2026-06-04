@@ -72,6 +72,9 @@ namespace AssistantHub.Server.Services
         {
             Dictionary<string, object> metadata = ctx.Metadata as Dictionary<string, object> ?? new Dictionary<string, object>();
             AuthContext auth = metadata.ContainsKey("authContext") ? metadata["authContext"] as AuthContext : null;
+            string traceId = metadata.ContainsKey("traceId") ? metadata["traceId"] as string : null;
+            string requestHistoryId = metadata.ContainsKey("requestHistoryId") ? metadata["requestHistoryId"] as string : null;
+            string chatHistoryId = metadata.ContainsKey("chatHistoryId") ? metadata["chatHistoryId"] as string : null;
 
             string path = ctx.Request?.Url?.RawWithoutQuery ?? "/";
             string fullUrl = ctx.Request?.Url?.RawWithQuery ?? path;
@@ -79,7 +82,11 @@ namespace AssistantHub.Server.Services
 
             RequestHistoryEntry entry = new RequestHistoryEntry
             {
-                Id = AssistantHub.Core.Helpers.IdGenerator.NewRequestHistoryId(),
+                Id = !String.IsNullOrWhiteSpace(requestHistoryId)
+                    ? requestHistoryId
+                    : AssistantHub.Core.Helpers.IdGenerator.NewRequestHistoryId(),
+                TraceId = traceId,
+                ChatHistoryId = chatHistoryId,
                 TenantId = auth?.TenantId,
                 UserId = auth?.UserId,
                 CredentialId = auth?.CredentialId,

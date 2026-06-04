@@ -2,7 +2,9 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -462,6 +464,7 @@ namespace AssistantHub.Core.Services
         /// <param name="onComplete">Callback invoked when generation is complete, with the full accumulated content.</param>
         /// <param name="onError">Callback invoked on error.</param>
         /// <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
+        /// <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
         /// <param name="token">Cancellation token.</param>
         public async Task GenerateResponseStreamingAsync(
             List<ChatCompletionMessage> messages,
@@ -476,6 +479,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onComplete,
             Func<string, Task> onError,
             Action onConnectionEstablished = null,
+            Action<AssistantPerformanceStage> onTelemetry = null,
             CancellationToken token = default)
         {
             if (messages == null || messages.Count == 0) throw new ArgumentNullException(nameof(messages));
@@ -497,31 +501,58 @@ namespace AssistantHub.Core.Services
                         await GenerateOpenAIStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey, 
-                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Gemini:
                         await GenerateGeminiStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
                         break;
 
                     default:
-                        await onError("Unsupported inference provider: " + provider.ToString()).ConfigureAwait(false);
+                        string error = "Unsupported inference provider: " + provider.ToString();
+                        onTelemetry?.Invoke(new AssistantPerformanceStage
+                        {
+                            Name = "streaming_inference",
+                            Kind = "inference",
+                            Provider = provider.ToString(),
+                            ApiFormat = provider.ToString(),
+                            Model = effectiveModel,
+                            EndpointName = effectiveEndpoint,
+                            EndpointType = "completion",
+                            Success = false,
+                            ErrorType = "UnsupportedProvider",
+                            ErrorMessage = error
+                        });
+                        await onError(error).ConfigureAwait(false);
                         break;
                 }
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "exception during streaming inference: " + e.Message);
+                onTelemetry?.Invoke(new AssistantPerformanceStage
+                {
+                    Name = "streaming_inference",
+                    Kind = "inference",
+                    Provider = provider.ToString(),
+                    ApiFormat = provider.ToString(),
+                    Model = effectiveModel,
+                    EndpointName = effectiveEndpoint,
+                    EndpointType = "completion",
+                    Success = false,
+                    ErrorType = e.GetType().Name,
+                    ErrorMessage = e.Message
+                });
                 await onError("Inference exception: " + e.Message).ConfigureAwait(false);
             }
         }
@@ -596,6 +627,167 @@ namespace AssistantHub.Core.Services
 
         #region Private-Methods
 
+        private AssistantPerformanceStage StartTelemetry(
+            InferenceProviderEnum provider,
+            string model,
+            string endpoint,
+            bool streaming)
+        {
+            return new AssistantPerformanceStage
+            {
+                Name = streaming ? "streaming_inference" : "inference",
+                Kind = "inference",
+                Provider = provider.ToString(),
+                ApiFormat = provider.ToString(),
+                Model = model,
+                EndpointName = endpoint,
+                EndpointType = "completion",
+                StartedUtc = DateTime.UtcNow,
+                Success = false,
+                ClientTimings = new AssistantPerformanceClientTimings(),
+                Tokens = new AssistantTokenUsageTelemetry(),
+                ProviderMetrics = new AssistantProviderMetrics(),
+                Metadata = new Dictionary<string, object>
+                {
+                    ["streaming"] = streaming
+                }
+            };
+        }
+
+        private void MarkResponseHeaders(AssistantPerformanceStage telemetry, Stopwatch stopwatch, HttpResponseMessage response)
+        {
+            if (telemetry == null || stopwatch == null || response == null) return;
+
+            telemetry.ClientTimings ??= new AssistantPerformanceClientTimings();
+            telemetry.ClientTimings.RequestToHeadersMs = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 2);
+            telemetry.HttpStatusCode = (int)response.StatusCode;
+
+            string requestId = GetHeaderValue(response, "x-request-id")
+                ?? GetHeaderValue(response, "x-openai-request-id")
+                ?? GetHeaderValue(response, "x-ms-request-id")
+                ?? GetHeaderValue(response, "cf-ray");
+
+            if (!String.IsNullOrEmpty(requestId))
+            {
+                telemetry.ProviderMetrics ??= new AssistantProviderMetrics();
+                telemetry.ProviderMetrics.RequestId = requestId;
+            }
+        }
+
+        private void FinishTelemetry(
+            AssistantPerformanceStage telemetry,
+            Stopwatch stopwatch,
+            bool success,
+            string errorType = null,
+            string errorMessage = null)
+        {
+            if (telemetry == null) return;
+
+            telemetry.FinishedUtc = DateTime.UtcNow;
+            telemetry.DurationMs = Math.Round(stopwatch?.Elapsed.TotalMilliseconds ?? 0, 2);
+            telemetry.Success = success;
+            telemetry.ErrorType = errorType;
+            telemetry.ErrorMessage = errorMessage;
+            telemetry.ClientTimings ??= new AssistantPerformanceClientTimings();
+            telemetry.ClientTimings.TotalMs ??= telemetry.DurationMs;
+        }
+
+        private void MarkFirstToken(AssistantPerformanceStage telemetry, Stopwatch stopwatch)
+        {
+            if (telemetry == null || stopwatch == null) return;
+
+            telemetry.ClientTimings ??= new AssistantPerformanceClientTimings();
+            if (!telemetry.ClientTimings.HeadersToFirstTokenMs.HasValue)
+            {
+                double requestToHeaders = telemetry.ClientTimings.RequestToHeadersMs ?? 0;
+                telemetry.ClientTimings.HeadersToFirstTokenMs =
+                    Math.Max(0, Math.Round(stopwatch.Elapsed.TotalMilliseconds - requestToHeaders, 2));
+            }
+        }
+
+        private void MarkLastToken(AssistantPerformanceStage telemetry, Stopwatch stopwatch)
+        {
+            if (telemetry == null || stopwatch == null) return;
+
+            telemetry.ClientTimings ??= new AssistantPerformanceClientTimings();
+            if (!telemetry.ClientTimings.FirstTokenToLastTokenMs.HasValue
+                && telemetry.ClientTimings.HeadersToFirstTokenMs.HasValue)
+            {
+                double requestToHeaders = telemetry.ClientTimings.RequestToHeadersMs ?? 0;
+                double firstTokenAt = requestToHeaders + telemetry.ClientTimings.HeadersToFirstTokenMs.Value;
+                telemetry.ClientTimings.FirstTokenToLastTokenMs =
+                    Math.Max(0, Math.Round(stopwatch.Elapsed.TotalMilliseconds - firstTokenAt, 2));
+            }
+        }
+
+        private void ApplyUsage(AssistantPerformanceStage telemetry, ChatCompletionUsage usage)
+        {
+            if (telemetry == null || usage == null) return;
+
+            telemetry.Tokens ??= new AssistantTokenUsageTelemetry();
+            telemetry.Tokens.Input = usage.PromptTokens > 0 ? usage.PromptTokens : telemetry.Tokens.Input;
+            telemetry.Tokens.Output = usage.CompletionTokens > 0 ? usage.CompletionTokens : telemetry.Tokens.Output;
+            telemetry.Tokens.Total = usage.TotalTokens > 0 ? usage.TotalTokens : telemetry.Tokens.Total;
+        }
+
+        private void ApplyGeminiUsage(AssistantPerformanceStage telemetry, GeminiUsageMetadata usage)
+        {
+            if (telemetry == null || usage == null) return;
+
+            telemetry.Tokens ??= new AssistantTokenUsageTelemetry();
+            telemetry.Tokens.Input = usage.PromptTokenCount ?? telemetry.Tokens.Input;
+            telemetry.Tokens.Output = usage.CandidatesTokenCount ?? telemetry.Tokens.Output;
+            telemetry.Tokens.Total = usage.TotalTokenCount ?? telemetry.Tokens.Total;
+        }
+
+        private void ApplyOllamaMetrics(
+            AssistantPerformanceStage telemetry,
+            long? totalDuration,
+            long? loadDuration,
+            int? promptEvalCount,
+            long? promptEvalDuration,
+            int? evalCount,
+            long? evalDuration)
+        {
+            if (telemetry == null) return;
+
+            telemetry.Tokens ??= new AssistantTokenUsageTelemetry();
+            telemetry.Tokens.Input = promptEvalCount ?? telemetry.Tokens.Input;
+            telemetry.Tokens.Output = evalCount ?? telemetry.Tokens.Output;
+            if (promptEvalCount.HasValue || evalCount.HasValue)
+                telemetry.Tokens.Total = (promptEvalCount ?? 0) + (evalCount ?? 0);
+
+            telemetry.ProviderMetrics ??= new AssistantProviderMetrics();
+            telemetry.ProviderMetrics.TotalMs = NanosecondsToMilliseconds(totalDuration);
+            telemetry.ProviderMetrics.LoadMs = NanosecondsToMilliseconds(loadDuration);
+            telemetry.ProviderMetrics.PromptEvalMs = NanosecondsToMilliseconds(promptEvalDuration);
+            telemetry.ProviderMetrics.GenerationMs = NanosecondsToMilliseconds(evalDuration);
+
+            if (evalCount.HasValue && evalCount.Value > 0 && evalDuration.HasValue && evalDuration.Value > 0)
+                telemetry.ProviderMetrics.TokensPerSecond = Math.Round(evalCount.Value / (evalDuration.Value / 1_000_000_000.0), 2);
+        }
+
+        private string GetHeaderValue(HttpResponseMessage response, string headerName)
+        {
+            if (response == null || String.IsNullOrWhiteSpace(headerName)) return null;
+
+            if (response.Headers.TryGetValues(headerName, out IEnumerable<string> values))
+                return values?.FirstOrDefault();
+
+            if (response.Content?.Headers != null
+                && response.Content.Headers.TryGetValues(headerName, out IEnumerable<string> contentValues))
+                return contentValues?.FirstOrDefault();
+
+            return null;
+        }
+
+        private double? NanosecondsToMilliseconds(long? nanoseconds)
+        {
+            return nanoseconds.HasValue && nanoseconds.Value > 0
+                ? Math.Round(nanoseconds.Value / 1_000_000.0, 2)
+                : null;
+        }
+
         private async Task<InferenceResult> GenerateOpenAIResponseAsync(
             string systemMessage,
             string userMessage,
@@ -607,55 +799,21 @@ namespace AssistantHub.Core.Services
             string apiKey,
             CancellationToken token)
         {
-            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, false);
+            List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>();
+            if (!String.IsNullOrEmpty(systemMessage))
+                messages.Add(new ChatCompletionMessage { Role = "system", Content = systemMessage });
 
-            List<object> messages = new List<object>();
-            messages.Add(new { role = "system", content = systemMessage });
-            messages.Add(new { role = "user", content = userMessage });
+            messages.Add(new ChatCompletionMessage { Role = "user", Content = userMessage });
 
-            object requestBody = new
-            {
-                model = model,
-                messages = messages,
-                max_tokens = maxTokens,
-                temperature = temperature,
-                top_p = topP
-            };
-
-            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(
-                        _Header +
-                        "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
-                        "| URL           : " + url + Environment.NewLine +
-                        "| Bearer token  : " + apiKey + Environment.NewLine +
-                        "| Response body : " + Environment.NewLine + responseBody);
-                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode);
-                }
-
-                OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
-
-                if (chatResponse?.Choices != null && chatResponse.Choices.Count > 0)
-                {
-                    string content = chatResponse.Choices[0].Message?.Content;
-                    _Logging.Debug(_Header + "OpenAI response received (" + (content != null ? content.Length : 0) + " characters)");
-                    return InferenceResult.FromSuccess(content);
-                }
-
-                _Logging.Warn(_Header + "OpenAI response contained no choices");
-                return InferenceResult.FromError("OpenAI response contained no choices.");
-            }
+            return await GenerateOpenAIResponseFromMessagesAsync(
+                messages,
+                model,
+                maxTokens,
+                temperature,
+                topP,
+                endpoint,
+                apiKey,
+                token).ConfigureAwait(false);
         }
 
         private async Task<InferenceResult> GenerateGeminiResponseAsync(
@@ -697,62 +855,21 @@ namespace AssistantHub.Core.Services
             string apiKey,
             CancellationToken token)
         {
-            string url = endpoint.TrimEnd('/') + "/api/chat";
+            List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>();
+            if (!String.IsNullOrEmpty(systemMessage))
+                messages.Add(new ChatCompletionMessage { Role = "system", Content = systemMessage });
 
-            List<object> messages = new List<object>();
-            messages.Add(new { role = "system", content = systemMessage });
-            messages.Add(new { role = "user", content = userMessage });
+            messages.Add(new ChatCompletionMessage { Role = "user", Content = userMessage });
 
-            object requestBody = new
-            {
-                model = model,
-                messages = messages,
-                stream = false,
-                options = new
-                {
-                    temperature = temperature,
-                    top_p = topP,
-                    num_predict = maxTokens
-                }
-            };
-
-            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                if (!String.IsNullOrEmpty(apiKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(
-                        _Header + 
-                        "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine + 
-                        "| URL           : " + url + Environment.NewLine +
-                        "| Bearer token  : " + apiKey + Environment.NewLine + 
-                        "| Response body : " + Environment.NewLine + responseBody);
-                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode);
-                }
-
-                OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);
-
-                if (chatResponse?.Message != null)
-                {
-                    string content = chatResponse.Message.Content;
-                    _Logging.Debug(_Header + "Ollama response received (" + (content != null ? content.Length : 0) + " characters)");
-                    return InferenceResult.FromSuccess(content);
-                }
-
-                _Logging.Warn(_Header + "Ollama response contained no message");
-                return InferenceResult.FromError("Ollama response contained no message.");
-            }
+            return await GenerateOllamaResponseFromMessagesAsync(
+                messages,
+                model,
+                maxTokens,
+                temperature,
+                topP,
+                endpoint,
+                apiKey,
+                token).ConfigureAwait(false);
         }
 
         private async Task<List<InferenceModel>> ListOllamaModelsAsync()
@@ -911,6 +1028,8 @@ namespace AssistantHub.Core.Services
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.OpenAI, model, endpoint, false);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -918,31 +1037,39 @@ namespace AssistantHub.Core.Services
 
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
-                    _Logging.Warn(
-                        _Header +
-                        "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
-                        "| URL           : " + url + Environment.NewLine +
-                        "| Bearer token  : " + apiKey + Environment.NewLine +
-                        "| Response body : " + Environment.NewLine + responseBody);
-                    return InferenceResult.FromError("OpenAI API returned " + (int)response.StatusCode);
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(
+                            _Header +
+                            "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + responseBody);
+                        string error = "OpenAI API returned " + (int)response.StatusCode;
+                        FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
+                        return InferenceResult.FromError(error, telemetry);
+                    }
+
+                    OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
+                    ApplyUsage(telemetry, chatResponse?.Usage);
+
+                    if (chatResponse?.Choices != null && chatResponse.Choices.Count > 0)
+                    {
+                        string content = chatResponse.Choices[0].Message?.Content;
+                        _Logging.Debug(_Header + "OpenAI response received (" + (content != null ? content.Length : 0) + " characters)");
+                        FinishTelemetry(telemetry, telemetrySw, true);
+                        return InferenceResult.FromSuccess(content, telemetry);
+                    }
+
+                    _Logging.Warn(_Header + "OpenAI response contained no choices");
+                    FinishTelemetry(telemetry, telemetrySw, false, "NoChoices", "OpenAI response contained no choices.");
+                    return InferenceResult.FromError("OpenAI response contained no choices.", telemetry);
                 }
-
-                OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
-
-                if (chatResponse?.Choices != null && chatResponse.Choices.Count > 0)
-                {
-                    string content = chatResponse.Choices[0].Message?.Content;
-                    _Logging.Debug(_Header + "OpenAI response received (" + (content != null ? content.Length : 0) + " characters)");
-                    return InferenceResult.FromSuccess(content);
-                }
-
-                _Logging.Warn(_Header + "OpenAI response contained no choices");
-                return InferenceResult.FromError("OpenAI response contained no choices.");
             }
         }
 
@@ -978,6 +1105,8 @@ namespace AssistantHub.Core.Services
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.Ollama, model, endpoint, false);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -988,31 +1117,46 @@ namespace AssistantHub.Core.Services
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 }
 
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
-                    _Logging.Warn(
-                        _Header +
-                        "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
-                        "| URL           : " + url + Environment.NewLine +
-                        "| Bearer token  : " + apiKey + Environment.NewLine +
-                        "| Response body : " + Environment.NewLine + responseBody);
-                    return InferenceResult.FromError("Ollama API returned " + (int)response.StatusCode);
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(
+                            _Header +
+                            "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + responseBody);
+                        string error = "Ollama API returned " + (int)response.StatusCode;
+                        FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
+                        return InferenceResult.FromError(error, telemetry);
+                    }
+
+                    OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);
+                    ApplyOllamaMetrics(
+                        telemetry,
+                        chatResponse?.TotalDuration,
+                        chatResponse?.LoadDuration,
+                        chatResponse?.PromptEvalCount,
+                        chatResponse?.PromptEvalDuration,
+                        chatResponse?.EvalCount,
+                        chatResponse?.EvalDuration);
+
+                    if (chatResponse?.Message != null)
+                    {
+                        string content = chatResponse.Message.Content;
+                        _Logging.Debug(_Header + "Ollama response received (" + (content != null ? content.Length : 0) + " characters)");
+                        FinishTelemetry(telemetry, telemetrySw, true);
+                        return InferenceResult.FromSuccess(content, telemetry);
+                    }
+
+                    _Logging.Warn(_Header + "Ollama response contained no message");
+                    FinishTelemetry(telemetry, telemetrySw, false, "NoMessage", "Ollama response contained no message.");
+                    return InferenceResult.FromError("Ollama response contained no message.", telemetry);
                 }
-
-                OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);
-
-                if (chatResponse?.Message != null)
-                {
-                    string content = chatResponse.Message.Content;
-                    _Logging.Debug(_Header + "Ollama response received (" + (content != null ? content.Length : 0) + " characters)");
-                    return InferenceResult.FromSuccess(content);
-                }
-
-                _Logging.Warn(_Header + "Ollama response contained no message");
-                return InferenceResult.FromError("Ollama response contained no message.");
             }
         }
 
@@ -1029,36 +1173,46 @@ namespace AssistantHub.Core.Services
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.Gemini, model, false);
             object requestBody = BuildGeminiRequestBody(messages, maxTokens, temperature, topP);
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.Gemini, model, endpoint, false);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, apiKey);
 
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
-                    _Logging.Warn(
-                        _Header +
-                        "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
-                        "| URL           : " + url + Environment.NewLine +
-                        "| API key       : " + apiKey + Environment.NewLine +
-                        "| Response body : " + Environment.NewLine + responseBody);
-                    return InferenceResult.FromError("Gemini API returned " + (int)response.StatusCode);
-                }
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
-                GeminiResponse geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseBody, _JsonOptions);
-                string content = ExtractGeminiText(geminiResponse);
-                if (!String.IsNullOrEmpty(content))
-                {
-                    _Logging.Debug(_Header + "Gemini response received (" + content.Length + " characters)");
-                    return InferenceResult.FromSuccess(content);
-                }
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(
+                            _Header +
+                            "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
+                            "| URL           : " + url + Environment.NewLine +
+                            "| API key       : " + apiKey + Environment.NewLine +
+                            "| Response body : " + Environment.NewLine + responseBody);
+                        string error = "Gemini API returned " + (int)response.StatusCode;
+                        FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
+                        return InferenceResult.FromError(error, telemetry);
+                    }
 
-                _Logging.Warn(_Header + "Gemini response contained no candidate content");
-                return InferenceResult.FromError("Gemini response contained no candidate content.");
+                    GeminiResponse geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseBody, _JsonOptions);
+                    ApplyGeminiUsage(telemetry, geminiResponse?.UsageMetadata);
+                    string content = ExtractGeminiText(geminiResponse);
+                    if (!String.IsNullOrEmpty(content))
+                    {
+                        _Logging.Debug(_Header + "Gemini response received (" + content.Length + " characters)");
+                        FinishTelemetry(telemetry, telemetrySw, true);
+                        return InferenceResult.FromSuccess(content, telemetry);
+                    }
+
+                    _Logging.Warn(_Header + "Gemini response contained no candidate content");
+                    FinishTelemetry(telemetry, telemetrySw, false, "NoCandidateContent", "Gemini response contained no candidate content.");
+                    return InferenceResult.FromError("Gemini response contained no candidate content.", telemetry);
+                }
             }
         }
 
@@ -1074,6 +1228,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onComplete,
             Func<string, Task> onError,
             Action onConnectionEstablished,
+            Action<AssistantPerformanceStage> onTelemetry,
             CancellationToken token)
         {
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, true);
@@ -1091,11 +1246,27 @@ namespace AssistantHub.Core.Services
                 max_tokens = maxTokens,
                 temperature = temperature,
                 top_p = topP,
-                stream = true
+                stream = true,
+                stream_options = new
+                {
+                    include_usage = true
+                }
             };
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
             StringBuilder fullContent = new StringBuilder();
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.OpenAI, model, endpoint, true);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
+            bool telemetryEmitted = false;
+
+            void EmitTelemetry(bool success, string errorType = null, string errorMessage = null)
+            {
+                if (telemetryEmitted) return;
+                telemetryEmitted = true;
+                MarkLastToken(telemetry, telemetrySw);
+                FinishTelemetry(telemetry, telemetrySw, success, errorType, errorMessage);
+                onTelemetry?.Invoke(telemetry);
+            }
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -1105,6 +1276,7 @@ namespace AssistantHub.Core.Services
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
 
                     if (!response.IsSuccessStatusCode)
@@ -1117,7 +1289,9 @@ namespace AssistantHub.Core.Services
                             "| Bearer token  : " + apiKey + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
                         _Logging.Warn(_Header + "OpenAI streaming returned " + (int)response.StatusCode);
-                        await onError("OpenAI API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
+                        string error = "OpenAI API returned " + (int)response.StatusCode + ": " + errorBody;
+                        EmitTelemetry(false, "HttpStatus", error);
+                        await onError(error).ConfigureAwait(false);
                         return;
                     }
 
@@ -1135,6 +1309,7 @@ namespace AssistantHub.Core.Services
 
                                 if (data == "[DONE]")
                                 {
+                                    EmitTelemetry(true);
                                     await onComplete(fullContent.ToString()).ConfigureAwait(false);
                                     return;
                                 }
@@ -1142,11 +1317,13 @@ namespace AssistantHub.Core.Services
                                 try
                                 {
                                     OpenAIStreamingChunk chunk = JsonSerializer.Deserialize<OpenAIStreamingChunk>(data, _JsonOptions);
+                                    ApplyUsage(telemetry, chunk?.Usage);
                                     string deltaContent = chunk?.Choices != null && chunk.Choices.Count > 0
                                         ? chunk.Choices[0].Delta?.Content
                                         : null;
                                     if (!String.IsNullOrEmpty(deltaContent))
                                     {
+                                        MarkFirstToken(telemetry, telemetrySw);
                                         fullContent.Append(deltaContent);
                                         await onDelta(deltaContent).ConfigureAwait(false);
                                     }
@@ -1161,6 +1338,7 @@ namespace AssistantHub.Core.Services
                 }
             }
 
+            EmitTelemetry(true);
             await onComplete(fullContent.ToString()).ConfigureAwait(false);
         }
 
@@ -1176,12 +1354,25 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onComplete,
             Func<string, Task> onError,
             Action onConnectionEstablished,
+            Action<AssistantPerformanceStage> onTelemetry,
             CancellationToken token)
         {
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.Gemini, model, true);
             object requestBody = BuildGeminiRequestBody(messages, maxTokens, temperature, topP);
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
             StringBuilder fullContent = new StringBuilder();
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.Gemini, model, endpoint, true);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
+            bool telemetryEmitted = false;
+
+            void EmitTelemetry(bool success, string errorType = null, string errorMessage = null)
+            {
+                if (telemetryEmitted) return;
+                telemetryEmitted = true;
+                MarkLastToken(telemetry, telemetrySw);
+                FinishTelemetry(telemetry, telemetrySw, success, errorType, errorMessage);
+                onTelemetry?.Invoke(telemetry);
+            }
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -1190,6 +1381,7 @@ namespace AssistantHub.Core.Services
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
 
                     if (!response.IsSuccessStatusCode)
@@ -1201,7 +1393,9 @@ namespace AssistantHub.Core.Services
                             "| URL           : " + url + Environment.NewLine +
                             "| API key       : " + apiKey + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
-                        await onError("Gemini API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
+                        string error = "Gemini API returned " + (int)response.StatusCode + ": " + errorBody;
+                        EmitTelemetry(false, "HttpStatus", error);
+                        await onError(error).ConfigureAwait(false);
                         return;
                     }
 
@@ -1221,6 +1415,7 @@ namespace AssistantHub.Core.Services
                             try
                             {
                                 GeminiResponse geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(data, _JsonOptions);
+                                ApplyGeminiUsage(telemetry, geminiResponse?.UsageMetadata);
                                 string chunkText = ExtractGeminiText(geminiResponse);
                                 if (!String.IsNullOrEmpty(chunkText))
                                 {
@@ -1234,6 +1429,7 @@ namespace AssistantHub.Core.Services
 
                                     if (!String.IsNullOrEmpty(deltaContent))
                                     {
+                                        MarkFirstToken(telemetry, telemetrySw);
                                         fullContent.Append(deltaContent);
                                         await onDelta(deltaContent).ConfigureAwait(false);
                                     }
@@ -1248,6 +1444,7 @@ namespace AssistantHub.Core.Services
                 }
             }
 
+            EmitTelemetry(true);
             await onComplete(fullContent.ToString()).ConfigureAwait(false);
         }
 
@@ -1263,6 +1460,7 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onComplete,
             Func<string, Task> onError,
             Action onConnectionEstablished,
+            Action<AssistantPerformanceStage> onTelemetry,
             CancellationToken token)
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
@@ -1288,6 +1486,18 @@ namespace AssistantHub.Core.Services
 
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
             StringBuilder fullContent = new StringBuilder();
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.Ollama, model, endpoint, true);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
+            bool telemetryEmitted = false;
+
+            void EmitTelemetry(bool success, string errorType = null, string errorMessage = null)
+            {
+                if (telemetryEmitted) return;
+                telemetryEmitted = true;
+                MarkLastToken(telemetry, telemetrySw);
+                FinishTelemetry(telemetry, telemetrySw, success, errorType, errorMessage);
+                onTelemetry?.Invoke(telemetry);
+            }
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
@@ -1300,6 +1510,7 @@ namespace AssistantHub.Core.Services
 
                 using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
 
                     if (!response.IsSuccessStatusCode)
@@ -1312,7 +1523,9 @@ namespace AssistantHub.Core.Services
                             "| Bearer token  : " + apiKey + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
                         _Logging.Warn(_Header + "Ollama streaming returned " + (int)response.StatusCode);
-                        await onError("Ollama API returned " + (int)response.StatusCode + ": " + errorBody).ConfigureAwait(false);
+                        string error = "Ollama API returned " + (int)response.StatusCode + ": " + errorBody;
+                        EmitTelemetry(false, "HttpStatus", error);
+                        await onError(error).ConfigureAwait(false);
                         return;
                     }
 
@@ -1330,6 +1543,15 @@ namespace AssistantHub.Core.Services
 
                                 if (streamLine?.Done == true)
                                 {
+                                    ApplyOllamaMetrics(
+                                        telemetry,
+                                        streamLine.TotalDuration,
+                                        streamLine.LoadDuration,
+                                        streamLine.PromptEvalCount,
+                                        streamLine.PromptEvalDuration,
+                                        streamLine.EvalCount,
+                                        streamLine.EvalDuration);
+                                    EmitTelemetry(true);
                                     await onComplete(fullContent.ToString()).ConfigureAwait(false);
                                     return;
                                 }
@@ -1337,6 +1559,7 @@ namespace AssistantHub.Core.Services
                                 string deltaContent = streamLine?.Message?.Content;
                                 if (!String.IsNullOrEmpty(deltaContent))
                                 {
+                                    MarkFirstToken(telemetry, telemetrySw);
                                     fullContent.Append(deltaContent);
                                     await onDelta(deltaContent).ConfigureAwait(false);
                                 }
@@ -1350,6 +1573,7 @@ namespace AssistantHub.Core.Services
                 }
             }
 
+            EmitTelemetry(true);
             await onComplete(fullContent.ToString()).ConfigureAwait(false);
         }
 
@@ -1521,6 +1745,11 @@ namespace AssistantHub.Core.Services
             /// Response choices.
             /// </summary>
             public List<OpenAIChoice> Choices { get; set; } = null;
+
+            /// <summary>
+            /// Token usage reported by OpenAI-compatible providers.
+            /// </summary>
+            public ChatCompletionUsage Usage { get; set; } = null;
         }
 
         private class OpenAIChoice
@@ -1550,6 +1779,24 @@ namespace AssistantHub.Core.Services
             /// Response message.
             /// </summary>
             public OllamaMessage Message { get; set; } = null;
+
+            [JsonPropertyName("total_duration")]
+            public long? TotalDuration { get; set; } = null;
+
+            [JsonPropertyName("load_duration")]
+            public long? LoadDuration { get; set; } = null;
+
+            [JsonPropertyName("prompt_eval_count")]
+            public int? PromptEvalCount { get; set; } = null;
+
+            [JsonPropertyName("prompt_eval_duration")]
+            public long? PromptEvalDuration { get; set; } = null;
+
+            [JsonPropertyName("eval_count")]
+            public int? EvalCount { get; set; } = null;
+
+            [JsonPropertyName("eval_duration")]
+            public long? EvalDuration { get; set; } = null;
         }
 
         private class OllamaMessage

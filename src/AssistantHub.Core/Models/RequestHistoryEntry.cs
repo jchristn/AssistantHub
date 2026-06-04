@@ -23,6 +23,16 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
+        /// Trace identifier shared by chat history, request history, and logs.
+        /// </summary>
+        public string TraceId { get; set; } = null;
+
+        /// <summary>
+        /// Chat history identifier associated with this request, when available.
+        /// </summary>
+        public string ChatHistoryId { get; set; } = null;
+
+        /// <summary>
         /// Tenant identifier.
         /// </summary>
         public string TenantId { get; set; } = null;
@@ -211,6 +221,8 @@ namespace AssistantHub.Core.Models
             RequestHistoryEntry obj = new RequestHistoryEntry
             {
                 Id = DataTableHelper.GetStringValue(row, "id"),
+                TraceId = DataTableHelper.GetStringValue(row, "trace_id"),
+                ChatHistoryId = DataTableHelper.GetStringValue(row, "chat_history_id"),
                 TenantId = DataTableHelper.GetStringValue(row, "tenant_id"),
                 UserId = DataTableHelper.GetStringValue(row, "user_id"),
                 CredentialId = DataTableHelper.GetStringValue(row, "credential_id"),

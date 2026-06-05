@@ -495,6 +495,7 @@ namespace AssistantHub.Core.Services
 
         private async Task<List<RequestAnalyticsRow>> LoadRequestsAsync(AssistantAnalyticsFilter filter, AssistantAnalyticsRange range, CancellationToken token)
         {
+            string successFallback = _Database.FormatBoolean(true);
             string query =
                 "SELECT " +
                 "COALESCE(r.id, h.request_history_id) AS id, " +
@@ -508,7 +509,7 @@ namespace AssistantHub.Core.Services
                 "COALESCE(r.http_method, 'POST') AS http_method, " +
                 "COALESCE(r.request_path, '') AS request_path, " +
                 "COALESCE(r.status_code, 200) AS status_code, " +
-                "CASE WHEN r.id IS NULL THEN 1 ELSE r.success END AS success, " +
+                "CASE WHEN r.id IS NULL THEN " + successFallback + " ELSE r.success END AS success, " +
                 "COALESCE(r.duration_ms, " +
                 "h.retrieval_duration_ms + h.retrieval_gate_duration_ms + h.query_rewrite_duration_ms + h.rerank_duration_ms + " +
                 "h.endpoint_resolution_duration_ms + h.compaction_duration_ms + h.inference_connection_duration_ms + h.time_to_last_token_ms) AS duration_ms, " +

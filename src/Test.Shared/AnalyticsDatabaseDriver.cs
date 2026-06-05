@@ -15,14 +15,33 @@ namespace Test.Automated
     internal sealed class AnalyticsDatabaseDriver : MockDatabaseDriver
     {
         private readonly DateTime _StartUtc;
+        private readonly string _TrueLiteral;
+        private readonly string _FalseLiteral;
+        private readonly List<string> _Queries = new List<string>();
 
         public AnalyticsDatabaseDriver(DateTime startUtc)
+            : this(startUtc, "1", "0")
+        {
+        }
+
+        public AnalyticsDatabaseDriver(DateTime startUtc, string trueLiteral, string falseLiteral)
         {
             _StartUtc = startUtc;
+            _TrueLiteral = trueLiteral;
+            _FalseLiteral = falseLiteral;
+        }
+
+        public IReadOnlyList<string> Queries => _Queries;
+
+        public override string FormatBoolean(bool value)
+        {
+            return value ? _TrueLiteral : _FalseLiteral;
         }
 
         public override Task<DataTable> ExecuteQueryAsync(string query, bool isTransaction = false, CancellationToken token = default)
         {
+            _Queries.Add(query);
+
             if (query.Contains("FROM chat_history h", StringComparison.OrdinalIgnoreCase)
                 && query.Contains("LEFT JOIN request_history r", StringComparison.OrdinalIgnoreCase))
                 return Task.FromResult(BuildRequestHistoryTable());

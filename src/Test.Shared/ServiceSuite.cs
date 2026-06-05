@@ -3,6 +3,7 @@ namespace Test.Automated
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Linq;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -383,6 +384,41 @@ namespace Test.Automated
                 AssertHelper.AreEqual(1, feedback.ThumbsDownCount, "feedback thumbs down");
                 AssertHelper.AreEqual(0.5, feedback.NegativeRate.Value, "feedback negative rate");
                 AssertHelper.HasCount(feedback.Buckets, 2, "feedback buckets");
+            });
+
+            await ExecuteTestAsync("AssistantAnalyticsService: uses database boolean formatting for retained-chat fallback", async () =>
+            {
+                DateTime start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                AssistantAnalyticsFilter filter = new AssistantAnalyticsFilter
+                {
+                    TenantId = "ten_test",
+                    AssistantId = "asst_test",
+                    StartUtc = start,
+                    EndUtc = start.AddMinutes(10),
+                    BucketSeconds = 300,
+                    Metrics = new List<string> { "request_count" },
+                    Limit = 10
+                };
+
+                Dictionary<string, string> providerTrueLiterals = new Dictionary<string, string>
+                {
+                    ["sqlite"] = "1",
+                    ["mysql"] = "1",
+                    ["postgresql"] = "1",
+                    ["sqlserver"] = "1"
+                };
+
+                foreach (KeyValuePair<string, string> provider in providerTrueLiterals)
+                {
+                    AnalyticsDatabaseDriver driver = new AnalyticsDatabaseDriver(start, provider.Value, "0");
+                    AssistantAnalyticsService service = new AssistantAnalyticsService(driver);
+                    AssistantAnalyticsOverviewResult overview = await service.GetOverviewAsync(filter).ConfigureAwait(false);
+                    AssertHelper.AreEqual(2, overview.RequestCount, provider.Key + " request count");
+
+                    string requestQuery = driver.Queries.FirstOrDefault(query => query.Contains("LEFT JOIN request_history r", StringComparison.OrdinalIgnoreCase));
+                    AssertHelper.IsNotNull(requestQuery, provider.Key + " request analytics query");
+                    AssertHelper.StringContains(requestQuery, "CASE WHEN r.id IS NULL THEN " + provider.Value + " ELSE r.success END AS success", provider.Key + " success fallback");
+                }
             });
 
             return GetResults();

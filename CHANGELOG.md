@@ -14,6 +14,7 @@
 
 ### Fixed
 - **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
+- **Assistant analytics database portability**: Retained-chat analytics scoping now uses the active database driver's boolean formatting instead of a hard-coded literal, keeping the fix valid for SQLite, MySQL, PostgreSQL, and SQL Server.
 
 ## v0.13.0 - Assistant Analytics
 

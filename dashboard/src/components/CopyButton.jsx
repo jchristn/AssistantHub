@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { copyToClipboard } from '../utils/clipboard';
 
-function CopyButton({ text }) {
+function CopyButton({ text, className = '', title = 'Copy' }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const success = await copyToClipboard(text);
+    const success = await copyToClipboard(text || '');
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -13,7 +13,13 @@ function CopyButton({ text }) {
   };
 
   return (
-    <button className={`copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy">
+    <button
+      className={`copy-btn ${className} ${copied ? 'copied' : ''}`.trim()}
+      onClick={handleCopy}
+      title={copied ? 'Copied' : title}
+      aria-label={copied ? 'Copied' : title}
+      type="button"
+    >
       {copied ? (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
       ) : (

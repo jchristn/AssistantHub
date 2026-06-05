@@ -49,6 +49,40 @@ function getProviderMetric(stage, key) {
   return Number(stage?.ProviderMetrics?.[key] || 0);
 }
 
+function getStageMetadata(stage, key) {
+  const metadata = stage?.Metadata || {};
+  return Object.prototype.hasOwnProperty.call(metadata, key) ? metadata[key] : undefined;
+}
+
+function hasEndpointDetails(stage) {
+  return Boolean(stage?.EndpointId || stage?.EndpointName || stage?.Provider || stage?.Model);
+}
+
+function getStageNoopReason(stage, stages) {
+  if (!stage || Number(stage.DurationMs || 0) > 0 || hasEndpointDetails(stage)) return null;
+
+  const gateStage = stages?.find((candidate) => candidate?.Name === 'retrieval_gate');
+  const gateDecision = String(getStageMetadata(gateStage, 'decision') || '').toUpperCase();
+
+  if (stage.Name === 'query_rewrite') {
+    if (gateDecision === 'SKIP') return 'Retrieval gate skipped query rewrite';
+    return 'Query rewrite was not run';
+  }
+
+  if (stage.Name === 'retrieval') {
+    if (gateDecision === 'SKIP') return 'Retrieval gate skipped retrieval';
+    return 'Retrieval was not run';
+  }
+
+  if (stage.Name === 'rerank') {
+    const chunksInput = Number(getStageMetadata(stage, 'chunks_input') || 0);
+    if (chunksInput < 1) return 'No chunks to rerank';
+    return 'Rerank was not run';
+  }
+
+  return null;
+}
+
 function RequestPerformanceTable({ stages }) {
   if (!stages || stages.length < 1) return null;
 
@@ -74,6 +108,8 @@ function RequestPerformanceTable({ stages }) {
             const tokens = stage.Tokens || {};
             const inputTokens = tokens.Input ?? tokens.PromptEvalCount;
             const outputTokens = tokens.Output ?? tokens.EvalCount;
+            const noopReason = getStageNoopReason(stage, stages);
+            const endpointText = stage.EndpointId || stage.EndpointName || (noopReason ? 'Not run' : '-');
             return (
               <tr key={`${stage.Name || 'stage'}-${idx}`}>
                 <td>
@@ -81,7 +117,12 @@ function RequestPerformanceTable({ stages }) {
                   <div className="history-stage-kind">{stage.Kind || 'stage'}</div>
                 </td>
                 <td>
-                  <div className="history-stage-endpoint">{stage.EndpointId || stage.EndpointName || '-'}</div>
+                  <div
+                    className={['history-stage-endpoint', noopReason ? 'history-stage-muted' : ''].filter(Boolean).join(' ')}
+                    title={noopReason || undefined}
+                  >
+                    {endpointText}
+                  </div>
                   {(stage.Provider || stage.Model) && (
                     <div className="history-stage-kind">{[stage.Provider, stage.Model].filter(Boolean).join(' / ')}</div>
                   )}

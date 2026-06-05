@@ -8,7 +8,7 @@ import {
   getApiFormatDefaults,
   getDefaultEndpoint,
   getDefaultModel,
-  getDefaultHealthCheckUrl
+  getHealthCheckUrlForEndpointChange
 } from '../../utils/endpointDefaults';
 
 function isAbsoluteUrl(url) {
@@ -76,10 +76,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           updated.HealthCheckTimeoutMs = newDefaults.HealthCheckTimeoutMs;
         }
       } else if (field === 'Endpoint') {
-        const oldDefault = getDefaultHealthCheckUrl(prev.Endpoint, prev.ApiFormat);
-        if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefault) {
-          updated.HealthCheckUrl = getDefaultHealthCheckUrl(value, prev.ApiFormat);
-        }
+        updated.HealthCheckUrl = getHealthCheckUrlForEndpointChange(prev.HealthCheckUrl, prev.Endpoint, value, prev.ApiFormat);
       }
       return updated;
     });

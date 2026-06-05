@@ -47,6 +47,18 @@ function trimTrailingSlash(value) {
   return (value || '').replace(/\/+$/, '');
 }
 
+function normalizeComparableUrl(value) {
+  if (!value) return '';
+
+  try {
+    const url = new URL(value);
+    url.pathname = trimTrailingSlash(url.pathname);
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return trimTrailingSlash(value);
+  }
+}
+
 function appendVersionedPath(endpoint, versionSegment, path) {
   const base = trimTrailingSlash(endpoint);
   if (!base) return '';
@@ -70,6 +82,40 @@ export function getDefaultHealthCheckUrl(endpoint, apiFormat = 'Ollama') {
     case 'Ollama':
     default:
       return `${trimTrailingSlash(endpoint)}/api/tags`;
+  }
+}
+
+export function getHealthCheckUrlForEndpointChange(currentHealthCheckUrl, previousEndpoint, nextEndpoint, apiFormat = 'Ollama') {
+  const nextDefault = getDefaultHealthCheckUrl(nextEndpoint, apiFormat);
+  if (!currentHealthCheckUrl) return nextDefault;
+
+  const previousDefault = getDefaultHealthCheckUrl(previousEndpoint, apiFormat);
+  if (normalizeComparableUrl(currentHealthCheckUrl) === normalizeComparableUrl(previousDefault)) {
+    return nextDefault;
+  }
+
+  try {
+    const healthUrl = new URL(currentHealthCheckUrl);
+    const previousUrl = new URL(previousEndpoint);
+    const nextUrl = new URL(nextEndpoint);
+    const previousBasePath = trimTrailingSlash(previousUrl.pathname);
+    const healthPath = healthUrl.pathname || '/';
+    const isSameBase =
+      healthUrl.origin === previousUrl.origin
+      && (!previousBasePath || healthPath === previousBasePath || healthPath.startsWith(`${previousBasePath}/`));
+
+    if (!isSameBase) return currentHealthCheckUrl;
+
+    const suffixPath = previousBasePath && healthPath.startsWith(previousBasePath)
+      ? healthPath.slice(previousBasePath.length)
+      : healthPath;
+    const nextBasePath = trimTrailingSlash(nextUrl.pathname);
+    nextUrl.pathname = `${nextBasePath}${suffixPath.startsWith('/') ? suffixPath : `/${suffixPath}`}`;
+    nextUrl.search = healthUrl.search;
+    nextUrl.hash = healthUrl.hash;
+    return nextUrl.toString().replace(/\/$/, '');
+  } catch {
+    return currentHealthCheckUrl;
   }
 }
 

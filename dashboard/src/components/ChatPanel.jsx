@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import MetadataFilterModal from './modals/MetadataFilterModal';
+import CopyButton from './CopyButton';
 
 const WAIT_MESSAGES = [
   "Scanning available sources...",
@@ -961,6 +962,11 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                   })()}
                   {msg.role === 'assistant' && !msg.isError && (
                     <div className="chat-message-actions">
+                      <CopyButton
+                        text={msg.content}
+                        className="chat-action-btn"
+                        title="Copy response"
+                      />
                       <button
                         className={`chat-action-btn ${feedbackSent[idx] === 'ThumbsUp' ? 'active' : ''}`}
                         onClick={() => handleFeedback(idx, 'ThumbsUp')}

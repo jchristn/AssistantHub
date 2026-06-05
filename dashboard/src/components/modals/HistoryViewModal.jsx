@@ -61,13 +61,15 @@ function valueTooltip(label, description, value) {
   return `${label}: ${description} Current value: ${value || 'N/A'}.`;
 }
 
-function stageSummary(stage) {
+function stageSummary(stage, stages = []) {
+  const noopReason = getStageNoopReason(stage, stages);
   const parts = [
     `${formatStageLabel(stage?.Name)} stage.`,
     stage?.Kind ? `Kind: ${stage.Kind}.` : null,
     stage?.EndpointId ? `Endpoint: ${stage.EndpointId}.` : null,
     stage?.Provider ? `Provider: ${stage.Provider}.` : null,
     stage?.Model ? `Model: ${stage.Model}.` : null,
+    noopReason,
     `Duration: ${formatMs(getStageDuration(stage))}.`
   ];
   return parts.filter(Boolean).join(' ');
@@ -121,6 +123,40 @@ function getProviderMetric(stage, key) {
   return Number(stage?.ProviderMetrics?.[key] || 0);
 }
 
+function getStageMetadata(stage, key) {
+  const metadata = stage?.Metadata || {};
+  return Object.prototype.hasOwnProperty.call(metadata, key) ? metadata[key] : undefined;
+}
+
+function hasEndpointDetails(stage) {
+  return Boolean(stage?.EndpointId || stage?.EndpointName || stage?.Provider || stage?.Model);
+}
+
+function getStageNoopReason(stage, stages) {
+  if (!stage || getStageDuration(stage) > 0 || hasEndpointDetails(stage)) return null;
+
+  const gateStage = stages?.find((candidate) => candidate?.Name === 'retrieval_gate');
+  const gateDecision = String(getStageMetadata(gateStage, 'decision') || '').toUpperCase();
+
+  if (stage.Name === 'query_rewrite') {
+    if (gateDecision === 'SKIP') return 'Not run: retrieval gate returned SKIP, so query rewrite was bypassed.';
+    return 'Not run: no query rewrite model call was made for this turn.';
+  }
+
+  if (stage.Name === 'retrieval') {
+    if (gateDecision === 'SKIP') return 'Not run: retrieval gate returned SKIP.';
+    return 'Not run: no retrieval search was performed for this turn.';
+  }
+
+  if (stage.Name === 'rerank') {
+    const chunksInput = Number(getStageMetadata(stage, 'chunks_input') || 0);
+    if (chunksInput < 1) return 'Not run: no retrieved chunks were available to rerank.';
+    return 'Not run: no rerank model call was made for this turn.';
+  }
+
+  return null;
+}
+
 function TimingBar({ label, tooltip, durationMs, totalMs, color }) {
   const pct = totalMs > 0 && durationMs > 0 ? Math.max(1, (durationMs / totalMs) * 100) : 0;
   const formattedDuration = formatMs(durationMs);
@@ -167,8 +203,9 @@ function StageTable({ stages }) {
             const tokens = stage.Tokens || {};
             const inputTokens = tokens.Input ?? tokens.PromptEvalCount;
             const outputTokens = tokens.Output ?? tokens.EvalCount;
-            const stageText = stageSummary(stage);
-            const endpointText = stage.EndpointId || stage.EndpointName || '-';
+            const noopReason = getStageNoopReason(stage, stages);
+            const stageText = stageSummary(stage, stages);
+            const endpointText = stage.EndpointId || stage.EndpointName || (noopReason ? 'Not run' : '-');
             const providerText = [stage.Provider, stage.Model].filter(Boolean).join(' / ');
             const generationMs = getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs');
             const tokenText = inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A';
@@ -181,8 +218,8 @@ function StageTable({ stages }) {
                 <td>
                   <Tooltip
                     as="div"
-                    className="history-stage-endpoint"
-                    text={`Endpoint used for this stage. Value: ${endpointText}. ${providerText ? `Provider/model: ${providerText}.` : 'No provider/model was recorded for this stage.'}`}
+                    className={['history-stage-endpoint', noopReason ? 'history-stage-muted' : ''].filter(Boolean).join(' ')}
+                    text={`Endpoint used for this stage. Value: ${endpointText}. ${noopReason || (providerText ? `Provider/model: ${providerText}.` : 'No provider/model was recorded for this stage.')}`}
                   >
                     {endpointText}
                   </Tooltip>

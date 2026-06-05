@@ -208,7 +208,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.12.0",
+  "Version": "0.13.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -2404,6 +2404,64 @@ List distinct conversation threads grouped from chat history records.
 | `FirstMessageUtc` | datetime | Timestamp of the first message in the thread.|
 | `LastMessageUtc`  | datetime | Timestamp of the last message in the thread. |
 | `TurnCount`       | int      | Number of conversation turns in the thread.  |
+
+---
+
+## Assistant Analytics (Authenticated)
+
+Assistant analytics summarizes the v0.12.0 chat/request telemetry for a single assistant without returning raw prompts, responses, request bodies, response bodies, headers, or secrets. Analytics are scoped to surviving Assistant History rows; Request History is joined only as supporting timing/status telemetry, so deleting assistant history removes those turns from Assistant Analytics while leaving the audit log intact. Authenticated assistant owners can view their own assistant analytics. Tenant admins can view analytics for assistants in their tenant. Global admins can view all tenants.
+
+All analytics endpoints support these range parameters:
+
+| Parameter       | Type     | Default   | Description |
+|-----------------|----------|-----------|-------------|
+| `range`         | string   | `lastDay` | Preset range: `lastHour`, `lastDay`, `lastWeek`, or `lastMonth`. |
+| `startUtc`      | datetime | null      | Explicit UTC start. Must be paired with `endUtc`; overrides `range`. |
+| `endUtc`        | datetime | null      | Explicit UTC end. Must be paired with `startUtc`; overrides `range`. |
+| `bucketSeconds` | int      | automatic | Optional bucket width. The server caps responses to 240 buckets. |
+
+The resolved `Range` object is returned in every response with `RangeId`, `StartUtc`, `EndUtc`, `BucketSeconds`, and `BucketCount`.
+
+### GET /v1.0/assistants/{assistantId}/analytics/overview
+
+Returns one summary row for the selected assistant and range.
+
+**Response fields include:** `RequestCount`, `SuccessCount`, `FailureCount`, `SuccessRate`, `AverageDurationMs`, `P50DurationMs`, `P90DurationMs`, `P95DurationMs`, `P99DurationMs`, `MaxDurationMs`, `TelemetryEventCount`, `RequestsWithTelemetry`, `TelemetryCoverageRate`, `DominantStage`, `TopEndpointId`, `TopEndpointName`, `TopEndpointProvider`, `TopEndpointModel`, `FeedbackCount`, `ThumbsUpCount`, `ThumbsDownCount`, and `NegativeFeedbackRate`.
+
+### GET /v1.0/assistants/{assistantId}/analytics/timeseries
+
+Returns chart-ready time series. Optional filters:
+
+| Parameter    | Type   | Description |
+|--------------|--------|-------------|
+| `metrics`    | string | Comma-separated metric names. Omit to return all supported metrics. |
+| `stage`      | string | Filter performance events to a stage such as `retrieval`, `query_rewrite`, `rerank`, or `final_inference`. |
+| `endpointId` | string | Filter to one endpoint. |
+| `model`      | string | Filter to one model name. |
+
+Supported metric names include `request_count`, `success_count`, `failure_count`, `success_rate`, `avg_duration_ms`, `p95_duration_ms`, `p99_duration_ms`, `max_duration_ms`, `endpoint_limiter_wait_avg_ms`, `endpoint_limiter_wait_p95_ms`, `endpoint_wait_calls`, `provider_load_avg_ms`, `provider_generation_avg_ms`, `provider_tokens_per_second_avg`, `input_tokens`, `output_tokens`, `total_tokens`, `retrieval_query_count_avg`, `chunks_output_avg`, `query_rewrite_calls`, `rerank_calls`, and `final_inference_calls`.
+
+### GET /v1.0/assistants/{assistantId}/analytics/stages
+
+Returns per-bucket stage summaries with `Stage`, `Kind`, `Calls`, `Failures`, `SkippedCount`, `AverageDurationMs`, `P95DurationMs`, and `MaxDurationMs`.
+
+Optional filters: `stage`, `endpointId`, `endpointType`, and `model`.
+
+### GET /v1.0/assistants/{assistantId}/analytics/endpoints
+
+Returns ranked endpoint/model/provider summaries. Optional filters: `stage`, `endpointId`, `endpointType`, `model`, and `limit` (default `25`, max `250`).
+
+Each summary includes endpoint metadata, call/failure counts, duration percentiles, limiter wait, request-to-headers timing, provider load/generation timing, average tokens per second, and total input/output tokens.
+
+### GET /v1.0/assistants/{assistantId}/analytics/slowest
+
+Returns the slowest request-history rows in the selected range, optionally filtered by `stage`, `endpointId`, `endpointType`, `model`, and `limit` (default `25`, max `250`).
+
+Rows include `RequestHistoryId`, `ChatHistoryId`, `TraceId`, `CreatedUtc`, `StatusCode`, `Success`, `DurationMs`, `RequestPath`, and dominant-stage endpoint/model metadata.
+
+### GET /v1.0/assistants/{assistantId}/analytics/feedback
+
+Returns feedback totals and per-bucket feedback counts: `ThumbsUpCount`, `ThumbsDownCount`, `UnknownCount`, `TotalCount`, and `NegativeRate`.
 
 ---
 

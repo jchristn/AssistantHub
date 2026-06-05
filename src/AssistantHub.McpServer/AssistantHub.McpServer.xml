@@ -1,0 +1,723 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AssistantHub.McpServer</name>
+    </assembly>
+    <members>
+        <member name="T:AssistantHub.McpServer.AssistantHubMcpServer">
+            <summary>
+            AssistantHub MCP Server.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.AssistantHubMcpServer.Main(System.String[])">
+            <summary>
+            Entrypoint.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubMcpContext">
+            <summary>
+            Shared MCP execution context.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpContext.Settings">
+            <summary>
+            Settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpContext.Sdk">
+            <summary>
+            Upstream SDK client.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpContext.Logging">
+            <summary>
+            Logger.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpContext.Redactor">
+            <summary>
+            Redactor.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubMcpRedactor">
+            <summary>
+            Response redaction helper for secret-bearing payloads.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRedactor.RedactJson(System.String)">
+            <summary>
+            Redact a JSON string.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRedactor.SerializeAndRedact(System.Object)">
+            <summary>
+            Serialize and redact an object.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy">
+            <summary>
+            Minimal authenticated REST bridge for MCP operations.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.SendJson(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.Net.Http.HttpMethod,System.String,System.String)">
+            <summary>
+            Send JSON and return the body.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.SendJsonOrNullOnNotFound(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.Net.Http.HttpMethod,System.String,System.String)">
+            <summary>
+            Send JSON and return the body or null on not found.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.SendBinary(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.Net.Http.HttpMethod,System.String,System.Byte[],System.String)">
+            <summary>
+            Send a binary request.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.Download(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.String)">
+            <summary>
+            Download binary content.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.HeadExists(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.String)">
+            <summary>
+            Check whether a resource exists using HEAD.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpRestProxy.Escape(System.String)">
+            <summary>
+            URL escape a string.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers">
+            <summary>
+            Helper methods for the AssistantHub MCP Server.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.Serialize(System.Object)">
+            <summary>
+            Serialize an object as JSON.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.Serialize(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.Object,System.Boolean)">
+            <summary>
+            Serialize and conditionally redact an object.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.SerializeJsonString(AssistantHub.McpServer.Classes.AssistantHubMcpContext,System.String,System.Boolean)">
+            <summary>
+            Conditionally redact an existing JSON string.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetStringRequired(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Get a required string property.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetStringOptional(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Get an optional string property.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetIntOptional(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Get an optional integer.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetBoolOrDefault(System.Nullable{System.Text.Json.JsonElement},System.String,System.Boolean)">
+            <summary>
+            Get an optional boolean with default.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetJsonRequired(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Get a required JSON parameter as raw JSON.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetJsonOptional(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Get an optional JSON parameter as raw JSON.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.DeserializeRequired``1(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Deserialize a required JSON parameter.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.DeserializeOptional``1(System.Nullable{System.Text.Json.JsonElement},System.String)">
+            <summary>
+            Deserialize an optional JSON parameter.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.AppendQueryString(System.String,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Append query string parameters to a path.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.SerializeBinaryEnvelope(AssistantHub.McpServer.Classes.BinaryResponse,System.String)">
+            <summary>
+            Convert a binary download to a JSON envelope.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.GetBase64BytesRequired(System.Nullable{System.Text.Json.JsonElement},System.String,System.Int64)">
+            <summary>
+            Decode required base64 content and enforce the configured limit.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(System.Int64,System.Int64,System.String)">
+            <summary>
+            Enforce the configured binary size limit.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings">
+            <summary>
+            AssistantHub MCP Server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.CreatedUtc">
+            <summary>
+            Creation timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.CreatedBy">
+            <summary>
+            Created by identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.DeploymentType">
+            <summary>
+            Deployment type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.SoftwareVersion">
+            <summary>
+            Software version.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Node">
+            <summary>
+            Node information.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Logging">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.AssistantHub">
+            <summary>
+            Upstream AssistantHub connection settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Http">
+            <summary>
+            HTTP transport settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Tcp">
+            <summary>
+            TCP transport settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.WebSocket">
+            <summary>
+            WebSocket transport settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Storage">
+            <summary>
+            Storage settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Debug">
+            <summary>
+            Debug settings.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.AssistantHubServiceSettings">
+            <summary>
+            Upstream AssistantHub service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubServiceSettings.Endpoint">
+            <summary>
+            Upstream endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubServiceSettings.ApiKey">
+            <summary>
+            Bearer token used for upstream authentication.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.BinaryResponse">
+            <summary>
+            Download response envelope.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.BinaryResponse.Bytes">
+            <summary>
+            Bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.BinaryResponse.ContentType">
+            <summary>
+            Content type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.BinaryResponse.ContentLength">
+            <summary>
+            Content length.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.BinaryResponse.FileName">
+            <summary>
+            File name.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.Constants">
+            <summary>
+            Constants.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.Version">
+            <summary>
+            Software version.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.Logo">
+            <summary>
+            Logo.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.ProductName">
+            <summary>
+            Product name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.Copyright">
+            <summary>
+            Copyright.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.SettingsFile">
+            <summary>
+            Settings file path.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.AssistantHubEndpointEnvironmentVariable">
+            <summary>
+            AssistantHub endpoint environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.AssistantHubApiKeyEnvironmentVariable">
+            <summary>
+            AssistantHub API key environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpHttpHostnameEnvironmentVariable">
+            <summary>
+            MCP HTTP hostname environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpHttpPortEnvironmentVariable">
+            <summary>
+            MCP HTTP port environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpTcpAddressEnvironmentVariable">
+            <summary>
+            MCP TCP address environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpTcpPortEnvironmentVariable">
+            <summary>
+            MCP TCP port environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpWebSocketHostnameEnvironmentVariable">
+            <summary>
+            MCP WebSocket hostname environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.McpWebSocketPortEnvironmentVariable">
+            <summary>
+            MCP WebSocket port environment variable.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.McpServer.Classes.Constants.ConsoleLoggingEnvironmentVariable">
+            <summary>
+            Console logging environment variable.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.DebugSettings">
+            <summary>
+            Debug settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.DebugSettings.Exceptions">
+            <summary>
+            Enable exception debug output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.DebugSettings.Requests">
+            <summary>
+            Enable request debug output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.DebugSettings.McpOperations">
+            <summary>
+            Enable MCP operation debug output.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.HttpServerSettings">
+            <summary>
+            HTTP server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.HttpServerSettings.Hostname">
+            <summary>
+            HTTP hostname.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.HttpServerSettings.Port">
+            <summary>
+            HTTP port.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.LoggingServerSettings">
+            <summary>
+            Logging server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingServerSettings.Hostname">
+            <summary>
+            Hostname.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingServerSettings.Port">
+            <summary>
+            Port.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.LoggingSettings">
+            <summary>
+            Logging settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.Servers">
+            <summary>
+            Logging servers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.LogDirectory">
+            <summary>
+            Log directory.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.LogFilename">
+            <summary>
+            Log filename.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.ConsoleLogging">
+            <summary>
+            Enable console logging.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.EnableColors">
+            <summary>
+            Enable colors in console.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.LoggingSettings.MinimumSeverity">
+            <summary>
+            Minimum severity level.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.McpMethodDefinition">
+            <summary>
+            MCP method definition.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.McpMethodDefinition.Name">
+            <summary>
+            Name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.McpMethodDefinition.Description">
+            <summary>
+            Description.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.McpMethodDefinition.InputSchema">
+            <summary>
+            Input schema.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.McpMethodDefinition.Handler">
+            <summary>
+            Handler.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.McpRegistrationHelper">
+            <summary>
+            MCP registration helper.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.McpRegistrationHelper.EmptySchema">
+            <summary>
+            Empty input schema.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterHttpTools(Voltaic.McpHttpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+            <summary>
+            Register HTTP tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterTcpMethods(Voltaic.McpTcpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+            <summary>
+            Register TCP methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+            <summary>
+            Register WebSocket methods.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.NodeSettings">
+            <summary>
+            Node information settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.Guid">
+            <summary>
+            Node GUID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.Name">
+            <summary>
+            Node name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.Hostname">
+            <summary>
+            Node hostname.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.InstanceType">
+            <summary>
+            Instance type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.LastStartUtc">
+            <summary>
+            Last start timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.NodeSettings.CreatedUtc">
+            <summary>
+            Creation timestamp.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.StorageSettings">
+            <summary>
+            Storage settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.StorageSettings.BackupsDirectory">
+            <summary>
+            Backups directory.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.StorageSettings.TempDirectory">
+            <summary>
+            Temporary directory.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.StorageSettings.MaxInlineBinaryBytes">
+            <summary>
+            Maximum inline binary payload size in bytes.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.TcpServerSettings">
+            <summary>
+            TCP server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.TcpServerSettings.Address">
+            <summary>
+            Address on which to listen.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.TcpServerSettings.Port">
+            <summary>
+            TCP port.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.WebSocketServerSettings">
+            <summary>
+            WebSocket server settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.WebSocketServerSettings.Hostname">
+            <summary>
+            WebSocket hostname.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.McpServer.Classes.WebSocketServerSettings.Port">
+            <summary>
+            WebSocket port.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.AssistantAnalyticsRegistrations">
+            <summary>
+            Registration methods for assistant analytics operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.AssistantRegistrations">
+            <summary>
+            Registration methods for assistant operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.AssistantSettingsRegistrations">
+            <summary>
+            Registration methods for assistant settings operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.AuthenticationRegistrations">
+            <summary>
+            Registration methods for authentication operations.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterHttpTools(Voltaic.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register HTTP tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterTcpMethods(Voltaic.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register TCP methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register WebSocket methods.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.BucketObjectRegistrations">
+            <summary>
+            Registration methods for bucket object operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.BucketRegistrations">
+            <summary>
+            Registration methods for bucket operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CollectionRecordRegistrations">
+            <summary>
+            Registration methods for collection record operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CollectionRegistrations">
+            <summary>
+            Registration methods for collection operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CompletionEndpointRegistrations">
+            <summary>
+            Registration methods for completion endpoint operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.ConfigurationRegistrations">
+            <summary>
+            Registration methods for configuration operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CrawlOperationRegistrations">
+            <summary>
+            Registration methods for crawl operation operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CrawlPlanRegistrations">
+            <summary>
+            Registration methods for crawl plan operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.CredentialRegistrations">
+            <summary>
+            Registration methods for credential operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.DocumentRegistrations">
+            <summary>
+            Registration methods for document operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.EmbeddingEndpointRegistrations">
+            <summary>
+            Registration methods for embedding endpoint operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.EvalRegistrations">
+            <summary>
+            Registration methods for evaluation operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.FeedbackRegistrations">
+            <summary>
+            Registration methods for feedback operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.HistoryRegistrations">
+            <summary>
+            Registration methods for history and thread operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.IngestionRuleRegistrations">
+            <summary>
+            Registration methods for ingestion rule operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.ModelRegistrations">
+            <summary>
+            Registration methods for model management operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.RequestHistoryRegistrations">
+            <summary>
+            Registration methods for request history operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.SystemRegistrations">
+            <summary>
+            Registration methods for system operations.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterHttpTools(Voltaic.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register HTTP tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterTcpMethods(Voltaic.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register TCP methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+            <summary>
+            Register WebSocket methods.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.TenantRegistrations">
+            <summary>
+            Registration methods for tenant operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.UserRegistrations">
+            <summary>
+            Registration methods for user operations.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -66,7 +66,7 @@ namespace Test.Shared
 
             _requests.Add(new RequestRecord(request.Method, url, body, request.Headers));
 
-            foreach (var kvp in _handlers)
+            foreach (KeyValuePair<string, Func<HttpRequestMessage, HttpResponseMessage>> kvp in _handlers)
             {
                 if (url.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
                 {
@@ -91,25 +91,6 @@ namespace Test.Shared
         public HttpClient CreateClient()
         {
             return new HttpClient(this);
-        }
-
-        /// <summary>
-        /// Record of a request sent through this handler.
-        /// </summary>
-        public class RequestRecord
-        {
-            public HttpMethod Method { get; }
-            public string Url { get; }
-            public string Body { get; }
-            public System.Net.Http.Headers.HttpRequestHeaders Headers { get; }
-
-            public RequestRecord(HttpMethod method, string url, string body, System.Net.Http.Headers.HttpRequestHeaders headers)
-            {
-                Method = method;
-                Url = url;
-                Body = body;
-                Headers = headers;
-            }
         }
     }
 }

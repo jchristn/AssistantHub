@@ -60,7 +60,7 @@ namespace AssistantHub.Server.Services
                 _ReconcilerTokenSource = null;
             }
 
-            foreach (var kvp in _Workers)
+            foreach (KeyValuePair<string, SlackAssistantWorker> kvp in _Workers)
             {
                 try
                 {
@@ -152,7 +152,7 @@ namespace AssistantHub.Server.Services
                 }
             }
 
-            foreach (var kvp in _Workers)
+            foreach (KeyValuePair<string, SlackAssistantWorker> kvp in _Workers)
             {
                 if (!expected.Contains(kvp.Key))
                 {

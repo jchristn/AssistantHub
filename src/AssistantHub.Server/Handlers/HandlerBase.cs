@@ -121,7 +121,7 @@ namespace AssistantHub.Server.Handlers
         protected AuthContext GetAuthContext(HttpContextBase ctx)
         {
             if (ctx == null) throw new ArgumentNullException(nameof(ctx));
-            var metadata = GetMetadata(ctx);
+            Dictionary<string, object> metadata = GetMetadata(ctx);
             if (metadata.ContainsKey("authContext"))
                 return (AuthContext)metadata["authContext"];
             return null;

@@ -162,47 +162,5 @@ namespace AssistantHub.McpServer.Classes
                 + ": "
                 + response.Body);
         }
-
-        /// <summary>
-        /// Download response envelope.
-        /// </summary>
-        public class BinaryResponse
-        {
-            /// <summary>
-            /// Bytes.
-            /// </summary>
-            public byte[] Bytes { get; set; } = Array.Empty<byte>();
-
-            /// <summary>
-            /// Content type.
-            /// </summary>
-            public string? ContentType { get; set; }
-
-            /// <summary>
-            /// Content length.
-            /// </summary>
-            public long? ContentLength { get; set; }
-
-            /// <summary>
-            /// File name.
-            /// </summary>
-            public string? FileName { get; set; }
-        }
-
-        private sealed class RestResponse
-        {
-            public RestResponse(HttpStatusCode statusCode, string reasonPhrase, string body, bool isSuccess)
-            {
-                StatusCode = statusCode;
-                ReasonPhrase = reasonPhrase;
-                Body = body;
-                IsSuccess = isSuccess;
-            }
-
-            public HttpStatusCode StatusCode { get; }
-            public string ReasonPhrase { get; }
-            public string Body { get; }
-            public bool IsSuccess { get; }
-        }
     }
 }

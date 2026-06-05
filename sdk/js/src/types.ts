@@ -1,3 +1,7 @@
+export * from './types.telemetry';
+export * from './types.analytics';
+export * from './types.crawlEval';
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -620,71 +624,6 @@ export interface ChatHistory {
   LastUpdateUtc?: string;
 }
 
-/** Versioned provider-agnostic performance telemetry for a chat turn. */
-export interface AssistantPerformanceTelemetry {
-  SchemaVersion?: number;
-  TraceId?: string | null;
-  ChatHistoryId?: string | null;
-  RequestHistoryId?: string | null;
-  WallTimeMs?: number;
-  CreatedUtc?: string;
-  Stages?: AssistantPerformanceStage[];
-}
-
-/** A measured stage in the assistant pipeline. */
-export interface AssistantPerformanceStage {
-  Name?: string;
-  Kind?: string;
-  Sequence?: number;
-  EndpointId?: string | null;
-  EndpointName?: string | null;
-  EndpointType?: string | null;
-  Provider?: string | null;
-  ApiFormat?: string | null;
-  Model?: string | null;
-  StartedUtc?: string | null;
-  FinishedUtc?: string | null;
-  DurationMs?: number;
-  Success?: boolean;
-  HttpStatusCode?: number | null;
-  ErrorType?: string | null;
-  ErrorMessage?: string | null;
-  ClientTimings?: AssistantPerformanceClientTimings | null;
-  Tokens?: AssistantTokenUsageTelemetry | null;
-  ProviderMetrics?: AssistantProviderMetrics | null;
-  Metadata?: Record<string, unknown> | null;
-  ProviderRaw?: Record<string, unknown> | null;
-}
-
-/** Client-observed timings for an upstream provider call. */
-export interface AssistantPerformanceClientTimings {
-  EndpointLimiterWaitMs?: number | null;
-  RequestToHeadersMs?: number | null;
-  HeadersToFirstTokenMs?: number | null;
-  FirstTokenToLastTokenMs?: number | null;
-  TotalMs?: number | null;
-}
-
-/** Normalized token counters. */
-export interface AssistantTokenUsageTelemetry {
-  Input?: number | null;
-  Output?: number | null;
-  Total?: number | null;
-  PromptEvalCount?: number | null;
-  EvalCount?: number | null;
-}
-
-/** Provider-native metrics normalized into common fields. */
-export interface AssistantProviderMetrics {
-  QueueMs?: number | null;
-  LoadMs?: number | null;
-  PromptEvalMs?: number | null;
-  GenerationMs?: number | null;
-  TotalMs?: number | null;
-  TokensPerSecond?: number | null;
-  RequestId?: string | null;
-}
-
 /** Summary of a conversation thread. */
 export interface ThreadSummary {
   ThreadId: string;
@@ -782,6 +721,7 @@ export interface RequestHistorySummaryResult {
 export interface RequestHistoryDeleteResult {
   DeletedCount?: number;
 }
+
 
 // ============================================================================
 // Endpoint Configuration (Partio)
@@ -982,169 +922,6 @@ export interface BucketObjectMetadata {
 
 // ============================================================================
 // Crawl
-// ============================================================================
-
-/** Crawl plan configuration. */
-export interface CrawlPlan {
-  Id?: string;
-  TenantId?: string;
-  Name?: string;
-  RepositoryType?: RepositoryType;
-  IngestionSettings?: CrawlIngestionSettings;
-  RepositorySettings?: CrawlRepositorySettings;
-  Schedule?: CrawlScheduleSettings;
-  Filter?: CrawlFilterSettings;
-  ProcessAdditions?: boolean;
-  ProcessUpdates?: boolean;
-  ProcessDeletions?: boolean;
-  MaxDrainTasks?: number;
-  RetentionDays?: number;
-  State?: CrawlPlanState;
-  LastCrawlStartUtc?: string | null;
-  LastCrawlFinishUtc?: string | null;
-  LastCrawlSuccess?: boolean | null;
-  CreatedUtc?: string;
-  LastUpdateUtc?: string;
-}
-
-/** Crawl ingestion settings. */
-export interface CrawlIngestionSettings {
-  IngestionRuleId?: string;
-  StoreInS3?: boolean;
-  S3BucketName?: string;
-}
-
-/** Crawl repository settings. */
-export interface CrawlRepositorySettings {
-  RepositoryType?: RepositoryType;
-  AuthenticationType?: WebAuthType;
-  Username?: string;
-  Password?: string;
-  ApiKeyHeader?: string;
-  ApiKeyValue?: string;
-  BearerToken?: string;
-  UserAgent?: string;
-  StartUrl?: string;
-  UseHeadlessBrowser?: boolean;
-  FollowLinks?: boolean;
-  FollowRedirects?: boolean;
-  ExtractSitemapLinks?: boolean;
-  RestrictToChildUrls?: boolean;
-  RestrictToSubdomain?: boolean;
-  RestrictToRootDomain?: boolean;
-  IgnoreRobotsTxt?: boolean;
-  MaxDepth?: number;
-  MaxParallelTasks?: number;
-  CrawlDelayMs?: number;
-}
-
-/** Crawl schedule settings. */
-export interface CrawlScheduleSettings {
-  IntervalType?: ScheduleInterval;
-  IntervalValue?: number;
-}
-
-/** Crawl filter settings. */
-export interface CrawlFilterSettings {
-  ObjectPrefix?: string;
-  ObjectSuffix?: string;
-  AllowedContentTypes?: string[];
-  MinimumSize?: number;
-  MaximumSize?: number | null;
-}
-
-/** Crawl operation record. */
-export interface CrawlOperation {
-  Id?: string;
-  TenantId?: string;
-  CrawlPlanId?: string;
-  State?: CrawlOperationState;
-  StatusMessage?: string;
-  ObjectsEnumerated?: number;
-  BytesEnumerated?: number;
-  ObjectsAdded?: number;
-  BytesAdded?: number;
-  ObjectsUpdated?: number;
-  BytesUpdated?: number;
-  ObjectsDeleted?: number;
-  BytesDeleted?: number;
-  ObjectsSuccess?: number;
-  BytesSuccess?: number;
-  ObjectsFailed?: number;
-  BytesFailed?: number;
-  EnumerationFile?: string;
-  StartUtc?: string | null;
-  StartEnumerationUtc?: string | null;
-  FinishEnumerationUtc?: string | null;
-  StartRetrievalUtc?: string | null;
-  FinishRetrievalUtc?: string | null;
-  FinishUtc?: string | null;
-  CreatedUtc?: string;
-  LastUpdateUtc?: string;
-}
-
-// ============================================================================
-// Evaluation
-// ============================================================================
-
-/** Evaluation fact. */
-export interface EvalFact {
-  Id?: string;
-  TenantId?: string;
-  AssistantId?: string;
-  Category?: string;
-  Question?: string;
-  ExpectedFacts?: string;
-  CreatedUtc?: string;
-  LastUpdateUtc?: string;
-}
-
-/** Evaluation run. */
-export interface EvalRun {
-  Id?: string;
-  TenantId?: string;
-  AssistantId?: string;
-  Status?: EvalStatus;
-  TotalFacts?: number;
-  FactsEvaluated?: number;
-  FactsPassed?: number;
-  FactsFailed?: number;
-  PassRate?: number;
-  JudgePrompt?: string;
-  StartedUtc?: string | null;
-  CompletedUtc?: string | null;
-  CreatedUtc?: string;
-}
-
-/** Request to start an evaluation run. */
-export interface EvalRunRequest {
-  AssistantId: string;
-  JudgePrompt?: string;
-}
-
-/** Evaluation result. */
-export interface EvalResult {
-  Id?: string;
-  RunId?: string;
-  FactId?: string;
-  Question?: string;
-  ExpectedFacts?: string;
-  LlmResponse?: string;
-  FactVerdicts?: string;
-  OverallPass?: boolean;
-  DurationMs?: number;
-  CreatedUtc?: string;
-}
-
-/** Individual fact verdict within an eval result. */
-export interface FactVerdict {
-  Fact: string;
-  Pass: boolean;
-  Reasoning?: string;
-}
-
-// ============================================================================
-// Configuration
 // ============================================================================
 
 /** AssistantHub server configuration (partial -- includes common fields). */

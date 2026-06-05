@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.12.0` adds provider-agnostic assistant performance telemetry. Chat history and request history are linked by trace IDs, and the dashboard now exposes detailed hot-path timing for retrieval, utility inference, endpoint limiter wait, request-to-headers latency, first-token wait, generation, token counts, and provider metrics when available.
+`v0.13.0` adds assistant analytics over the v0.12.0 telemetry stream. The dashboard now includes an assistant-scoped Analytics page with request volume, latency, stage, endpoint/model, provider timing, token, retrieval fanout, slow-request, and feedback trends over the last hour, day, week, or month. Assistant Analytics is scoped to surviving Assistant History rows, with Request History joined only as supporting telemetry.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,16 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 </details>
 
 ---
+
+## New in v0.13.0
+
+- **Assistant Analytics dashboard** -- New `Assistants > Analytics` page with per-assistant charts for request volume, success/failure, latency percentiles, stage duration, endpoint/model usage, provider timings, token throughput, retrieval fanout, slowest requests, and feedback trend, scoped to retained Assistant History rows.
+- **Analytics REST API** -- Added `GET /v1.0/assistants/{assistantId}/analytics/*` endpoints for overview, time series, stage buckets, endpoint summaries, slowest requests, and feedback analytics.
+- **Efficient assistant-scoped telemetry queries** -- `chat_history_performance_events` now carries `assistant_id`, with startup migrations and provider scripts adding backfill and indexes for SQLite, PostgreSQL, MySQL, and SQL Server.
+- **SDK and MCP coverage** -- C#, JavaScript/TypeScript, Python, Postman, OpenAPI, and MCP all expose the new assistant analytics read APIs.
+- **Schema migration** -- Existing deployments can add analytics indexes and backfill performance events with the matching `migrations/011_upgrade_to_v0.13.0.*.sql` provider script.
+
+Implementation planning notes for Assistant Analytics are archived in [`archive/ASSISTANT_ANALYTICS.md`](archive/ASSISTANT_ANALYTICS.md).
 
 ## New in v0.12.0
 
@@ -471,6 +481,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio completion endpoint management and smoke testing (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
 | Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify` | Per-assistant endpoint, prompt, RAG, and Slack configuration. Includes draft Slack connectivity verification (owner or admin). |
+| Assistant Analytics | `GET /v1.0/assistants/{id}/analytics/{overview,timeseries,stages,endpoints,slowest,feedback}` | Assistant-scoped performance, endpoint, retrieval, slow request, and feedback analytics |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
 | Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |
@@ -515,7 +526,7 @@ Supported tool families include:
 - `document/*`, `ingestionrule/*`
 - `embeddingendpoint/*`, `completionendpoint/*`, `model/*`
 - `crawlplan/*`, `crawloperation/*`
-- `history/*`, `thread/*`, `requesthistory/*`
+- `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*`
 - `eval/*`
 - `configuration/*`
 

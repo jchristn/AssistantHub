@@ -28,6 +28,13 @@ import type {
   RequestHistoryEntry,
   RequestHistorySummaryResult,
   RequestHistoryDeleteResult,
+  AssistantAnalyticsQuery,
+  AssistantAnalyticsOverviewResult,
+  AssistantAnalyticsTimeSeriesResult,
+  AssistantAnalyticsStageResult,
+  AssistantAnalyticsEndpointResult,
+  AssistantAnalyticsSlowestResult,
+  AssistantAnalyticsFeedbackResult,
   PartioEndpointRequest,
   PartioEndpointConfig,
   EndpointHealthStatus,
@@ -404,6 +411,36 @@ export class AssistantHubClient {
   /** Verify Slack settings for an assistant. */
   async verifySlack(assistantId: string, request: SlackVerificationRequest): Promise<SlackVerificationResponse> {
     return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/settings/slack/verify`, request);
+  }
+
+  /** Get assistant analytics overview. */
+  async getAssistantAnalyticsOverview(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsOverviewResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/overview${this._qs(query)}`);
+  }
+
+  /** Get assistant analytics time series. */
+  async getAssistantAnalyticsTimeSeries(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsTimeSeriesResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/timeseries${this._qs(query)}`);
+  }
+
+  /** Get assistant analytics stage summaries. */
+  async getAssistantAnalyticsStages(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsStageResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/stages${this._qs(query)}`);
+  }
+
+  /** Get assistant analytics endpoint summaries. */
+  async getAssistantAnalyticsEndpoints(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsEndpointResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/endpoints${this._qs(query)}`);
+  }
+
+  /** Get assistant analytics slowest requests. */
+  async getAssistantAnalyticsSlowest(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsSlowestResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/slowest${this._qs(query)}`);
+  }
+
+  /** Get assistant feedback analytics. */
+  async getAssistantAnalyticsFeedback(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsFeedbackResult> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/feedback${this._qs(query)}`);
   }
 
   // --------------------------------------------------------------------------

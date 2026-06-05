@@ -73,10 +73,10 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Enum.ApiErrorEnum: all values exist and are distinct", async () =>
             {
-                var values = Enum.GetValues<ApiErrorEnum>();
+                ApiErrorEnum[] values = Enum.GetValues<ApiErrorEnum>();
                 AssertHelper.AreEqual(6, values.Length, "count");
-                var set = new HashSet<int>();
-                foreach (var v in values)
+                HashSet<int> set = new HashSet<int>();
+                foreach (ApiErrorEnum v in values)
                 {
                     AssertHelper.IsTrue(set.Add((int)v), $"ApiErrorEnum.{v} should be distinct");
                 }
@@ -94,9 +94,9 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Enum.CrawlOperationStateEnum: all states", async () =>
             {
-                var values = Enum.GetValues<CrawlOperationStateEnum>();
+                CrawlOperationStateEnum[] values = Enum.GetValues<CrawlOperationStateEnum>();
                 AssertHelper.AreEqual(8, values.Length, "count");
-                foreach (var val in values)
+                foreach (CrawlOperationStateEnum val in values)
                 {
                     string json = JsonSerializer.Serialize(val, _jsonOptionsDefault);
                     CrawlOperationStateEnum deserialized = JsonSerializer.Deserialize<CrawlOperationStateEnum>(json, _jsonOptionsDefault);
@@ -144,7 +144,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.TenantMetadata: defaults and JSON round-trip", async () =>
             {
-                var t = new TenantMetadata();
+                TenantMetadata t = new TenantMetadata();
                 AssertHelper.IsNotNull(t.Id, "Id");
                 AssertHelper.StartsWith(t.Id, "ten_", "Id prefix");
                 AssertHelper.AreEqual("My Tenant", t.Name, "default Name");
@@ -154,14 +154,14 @@ namespace Test.Automated
 
                 t.Name = "Test Tenant";
                 string json = JsonSerializer.Serialize(t, _jsonOptions);
-                var deserialized = JsonSerializer.Deserialize<TenantMetadata>(json, _jsonOptions);
+                TenantMetadata? deserialized = JsonSerializer.Deserialize<TenantMetadata>(json, _jsonOptions);
                 AssertHelper.AreEqual(t.Id, deserialized.Id, "round-trip Id");
                 AssertHelper.AreEqual("Test Tenant", deserialized.Name, "round-trip Name");
             });
 
             await ExecuteTestAsync("Model.UserMaster: defaults and password", async () =>
             {
-                var u = new UserMaster();
+                UserMaster u = new UserMaster();
                 AssertHelper.IsNotNull(u.Id, "Id");
                 AssertHelper.StartsWith(u.Id, "usr_", "Id prefix");
                 AssertHelper.AreEqual(Constants.DefaultTenantId, u.TenantId, "default TenantId");
@@ -172,7 +172,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.UserMaster: SetPassword and VerifyPassword", async () =>
             {
-                var u = new UserMaster();
+                UserMaster u = new UserMaster();
                 u.SetPassword("mysecret");
                 AssertHelper.IsNotNull(u.PasswordSha256, "PasswordSha256 set");
                 AssertHelper.IsTrue(u.VerifyPassword("mysecret"), "correct password matches");
@@ -182,7 +182,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.UserMaster: password not serialized as plain text", async () =>
             {
-                var u = new UserMaster();
+                UserMaster u = new UserMaster();
                 u.SetPassword("mysecret");
                 string json = JsonSerializer.Serialize(u, _jsonOptions);
                 AssertHelper.IsFalse(json.Contains("mysecret"), "plain text password should not appear in JSON");
@@ -190,20 +190,20 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.Credential: defaults and bearer token", async () =>
             {
-                var c = new Credential();
+                Credential c = new Credential();
                 AssertHelper.IsNotNull(c.Id, "Id");
                 AssertHelper.StartsWith(c.Id, "cred_", "Id prefix");
                 AssertHelper.IsNotNull(c.BearerToken, "BearerToken");
                 AssertHelper.IsTrue(c.BearerToken.Length > 0, "BearerToken has length");
                 AssertHelper.AreEqual(true, c.Active, "default Active");
 
-                var c2 = new Credential();
+                Credential c2 = new Credential();
                 AssertHelper.AreNotEqual(c.BearerToken, c2.BearerToken, "unique bearer tokens");
             });
 
             await ExecuteTestAsync("Model.Assistant: defaults and JSON round-trip", async () =>
             {
-                var a = new Assistant();
+                Assistant a = new Assistant();
                 AssertHelper.IsNotNull(a.Id, "Id");
                 AssertHelper.StartsWith(a.Id, "asst_", "Id prefix");
                 AssertHelper.AreEqual("My Assistant", a.Name, "default Name");
@@ -212,14 +212,14 @@ namespace Test.Automated
                 a.Name = "Test Assistant";
                 a.Description = "A test assistant";
                 string json = JsonSerializer.Serialize(a, _jsonOptions);
-                var d = JsonSerializer.Deserialize<Assistant>(json, _jsonOptions);
+                Assistant? d = JsonSerializer.Deserialize<Assistant>(json, _jsonOptions);
                 AssertHelper.AreEqual("Test Assistant", d.Name, "round-trip Name");
                 AssertHelper.AreEqual("A test assistant", d.Description, "round-trip Description");
             });
 
             await ExecuteTestAsync("Model.AssistantDocument: defaults and status", async () =>
             {
-                var doc = new AssistantDocument();
+                AssistantDocument doc = new AssistantDocument();
                 AssertHelper.IsNotNull(doc.Id, "Id");
                 AssertHelper.StartsWith(doc.Id, "adoc_", "Id prefix");
                 AssertHelper.AreEqual("Untitled Document", doc.Name, "default Name");
@@ -235,20 +235,20 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.AssistantFeedback: defaults and rating", async () =>
             {
-                var fb = new AssistantFeedback();
+                AssistantFeedback fb = new AssistantFeedback();
                 AssertHelper.IsNotNull(fb.Id, "Id");
                 AssertHelper.StartsWith(fb.Id, "afb_", "Id prefix");
                 AssertHelper.AreEqual(FeedbackRatingEnum.ThumbsUp, fb.Rating, "default Rating");
 
                 fb.Rating = FeedbackRatingEnum.ThumbsDown;
                 string json = JsonSerializer.Serialize(fb, _jsonOptions);
-                var d = JsonSerializer.Deserialize<AssistantFeedback>(json, _jsonOptions);
+                AssistantFeedback? d = JsonSerializer.Deserialize<AssistantFeedback>(json, _jsonOptions);
                 AssertHelper.AreEqual(FeedbackRatingEnum.ThumbsDown, d.Rating, "round-trip Rating");
             });
 
             await ExecuteTestAsync("Model.ChatHistory: defaults", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 AssertHelper.IsNotNull(ch.Id, "Id");
                 AssertHelper.StartsWith(ch.Id, "chist_", "Id prefix");
                 AssertHelper.IsNull(ch.TraceId, "default TraceId");
@@ -261,7 +261,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.IngestionRule: defaults", async () =>
             {
-                var rule = new IngestionRule();
+                IngestionRule rule = new IngestionRule();
                 AssertHelper.IsNotNull(rule.Id, "Id");
                 AssertHelper.StartsWith(rule.Id, "irule_", "Id prefix");
                 AssertHelper.AreEqual("Untitled Rule", rule.Name, "default Name");
@@ -271,7 +271,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.CrawlPlan: defaults and nested objects", async () =>
             {
-                var plan = new CrawlPlan();
+                CrawlPlan plan = new CrawlPlan();
                 AssertHelper.IsNotNull(plan.Id, "Id");
                 AssertHelper.StartsWith(plan.Id, "cplan_", "Id prefix");
                 AssertHelper.AreEqual("My crawl plan", plan.Name, "default Name");
@@ -287,7 +287,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.CrawlOperation: defaults and state", async () =>
             {
-                var op = new CrawlOperation();
+                CrawlOperation op = new CrawlOperation();
                 AssertHelper.IsNotNull(op.Id, "Id");
                 AssertHelper.StartsWith(op.Id, "cop_", "Id prefix");
                 AssertHelper.AreEqual(CrawlOperationStateEnum.NotStarted, op.State, "default State");
@@ -297,7 +297,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Model.RetrievalChunk: defaults and rerank_score JSON", async () =>
             {
-                var chunk = new RetrievalChunk();
+                RetrievalChunk chunk = new RetrievalChunk();
                 AssertHelper.IsNull(chunk.RerankScore, "default RerankScore");
                 AssertHelper.AreEqual(0.0, chunk.Score, "default Score");
                 AssertHelper.IsNull(chunk.DocumentId, "default DocumentId");
@@ -307,13 +307,13 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantSettings.EnableReranking: defaults to false", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 AssertHelper.AreEqual(false, s.EnableReranking, "EnableReranking default");
             });
 
             await ExecuteTestAsync("AssistantSettings.RerankerTopK: defaults to 5", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 AssertHelper.AreEqual(5, s.RerankerTopK, "RerankerTopK default");
             });
 
@@ -322,7 +322,7 @@ namespace Test.Automated
                 bool threw = false;
                 try
                 {
-                    var s = new AssistantSettings();
+                    AssistantSettings s = new AssistantSettings();
                     s.RerankerTopK = 0;
                 }
                 catch (ArgumentOutOfRangeException)
@@ -334,7 +334,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantSettings.RerankerScoreThreshold: defaults to 3.0", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 AssertHelper.AreEqual(3.0, s.RerankerScoreThreshold, "RerankerScoreThreshold default");
             });
 
@@ -343,7 +343,7 @@ namespace Test.Automated
                 bool threwBelow = false;
                 try
                 {
-                    var s = new AssistantSettings();
+                    AssistantSettings s = new AssistantSettings();
                     s.RerankerScoreThreshold = -1.0;
                 }
                 catch (ArgumentOutOfRangeException)
@@ -355,7 +355,7 @@ namespace Test.Automated
                 bool threwAbove = false;
                 try
                 {
-                    var s = new AssistantSettings();
+                    AssistantSettings s = new AssistantSettings();
                     s.RerankerScoreThreshold = 11.0;
                 }
                 catch (ArgumentOutOfRangeException)
@@ -364,7 +364,7 @@ namespace Test.Automated
                 }
                 AssertHelper.IsTrue(threwAbove, "above 10 should throw");
 
-                var valid = new AssistantSettings();
+                AssistantSettings valid = new AssistantSettings();
                 valid.RerankerScoreThreshold = 0.0;
                 AssertHelper.AreEqual(0.0, valid.RerankerScoreThreshold, "0.0 accepted");
                 valid.RerankerScoreThreshold = 10.0;
@@ -373,20 +373,20 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantSettings.RerankPrompt: defaults to null", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 AssertHelper.IsNull(s.RerankPrompt, "RerankPrompt default");
             });
 
             await ExecuteTestAsync("AssistantSettings: JSON round-trip preserves reranking fields", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 s.EnableReranking = true;
                 s.RerankerTopK = 7;
                 s.RerankerScoreThreshold = 5.5;
                 s.RerankPrompt = "Test prompt {query} {chunks}";
 
                 string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
+                AssistantSettings? d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.AreEqual(true, d.EnableReranking, "round-trip EnableReranking");
                 AssertHelper.AreEqual(7, d.RerankerTopK, "round-trip RerankerTopK");
@@ -396,7 +396,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: default to null", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 AssertHelper.IsNull(s.RetrievalGateInferenceEndpointId, "RetrievalGateInferenceEndpointId default");
                 AssertHelper.IsNull(s.QueryRewriteInferenceEndpointId, "QueryRewriteInferenceEndpointId default");
                 AssertHelper.IsNull(s.RerankInferenceEndpointId, "RerankInferenceEndpointId default");
@@ -404,14 +404,14 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: JSON round-trip", async () =>
             {
-                var s = new AssistantSettings();
+                AssistantSettings s = new AssistantSettings();
                 s.InferenceEndpointId = "ep_response";
                 s.RetrievalGateInferenceEndpointId = "ep_gate";
                 s.QueryRewriteInferenceEndpointId = "ep_rewrite";
                 s.RerankInferenceEndpointId = "ep_rerank";
 
                 string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
+                AssistantSettings? d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.AreEqual("ep_response", d.InferenceEndpointId, "round-trip InferenceEndpointId");
                 AssertHelper.AreEqual("ep_gate", d.RetrievalGateInferenceEndpointId, "round-trip RetrievalGateInferenceEndpointId");
@@ -421,31 +421,31 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ChatHistory.RerankDurationMs: defaults to 0", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 AssertHelper.AreEqual(0.0, ch.RerankDurationMs, "default RerankDurationMs");
             });
 
             await ExecuteTestAsync("ChatHistory.RerankInputCount: defaults to 0", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 AssertHelper.AreEqual(0, ch.RerankInputCount, "default RerankInputCount");
             });
 
             await ExecuteTestAsync("ChatHistory.RerankOutputCount: defaults to 0", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 AssertHelper.AreEqual(0, ch.RerankOutputCount, "default RerankOutputCount");
             });
 
             await ExecuteTestAsync("ChatHistory: JSON round-trip preserves reranking fields", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 ch.RerankDurationMs = 123.4;
                 ch.RerankInputCount = 10;
                 ch.RerankOutputCount = 3;
 
                 string json = JsonSerializer.Serialize(ch, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
+                ChatHistory? d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.AreEqual(123.4, d.RerankDurationMs, "round-trip RerankDurationMs");
                 AssertHelper.AreEqual(10, d.RerankInputCount, "round-trip RerankInputCount");
@@ -454,14 +454,14 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ChatHistory: JSON round-trip preserves telemetry fields", async () =>
             {
-                var ch = new ChatHistory();
+                ChatHistory ch = new ChatHistory();
                 ch.TraceId = IdGenerator.NewTraceId();
                 ch.RequestHistoryId = "req_test";
                 ch.PerformanceSchemaVersion = 1;
                 ch.PerformanceJson = "{\"SchemaVersion\":1,\"Stages\":[]}";
 
                 string json = JsonSerializer.Serialize(ch, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
+                ChatHistory? d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.StartsWith(d.TraceId, "trace_", "round-trip TraceId");
                 AssertHelper.AreEqual("req_test", d.RequestHistoryId, "round-trip RequestHistoryId");
@@ -471,12 +471,12 @@ namespace Test.Automated
 
             await ExecuteTestAsync("RequestHistoryEntry: JSON round-trip preserves telemetry correlation", async () =>
             {
-                var entry = new RequestHistoryEntry();
+                RequestHistoryEntry entry = new RequestHistoryEntry();
                 entry.TraceId = IdGenerator.NewTraceId();
                 entry.ChatHistoryId = "chist_test";
 
                 string json = JsonSerializer.Serialize(entry, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<RequestHistoryEntry>(json, _jsonOptionsIgnoreNever);
+                RequestHistoryEntry? d = JsonSerializer.Deserialize<RequestHistoryEntry>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.StartsWith(d.TraceId, "trace_", "round-trip TraceId");
                 AssertHelper.AreEqual("chist_test", d.ChatHistoryId, "round-trip ChatHistoryId");
@@ -484,7 +484,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("AssistantPerformanceTelemetry: JSON round-trip preserves provider metrics", async () =>
             {
-                var telemetry = new AssistantPerformanceTelemetry
+                AssistantPerformanceTelemetry telemetry = new AssistantPerformanceTelemetry
                 {
                     TraceId = "trace_test",
                     ChatHistoryId = "chist_test",
@@ -524,7 +524,7 @@ namespace Test.Automated
                 };
 
                 string json = JsonSerializer.Serialize(telemetry, _jsonOptionsIgnoreNever);
-                var d = JsonSerializer.Deserialize<AssistantPerformanceTelemetry>(json, _jsonOptionsIgnoreNever);
+                AssistantPerformanceTelemetry? d = JsonSerializer.Deserialize<AssistantPerformanceTelemetry>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.AreEqual("trace_test", d.TraceId, "TraceId");
                 AssertHelper.HasCount(d.Stages, 1, "Stages");
@@ -535,36 +535,36 @@ namespace Test.Automated
 
             await ExecuteTestAsync("RetrievalChunk.RerankScore: defaults to null", async () =>
             {
-                var chunk = new RetrievalChunk();
+                RetrievalChunk chunk = new RetrievalChunk();
                 AssertHelper.IsNull(chunk.RerankScore, "default RerankScore");
             });
 
             await ExecuteTestAsync("RetrievalChunk: JSON uses property name rerank_score", async () =>
             {
-                var chunk = new RetrievalChunk { RerankScore = 8.5 };
+                RetrievalChunk chunk = new RetrievalChunk { RerankScore = 8.5 };
                 string json = JsonSerializer.Serialize(chunk);
                 AssertHelper.IsTrue(json.Contains("\"rerank_score\""), "JSON should contain rerank_score key");
             });
 
             await ExecuteTestAsync("RetrievalChunk.RerankScore: round-trips when set", async () =>
             {
-                var chunk = new RetrievalChunk { RerankScore = 7.2 };
+                RetrievalChunk chunk = new RetrievalChunk { RerankScore = 7.2 };
                 string json = JsonSerializer.Serialize(chunk);
-                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                RetrievalChunk? d = JsonSerializer.Deserialize<RetrievalChunk>(json);
                 AssertHelper.AreEqual(7.2, d.RerankScore, "round-trip RerankScore");
             });
 
             await ExecuteTestAsync("RetrievalChunk.RerankScore: round-trips as null when not set", async () =>
             {
-                var chunk = new RetrievalChunk();
+                RetrievalChunk chunk = new RetrievalChunk();
                 string json = JsonSerializer.Serialize(chunk);
-                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                RetrievalChunk? d = JsonSerializer.Deserialize<RetrievalChunk>(json);
                 AssertHelper.IsNull(d.RerankScore, "round-trip null RerankScore");
             });
 
             await ExecuteTestAsync("ChatCompletionRetrieval: reranking defaults", async () =>
             {
-                var r = new ChatCompletionRetrieval();
+                ChatCompletionRetrieval r = new ChatCompletionRetrieval();
                 AssertHelper.AreEqual(0.0, r.RerankDurationMs, "default RerankDurationMs");
                 AssertHelper.AreEqual(0, r.RerankInputCount, "default RerankInputCount");
                 AssertHelper.AreEqual(0, r.RerankOutputCount, "default RerankOutputCount");
@@ -572,7 +572,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ChatCompletionRetrieval: fields present when non-zero", async () =>
             {
-                var r = new ChatCompletionRetrieval
+                ChatCompletionRetrieval r = new ChatCompletionRetrieval
                 {
                     RerankDurationMs = 55.5,
                     RerankInputCount = 8,
@@ -586,7 +586,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ChatCompletionRetrieval: fields omitted when zero (WhenWritingDefault)", async () =>
             {
-                var r = new ChatCompletionRetrieval();
+                ChatCompletionRetrieval r = new ChatCompletionRetrieval();
                 string json = JsonSerializer.Serialize(r);
                 AssertHelper.IsFalse(json.Contains("\"rerank_duration_ms\""), "rerank_duration_ms omitted when 0");
                 AssertHelper.IsFalse(json.Contains("\"rerank_input_count\""), "rerank_input_count omitted when 0");
@@ -595,7 +595,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("CitationSource.RerankScore: defaults to null, omitted in JSON", async () =>
             {
-                var cs = new CitationSource();
+                CitationSource cs = new CitationSource();
                 AssertHelper.IsNull(cs.RerankScore, "default RerankScore");
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsFalse(json.Contains("\"rerank_score\""), "omitted when null");
@@ -603,7 +603,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("CitationSource.RerankScore: present when set", async () =>
             {
-                var cs = new CitationSource { RerankScore = 8.5 };
+                CitationSource cs = new CitationSource { RerankScore = 8.5 };
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsTrue(json.Contains("\"rerank_score\""), "present when set");
                 AssertHelper.IsTrue(json.Contains("8.5"), "correct value in JSON");
@@ -611,43 +611,43 @@ namespace Test.Automated
 
             await ExecuteTestAsync("CitationSource.RerankScore: omitted when null", async () =>
             {
-                var cs = new CitationSource { RerankScore = null };
+                CitationSource cs = new CitationSource { RerankScore = null };
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsFalse(json.Contains("\"rerank_score\""), "omitted when null");
             });
 
             await ExecuteTestAsync("RetrievalChunk.FusionScore: defaults to null", async () =>
             {
-                var chunk = new RetrievalChunk();
+                RetrievalChunk chunk = new RetrievalChunk();
                 AssertHelper.IsNull(chunk.FusionScore, "default FusionScore");
             });
 
             await ExecuteTestAsync("RetrievalChunk: JSON uses property name fusion_score", async () =>
             {
-                var chunk = new RetrievalChunk { FusionScore = 0.016393 };
+                RetrievalChunk chunk = new RetrievalChunk { FusionScore = 0.016393 };
                 string json = JsonSerializer.Serialize(chunk);
                 AssertHelper.IsTrue(json.Contains("\"fusion_score\""), "JSON should contain fusion_score key");
             });
 
             await ExecuteTestAsync("RetrievalChunk.FusionScore: round-trips when set", async () =>
             {
-                var chunk = new RetrievalChunk { FusionScore = 0.032787 };
+                RetrievalChunk chunk = new RetrievalChunk { FusionScore = 0.032787 };
                 string json = JsonSerializer.Serialize(chunk);
-                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                RetrievalChunk? d = JsonSerializer.Deserialize<RetrievalChunk>(json);
                 AssertHelper.AreEqual(0.032787, d.FusionScore, "round-trip FusionScore");
             });
 
             await ExecuteTestAsync("RetrievalChunk.FusionScore: round-trips as null when not set", async () =>
             {
-                var chunk = new RetrievalChunk();
+                RetrievalChunk chunk = new RetrievalChunk();
                 string json = JsonSerializer.Serialize(chunk);
-                var d = JsonSerializer.Deserialize<RetrievalChunk>(json);
+                RetrievalChunk? d = JsonSerializer.Deserialize<RetrievalChunk>(json);
                 AssertHelper.IsNull(d.FusionScore, "round-trip null FusionScore");
             });
 
             await ExecuteTestAsync("CitationSource.FusionScore: defaults to null, omitted in JSON", async () =>
             {
-                var cs = new CitationSource();
+                CitationSource cs = new CitationSource();
                 AssertHelper.IsNull(cs.FusionScore, "default FusionScore");
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsFalse(json.Contains("\"fusion_score\""), "omitted when null");
@@ -655,7 +655,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("CitationSource.FusionScore: present when set", async () =>
             {
-                var cs = new CitationSource { FusionScore = 0.048 };
+                CitationSource cs = new CitationSource { FusionScore = 0.048 };
                 string json = JsonSerializer.Serialize(cs);
                 AssertHelper.IsTrue(json.Contains("\"fusion_score\""), "present when set");
             });
@@ -665,7 +665,7 @@ namespace Test.Automated
             await ExecuteTestAsync("ApiContract.ChatCompletionRequest: deserialization", async () =>
             {
                 string json = "{\"model\":\"gpt-4\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}";
-                var req = JsonSerializer.Deserialize<ChatCompletionRequest>(json, _jsonOptionsDefault);
+                ChatCompletionRequest? req = JsonSerializer.Deserialize<ChatCompletionRequest>(json, _jsonOptionsDefault);
                 AssertHelper.IsNotNull(req, "deserialized request");
                 AssertHelper.AreEqual("gpt-4", req.Model, "Model");
                 AssertHelper.IsNotNull(req.Messages, "Messages");
@@ -674,7 +674,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ApiContract.ChatCompletionResponse: structure", async () =>
             {
-                var resp = new ChatCompletionResponse
+                ChatCompletionResponse resp = new ChatCompletionResponse
                 {
                     Id = "chatcmpl-test",
                     Object = "chat.completion",
@@ -697,7 +697,7 @@ namespace Test.Automated
                 };
 
                 string json = JsonSerializer.Serialize(resp);
-                var d = JsonSerializer.Deserialize<ChatCompletionResponse>(json, _jsonOptionsDefault);
+                ChatCompletionResponse? d = JsonSerializer.Deserialize<ChatCompletionResponse>(json, _jsonOptionsDefault);
                 AssertHelper.AreEqual("chatcmpl-test", d.Id, "Id");
                 AssertHelper.AreEqual("chat.completion", d.Object, "Object");
                 AssertHelper.AreEqual(1, d.Choices.Count, "Choices count");
@@ -708,16 +708,16 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ApiContract.AuthenticateRequest: round-trip", async () =>
             {
-                var req = new AuthenticateRequest { Email = "test@example.com", Password = "pass123" };
+                AuthenticateRequest req = new AuthenticateRequest { Email = "test@example.com", Password = "pass123" };
                 string json = JsonSerializer.Serialize(req, _jsonOptionsDefault);
-                var d = JsonSerializer.Deserialize<AuthenticateRequest>(json, _jsonOptionsDefault);
+                AuthenticateRequest? d = JsonSerializer.Deserialize<AuthenticateRequest>(json, _jsonOptionsDefault);
                 AssertHelper.AreEqual("test@example.com", d.Email, "Email");
                 AssertHelper.AreEqual("pass123", d.Password, "Password");
             });
 
             await ExecuteTestAsync("ApiContract.AuthenticateResult: round-trip", async () =>
             {
-                var res = new AuthenticateResult
+                AuthenticateResult res = new AuthenticateResult
                 {
                     Success = true,
                     TenantId = "ten_test",
@@ -725,7 +725,7 @@ namespace Test.Automated
                     IsTenantAdmin = false
                 };
                 string json = JsonSerializer.Serialize(res, _jsonOptionsDefault);
-                var d = JsonSerializer.Deserialize<AuthenticateResult>(json, _jsonOptionsDefault);
+                AuthenticateResult? d = JsonSerializer.Deserialize<AuthenticateResult>(json, _jsonOptionsDefault);
                 AssertHelper.AreEqual(true, d.Success, "Success");
                 AssertHelper.AreEqual("ten_test", d.TenantId, "TenantId");
                 AssertHelper.AreEqual(true, d.IsGlobalAdmin, "IsGlobalAdmin");
@@ -733,7 +733,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ApiContract.ApiErrorResponse: error enum and message", async () =>
             {
-                var err = new ApiErrorResponse(ApiErrorEnum.NotFound);
+                ApiErrorResponse err = new ApiErrorResponse(ApiErrorEnum.NotFound);
                 AssertHelper.AreEqual(ApiErrorEnum.NotFound, err.Error, "Error enum");
                 AssertHelper.AreEqual(404, err.StatusCode, "StatusCode");
                 AssertHelper.StringContains(err.Message, "not found", "Message contains 'not found'");
@@ -744,7 +744,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("ApiContract.EnumerationQuery: default MaxResults and ordering", async () =>
             {
-                var q = new EnumerationQuery();
+                EnumerationQuery q = new EnumerationQuery();
                 AssertHelper.AreEqual(100, q.MaxResults, "default MaxResults");
                 AssertHelper.AreEqual(EnumerationOrderEnum.CreatedDescending, q.Ordering, "default Ordering");
                 AssertHelper.IsNull(q.ContinuationToken, "default ContinuationToken");
@@ -753,19 +753,19 @@ namespace Test.Automated
             await ExecuteTestAsync("ApiContract.EnumerationQuery: MaxResults validation", async () =>
             {
                 bool threw = false;
-                try { var q = new EnumerationQuery(); q.MaxResults = 0; }
+                try { EnumerationQuery q = new EnumerationQuery(); q.MaxResults = 0; }
                 catch (ArgumentException) { threw = true; }
                 AssertHelper.IsTrue(threw, "MaxResults = 0 should throw");
 
                 threw = false;
-                try { var q = new EnumerationQuery(); q.MaxResults = 1001; }
+                try { EnumerationQuery q = new EnumerationQuery(); q.MaxResults = 1001; }
                 catch (ArgumentException) { threw = true; }
                 AssertHelper.IsTrue(threw, "MaxResults = 1001 should throw");
             });
 
             await ExecuteTestAsync("ApiContract.EnumerationResult: structure", async () =>
             {
-                var r = new EnumerationResult<string>();
+                EnumerationResult<string> r = new EnumerationResult<string>();
                 AssertHelper.AreEqual(true, r.EndOfResults, "default EndOfResults");
                 AssertHelper.IsNull(r.ContinuationToken, "default ContinuationToken");
                 AssertHelper.AreEqual(0L, r.TotalRecords, "default TotalRecords");
@@ -778,87 +778,87 @@ namespace Test.Automated
 
             await ExecuteTestAsync("Settings.AssistantHubSettings: loads from JSON with defaults", async () =>
             {
-                var settings = new AssistantHubSettings();
+                AssistantHubSettings settings = new AssistantHubSettings();
                 AssertHelper.IsNotNull(settings, "settings object");
             });
 
             await ExecuteTestAsync("Settings.DatabaseSettings: sensible defaults", async () =>
             {
-                var db = new DatabaseSettings();
+                DatabaseSettings db = new DatabaseSettings();
                 AssertHelper.IsNotNull(db, "DatabaseSettings");
             });
 
             await ExecuteTestAsync("Settings.WebserverSettings: defaults", async () =>
             {
-                var ws = new WebserverSettings();
+                WebserverSettings ws = new WebserverSettings();
                 AssertHelper.IsNotNull(ws, "WebserverSettings");
             });
 
             await ExecuteTestAsync("Settings.S3Settings: defaults", async () =>
             {
-                var s3 = new S3Settings();
+                S3Settings s3 = new S3Settings();
                 AssertHelper.IsNotNull(s3, "S3Settings");
                 AssertHelper.AreEqual("", s3.DashboardUrl, "DashboardUrl default");
             });
 
             await ExecuteTestAsync("Settings.InferenceSettings: defaults", async () =>
             {
-                var inf = new InferenceSettings();
+                InferenceSettings inf = new InferenceSettings();
                 AssertHelper.IsNotNull(inf, "InferenceSettings");
                 AssertHelper.AreEqual("", inf.DashboardUrl, "DashboardUrl default");
             });
 
             await ExecuteTestAsync("Settings.RecallDbSettings: defaults", async () =>
             {
-                var rdb = new RecallDbSettings();
+                RecallDbSettings rdb = new RecallDbSettings();
                 AssertHelper.IsNotNull(rdb, "RecallDbSettings");
                 AssertHelper.AreEqual("", rdb.DashboardUrl, "DashboardUrl default");
             });
 
             await ExecuteTestAsync("Settings.ChunkingSettings: defaults", async () =>
             {
-                var ch = new ChunkingSettings();
+                ChunkingSettings ch = new ChunkingSettings();
                 AssertHelper.IsNotNull(ch, "ChunkingSettings");
                 AssertHelper.AreEqual("", ch.DashboardUrl, "DashboardUrl default");
             });
 
             await ExecuteTestAsync("Settings.EmbeddingsSettings: defaults", async () =>
             {
-                var emb = new EmbeddingsSettings();
+                EmbeddingsSettings emb = new EmbeddingsSettings();
                 AssertHelper.IsNotNull(emb, "EmbeddingsSettings");
             });
 
             await ExecuteTestAsync("Settings.DocumentAtomSettings: defaults", async () =>
             {
-                var da = new DocumentAtomSettings();
+                DocumentAtomSettings da = new DocumentAtomSettings();
                 AssertHelper.IsNotNull(da, "DocumentAtomSettings");
                 AssertHelper.AreEqual("", da.DashboardUrl, "DashboardUrl default");
             });
 
             await ExecuteTestAsync("Settings.LoggingSettings: defaults", async () =>
             {
-                var log = new LoggingSettings();
+                LoggingSettings log = new LoggingSettings();
                 AssertHelper.IsNotNull(log, "LoggingSettings");
             });
 
             await ExecuteTestAsync("Settings.CrawlSettings: defaults", async () =>
             {
-                var crawl = new CrawlSettings();
+                CrawlSettings crawl = new CrawlSettings();
                 AssertHelper.IsNotNull(crawl, "CrawlSettings");
             });
 
             await ExecuteTestAsync("Settings.AssistantHubSettings: JSON round-trip", async () =>
             {
-                var settings = new AssistantHubSettings();
+                AssistantHubSettings settings = new AssistantHubSettings();
                 string json = JsonSerializer.Serialize(settings, _jsonOptionsDefault);
                 AssertHelper.IsTrue(json.Length > 10, "serialized JSON not empty");
-                var d = JsonSerializer.Deserialize<AssistantHubSettings>(json, _jsonOptionsDefault);
+                AssistantHubSettings? d = JsonSerializer.Deserialize<AssistantHubSettings>(json, _jsonOptionsDefault);
                 AssertHelper.IsNotNull(d, "deserialized settings");
             });
 
             await ExecuteTestAsync("Models.AssistantSettings: Slack defaults", async () =>
             {
-                var settings = new AssistantSettings();
+                AssistantSettings settings = new AssistantSettings();
                 AssertHelper.AreEqual(false, settings.EnableSlack, "EnableSlack default");
                 AssertHelper.IsNull(settings.SlackAppToken, "SlackAppToken default");
                 AssertHelper.IsNull(settings.SlackBotToken, "SlackBotToken default");

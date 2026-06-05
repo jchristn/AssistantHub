@@ -12,6 +12,7 @@ import AssistantsView from '../views/AssistantsView';
 import DocumentsView from '../views/DocumentsView';
 import FeedbackView from '../views/FeedbackView';
 import HistoryView from '../views/HistoryView';
+import AssistantAnalyticsView from '../views/AssistantAnalyticsView';
 import RequestHistoryView from '../views/RequestHistoryView';
 import ApiExplorerView from '../views/ApiExplorerView';
 import CollectionsView from '../views/CollectionsView';
@@ -91,6 +92,7 @@ function Dashboard() {
             <Route path="/crawlers" element={<CrawlersView />} />
             <Route path="/feedback" element={<FeedbackView />} />
             <Route path="/history" element={<HistoryView />} />
+            <Route path="/assistant-analytics" element={<AssistantAnalyticsView />} />
             {isAdminOrTenantAdmin && <Route path="/request-history" element={<RequestHistoryView />} />}
             {isAdminOrTenantAdmin && <Route path="/api-explorer" element={<ApiExplorerView />} />}
             <Route path="/evaluation" element={<EvaluationView />} />

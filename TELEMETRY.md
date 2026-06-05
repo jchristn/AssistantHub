@@ -4,6 +4,8 @@ This plan covers the v0.12.0 work to capture provider-agnostic assistant perform
 
 Implementation status: v0.12.0 telemetry has been implemented in the backend hot path, startup schemas, provider migration scripts, dashboard history/detail views, SDK models, REST API docs, OpenAPI, Postman, Docker compose tags, and shared test suites. Use the checklist below for follow-up hardening and future telemetry expansion.
 
+v0.13.0 builds on this telemetry by adding assistant-scoped analytics endpoints and dashboard charts. The analytics layer reads `request_history`, `chat_history_performance_events`, and `assistant_feedback`, and the v0.13.0 migration adds `assistant_id` plus assistant/time indexes to `chat_history_performance_events` so aggregate queries do not need to join through chat history on every request.
+
 Legend:
 
 - `[ ]` Not started

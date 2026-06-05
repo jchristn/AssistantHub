@@ -586,6 +586,234 @@ class RequestHistoryDeleteResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Assistant Analytics
+# ---------------------------------------------------------------------------
+
+
+class AssistantAnalyticsQuery(BaseModel):
+    """Query parameters for assistant analytics endpoints."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    range: Optional[str] = "lastDay"
+    start_utc: Optional[datetime] = Field(None, alias="startUtc")
+    end_utc: Optional[datetime] = Field(None, alias="endUtc")
+    bucket_seconds: Optional[int] = Field(None, alias="bucketSeconds")
+    metrics: Optional[str | list[str]] = None
+    stage: Optional[str] = None
+    endpoint_id: Optional[str] = Field(None, alias="endpointId")
+    endpoint_type: Optional[str] = Field(None, alias="endpointType")
+    model: Optional[str] = None
+    limit: Optional[int] = None
+
+
+class AssistantAnalyticsRange(BaseModel):
+    """Resolved assistant analytics range."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    range_id: Optional[str] = Field(None, alias="rangeId")
+    start_utc: Optional[datetime] = Field(None, alias="startUtc")
+    end_utc: Optional[datetime] = Field(None, alias="endUtc")
+    bucket_seconds: int = Field(0, alias="bucketSeconds")
+    bucket_count: int = Field(0, alias="bucketCount")
+
+
+class AssistantAnalyticsPoint(BaseModel):
+    """Assistant analytics time-series point."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    bucket_start_utc: Optional[datetime] = Field(None, alias="bucketStartUtc")
+    bucket_end_utc: Optional[datetime] = Field(None, alias="bucketEndUtc")
+    value: Optional[float] = None
+    sample_count: int = Field(0, alias="sampleCount")
+    null_count: int = Field(0, alias="nullCount")
+
+
+class AssistantAnalyticsSeries(BaseModel):
+    """Assistant analytics time-series definition."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    metric: Optional[str] = None
+    label: Optional[str] = None
+    unit: Optional[str] = None
+    points: Optional[list[AssistantAnalyticsPoint]] = None
+
+
+class AssistantAnalyticsOverviewResult(BaseModel):
+    """Assistant analytics overview."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    request_count: int = Field(0, alias="requestCount")
+    success_count: int = Field(0, alias="successCount")
+    failure_count: int = Field(0, alias="failureCount")
+    success_rate: Optional[float] = Field(None, alias="successRate")
+    failure_rate: Optional[float] = Field(None, alias="failureRate")
+    average_duration_ms: Optional[float] = Field(None, alias="averageDurationMs")
+    p50_duration_ms: Optional[float] = Field(None, alias="p50DurationMs")
+    p90_duration_ms: Optional[float] = Field(None, alias="p90DurationMs")
+    p95_duration_ms: Optional[float] = Field(None, alias="p95DurationMs")
+    p99_duration_ms: Optional[float] = Field(None, alias="p99DurationMs")
+    max_duration_ms: Optional[float] = Field(None, alias="maxDurationMs")
+    telemetry_event_count: int = Field(0, alias="telemetryEventCount")
+    requests_with_telemetry: int = Field(0, alias="requestsWithTelemetry")
+    telemetry_coverage_rate: Optional[float] = Field(None, alias="telemetryCoverageRate")
+    dominant_stage: Optional[str] = Field(None, alias="dominantStage")
+    dominant_stage_average_ms: Optional[float] = Field(None, alias="dominantStageAverageMs")
+    top_endpoint_id: Optional[str] = Field(None, alias="topEndpointId")
+    top_endpoint_name: Optional[str] = Field(None, alias="topEndpointName")
+    top_endpoint_provider: Optional[str] = Field(None, alias="topEndpointProvider")
+    top_endpoint_model: Optional[str] = Field(None, alias="topEndpointModel")
+    feedback_count: int = Field(0, alias="feedbackCount")
+    thumbs_up_count: int = Field(0, alias="thumbsUpCount")
+    thumbs_down_count: int = Field(0, alias="thumbsDownCount")
+    negative_feedback_rate: Optional[float] = Field(None, alias="negativeFeedbackRate")
+
+
+class AssistantAnalyticsTimeSeriesResult(BaseModel):
+    """Assistant analytics time-series result."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    series: Optional[list[AssistantAnalyticsSeries]] = None
+
+
+class AssistantAnalyticsStageBucket(BaseModel):
+    """Assistant analytics stage bucket."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    bucket_start_utc: Optional[datetime] = Field(None, alias="bucketStartUtc")
+    bucket_end_utc: Optional[datetime] = Field(None, alias="bucketEndUtc")
+    stage: Optional[str] = None
+    kind: Optional[str] = None
+    calls: int = 0
+    failures: int = 0
+    skipped_count: int = Field(0, alias="skippedCount")
+    average_duration_ms: Optional[float] = Field(None, alias="averageDurationMs")
+    p95_duration_ms: Optional[float] = Field(None, alias="p95DurationMs")
+    max_duration_ms: Optional[float] = Field(None, alias="maxDurationMs")
+
+
+class AssistantAnalyticsStageResult(BaseModel):
+    """Assistant analytics stage result."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    buckets: Optional[list[AssistantAnalyticsStageBucket]] = None
+
+
+class AssistantAnalyticsEndpointSummary(BaseModel):
+    """Assistant analytics endpoint/model/provider summary."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    endpoint_id: Optional[str] = Field(None, alias="endpointId")
+    endpoint_name: Optional[str] = Field(None, alias="endpointName")
+    endpoint_type: Optional[str] = Field(None, alias="endpointType")
+    provider: Optional[str] = None
+    api_format: Optional[str] = Field(None, alias="apiFormat")
+    model: Optional[str] = None
+    stage: Optional[str] = None
+    calls: int = 0
+    failures: int = 0
+    average_duration_ms: Optional[float] = Field(None, alias="averageDurationMs")
+    p95_duration_ms: Optional[float] = Field(None, alias="p95DurationMs")
+    average_limiter_wait_ms: Optional[float] = Field(None, alias="averageLimiterWaitMs")
+    p95_limiter_wait_ms: Optional[float] = Field(None, alias="p95LimiterWaitMs")
+    average_request_to_headers_ms: Optional[float] = Field(None, alias="averageRequestToHeadersMs")
+    average_provider_load_ms: Optional[float] = Field(None, alias="averageProviderLoadMs")
+    average_provider_generation_ms: Optional[float] = Field(None, alias="averageProviderGenerationMs")
+    average_tokens_per_second: Optional[float] = Field(None, alias="averageTokensPerSecond")
+    input_tokens: int = Field(0, alias="inputTokens")
+    output_tokens: int = Field(0, alias="outputTokens")
+
+
+class AssistantAnalyticsEndpointResult(BaseModel):
+    """Assistant analytics endpoint result."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    endpoints: Optional[list[AssistantAnalyticsEndpointSummary]] = None
+
+
+class AssistantAnalyticsSlowRequest(BaseModel):
+    """Assistant analytics slow request row."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    request_history_id: Optional[str] = Field(None, alias="requestHistoryId")
+    chat_history_id: Optional[str] = Field(None, alias="chatHistoryId")
+    trace_id: Optional[str] = Field(None, alias="traceId")
+    created_utc: Optional[datetime] = Field(None, alias="createdUtc")
+    status_code: int = Field(0, alias="statusCode")
+    success: bool = False
+    duration_ms: float = Field(0.0, alias="durationMs")
+    request_path: Optional[str] = Field(None, alias="requestPath")
+    dominant_stage: Optional[str] = Field(None, alias="dominantStage")
+    dominant_stage_duration_ms: Optional[float] = Field(None, alias="dominantStageDurationMs")
+    endpoint_id: Optional[str] = Field(None, alias="endpointId")
+    endpoint_name: Optional[str] = Field(None, alias="endpointName")
+    provider: Optional[str] = None
+    model: Optional[str] = None
+
+
+class AssistantAnalyticsSlowestResult(BaseModel):
+    """Assistant analytics slowest requests result."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    requests: Optional[list[AssistantAnalyticsSlowRequest]] = None
+
+
+class AssistantAnalyticsFeedbackBucket(BaseModel):
+    """Assistant analytics feedback bucket."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    bucket_start_utc: Optional[datetime] = Field(None, alias="bucketStartUtc")
+    bucket_end_utc: Optional[datetime] = Field(None, alias="bucketEndUtc")
+    thumbs_up_count: int = Field(0, alias="thumbsUpCount")
+    thumbs_down_count: int = Field(0, alias="thumbsDownCount")
+    unknown_count: int = Field(0, alias="unknownCount")
+    total_count: int = Field(0, alias="totalCount")
+    negative_rate: Optional[float] = Field(None, alias="negativeRate")
+
+
+class AssistantAnalyticsFeedbackResult(BaseModel):
+    """Assistant analytics feedback result."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    assistant_id: Optional[str] = Field(None, alias="assistantId")
+    range: Optional[AssistantAnalyticsRange] = None
+    generated_utc: Optional[datetime] = Field(None, alias="generatedUtc")
+    total_count: int = Field(0, alias="totalCount")
+    thumbs_up_count: int = Field(0, alias="thumbsUpCount")
+    thumbs_down_count: int = Field(0, alias="thumbsDownCount")
+    negative_rate: Optional[float] = Field(None, alias="negativeRate")
+    buckets: Optional[list[AssistantAnalyticsFeedbackBucket]] = None
+
+
+# ---------------------------------------------------------------------------
 # Feedback
 # ---------------------------------------------------------------------------
 

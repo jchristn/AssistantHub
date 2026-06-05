@@ -455,7 +455,7 @@ namespace AssistantHub.Server.Handlers
             {
                 connector = new SlackConnector(new SlackConnectorOptions(new SlackAuthMaterial(request.SlackBotToken, request.SlackAppToken)));
 
-                var validation = await connector.ValidateConnectionAsync(CancellationToken.None).ConfigureAwait(false);
+                SlackValidationResult? validation = await connector.ValidateConnectionAsync(CancellationToken.None).ConfigureAwait(false);
                 response.BotToken.Success = validation != null && validation.Ok;
                 response.BotToken.Message = response.BotToken.Success ? "Bot token is valid." : "Bot token validation failed.";
                 response.BotToken.Details = validation == null ? null : new
@@ -471,7 +471,7 @@ namespace AssistantHub.Server.Handlers
                 if (!response.BotToken.Success)
                     Logging.Warn(_Header + "Slack bot token verification failed for assistant settings verification.");
 
-                var channel = await connector.GetChannelInfoAsync(request.SlackChannelId, CancellationToken.None).ConfigureAwait(false);
+                SlackChannelInfoResult? channel = await connector.GetChannelInfoAsync(request.SlackChannelId, CancellationToken.None).ConfigureAwait(false);
                 response.Channel.Success = channel != null && channel.Ok;
                 response.Channel.Message = response.Channel.Success ? "Channel lookup succeeded." : "Channel lookup failed.";
                 response.Channel.Details = channel == null ? null : new

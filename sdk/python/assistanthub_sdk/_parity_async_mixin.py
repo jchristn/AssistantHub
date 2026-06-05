@@ -7,6 +7,13 @@ from typing import Any, Optional, TypeVar
 import httpx
 
 from .models import (
+    AssistantAnalyticsEndpointResult,
+    AssistantAnalyticsFeedbackResult,
+    AssistantAnalyticsOverviewResult,
+    AssistantAnalyticsQuery,
+    AssistantAnalyticsSlowestResult,
+    AssistantAnalyticsStageResult,
+    AssistantAnalyticsTimeSeriesResult,
     AssistantFeedback,
     AssistantPublicInfo,
     AssistantSettings,
@@ -41,6 +48,24 @@ class AsyncAssistantHubClientParityMixin:
         result = EnumerationResult[T].model_validate(data)
         result.objects = [model_type.model_validate(obj) for obj in (data.get("objects") or [])]
         return result
+
+    @staticmethod
+    def _assistant_analytics_params(
+        query: AssistantAnalyticsQuery | dict[str, Any] | None,
+    ) -> Optional[dict[str, Any]]:
+        if query is None:
+            return None
+
+        if isinstance(query, AssistantAnalyticsQuery):
+            params = query.model_dump(by_alias=True, exclude_none=True, mode="json")
+        else:
+            params = {key: value for key, value in query.items() if value is not None}
+
+        metrics = params.get("metrics")
+        if isinstance(metrics, list):
+            params["metrics"] = ",".join(str(metric) for metric in metrics)
+
+        return params
 
     async def health(self) -> dict[str, Any]:
         return await self.health_check()
@@ -100,6 +125,78 @@ class AsyncAssistantHubClientParityMixin:
             json=request.model_dump(by_alias=True, exclude_none=True),
         )
         return SlackVerificationResponse.model_validate(response.json())
+
+    async def get_assistant_analytics_overview(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsOverviewResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/overview",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsOverviewResult.model_validate(response.json())
+
+    async def get_assistant_analytics_time_series(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsTimeSeriesResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/timeseries",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsTimeSeriesResult.model_validate(response.json())
+
+    async def get_assistant_analytics_stages(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsStageResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/stages",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsStageResult.model_validate(response.json())
+
+    async def get_assistant_analytics_endpoints(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsEndpointResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/endpoints",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsEndpointResult.model_validate(response.json())
+
+    async def get_assistant_analytics_slowest(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsSlowestResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/slowest",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsSlowestResult.model_validate(response.json())
+
+    async def get_assistant_analytics_feedback(
+        self,
+        assistant_id: str,
+        query: AssistantAnalyticsQuery | dict[str, Any] | None = None,
+    ) -> AssistantAnalyticsFeedbackResult:
+        response = await self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/analytics/feedback",
+            params=self._assistant_analytics_params(query),
+        )
+        return AssistantAnalyticsFeedbackResult.model_validate(response.json())
 
     async def list_threads(
         self,

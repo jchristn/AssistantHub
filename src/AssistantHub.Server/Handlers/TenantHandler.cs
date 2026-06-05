@@ -413,15 +413,15 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                var result = new
+                Dictionary<string, object> result = new Dictionary<string, object>
                 {
-                    IsAuthenticated = auth.IsAuthenticated,
-                    IsGlobalAdmin = auth.IsGlobalAdmin,
-                    IsTenantAdmin = auth.IsTenantAdmin,
-                    TenantId = auth.TenantId,
-                    TenantName = auth.Tenant?.Name,
-                    UserId = auth.UserId,
-                    Email = auth.Email
+                    { "IsAuthenticated", auth.IsAuthenticated },
+                    { "IsGlobalAdmin", auth.IsGlobalAdmin },
+                    { "IsTenantAdmin", auth.IsTenantAdmin },
+                    { "TenantId", auth.TenantId },
+                    { "TenantName", auth.Tenant?.Name },
+                    { "UserId", auth.UserId },
+                    { "Email", auth.Email }
                 };
 
                 ctx.Response.StatusCode = 200;

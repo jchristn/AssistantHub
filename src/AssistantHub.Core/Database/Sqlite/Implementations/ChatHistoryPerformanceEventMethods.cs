@@ -89,9 +89,10 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
 
             return
                 "INSERT INTO chat_history_performance_events " +
-                "(id, tenant_id, chat_history_id, request_history_id, trace_id, sequence_number, stage, phase, kind, endpoint_id, endpoint_name, endpoint_type, provider, api_format, model, started_utc, finished_utc, duration_ms, success, http_status_code, error_type, error_message, input_tokens, output_tokens, total_tokens, chunks_input, chunks_output, retrieval_query_count, endpoint_limiter_wait_ms, request_to_headers_ms, headers_to_first_token_ms, first_token_to_last_token_ms, client_total_ms, provider_queue_ms, provider_load_ms, provider_prompt_eval_ms, provider_generation_ms, provider_total_ms, provider_tokens_per_second, provider_request_id, metadata_json, provider_metrics_json, provider_raw_json, created_utc) VALUES (" +
+                "(id, tenant_id, assistant_id, chat_history_id, request_history_id, trace_id, sequence_number, stage, phase, kind, endpoint_id, endpoint_name, endpoint_type, provider, api_format, model, started_utc, finished_utc, duration_ms, success, http_status_code, error_type, error_message, input_tokens, output_tokens, total_tokens, chunks_input, chunks_output, retrieval_query_count, endpoint_limiter_wait_ms, request_to_headers_ms, headers_to_first_token_ms, first_token_to_last_token_ms, client_total_ms, provider_queue_ms, provider_load_ms, provider_prompt_eval_ms, provider_generation_ms, provider_total_ms, provider_tokens_per_second, provider_request_id, metadata_json, provider_metrics_json, provider_raw_json, created_utc) VALUES (" +
                 _Driver.FormatNullableString(evt.Id) + ", " +
                 _Driver.FormatNullableString(evt.TenantId) + ", " +
+                _Driver.FormatNullableString(evt.AssistantId) + ", " +
                 _Driver.FormatNullableString(evt.ChatHistoryId) + ", " +
                 _Driver.FormatNullableString(evt.RequestHistoryId) + ", " +
                 _Driver.FormatNullableString(evt.TraceId) + ", " +

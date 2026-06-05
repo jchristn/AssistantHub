@@ -234,6 +234,26 @@ if (first?.Id) {
 }
 ```
 
+### Assistant Analytics
+
+```typescript
+const overview = await client.getAssistantAnalyticsOverview("asst_abc123", {
+  range: "lastDay",
+});
+
+const latency = await client.getAssistantAnalyticsTimeSeries("asst_abc123", {
+  range: "lastDay",
+  metrics: ["request_count", "p95_duration_ms"],
+});
+
+const endpoints = await client.getAssistantAnalyticsEndpoints("asst_abc123", {
+  range: "lastWeek",
+  limit: 10,
+});
+
+console.log(overview.RequestCount, latency.Series?.length, endpoints.Endpoints?.length);
+```
+
 ### Tenants, Users, and Credentials
 
 ```typescript

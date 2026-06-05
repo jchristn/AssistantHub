@@ -118,14 +118,14 @@ namespace AssistantHub.Server.Services
                 ["tags"] = new JsonArray(GetTagForPath(path)),
                 ["summary"] = BuildSummary(method, path),
                 ["operationId"] = BuildOperationId(method, path),
-                ["parameters"] = BuildPathParameters(path),
+                ["parameters"] = BuildOperationParameters(path),
                 ["security"] = authenticated
                     ? new JsonArray { new JsonObject { ["BearerAuth"] = new JsonArray() } }
                     : new JsonArray()
             };
         }
 
-        private JsonArray BuildPathParameters(string path)
+        private JsonArray BuildOperationParameters(string path)
         {
             JsonArray parameters = new JsonArray();
             if (String.IsNullOrEmpty(path)) return parameters;
@@ -153,7 +153,55 @@ namespace AssistantHub.Server.Services
                 index = end + 1;
             }
 
+            if (path.Contains("/analytics/", StringComparison.OrdinalIgnoreCase))
+                AddAnalyticsQueryParameters(parameters, path);
+
             return parameters;
+        }
+
+        private void AddAnalyticsQueryParameters(JsonArray parameters, string path)
+        {
+            AddQueryParameter(parameters, "range", "string", "Range ID: lastHour, lastDay, lastWeek, or lastMonth.");
+            AddQueryParameter(parameters, "startUtc", "string", "Explicit UTC start time.");
+            AddQueryParameter(parameters, "endUtc", "string", "Explicit UTC end time.");
+            AddQueryParameter(parameters, "bucketSeconds", "integer", "Explicit bucket width in seconds.");
+
+            if (path.Contains("/timeseries", StringComparison.OrdinalIgnoreCase))
+            {
+                AddQueryParameter(parameters, "metrics", "string", "Comma-separated metric names.");
+                AddQueryParameter(parameters, "stage", "string", "Optional stage filter.");
+                AddQueryParameter(parameters, "endpointId", "string", "Optional endpoint ID filter.");
+                AddQueryParameter(parameters, "model", "string", "Optional model filter.");
+            }
+
+            if (path.Contains("/stages", StringComparison.OrdinalIgnoreCase)
+                || path.Contains("/endpoints", StringComparison.OrdinalIgnoreCase)
+                || path.Contains("/slowest", StringComparison.OrdinalIgnoreCase))
+            {
+                AddQueryParameter(parameters, "stage", "string", "Optional stage filter.");
+                AddQueryParameter(parameters, "endpointId", "string", "Optional endpoint ID filter.");
+                AddQueryParameter(parameters, "endpointType", "string", "Optional endpoint type filter.");
+                AddQueryParameter(parameters, "model", "string", "Optional model filter.");
+            }
+
+            if (path.Contains("/endpoints", StringComparison.OrdinalIgnoreCase)
+                || path.Contains("/slowest", StringComparison.OrdinalIgnoreCase))
+                AddQueryParameter(parameters, "limit", "integer", "Maximum ranked rows to return.");
+        }
+
+        private void AddQueryParameter(JsonArray parameters, string name, string type, string description)
+        {
+            parameters.Add(new JsonObject
+            {
+                ["name"] = name,
+                ["in"] = "query",
+                ["required"] = false,
+                ["description"] = description,
+                ["schema"] = new JsonObject
+                {
+                    ["type"] = type
+                }
+            });
         }
 
         private JsonArray BuildTags()
@@ -172,6 +220,7 @@ namespace AssistantHub.Server.Services
                 BuildTag("Collection Records", "Collection record routes."),
                 BuildTag("Assistants", "Assistant management routes."),
                 BuildTag("Assistant Settings", "Assistant settings routes."),
+                BuildTag("Assistant Analytics", "Assistant performance analytics routes."),
                 BuildTag("Assistant Public APIs", "Public assistant API routes."),
                 BuildTag("Ingestion Rules", "Ingestion rule routes."),
                 BuildTag("Documents", "Document routes."),
@@ -222,6 +271,7 @@ namespace AssistantHub.Server.Services
                     || path.Contains("/documents/", StringComparison.OrdinalIgnoreCase)))
                 return "Assistant Public APIs";
             if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/settings", StringComparison.OrdinalIgnoreCase)) return "Assistant Settings";
+            if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/analytics", StringComparison.OrdinalIgnoreCase)) return "Assistant Analytics";
             if (path.StartsWith("/v1.0/assistants", StringComparison.OrdinalIgnoreCase)) return "Assistants";
             if (path.StartsWith("/v1.0/ingestion-rules", StringComparison.OrdinalIgnoreCase)) return "Ingestion Rules";
             if (path.StartsWith("/v1.0/documents", StringComparison.OrdinalIgnoreCase)) return "Documents";

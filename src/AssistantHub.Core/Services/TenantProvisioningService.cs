@@ -377,34 +377,4 @@ namespace AssistantHub.Core.Services
             }
         }
     }
-
-    /// <summary>
-    /// Result of tenant provisioning.
-    /// </summary>
-    public class TenantProvisioningResult
-    {
-        /// <summary>Tenant ID.</summary>
-        public string TenantId { get; set; }
-
-        /// <summary>Tenant name.</summary>
-        public string TenantName { get; set; }
-
-        /// <summary>Admin user ID.</summary>
-        public string AdminUserId { get; set; }
-
-        /// <summary>Admin email.</summary>
-        public string AdminEmail { get; set; }
-
-        /// <summary>Admin password (plaintext, for initial provisioning only).</summary>
-        public string AdminPassword { get; set; }
-
-        /// <summary>Default bearer token.</summary>
-        public string BearerToken { get; set; }
-
-        /// <summary>Admin user created during provisioning.</summary>
-        public UserMaster User { get; set; }
-
-        /// <summary>Credential created during provisioning.</summary>
-        public Credential Credential { get; set; }
-    }
 }

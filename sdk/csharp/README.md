@@ -235,6 +235,30 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 }
 ```
 
+## Assistant Analytics
+
+```csharp
+using AssistantHub.Sdk;
+using AssistantHub.Sdk.Models;
+
+using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800", "your-api-key"))
+{
+    AssistantAnalyticsQuery query = new AssistantAnalyticsQuery
+    {
+        Range = "lastDay",
+        Metrics = new List<string> { "request_count", "p95_duration_ms" }
+    };
+
+    AssistantAnalyticsOverviewResult overview = await client.GetAssistantAnalyticsOverviewAsync("asst_abc123", query);
+    AssistantAnalyticsTimeSeriesResult series = await client.GetAssistantAnalyticsTimeSeriesAsync("asst_abc123", query);
+    AssistantAnalyticsEndpointResult endpoints = await client.GetAssistantAnalyticsEndpointsAsync(
+        "asst_abc123",
+        new AssistantAnalyticsQuery { Range = "lastWeek", Limit = 10 });
+
+    Console.WriteLine($"Requests: {overview.RequestCount}, series: {series.Series.Count}, endpoints: {endpoints.Endpoints.Count}");
+}
+```
+
 ## Error Handling
 
 The SDK throws typed exceptions that map to HTTP status codes:
@@ -306,6 +330,17 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `GenerateAsync(assistantId, request, threadId?)` | Send a message (no RAG) |
 | `GenerateStreamAsync(assistantId, request, threadId?)` | Stream a response (no RAG) |
 | `SearchAsync(assistantId, request, threadId?)` | Search documents |
+
+### Assistant Analytics
+
+| Method | Description |
+|---|---|
+| `GetAssistantAnalyticsOverviewAsync(assistantId, query?)` | Summary metrics for an assistant |
+| `GetAssistantAnalyticsTimeSeriesAsync(assistantId, query?)` | Chart-ready time-series metrics |
+| `GetAssistantAnalyticsStagesAsync(assistantId, query?)` | Stage bucket summaries |
+| `GetAssistantAnalyticsEndpointsAsync(assistantId, query?)` | Endpoint/model/provider summaries |
+| `GetAssistantAnalyticsSlowestAsync(assistantId, query?)` | Slowest assistant requests |
+| `GetAssistantAnalyticsFeedbackAsync(assistantId, query?)` | Feedback trend and totals |
 
 ### Threads
 

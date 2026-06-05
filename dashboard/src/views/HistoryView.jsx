@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -17,7 +18,8 @@ function HistoryView() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
-  const [assistantFilter, setAssistantFilter] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [assistantFilter, setAssistantFilter] = useState(searchParams.get('assistantId') || '');
   const [threadFilter, setThreadFilter] = useState('');
   const [assistants, setAssistants] = useState([]);
 
@@ -81,7 +83,12 @@ function HistoryView() {
   };
 
   const handleAssistantFilterChange = (e) => {
-    setAssistantFilter(e.target.value);
+    const nextAssistantId = e.target.value;
+    setAssistantFilter(nextAssistantId);
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextAssistantId) nextParams.set('assistantId', nextAssistantId);
+    else nextParams.delete('assistantId');
+    setSearchParams(nextParams);
     setRefresh(r => r + 1);
   };
 

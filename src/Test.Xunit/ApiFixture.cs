@@ -38,7 +38,7 @@ namespace Test.Xunit
                     Dictionary<string, AutomatedTestResult> cachedResults =
                         new Dictionary<string, AutomatedTestResult>(StringComparer.Ordinal);
 
-                    foreach (var result in results)
+                    foreach (AutomatedTestResult result in results)
                         cachedResults[result.TestName] = result;
 
                     _CachedResults = cachedResults;

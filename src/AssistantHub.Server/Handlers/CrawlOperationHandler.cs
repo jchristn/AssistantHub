@@ -208,17 +208,17 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                var statistics = new
+                Dictionary<string, object> statistics = new Dictionary<string, object>
                 {
-                    LastRun = lastRun,
-                    NextRun = nextRun,
-                    FailedRunCount = failedRunCount,
-                    SuccessfulRunCount = successfulRunCount,
-                    MinRuntimeMs = minRuntimeMs,
-                    MaxRuntimeMs = maxRuntimeMs,
-                    AvgRuntimeMs = avgRuntimeMs,
-                    ObjectCount = objectCount,
-                    BytesCrawled = bytesCrawled
+                    { "LastRun", lastRun },
+                    { "NextRun", nextRun },
+                    { "FailedRunCount", failedRunCount },
+                    { "SuccessfulRunCount", successfulRunCount },
+                    { "MinRuntimeMs", minRuntimeMs },
+                    { "MaxRuntimeMs", maxRuntimeMs },
+                    { "AvgRuntimeMs", avgRuntimeMs },
+                    { "ObjectCount", objectCount },
+                    { "BytesCrawled", bytesCrawled }
                 };
 
                 ctx.Response.StatusCode = 200;
@@ -345,14 +345,14 @@ namespace AssistantHub.Server.Handlers
                 if (operation.StartUtc != null && operation.FinishUtc != null)
                     runtimeMs = (operation.FinishUtc.Value - operation.StartUtc.Value).TotalMilliseconds;
 
-                var statistics = new
+                Dictionary<string, object> statistics = new Dictionary<string, object>
                 {
-                    LastRun = operation.StartUtc,
-                    FailedRunCount = (operation.State == Enums.CrawlOperationStateEnum.Failed) ? 1 : 0,
-                    SuccessfulRunCount = (operation.State == Enums.CrawlOperationStateEnum.Success) ? 1 : 0,
-                    RuntimeMs = runtimeMs,
-                    ObjectCount = operation.ObjectsEnumerated,
-                    BytesCrawled = operation.BytesEnumerated
+                    { "LastRun", operation.StartUtc },
+                    { "FailedRunCount", (operation.State == Enums.CrawlOperationStateEnum.Failed) ? 1 : 0 },
+                    { "SuccessfulRunCount", (operation.State == Enums.CrawlOperationStateEnum.Success) ? 1 : 0 },
+                    { "RuntimeMs", runtimeMs },
+                    { "ObjectCount", operation.ObjectsEnumerated },
+                    { "BytesCrawled", operation.BytesEnumerated }
                 };
 
                 ctx.Response.StatusCode = 200;

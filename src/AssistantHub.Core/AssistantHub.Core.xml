@@ -2841,6 +2841,16 @@
             Add the chat-history ID column to request history.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn">
+            <summary>
+            Add the assistant ID column to chat history performance events.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.BackfillChatHistoryPerformanceEventsAssistantId">
+            <summary>
+            Backfill assistant IDs onto chat history performance events.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.CreateIndices">
             <summary>
             Get the CREATE INDEX statements.
@@ -4159,6 +4169,741 @@
             <param name="row">Data row.</param>
             <returns>Assistant instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsEndpointResult">
+            <summary>
+            Endpoint analytics result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointResult.Endpoints">
+            <summary>
+            Endpoint summaries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary">
+            <summary>
+            Endpoint/model/provider summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.EndpointId">
+            <summary>
+            Endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.EndpointName">
+            <summary>
+            Endpoint name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.EndpointType">
+            <summary>
+            Endpoint type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.Provider">
+            <summary>
+            Provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.ApiFormat">
+            <summary>
+            API format.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.Model">
+            <summary>
+            Model name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.Stage">
+            <summary>
+            Stage name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.Calls">
+            <summary>
+            Calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.Failures">
+            <summary>
+            Failures.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageDurationMs">
+            <summary>
+            Average duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.P95DurationMs">
+            <summary>
+            95th percentile duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageLimiterWaitMs">
+            <summary>
+            Average limiter wait.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.P95LimiterWaitMs">
+            <summary>
+            95th percentile limiter wait.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageRequestToHeadersMs">
+            <summary>
+            Average request-to-headers duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageProviderLoadMs">
+            <summary>
+            Average provider load duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageProviderGenerationMs">
+            <summary>
+            Average provider generation duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.AverageTokensPerSecond">
+            <summary>
+            Average provider tokens per second.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.InputTokens">
+            <summary>
+            Total input tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsEndpointSummary.OutputTokens">
+            <summary>
+            Total output tokens.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket">
+            <summary>
+            Feedback analytics bucket.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.BucketStartUtc">
+            <summary>
+            Bucket start time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.BucketEndUtc">
+            <summary>
+            Bucket end time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.ThumbsUpCount">
+            <summary>
+            Positive feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.ThumbsDownCount">
+            <summary>
+            Negative feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.UnknownCount">
+            <summary>
+            Unknown feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.TotalCount">
+            <summary>
+            Total feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackBucket.NegativeRate">
+            <summary>
+            Negative feedback rate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult">
+            <summary>
+            Feedback analytics result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.TotalCount">
+            <summary>
+            Total feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.ThumbsUpCount">
+            <summary>
+            Positive feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.ThumbsDownCount">
+            <summary>
+            Negative feedback count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.NegativeRate">
+            <summary>
+            Negative feedback rate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFeedbackResult.Buckets">
+            <summary>
+            Feedback buckets.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsFilter">
+            <summary>
+            Analytics query filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.Range">
+            <summary>
+            Range identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.StartUtc">
+            <summary>
+            Explicit UTC start time.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.EndUtc">
+            <summary>
+            Explicit UTC end time.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.BucketSeconds">
+            <summary>
+            Explicit bucket width in seconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.Metrics">
+            <summary>
+            Optional metric names to return.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.Stage">
+            <summary>
+            Optional stage filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.EndpointId">
+            <summary>
+            Optional endpoint identifier filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.EndpointType">
+            <summary>
+            Optional endpoint type filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.Model">
+            <summary>
+            Optional model filter.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsFilter.Limit">
+            <summary>
+            Result limit for ranked tables.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsMetricValue">
+            <summary>
+            Named metric value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsMetricValue.Name">
+            <summary>
+            Metric name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsMetricValue.Value">
+            <summary>
+            Numeric value, or null when unavailable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsMetricValue.Unit">
+            <summary>
+            Metric unit.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsMetricValue.SampleCount">
+            <summary>
+            Number of samples used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsMetricValue.NullCount">
+            <summary>
+            Number of unavailable samples.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsRange">
+            <summary>
+            Resolved analytics time range and bucket geometry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsRange.RangeId">
+            <summary>
+            Range identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsRange.StartUtc">
+            <summary>
+            Inclusive UTC start time.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsRange.EndUtc">
+            <summary>
+            Exclusive UTC end time.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsRange.BucketSeconds">
+            <summary>
+            Bucket width in seconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsRange.BucketCount">
+            <summary>
+            Number of buckets returned.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult">
+            <summary>
+            Assistant analytics overview.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.RequestCount">
+            <summary>
+            Total requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.SuccessCount">
+            <summary>
+            Successful requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.FailureCount">
+            <summary>
+            Failed requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.SuccessRate">
+            <summary>
+            Success rate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.FailureRate">
+            <summary>
+            Failure rate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.AverageDurationMs">
+            <summary>
+            Average request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.P50DurationMs">
+            <summary>
+            Median request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.P90DurationMs">
+            <summary>
+            90th percentile request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.P95DurationMs">
+            <summary>
+            95th percentile request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.P99DurationMs">
+            <summary>
+            99th percentile request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.MaxDurationMs">
+            <summary>
+            Maximum request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TelemetryEventCount">
+            <summary>
+            Number of performance-event rows.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.RequestsWithTelemetry">
+            <summary>
+            Number of requests with linked performance events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TelemetryCoverageRate">
+            <summary>
+            Telemetry coverage rate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.DominantStage">
+            <summary>
+            Highest aggregate-duration stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.DominantStageAverageMs">
+            <summary>
+            Average duration of the dominant stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TopEndpointId">
+            <summary>
+            Top endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TopEndpointName">
+            <summary>
+            Top endpoint display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TopEndpointProvider">
+            <summary>
+            Top endpoint provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.TopEndpointModel">
+            <summary>
+            Top endpoint model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.FeedbackCount">
+            <summary>
+            Total feedback rows.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.ThumbsUpCount">
+            <summary>
+            Positive feedback rows.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.ThumbsDownCount">
+            <summary>
+            Negative feedback rows.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsOverviewResult.NegativeFeedbackRate">
+            <summary>
+            Negative feedback rate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsPoint">
+            <summary>
+            Time-series point.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsPoint.BucketStartUtc">
+            <summary>
+            Bucket start time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsPoint.BucketEndUtc">
+            <summary>
+            Bucket end time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsPoint.Value">
+            <summary>
+            Point value, or null when unavailable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsPoint.SampleCount">
+            <summary>
+            Number of samples used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsPoint.NullCount">
+            <summary>
+            Number of unavailable samples.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsSeries">
+            <summary>
+            Time-series definition.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSeries.Metric">
+            <summary>
+            Metric machine name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSeries.Label">
+            <summary>
+            Display label.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSeries.Unit">
+            <summary>
+            Unit for values.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSeries.Points">
+            <summary>
+            Series points.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsSlowestResult">
+            <summary>
+            Slow request result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowestResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowestResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowestResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowestResult.Requests">
+            <summary>
+            Slowest requests.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest">
+            <summary>
+            Slow request diagnostic row.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.RequestHistoryId">
+            <summary>
+            Request-history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ChatHistoryId">
+            <summary>
+            Chat-history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.TraceId">
+            <summary>
+            Trace identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.CreatedUtc">
+            <summary>
+            Created timestamp in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.StatusCode">
+            <summary>
+            HTTP status code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.Success">
+            <summary>
+            Success flag.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.DurationMs">
+            <summary>
+            Total request duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.RequestPath">
+            <summary>
+            Request path.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.DominantStage">
+            <summary>
+            Dominant stage name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.DominantStageDurationMs">
+            <summary>
+            Dominant stage duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.EndpointId">
+            <summary>
+            Endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.EndpointName">
+            <summary>
+            Endpoint name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.Provider">
+            <summary>
+            Provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.Model">
+            <summary>
+            Model.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsStageBucket">
+            <summary>
+            Stage summary bucket.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.BucketStartUtc">
+            <summary>
+            Bucket start time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.BucketEndUtc">
+            <summary>
+            Bucket end time in UTC.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.Stage">
+            <summary>
+            Stage name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.Kind">
+            <summary>
+            Stage kind.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.Calls">
+            <summary>
+            Stage call count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.Failures">
+            <summary>
+            Failed call count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.SkippedCount">
+            <summary>
+            Zero-duration/noop count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.AverageDurationMs">
+            <summary>
+            Average duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.P95DurationMs">
+            <summary>
+            95th percentile duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageBucket.MaxDurationMs">
+            <summary>
+            Maximum duration.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsStageResult">
+            <summary>
+            Stage analytics result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsStageResult.Buckets">
+            <summary>
+            Stage buckets.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantAnalyticsTimeSeriesResult">
+            <summary>
+            Time-series analytics result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsTimeSeriesResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsTimeSeriesResult.Range">
+            <summary>
+            Resolved range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsTimeSeriesResult.GeneratedUtc">
+            <summary>
+            Timestamp when generated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsTimeSeriesResult.Series">
+            <summary>
+            Chart-ready series.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantDocument">
             <summary>
             Assistant document record.
@@ -4343,44 +5088,34 @@
             <param name="row">Data row.</param>
             <returns>AssistantFeedback instance or null.</returns>
         </member>
-        <member name="T:AssistantHub.Core.Models.AssistantPerformanceTelemetry">
+        <member name="T:AssistantHub.Core.Models.AssistantPerformanceClientTimings">
             <summary>
-            Versioned provider-agnostic performance telemetry for a chat turn.
+            Client-observed timings for an upstream provider request.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.SchemaVersion">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.EndpointLimiterWaitMs">
             <summary>
-            Telemetry schema version.
+            Time spent waiting for the endpoint concurrency limiter.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.TraceId">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.RequestToHeadersMs">
             <summary>
-            Correlation identifier shared by chat history, request history, and logs.
+            Time from sending the request to receiving response headers.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.ChatHistoryId">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.HeadersToFirstTokenMs">
             <summary>
-            Chat history identifier when known.
+            Time from response headers to first streamed token.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.RequestHistoryId">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.FirstTokenToLastTokenMs">
             <summary>
-            Request history identifier when known.
+            Time from first streamed token to the final streamed token.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.WallTimeMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.TotalMs">
             <summary>
-            Approximate wall-clock time for the assistant pipeline.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.CreatedUtc">
-            <summary>
-            Timestamp when telemetry was created.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.Stages">
-            <summary>
-            Ordered stage timings.
+            Total client-observed duration.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.AssistantPerformanceStage">
@@ -4493,64 +5228,49 @@
             Provider-specific raw metrics retained for troubleshooting.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Models.AssistantPerformanceClientTimings">
+        <member name="T:AssistantHub.Core.Models.AssistantPerformanceTelemetry">
             <summary>
-            Client-observed timings for an upstream provider request.
+            Versioned provider-agnostic performance telemetry for a chat turn.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.EndpointLimiterWaitMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.SchemaVersion">
             <summary>
-            Time spent waiting for the endpoint concurrency limiter.
+            Telemetry schema version.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.RequestToHeadersMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.TraceId">
             <summary>
-            Time from sending the request to receiving response headers.
+            Correlation identifier shared by chat history, request history, and logs.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.HeadersToFirstTokenMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.ChatHistoryId">
             <summary>
-            Time from response headers to first streamed token.
+            Chat history identifier when known.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.FirstTokenToLastTokenMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.RequestHistoryId">
             <summary>
-            Time from first streamed token to the final streamed token.
+            Request history identifier when known.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantPerformanceClientTimings.TotalMs">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.AssistantId">
             <summary>
-            Total client-observed duration.
+            Assistant identifier when known.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Models.AssistantTokenUsageTelemetry">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.WallTimeMs">
             <summary>
-            Normalized token counters.
+            Approximate wall-clock time for the assistant pipeline.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Input">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.CreatedUtc">
             <summary>
-            Input token count, when reported or estimated.
+            Timestamp when telemetry was created.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Output">
+        <member name="P:AssistantHub.Core.Models.AssistantPerformanceTelemetry.Stages">
             <summary>
-            Output token count, when reported or estimated.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Total">
-            <summary>
-            Total token count, when reported or estimated.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.PromptEvalCount">
-            <summary>
-            Provider prompt-evaluation token count, when reported.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.EvalCount">
-            <summary>
-            Provider generation token count, when reported.
+            Ordered stage timings.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.AssistantProviderMetrics">
@@ -4864,6 +5584,36 @@
             <param name="row">Data row.</param>
             <returns>AssistantSettings instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.AssistantTokenUsageTelemetry">
+            <summary>
+            Normalized token counters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Input">
+            <summary>
+            Input token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Output">
+            <summary>
+            Output token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Total">
+            <summary>
+            Total token count, when reported or estimated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.PromptEvalCount">
+            <summary>
+            Provider prompt-evaluation token count, when reported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.EvalCount">
+            <summary>
+            Provider generation token count, when reported.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AuthContext">
             <summary>
             Authentication context propagated through request handlers.
@@ -5019,6 +5769,33 @@
             Finish reason: "stop", "length", etc.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionCitations">
+            <summary>
+            Citation metadata included in chat completion responses.
+            Contains a manifest of all source documents provided as context
+            and the indices the model actually referenced in its answer.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.Sources">
+            <summary>
+            Source documents provided as context to the model, indexed starting at 1.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.ReferencedIndices">
+            <summary>
+            Indices from Sources that the model actually cited in its response.
+            Validated against the source manifest (invalid indices are excluded).
+            When the model does not cite any sources, all source indices are
+            populated as a fallback and AutoPopulated is set to true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.AutoPopulated">
+            <summary>
+            True when the model did not produce inline citation markers and the
+            system automatically populated ReferencedIndices with all source indices.
+            Useful for diagnosing models that ignore citation instructions.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionMessage">
             <summary>
             OpenAI-compatible chat completion message.
@@ -5163,85 +5940,6 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
             <summary>
             The retrieved context chunks with source identification.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Models.ChatCompletionCitations">
-            <summary>
-            Citation metadata included in chat completion responses.
-            Contains a manifest of all source documents provided as context
-            and the indices the model actually referenced in its answer.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.Sources">
-            <summary>
-            Source documents provided as context to the model, indexed starting at 1.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.ReferencedIndices">
-            <summary>
-            Indices from Sources that the model actually cited in its response.
-            Validated against the source manifest (invalid indices are excluded).
-            When the model does not cite any sources, all source indices are
-            populated as a fallback and AutoPopulated is set to true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.ChatCompletionCitations.AutoPopulated">
-            <summary>
-            True when the model did not produce inline citation markers and the
-            system automatically populated ReferencedIndices with all source indices.
-            Useful for diagnosing models that ignore citation instructions.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Models.CitationSource">
-            <summary>
-            A single source document in the citation manifest.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.Index">
-            <summary>
-            1-based index matching the bracket notation [N] used in the response text.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentId">
-            <summary>
-            The document identifier (maps to AssistantDocument.Id).
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentName">
-            <summary>
-            Display name of the source document.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.ContentType">
-            <summary>
-            MIME content type of the source document.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.Score">
-            <summary>
-            Retrieval relevance score (0.0 to 1.0).
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.FusionScore">
-            <summary>
-            Reciprocal Rank Fusion score, null when RRF is disabled.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.RerankScore">
-            <summary>
-            LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.Excerpt">
-            <summary>
-            Text excerpt from the retrieved chunk.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.CitationSource.DownloadUrl">
-            <summary>
-            Download URL for the source document.
-            Populated based on CitationLinkMode: null for "None",
-            relative path for "Authenticated", unauthenticated server-proxied path for "Public".
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
@@ -5484,6 +6182,11 @@
         <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.TenantId">
             <summary>
             Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.AssistantId">
+            <summary>
+            Associated assistant identifier.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.ChatHistoryId">
@@ -5818,6 +6521,58 @@
         <member name="P:AssistantHub.Core.Models.ChatTagCondition.Value">
             <summary>
             Value to compare against.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CitationSource">
+            <summary>
+            A single source document in the citation manifest.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Index">
+            <summary>
+            1-based index matching the bracket notation [N] used in the response text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentId">
+            <summary>
+            The document identifier (maps to AssistantDocument.Id).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DocumentName">
+            <summary>
+            Display name of the source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.ContentType">
+            <summary>
+            MIME content type of the source document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Score">
+            <summary>
+            Retrieval relevance score (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.FusionScore">
+            <summary>
+            Reciprocal Rank Fusion score, null when RRF is disabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.RerankScore">
+            <summary>
+            LLM-assigned re-rank relevance score (0–10), null when re-ranking is disabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Excerpt">
+            <summary>
+            Text excerpt from the retrieved chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.DownloadUrl">
+            <summary>
+            Download URL for the source document.
+            Populated based on CitationLinkMode: null for "None",
+            relative path for "Authenticated", unauthenticated server-proxied path for "Public".
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CompletionCallDetail">
@@ -6234,124 +6989,6 @@
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Models.CrawlRepositorySettings.#ctor">
-            <summary>
-            Instantiate.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Models.WebCrawlRepositorySettings">
-            <summary>
-            Web crawl repository settings.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.AuthenticationType">
-            <summary>
-            Authentication type.
-            Default: None.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Username">
-            <summary>
-            Username for Basic authentication.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Password">
-            <summary>
-            Password for Basic authentication.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyHeader">
-            <summary>
-            API key header name.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyValue">
-            <summary>
-            API key value.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.BearerToken">
-            <summary>
-            Bearer token.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UserAgent">
-            <summary>
-            User agent string.
-            Default: assistanthub-crawler.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.StartUrl">
-            <summary>
-            Start URL for crawling.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UseHeadlessBrowser">
-            <summary>
-            Use headless browser for JavaScript-heavy sites.
-            Default: false.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowLinks">
-            <summary>
-            Follow links during crawling.
-            Default: true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowRedirects">
-            <summary>
-            Follow HTTP redirects.
-            Default: true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ExtractSitemapLinks">
-            <summary>
-            Extract and follow sitemap links.
-            Default: true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToChildUrls">
-            <summary>
-            Restrict crawling to child URLs of the start URL.
-            Default: true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToSubdomain">
-            <summary>
-            Restrict crawling to the same subdomain.
-            Default: false.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToRootDomain">
-            <summary>
-            Restrict crawling to the same root domain.
-            Default: true.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.IgnoreRobotsTxt">
-            <summary>
-            Ignore robots.txt directives.
-            Default: false.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxDepth">
-            <summary>
-            Maximum crawl depth.
-            Default: 5. Clamped 1-100.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxParallelTasks">
-            <summary>
-            Maximum parallel crawl tasks.
-            Default: 8. Clamped 1-64.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.CrawlDelayMs">
-            <summary>
-            Delay between requests in milliseconds.
-            Default: 100. Clamped 0-60000.
-            </summary>
-        </member>
-        <member name="M:AssistantHub.Core.Models.WebCrawlRepositorySettings.#ctor">
             <summary>
             Instantiate.
             </summary>
@@ -8430,6 +9067,26 @@
             Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.SlackVerificationCheck">
+            <summary>
+            Individual verification result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Success">
+            <summary>
+            True if the check succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Message">
+            <summary>
+            User-facing status message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Details">
+            <summary>
+            Safe detail payload for UI display.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.SlackVerificationRequest">
             <summary>
             Draft Slack settings used for connectivity verification.
@@ -8483,26 +9140,6 @@
         <member name="P:AssistantHub.Core.Models.SlackVerificationResponse.SocketMode">
             <summary>
             Socket Mode connectivity result.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Models.SlackVerificationCheck">
-            <summary>
-            Individual verification result.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Success">
-            <summary>
-            True if the check succeeded.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Message">
-            <summary>
-            User-facing status message.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Models.SlackVerificationCheck.Details">
-            <summary>
-            Safe detail payload for UI display.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.TenantMetadata">
@@ -8653,6 +9290,124 @@
             <param name="password">Plain-text password.</param>
             <returns>True if the password matches.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.WebCrawlRepositorySettings">
+            <summary>
+            Web crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.AuthenticationType">
+            <summary>
+            Authentication type.
+            Default: None.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Username">
+            <summary>
+            Username for Basic authentication.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.Password">
+            <summary>
+            Password for Basic authentication.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyHeader">
+            <summary>
+            API key header name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ApiKeyValue">
+            <summary>
+            API key value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.BearerToken">
+            <summary>
+            Bearer token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UserAgent">
+            <summary>
+            User agent string.
+            Default: assistanthub-crawler.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.StartUrl">
+            <summary>
+            Start URL for crawling.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.UseHeadlessBrowser">
+            <summary>
+            Use headless browser for JavaScript-heavy sites.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowLinks">
+            <summary>
+            Follow links during crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowRedirects">
+            <summary>
+            Follow HTTP redirects.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ExtractSitemapLinks">
+            <summary>
+            Extract and follow sitemap links.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToChildUrls">
+            <summary>
+            Restrict crawling to child URLs of the start URL.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToSubdomain">
+            <summary>
+            Restrict crawling to the same subdomain.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.RestrictToRootDomain">
+            <summary>
+            Restrict crawling to the same root domain.
+            Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.IgnoreRobotsTxt">
+            <summary>
+            Ignore robots.txt directives.
+            Default: false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxDepth">
+            <summary>
+            Maximum crawl depth.
+            Default: 5. Clamped 1-100.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxParallelTasks">
+            <summary>
+            Maximum parallel crawl tasks.
+            Default: 8. Clamped 1-64.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.CrawlDelayMs">
+            <summary>
+            Delay between requests in milliseconds.
+            Default: 100. Clamped 0-60000.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.WebCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter">
             <summary>
             Converts Partio health check method values from either string or numeric enum form.
@@ -8663,6 +9418,82 @@
         </member>
         <member name="M:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter.Write(System.Text.Json.Utf8JsonWriter,System.String,System.Text.Json.JsonSerializerOptions)">
             <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.AssistantAnalyticsService">
+            <summary>
+            Aggregates assistant request and performance telemetry into chart-ready analytics.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase)">
+            <summary>
+            Instantiate the assistant analytics service.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.ResolveRange(AssistantHub.Core.Models.AssistantAnalyticsFilter)">
+            <summary>
+            Resolve a filter to a concrete analytics range.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <returns>Resolved range.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetOverviewAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get high-level analytics for an assistant.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Overview result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetTimeSeriesAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get chart-ready time series for an assistant.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Time-series result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetStagesAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get stage-level analytics for an assistant.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Stage analytics result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetEndpointsAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get endpoint/model/provider analytics for an assistant.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Endpoint analytics result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetSlowestAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get the slowest assistant requests.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Slowest request result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantAnalyticsService.GetFeedbackAsync(AssistantHub.Core.Models.AssistantAnalyticsFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get assistant feedback analytics.
+            </summary>
+            <param name="filter">Analytics filter.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Feedback analytics result.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.AtomResponse">
+            <summary>
+            Atom response from DocumentAtom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Text">
+            <summary>
+            Text content of the atom.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.AuthenticationService">
             <summary>
@@ -8712,6 +9543,11 @@
             <param name="password">Password.</param>
             <param name="token">Cancellation token.</param>
             <returns>Authentication result.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ChunkResult">
+            <summary>
+            A single chunk result from Partio v0.4.0.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.CrawledObject">
             <summary>
@@ -9150,6 +9986,16 @@
             <param name="token">Cancellation token.</param>
             <returns>The created EvalRun.</returns>
         </member>
+        <member name="P:AssistantHub.Core.Services.GeminiModelEntry.Name">
+            <summary>
+            Model resource name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.GeminiModelsResponse.Models">
+            <summary>
+            List of Gemini models.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Services.InferenceService">
             <summary>
             Inference service for generating responses from language models.
@@ -9261,95 +10107,41 @@
             <param name="chunkLabels">Source labels for each chunk when citations are enabled.</param>
             <returns>Complete system message with context.</returns>
         </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaTagsResponse.Models">
+        <member name="T:AssistantHub.Core.Services.InferenceServiceProviderBase">
             <summary>
-            List of models.
+            Provides streaming provider request helpers for inference services.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.Name">
+        <member name="M:AssistantHub.Core.Services.InferenceServiceProviderBase.#ctor(AssistantHub.Core.Settings.InferenceSettings,SyslogLogging.LoggingModule)">
             <summary>
-            Model name.
+            Instantiate the streaming provider helper base.
+            </summary>
+            <param name="settings">Inference settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceServiceResponseBase">
+            <summary>
+            Provides non-streaming provider request helpers for inference services.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.Size">
+        <member name="M:AssistantHub.Core.Services.InferenceServiceResponseBase.#ctor(AssistantHub.Core.Settings.InferenceSettings,SyslogLogging.LoggingModule)">
             <summary>
-            Model size in bytes.
+            Instantiate the non-streaming provider helper base.
+            </summary>
+            <param name="settings">Inference settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Services.InferenceServiceTelemetryBase">
+            <summary>
+            Provides shared telemetry and provider DTO helpers for inference services.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaModelEntry.ModifiedAt">
+        <member name="M:AssistantHub.Core.Services.InferenceServiceTelemetryBase.#ctor(AssistantHub.Core.Settings.InferenceSettings,SyslogLogging.LoggingModule)">
             <summary>
-            Last modified timestamp.
+            Instantiate the telemetry helper base.
             </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelsResponse.Data">
-            <summary>
-            List of model entries.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.GeminiModelsResponse.Models">
-            <summary>
-            List of Gemini models.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.GeminiModelEntry.Name">
-            <summary>
-            Model resource name.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Id">
-            <summary>
-            Model identifier.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.Created">
-            <summary>
-            Creation timestamp (Unix seconds).
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIModelEntry.OwnedBy">
-            <summary>
-            Model owner.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Choices">
-            <summary>
-            Response choices.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChatResponse.Usage">
-            <summary>
-            Token usage reported by OpenAI-compatible providers.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIChoice.Message">
-            <summary>
-            Message in the choice.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIMessage.Role">
-            <summary>
-            Message role.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OpenAIMessage.Content">
-            <summary>
-            Message content.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaChatResponse.Message">
-            <summary>
-            Response message.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaMessage.Role">
-            <summary>
-            Message role.
-            </summary>
-        </member>
-        <member name="P:AssistantHub.Core.Services.InferenceService.OllamaMessage.Content">
-            <summary>
-            Message content.
-            </summary>
+            <param name="settings">Inference settings.</param>
+            <param name="logging">Logging module.</param>
         </member>
         <member name="T:AssistantHub.Core.Services.IngestionService">
             <summary>
@@ -9396,7 +10188,24 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.UpdateDocumentStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
+        <member name="T:AssistantHub.Core.Services.IngestionServiceBase">
+            <summary>
+            Provides shared document ingestion pipeline helpers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
+            <summary>
+            Instantiate the ingestion service helper base.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="storage">Storage service.</param>
+            <param name="documentAtomSettings">DocumentAtom service settings.</param>
+            <param name="chunkingSettings">Chunking service settings.</param>
+            <param name="recallDbSettings">RecallDb service settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="processingLog">Optional processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.UpdateDocumentStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
             <summary>
             Update the status of a document in the database.
             </summary>
@@ -9406,7 +10215,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.DetectDocumentTypeAsync(System.String,System.Byte[],System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.DetectDocumentTypeAsync(System.String,System.Byte[],System.String,System.Threading.CancellationToken)">
             <summary>
             Detect the type of a document using the DocumentAtom service.
             </summary>
@@ -9416,7 +10225,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Detected document type string.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentContentAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ProcessDocumentContentAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Process document content using the DocumentAtom service.
             </summary>
@@ -9427,12 +10236,12 @@
             <param name="token">Cancellation token.</param>
             <returns>Extracted text content.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.GetAtomPath(System.String)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.GetAtomPath(System.String)">
             <summary>
             Map a detected document type to the corresponding DocumentAtom atom endpoint path.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ChunkAndEmbedContentAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ChunkAndEmbedContentAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken)">
             <summary>
             Chunk and embed document content using the Partio chunking service.
             </summary>
@@ -9444,24 +10253,24 @@
             <param name="token">Cancellation token.</param>
             <returns>List of chunks with their embeddings.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.FlattenChunks(AssistantHub.Core.Services.IngestionService.SemanticCellResponse)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.FlattenChunks(AssistantHub.Core.Services.SemanticCellResponse)">
             <summary>
             Recursively flatten all chunks from a SemanticCellResponse hierarchy.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ComputeEmbeddingAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ComputeEmbeddingAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
             <summary>
             Compute embedding vector for a single piece of text using the Partio embedding endpoint.
             Used when chunking strategy is "None" to embed the whole document as a single chunk.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.EnsureCollectionExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.EnsureCollectionExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Check that a RecallDB collection exists via HEAD.
             Collections must be created via the dashboard/RecallDB before ingestion.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingAsync(System.String,System.String,System.String,AssistantHub.Core.Services.IngestionService.ChunkResult,System.Int32,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.StoreEmbeddingAsync(System.String,System.String,System.String,AssistantHub.Core.Services.ChunkResult,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
             </summary>
@@ -9473,7 +10282,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Document key if stored successfully, null otherwise.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.StoreEmbeddingBatchAsync(System.String,System.String,System.String,System.Collections.Generic.List{AssistantHub.Core.Services.IngestionService.ChunkResult},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.StoreEmbeddingBatchAsync(System.String,System.String,System.String,System.Collections.Generic.List{AssistantHub.Core.Services.ChunkResult},System.Threading.CancellationToken)">
             <summary>
             Store all chunk embeddings in RecallDB via the batch API in a single request.
             </summary>
@@ -9484,12 +10293,12 @@
             <param name="token">Cancellation token.</param>
             <returns>List of stored document keys.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.Excerpt(System.String,System.Int32)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.Excerpt(System.String,System.Int32)">
             <summary>
             Truncate text to a maximum length for logging, appending total length if truncated.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ResolveEndpointInfoAsync(System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Resolve endpoint details (model, URL) from Partio for logging.
             </summary>
@@ -9498,61 +10307,101 @@
             <param name="token">Cancellation token.</param>
             <returns>Human-readable endpoint info string, or null on failure.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
             <summary>
             Merge labels from ingestion rule and document.
             Document labels are appended to rule labels.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.MergeTags(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.MergeTags(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
             <summary>
             Merge tags from ingestion rule and document.
             Document tags override rule tags for the same key.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.TypeDetectResponse">
+        <member name="P:AssistantHub.Core.Services.OllamaChatResponse.Message">
             <summary>
-            Type detection response from DocumentAtom.
+            Response message.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.TypeDetectResponse.MimeType">
+        <member name="P:AssistantHub.Core.Services.OllamaMessage.Role">
             <summary>
-            Detected MIME type.
+            Message role.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.TypeDetectResponse.Type">
+        <member name="P:AssistantHub.Core.Services.OllamaMessage.Content">
             <summary>
-            Detected document type.
+            Message content.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.AtomResponse">
+        <member name="P:AssistantHub.Core.Services.OllamaModelEntry.Name">
             <summary>
-            Atom response from DocumentAtom.
+            Model name.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.AtomResponse.Text">
+        <member name="P:AssistantHub.Core.Services.OllamaModelEntry.Size">
             <summary>
-            Text content of the atom.
+            Model size in bytes.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.SemanticCellResponse">
+        <member name="P:AssistantHub.Core.Services.OllamaModelEntry.ModifiedAt">
             <summary>
-            Semantic cell response from the Partio v0.4.0 service.
+            Last modified timestamp.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.ChunkResult">
+        <member name="P:AssistantHub.Core.Services.OllamaTagsResponse.Models">
             <summary>
-            A single chunk result from Partio v0.4.0.
+            List of models.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse">
+        <member name="P:AssistantHub.Core.Services.OpenAIChatResponse.Choices">
             <summary>
-            Response from RecallDB when storing a document/embedding.
+            Response choices.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.IngestionService.RecallDbStoreResponse.DocumentKey">
+        <member name="P:AssistantHub.Core.Services.OpenAIChatResponse.Usage">
             <summary>
-            Document key (unique identifier within the collection).
+            Token usage reported by OpenAI-compatible providers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIChoice.Message">
+            <summary>
+            Message in the choice.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.Role">
+            <summary>
+            Message role.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.Content">
+            <summary>
+            Message content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIModelEntry.Id">
+            <summary>
+            Model identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIModelEntry.Created">
+            <summary>
+            Creation timestamp (Unix seconds).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIModelEntry.OwnedBy">
+            <summary>
+            Model owner.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIModelsResponse.Data">
+            <summary>
+            List of model entries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ProcessChunk">
+            <summary>
+            A single chunk from the Partio process response.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.ProcessingLogService">
@@ -9611,6 +10460,21 @@
             </summary>
             <returns>Task.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.ProcessResponse">
+            <summary>
+            Process response from the Partio v0.4.0 service.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.RecallDbStoreResponse">
+            <summary>
+            Response from RecallDB when storing a document/embedding.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.RecallDbStoreResponse.DocumentKey">
+            <summary>
+            Document key (unique identifier within the collection).
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService">
             <summary>
             Retrieval service for querying embedded document chunks.
@@ -9662,60 +10526,55 @@
             <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
             <returns>Embedding vector.</returns>
         </member>
-        <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessResponse">
-            <summary>
-            Process response from the Partio v0.4.0 service.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.RetrievalService.ProcessChunk">
-            <summary>
-            A single chunk from the Partio process response.
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResponse">
+        <member name="T:AssistantHub.Core.Services.SearchResponse">
             <summary>
             Search response from RecallDB.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResponse.Documents">
+        <member name="P:AssistantHub.Core.Services.SearchResponse.Documents">
             <summary>
             List of matching documents.
             </summary>
         </member>
-        <member name="T:AssistantHub.Core.Services.RetrievalService.SearchResult">
+        <member name="T:AssistantHub.Core.Services.SearchResult">
             <summary>
             A single search result from RecallDB.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.DocumentId">
+        <member name="P:AssistantHub.Core.Services.SearchResult.DocumentId">
             <summary>
             Document identifier (maps to AssistantDocument.Id).
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Score">
+        <member name="P:AssistantHub.Core.Services.SearchResult.Score">
             <summary>
             Similarity score.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.TextScore">
+        <member name="P:AssistantHub.Core.Services.SearchResult.TextScore">
             <summary>
             Full-text relevance score (null in vector-only mode).
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Content">
+        <member name="P:AssistantHub.Core.Services.SearchResult.Content">
             <summary>
             Text content of the matching chunk.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Position">
+        <member name="P:AssistantHub.Core.Services.SearchResult.Position">
             <summary>
             Positional index of this chunk within its source document.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Services.RetrievalService.SearchResult.Neighbors">
+        <member name="P:AssistantHub.Core.Services.SearchResult.Neighbors">
             <summary>
             Neighboring chunks surrounding this match in positional order.
             Populated when IncludeNeighbors is specified on the search query.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.SemanticCellResponse">
+            <summary>
+            Semantic cell response from the Partio v0.4.0 service.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.StorageService">
@@ -9800,32 +10659,6 @@
             <param name="bucketName">Bucket name.</param>
             <returns>S3 blob client for the bucket.</returns>
         </member>
-        <member name="T:AssistantHub.Core.Services.TenantProvisioningService">
-            <summary>
-            Service for provisioning resources when a new tenant is created.
-            Creates RecallDB tenant, default collection, admin user, credential, and ingestion rule.
-            </summary>
-        </member>
-        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings)">
-            <summary>
-            Instantiate.
-            </summary>
-        </member>
-        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.ProvisionAsync(AssistantHub.Core.Models.TenantMetadata)">
-            <summary>
-            Provision all default resources for a new tenant.
-            </summary>
-            <param name="tenant">The tenant metadata (already persisted).</param>
-            <returns>Provisioning result with created credentials.</returns>
-        </member>
-        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.DeprovisionAsync(System.String)">
-            <summary>
-            Deprovision all resources for a tenant being deleted.
-            Deletes child rows in dependency order, RecallDB tenant, and tenant row.
-            </summary>
-            <param name="tenantId">The tenant ID to deprovision.</param>
-            <returns>Task.</returns>
-        </member>
         <member name="T:AssistantHub.Core.Services.TenantProvisioningResult">
             <summary>
             Result of tenant provisioning.
@@ -9854,6 +10687,47 @@
         </member>
         <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.Credential">
             <summary>Credential created during provisioning.</summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.TenantProvisioningService">
+            <summary>
+            Service for provisioning resources when a new tenant is created.
+            Creates RecallDB tenant, default collection, admin user, credential, and ingestion rule.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.ProvisionAsync(AssistantHub.Core.Models.TenantMetadata)">
+            <summary>
+            Provision all default resources for a new tenant.
+            </summary>
+            <param name="tenant">The tenant metadata (already persisted).</param>
+            <returns>Provisioning result with created credentials.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.DeprovisionAsync(System.String)">
+            <summary>
+            Deprovision all resources for a tenant being deleted.
+            Deletes child rows in dependency order, RecallDB tenant, and tenant row.
+            </summary>
+            <param name="tenantId">The tenant ID to deprovision.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.TypeDetectResponse">
+            <summary>
+            Type detection response from DocumentAtom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TypeDetectResponse.MimeType">
+            <summary>
+            Detected MIME type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TypeDetectResponse.Type">
+            <summary>
+            Detected document type.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
             <summary>

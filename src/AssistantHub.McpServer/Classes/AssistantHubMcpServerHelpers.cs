@@ -168,7 +168,7 @@ namespace AssistantHub.McpServer.Classes
         /// <summary>
         /// Convert a binary download to a JSON envelope.
         /// </summary>
-        public static string SerializeBinaryEnvelope(AssistantHubMcpRestProxy.BinaryResponse response, string source)
+        public static string SerializeBinaryEnvelope(BinaryResponse response, string source)
         {
             return Serialize(new
             {

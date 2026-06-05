@@ -73,7 +73,12 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("Auth.PostAuthenticate_ValidCredentials", async () =>
                 {
-                    var payload = new { Email = "admin@test.local", Password = "testpassword123", TenantId = server.DefaultTenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Email", "admin@test.local" },
+                        { "Password", "testpassword123" },
+                        { "TenantId", server.DefaultTenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -87,7 +92,12 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("Auth.PostAuthenticate_InvalidPassword", async () =>
                 {
-                    var payload = new { Email = "admin@test.local", Password = "wrongpassword", TenantId = server.DefaultTenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Email", "admin@test.local" },
+                        { "Password", "wrongpassword" },
+                        { "TenantId", server.DefaultTenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -99,7 +109,12 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("Auth.PostAuthenticate_NonExistentEmail", async () =>
                 {
-                    var payload = new { Email = "nonexistent@test.local", Password = "password123", TenantId = server.DefaultTenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Email", "nonexistent@test.local" },
+                        { "Password", "password123" },
+                        { "TenantId", server.DefaultTenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -111,7 +126,12 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("Auth.BearerToken_SubsequentRequest", async () =>
                 {
-                    var payload = new { Email = "admin@test.local", Password = "testpassword123", TenantId = server.DefaultTenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Email", "admin@test.local" },
+                        { "Password", "testpassword123" },
+                        { "TenantId", server.DefaultTenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -133,7 +153,11 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.Assistant.Create", async () =>
                 {
-                    var payload = new { Name = "Integration Test Assistant", TenantId = tenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Name", "Integration Test Assistant" },
+                        { "TenantId", tenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -234,13 +258,13 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.User.Create", async () =>
                 {
-                    var payload = new
+                    Dictionary<string, object> payload = new Dictionary<string, object>
                     {
-                        FirstName = "Test",
-                        LastName = "User",
-                        Email = "testuser@integration.local",
-                        Password = "password123",
-                        TenantId = tenantId
+                        { "FirstName", "Test" },
+                        { "LastName", "User" },
+                        { "Email", "testuser@integration.local" },
+                        { "Password", "password123" },
+                        { "TenantId", tenantId }
                     };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -293,7 +317,11 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.IngestionRule.Create", async () =>
                 {
-                    var payload = new { TenantId = tenantId, Name = "Test Rule" };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "TenantId", tenantId },
+                        { "Name", "Test Rule" }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -332,7 +360,11 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.Tenant.Create", async () =>
                 {
-                    var payload = new { Name = "Integration CRUD Tenant", Active = true };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Name", "Integration CRUD Tenant" },
+                        { "Active", true }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -404,13 +436,13 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.Credential.Create", async () =>
                 {
-                    var userPayload = new
+                    Dictionary<string, object> userPayload = new Dictionary<string, object>
                     {
-                        FirstName = "Cred",
-                        LastName = "TestUser",
-                        Email = "credtest@integration.local",
-                        Password = "password123",
-                        TenantId = tenantId
+                        { "FirstName", "Cred" },
+                        { "LastName", "TestUser" },
+                        { "Email", "credtest@integration.local" },
+                        { "Password", "password123" },
+                        { "TenantId", tenantId }
                     };
                     string userJson = JsonSerializer.Serialize(userPayload);
                     HttpContent userContent = new StringContent(userJson, Encoding.UTF8, "application/json");
@@ -426,7 +458,12 @@ namespace Test.Automated
                             credUserId = idElem2.GetString();
                     }
 
-                    var payload = new { TenantId = tenantId, UserId = credUserId, Active = true };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "TenantId", tenantId },
+                        { "UserId", credUserId },
+                        { "Active", true }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -467,7 +504,11 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.Settings.CreateAssistant", async () =>
                 {
-                    var payload = new { Name = "Settings Test Assistant", TenantId = tenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Name", "Settings Test Assistant" },
+                        { "TenantId", tenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -486,14 +527,14 @@ namespace Test.Automated
                 {
                     AssertHelper.IsNotNull(settingsAssistantId, "assistant ID for settings");
 
-                    var payload = new
+                    Dictionary<string, object> payload = new Dictionary<string, object>
                     {
-                        AssistantId = settingsAssistantId,
-                        Temperature = 0.8,
-                        InferenceEndpointId = "ep_test_inference",
-                        EnableReranking = true,
-                        RerankerTopK = 3,
-                        RerankerScoreThreshold = 5.0
+                        { "AssistantId", settingsAssistantId },
+                        { "Temperature", 0.8 },
+                        { "InferenceEndpointId", "ep_test_inference" },
+                        { "EnableReranking", true },
+                        { "RerankerTopK", 3 },
+                        { "RerankerScoreThreshold", 5.0 }
                     };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -557,11 +598,11 @@ namespace Test.Automated
 
                 await ExecuteTestAsync("CRUD.CrawlPlan.Create", async () =>
                 {
-                    var payload = new
+                    Dictionary<string, object> payload = new Dictionary<string, object>
                     {
-                        TenantId = tenantId,
-                        Name = "Integration Test Crawl Plan",
-                        RepositoryType = "Web"
+                        { "TenantId", tenantId },
+                        { "Name", "Integration Test Crawl Plan" },
+                        { "RepositoryType", "Web" }
                     };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -613,7 +654,11 @@ namespace Test.Automated
                 string[] assistantIds = new string[3];
                 for (int i = 0; i < 3; i++)
                 {
-                    var payload = new { Name = $"Pagination Asst {i}", TenantId = tenantId };
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Name", $"Pagination Asst {i}" },
+                        { "TenantId", tenantId }
+                    };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     HttpResponseMessage resp = await server.Client.PutAsync("/v1.0/assistants", content);
@@ -667,13 +712,13 @@ namespace Test.Automated
                     string id1 = null, id2 = null;
                     if (doc1.RootElement.TryGetProperty("Objects", out JsonElement o1) || doc1.RootElement.TryGetProperty("objects", out o1))
                     {
-                        var first = o1[0];
+                        JsonElement first = o1[0];
                         if (first.TryGetProperty("Id", out JsonElement ie)) id1 = ie.GetString();
                         else if (first.TryGetProperty("id", out JsonElement ie2)) id1 = ie2.GetString();
                     }
                     if (doc2.RootElement.TryGetProperty("Objects", out JsonElement o2) || doc2.RootElement.TryGetProperty("objects", out o2))
                     {
-                        var first = o2[0];
+                        JsonElement first = o2[0];
                         if (first.TryGetProperty("Id", out JsonElement ie)) id2 = ie.GetString();
                         else if (first.TryGetProperty("id", out JsonElement ie2)) id2 = ie2.GetString();
                     }
@@ -724,7 +769,11 @@ namespace Test.Automated
                 string tenantBToken = null;
 
                 // Setup: Create tenant B
-                var tenantPayload = new { Name = "Isolation Tenant B", Active = true };
+                Dictionary<string, object> tenantPayload = new Dictionary<string, object>
+                {
+                    { "Name", "Isolation Tenant B" },
+                    { "Active", true }
+                };
                 string tenantJson = JsonSerializer.Serialize(tenantPayload);
                 HttpContent tenantContent = new StringContent(tenantJson, Encoding.UTF8, "application/json");
                 HttpResponseMessage tenantResp = await server.Client.PutAsync("/v1.0/tenants", tenantContent);
@@ -743,15 +792,15 @@ namespace Test.Automated
                 // Setup: Create regular user in tenant B
                 if (tenantBId != null)
                 {
-                    var userPayload = new
+                    Dictionary<string, object> userPayload = new Dictionary<string, object>
                     {
-                        FirstName = "Regular",
-                        LastName = "UserB",
-                        Email = "regular@tenantb.local",
-                        Password = "password123",
-                        TenantId = tenantBId,
-                        IsAdmin = false,
-                        IsTenantAdmin = false
+                        { "FirstName", "Regular" },
+                        { "LastName", "UserB" },
+                        { "Email", "regular@tenantb.local" },
+                        { "Password", "password123" },
+                        { "TenantId", tenantBId },
+                        { "IsAdmin", false },
+                        { "IsTenantAdmin", false }
                     };
                     string userJson = JsonSerializer.Serialize(userPayload);
                     HttpContent userContent = new StringContent(userJson, Encoding.UTF8, "application/json");
@@ -769,7 +818,12 @@ namespace Test.Automated
 
                     if (regularUserId != null)
                     {
-                        var credPayload = new { TenantId = tenantBId, UserId = regularUserId, Active = true };
+                        Dictionary<string, object> credPayload = new Dictionary<string, object>
+                        {
+                            { "TenantId", tenantBId },
+                            { "UserId", regularUserId },
+                            { "Active", true }
+                        };
                         string credJson = JsonSerializer.Serialize(credPayload);
                         HttpContent credContent = new StringContent(credJson, Encoding.UTF8, "application/json");
                         HttpResponseMessage credResp = await server.Client.PutAsync($"/v1.0/tenants/{tenantBId}/credentials", credContent);
@@ -786,7 +840,11 @@ namespace Test.Automated
 
                 // Create an assistant in tenant A
                 string tenantAAssistantId = null;
-                var asstAPayload = new { Name = "Tenant A Assistant", TenantId = tenantAId };
+                Dictionary<string, object> asstAPayload = new Dictionary<string, object>
+                {
+                    { "Name", "Tenant A Assistant" },
+                    { "TenantId", tenantAId }
+                };
                 string asstAJson = JsonSerializer.Serialize(asstAPayload);
                 HttpContent asstAContent = new StringContent(asstAJson, Encoding.UTF8, "application/json");
                 HttpResponseMessage asstAResp = await server.Client.PutAsync("/v1.0/assistants", asstAContent);

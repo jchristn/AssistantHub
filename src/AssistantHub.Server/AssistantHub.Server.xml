@@ -24,6 +24,58 @@
             Entry point.
             </summary>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.AssistantAnalyticsHandler">
+            <summary>
+            Handles assistant analytics routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetOverviewAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/overview.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetTimeSeriesAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/timeseries.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetStagesAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/stages.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetEndpointsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/endpoints.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetSlowestAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/slowest.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.GetFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/analytics/feedback.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.AssistantHandler">
             <summary>
             Handles assistant CRUD routes with ownership checks.
@@ -275,50 +327,86 @@
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantPublicAsync(WatsonWebserver.Core.HttpContextBase)">
-            <summary>
-            GET /v1.0/assistants/{assistantId}/public - Public assistant info.
-            </summary>
-            <param name="ctx">HTTP context.</param>
-        </member>
         <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostChatAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/chat - OpenAI-compatible chat completion endpoint.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="T:AssistantHub.Server.Handlers.ChatHandlerExecutionBase">
+            <summary>
+            Provides shared execution helpers for chat handlers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerExecutionBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate the chat handler execution base.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.ChatHandlerRouteBase">
+            <summary>
+            Provides secondary public chat route handlers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate the chat route base.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetAssistantPublicAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/public - Public assistant info.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.PostFeedbackAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/feedback - Public feedback submission.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostCreateThreadAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.PostCreateThreadAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/threads - Create a new thread ID.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostCompactAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.PostCompactAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/compact - Force conversation compaction.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.PostGenerateAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.PostGenerateAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/generate - Lightweight inference-only endpoint.
             Skips RAG retrieval, compaction, system prompt injection, and chat history persistence.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetThreadHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetThreadHistoryAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/threads/{threadId}/history - Retrieve thread chat history.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetPublicDocumentDownloadAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetPublicDocumentDownloadAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/documents/{documentId}/download - Public document download.
             Only available when the assistant's CitationLinkMode is "Public".
@@ -326,12 +414,12 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantDistinctLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetAssistantDistinctLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/labels/distinct - Get distinct labels for an assistant's collection (public).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.GetAssistantDistinctTagsAsync(WatsonWebserver.Core.HttpContextBase)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetAssistantDistinctTagsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/tags/distinct - Get distinct tag keys for an assistant's collection (public).
             </summary>
@@ -1420,29 +1508,6 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
-        <member name="T:AssistantHub.Server.Services.AssistantChatService">
-            <summary>
-            Shared non-streaming assistant chat execution service.
-            </summary>
-        </member>
-        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
-            <summary>
-            Instantiate the shared assistant chat execution service.
-            </summary>
-            <param name="database">Database driver.</param>
-            <param name="logging">Logging module.</param>
-            <param name="settings">Application settings.</param>
-            <param name="retrieval">Retrieval service.</param>
-            <param name="inference">Inference service.</param>
-        </member>
-        <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)">
-            <summary>
-            Execute a non-streaming chat completion using the shared AssistantHub chat rail.
-            </summary>
-            <param name="request">Execution request.</param>
-            <param name="token">Cancellation token.</param>
-            <returns>Execution result.</returns>
-        </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatExecutionRequest">
             <summary>
             Chat execution request.
@@ -1563,6 +1628,44 @@
             Persisted chat-history identifier when history was written.
             </summary>
         </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatService">
+            <summary>
+            Shared non-streaming assistant chat execution service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate the shared assistant chat execution service.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a non-streaming chat completion using the shared AssistantHub chat rail.
+            </summary>
+            <param name="request">Execution request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Execution result.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatServiceBase">
+            <summary>
+            Provides shared non-streaming chat execution helpers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate the shared assistant chat helper base.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
         <member name="T:AssistantHub.Server.Services.CrawlOperationCleanupService">
             <summary>
             Background service that performs periodic cleanup of expired crawl operations and their associated enumeration files.
@@ -1639,6 +1742,11 @@
             <param name="crawlPlanId">Crawl plan identifier.</param>
             <returns>True if the crawl plan is running.</returns>
         </member>
+        <member name="T:AssistantHub.Server.Services.EndpointConfig">
+            <summary>
+            Internal config holder for parsed endpoint JSON.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService">
             <summary>
             Background service that performs periodic health checks on both embedding and completion endpoints.
@@ -1695,11 +1803,6 @@
         <member name="M:AssistantHub.Server.Services.EndpointHealthCheckService.ParseEndpointConfig(AssistantHub.Core.Models.PartioEndpointConfig)">
             <summary>
             Parse endpoint health config fields from a JSON element (Partio response).
-            </summary>
-        </member>
-        <member name="T:AssistantHub.Server.Services.EndpointHealthCheckService.EndpointConfig">
-            <summary>
-            Internal config holder for parsed endpoint JSON.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.ISlackAssistantConnectionManager">

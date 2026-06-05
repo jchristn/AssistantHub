@@ -233,6 +233,13 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(requestHistoryColumns, "chat_history_id"))
                 await ExecuteQueryAsync(TableQueries.AddRequestHistoryChatHistoryIdColumn, true, token).ConfigureAwait(false);
+
+            DataTable performanceEventColumns = await ExecuteQueryAsync("PRAGMA table_info(chat_history_performance_events);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(performanceEventColumns, "assistant_id"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn, true, token).ConfigureAwait(false);
+
+            await ExecuteQueryAsync(TableQueries.BackfillChatHistoryPerformanceEventsAssistantId, true, token).ConfigureAwait(false);
         }
 
         private static bool HasColumn(DataTable columns, string columnName)

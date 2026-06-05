@@ -109,6 +109,7 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateAssistantSettingsAssistantIdIndex,
                 TableQueries.CreateAssistantFeedbackAssistantIdIndex,
                 TableQueries.CreateAssistantFeedbackTenantIdIndex,
+                TableQueries.CreateAssistantFeedbackTenantAssistantCreatedIndex,
                 TableQueries.CreateIngestionRulesNameIndex,
                 TableQueries.CreateIngestionRulesTenantIdIndex,
                 TableQueries.CreateAssistantDocumentsIngestionRuleIdIndex,
@@ -137,7 +138,10 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateRequestHistoryPathIndex,
                 TableQueries.CreateRequestHistoryTraceIdIndex,
                 TableQueries.CreateRequestHistoryChatHistoryIdIndex,
+                TableQueries.CreateRequestHistoryTenantAssistantCreatedIndex,
+                TableQueries.CreateRequestHistoryTenantAssistantSuccessCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsChatHistoryIdIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsAssistantIdIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsRequestHistoryIdIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTraceIdIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsStageIndex,
@@ -147,7 +151,10 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryPerformanceEventsProviderModelIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsCreatedUtcIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsDurationMsIndex,
-                TableQueries.CreateChatHistoryPerformanceEventsTenantCreatedIndex
+                TableQueries.CreateChatHistoryPerformanceEventsTenantCreatedIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex,
+                TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex
             };
 
             foreach (string indexQuery in indexQueries)
@@ -276,6 +283,8 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("chat_history", "performance_json", TableQueries.AddChatHistoryPerformanceJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "trace_id", TableQueries.AddRequestHistoryTraceIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "chat_history_id", TableQueries.AddRequestHistoryChatHistoryIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history_performance_events", "assistant_id", TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn, token).ConfigureAwait(false);
+            await ExecuteQueryAsync(TableQueries.BackfillChatHistoryPerformanceEventsAssistantId, true, token).ConfigureAwait(false);
         }
 
         private async Task EnsureColumnAsync(string tableName, string columnName, string alterQuery, CancellationToken token)

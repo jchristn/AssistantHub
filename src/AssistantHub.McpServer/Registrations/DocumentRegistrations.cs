@@ -165,7 +165,7 @@ namespace AssistantHub.McpServer.Registrations
                     Handler = args =>
                     {
                         string documentId = AssistantHubMcpServerHelpers.GetStringRequired(args, "documentId");
-                        AssistantHubMcpRestProxy.BinaryResponse response = AssistantHubMcpRestProxy.Download(context, "/v1.0/documents/" + AssistantHubMcpRestProxy.Escape(documentId) + "/download");
+                        BinaryResponse response = AssistantHubMcpRestProxy.Download(context, "/v1.0/documents/" + AssistantHubMcpRestProxy.Escape(documentId) + "/download");
                         AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "document/download");
                         return AssistantHubMcpServerHelpers.SerializeBinaryEnvelope(response, "document/" + documentId);
                     }

@@ -364,6 +364,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             CREATE TABLE chat_history_performance_events (
                 id NVARCHAR(256) NOT NULL,
                 tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
+                assistant_id NVARCHAR(256) NULL,
                 chat_history_id NVARCHAR(256) NOT NULL,
                 request_history_id NVARCHAR(256) NULL,
                 trace_id NVARCHAR(256) NULL,
@@ -408,6 +409,17 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 created_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_chat_history_performance_events PRIMARY KEY (id)
             );";
+
+        internal static readonly string AddChatHistoryPerformanceEventsAssistantIdColumn =
+            @"IF COL_LENGTH('chat_history_performance_events', 'assistant_id') IS NULL
+            ALTER TABLE chat_history_performance_events ADD assistant_id NVARCHAR(256) NULL;";
+
+        internal static readonly string BackfillChatHistoryPerformanceEventsAssistantId =
+            @"UPDATE e
+            SET assistant_id = h.assistant_id
+            FROM chat_history_performance_events e
+            INNER JOIN chat_history h ON h.id = e.chat_history_id
+            WHERE e.assistant_id IS NULL;";
 
         #endregion
 
@@ -472,6 +484,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateAssistantFeedbackTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_feedback_tenant_id')
             CREATE INDEX idx_assistant_feedback_tenant_id ON assistant_feedback (tenant_id);";
+
+        internal static readonly string CreateAssistantFeedbackTenantAssistantCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_feedback_tenant_assistant_created')
+            CREATE INDEX idx_assistant_feedback_tenant_assistant_created ON assistant_feedback (tenant_id, assistant_id, created_utc);";
 
         internal static readonly string CreateIngestionRulesNameIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ingestion_rules_name')
@@ -549,9 +565,21 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_chat_history_id')
             CREATE INDEX idx_request_history_chat_history_id ON request_history (chat_history_id);";
 
+        internal static readonly string CreateRequestHistoryTenantAssistantCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_tenant_assistant_created')
+            CREATE INDEX idx_request_history_tenant_assistant_created ON request_history (tenant_id, assistant_id, created_utc);";
+
+        internal static readonly string CreateRequestHistoryTenantAssistantSuccessCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_request_history_tenant_assistant_success_created')
+            CREATE INDEX idx_request_history_tenant_assistant_success_created ON request_history (tenant_id, assistant_id, success, created_utc);";
+
         internal static readonly string CreateChatHistoryPerformanceEventsChatHistoryIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_performance_events_chat_history_id')
             CREATE INDEX idx_chat_history_performance_events_chat_history_id ON chat_history_performance_events (chat_history_id);";
+
+        internal static readonly string CreateChatHistoryPerformanceEventsAssistantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chpe_assistant_id')
+            CREATE INDEX idx_chpe_assistant_id ON chat_history_performance_events (assistant_id);";
 
         internal static readonly string CreateChatHistoryPerformanceEventsRequestHistoryIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_performance_events_request_history_id')
@@ -592,6 +620,18 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateChatHistoryPerformanceEventsTenantCreatedIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chat_history_performance_events_tenant_created')
             CREATE INDEX idx_chat_history_performance_events_tenant_created ON chat_history_performance_events (tenant_id, created_utc);";
+
+        internal static readonly string CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chpe_tenant_assistant_created')
+            CREATE INDEX idx_chpe_tenant_assistant_created ON chat_history_performance_events (tenant_id, assistant_id, created_utc);";
+
+        internal static readonly string CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chpe_tenant_assistant_stage_created')
+            CREATE INDEX idx_chpe_tenant_assistant_stage_created ON chat_history_performance_events (tenant_id, assistant_id, stage, created_utc);";
+
+        internal static readonly string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chpe_tenant_assistant_endpoint_created')
+            CREATE INDEX idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events (tenant_id, assistant_id, endpoint_id, created_utc);";
 
         internal static readonly string CreateCrawlPlansTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_plans_tenant_id')

@@ -2,7 +2,9 @@ namespace Test.Automated
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
@@ -69,7 +71,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("SlackAssistantUtilities.ChunkSlackMessage: returns single chunk for short message", async () =>
             {
-                var chunks = SlackAssistantUtilities.ChunkSlackMessage("short message", 50);
+                List<string> chunks = SlackAssistantUtilities.ChunkSlackMessage("short message", 50);
                 AssertHelper.HasCount(chunks, 1, "chunk count");
                 AssertHelper.AreEqual("short message", chunks[0], "chunk content");
             });
@@ -83,7 +85,7 @@ namespace Test.Automated
                     new string('c', 40)
                 });
 
-                var chunks = SlackAssistantUtilities.ChunkSlackMessage(longText, 60);
+                List<string> chunks = SlackAssistantUtilities.ChunkSlackMessage(longText, 60);
                 AssertHelper.IsTrue(chunks.Count >= 2, "multiple chunks expected");
                 foreach (string chunk in chunks)
                 {
@@ -94,7 +96,7 @@ namespace Test.Automated
             await ExecuteTestAsync("SlackAssistantUtilities.ChunkSlackMessage: preserves combined content modulo trimming", async () =>
             {
                 string input = "First paragraph\nSecond paragraph\nThird paragraph";
-                var chunks = SlackAssistantUtilities.ChunkSlackMessage(input, 18);
+                List<string> chunks = SlackAssistantUtilities.ChunkSlackMessage(input, 18);
                 string recombined = String.Join(" ", chunks);
                 AssertHelper.StringContains(recombined, "First paragraph", "first paragraph present");
                 AssertHelper.StringContains(recombined, "Second paragraph", "second paragraph present");
@@ -130,6 +132,7 @@ namespace Test.Automated
                 {
                     Id = "chist_test",
                     TenantId = "ten_test",
+                    AssistantId = "asst_test",
                     TraceId = IdGenerator.NewTraceId(),
                     RequestHistoryId = "req_test",
                     RetrievalGateDecision = "RETRIEVE",
@@ -230,6 +233,7 @@ namespace Test.Automated
 
                 ChatHistoryPerformanceEvent finalEvent = events.Find(evt => evt.Stage == "final_inference");
                 AssertHelper.IsNotNull(finalEvent, "final inference event");
+                AssertHelper.AreEqual("asst_test", finalEvent.AssistantId, "AssistantId");
                 AssertHelper.AreEqual(history.TraceId, finalEvent.TraceId, "TraceId");
                 AssertHelper.AreEqual("cep_test", finalEvent.EndpointId, "EndpointId");
                 AssertHelper.AreEqual(7.0, finalEvent.EndpointLimiterWaitMs.Value, "EndpointLimiterWaitMs");
@@ -300,6 +304,85 @@ namespace Test.Automated
                 AssertHelper.AreEqual(history.Id, storedRequest.ChatHistoryId, "stored request ChatHistoryId");
                 AssertHelper.HasCount(events, 1, "stored performance events");
                 AssertHelper.AreEqual("final_inference", events[0].Stage, "stored event stage");
+            });
+
+            await ExecuteTestAsync("AssistantAnalyticsService.ResolveRange: caps explicit bucket count", async () =>
+            {
+                AssistantAnalyticsService service = new AssistantAnalyticsService(new MockDatabaseDriver());
+                AssistantAnalyticsRange range = service.ResolveRange(new AssistantAnalyticsFilter
+                {
+                    TenantId = "ten_test",
+                    AssistantId = "asst_test",
+                    StartUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    EndUtc = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                    BucketSeconds = 1
+                });
+
+                AssertHelper.AreEqual("custom", range.RangeId, "custom range id");
+                AssertHelper.AreEqual(360, range.BucketSeconds, "capped bucket seconds");
+                AssertHelper.AreEqual(240, range.BucketCount, "capped bucket count");
+            });
+
+            await ExecuteTestAsync("AssistantAnalyticsService: aggregates requests, stages, endpoints, slowest rows, and feedback", async () =>
+            {
+                DateTime start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                AssistantAnalyticsFilter filter = new AssistantAnalyticsFilter
+                {
+                    TenantId = "ten_test",
+                    AssistantId = "asst_test",
+                    StartUtc = start,
+                    EndUtc = start.AddMinutes(10),
+                    BucketSeconds = 300,
+                    Metrics = new List<string> { "request_count", "final_inference_calls" },
+                    Limit = 10
+                };
+
+                AssistantAnalyticsService service = new AssistantAnalyticsService(new AnalyticsDatabaseDriver(start));
+
+                AssistantAnalyticsOverviewResult overview = await service.GetOverviewAsync(filter).ConfigureAwait(false);
+                AssertHelper.AreEqual(2, overview.RequestCount, "overview RequestCount");
+                AssertHelper.AreEqual(1, overview.SuccessCount, "overview SuccessCount");
+                AssertHelper.AreEqual(1, overview.FailureCount, "overview FailureCount");
+                AssertHelper.AreEqual(1500.0, overview.AverageDurationMs.Value, "overview AverageDurationMs");
+                AssertHelper.AreEqual(1.0, overview.TelemetryCoverageRate.Value, "overview TelemetryCoverageRate");
+                AssertHelper.AreEqual("final_inference", overview.DominantStage, "overview DominantStage");
+                AssertHelper.AreEqual("cep_final", overview.TopEndpointId, "overview TopEndpointId");
+                AssertHelper.AreEqual(0.5, overview.NegativeFeedbackRate.Value, "overview NegativeFeedbackRate");
+
+                AssistantAnalyticsTimeSeriesResult timeSeries = await service.GetTimeSeriesAsync(filter).ConfigureAwait(false);
+                AssertHelper.HasCount(timeSeries.Series, 2, "filtered analytics series");
+                AssistantAnalyticsSeries requestCount = timeSeries.Series.Find(series => series.Metric == "request_count");
+                AssistantAnalyticsSeries finalCalls = timeSeries.Series.Find(series => series.Metric == "final_inference_calls");
+                AssertHelper.IsNotNull(requestCount, "request_count series");
+                AssertHelper.IsNotNull(finalCalls, "final_inference_calls series");
+                AssertHelper.AreEqual(1.0, requestCount.Points[0].Value.Value, "first bucket request count");
+                AssertHelper.AreEqual(1.0, requestCount.Points[1].Value.Value, "second bucket request count");
+                AssertHelper.AreEqual(1.0, finalCalls.Points[0].Value.Value, "first bucket final inference calls");
+                AssertHelper.AreEqual(1.0, finalCalls.Points[1].Value.Value, "second bucket final inference calls");
+
+                AssistantAnalyticsStageResult stages = await service.GetStagesAsync(filter).ConfigureAwait(false);
+                AssistantAnalyticsStageBucket firstFinalStage = stages.Buckets.Find(bucket => bucket.Stage == "final_inference" && bucket.Calls == 1);
+                AssertHelper.IsNotNull(firstFinalStage, "final inference stage bucket");
+                AssertHelper.AreEqual("inference", firstFinalStage.Kind, "final inference stage kind");
+
+                AssistantAnalyticsEndpointResult endpoints = await service.GetEndpointsAsync(filter).ConfigureAwait(false);
+                AssertHelper.HasCount(endpoints.Endpoints, 1, "endpoint summaries");
+                AssertHelper.AreEqual(2, endpoints.Endpoints[0].Calls, "endpoint calls");
+                AssertHelper.AreEqual(15.0, endpoints.Endpoints[0].AverageLimiterWaitMs.Value, "endpoint average limiter wait");
+                AssertHelper.AreEqual(30, endpoints.Endpoints[0].InputTokens, "endpoint input tokens");
+                AssertHelper.AreEqual(15, endpoints.Endpoints[0].OutputTokens, "endpoint output tokens");
+
+                AssistantAnalyticsSlowestResult slowest = await service.GetSlowestAsync(filter).ConfigureAwait(false);
+                AssertHelper.HasCount(slowest.Requests, 2, "slowest requests");
+                AssertHelper.AreEqual("req_2", slowest.Requests[0].RequestHistoryId, "slowest request id");
+                AssertHelper.AreEqual("final_inference", slowest.Requests[0].DominantStage, "slowest dominant stage");
+
+                AssistantAnalyticsFeedbackResult feedback = await service.GetFeedbackAsync(filter).ConfigureAwait(false);
+                AssertHelper.AreEqual(2, feedback.TotalCount, "feedback total");
+                AssertHelper.AreEqual(1, feedback.ThumbsUpCount, "feedback thumbs up");
+                AssertHelper.AreEqual(1, feedback.ThumbsDownCount, "feedback thumbs down");
+                AssertHelper.AreEqual(0.5, feedback.NegativeRate.Value, "feedback negative rate");
+                AssertHelper.HasCount(feedback.Buckets, 2, "feedback buckets");
             });
 
             return GetResults();

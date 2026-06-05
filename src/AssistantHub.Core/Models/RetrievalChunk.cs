@@ -89,7 +89,7 @@ namespace AssistantHub.Core.Models
                 }
 
                 StringBuilder sb = new StringBuilder();
-                foreach (var chunk in all)
+                foreach (RetrievalChunk chunk in all)
                 {
                     if (sb.Length > 0) sb.AppendLine();
                     sb.Append(chunk.Content);

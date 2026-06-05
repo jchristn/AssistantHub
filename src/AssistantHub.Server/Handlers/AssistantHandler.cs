@@ -120,11 +120,14 @@ namespace AssistantHub.Server.Handlers
                         if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
                             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
 
-                        var enumBody = new { MaxResults = 1 };
-                        var content = new StringContent(
+                        Dictionary<string, object> enumBody = new Dictionary<string, object>
+                        {
+                            { "MaxResults", 1 }
+                        };
+                        StringContent content = new StringContent(
                             JsonSerializer.Serialize(enumBody),
                             Encoding.UTF8, "application/json");
-                        var response = await client.PostAsync(completionUrl, content).ConfigureAwait(false);
+                        HttpResponseMessage response = await client.PostAsync(completionUrl, content).ConfigureAwait(false);
 
                         if (response.IsSuccessStatusCode)
                         {
@@ -151,11 +154,14 @@ namespace AssistantHub.Server.Handlers
                         if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
                             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
 
-                        var enumBody = new { MaxResults = 1 };
-                        var content = new StringContent(
+                        Dictionary<string, object> enumBody = new Dictionary<string, object>
+                        {
+                            { "MaxResults", 1 }
+                        };
+                        StringContent content = new StringContent(
                             JsonSerializer.Serialize(enumBody),
                             Encoding.UTF8, "application/json");
-                        var response = await client.PostAsync(embeddingUrl, content).ConfigureAwait(false);
+                        HttpResponseMessage response = await client.PostAsync(embeddingUrl, content).ConfigureAwait(false);
 
                         if (response.IsSuccessStatusCode)
                         {

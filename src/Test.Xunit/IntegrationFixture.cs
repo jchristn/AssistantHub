@@ -42,10 +42,10 @@ namespace Test.Xunit
                     Dictionary<string, AutomatedTestResult> cachedResults =
                         new Dictionary<string, AutomatedTestResult>(StringComparer.Ordinal);
 
-                    foreach (var result in integrationResults)
+                    foreach (AutomatedTestResult result in integrationResults)
                         cachedResults[result.TestName] = result;
 
-                    foreach (var result in mcpResults)
+                    foreach (AutomatedTestResult result in mcpResults)
                         cachedResults[result.TestName] = result;
 
                     _CachedResults = cachedResults;

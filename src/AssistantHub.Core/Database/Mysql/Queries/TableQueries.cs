@@ -342,6 +342,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "CREATE TABLE IF NOT EXISTS `chat_history_performance_events` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
             "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
+            "  `assistant_id` VARCHAR(256), " +
             "  `chat_history_id` VARCHAR(256) NOT NULL, " +
             "  `request_history_id` VARCHAR(256), " +
             "  `trace_id` VARCHAR(256), " +
@@ -386,6 +387,15 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `created_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
             ")";
+
+        internal static string AddChatHistoryPerformanceEventsAssistantIdColumn =
+            "ALTER TABLE `chat_history_performance_events` ADD COLUMN `assistant_id` VARCHAR(256)";
+
+        internal static string BackfillChatHistoryPerformanceEventsAssistantId =
+            "UPDATE `chat_history_performance_events` e " +
+            "JOIN `chat_history` h ON h.`id` = e.`chat_history_id` " +
+            "SET e.`assistant_id` = h.`assistant_id` " +
+            "WHERE e.`assistant_id` IS NULL";
 
         #endregion
 
@@ -435,6 +445,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateAssistantFeedbackTenantIdIndex =
             "CREATE INDEX idx_assistant_feedback_tenant_id ON `assistant_feedback` (`tenant_id`)";
+
+        internal static string CreateAssistantFeedbackTenantAssistantCreatedIndex =
+            "CREATE INDEX idx_assistant_feedback_tenant_assistant_created ON `assistant_feedback` (`tenant_id`, `assistant_id`, `created_utc`(191))";
 
         // Ingestion rules indices
         internal static string CreateIngestionRulesNameIndex =
@@ -526,8 +539,17 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string CreateRequestHistoryChatHistoryIdIndex =
             "CREATE INDEX idx_request_history_chat_history_id ON `request_history` (`chat_history_id`)";
 
+        internal static string CreateRequestHistoryTenantAssistantCreatedIndex =
+            "CREATE INDEX idx_request_history_tenant_assistant_created ON `request_history` (`tenant_id`, `assistant_id`, `created_utc`(191))";
+
+        internal static string CreateRequestHistoryTenantAssistantSuccessCreatedIndex =
+            "CREATE INDEX idx_request_history_tenant_assistant_success_created ON `request_history` (`tenant_id`, `assistant_id`, `success`, `created_utc`(191))";
+
         internal static string CreateChatHistoryPerformanceEventsChatHistoryIdIndex =
             "CREATE INDEX idx_chat_history_performance_events_chat_history_id ON `chat_history_performance_events` (`chat_history_id`)";
+
+        internal static string CreateChatHistoryPerformanceEventsAssistantIdIndex =
+            "CREATE INDEX idx_chpe_assistant_id ON `chat_history_performance_events` (`assistant_id`)";
 
         internal static string CreateChatHistoryPerformanceEventsRequestHistoryIdIndex =
             "CREATE INDEX idx_chat_history_performance_events_request_history_id ON `chat_history_performance_events` (`request_history_id`)";
@@ -558,6 +580,15 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateChatHistoryPerformanceEventsTenantCreatedIndex =
             "CREATE INDEX idx_chat_history_performance_events_tenant_created ON `chat_history_performance_events` (`tenant_id`, `created_utc`(191))";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex =
+            "CREATE INDEX idx_chpe_tenant_assistant_created ON `chat_history_performance_events` (`tenant_id`, `assistant_id`, `created_utc`(191))";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex =
+            "CREATE INDEX idx_chpe_tenant_assistant_stage_created ON `chat_history_performance_events` (`tenant_id`, `assistant_id`, `stage`, `created_utc`(191))";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
+            "CREATE INDEX idx_chpe_tenant_assistant_endpoint_created ON `chat_history_performance_events` (`tenant_id`, `assistant_id`, `endpoint_id`, `created_utc`(191))";
 
         #endregion
     }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -311,6 +311,7 @@ function RequestHistorySummaryChart({ buckets, rangeId, rangeWindow }) {
 function RequestHistoryView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
 
   const [summary, setSummary] = useState(null);
@@ -328,7 +329,7 @@ function RequestHistoryView() {
   const [statusCodeFilter, setStatusCodeFilter] = useState('');
   const [pathFilter, setPathFilter] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
-  const [assistantFilter, setAssistantFilter] = useState('');
+  const [assistantFilter, setAssistantFilter] = useState(searchParams.get('assistantId') || '');
   const [threadFilter, setThreadFilter] = useState('');
   const [tenantFilter, setTenantFilter] = useState('');
   const [startUtcFilter, setStartUtcFilter] = useState(() => toLocalDateTimeInputValue(new Date(Date.now() - 24 * 60 * 60 * 1000)));
@@ -409,6 +410,23 @@ function RequestHistoryView() {
   const loadDetail = useCallback(async (requestId) => {
     return await api.getRequestHistoryEntryDetail(requestId);
   }, [serverUrl, credential]);
+
+  useEffect(() => {
+    const requestId = searchParams.get('requestId');
+    if (!requestId) return;
+
+    (async () => {
+      try {
+        const full = await loadDetail(requestId);
+        setDetail(full);
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete('requestId');
+        setSearchParams(nextParams, { replace: true });
+      } catch (err) {
+        setAlert({ title: 'Error', message: err.message || 'Failed to load request history detail' });
+      }
+    })();
+  }, [searchParams, setSearchParams, loadDetail]);
 
   const openDetail = useCallback(async (row) => {
     try {
@@ -519,6 +537,9 @@ function RequestHistoryView() {
     setPathFilter('');
     setSearchFilter('');
     setAssistantFilter('');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('assistantId');
+    setSearchParams(nextParams);
     setThreadFilter('');
     setTenantFilter('');
     setStartUtcFilter(toLocalDateTimeInputValue(new Date(Date.now() - 24 * 60 * 60 * 1000)));
@@ -528,6 +549,14 @@ function RequestHistoryView() {
   };
 
   const selectedSummaryRange = getSummaryRangeConfig(summaryRangeId);
+
+  const handleAssistantFilterChange = (value) => {
+    setAssistantFilter(value);
+    const nextParams = new URLSearchParams(searchParams);
+    if (value) nextParams.set('assistantId', value);
+    else nextParams.delete('assistantId');
+    setSearchParams(nextParams);
+  };
 
   return (
     <div>
@@ -594,7 +623,7 @@ function RequestHistoryView() {
         </label>
         <label className="filter-label">
           Assistant
-          <select value={assistantFilter} onChange={(e) => setAssistantFilter(e.target.value)}>
+          <select value={assistantFilter} onChange={(e) => handleAssistantFilterChange(e.target.value)}>
             <option value="">All</option>
             {assistants.map((assistant) => (
               <option key={assistant.Id} value={assistant.Id}>

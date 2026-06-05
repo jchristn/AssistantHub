@@ -446,7 +446,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                var request = JsonSerializer.Deserialize<BulkDeleteRequest>(body);
+                BulkDeleteRequest? request = JsonSerializer.Deserialize<BulkDeleteRequest>(body);
                 if (request == null || request.DocumentIds == null || request.DocumentIds.Count == 0)
                 {
                     ctx.Response.StatusCode = 400;
@@ -490,7 +490,7 @@ namespace AssistantHub.Server.Handlers
                 // Batch delete embeddings per collection
                 if (Ingestion != null)
                 {
-                    foreach (var kvp in recordIdsByCollection)
+                    foreach (KeyValuePair<string, List<string>> kvp in recordIdsByCollection)
                     {
                         try
                         {
@@ -619,22 +619,6 @@ namespace AssistantHub.Server.Handlers
         }
 
         #region Private-Classes
-
-        private class DocumentUploadRequest
-        {
-            public string IngestionRuleId { get; set; } = null;
-            public string Name { get; set; } = null;
-            public string OriginalFilename { get; set; } = null;
-            public string ContentType { get; set; } = null;
-            public List<string> Labels { get; set; } = null;
-            public Dictionary<string, string> Tags { get; set; } = null;
-            public string Base64Content { get; set; } = null;
-        }
-
-        private class BulkDeleteRequest
-        {
-            public List<string> DocumentIds { get; set; } = null;
-        }
 
         #endregion
     }

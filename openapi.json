@@ -3,7 +3,7 @@
   "info": {
     "title": "AssistantHub REST API",
     "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
-    "version": "0.12.0"
+    "version": "0.13.0"
   },
   "servers": [
     {
@@ -31,6 +31,7 @@
     { "name": "Completion Endpoints", "description": "Partio completion endpoint proxy (Admin)" },
     { "name": "Assistants", "description": "Assistant management" },
     { "name": "Assistant Settings", "description": "Assistant configuration settings" },
+    { "name": "Assistant Analytics", "description": "Assistant performance analytics and trend summaries" },
     { "name": "Documents", "description": "Document management and ingestion" },
     { "name": "Feedback", "description": "Assistant feedback records (Auth)" },
     { "name": "History", "description": "Chat history records (Auth)" },
@@ -57,7 +58,7 @@
                   "type": "object",
                   "properties": {
                     "Product": { "type": "string", "example": "AssistantHub" },
-                    "Version": { "type": "string", "example": "0.12.0" },
+                    "Version": { "type": "string", "example": "0.13.0" },
                     "Timestamp": { "type": "string", "format": "date-time" }
                   }
                 }
@@ -1586,6 +1587,140 @@
             }
           },
           "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/overview": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant analytics overview",
+        "description": "Returns request counts, latency percentiles, telemetry coverage, dominant stage, top endpoint, and feedback totals for an assistant over a bounded range.",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] }, "description": "Preset range. Defaults to lastDay." },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Explicit UTC start time. Must be paired with endUtc." },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Explicit UTC end time. Must be paired with startUtc." },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" }, "description": "Optional bucket size in seconds." }
+        ],
+        "responses": {
+          "200": { "description": "Assistant analytics overview", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/timeseries": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant analytics time series",
+        "description": "Returns chart-ready metric series for request volume, success/failure, latency, limiter wait, provider timing, token counts, retrieval fanout, and utility-call counts.",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] } },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" } },
+          { "name": "metrics", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated metric names. Omit to return all supported series." },
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointId", "in": "query", "schema": { "type": "string" } },
+          { "name": "model", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Assistant analytics time series", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/stages": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant analytics stage buckets",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] } },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" } },
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointId", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointType", "in": "query", "schema": { "type": "string" } },
+          { "name": "model", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Assistant analytics stage buckets", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/endpoints": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant analytics endpoint summaries",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] } },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" } },
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointId", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointType", "in": "query", "schema": { "type": "string" } },
+          { "name": "model", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 25, "maximum": 250 } }
+        ],
+        "responses": {
+          "200": { "description": "Assistant analytics endpoint summaries", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/slowest": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant analytics slowest requests",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] } },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" } },
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointId", "in": "query", "schema": { "type": "string" } },
+          { "name": "endpointType", "in": "query", "schema": { "type": "string" } },
+          { "name": "model", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 25, "maximum": 250 } }
+        ],
+        "responses": {
+          "200": { "description": "Assistant analytics slowest requests", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/analytics/feedback": {
+      "get": {
+        "tags": ["Assistant Analytics"],
+        "summary": "Get assistant feedback analytics",
+        "parameters": [
+          { "$ref": "#/components/parameters/assistantId" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["lastHour", "lastDay", "lastWeek", "lastMonth"] } },
+          { "name": "startUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "endUtc", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "bucketSeconds", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Assistant feedback analytics", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }

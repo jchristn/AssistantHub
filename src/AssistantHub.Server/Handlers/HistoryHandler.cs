@@ -238,7 +238,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 List<object> threads = new List<object>();
-                foreach (var kvp in threadGroups)
+                foreach (KeyValuePair<string, List<ChatHistory>> kvp in threadGroups)
                 {
                     DateTime firstMsg = DateTime.MaxValue;
                     DateTime lastMsg = DateTime.MinValue;

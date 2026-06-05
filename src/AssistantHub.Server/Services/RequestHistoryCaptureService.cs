@@ -328,13 +328,5 @@ namespace AssistantHub.Server.Services
 
             return ret;
         }
-
-        private struct CapturedBody
-        {
-            public string Body;
-            public bool Truncated;
-            public bool IsBinary;
-            public long SizeBytes;
-        }
     }
 }

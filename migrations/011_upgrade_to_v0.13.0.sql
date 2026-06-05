@@ -1,0 +1,8 @@
+-- Migration script for AssistantHub v0.13.0
+-- Assistant analytics indexes and performance-event assistant backfill
+--
+-- Use the provider-specific script that matches your backend:
+--   011_upgrade_to_v0.13.0.sqlite.sql
+--   011_upgrade_to_v0.13.0.postgresql.sql
+--   011_upgrade_to_v0.13.0.mysql.sql
+--   011_upgrade_to_v0.13.0.sqlserver.sql

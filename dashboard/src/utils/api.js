@@ -478,6 +478,14 @@ export class ApiClient {
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
   verifyAssistantSlackSettings(assistantId, settings) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/slack/verify`, settings); }
 
+  // Assistant Analytics
+  getAssistantAnalyticsOverview(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/overview` + this.buildQuery(params)); }
+  getAssistantAnalyticsTimeSeries(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/timeseries` + this.buildQuery(params)); }
+  getAssistantAnalyticsStages(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/stages` + this.buildQuery(params)); }
+  getAssistantAnalyticsEndpoints(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/endpoints` + this.buildQuery(params)); }
+  getAssistantAnalyticsSlowest(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/slowest` + this.buildQuery(params)); }
+  getAssistantAnalyticsFeedback(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/feedback` + this.buildQuery(params)); }
+
   // Embedding Endpoints
   createEmbeddingEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/embedding', endpoint); }
   enumerateEmbeddingEndpoints(params) { return this.request('POST', '/v1.0/endpoints/embedding/enumerate', params || {}); }

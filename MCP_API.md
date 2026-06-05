@@ -109,6 +109,7 @@ Examples:
 
 - `tenant/create`
 - `assistant/settings/get`
+- `assistantanalytics/overview`
 - `bucket/object/upload`
 - `requesthistory/summary`
 - `eval/judge-prompt/default`
@@ -169,7 +170,7 @@ Streaming status:
 | Collections | `collection/*`, `collection/record/*` |
 | Assistants | `assistant/*`, `assistant/settings/*` |
 | Documents / Ingestion | `document/*`, `ingestionrule/*` |
-| Monitoring | `history/*`, `thread/*`, `requesthistory/*` |
+| Monitoring | `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*` |
 | Endpoint management | `embeddingendpoint/*`, `completionendpoint/*`, `model/*` |
 | Crawl | `crawlplan/*`, `crawloperation/*` |
 | Evaluation | `eval/fact/*`, `eval/run/*`, `eval/result/get`, `eval/judge-prompt/default` |
@@ -192,6 +193,7 @@ Streaming status:
 | `collection records` list/get/create/delete/batch-delete | `collection/record/list`, `collection/record/get`, `collection/record/create`, `collection/record/delete`, `collection/record/batch-delete` | Mapped | |
 | `assistants` CRUD + HEAD | `assistant/list`, `assistant/get`, `assistant/create`, `assistant/update`, `assistant/delete`, `assistant/exists` | Mapped | |
 | `assistant settings` get/update/slack verify | `assistant/settings/get`, `assistant/settings/update`, `assistant/settings/slack/verify` | Mapped | `includeSecrets` opt-in |
+| `assistant analytics` overview/timeseries/stages/endpoints/slowest/feedback | `assistantanalytics/overview`, `assistantanalytics/timeseries`, `assistantanalytics/stages`, `assistantanalytics/endpoints`, `assistantanalytics/slowest`, `assistantanalytics/feedback` | Mapped | Uses `assistantId` plus optional `AssistantAnalyticsQuery` JSON |
 | `assistant public info + labels/tags` | `assistant/public/get`, `assistant/labels/distinct`, `assistant/tags/distinct` | Mapped | Public metadata only |
 | `documents` list/get/upload/delete/HEAD/log/download/bulk-delete | `document/list`, `document/get`, `document/upload`, `document/delete`, `document/exists`, `document/processing-log`, `document/download`, `document/bulk-delete` | Mapped | Binary transfers use base64 |
 | `ingestion-rules` CRUD + HEAD | `ingestionrule/list`, `ingestionrule/get`, `ingestionrule/create`, `ingestionrule/update`, `ingestionrule/delete`, `ingestionrule/exists` | Mapped | |

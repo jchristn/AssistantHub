@@ -110,7 +110,7 @@ namespace AssistantHub.McpServer.Registrations
                     {
                         string bucketName = AssistantHubMcpServerHelpers.GetStringRequired(args, "bucketName");
                         string key = AssistantHubMcpServerHelpers.GetStringRequired(args, "key");
-                        AssistantHubMcpRestProxy.BinaryResponse response = AssistantHubMcpRestProxy.Download(
+                        BinaryResponse response = AssistantHubMcpRestProxy.Download(
                             context,
                             "/v1.0/buckets/" + AssistantHubMcpRestProxy.Escape(bucketName) + "/objects/download?key=" + AssistantHubMcpRestProxy.Escape(key));
                         AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "bucket/object/download");

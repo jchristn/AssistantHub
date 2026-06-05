@@ -15,6 +15,25 @@
 ### Fixed
 - **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
 
+## v0.13.0 - Assistant Analytics
+
+### Added
+- **Assistant Analytics dashboard**: Added `Assistants > Analytics` with assistant selector, independent last-hour/day/week/month chart ranges, overview metrics, request volume/outcome, latency percentiles, hot-path stage duration, provider timing, provider throughput, utility-call activity, retrieval fanout/chunk flow, endpoint/model usage, slowest requests, and feedback trend.
+- **Assistant Analytics scoping**: Analytics now treats Assistant History as the ownership boundary and joins Request History only for supporting timing/status telemetry, so deleting assistant history removes those turns from analytics without deleting the request audit log.
+- **Assistant analytics REST API**: Added authenticated `GET /v1.0/assistants/{assistantId}/analytics/overview`, `/timeseries`, `/stages`, `/endpoints`, `/slowest`, and `/feedback`.
+- **Assistant-scoped telemetry indexing**: Added `assistant_id` to `chat_history_performance_events`, startup backfill, and assistant/time/stage/endpoint indexes for SQLite, PostgreSQL, MySQL, and SQL Server.
+- **Migration scripts**: Added `migrations/011_upgrade_to_v0.13.0.*.sql` provider scripts for existing installations.
+- **Archived implementation plan**: Moved the completed Assistant Analytics implementation plan to `archive/ASSISTANT_ANALYTICS.md`.
+- **SDK/Postman/MCP coverage**: C#, JavaScript/TypeScript, Python, Postman, OpenAPI, and MCP now expose assistant analytics read APIs.
+- **Analytics tests**: Added Touchstone shared coverage for analytics range capping, aggregation, endpoint summaries, slowest request detection, feedback analytics, and telemetry assistant ID projection.
+
+### Changed
+- Dashboard history and request-history filters can deep-link with `assistantId` so analytics drill-downs open directly to related entries.
+- Docker compose image tags and package/product versions updated to `0.13.0`.
+
+### Breaking
+- Database schema changes require running the matching `migrations/011_upgrade_to_v0.13.0.*.sql` provider script for existing installations when startup migrations are not used.
+
 ## v0.12.0 - Assistant Performance Telemetry
 
 ### Added

@@ -283,6 +283,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE TABLE IF NOT EXISTS chat_history_performance_events (" +
                 "  id TEXT PRIMARY KEY, " +
                 "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  assistant_id TEXT, " +
                 "  chat_history_id TEXT NOT NULL, " +
                 "  request_history_id TEXT, " +
                 "  trace_id TEXT, " +
@@ -420,6 +421,20 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE request_history ADD COLUMN chat_history_id TEXT;";
 
         /// <summary>
+        /// Add the assistant ID column to chat history performance events.
+        /// </summary>
+        public static string AddChatHistoryPerformanceEventsAssistantIdColumn =
+            "ALTER TABLE chat_history_performance_events ADD COLUMN assistant_id TEXT;";
+
+        /// <summary>
+        /// Backfill assistant IDs onto chat history performance events.
+        /// </summary>
+        public static string BackfillChatHistoryPerformanceEventsAssistantId =
+            "UPDATE chat_history_performance_events " +
+            "SET assistant_id = (SELECT assistant_id FROM chat_history WHERE chat_history.id = chat_history_performance_events.chat_history_id) " +
+            "WHERE assistant_id IS NULL AND chat_history_id IS NOT NULL;";
+
+        /// <summary>
         /// Get the CREATE INDEX statements.
         /// </summary>
         public static string CreateIndices()
@@ -440,6 +455,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_assistant_documents_tenant_id ON assistant_documents(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_assistant_id ON assistant_feedback (assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_tenant_id ON assistant_feedback(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_tenant_assistant_created ON assistant_feedback(tenant_id, assistant_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_name ON ingestion_rules (name); " +
                 "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_tenant_id ON ingestion_rules(tenant_id); " +
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_ingestion_rules_tenant_name ON ingestion_rules(tenant_id, name); " +
@@ -461,7 +477,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_request_history_request_path ON request_history(request_path); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_trace_id ON request_history(trace_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_request_history_chat_history_id ON request_history(chat_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_assistant_created ON request_history(tenant_id, assistant_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_assistant_success_created ON request_history(tenant_id, assistant_id, success, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_chat_history_id ON chat_history_performance_events(chat_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_chpe_assistant_id ON chat_history_performance_events(assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_request_history_id ON chat_history_performance_events(request_history_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_trace_id ON chat_history_performance_events(trace_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_stage ON chat_history_performance_events(stage); " +
@@ -472,6 +491,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_created_utc ON chat_history_performance_events(created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_duration_ms ON chat_history_performance_events(duration_ms); " +
                 "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_created ON chat_history_performance_events(tenant_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_created ON chat_history_performance_events(tenant_id, assistant_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_stage_created ON chat_history_performance_events(tenant_id, assistant_id, stage, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events(tenant_id, assistant_id, endpoint_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_state ON crawl_plans(state); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_operations_tenant_id ON crawl_operations(tenant_id); " +

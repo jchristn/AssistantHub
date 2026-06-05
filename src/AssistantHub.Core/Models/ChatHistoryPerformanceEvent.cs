@@ -20,6 +20,11 @@ namespace AssistantHub.Core.Models
         public string TenantId { get; set; } = Constants.DefaultTenantId;
 
         /// <summary>
+        /// Associated assistant identifier.
+        /// </summary>
+        public string AssistantId { get; set; } = null;
+
+        /// <summary>
         /// Associated chat history identifier.
         /// </summary>
         public string ChatHistoryId { get; set; } = null;
@@ -240,6 +245,7 @@ namespace AssistantHub.Core.Models
             {
                 Id = DataTableHelper.GetStringValue(row, "id"),
                 TenantId = DataTableHelper.GetStringValue(row, "tenant_id"),
+                AssistantId = DataTableHelper.GetStringValue(row, "assistant_id"),
                 ChatHistoryId = DataTableHelper.GetStringValue(row, "chat_history_id"),
                 RequestHistoryId = DataTableHelper.GetStringValue(row, "request_history_id"),
                 TraceId = DataTableHelper.GetStringValue(row, "trace_id"),

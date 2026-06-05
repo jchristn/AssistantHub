@@ -146,7 +146,7 @@ namespace AssistantHub.Core.Services
 
                 if (!String.IsNullOrEmpty(settings.InferenceEndpointId))
                 {
-                    var resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    ResolvedEndpoint? resolved = await ResolveCompletionEndpointAsync(settings.InferenceEndpointId).ConfigureAwait(false);
                     if (resolved != null)
                     {
                         provider = resolved.Value.Provider;
@@ -297,14 +297,6 @@ namespace AssistantHub.Core.Services
                 }
                 catch { }
             }
-        }
-
-        private struct ResolvedEndpoint
-        {
-            public InferenceProviderEnum Provider;
-            public string Endpoint;
-            public string ApiKey;
-            public string Model;
         }
 
         private async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)

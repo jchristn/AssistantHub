@@ -330,6 +330,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "CREATE TABLE IF NOT EXISTS chat_history_performance_events (" +
             "  id TEXT PRIMARY KEY, " +
             "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  assistant_id TEXT, " +
             "  chat_history_id TEXT NOT NULL, " +
             "  request_history_id TEXT, " +
             "  trace_id TEXT, " +
@@ -374,6 +375,15 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  created_utc TEXT NOT NULL " +
             ")";
 
+        internal static string AddChatHistoryPerformanceEventsAssistantIdColumn =
+            "ALTER TABLE chat_history_performance_events ADD COLUMN IF NOT EXISTS assistant_id TEXT";
+
+        internal static string BackfillChatHistoryPerformanceEventsAssistantId =
+            "UPDATE chat_history_performance_events e " +
+            "SET assistant_id = h.assistant_id " +
+            "FROM chat_history h " +
+            "WHERE e.assistant_id IS NULL AND h.id = e.chat_history_id";
+
         #endregion
 
         #region Indices
@@ -404,6 +414,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateAssistantFeedbackTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_tenant_id ON assistant_feedback (tenant_id)";
+
+        internal static string CreateAssistantFeedbackTenantAssistantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_feedback_tenant_assistant_created ON assistant_feedback (tenant_id, assistant_id, created_utc)";
 
         internal static string CreateIngestionRulesTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_ingestion_rules_tenant_id ON ingestion_rules (tenant_id)";
@@ -480,8 +493,17 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string CreateRequestHistoryChatHistoryIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_request_history_chat_history_id ON request_history (chat_history_id)";
 
+        internal static string CreateRequestHistoryTenantAssistantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_assistant_created ON request_history (tenant_id, assistant_id, created_utc)";
+
+        internal static string CreateRequestHistoryTenantAssistantSuccessCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_request_history_tenant_assistant_success_created ON request_history (tenant_id, assistant_id, success, created_utc)";
+
         internal static string CreateChatHistoryPerformanceEventsChatHistoryIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_chat_history_id ON chat_history_performance_events (chat_history_id)";
+
+        internal static string CreateChatHistoryPerformanceEventsAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chpe_assistant_id ON chat_history_performance_events (assistant_id)";
 
         internal static string CreateChatHistoryPerformanceEventsRequestHistoryIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_request_history_id ON chat_history_performance_events (request_history_id)";
@@ -512,6 +534,15 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateChatHistoryPerformanceEventsTenantCreatedIndex =
             "CREATE INDEX IF NOT EXISTS idx_chat_history_performance_events_tenant_created ON chat_history_performance_events (tenant_id, created_utc)";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_created ON chat_history_performance_events (tenant_id, assistant_id, created_utc)";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_stage_created ON chat_history_performance_events (tenant_id, assistant_id, stage, created_utc)";
+
+        internal static string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events (tenant_id, assistant_id, endpoint_id, created_utc)";
 
         internal static string CreateCrawlPlansTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans (tenant_id)";

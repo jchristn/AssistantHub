@@ -65,6 +65,61 @@
 			"key": "traceId",
 			"value": "trace_abc123",
 			"type": "string"
+		},
+		{
+			"key": "assistantId",
+			"value": "asst_abc123",
+			"type": "string"
+		},
+		{
+			"key": "analyticsRange",
+			"value": "lastDay",
+			"type": "string"
+		},
+		{
+			"key": "analyticsStartUtc",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsEndUtc",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsBucketSeconds",
+			"value": "900",
+			"type": "string"
+		},
+		{
+			"key": "analyticsMetrics",
+			"value": "request_count,p95_duration_ms,final_inference_calls",
+			"type": "string"
+		},
+		{
+			"key": "analyticsStage",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsEndpointId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsEndpointType",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsModel",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "analyticsLimit",
+			"value": "25",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -78,8 +133,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/",
-							"host": ["{{baseUrl}}"],
-							"path": [""]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
 						}
 					}
 				},
@@ -90,8 +149,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/",
-							"host": ["{{baseUrl}}"],
-							"path": [""]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
 						}
 					}
 				}
@@ -119,8 +182,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/authenticate",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "authenticate"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"authenticate"
+							]
 						}
 					}
 				},
@@ -131,8 +199,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/whoami",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "whoami"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"whoami"
+							]
 						}
 					}
 				}
@@ -157,8 +230,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants"
+							]
 						}
 					}
 				},
@@ -169,8 +247,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants"
+							]
 						}
 					}
 				},
@@ -181,8 +264,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -208,8 +297,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -226,8 +321,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -244,8 +345,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -276,8 +383,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -294,8 +408,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -312,8 +433,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -343,8 +472,16 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -365,8 +502,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -387,8 +532,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/users/:userId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "users", ":userId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"users",
+								":userId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -423,8 +576,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -441,8 +601,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -459,8 +626,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials",
+								":credentialId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -490,8 +665,16 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials",
+								":credentialId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -512,8 +695,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials",
+								":credentialId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -534,8 +725,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/tenants/:tenantId/credentials/:credentialId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "tenants", ":tenantId", "credentials", ":credentialId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"tenants",
+								":tenantId",
+								"credentials",
+								":credentialId"
+							],
 							"variable": [
 								{
 									"key": "tenantId",
@@ -570,8 +769,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets"
+							]
 						}
 					}
 				},
@@ -582,8 +786,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets"
+							]
 						}
 					}
 				},
@@ -594,8 +803,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -612,8 +827,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -630,8 +851,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -653,8 +880,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -671,8 +905,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/metadata",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects", "metadata"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects",
+								"metadata"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -698,8 +940,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -716,8 +965,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -734,8 +990,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/download",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects", "download"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects",
+								"download"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -762,8 +1026,16 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/buckets/:name/objects/upload",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "buckets", ":name", "objects", "upload"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"buckets",
+								":name",
+								"objects",
+								"upload"
+							],
 							"variable": [
 								{
 									"key": "name",
@@ -794,8 +1066,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections"
+							]
 						}
 					}
 				},
@@ -806,8 +1083,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections"
+							]
 						}
 					}
 				},
@@ -818,8 +1100,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -845,8 +1133,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -863,8 +1157,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -881,8 +1181,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -913,8 +1219,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "records"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"records"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -931,8 +1244,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "records"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"records"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -949,8 +1269,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/:recordId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "records", ":recordId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"records",
+								":recordId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -971,8 +1299,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/:recordId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "records", ":recordId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"records",
+								":recordId"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -1002,8 +1338,17 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/batch/delete",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "records", "batch", "delete"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"records",
+								"batch",
+								"delete"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -1020,8 +1365,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/labels/distinct",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "labels", "distinct"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"labels",
+								"distinct"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -1038,8 +1391,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/collections/:collectionId/tags/distinct",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "collections", ":collectionId", "tags", "distinct"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"collections",
+								":collectionId",
+								"tags",
+								"distinct"
+							],
 							"variable": [
 								{
 									"key": "collectionId",
@@ -1070,8 +1431,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding"
+							]
 						}
 					}
 				},
@@ -1091,8 +1458,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding"
+							]
 						}
 					}
 				},
@@ -1112,8 +1485,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding"
+							]
 						}
 					}
 				},
@@ -1133,8 +1512,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/enumerate",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", "enumerate"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								"enumerate"
+							]
 						}
 					}
 				},
@@ -1145,8 +1531,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", "health"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								"health"
+							]
 						}
 					}
 				},
@@ -1157,8 +1550,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1184,8 +1584,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1202,8 +1609,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1220,8 +1634,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1238,8 +1659,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId", "health"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId",
+								"health"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1265,8 +1694,16 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/test",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "embedding", ":endpointId", "test"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"embedding",
+								":endpointId",
+								"test"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1297,8 +1734,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion"
+							]
 						}
 					}
 				},
@@ -1318,8 +1761,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion"
+							]
 						}
 					}
 				},
@@ -1339,8 +1788,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion"
+							]
 						}
 					}
 				},
@@ -1360,8 +1815,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/enumerate",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", "enumerate"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								"enumerate"
+							]
 						}
 					}
 				},
@@ -1372,8 +1834,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", "health"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								"health"
+							]
 						}
 					}
 				},
@@ -1384,8 +1853,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1411,8 +1887,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1429,8 +1912,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1447,8 +1937,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1465,8 +1962,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/health",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId", "health"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId",
+								"health"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1492,8 +1997,16 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/test",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "endpoints", "completion", ":endpointId", "test"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"endpoints",
+								"completion",
+								":endpointId",
+								"test"
+							],
 							"variable": [
 								{
 									"key": "endpointId",
@@ -1524,8 +2037,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules"
+							]
 						}
 					}
 				},
@@ -1536,8 +2054,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules"
+							]
 						}
 					}
 				},
@@ -1548,8 +2071,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules",
+								":ruleId"
+							],
 							"variable": [
 								{
 									"key": "ruleId",
@@ -1575,8 +2104,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules",
+								":ruleId"
+							],
 							"variable": [
 								{
 									"key": "ruleId",
@@ -1593,8 +2128,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules",
+								":ruleId"
+							],
 							"variable": [
 								{
 									"key": "ruleId",
@@ -1611,8 +2152,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/ingestion-rules/:ruleId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "ingestion-rules", ":ruleId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"ingestion-rules",
+								":ruleId"
+							],
 							"variable": [
 								{
 									"key": "ruleId",
@@ -1643,8 +2190,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants"
+							]
 						}
 					}
 				},
@@ -1655,8 +2207,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants"
+							]
 						}
 					}
 				},
@@ -1667,8 +2224,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1694,8 +2257,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1712,8 +2281,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1730,8 +2305,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1753,8 +2334,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "settings"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"settings"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1780,8 +2368,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "settings"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"settings"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -1807,12 +2402,344 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings/slack/verify",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "settings", "slack", "verify"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"settings",
+								"slack",
+								"verify"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
 									"value": "assistant-guid-here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Assistant Analytics",
+			"item": [
+				{
+					"name": "Get Analytics Overview",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/overview?range={{analyticsRange}}&startUtc={{analyticsStartUtc}}&endUtc={{analyticsEndUtc}}&bucketSeconds={{analyticsBucketSeconds}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"overview"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "startUtc",
+									"value": "{{analyticsStartUtc}}",
+									"disabled": true
+								},
+								{
+									"key": "endUtc",
+									"value": "{{analyticsEndUtc}}",
+									"disabled": true
+								},
+								{
+									"key": "bucketSeconds",
+									"value": "{{analyticsBucketSeconds}}",
+									"disabled": false
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Analytics Time Series",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/timeseries?range={{analyticsRange}}&bucketSeconds={{analyticsBucketSeconds}}&metrics={{analyticsMetrics}}&stage={{analyticsStage}}&endpointId={{analyticsEndpointId}}&model={{analyticsModel}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"timeseries"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "bucketSeconds",
+									"value": "{{analyticsBucketSeconds}}",
+									"disabled": false
+								},
+								{
+									"key": "metrics",
+									"value": "{{analyticsMetrics}}",
+									"disabled": false
+								},
+								{
+									"key": "stage",
+									"value": "{{analyticsStage}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointId",
+									"value": "{{analyticsEndpointId}}",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "{{analyticsModel}}",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Analytics Stages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/stages?range={{analyticsRange}}&bucketSeconds={{analyticsBucketSeconds}}&stage={{analyticsStage}}&endpointId={{analyticsEndpointId}}&endpointType={{analyticsEndpointType}}&model={{analyticsModel}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"stages"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "bucketSeconds",
+									"value": "{{analyticsBucketSeconds}}",
+									"disabled": false
+								},
+								{
+									"key": "stage",
+									"value": "{{analyticsStage}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointId",
+									"value": "{{analyticsEndpointId}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointType",
+									"value": "{{analyticsEndpointType}}",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "{{analyticsModel}}",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Analytics Endpoints",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/endpoints?range={{analyticsRange}}&stage={{analyticsStage}}&endpointId={{analyticsEndpointId}}&endpointType={{analyticsEndpointType}}&model={{analyticsModel}}&limit={{analyticsLimit}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"endpoints"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "stage",
+									"value": "{{analyticsStage}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointId",
+									"value": "{{analyticsEndpointId}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointType",
+									"value": "{{analyticsEndpointType}}",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "{{analyticsModel}}",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "{{analyticsLimit}}",
+									"disabled": false
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Analytics Slowest Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/slowest?range={{analyticsRange}}&stage={{analyticsStage}}&endpointId={{analyticsEndpointId}}&endpointType={{analyticsEndpointType}}&model={{analyticsModel}}&limit={{analyticsLimit}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"slowest"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "stage",
+									"value": "{{analyticsStage}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointId",
+									"value": "{{analyticsEndpointId}}",
+									"disabled": true
+								},
+								{
+									"key": "endpointType",
+									"value": "{{analyticsEndpointType}}",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "{{analyticsModel}}",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "{{analyticsLimit}}",
+									"disabled": false
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Analytics Feedback",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/analytics/feedback?range={{analyticsRange}}&bucketSeconds={{analyticsBucketSeconds}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"analytics",
+								"feedback"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "{{analyticsRange}}",
+									"disabled": false
+								},
+								{
+									"key": "bucketSeconds",
+									"value": "{{analyticsBucketSeconds}}",
+									"disabled": false
+								}
+							],
+							"variable": [
+								{
+									"key": "assistantId",
+									"value": "{{assistantId}}"
 								}
 							]
 						}
@@ -1839,8 +2766,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents"
+							]
 						}
 					}
 				},
@@ -1851,8 +2783,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents"
+							]
 						}
 					}
 				},
@@ -1863,8 +2800,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", ":documentId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								":documentId"
+							],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1881,8 +2824,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", ":documentId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								":documentId"
+							],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1899,8 +2848,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", ":documentId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								":documentId"
+							],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1926,8 +2881,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/delete",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", "delete"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								"delete"
+							]
 						}
 					}
 				},
@@ -1938,8 +2899,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId/processing-log",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", ":documentId", "processing-log"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								":documentId",
+								"processing-log"
+							],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1956,8 +2924,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/documents/:documentId/download",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "documents", ":documentId", "download"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"documents",
+								":documentId",
+								"download"
+							],
 							"variable": [
 								{
 									"key": "documentId",
@@ -1979,8 +2954,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/feedback",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "feedback"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"feedback"
+							]
 						}
 					}
 				},
@@ -1991,8 +2971,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/feedback/:feedbackId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "feedback", ":feedbackId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"feedback",
+								":feedbackId"
+							],
 							"variable": [
 								{
 									"key": "feedbackId",
@@ -2009,8 +2995,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/feedback/:feedbackId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "feedback", ":feedbackId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"feedback",
+								":feedbackId"
+							],
 							"variable": [
 								{
 									"key": "feedbackId",
@@ -2032,8 +3024,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/history",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "history"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"history"
+							]
 						}
 					}
 				},
@@ -2044,8 +3041,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/history/:historyId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "history", ":historyId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"history",
+								":historyId"
+							],
 							"variable": [
 								{
 									"key": "historyId",
@@ -2062,8 +3065,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/history/:historyId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "history", ":historyId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"history",
+								":historyId"
+							],
 							"variable": [
 								{
 									"key": "historyId",
@@ -2085,8 +3094,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory?maxResults=100",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory"
+							],
 							"query": [
 								{
 									"key": "maxResults",
@@ -2103,8 +3117,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory/summary?bucketSeconds=900",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory", "summary"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory",
+								"summary"
+							],
 							"query": [
 								{
 									"key": "bucketSeconds",
@@ -2121,8 +3141,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory", ":requestHistoryId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory",
+								":requestHistoryId"
+							],
 							"variable": [
 								{
 									"key": "requestHistoryId",
@@ -2140,8 +3166,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId/detail",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory", ":requestHistoryId", "detail"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory",
+								":requestHistoryId",
+								"detail"
+							],
 							"variable": [
 								{
 									"key": "requestHistoryId",
@@ -2159,8 +3192,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory", ":requestHistoryId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory",
+								":requestHistoryId"
+							],
 							"variable": [
 								{
 									"key": "requestHistoryId",
@@ -2177,8 +3216,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/requesthistory/bulk?requestType=AssistantApi",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "requesthistory", "bulk"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"requesthistory",
+								"bulk"
+							],
 							"query": [
 								{
 									"key": "requestType",
@@ -2200,8 +3245,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/threads",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "threads"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"threads"
+							]
 						}
 					}
 				}
@@ -2217,8 +3267,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/models",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "models"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"models"
+							]
 						}
 					}
 				},
@@ -2238,8 +3293,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/models/pull",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "models", "pull"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"models",
+								"pull"
+							]
 						}
 					}
 				},
@@ -2250,8 +3311,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/models/pull/status",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "models", "pull", "status"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"models",
+								"pull",
+								"status"
+							]
 						}
 					}
 				},
@@ -2262,8 +3330,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/models/:modelName",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "models", ":modelName"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"models",
+								":modelName"
+							],
 							"variable": [
 								{
 									"key": "modelName",
@@ -2285,8 +3359,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/configuration",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "configuration"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"configuration"
+							]
 						}
 					}
 				},
@@ -2311,8 +3390,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/configuration",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "configuration"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"configuration"
+							]
 						},
 						"description": "Accepts a full or partial AssistantHubSettings object. Supported sections: Webserver, Database, S3, DocumentAtom, Chunking, Inference, RecallDb, Logging."
 					}
@@ -2338,8 +3422,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans"
+							]
 						}
 					}
 				},
@@ -2350,8 +3439,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans"
+							]
 						}
 					}
 				},
@@ -2362,8 +3456,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2389,8 +3489,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2407,8 +3513,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2425,8 +3537,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2443,8 +3561,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/start",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id", "start"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id",
+								"start"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2461,8 +3586,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/stop",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id", "stop"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id",
+								"stop"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2479,8 +3611,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/connectivity",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id", "connectivity"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id",
+								"connectivity"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2497,8 +3636,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:id/enumerate",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":id", "enumerate"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":id",
+								"enumerate"
+							],
 							"variable": [
 								{
 									"key": "id",
@@ -2520,8 +3666,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2538,8 +3691,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/statistics",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations", "statistics"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations",
+								"statistics"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2556,8 +3717,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2578,8 +3747,17 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id/statistics",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id", "statistics"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations",
+								":id",
+								"statistics"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2600,8 +3778,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2622,8 +3808,17 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/crawlplans/:planId/operations/:id/enumeration",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "crawlplans", ":planId", "operations", ":id", "enumeration"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"crawlplans",
+								":planId",
+								"operations",
+								":id",
+								"enumeration"
+							],
 							"variable": [
 								{
 									"key": "planId",
@@ -2658,8 +3853,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/facts",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "facts"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"facts"
+							]
 						}
 					}
 				},
@@ -2670,8 +3871,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/facts",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "facts"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"facts"
+							]
 						}
 					}
 				},
@@ -2682,8 +3889,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "facts", ":factId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"facts",
+								":factId"
+							],
 							"variable": [
 								{
 									"key": "factId",
@@ -2709,8 +3923,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "facts", ":factId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"facts",
+								":factId"
+							],
 							"variable": [
 								{
 									"key": "factId",
@@ -2727,8 +3948,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/facts/:factId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "facts", ":factId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"facts",
+								":factId"
+							],
 							"variable": [
 								{
 									"key": "factId",
@@ -2754,8 +3982,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs"
+							]
 						}
 					}
 				},
@@ -2766,8 +4000,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs"
+							]
 						}
 					}
 				},
@@ -2778,8 +4018,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs", ":runId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs",
+								":runId"
+							],
 							"variable": [
 								{
 									"key": "runId",
@@ -2796,8 +4043,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs", ":runId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs",
+								":runId"
+							],
 							"variable": [
 								{
 									"key": "runId",
@@ -2814,8 +4068,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId/results",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs", ":runId", "results"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs",
+								":runId",
+								"results"
+							],
 							"variable": [
 								{
 									"key": "runId",
@@ -2832,8 +4094,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/runs/:runId/stream",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "runs", ":runId", "stream"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"runs",
+								":runId",
+								"stream"
+							],
 							"variable": [
 								{
 									"key": "runId",
@@ -2851,8 +4121,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/results/:resultId",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "results", ":resultId"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"results",
+								":resultId"
+							],
 							"variable": [
 								{
 									"key": "resultId",
@@ -2869,8 +4146,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/eval/judge-prompt/default",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "eval", "judge-prompt", "default"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"eval",
+								"judge-prompt",
+								"default"
+							]
 						}
 					}
 				}
@@ -2889,8 +4173,15 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/public",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "public"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"public"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -2919,8 +4210,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/threads",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "threads"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"threads"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -2940,8 +4238,17 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/threads/:threadId/history",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "threads", ":threadId", "history"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"threads",
+								":threadId",
+								"history"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -2978,8 +4285,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "chat"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"chat"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3013,8 +4327,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "chat"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"chat"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3044,8 +4365,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/feedback",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "feedback"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"feedback"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3078,8 +4406,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/compact",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "compact"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"compact"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3108,8 +4443,15 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/generate",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "generate"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"generate"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3130,8 +4472,17 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/documents/:documentId/download",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "documents", ":documentId", "download"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"documents",
+								":documentId",
+								"download"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3155,8 +4506,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/labels/distinct",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "labels", "distinct"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"labels",
+								"distinct"
+							],
 							"variable": [
 								{
 									"key": "assistantId",
@@ -3176,8 +4535,16 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tags/distinct",
-							"host": ["{{baseUrl}}"],
-							"path": ["v1.0", "assistants", ":assistantId", "tags", "distinct"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1.0",
+								"assistants",
+								":assistantId",
+								"tags",
+								"distinct"
+							],
 							"variable": [
 								{
 									"key": "assistantId",

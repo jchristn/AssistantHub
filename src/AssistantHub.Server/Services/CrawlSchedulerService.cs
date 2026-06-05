@@ -36,8 +36,8 @@ namespace AssistantHub.Server.Services
         private readonly IngestionService _Ingestion;
         private readonly StorageService _Storage;
         private readonly ProcessingLogService _ProcessingLog;
-        private readonly ConcurrentDictionary<string, (CrawlerBase Crawler, CancellationTokenSource Cts)> _RunningCrawlers
-            = new ConcurrentDictionary<string, (CrawlerBase Crawler, CancellationTokenSource Cts)>();
+        private readonly ConcurrentDictionary<string, RunningCrawler> _RunningCrawlers
+            = new ConcurrentDictionary<string, RunningCrawler>();
 
         private CancellationTokenSource _ServiceCts = null;
         private Task _SchedulerLoop = null;
@@ -110,12 +110,12 @@ namespace AssistantHub.Server.Services
             // Cancel all running crawlers
             foreach (string key in _RunningCrawlers.Keys.ToList())
             {
-                if (_RunningCrawlers.TryRemove(key, out var entry))
+                if (_RunningCrawlers.TryRemove(key, out RunningCrawler entry))
                 {
                     try
                     {
-                        entry.Cts.Cancel();
-                        entry.Cts.Dispose();
+                        entry.Cancellation.Cancel();
+                        entry.Cancellation.Dispose();
                         entry.Crawler.Dispose();
                     }
                     catch (Exception ex)
@@ -179,14 +179,14 @@ namespace AssistantHub.Server.Services
         {
             if (String.IsNullOrEmpty(crawlPlanId)) throw new ArgumentNullException(nameof(crawlPlanId));
 
-            if (_RunningCrawlers.TryRemove(crawlPlanId, out var entry))
+            if (_RunningCrawlers.TryRemove(crawlPlanId, out RunningCrawler entry))
             {
                 _Logging.Info(_Header + "stopping crawl for plan " + crawlPlanId);
 
                 try
                 {
-                    entry.Cts.Cancel();
-                    entry.Cts.Dispose();
+                    entry.Cancellation.Cancel();
+                    entry.Cancellation.Dispose();
                     entry.Crawler.Dispose();
                 }
                 catch (Exception ex)
@@ -400,7 +400,11 @@ namespace AssistantHub.Server.Services
                 enumerationDirectory,
                 cts.Token);
 
-            _RunningCrawlers[plan.Id] = (crawler, cts);
+            _RunningCrawlers[plan.Id] = new RunningCrawler
+            {
+                Crawler = crawler,
+                Cancellation = cts
+            };
 
             // Set plan state to Running immediately so the dashboard reflects it
             plan.State = CrawlPlanStateEnum.Running;

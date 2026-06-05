@@ -345,7 +345,7 @@ namespace AssistantHub.Server.Handlers
                         if (response.IsSuccessStatusCode)
                         {
                             string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+                            JsonSerializerOptions jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
                             PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, jsonOpts);
 
                             tempSettings.Provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, tempSettings.Provider);
@@ -368,11 +368,6 @@ namespace AssistantHub.Server.Handlers
         #endregion
 
         #region Private-Classes
-
-        private class PullModelRequest
-        {
-            public string Name { get; set; } = null;
-        }
 
         #endregion
     }

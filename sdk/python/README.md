@@ -144,6 +144,20 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
         print(detail.path, detail.status_code)
 ```
 
+## Assistant Analytics
+
+```python
+from assistanthub_sdk import AssistantAnalyticsQuery, AssistantHubClient
+
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
+    query = AssistantAnalyticsQuery(range="lastDay", metrics=["request_count", "p95_duration_ms"])
+    overview = client.get_assistant_analytics_overview("asst_abc123", query)
+    series = client.get_assistant_analytics_time_series("asst_abc123", query)
+    endpoints = client.get_assistant_analytics_endpoints("asst_abc123", {"range": "lastWeek", "limit": 10})
+
+    print(overview.request_count, len(series.series or []), len(endpoints.endpoints or []))
+```
+
 ## Available Methods
 
 ### Assistants
@@ -245,6 +259,15 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `get_request_history_detail(request_id)` -- Get detailed request/response payloads
 - `delete_request_history(request_id)` -- Delete a single request-history entry
 - `delete_request_history_bulk(filter=None)` -- Delete request-history entries matching a filter
+
+### Assistant Analytics
+
+- `get_assistant_analytics_overview(assistant_id, query=None)` -- Summary metrics for an assistant
+- `get_assistant_analytics_time_series(assistant_id, query=None)` -- Chart-ready time-series metrics
+- `get_assistant_analytics_stages(assistant_id, query=None)` -- Stage bucket summaries
+- `get_assistant_analytics_endpoints(assistant_id, query=None)` -- Endpoint/model/provider summaries
+- `get_assistant_analytics_slowest(assistant_id, query=None)` -- Slowest assistant requests
+- `get_assistant_analytics_feedback(assistant_id, query=None)` -- Feedback trend and totals
 
 ### Crawl Plans
 

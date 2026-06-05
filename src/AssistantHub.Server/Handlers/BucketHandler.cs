@@ -174,10 +174,10 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                var envelope = new
+                Dictionary<string, object> envelope = new Dictionary<string, object>
                 {
-                    Objects = buckets,
-                    TotalRecords = buckets.Count
+                    { "Objects", buckets },
+                    { "TotalRecords", buckets.Count }
                 };
 
                 ctx.Response.StatusCode = 200;
@@ -478,13 +478,13 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                var envelope = new
+                Dictionary<string, object> envelope = new Dictionary<string, object>
                 {
-                    Prefix = prefix,
-                    Delimiter = delimiter,
-                    CommonPrefixes = prefixes,
-                    Objects = objects,
-                    TotalRecords = objects.Count
+                    { "Prefix", prefix },
+                    { "Delimiter", delimiter },
+                    { "CommonPrefixes", prefixes },
+                    { "Objects", objects },
+                    { "TotalRecords", objects.Count }
                 };
 
                 ctx.Response.StatusCode = 200;
@@ -569,14 +569,14 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
-                var result = new
+                Dictionary<string, object> result = new Dictionary<string, object>
                 {
-                    Key = key,
-                    ContentLength = response.ContentLength,
-                    ContentType = response.Headers?.ContentType,
-                    LastModified = response.LastModified,
-                    ETag = response.ETag,
-                    Metadata = metadata
+                    { "Key", key },
+                    { "ContentLength", response.ContentLength },
+                    { "ContentType", response.Headers?.ContentType },
+                    { "LastModified", response.LastModified },
+                    { "ETag", response.ETag },
+                    { "Metadata", metadata }
                 };
 
                 ctx.Response.StatusCode = 200;

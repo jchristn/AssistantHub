@@ -122,7 +122,7 @@ namespace AssistantHub.Core.Services
                     && queryEmbeddings != null)
                 {
                     _Logging.Info(_Header + "hybrid search returned 0 results, falling back to vector-only");
-                    var vectorOnlyBody = new Dictionary<string, object>
+                    Dictionary<string, object> vectorOnlyBody = new Dictionary<string, object>
                     {
                         ["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
                         ["MaxResults"] = topK
@@ -187,7 +187,7 @@ namespace AssistantHub.Core.Services
         {
             int? includeNeighbors = options.IncludeNeighbors > 0 ? options.IncludeNeighbors : null;
 
-            var body = new Dictionary<string, object>();
+            Dictionary<string, object> body = new Dictionary<string, object>();
 
             if (options.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
             {
@@ -240,7 +240,7 @@ namespace AssistantHub.Core.Services
             bool hasExcludedLabels = filter.ExcludedLabels != null && filter.ExcludedLabels.Count > 0;
             if (hasRequiredLabels || hasExcludedLabels)
             {
-                var labelFilter = new Dictionary<string, object>();
+                Dictionary<string, object> labelFilter = new Dictionary<string, object>();
                 if (hasRequiredLabels) labelFilter["Required"] = filter.RequiredLabels;
                 if (hasExcludedLabels) labelFilter["Excluded"] = filter.ExcludedLabels;
                 body["LabelFilter"] = labelFilter;
@@ -250,7 +250,7 @@ namespace AssistantHub.Core.Services
             bool hasExcludedTags = filter.ExcludedTags != null && filter.ExcludedTags.Count > 0;
             if (hasRequiredTags || hasExcludedTags)
             {
-                var tagFilter = new Dictionary<string, object>();
+                Dictionary<string, object> tagFilter = new Dictionary<string, object>();
                 if (hasRequiredTags)
                     tagFilter["Required"] = filter.RequiredTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
                 if (hasExcludedTags)
@@ -340,76 +340,6 @@ namespace AssistantHub.Core.Services
         #endregion
 
         #region Private-Classes
-
-        /// <summary>
-        /// Process response from the Partio v0.4.0 service.
-        /// </summary>
-        private class ProcessResponse
-        {
-            public Guid GUID { get; set; }
-            public string Type { get; set; } = null;
-            public string Text { get; set; } = null;
-            public List<ProcessChunk> Chunks { get; set; } = null;
-            public List<ProcessResponse> Children { get; set; } = null;
-        }
-
-        /// <summary>
-        /// A single chunk from the Partio process response.
-        /// </summary>
-        private class ProcessChunk
-        {
-            public Guid CellGUID { get; set; }
-            public string Text { get; set; } = null;
-            public List<double> Embeddings { get; set; } = null;
-        }
-
-        /// <summary>
-        /// Search response from RecallDB.
-        /// </summary>
-        private class SearchResponse
-        {
-            /// <summary>
-            /// List of matching documents.
-            /// </summary>
-            public List<SearchResult> Documents { get; set; } = null;
-        }
-
-        /// <summary>
-        /// A single search result from RecallDB.
-        /// </summary>
-        private class SearchResult
-        {
-            /// <summary>
-            /// Document identifier (maps to AssistantDocument.Id).
-            /// </summary>
-            public string DocumentId { get; set; } = null;
-
-            /// <summary>
-            /// Similarity score.
-            /// </summary>
-            public double Score { get; set; } = 0;
-
-            /// <summary>
-            /// Full-text relevance score (null in vector-only mode).
-            /// </summary>
-            public double? TextScore { get; set; }
-
-            /// <summary>
-            /// Text content of the matching chunk.
-            /// </summary>
-            public string Content { get; set; } = null;
-
-            /// <summary>
-            /// Positional index of this chunk within its source document.
-            /// </summary>
-            public int? Position { get; set; } = null;
-
-            /// <summary>
-            /// Neighboring chunks surrounding this match in positional order.
-            /// Populated when IncludeNeighbors is specified on the search query.
-            /// </summary>
-            public List<SearchResult> Neighbors { get; set; } = null;
-        }
 
         #endregion
     }

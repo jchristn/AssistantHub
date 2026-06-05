@@ -36,6 +36,7 @@ namespace AssistantHub.Core.Services
                 TraceId = history.TraceId,
                 ChatHistoryId = history.Id,
                 RequestHistoryId = history.RequestHistoryId,
+                AssistantId = history.AssistantId,
                 CreatedUtc = history.CreatedUtc == default ? DateTime.UtcNow : history.CreatedUtc,
                 WallTimeMs = Math.Round(history.TimeToLastTokenMs, 2)
             };
@@ -143,6 +144,7 @@ namespace AssistantHub.Core.Services
                 {
                     Id = IdGenerator.NewChatHistoryPerformanceEventId(),
                     TenantId = tenantId,
+                    AssistantId = telemetry.AssistantId,
                     ChatHistoryId = telemetry.ChatHistoryId,
                     RequestHistoryId = telemetry.RequestHistoryId,
                     TraceId = telemetry.TraceId,

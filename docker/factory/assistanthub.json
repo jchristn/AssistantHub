@@ -5,13 +5,16 @@
     "Ssl": false
   },
   "Database": {
-    "Type": "Sqlite",
-    "Filename": "./data/assistanthub.db",
-    "Hostname": "",
-    "Port": 0,
-    "DatabaseName": "",
-    "Username": "",
-    "Password": ""
+    "Type": "Postgresql",
+    "Filename": "",
+    "Hostname": "postgres",
+    "Port": 5432,
+    "DatabaseName": "assistanthub",
+    "Username": "assistanthub_app",
+    "Password": "assistanthub_password",
+    "Schema": "public",
+    "RequireEncryption": false,
+    "LogQueries": false
   },
   "S3": {
     "Region": "USWest1",

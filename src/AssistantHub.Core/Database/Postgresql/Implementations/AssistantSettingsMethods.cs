@@ -68,9 +68,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 assistantSettings.ContextWindow + ", " +
                 (assistantSettings.EnableRag ? 1 : 0) + ", " +
                 (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
-                (assistantSettings.EnableQueryRewrite ? 1 : 0) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableQueryRewrite) + ", " +
                 _Driver.FormatNullableString(assistantSettings.QueryRewritePrompt) + ", " +
-                (assistantSettings.EnableReranking ? 1 : 0) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableReranking) + ", " +
                 assistantSettings.RerankerTopK + ", " +
                 _Driver.FormatDouble(assistantSettings.RerankerScoreThreshold) + ", " +
                 _Driver.FormatNullableString(assistantSettings.RerankPrompt) + ", " +
@@ -97,7 +97,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
                 _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 (assistantSettings.Streaming ? 1 : 0) + ", " +
-                (assistantSettings.EnableSlack ? 1 : 0) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableSlack) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SlackAppToken) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
@@ -151,9 +151,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "context_window = " + assistantSettings.ContextWindow + ", " +
                 "enable_rag = " + (assistantSettings.EnableRag ? 1 : 0) + ", " +
                 "enable_retrieval_gate = " + (assistantSettings.EnableRetrievalGate ? 1 : 0) + ", " +
-                "enable_query_rewrite = " + (assistantSettings.EnableQueryRewrite ? 1 : 0) + ", " +
+                "enable_query_rewrite = " + FormatBooleanColumn(assistantSettings.EnableQueryRewrite) + ", " +
                 "query_rewrite_prompt = " + _Driver.FormatNullableString(assistantSettings.QueryRewritePrompt) + ", " +
-                "enable_reranking = " + (assistantSettings.EnableReranking ? 1 : 0) + ", " +
+                "enable_reranking = " + FormatBooleanColumn(assistantSettings.EnableReranking) + ", " +
                 "reranker_top_k = " + assistantSettings.RerankerTopK + ", " +
                 "reranker_score_threshold = " + _Driver.FormatDouble(assistantSettings.RerankerScoreThreshold) + ", " +
                 "rerank_prompt = " + _Driver.FormatNullableString(assistantSettings.RerankPrompt) + ", " +
@@ -180,7 +180,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "retrieval_label_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalLabelFilter) + ", " +
                 "retrieval_tag_filter = " + _Driver.FormatNullableString(assistantSettings.RetrievalTagFilter) + ", " +
                 "streaming = " + (assistantSettings.Streaming ? 1 : 0) + ", " +
-                "enable_slack = " + (assistantSettings.EnableSlack ? 1 : 0) + ", " +
+                "enable_slack = " + FormatBooleanColumn(assistantSettings.EnableSlack) + ", " +
                 "slack_app_token = " + _Driver.FormatNullableString(assistantSettings.SlackAppToken) + ", " +
                 "slack_bot_token = " + _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
                 "slack_channel_id = " + _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
@@ -208,6 +208,15 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
 
             string query = "DELETE FROM assistant_settings WHERE assistant_id = '" + _Driver.Sanitize(assistantId) + "'";
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Private-Methods
+
+        private static string FormatBooleanColumn(bool value)
+        {
+            return value ? "TRUE" : "FALSE";
         }
 
         #endregion

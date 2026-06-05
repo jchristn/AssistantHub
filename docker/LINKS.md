@@ -16,7 +16,9 @@ The AssistantHub dashboard server URL should be set to `http://localhost:8801` (
 
 ## Startup Note
 
-On a fresh `docker compose up -d` or after `factory/reset.bat`, `assistanthub-server` waits for `partio-server` to report healthy before starting. This is expected and prevents AssistantHub from failing early during chunking and embeddings connectivity validation.
+On a fresh `docker compose up -d` or after `factory/reset.bat`, `postgres-init` must complete before database-backed services start, and `assistanthub-server` waits for `partio-server` to report healthy before starting. This is expected and prevents AssistantHub from failing early during database and chunking/embeddings connectivity validation.
+
+Use `status.bat` or `status.sh` from this directory to list container ID, name, creation time, status, and published ports for the local Docker deployment.
 
 ## Default Credentials
 
@@ -61,11 +63,13 @@ No authentication configured by default.
 
 ### PostgreSQL
 
-| Field         | Value                |
-|---------------|----------------------|
-| Username      | postgres             |
-| Password      | password             |
-| Database      | postgres             |
+| Service | Database | Username | Password |
+|---------|----------|----------|----------|
+| Superuser | postgres | postgres | password |
+| AssistantHub | assistanthub | assistanthub_app | assistanthub_password |
+| Less3 | less3 | less3_app | less3_password |
+| Partio | partio | partio_app | partio_password |
+| RecallDB | recalldb | recalldb_app | recalldb_password |
 
 ## Backend Services
 

@@ -5,15 +5,15 @@
     "Ssl": false
   },
   "Database": {
-    "Type": "Sqlite",
-    "Filename": "/app/data/partio.db",
-    "Hostname": null,
-    "Port": 0,
-    "DatabaseName": null,
-    "Username": null,
-    "Password": null,
+    "Type": "Postgresql",
+    "Filename": "",
+    "Hostname": "postgres",
+    "Port": 5432,
+    "DatabaseName": "partio",
+    "Username": "partio_app",
+    "Password": "partio_password",
     "Instance": null,
-    "Schema": null,
+    "Schema": "public",
     "RequireEncryption": false,
     "LogQueries": false
   },

@@ -16,6 +16,7 @@ namespace Test.Shared
             {
                 CreateSuite("model", "Model Suite", () => new ModelSuite().RunAsync()),
                 CreateSuite("service", "Service Suite", () => new ServiceSuite().RunAsync()),
+                CreateSuite("docker", "Docker Deployment Suite", () => new DockerDeploymentSuite().RunAsync()),
                 CreateSuite("api", "API Suite", () => new ApiSuite().RunAsync()),
                 CreateSuite("integration", "Integration Suite", () => new IntegrationSuite().RunAsync()),
                 CreateSuite("mcp", "MCP Suite", () => new McpSuite().RunAsync())

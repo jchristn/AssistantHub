@@ -191,7 +191,7 @@ Operational notes:
 
 ## Quick Start (Docker)
 
-The fastest way to run AssistantHub and all its dependencies is with Docker Compose. This is the recommended deployment method.
+The fastest way to run AssistantHub and all its dependencies is with Docker Compose. This is the recommended deployment method. The Docker deployment uses PostgreSQL by default for AssistantHub, Less3, Partio, and RecallDB metadata.
 
 ```bash
 cd docker
@@ -220,9 +220,31 @@ The Docker Compose stack orchestrates the following services:
 | **documentatom-dashboard** | 8302 | Web-based management UI for DocumentAtom. |
 | **partio-server** | 8321 | Text chunking, embedding, and summarization service. Splits extracted text into chunks using configurable strategies, computes vector embeddings via configurable embedding endpoints, and optionally summarizes content using a completion endpoint. Also manages embedding and completion endpoint configurations. |
 | **partio-dashboard** | 8322 | Web-based management UI for Partio. Allows direct management of embedding and completion endpoints. |
-| **pgvector** | 5432 | PostgreSQL with the pgvector extension. Provides the underlying vector storage and full-text search capabilities used by RecallDB. Supports cosine similarity search over high-dimensional embedding vectors. |
-| **recalldb-server** | 8401 | Vector and full-text search database. Wraps pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
+| **postgres** | 5432 | PostgreSQL with the pgvector extension. Provides separate databases for AssistantHub, Less3, Partio, and RecallDB. |
+| **postgres-init** | n/a | One-shot initialization verifier that creates service roles/databases, installs `vector` for RecallDB, and verifies service-role connectivity before app services start. |
+| **recalldb-server** | 8401 | Vector and full-text search database. Wraps PostgreSQL/pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
 | **recalldb-dashboard** | 8402 | Web-based management UI for RecallDB. Allows direct browsing of collections, records, and search testing. |
+
+### Docker PostgreSQL Defaults
+
+The Docker stack uses a single `postgres` container with a named `postgres-data` volume. `postgres-init` creates separate databases and application roles before AssistantHub, Less3, Partio, and RecallDB start.
+
+| Service | Database | Role |
+|---|---|---|
+| AssistantHub | `assistanthub` | `assistanthub_app` |
+| Less3 | `less3` | `less3_app` |
+| Partio | `partio` | `partio_app` |
+| RecallDB | `recalldb` | `recalldb_app` |
+
+Local-only database defaults are in `docker/.env` and are mirrored in the mounted JSON config files. Keep those values synchronized if you change database names or credentials.
+
+Troubleshooting:
+
+- If `postgres` is unhealthy, inspect `docker logs assistanthub-postgres` and confirm port `5432` is not already bound by another local database.
+- If `postgres-init` fails, inspect `docker logs assistanthub-postgres-init`; failures usually indicate a credential drift between `docker/.env` and the service JSON files, a stale volume, or a missing `vector` extension.
+- If stale SQLite files exist under `docker/assistanthub/data`, `docker/less3`, or `docker/partio/data`, they are ignored by the current compose file. Run `docker/factory/reset.bat` or `docker/factory/reset.sh` to remove them while resetting the deployment.
+
+Use `docker/status.bat` or `docker/status.sh` to view the local container ID, name, creation time, status, and published ports without the image and command columns from the default `docker ps -a` output.
 
 ### Using an External Ollama Instance
 
@@ -230,7 +252,7 @@ If you already have Ollama running on your host machine or on another server, yo
 
 **1. Comment out the Ollama service in `docker/compose.yaml`:**
 
-Comment out (or remove) the `ollama` service and its volume:
+Comment out (or remove) the `ollama` and `ollama-init` services and the Ollama model volume:
 
 ```yaml
 services:
@@ -238,7 +260,7 @@ services:
   # --- Infrastructure ---
 
   # ollama:
-  #   image: ollama/ollama:latest
+  #   image: ollama/ollama:0.30.4
   #   container_name: ollama
   #   ports:
   #     - "11434:11434"
@@ -254,11 +276,11 @@ Also comment out the `ollama-models` volume at the bottom of the file:
 
 ```yaml
 volumes:
-  pgvector-data:
+  postgres-data:
   # ollama-models:
 ```
 
-And remove `- ollama` from the `partio-server` service's `depends_on` list.
+And remove `ollama-init` from the `partio-server` service's `depends_on` list.
 
 **2. Update `docker/assistanthub/assistanthub.json` to point to your Ollama instance:**
 
@@ -334,13 +356,16 @@ The server reads configuration from `assistanthub.json` in the working directory
     "Ssl": false
   },
   "Database": {
-    "Type": "Sqlite",
-    "Filename": "./data/assistanthub.db",
-    "Hostname": "",
-    "Port": 0,
-    "DatabaseName": "",
-    "Username": "",
-    "Password": ""
+    "Type": "Postgresql",
+    "Filename": "",
+    "Hostname": "postgres",
+    "Port": 5432,
+    "DatabaseName": "assistanthub",
+    "Username": "assistanthub_app",
+    "Password": "assistanthub_password",
+    "Schema": "public",
+    "RequireEncryption": false,
+    "LogQueries": false
   },
   "S3": {
     "Region": "USWest1",
@@ -438,7 +463,7 @@ cd factory
 reset.bat         # Windows
 ```
 
-The script will prompt you to type `RESET` to confirm. This destroys all runtime data (databases, uploaded documents, logs, vector data) and restores factory-default databases. Configuration files are preserved. Downloaded Ollama models are kept by default; pass `--include-models` to remove them as well.
+The script will prompt you to type `RESET` to confirm. This destroys all runtime data (PostgreSQL data, uploaded documents, logs, request history) and restores factory-default configuration files. Downloaded Ollama models are kept by default; pass `--include-models` to remove them as well.
 
 After the reset completes, start the environment again:
 
@@ -449,6 +474,7 @@ docker compose up -d
 
 Expected behavior after reset:
 
+- `postgres-init` must complete before database-backed services start
 - `assistanthub-server` will not start until `partio-server` is healthy
 - this is intentional and prevents AssistantHub from failing early while validating chunking and embeddings connectivity
 - if startup appears slower than before, wait for Partio to finish its health checks and model initialization
@@ -590,7 +616,7 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
             │                    │
             ▼                    ▼
    ┌──────────────────┐ ┌──────────────────┐
-   │     Partio       │ │    pgvector      │
+   │     Partio       │ │   PostgreSQL     │
    │ (Chunk/Embed)    │ │  (PostgreSQL)    │
    │    Port 8321     │ │    Port 5432     │
    └────────┬─────────┘ └──────────────────┘
@@ -630,7 +656,8 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
                            ▼
                     ┌──────────────┐
                     │   RecallDB   │   Stores chunks and vectors
-                    │  (pgvector)  │   for retrieval
+                    │ (PostgreSQL/ │   for retrieval
+                    │  pgvector)   │
                     └──────────────┘
 ```
 
@@ -645,7 +672,8 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
 ```
   ┌─────────┐       ┌──────────────┐       ┌──────────────┐
   │  User   │       │ AssistantHub │       │   RecallDB   │
-  │(Browser │──1───►│   Server     │──2───►│  (pgvector)  │
+  │(Browser │──1───►│   Server     │──2───►│(PostgreSQL/ │
+  │         │       │              │       │ pgvector)   │
   │  or API)│       │              │◄──3───│              │
   └─────────┘       └──────┬───────┘       └──────────────┘
        ▲                   │
@@ -670,7 +698,7 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
 
 - **Backend:** .NET 10 (C#), WatsonWebserver
 - **Frontend:** React 19, Vite 6, JavaScript
-- **Database:** SQLite (default), PostgreSQL, SQL Server, MySQL
+- **Database:** PostgreSQL by default in Docker; product binaries also support SQLite, SQL Server, and MySQL
 - **Vector Search:** RecallDB backed by PostgreSQL with pgvector
 - **Document Processing:** DocumentAtom (text extraction), Partio (chunking, embedding, summarization)
 - **Object Storage:** Less3 (S3-compatible)

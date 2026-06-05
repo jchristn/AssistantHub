@@ -7,8 +7,11 @@
 - **MCP management surface**: Added MCP tools for system/runtime inspection, authentication, tenants, users, credentials, buckets, bucket objects, collections, assistants, assistant settings, documents, ingestion rules, feedback, history, request history, endpoints, models, crawl plans, crawl operations, evaluation, and runtime configuration.
 - **MCP integration coverage**: Added shared MCP host/test harness support and automated MCP transport, CRUD, configuration-redaction, request-history, and install-path coverage.
 - **MCP docs and Docker assets**: Added `MCP_API.md`, `docs/CLAUDE_MCP.md`, `src/AssistantHub.McpServer/Dockerfile`, `build-mcp.bat`, and Docker compose/config assets for running the MCP server alongside the platform.
+- **Docker status scripts**: Added `docker/status.bat` and `docker/status.sh` for a concise `docker ps -a` view of container ID, name, creation time, status, and ports.
 
 ### Changed
+- **Docker PostgreSQL defaults**: The local Docker deployment now defaults AssistantHub, Less3, Partio, and RecallDB to a shared PostgreSQL/pgvector container with separate service databases and application roles, plus a one-shot `postgres-init` verifier before services start.
+- **Archived PostgreSQL migration plan**: Moved the completed Docker PostgreSQL migration plan to `archive/POSTGRES_MIGRATION.md`.
 - **SDK parity for MCP-backed routes**: C#, JavaScript, and Python SDKs now expose request-history APIs and align the eval judge-prompt/eval-results contracts used by the MCP server.
 - **Testing documentation and runners**: Root test docs and wrappers document the Touchstone-backed `Test.Automated`, `Test.Xunit`, and `Test.Nunit` layout plus MCP-focused environment controls.
 

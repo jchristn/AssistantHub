@@ -4,8 +4,8 @@ setlocal enabledelayedexpansion
 REM ==========================================================================
 REM reset.bat - Reset AssistantHub docker environment to factory defaults
 REM
-REM This script destroys all runtime data (databases, logs, object storage,
-REM vector data) and restores factory-default databases and configuration.
+REM This script destroys all runtime data (PostgreSQL data, logs, object
+REM storage, request history) and restores factory-default configuration.
 REM
 REM Usage: factory\reset.bat [--include-models]
 REM   --include-models  Also remove downloaded Ollama models (requires re-download)
@@ -29,18 +29,18 @@ echo.
 echo WARNING: This is a DESTRUCTIVE action. The following will
 echo be permanently deleted:
 echo.
-echo   - All SQLite databases (AssistantHub, Less3, Partio)
-echo   - All PostgreSQL/pgvector data (RecallDB collections,
-echo     embeddings, tenants, users)
+echo   - All PostgreSQL data (AssistantHub, Less3, Partio,
+echo     RecallDB collections, embeddings, tenants, users)
+echo   - Stale local SQLite database files from older deployments
 echo   - All object storage files (uploaded documents)
 echo   - All log files and processing logs
 echo   - All Partio request history
-echo   - AssistantHub configuration changes
+echo   - Service configuration changes
 if "%INCLUDE_MODELS%"=="true" (
     echo   - All downloaded Ollama models
 )
 echo.
-echo AssistantHub configuration will be restored to factory defaults.
+echo Service configuration will be restored to factory defaults.
 echo.
 set /p "CONFIRM=Type 'RESET' to confirm: "
 echo.
@@ -62,42 +62,43 @@ REM -------------------------------------------------------------------------
 REM Remove Docker named volumes
 REM -------------------------------------------------------------------------
 echo [2/6] Removing Docker volumes...
+docker volume rm docker_postgres-data 2>nul
+docker volume rm postgres-data 2>nul
 docker volume rm docker_pgvector-data 2>nul
-if errorlevel 1 docker volume rm pgvector-data 2>nul
+docker volume rm pgvector-data 2>nul
 if "%INCLUDE_MODELS%"=="true" (
     docker volume rm docker_ollama-models 2>nul
-    if errorlevel 1 docker volume rm ollama-models 2>nul
-    echo         Removed pgvector-data and ollama-models volumes
+    docker volume rm ollama-models 2>nul
+    echo         Removed postgres-data and ollama-models volumes
 ) else (
-    echo         Removed pgvector-data volume ^(ollama-models preserved^)
+    echo         Removed postgres-data volume ^(ollama-models preserved^)
 )
 
 REM -------------------------------------------------------------------------
-REM Restore factory databases
+REM Restore factory configuration and clear stale SQLite files
 REM -------------------------------------------------------------------------
-echo [3/6] Restoring factory databases...
+echo [3/6] Restoring factory configuration...
 
 del /q "%DOCKER_DIR%assistanthub\data\assistanthub.db" 2>nul
 del /q "%DOCKER_DIR%assistanthub\data\assistanthub.db-shm" 2>nul
 del /q "%DOCKER_DIR%assistanthub\data\assistanthub.db-wal" 2>nul
-copy /y "%FACTORY_DIR%assistanthub.db" "%DOCKER_DIR%assistanthub\data\assistanthub.db" >nul
-copy /y "%FACTORY_DIR%assistanthub.db-shm" "%DOCKER_DIR%assistanthub\data\assistanthub.db-shm" >nul 2>nul
-copy /y "%FACTORY_DIR%assistanthub.db-wal" "%DOCKER_DIR%assistanthub\data\assistanthub.db-wal" >nul 2>nul
 copy /y "%FACTORY_DIR%assistanthub.json" "%DOCKER_DIR%assistanthub\assistanthub.json" >nul
-echo         Restored assistanthub.db and assistanthub.json
+echo         Restored assistanthub.json and removed stale AssistantHub SQLite files
 
 del /q "%DOCKER_DIR%less3\less3.db" 2>nul
 del /q "%DOCKER_DIR%less3\less3.db-shm" 2>nul
 del /q "%DOCKER_DIR%less3\less3.db-wal" 2>nul
-copy /y "%FACTORY_DIR%less3.db" "%DOCKER_DIR%less3\less3.db" >nul
-echo         Restored less3.db
+copy /y "%FACTORY_DIR%less3.system.json" "%DOCKER_DIR%less3\system.json" >nul
+echo         Restored Less3 system.json and removed stale Less3 SQLite files
 
 del /q "%DOCKER_DIR%partio\data\partio.db" 2>nul
 del /q "%DOCKER_DIR%partio\data\partio.db-shm" 2>nul
 del /q "%DOCKER_DIR%partio\data\partio.db-wal" 2>nul
-copy /y "%FACTORY_DIR%partio.db" "%DOCKER_DIR%partio\data\partio.db" >nul
 copy /y "%FACTORY_DIR%partio.json" "%DOCKER_DIR%partio\partio.json" >nul
-echo         Restored partio.db and partio.json
+echo         Restored partio.json and removed stale Partio SQLite files
+
+copy /y "%FACTORY_DIR%recalldb.json" "%DOCKER_DIR%recalldb\recalldb.json" >nul
+echo         Restored recalldb.json
 
 REM -------------------------------------------------------------------------
 REM Clear object storage

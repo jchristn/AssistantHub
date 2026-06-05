@@ -31,12 +31,15 @@ logs/
 .env
 .env.local
 .env.*.local
+!docker/.env
 
 # Data
 *.db
 *.sqlite
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
 
-# Allow .db files in docker/ and subdirectories
-!docker/**/*.db
-!docker/**/*.db-*
+# Docker configuration
 !docker/**/*.json

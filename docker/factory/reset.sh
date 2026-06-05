@@ -2,8 +2,8 @@
 #
 # reset.sh - Reset AssistantHub docker environment to factory defaults
 #
-# This script destroys all runtime data (databases, logs, object storage,
-# vector data) and restores factory-default databases and configuration.
+# This script destroys all runtime data (PostgreSQL data, logs, object
+# storage, request history) and restores factory-default configuration.
 #
 # Usage: ./factory/reset.sh [--include-models]
 #   --include-models  Also remove downloaded Ollama models (requires re-download)
@@ -33,18 +33,18 @@ echo ""
 echo "WARNING: This is a DESTRUCTIVE action. The following will"
 echo "be permanently deleted:"
 echo ""
-echo "  - All SQLite databases (AssistantHub, Less3, Partio)"
-echo "  - All PostgreSQL/pgvector data (RecallDB collections,"
-echo "    embeddings, tenants, users)"
+echo "  - All PostgreSQL data (AssistantHub, Less3, Partio,"
+echo "    RecallDB collections, embeddings, tenants, users)"
+echo "  - Stale local SQLite database files from older deployments"
 echo "  - All object storage files (uploaded documents)"
 echo "  - All log files and processing logs"
 echo "  - All Partio request history"
-echo "  - AssistantHub configuration changes"
+echo "  - Service configuration changes"
 if [ "$INCLUDE_MODELS" = true ]; then
   echo "  - All downloaded Ollama models"
 fi
 echo ""
-echo "AssistantHub configuration will be restored to factory defaults."
+echo "Service configuration will be restored to factory defaults."
 echo ""
 read -r -p "Type 'RESET' to confirm: " CONFIRM
 echo ""
@@ -65,43 +65,46 @@ docker compose down 2>/dev/null || true
 # Remove Docker named volumes
 # -------------------------------------------------------------------------
 echo "[2/6] Removing Docker volumes..."
-docker volume rm docker_pgvector-data 2>/dev/null || docker volume rm pgvector-data 2>/dev/null || true
+docker volume rm docker_postgres-data 2>/dev/null || true
+docker volume rm postgres-data 2>/dev/null || true
+docker volume rm docker_pgvector-data 2>/dev/null || true
+docker volume rm pgvector-data 2>/dev/null || true
 if [ "$INCLUDE_MODELS" = true ]; then
   docker volume rm docker_ollama-models 2>/dev/null || docker volume rm ollama-models 2>/dev/null || true
-  echo "        Removed pgvector-data and ollama-models volumes"
+  echo "        Removed postgres-data and ollama-models volumes"
 else
-  echo "        Removed pgvector-data volume (ollama-models preserved)"
+  echo "        Removed postgres-data volume (ollama-models preserved)"
 fi
 
 # -------------------------------------------------------------------------
-# Restore factory databases
+# Restore factory configuration and clear stale SQLite files
 # -------------------------------------------------------------------------
-echo "[3/6] Restoring factory databases..."
+echo "[3/6] Restoring factory configuration..."
 
 # AssistantHub
 rm -f "$DOCKER_DIR/assistanthub/data/assistanthub.db"
 rm -f "$DOCKER_DIR/assistanthub/data/assistanthub.db-shm"
 rm -f "$DOCKER_DIR/assistanthub/data/assistanthub.db-wal"
-cp "$FACTORY_DIR/assistanthub.db" "$DOCKER_DIR/assistanthub/data/assistanthub.db"
-cp "$FACTORY_DIR/assistanthub.db-shm" "$DOCKER_DIR/assistanthub/data/assistanthub.db-shm" 2>/dev/null || true
-cp "$FACTORY_DIR/assistanthub.db-wal" "$DOCKER_DIR/assistanthub/data/assistanthub.db-wal" 2>/dev/null || true
 cp "$FACTORY_DIR/assistanthub.json" "$DOCKER_DIR/assistanthub/assistanthub.json"
-echo "        Restored assistanthub.db and assistanthub.json"
+echo "        Restored assistanthub.json and removed stale AssistantHub SQLite files"
 
 # Less3
 rm -f "$DOCKER_DIR/less3/less3.db"
 rm -f "$DOCKER_DIR/less3/less3.db-shm"
 rm -f "$DOCKER_DIR/less3/less3.db-wal"
-cp "$FACTORY_DIR/less3.db" "$DOCKER_DIR/less3/less3.db"
-echo "        Restored less3.db"
+cp "$FACTORY_DIR/less3.system.json" "$DOCKER_DIR/less3/system.json"
+echo "        Restored Less3 system.json and removed stale Less3 SQLite files"
 
 # Partio
 rm -f "$DOCKER_DIR/partio/data/partio.db"
 rm -f "$DOCKER_DIR/partio/data/partio.db-shm"
 rm -f "$DOCKER_DIR/partio/data/partio.db-wal"
-cp "$FACTORY_DIR/partio.db" "$DOCKER_DIR/partio/data/partio.db"
 cp "$FACTORY_DIR/partio.json" "$DOCKER_DIR/partio/partio.json"
-echo "        Restored partio.db and partio.json"
+echo "        Restored partio.json and removed stale Partio SQLite files"
+
+# RecallDB
+cp "$FACTORY_DIR/recalldb.json" "$DOCKER_DIR/recalldb/recalldb.json"
+echo "        Restored recalldb.json"
 
 # -------------------------------------------------------------------------
 # Clear object storage

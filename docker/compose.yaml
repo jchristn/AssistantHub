@@ -49,10 +49,12 @@ services:
     tty: true
     volumes:
       - ./less3/system.json:/app/system.json
-      - ./less3/less3.db:/app/less3.db
       - ./less3/logs/:/app/logs/
       - ./less3/temp/:/app/temp/
       - ./less3/disk/:/app/disk/
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
     healthcheck:
       test: curl --fail http://localhost:8000
       interval: 5s
@@ -118,10 +120,11 @@ services:
       - "8321:8400"
     volumes:
       - ./partio/partio.json:/app/partio.json:ro
-      - ./partio/data/:/app/data/
       - ./partio/logs/:/app/logs/
       - ./partio/request-history/:/app/request-history/
     depends_on:
+      postgres-init:
+        condition: service_completed_successfully
       ollama-init:
         condition: service_completed_successfully
     healthcheck:
@@ -146,48 +149,56 @@ services:
 
   # --- Vector Database (RecallDB) ---
 
-  pgvector:
-    image: ankane/pgvector:latest
-    container_name: assistanthub-pgvector
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: assistanthub-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERPASS:-password}
       POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
-      - pgvector-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - pgvector
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
       timeout: 2s
       retries: 2
     restart: unless-stopped
 
-  recalldb-init:
-    image: ankane/pgvector:latest
-    container_name: assistanthub-recalldb-init
+  postgres-init:
+    image: pgvector/pgvector:pg17
+    container_name: assistanthub-postgres-init
     environment:
-      PGPASSWORD: password
+      POSTGRES_SUPERUSER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_SUPERPASS: ${POSTGRES_SUPERPASS:-password}
+      ASSISTANTHUB_DB_NAME: ${ASSISTANTHUB_DB_NAME:-assistanthub}
+      ASSISTANTHUB_DB_USER: ${ASSISTANTHUB_DB_USER:-assistanthub_app}
+      ASSISTANTHUB_DB_PASS: ${ASSISTANTHUB_DB_PASS:-assistanthub_password}
+      PARTIO_DB_NAME: ${PARTIO_DB_NAME:-partio}
+      PARTIO_DB_USER: ${PARTIO_DB_USER:-partio_app}
+      PARTIO_DB_PASS: ${PARTIO_DB_PASS:-partio_password}
+      LESS3_DB_NAME: ${LESS3_DB_NAME:-less3}
+      LESS3_DB_USER: ${LESS3_DB_USER:-less3_app}
+      LESS3_DB_PASS: ${LESS3_DB_PASS:-less3_password}
+      RECALLDB_DB_NAME: ${RECALLDB_DB_NAME:-recalldb}
+      RECALLDB_DB_USER: ${RECALLDB_DB_USER:-recalldb_app}
+      RECALLDB_DB_PASS: ${RECALLDB_DB_PASS:-recalldb_password}
+      PGPASSWORD: ${POSTGRES_SUPERPASS:-password}
+    volumes:
+      - ./postgres/init.sh:/init/postgres-init.sh:ro
     entrypoint:
       - bash
       - -c
       - |
-        set -e
-        echo "Checking if database 'recalldb' exists..."
-        DB_EXISTS=$$(psql -h pgvector -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'recalldb'")
-        if [ "$$DB_EXISTS" != "1" ]; then
-          echo "Creating database 'recalldb'..."
-          psql -h pgvector -U postgres -c "CREATE DATABASE recalldb;"
-          echo "Database 'recalldb' created."
-        else
-          echo "Database 'recalldb' already exists."
-        fi
-        echo "Ensuring vector extension is enabled..."
-        psql -h pgvector -U postgres -d recalldb -c "CREATE EXTENSION IF NOT EXISTS vector;"
-        echo "RecallDB initialization complete."
+        bash /init/postgres-init.sh
     depends_on:
-      pgvector:
+      postgres:
         condition: service_healthy
     restart: "no"
 
@@ -197,16 +208,16 @@ services:
     ports:
       - "8401:8600"
     environment:
-      RECALLDB_DB_HOST: pgvector
+      RECALLDB_DB_HOST: postgres
       RECALLDB_DB_PORT: "5432"
-      RECALLDB_DB_NAME: recalldb
-      RECALLDB_DB_USER: postgres
-      RECALLDB_DB_PASS: password
+      RECALLDB_DB_NAME: ${RECALLDB_DB_NAME:-recalldb}
+      RECALLDB_DB_USER: ${RECALLDB_DB_USER:-recalldb_app}
+      RECALLDB_DB_PASS: ${RECALLDB_DB_PASS:-recalldb_password}
     volumes:
       - ./recalldb/recalldb.json:/app/recalldb.json:ro
       - ./recalldb/logs/:/app/logs/
     depends_on:
-      recalldb-init:
+      postgres-init:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8600/"]
@@ -230,25 +241,6 @@ services:
 
   # --- AssistantHub ---
 
-  assistanthub-db-init:
-    image: alpine:latest
-    container_name: assistanthub-db-init
-    volumes:
-      - ./assistanthub/:/data/
-    entrypoint:
-      - sh
-      - -c
-      - |
-        mkdir -p /data/data
-        if [ ! -f /data/data/assistanthub.db ]; then
-          apk add --no-cache sqlite > /dev/null 2>&1
-          sqlite3 /data/data/assistanthub.db "VACUUM;"
-          echo "Created new assistanthub.db"
-        else
-          echo "assistanthub.db already exists, skipping"
-        fi
-    restart: "no"
-
   assistanthub-server:
     image: jchristn77/assistanthub-server:v0.13.0
     container_name: assistanthub-server
@@ -256,15 +248,12 @@ services:
       - "8800:8800"
     volumes:
       - ./assistanthub/assistanthub.json:/app/assistanthub.json
-      - ./assistanthub/data/:/app/data/
       - ./assistanthub/logs/:/app/logs/
       - ./assistanthub/processing-logs/:/app/processing-logs/
       - ./assistanthub/crawl-enumerations/:/app/crawl-enumerations/
     depends_on:
-      assistanthub-db-init:
+      postgres-init:
         condition: service_completed_successfully
-      pgvector:
-        condition: service_healthy
       less3:
         condition: service_healthy
       recalldb-server:
@@ -314,5 +303,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgvector-data:
+  postgres-data:
   ollama-models:

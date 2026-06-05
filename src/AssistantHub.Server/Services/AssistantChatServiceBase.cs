@@ -396,7 +396,15 @@ namespace AssistantHub.Server.Services
                 {
                     List<ChatHistoryPerformanceEvent> events =
                         AssistantPerformanceTelemetryBuilder.ToEvents(telemetry, history.TenantId);
-                    await _Database.ChatHistoryPerformanceEvent.CreateManyAsync(events, token).ConfigureAwait(false);
+                    if (events.Count > 0)
+                    {
+                        await _Database.ChatHistoryPerformanceEvent.CreateManyAsync(events, token).ConfigureAwait(false);
+                        _Logging.Debug(_Header + "persisted " + events.Count + " performance event row(s) for chat history " + history.Id);
+                    }
+                    else
+                    {
+                        _Logging.Warn(_Header + "no performance event rows generated for chat history " + history.Id);
+                    }
                 }
 
                 return history;

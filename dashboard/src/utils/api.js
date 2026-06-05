@@ -497,6 +497,23 @@ export class ApiClient {
   getAllEmbeddingEndpointHealth() { return this.request('GET', '/v1.0/endpoints/embedding/health'); }
   getEmbeddingEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/embedding/${id}/health`); }
   testEmbeddingEndpoint(id, body) { return this.request('POST', `/v1.0/endpoints/embedding/${id}/test`, body || {}); }
+  async loadEmbeddingEndpointModel(id, body) {
+    const response = await this.requestRaw({
+      method: 'POST',
+      path: `/v1.0/endpoints/embedding/${id}/load`,
+      body: body || {}
+    });
+    return {
+      ...(response.json || {}),
+      HttpStatusCode: response.statusCode,
+      ResponseHeaders: response.headers,
+      RawResponseText: response.text,
+      RequestElapsedMs: response.elapsedMs,
+      Success: response.json?.Success ?? response.ok,
+      StatusCode: response.json?.StatusCode ?? response.statusCode,
+      ErrorMessage: response.errorMessage
+    };
+  }
 
   // Completion Endpoints
   createCompletionEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/completion', endpoint); }
@@ -509,6 +526,23 @@ export class ApiClient {
   getAllCompletionEndpointHealth() { return this.request('GET', '/v1.0/endpoints/completion/health'); }
   getCompletionEndpointHealth(id) { return this.request('GET', `/v1.0/endpoints/completion/${id}/health`); }
   testCompletionEndpoint(id, body) { return this.request('POST', `/v1.0/endpoints/completion/${id}/test`, body || {}); }
+  async loadCompletionEndpointModel(id, body) {
+    const response = await this.requestRaw({
+      method: 'POST',
+      path: `/v1.0/endpoints/completion/${id}/load`,
+      body: body || {}
+    });
+    return {
+      ...(response.json || {}),
+      HttpStatusCode: response.statusCode,
+      ResponseHeaders: response.headers,
+      RawResponseText: response.text,
+      RequestElapsedMs: response.elapsedMs,
+      Success: response.json?.Success ?? response.ok,
+      StatusCode: response.json?.StatusCode ?? response.statusCode,
+      ErrorMessage: response.errorMessage
+    };
+  }
 
   // Ingestion Rules
   createIngestionRule(rule) { return this.request('PUT', '/v1.0/ingestion-rules', rule); }

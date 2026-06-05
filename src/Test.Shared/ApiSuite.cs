@@ -2,6 +2,7 @@ namespace Test.Automated
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Models;
@@ -146,7 +147,61 @@ namespace Test.Automated
                 AssertHelper.AreEqual("user@example.com", ctx.Email, "Email");
             });
 
+            await ExecuteTestAsync("Endpoint model load: AssistantHub routes proxy through Partio handlers", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string embeddingHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "EmbeddingEndpointHandler.cs"));
+                string completionHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "CompletionEndpointHandler.cs"));
+
+                AssertHelper.StringContains(serverSource, "/v1.0/endpoints/embedding/{endpointId}/load", "embedding load route");
+                AssertHelper.StringContains(serverSource, "LoadEmbeddingEndpointModelAsync", "embedding load route handler");
+                AssertHelper.StringContains(serverSource, "/v1.0/endpoints/completion/{endpointId}/load", "completion load route");
+                AssertHelper.StringContains(serverSource, "LoadCompletionEndpointModelAsync", "completion load route handler");
+                AssertHelper.StringContains(embeddingHandlerSource, "/v1.0/endpoints/embedding/\" + endpointId + \"/load", "embedding Partio load path");
+                AssertHelper.StringContains(completionHandlerSource, "/v1.0/endpoints/completion/\" + endpointId + \"/load", "completion Partio load path");
+                AssertHelper.StringContains(embeddingHandlerSource, "CopyModelLoadHeaders(resp, ctx)", "embedding model-load headers");
+                AssertHelper.StringContains(completionHandlerSource, "CopyModelLoadHeaders(resp, ctx)", "completion model-load headers");
+            });
+
+            await ExecuteTestAsync("Endpoint model load: dashboard actions and client methods are wired", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string apiClientSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "utils", "api.js"));
+                string embeddingViewSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "EmbeddingEndpointsView.jsx"));
+                string inferenceViewSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "InferenceEndpointsView.jsx"));
+                string apiExplorerSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "apiExplorerUtils.js"));
+
+                AssertHelper.StringContains(apiClientSource, "loadEmbeddingEndpointModel", "embedding load API client method");
+                AssertHelper.StringContains(apiClientSource, "/v1.0/endpoints/embedding/${id}/load", "embedding load API client route");
+                AssertHelper.StringContains(apiClientSource, "loadCompletionEndpointModel", "completion load API client method");
+                AssertHelper.StringContains(apiClientSource, "/v1.0/endpoints/completion/${id}/load", "completion load API client route");
+                AssertHelper.StringContains(embeddingViewSource, "label: 'Load Model'", "embedding load action");
+                AssertHelper.StringContains(inferenceViewSource, "label: 'Load Model'", "inference load action");
+                AssertHelper.StringContains(apiExplorerSource, "POST:/v1.0/endpoints/embedding/{endpointId}/load", "embedding load explorer template");
+                AssertHelper.StringContains(apiExplorerSource, "POST:/v1.0/endpoints/completion/{endpointId}/load", "completion load explorer template");
+            });
+
             return GetResults();
+        }
+
+        private static string GetRepositoryRoot()
+        {
+            DirectoryInfo directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+            while (directory != null)
+            {
+                bool hasDashboard = Directory.Exists(Path.Combine(directory.FullName, "dashboard"));
+                bool hasSource = Directory.Exists(Path.Combine(directory.FullName, "src"));
+                bool hasRestApi = File.Exists(Path.Combine(directory.FullName, "REST_API.md"));
+
+                if (hasDashboard && hasSource && hasRestApi)
+                    return directory.FullName;
+
+                directory = directory.Parent;
+            }
+
+            throw new DirectoryNotFoundException("Unable to locate the AssistantHub repository root.");
         }
     }
 }

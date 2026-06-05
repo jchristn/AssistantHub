@@ -17,18 +17,25 @@ namespace Test.Automated
         private readonly DateTime _StartUtc;
         private readonly string _TrueLiteral;
         private readonly string _FalseLiteral;
+        private readonly bool _ZeroSecondRequestDuration;
         private readonly List<string> _Queries = new List<string>();
 
         public AnalyticsDatabaseDriver(DateTime startUtc)
-            : this(startUtc, "1", "0")
+            : this(startUtc, "1", "0", false)
         {
         }
 
         public AnalyticsDatabaseDriver(DateTime startUtc, string trueLiteral, string falseLiteral)
+            : this(startUtc, trueLiteral, falseLiteral, false)
+        {
+        }
+
+        public AnalyticsDatabaseDriver(DateTime startUtc, string trueLiteral, string falseLiteral, bool zeroSecondRequestDuration)
         {
             _StartUtc = startUtc;
             _TrueLiteral = trueLiteral;
             _FalseLiteral = falseLiteral;
+            _ZeroSecondRequestDuration = zeroSecondRequestDuration;
         }
 
         public IReadOnlyList<string> Queries => _Queries;
@@ -77,7 +84,8 @@ namespace Test.Automated
                 "created_utc");
 
             AddRow(table, "req_1", "trace_1", "chist_1", "ten_test", "asst_test", "thr_1", "AssistantChat", "api", "POST", "/v1.0/assistants/asst_test/chat", "200", "true", "1000", _StartUtc.AddMinutes(1).ToString("o"));
-            AddRow(table, "req_2", "trace_2", "chist_2", "ten_test", "asst_test", "thr_1", "AssistantChat", "api", "POST", "/v1.0/assistants/asst_test/chat", "500", "false", "2000", _StartUtc.AddMinutes(6).ToString("o"));
+            string secondRequestDurationMs = _ZeroSecondRequestDuration ? "0" : "2000";
+            AddRow(table, "req_2", "trace_2", "chist_2", "ten_test", "asst_test", "thr_1", "AssistantChat", "api", "POST", "/v1.0/assistants/asst_test/chat", "500", "false", secondRequestDurationMs, _StartUtc.AddMinutes(6).ToString("o"));
             return table;
         }
 

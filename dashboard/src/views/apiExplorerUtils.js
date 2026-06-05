@@ -11,12 +11,38 @@ const SPECIAL_OPERATION_OVERRIDES = {
       TimeoutMs: 60000,
     },
   },
+  'POST:/v1.0/endpoints/completion/{endpointId}/load': {
+    summary: 'Load completion endpoint model',
+    description: 'Load or warm the configured model through AssistantHub and Partio.',
+    bodyTemplate: {
+      Strategy: 'Auto',
+      TimeoutMs: 60000,
+      KeepAlive: '30m',
+      SampleInput: 'Partio model load probe',
+      MaxTokens: 1,
+      RecordRequestHistory: true,
+      RequireNativeLoad: false,
+    },
+  },
   'POST:/v1.0/endpoints/embedding/{endpointId}/test': {
     summary: 'Test embedding endpoint',
     description: 'Run a smoke test through AssistantHub against a Partio embedding endpoint.',
     bodyTemplate: {
       Input: 'AssistantHub embedding smoke test input',
       L2Normalization: false,
+    },
+  },
+  'POST:/v1.0/endpoints/embedding/{endpointId}/load': {
+    summary: 'Load embedding endpoint model',
+    description: 'Load or warm the configured embedding model through AssistantHub and Partio.',
+    bodyTemplate: {
+      Strategy: 'Auto',
+      TimeoutMs: 60000,
+      KeepAlive: '30m',
+      SampleInput: 'Partio model load probe',
+      MaxTokens: 1,
+      RecordRequestHistory: true,
+      RequireNativeLoad: false,
     },
   },
 };

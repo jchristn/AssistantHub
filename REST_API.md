@@ -1449,6 +1449,58 @@ Run a smoke test against a specific embedding endpoint through AssistantHub's Pa
 - `404` -- Endpoint not found.
 - `502` -- Partio or upstream provider unavailable.
 
+### POST /v1.0/endpoints/embedding/{endpointId}/load
+
+Load or warm the configured embedding endpoint model through AssistantHub's Partio proxy. AssistantHub forwards the request to Partio and returns Partio's status code and response payload.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Strategy": "Auto",
+  "TimeoutMs": 60000,
+  "KeepAlive": "30m",
+  "SampleInput": "Partio model load probe",
+  "MaxTokens": 1,
+  "RecordRequestHistory": true,
+  "RequireNativeLoad": false
+}
+```
+
+**Response (200 OK on success, mapped non-2xx on failure):**
+
+```json
+{
+  "Success": true,
+  "StatusCode": 200,
+  "Outcome": "Loaded",
+  "EndpointType": "Embedding",
+  "EndpointId": "ep_abc123",
+  "TenantId": "default",
+  "ApiFormat": "Ollama",
+  "Model": "nomic-embed-text",
+  "Strategy": "NativeProviderLoad",
+  "Message": "Ollama accepted the preload request.",
+  "ResponseTimeMs": 482.5,
+  "StartedUtc": "2026-06-05T18:00:00Z",
+  "CompletedUtc": "2026-06-05T18:00:01Z",
+  "RequestHistoryId": "req_abc123",
+  "EmbeddingCalls": [],
+  "CompletionCalls": null
+}
+```
+
+**Error Responses:** Partio-mapped model-load errors are returned with the same response shape.
+- `400` -- Invalid request body or unload-style keep-alive value.
+- `403` -- Not an admin user.
+- `404` -- Endpoint not found.
+- `409` -- Native provider load was required but unsupported by the configured provider.
+- `429` -- Endpoint concurrency limit reached.
+- `502` -- Partio or upstream provider failure.
+- `504` -- Upstream provider timeout.
+
 ---
 
 ## Completion Endpoints (Admin Only)
@@ -1613,6 +1665,58 @@ Run a smoke test against a specific completion endpoint through AssistantHub's P
 - `403` -- Not an admin user.
 - `404` -- Endpoint not found.
 - `502` -- Partio or upstream provider unavailable.
+
+### POST /v1.0/endpoints/completion/{endpointId}/load
+
+Load or warm the configured completion endpoint model through AssistantHub's Partio proxy. AssistantHub forwards the request to Partio and returns Partio's status code and response payload.
+
+**Auth:** Required (admin only)
+
+**Request Body:**
+
+```json
+{
+  "Strategy": "Auto",
+  "TimeoutMs": 60000,
+  "KeepAlive": "30m",
+  "SampleInput": "Partio model load probe",
+  "MaxTokens": 1,
+  "RecordRequestHistory": true,
+  "RequireNativeLoad": false
+}
+```
+
+**Response (200 OK on success, mapped non-2xx on failure):**
+
+```json
+{
+  "Success": true,
+  "StatusCode": 200,
+  "Outcome": "Loaded",
+  "EndpointType": "Completion",
+  "EndpointId": "cep_abc123",
+  "TenantId": "default",
+  "ApiFormat": "Ollama",
+  "Model": "gemma3:4b",
+  "Strategy": "NativeProviderLoad",
+  "Message": "Ollama accepted the preload request.",
+  "ResponseTimeMs": 482.5,
+  "StartedUtc": "2026-06-05T18:00:00Z",
+  "CompletedUtc": "2026-06-05T18:00:01Z",
+  "RequestHistoryId": "req_abc123",
+  "EmbeddingCalls": null,
+  "CompletionCalls": []
+}
+```
+
+**Error Responses:** Partio-mapped model-load errors are returned with the same response shape.
+- `400` -- Invalid request body or unload-style keep-alive value.
+- `403` -- Not an admin user.
+- `404` -- Endpoint not found.
+- `409` -- Native provider load was required but unsupported by the configured provider.
+- `429` -- Endpoint concurrency limit reached.
+- `502` -- Partio or upstream provider failure.
+- `504` -- Upstream provider timeout.
 
 ---
 

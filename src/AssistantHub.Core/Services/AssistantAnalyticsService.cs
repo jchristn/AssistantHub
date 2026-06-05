@@ -410,7 +410,8 @@ namespace AssistantHub.Core.Services
                 GeneratedUtc = DateTime.UtcNow
             };
 
-            foreach (RequestAnalyticsRow request in requests.OrderByDescending(r => r.DurationMs).Take(limit))
+            List<AssistantAnalyticsSlowRequest> slowRequests = new List<AssistantAnalyticsSlowRequest>();
+            foreach (RequestAnalyticsRow request in requests)
             {
                 List<ChatHistoryPerformanceEvent> requestEvents = new List<ChatHistoryPerformanceEvent>();
                 if (!String.IsNullOrEmpty(request.Id) && eventsByRequest.TryGetValue(request.Id, out List<ChatHistoryPerformanceEvent> byRequest))
@@ -418,12 +419,15 @@ namespace AssistantHub.Core.Services
                 if (!String.IsNullOrEmpty(request.ChatHistoryId) && eventsByChat.TryGetValue(request.ChatHistoryId, out List<ChatHistoryPerformanceEvent> byChat))
                     requestEvents.AddRange(byChat);
 
+                requestEvents = requestEvents.GroupBy(BuildEventIdentity).Select(g => g.First()).ToList();
                 ChatHistoryPerformanceEvent dominant = requestEvents
                     .Where(e => e.DurationMs > 0)
                     .OrderByDescending(e => e.DurationMs)
                     .FirstOrDefault();
 
-                ret.Requests.Add(new AssistantAnalyticsSlowRequest
+                double durationMs = ResolveRequestDurationMs(request.DurationMs, requestEvents);
+
+                slowRequests.Add(new AssistantAnalyticsSlowRequest
                 {
                     RequestHistoryId = request.Id,
                     ChatHistoryId = request.ChatHistoryId,
@@ -431,7 +435,7 @@ namespace AssistantHub.Core.Services
                     CreatedUtc = request.CreatedUtc,
                     StatusCode = request.StatusCode,
                     Success = request.Success,
-                    DurationMs = request.DurationMs,
+                    DurationMs = Math.Round(durationMs, 2),
                     RequestPath = request.RequestPath,
                     DominantStage = dominant?.Stage,
                     DominantStageDurationMs = dominant == null ? null : Math.Round(dominant.DurationMs, 2),
@@ -440,6 +444,11 @@ namespace AssistantHub.Core.Services
                     Provider = dominant?.Provider,
                     Model = dominant?.Model
                 });
+            }
+
+            foreach (AssistantAnalyticsSlowRequest request in slowRequests.OrderByDescending(r => r.DurationMs).Take(limit))
+            {
+                ret.Requests.Add(request);
             }
 
             return ret;
@@ -496,6 +505,15 @@ namespace AssistantHub.Core.Services
         private async Task<List<RequestAnalyticsRow>> LoadRequestsAsync(AssistantAnalyticsFilter filter, AssistantAnalyticsRange range, CancellationToken token)
         {
             string successFallback = _Database.FormatBoolean(true);
+            string chatDurationExpression =
+                "COALESCE(h.retrieval_duration_ms, 0) + COALESCE(h.retrieval_gate_duration_ms, 0) + " +
+                "COALESCE(h.query_rewrite_duration_ms, 0) + COALESCE(h.rerank_duration_ms, 0) + " +
+                "COALESCE(h.endpoint_resolution_duration_ms, 0) + COALESCE(h.compaction_duration_ms, 0) + " +
+                "COALESCE(h.inference_connection_duration_ms, 0) + COALESCE(h.time_to_last_token_ms, 0)";
+            string requestDurationExpression =
+                "CASE WHEN r.duration_ms IS NULL OR r.duration_ms <= 0 THEN " +
+                chatDurationExpression +
+                " ELSE r.duration_ms END";
             string query =
                 "SELECT " +
                 "COALESCE(r.id, h.request_history_id) AS id, " +
@@ -510,9 +528,7 @@ namespace AssistantHub.Core.Services
                 "COALESCE(r.request_path, '') AS request_path, " +
                 "COALESCE(r.status_code, 200) AS status_code, " +
                 "CASE WHEN r.id IS NULL THEN " + successFallback + " ELSE r.success END AS success, " +
-                "COALESCE(r.duration_ms, " +
-                "h.retrieval_duration_ms + h.retrieval_gate_duration_ms + h.query_rewrite_duration_ms + h.rerank_duration_ms + " +
-                "h.endpoint_resolution_duration_ms + h.compaction_duration_ms + h.inference_connection_duration_ms + h.time_to_last_token_ms) AS duration_ms, " +
+                requestDurationExpression + " AS duration_ms, " +
                 "COALESCE(r.created_utc, h.created_utc) AS created_utc " +
                 "FROM chat_history h " +
                 "LEFT JOIN request_history r ON (r.id = h.request_history_id OR r.chat_history_id = h.id) " +
@@ -793,6 +809,41 @@ namespace AssistantHub.Core.Services
             List<double> list = values?.Where(v => !Double.IsNaN(v) && !Double.IsInfinity(v)).ToList() ?? new List<double>();
             if (list.Count < 1) return null;
             return Math.Round(list.Average(), 2);
+        }
+
+        private static double ResolveRequestDurationMs(double requestDurationMs, List<ChatHistoryPerformanceEvent> events)
+        {
+            if (requestDurationMs > 0) return requestDurationMs;
+            if (events == null || events.Count < 1) return Math.Max(0, requestDurationMs);
+
+            double clientTotalMs = events
+                .Where(e => e.ClientTotalMs.HasValue && e.ClientTotalMs.GetValueOrDefault() > 0)
+                .Select(e => e.ClientTotalMs.GetValueOrDefault())
+                .DefaultIfEmpty(0)
+                .Max();
+            double stageDurationMs = events
+                .Where(e => e.DurationMs > 0)
+                .Select(e => e.DurationMs)
+                .DefaultIfEmpty(0)
+                .Sum();
+            double fallbackDurationMs = Math.Max(clientTotalMs, stageDurationMs);
+            if (fallbackDurationMs > 0) return fallbackDurationMs;
+
+            return Math.Max(0, requestDurationMs);
+        }
+
+        private static string BuildEventIdentity(ChatHistoryPerformanceEvent evt)
+        {
+            if (!String.IsNullOrEmpty(evt.Id)) return evt.Id;
+            return String.Join("|", new[]
+            {
+                evt.ChatHistoryId ?? String.Empty,
+                evt.RequestHistoryId ?? String.Empty,
+                evt.TraceId ?? String.Empty,
+                evt.SequenceNumber.ToString(CultureInfo.InvariantCulture),
+                evt.Stage ?? String.Empty,
+                evt.CreatedUtc.ToString("o", CultureInfo.InvariantCulture)
+            });
         }
 
         private static double? AverageNullable(IEnumerable<double?> values)

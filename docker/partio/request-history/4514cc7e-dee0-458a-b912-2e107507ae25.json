@@ -1,0 +1,24 @@
+{
+  "RequestHeaders": {
+    "Host": "partio-server:8400",
+    "Authorization": "Bearer partioadmin",
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": "19"
+  },
+  "RequestBody": "{\u0022MaxResults\u0022:1000}",
+  "ResponseHeaders": {
+    "Access-Control-Allow-Origin": "*",
+    "Connection": "close",
+    "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Expose-Headers": "",
+    "Accept": "*/*",
+    "Accept-Language": "en-US, en",
+    "Accept-Charset": "ISO-8859-1, utf-8",
+    "Cache-Control": "no-cache",
+    "Host": "3c3304e3d5f9:8400"
+  },
+  "ResponseBody": "{\u0022Data\u0022:[{\u0022Id\u0022:\u0022default\u0022,\u0022TenantId\u0022:\u0022default\u0022,\u0022Name\u0022:\u0022all-minilm\u0022,\u0022Model\u0022:\u0022all-minilm\u0022,\u0022Endpoint\u0022:\u0022http://ollama:11434\u0022,\u0022ApiFormat\u0022:\u0022Ollama\u0022,\u0022Active\u0022:true,\u0022EnableRequestHistory\u0022:false,\u0022Labels\u0022:[],\u0022Tags\u0022:{},\u0022HealthCheckEnabled\u0022:true,\u0022HealthCheckUrl\u0022:\u0022http://view.homedns.org:11434/api/tags\u0022,\u0022HealthCheckMethod\u0022:\u0022GET\u0022,\u0022HealthCheckIntervalMs\u0022:5000,\u0022HealthCheckTimeoutMs\u0022:2000,\u0022MaximumTimeoutMs\u0022:60000,\u0022MaxConcurrentRequests\u0022:2,\u0022HealthCheckExpectedStatusCode\u0022:200,\u0022HealthyThreshold\u0022:2,\u0022UnhealthyThreshold\u0022:2,\u0022HealthCheckUseAuth\u0022:false,\u0022Tokenization\u0022:{\u0022TokenizerKind\u0022:\u0022BertWordPiece\u0022,\u0022TokenizerModel\u0022:\u0022bert-base-uncased\u0022,\u0022MaxInputTokens\u0022:256,\u0022ReservedInputTokens\u0022:0,\u0022EffectiveInputBudget\u0022:256,\u0022BatchLimitMode\u0022:\u0022WholeRequest\u0022,\u0022AutoDetect\u0022:false},\u0022CreatedUtc\u0022:\u00222026-06-05T18:04:07.961728Z\u0022,\u0022LastUpdateUtc\u0022:\u00222026-06-05T22:27:23.128834Z\u0022}],\u0022TotalCount\u0022:1,\u0022HasMore\u0022:false}",
+  "EmbeddingCalls": null,
+  "CompletionCalls": null
+}

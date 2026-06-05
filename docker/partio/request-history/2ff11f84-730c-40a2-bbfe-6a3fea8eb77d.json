@@ -1,0 +1,22 @@
+{
+  "RequestHeaders": {
+    "Host": "partio-server:8400",
+    "Authorization": "Bearer partioadmin"
+  },
+  "RequestBody": null,
+  "ResponseHeaders": {
+    "Access-Control-Allow-Origin": "*",
+    "Connection": "close",
+    "Access-Control-Allow-Methods": "OPTIONS, HEAD, GET, PUT, POST, DELETE, PATCH",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Expose-Headers": "",
+    "Accept": "*/*",
+    "Accept-Language": "en-US, en",
+    "Accept-Charset": "ISO-8859-1, utf-8",
+    "Cache-Control": "no-cache",
+    "Host": "78f1799a859d:8400"
+  },
+  "ResponseBody": null,
+  "EmbeddingCalls": null,
+  "CompletionCalls": null
+}

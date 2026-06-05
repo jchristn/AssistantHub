@@ -563,6 +563,21 @@
             POST /v1.0/endpoints/completion/{endpointId}/test - Exercise a completion endpoint through Partio.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.LoadCompletionEndpointModelAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/completion/{endpointId}/load - Load or warm a completion endpoint model through Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.CopyModelLoadHeaders(System.Net.Http.HttpResponseMessage,WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Copy model-load metadata response headers from Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.CopyHeader(System.Net.Http.HttpResponseMessage,WatsonWebserver.Core.HttpContextBase,System.String)">
+            <summary>
+            Copy a response header from Partio when present.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.InjectTenantId(System.String)">
             <summary>
             Inject the default TenantId into a JSON request body if not already present.
@@ -904,6 +919,21 @@
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.TestEmbeddingEndpointAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/endpoints/embedding/{endpointId}/test - Exercise an embedding endpoint through Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.LoadEmbeddingEndpointModelAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/endpoints/embedding/{endpointId}/load - Load or warm an embedding endpoint model through Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.CopyModelLoadHeaders(System.Net.Http.HttpResponseMessage,WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Copy model-load metadata response headers from Partio.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.CopyHeader(System.Net.Http.HttpResponseMessage,WatsonWebserver.Core.HttpContextBase,System.String)">
+            <summary>
+            Copy a response header from Partio when present.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.InjectTenantId(System.String)">

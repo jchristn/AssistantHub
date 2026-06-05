@@ -9485,6 +9485,65 @@
             <param name="token">Cancellation token.</param>
             <returns>Feedback analytics result.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.AssistantPerformanceTelemetryBackfillService">
+            <summary>
+            Backfills normalized assistant performance event rows from chat history telemetry JSON.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBackfillService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the assistant performance telemetry backfill service.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBackfillService.BackfillMissingEventsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Backfill missing normalized performance event rows for all chat history records.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Number of inserted event rows.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder">
+            <summary>
+            Builds, serializes, and projects provider-agnostic assistant performance telemetry.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage)">
+            <summary>
+            Build provider-agnostic performance telemetry for a chat history row.
+            </summary>
+            <param name="history">Chat history row.</param>
+            <param name="finalInferenceStage">Measured final inference stage.</param>
+            <param name="retrievalQueryCount">Number of retrieval queries issued.</param>
+            <param name="retrievalChunksReturned">Number of chunks returned by retrieval.</param>
+            <param name="retrievalGateStage">Measured retrieval gate stage.</param>
+            <param name="queryRewriteStage">Measured query rewrite stage.</param>
+            <param name="rerankStage">Measured rerank stage.</param>
+            <returns>Provider-agnostic performance telemetry.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Serialize(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
+            <summary>
+            Serialize provider-agnostic performance telemetry.
+            </summary>
+            <param name="telemetry">Telemetry object.</param>
+            <returns>Serialized telemetry JSON, or null when telemetry is null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Deserialize(System.String)">
+            <summary>
+            Deserialize provider-agnostic performance telemetry.
+            </summary>
+            <param name="json">Serialized telemetry JSON.</param>
+            <returns>Deserialized telemetry, or null when input is empty.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.ToEvents(AssistantHub.Core.Models.AssistantPerformanceTelemetry,System.String)">
+            <summary>
+            Project provider-agnostic performance telemetry into normalized database event rows.
+            </summary>
+            <param name="telemetry">Telemetry object.</param>
+            <param name="tenantId">Tenant identifier.</param>
+            <returns>Normalized performance event rows.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.AtomResponse">
             <summary>
             Atom response from DocumentAtom.

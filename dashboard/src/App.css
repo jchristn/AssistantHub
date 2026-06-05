@@ -3457,15 +3457,25 @@ body {
 .analytics-header-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
-.analytics-header-controls select {
+.analytics-assistant-control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   flex: 1 1 22rem;
   min-width: 0;
-  width: min(360px, 62vw);
+  max-width: 32rem;
+}
+
+.analytics-assistant-control-group select {
+  flex: 1 1 auto;
+  min-width: 12rem;
+  width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--input-border);
   border-radius: var(--radius-sm);
@@ -3542,6 +3552,10 @@ body {
   border-radius: var(--radius-sm);
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.analytics-header-range-selector {
+  flex: 0 0 auto;
 }
 
 .analytics-range-selector button {
@@ -3665,6 +3679,14 @@ body {
     linear-gradient(to bottom, transparent 0, transparent 74%, var(--border-light) 75%, transparent 76%);
 }
 
+.analytics-chart-body {
+  display: grid;
+  grid-template-columns: 3.35rem minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
 .analytics-bar-column {
   height: 100%;
   display: flex;
@@ -3720,11 +3742,18 @@ body {
   stroke-width: 1;
 }
 
+.analytics-chart-x-axis {
+  display: grid;
+  grid-template-columns: 3.35rem minmax(0, 1fr);
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  min-width: 0;
+}
+
 .analytics-axis-labels {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-top: 0.4rem;
   font-size: 0.7rem;
   color: var(--text-secondary);
   overflow: hidden;
@@ -3734,6 +3763,27 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.analytics-y-axis-labels {
+  position: relative;
+  align-self: stretch;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1;
+  overflow: visible;
+}
+
+.analytics-y-axis-labels span {
+  position: absolute;
+  right: 0;
+  max-width: 3.1rem;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
 }
 
 .analytics-tooltip {
@@ -3835,10 +3885,18 @@ body {
 
   .analytics-header-controls {
     width: 100%;
+    align-items: stretch;
+    justify-content: flex-start;
   }
 
-  .analytics-header-controls select {
-    width: auto;
+  .analytics-assistant-control-group {
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+  }
+
+  .analytics-assistant-control-group select {
+    min-width: 0;
   }
 
   .analytics-bar-chart,

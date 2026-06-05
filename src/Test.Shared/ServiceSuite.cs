@@ -3,14 +3,19 @@ namespace Test.Automated
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Core.Database;
+    using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
+    using AssistantHub.Core.Settings;
     using AssistantHub.Server.Services;
+    using SyslogLogging;
     using Test.Shared;
 
     public class ServiceSuite : SuiteBase
@@ -307,6 +312,116 @@ namespace Test.Automated
                 AssertHelper.AreEqual("final_inference", events[0].Stage, "stored event stage");
             });
 
+            await ExecuteTestAsync("SQLite telemetry backfill: materializes analytics event rows", async () =>
+            {
+                string dbPath = Path.Combine(Path.GetTempPath(), "assistanthub_telemetry_" + Guid.NewGuid().ToString("N") + ".db");
+                DatabaseDriverBase database = null;
+                try
+                {
+                    LoggingModule logging = new LoggingModule();
+                    logging.Settings.EnableConsole = false;
+                    database = await DatabaseDriverFactory.CreateAndInitializeAsync(new DatabaseSettings
+                    {
+                        Type = DatabaseTypeEnum.Sqlite,
+                        Filename = dbPath
+                    }, logging).ConfigureAwait(false);
+
+                    string tenantId = "ten_telemetry";
+                    string assistantId = "asst_telemetry";
+                    DateTime createdUtc = DateTime.UtcNow.AddMinutes(-5);
+
+                    await database.Tenant.CreateAsync(new TenantMetadata
+                    {
+                        Id = tenantId,
+                        Name = "Telemetry Tenant"
+                    }).ConfigureAwait(false);
+
+                    ChatHistory history = new ChatHistory
+                    {
+                        TenantId = tenantId,
+                        AssistantId = assistantId,
+                        ThreadId = "thr_telemetry",
+                        TraceId = "trace_telemetry",
+                        RequestHistoryId = "req_telemetry",
+                        UserMessage = "hello",
+                        AssistantResponse = "world",
+                        CreatedUtc = createdUtc,
+                        LastUpdateUtc = createdUtc,
+                        PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(new AssistantPerformanceTelemetry
+                        {
+                            TraceId = "trace_telemetry",
+                            ChatHistoryId = null,
+                            RequestHistoryId = "req_telemetry",
+                            AssistantId = assistantId,
+                            CreatedUtc = createdUtc,
+                            Stages = new List<AssistantPerformanceStage>
+                            {
+                                new AssistantPerformanceStage
+                                {
+                                    Name = "retrieval",
+                                    Kind = "retrieval",
+                                    Sequence = 30,
+                                    DurationMs = 50,
+                                    Success = true,
+                                    Metadata = new Dictionary<string, object>
+                                    {
+                                        ["retrieval_query_count"] = 2,
+                                        ["chunks_output"] = 3
+                                    }
+                                },
+                                new AssistantPerformanceStage
+                                {
+                                    Name = "final_inference",
+                                    Kind = "inference",
+                                    Sequence = 70,
+                                    EndpointId = "cep_telemetry",
+                                    EndpointName = "Test endpoint",
+                                    EndpointType = "completion",
+                                    Provider = "Ollama",
+                                    ApiFormat = "Ollama",
+                                    Model = "gemma3:4b",
+                                    DurationMs = 250,
+                                    Success = true
+                                }
+                            }
+                        })
+                    };
+
+                    history = await database.ChatHistory.CreateAsync(history).ConfigureAwait(false);
+                    AssistantPerformanceTelemetryBackfillService backfill = new AssistantPerformanceTelemetryBackfillService(database, logging);
+                    int inserted = await backfill.BackfillMissingEventsAsync().ConfigureAwait(false);
+                    List<ChatHistoryPerformanceEvent> events = await database.ChatHistoryPerformanceEvent.ListByChatHistoryIdAsync(history.Id).ConfigureAwait(false);
+
+                    AssertHelper.AreEqual(2, inserted, "backfilled event count");
+                    AssertHelper.HasCount(events, 2, "sqlite persisted events");
+                    AssertHelper.AreEqual(assistantId, events[0].AssistantId, "event AssistantId");
+                    AssertHelper.AreEqual(history.Id, events[0].ChatHistoryId, "event ChatHistoryId");
+
+                    AssistantAnalyticsService analytics = new AssistantAnalyticsService(database);
+                    AssistantAnalyticsStageResult stages = await analytics.GetStagesAsync(new AssistantAnalyticsFilter
+                    {
+                        TenantId = tenantId,
+                        AssistantId = assistantId,
+                        StartUtc = createdUtc.AddMinutes(-1),
+                        EndUtc = createdUtc.AddMinutes(10),
+                        BucketSeconds = 600
+                    }).ConfigureAwait(false);
+
+                    AssistantAnalyticsStageBucket finalStage = stages.Buckets.Find(bucket => bucket.Stage == "final_inference");
+                    AssertHelper.IsNotNull(finalStage, "analytics final stage bucket");
+                    AssertHelper.AreEqual(1, finalStage.Calls, "analytics final stage calls");
+                    AssertHelper.AreEqual(250.0, finalStage.AverageDurationMs.Value, "analytics final stage duration");
+                }
+                finally
+                {
+                    IDisposable disposable = database as IDisposable;
+                    disposable?.Dispose();
+                    TryDeleteFile(dbPath);
+                    TryDeleteFile(dbPath + "-wal");
+                    TryDeleteFile(dbPath + "-shm");
+                }
+            });
+
             await ExecuteTestAsync("AssistantAnalyticsService.ResolveRange: caps explicit bucket count", async () =>
             {
                 AssistantAnalyticsService service = new AssistantAnalyticsService(new MockDatabaseDriver());
@@ -376,6 +491,7 @@ namespace Test.Automated
                 AssistantAnalyticsSlowestResult slowest = await service.GetSlowestAsync(filter).ConfigureAwait(false);
                 AssertHelper.HasCount(slowest.Requests, 2, "slowest requests");
                 AssertHelper.AreEqual("req_2", slowest.Requests[0].RequestHistoryId, "slowest request id");
+                AssertHelper.AreEqual(2000.0, slowest.Requests[0].DurationMs, "slowest duration");
                 AssertHelper.AreEqual("final_inference", slowest.Requests[0].DominantStage, "slowest dominant stage");
 
                 AssistantAnalyticsFeedbackResult feedback = await service.GetFeedbackAsync(filter).ConfigureAwait(false);
@@ -384,6 +500,28 @@ namespace Test.Automated
                 AssertHelper.AreEqual(1, feedback.ThumbsDownCount, "feedback thumbs down");
                 AssertHelper.AreEqual(0.5, feedback.NegativeRate.Value, "feedback negative rate");
                 AssertHelper.HasCount(feedback.Buckets, 2, "feedback buckets");
+            });
+
+            await ExecuteTestAsync("AssistantAnalyticsService: slowest requests recover zero request durations", async () =>
+            {
+                DateTime start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                AssistantAnalyticsFilter filter = new AssistantAnalyticsFilter
+                {
+                    TenantId = "ten_test",
+                    AssistantId = "asst_test",
+                    StartUtc = start,
+                    EndUtc = start.AddMinutes(10),
+                    BucketSeconds = 300,
+                    Limit = 10
+                };
+
+                AssistantAnalyticsService service = new AssistantAnalyticsService(new AnalyticsDatabaseDriver(start, "1", "0", true));
+
+                AssistantAnalyticsSlowestResult slowest = await service.GetSlowestAsync(filter).ConfigureAwait(false);
+                AssertHelper.HasCount(slowest.Requests, 2, "slowest fallback requests");
+                AssertHelper.AreEqual("req_2", slowest.Requests[0].RequestHistoryId, "fallback slowest request id");
+                AssertHelper.AreEqual(1900.0, slowest.Requests[0].DurationMs, "fallback slowest duration");
+                AssertHelper.AreEqual("final_inference", slowest.Requests[0].DominantStage, "fallback dominant stage");
             });
 
             await ExecuteTestAsync("AssistantAnalyticsService: uses database boolean formatting for retained-chat fallback", async () =>
@@ -418,10 +556,26 @@ namespace Test.Automated
                     string requestQuery = driver.Queries.FirstOrDefault(query => query.Contains("LEFT JOIN request_history r", StringComparison.OrdinalIgnoreCase));
                     AssertHelper.IsNotNull(requestQuery, provider.Key + " request analytics query");
                     AssertHelper.StringContains(requestQuery, "CASE WHEN r.id IS NULL THEN " + provider.Value + " ELSE r.success END AS success", provider.Key + " success fallback");
+                    AssertHelper.StringContains(requestQuery, "CASE WHEN r.duration_ms IS NULL OR r.duration_ms <= 0 THEN", provider.Key + " duration fallback case");
+                    AssertHelper.StringContains(requestQuery, "COALESCE(h.time_to_last_token_ms, 0)", provider.Key + " chat duration null guard");
                 }
             });
 
             return GetResults();
+        }
+
+        private static void TryDeleteFile(string filename)
+        {
+            try
+            {
+                if (File.Exists(filename)) File.Delete(filename);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
     }
 }

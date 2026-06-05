@@ -172,7 +172,7 @@ Operational notes:
 - **Crawlers** -- Native web crawling engine that automatically discovers, retrieves, and ingests website content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, and web authentication (Basic, API Key, Bearer Token). Each crawled document is traceable back to its source crawler and operation.
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
-- **Endpoint Management** -- Manage embedding and completion (inference) endpoints on the Partio service directly from the dashboard or API.
+- **Endpoint Management** -- Manage, test, and explicitly load or warm embedding and completion (inference) endpoint models on the Partio service directly from the dashboard or API.
 - **Search** -- Leverages pgvector and RecallDB for vector, full-text, and hybrid search. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
 - **Retrieval Gate** -- Optional LLM-based retrieval gate that intelligently decides whether each user message requires a new document search or can be answered from existing conversation context, reducing unnecessary retrieval calls.
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (Ollama, OpenAI, Gemini). Supports real-time SSE streaming.
@@ -503,8 +503,8 @@ For complete endpoint documentation including request/response schemas and examp
 | Collection Records | `PUT/GET /v1.0/collections/{id}/records`, `GET/DELETE .../records/{recordId}` | Browse and manage records within collections (admin only) |
 | Collection Metadata | `GET /v1.0/collections/{id}/labels/distinct`, `GET .../tags/distinct` | Discover distinct label values and tag keys in a collection (admin only) |
 | Ingestion Rules | `PUT/GET /v1.0/ingestion-rules`, `GET/PUT/DELETE/HEAD /v1.0/ingestion-rules/{id}` | Document processing rule management |
-| Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio embedding endpoint management and smoke testing (admin only) |
-| Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test` | Partio completion endpoint management and smoke testing (admin only) |
+| Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test`, `POST .../load` | Partio embedding endpoint management, smoke testing, and model load/warm actions (admin only) |
+| Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test`, `POST .../load` | Partio completion endpoint management, smoke testing, and model load/warm actions (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
 | Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify` | Per-assistant endpoint, prompt, RAG, and Slack configuration. Includes draft Slack connectivity verification (owner or admin). |
 | Assistant Analytics | `GET /v1.0/assistants/{id}/analytics/{overview,timeseries,stages,endpoints,slowest,feedback}` | Assistant-scoped performance, endpoint, retrieval, slow request, and feedback analytics |

@@ -73,6 +73,7 @@ namespace AssistantHub.Server
             InitializeLogging();
             await InitializeDatabaseAsync();
             await InitializeFirstRunAsync();
+            await BackfillAssistantPerformanceTelemetryAsync();
             InitializeServices();
             await ValidateConnectivityAsync();
             await StartHealthCheckServiceAsync();
@@ -325,6 +326,21 @@ namespace AssistantHub.Server
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "could not provision RecallDB: " + e.Message);
+            }
+        }
+
+        private static async Task BackfillAssistantPerformanceTelemetryAsync()
+        {
+            try
+            {
+                AssistantPerformanceTelemetryBackfillService backfillService = new AssistantPerformanceTelemetryBackfillService(_Database, _Logging);
+                int inserted = await backfillService.BackfillMissingEventsAsync(_TokenSource.Token).ConfigureAwait(false);
+                if (inserted < 1)
+                    _Logging.Debug(_Header + "assistant performance telemetry backfill found no missing event rows");
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "assistant performance telemetry backfill skipped: " + e.Message);
             }
         }
 
@@ -733,6 +749,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/health", embeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/test", embeddingEndpointHandler.TestEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/load", embeddingEndpointHandler.LoadEmbeddingEndpointModelAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.DeleteEmbeddingEndpointAsync);
@@ -744,6 +761,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/health", completionEndpointHandler.GetAllCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/test", completionEndpointHandler.TestCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/load", completionEndpointHandler.LoadCompletionEndpointModelAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.DeleteCompletionEndpointAsync);

@@ -348,7 +348,73 @@ namespace AssistantHub.Server.Handlers
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
         }
+
+        /// <summary>
+        /// POST /v1.0/endpoints/embedding/{endpointId}/load - Load or warm an embedding endpoint model through Partio.
+        /// </summary>
+        public async Task LoadEmbeddingEndpointModelAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string endpointId = ctx.Request.Url.Parameters["endpointId"];
+                string body = String.IsNullOrWhiteSpace(ctx.Request.DataAsString) ? "{}" : ctx.Request.DataAsString;
+                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId + "/load";
+
+                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, partioUrl))
+                {
+                    req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                    using (HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false))
+                    {
+                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        CopyModelLoadHeaders(resp, ctx);
+
+                        ctx.Response.StatusCode = (int)resp.StatusCode;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(respBody).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in LoadEmbeddingEndpointModelAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
         #region Private-Methods
+
+        /// <summary>
+        /// Copy model-load metadata response headers from Partio.
+        /// </summary>
+        private static void CopyModelLoadHeaders(HttpResponseMessage resp, HttpContextBase ctx)
+        {
+            CopyHeader(resp, ctx, "X-Partio-Endpoint-Id");
+            CopyHeader(resp, ctx, "X-Model");
+            CopyHeader(resp, ctx, "X-Partio-Model");
+        }
+
+        /// <summary>
+        /// Copy a response header from Partio when present.
+        /// </summary>
+        private static void CopyHeader(HttpResponseMessage resp, HttpContextBase ctx, string name)
+        {
+            if (resp.Headers.TryGetValues(name, out IEnumerable<string> values))
+                ctx.Response.Headers.Add(name, String.Join(",", values));
+        }
 
         /// <summary>
         /// Inject the default TenantId into a JSON request body if not already present.

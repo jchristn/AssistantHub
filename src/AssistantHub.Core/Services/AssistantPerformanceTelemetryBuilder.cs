@@ -9,6 +9,9 @@ namespace AssistantHub.Core.Services
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
 
+    /// <summary>
+    /// Builds, serializes, and projects provider-agnostic assistant performance telemetry.
+    /// </summary>
     public static class AssistantPerformanceTelemetryBuilder
     {
         private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
@@ -19,6 +22,17 @@ namespace AssistantHub.Core.Services
             Converters = { new JsonStringEnumConverter() }
         };
 
+        /// <summary>
+        /// Build provider-agnostic performance telemetry for a chat history row.
+        /// </summary>
+        /// <param name="history">Chat history row.</param>
+        /// <param name="finalInferenceStage">Measured final inference stage.</param>
+        /// <param name="retrievalQueryCount">Number of retrieval queries issued.</param>
+        /// <param name="retrievalChunksReturned">Number of chunks returned by retrieval.</param>
+        /// <param name="retrievalGateStage">Measured retrieval gate stage.</param>
+        /// <param name="queryRewriteStage">Measured query rewrite stage.</param>
+        /// <param name="rerankStage">Measured rerank stage.</param>
+        /// <returns>Provider-agnostic performance telemetry.</returns>
         public static AssistantPerformanceTelemetry Build(
             ChatHistory history,
             AssistantPerformanceStage finalInferenceStage,
@@ -126,11 +140,33 @@ namespace AssistantHub.Core.Services
             return telemetry;
         }
 
+        /// <summary>
+        /// Serialize provider-agnostic performance telemetry.
+        /// </summary>
+        /// <param name="telemetry">Telemetry object.</param>
+        /// <returns>Serialized telemetry JSON, or null when telemetry is null.</returns>
         public static string Serialize(AssistantPerformanceTelemetry telemetry)
         {
             return telemetry == null ? null : JsonSerializer.Serialize(telemetry, _JsonOptions);
         }
 
+        /// <summary>
+        /// Deserialize provider-agnostic performance telemetry.
+        /// </summary>
+        /// <param name="json">Serialized telemetry JSON.</param>
+        /// <returns>Deserialized telemetry, or null when input is empty.</returns>
+        public static AssistantPerformanceTelemetry Deserialize(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return null;
+            return JsonSerializer.Deserialize<AssistantPerformanceTelemetry>(json, _JsonOptions);
+        }
+
+        /// <summary>
+        /// Project provider-agnostic performance telemetry into normalized database event rows.
+        /// </summary>
+        /// <param name="telemetry">Telemetry object.</param>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <returns>Normalized performance event rows.</returns>
         public static List<ChatHistoryPerformanceEvent> ToEvents(AssistantPerformanceTelemetry telemetry, string tenantId)
         {
             List<ChatHistoryPerformanceEvent> events = new List<ChatHistoryPerformanceEvent>();

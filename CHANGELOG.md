@@ -4,6 +4,7 @@
 
 ### Added
 - **AssistantHub MCP server**: Added standalone `AssistantHub.McpServer` with Voltaic HTTP, TCP, and WebSocket transports plus install support for Claude/Cursor MCP clients.
+- **Endpoint model loading**: Added AssistantHub proxy routes and dashboard actions for loading or warming Partio-managed embedding and inference endpoint models, with a custom status modal for Partio's load result payload.
 - **MCP management surface**: Added MCP tools for system/runtime inspection, authentication, tenants, users, credentials, buckets, bucket objects, collections, assistants, assistant settings, documents, ingestion rules, feedback, history, request history, endpoints, models, crawl plans, crawl operations, evaluation, and runtime configuration.
 - **MCP integration coverage**: Added shared MCP host/test harness support and automated MCP transport, CRUD, configuration-redaction, request-history, and install-path coverage.
 - **MCP docs and Docker assets**: Added `MCP_API.md`, `docs/CLAUDE_MCP.md`, `src/AssistantHub.McpServer/Dockerfile`, `build-mcp.bat`, and Docker compose/config assets for running the MCP server alongside the platform.

@@ -85,6 +85,7 @@
   letter-spacing: 0.03em;
 }
 
+.endpoint-test-card strong,
 .endpoint-test-card code,
 .endpoint-test-output,
 .endpoint-test-json {

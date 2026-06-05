@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
@@ -9,6 +9,10 @@ const RANGE_OPTIONS = [
   { id: 'lastWeek', label: 'Last week' },
   { id: 'lastMonth', label: 'Last month' },
 ];
+
+const MAX_X_AXIS_LABELS = 7;
+const MIN_Y_AXIS_LABELS = 2;
+const MAX_Y_AXIS_LABELS = 5;
 
 const CHART_COLORS = [
   '#2563eb',
@@ -23,17 +27,7 @@ const CHART_COLORS = [
   '#9333ea',
 ];
 
-const DEFAULT_RANGES = {
-  overview: 'lastDay',
-  volume: 'lastDay',
-  latency: 'lastDay',
-  stages: 'lastDay',
-  provider: 'lastDay',
-  endpoints: 'lastDay',
-  activity: 'lastDay',
-  slowest: 'lastDay',
-  feedback: 'lastDay',
-};
+const DEFAULT_RANGE = 'lastDay';
 
 function formatNumber(value, maximumFractionDigits = 0) {
   if (value == null || Number.isNaN(Number(value))) return '-';
@@ -68,6 +62,110 @@ function formatBucketLabel(value, rangeId) {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function roundAxisValue(value) {
+  if (Math.abs(value) < 0.000000001) return 0;
+  return Number(value.toPrecision(12));
+}
+
+function niceAxisStep(span) {
+  if (!Number.isFinite(span) || span <= 0) return 1;
+
+  const roughStep = span / (MAX_Y_AXIS_LABELS - 1);
+  const power = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const fraction = roughStep / power;
+
+  if (fraction <= 1) return power;
+  if (fraction <= 2) return 2 * power;
+  if (fraction <= 2.5) return 2.5 * power;
+  if (fraction <= 5) return 5 * power;
+  return 10 * power;
+}
+
+function nextNiceAxisStep(step) {
+  if (!Number.isFinite(step) || step <= 0) return 1;
+
+  const power = Math.pow(10, Math.floor(Math.log10(step)));
+  const fraction = step / power;
+
+  if (fraction < 2) return 2 * power;
+  if (fraction < 2.5) return 2.5 * power;
+  if (fraction < 5) return 5 * power;
+  if (fraction < 10) return 10 * power;
+  return 20 * power;
+}
+
+function buildAxisTicks(axisMin, axisMax, step) {
+  const ticks = [];
+  for (let value = axisMin; value <= axisMax + (step / 2); value += step) {
+    ticks.push(roundAxisValue(value));
+  }
+
+  return ticks;
+}
+
+function buildYAxisScale(minValue, maxValue, unit = '') {
+  let min = Number(minValue);
+  let max = Number(maxValue);
+
+  if (!Number.isFinite(min)) min = 0;
+  if (!Number.isFinite(max)) max = 1;
+  if (min > max) {
+    const previousMin = min;
+    min = max;
+    max = previousMin;
+  }
+
+  if (min === max) {
+    if (min === 0) {
+      max = 1;
+    } else {
+      const padding = Math.abs(min) * 0.1;
+      min -= padding;
+      max += padding;
+    }
+  }
+
+  if (min > 0) min = 0;
+
+  if (unit === 'count' && min >= 0 && Number.isInteger(max) && max <= MAX_Y_AXIS_LABELS - 1) {
+    const axisMax = Math.max(1, max);
+    const ticks = [];
+    for (let index = 0; index <= axisMax; index += 1) {
+      ticks.push(index);
+    }
+
+    return { min: 0, max: axisMax, ticks };
+  }
+
+  let step = niceAxisStep(max - min);
+  let axisMin = roundAxisValue(Math.floor(min / step) * step);
+  let axisMax = roundAxisValue(Math.ceil(max / step) * step);
+
+  if (axisMax <= axisMin) axisMax = roundAxisValue(axisMin + step);
+
+  let ticks = buildAxisTicks(axisMin, axisMax, step);
+  while (ticks.length > MAX_Y_AXIS_LABELS) {
+    step = nextNiceAxisStep(step);
+    axisMin = roundAxisValue(Math.floor(min / step) * step);
+    axisMax = roundAxisValue(Math.ceil(max / step) * step);
+    ticks = buildAxisTicks(axisMin, axisMax, step);
+  }
+
+  if (ticks.length < MIN_Y_AXIS_LABELS) {
+    ticks.push(axisMax);
+  }
+
+  return { min: axisMin, max: axisMax, ticks };
+}
+
+function formatAxisTickValue(value, unit) {
+  if (unit === 'ms') return formatDuration(value);
+  if (unit === 'ratio') return formatRate(value);
+  if (unit === 'tokens/s') return formatNumber(value, Math.abs(Number(value)) < 10 ? 1 : 0);
+  if (unit === 'count') return formatNumber(value, Number.isInteger(Number(value)) ? 0 : 2);
+  return formatNumber(value, Number.isInteger(Number(value)) ? 0 : 1);
+}
+
 function pointsFor(result, metric) {
   return result?.Series?.find((series) => series.Metric === metric)?.Points || [];
 }
@@ -80,9 +178,9 @@ function buildSeriesFromMetrics(result, definitions) {
   }));
 }
 
-function RangeSelector({ value, onChange }) {
+function RangeSelector({ value, onChange, className = '' }) {
   return (
-    <div className="analytics-range-selector" role="group" aria-label="Analytics range">
+    <div className={`analytics-range-selector ${className}`.trim()} role="group" aria-label="Analytics range">
       {RANGE_OPTIONS.map((option) => (
         <button
           key={option.id}
@@ -106,7 +204,7 @@ function RefreshIcon() {
   );
 }
 
-function ChartShell({ title, subtitle, range, onRangeChange, loading, error, children }) {
+function ChartShell({ title, subtitle, loading, error, children }) {
   return (
     <section className="analytics-panel">
       <div className="analytics-panel-header">
@@ -114,7 +212,6 @@ function ChartShell({ title, subtitle, range, onRangeChange, loading, error, chi
           <h2>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
         </div>
-        <RangeSelector value={range} onChange={onRangeChange} />
       </div>
       {loading ? (
         <div className="analytics-state">Loading...</div>
@@ -148,6 +245,9 @@ function StackedBarChart({ series, rangeId, unit = '', emptyMessage = 'No data i
     return <div className="analytics-state">{emptyMessage}</div>;
   }
 
+  const yAxisScale = buildYAxisScale(0, maxTotal, unit);
+  const yAxisSpan = yAxisScale.max - yAxisScale.min;
+
   return (
     <div className="analytics-chart-wrap">
       <div className="analytics-legend">
@@ -158,39 +258,43 @@ function StackedBarChart({ series, rangeId, unit = '', emptyMessage = 'No data i
           </span>
         ))}
       </div>
-      <div className="analytics-bar-chart" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
-        {points.map((point, index) => {
-          const total = series.reduce((sum, item) => sum + Math.max(0, Number(item.points?.[index]?.Value || 0)), 0);
-          const height = total > 0 ? Math.max(3, Math.round((total / maxTotal) * 100)) : 2;
-          const tooltipLines = series.map((item) => `${item.label}: ${formatNumber(item.points?.[index]?.Value || 0, unit === 'ratio' ? 2 : 0)}${unit && unit !== 'count' ? ` ${unit}` : ''}`);
+      <div className="analytics-chart-body">
+        <YAxisLabels scale={yAxisScale} unit={unit} />
+        <div className="analytics-bar-chart" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
+          {points.map((point, index) => {
+            const total = series.reduce((sum, item) => sum + Math.max(0, Number(item.points?.[index]?.Value || 0)), 0);
+            const scaledTotal = yAxisSpan > 0 ? (total - yAxisScale.min) / yAxisSpan : 0;
+            const height = total > 0 ? Math.max(3, Math.round(Math.min(1, Math.max(0, scaledTotal)) * 100)) : 2;
+            const tooltipLines = series.map((item) => `${item.label}: ${formatNumber(item.points?.[index]?.Value || 0, unit === 'ratio' ? 2 : 0)}${unit && unit !== 'count' ? ` ${unit}` : ''}`);
 
-          return (
-            <div
-              key={`${point.BucketStartUtc}-${index}`}
-              className="analytics-bar-column"
-              onMouseEnter={(event) => setTooltip({ point, total, tooltipLines, clientX: event.clientX, clientY: event.clientY })}
-              onMouseMove={(event) => setTooltip((current) => current ? { ...current, clientX: event.clientX, clientY: event.clientY } : current)}
-              onMouseLeave={() => setTooltip(null)}
-            >
-              <div className="analytics-bar-track">
-                <div className="analytics-bar-stack" style={{ height: `${height}%` }}>
-                  {series.map((item) => {
-                    const value = Math.max(0, Number(item.points?.[index]?.Value || 0));
-                    const segmentHeight = total > 0 ? (value / total) * 100 : 0;
-                    return (
-                      <span
-                        key={item.metric || item.label}
-                        style={{ height: `${segmentHeight}%`, background: item.color }}
-                      />
-                    );
-                  })}
+            return (
+              <div
+                key={`${point.BucketStartUtc}-${index}`}
+                className="analytics-bar-column"
+                onMouseEnter={(event) => setTooltip({ point, total, tooltipLines, clientX: event.clientX, clientY: event.clientY })}
+                onMouseMove={(event) => setTooltip((current) => current ? { ...current, clientX: event.clientX, clientY: event.clientY } : current)}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                <div className="analytics-bar-track">
+                  <div className="analytics-bar-stack" style={{ height: `${height}%` }}>
+                    {series.map((item) => {
+                      const value = Math.max(0, Number(item.points?.[index]?.Value || 0));
+                      const segmentHeight = total > 0 ? (value / total) * 100 : 0;
+                      return (
+                        <span
+                          key={item.metric || item.label}
+                          style={{ height: `${segmentHeight}%`, background: item.color }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-      <AxisLabels points={points} rangeId={rangeId} />
+      <XAxisLabels points={points} rangeId={rangeId} />
       {tooltip && <ChartTooltip tooltip={tooltip} rangeId={rangeId} unit={unit} />}
     </div>
   );
@@ -211,12 +315,14 @@ function LineChart({ series, rangeId, unit = '', emptyMessage = 'No data in this
     return <div className="analytics-state">{emptyMessage}</div>;
   }
 
+  const yAxisScale = buildYAxisScale(min, max, unit);
+  const yAxisSpan = yAxisScale.max - yAxisScale.min;
   const xFor = (index) => points.length === 1
     ? width / 2
     : padX + ((index / (points.length - 1)) * (width - (padX * 2)));
   const yFor = (value) => {
-    if (max === min) return height / 2;
-    return height - padY - (((value - min) / (max - min)) * (height - (padY * 2)));
+    if (yAxisSpan <= 0) return height / 2;
+    return height - padY - (((value - yAxisScale.min) / yAxisSpan) * (height - (padY * 2)));
   };
 
   return (
@@ -229,37 +335,40 @@ function LineChart({ series, rangeId, unit = '', emptyMessage = 'No data in this
           </span>
         ))}
       </div>
-      <div className="analytics-line-chart">
-        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Analytics line chart">
-          <line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} className="analytics-axis-line" />
-          <line x1={padX} y1={padY} x2={padX} y2={height - padY} className="analytics-axis-line" />
-          {series.map((item) => {
-            const path = item.points
-              .map((point, index) => {
-                const value = Number(point.Value);
-                if (!Number.isFinite(value)) return null;
-                return `${xFor(index)},${yFor(value)}`;
-              })
-              .filter(Boolean)
-              .join(' ');
-            return <polyline key={item.metric || item.label} points={path} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />;
-          })}
-          {points.map((point, index) => (
-            <rect
-              key={`${point.BucketStartUtc}-${index}`}
-              x={xFor(index) - 8}
-              y={0}
-              width="16"
-              height={height}
-              fill="transparent"
-              onMouseEnter={(event) => setTooltip({ point, index, clientX: event.clientX, clientY: event.clientY })}
-              onMouseMove={(event) => setTooltip((current) => current ? { ...current, clientX: event.clientX, clientY: event.clientY } : current)}
-              onMouseLeave={() => setTooltip(null)}
-            />
-          ))}
-        </svg>
+      <div className="analytics-chart-body">
+        <YAxisLabels scale={yAxisScale} unit={unit} />
+        <div className="analytics-line-chart">
+          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Analytics line chart">
+            <line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} className="analytics-axis-line" />
+            <line x1={padX} y1={padY} x2={padX} y2={height - padY} className="analytics-axis-line" />
+            {series.map((item) => {
+              const path = item.points
+                .map((point, index) => {
+                  const value = Number(point.Value);
+                  if (!Number.isFinite(value)) return null;
+                  return `${xFor(index)},${yFor(value)}`;
+                })
+                .filter(Boolean)
+                .join(' ');
+              return <polyline key={item.metric || item.label} points={path} fill="none" stroke={item.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />;
+            })}
+            {points.map((point, index) => (
+              <rect
+                key={`${point.BucketStartUtc}-${index}`}
+                x={xFor(index) - 8}
+                y={0}
+                width="16"
+                height={height}
+                fill="transparent"
+                onMouseEnter={(event) => setTooltip({ point, index, clientX: event.clientX, clientY: event.clientY })}
+                onMouseMove={(event) => setTooltip((current) => current ? { ...current, clientX: event.clientX, clientY: event.clientY } : current)}
+                onMouseLeave={() => setTooltip(null)}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
-      <AxisLabels points={points} rangeId={rangeId} />
+      <XAxisLabels points={points} rangeId={rangeId} />
       {tooltip && (
         <ChartTooltip
           tooltip={{
@@ -274,18 +383,38 @@ function LineChart({ series, rangeId, unit = '', emptyMessage = 'No data in this
   );
 }
 
-function AxisLabels({ points, rangeId }) {
-  const labelCount = Math.min(6, points.length);
+function XAxisLabels({ points, rangeId }) {
+  const labelCount = Math.min(MAX_X_AXIS_LABELS, points.length);
   const indices = new Set();
   for (let index = 0; index < labelCount; index += 1) {
     indices.add(Math.round((index * (points.length - 1)) / Math.max(1, labelCount - 1)));
   }
 
   return (
-    <div className="analytics-axis-labels">
-      {Array.from(indices).map((index) => (
-        <span key={index}>{formatBucketLabel(points[index]?.BucketStartUtc, rangeId)}</span>
-      ))}
+    <div className="analytics-chart-x-axis">
+      <div />
+      <div className="analytics-axis-labels">
+        {Array.from(indices).map((index) => (
+          <span key={index}>{formatBucketLabel(points[index]?.BucketStartUtc, rangeId)}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function YAxisLabels({ scale, unit }) {
+  return (
+    <div className="analytics-y-axis-labels" aria-hidden="true">
+      {scale.ticks.map((tick) => {
+        const position = scale.max === scale.min
+          ? 50
+          : 100 - (((tick - scale.min) / (scale.max - scale.min)) * 100);
+        return (
+          <span key={tick} style={{ top: `${Math.min(100, Math.max(0, position))}%` }}>
+            {formatAxisTickValue(tick, unit)}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -465,7 +594,7 @@ function AssistantAnalyticsView() {
   const api = useMemo(() => new ApiClient(serverUrl, credential?.BearerToken), [serverUrl, credential]);
   const [assistants, setAssistants] = useState([]);
   const [assistantId, setAssistantId] = useState(searchParams.get('assistantId') || localStorage.getItem('ah_analytics_assistant') || '');
-  const [ranges, setRanges] = useState(DEFAULT_RANGES);
+  const [range, setRange] = useState(DEFAULT_RANGE);
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -518,15 +647,15 @@ function AssistantAnalyticsView() {
           slowest,
           feedback,
         ] = await Promise.all([
-          api.getAssistantAnalyticsOverview(assistantId, { range: ranges.overview }),
-          api.getAssistantAnalyticsTimeSeries(assistantId, { range: ranges.volume, metrics: 'success_count,failure_count,request_count' }),
-          api.getAssistantAnalyticsTimeSeries(assistantId, { range: ranges.latency, metrics: 'avg_duration_ms,p95_duration_ms,p99_duration_ms,max_duration_ms' }),
-          api.getAssistantAnalyticsStages(assistantId, { range: ranges.stages }),
-          api.getAssistantAnalyticsTimeSeries(assistantId, { range: ranges.provider, metrics: 'provider_load_avg_ms,provider_generation_avg_ms,provider_tokens_per_second_avg,endpoint_limiter_wait_avg_ms' }),
-          api.getAssistantAnalyticsEndpoints(assistantId, { range: ranges.endpoints, limit: 25 }),
-          api.getAssistantAnalyticsTimeSeries(assistantId, { range: ranges.activity, metrics: 'query_rewrite_calls,rerank_calls,final_inference_calls,retrieval_query_count_avg,chunks_output_avg' }),
-          api.getAssistantAnalyticsSlowest(assistantId, { range: ranges.slowest, limit: 20 }),
-          api.getAssistantAnalyticsFeedback(assistantId, { range: ranges.feedback }),
+          api.getAssistantAnalyticsOverview(assistantId, { range }),
+          api.getAssistantAnalyticsTimeSeries(assistantId, { range, metrics: 'success_count,failure_count,request_count' }),
+          api.getAssistantAnalyticsTimeSeries(assistantId, { range, metrics: 'avg_duration_ms,p95_duration_ms,p99_duration_ms,max_duration_ms' }),
+          api.getAssistantAnalyticsStages(assistantId, { range }),
+          api.getAssistantAnalyticsTimeSeries(assistantId, { range, metrics: 'provider_load_avg_ms,provider_generation_avg_ms,provider_tokens_per_second_avg,endpoint_limiter_wait_avg_ms' }),
+          api.getAssistantAnalyticsEndpoints(assistantId, { range, limit: 25 }),
+          api.getAssistantAnalyticsTimeSeries(assistantId, { range, metrics: 'query_rewrite_calls,rerank_calls,final_inference_calls,retrieval_query_count_avg,chunks_output_avg' }),
+          api.getAssistantAnalyticsSlowest(assistantId, { range, limit: 20 }),
+          api.getAssistantAnalyticsFeedback(assistantId, { range }),
         ]);
 
         if (!cancelled) {
@@ -540,12 +669,9 @@ function AssistantAnalyticsView() {
     })();
 
     return () => { cancelled = true; };
-  }, [api, assistantId, ranges, refreshNonce]);
+  }, [api, assistantId, range, refreshNonce]);
 
   const selectedAssistant = assistants.find((assistant) => assistant.Id === assistantId);
-  const setChartRange = useCallback((key, value) => {
-    setRanges((current) => ({ ...current, [key]: value }));
-  }, []);
 
   const openHistory = (chatHistoryId) => {
     const params = new URLSearchParams();
@@ -596,21 +722,24 @@ function AssistantAnalyticsView() {
           <p className="content-subtitle">{selectedAssistant ? selectedAssistant.Name : 'Select an assistant'}</p>
         </div>
         <div className="analytics-header-controls">
-          <select value={assistantId} onChange={(event) => setAssistantId(event.target.value)} disabled={!assistants.length}>
-            {assistants.length < 1 && <option value="">No assistants</option>}
-            {assistants.map((assistant) => (
-              <option key={assistant.Id} value={assistant.Id}>{assistant.Name} ({assistant.Id.substring(0, 10)}...)</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="analytics-refresh-button"
-            onClick={() => setRefreshNonce((value) => value + 1)}
-            title="Refresh analytics"
-            aria-label="Refresh analytics"
-          >
-            <RefreshIcon />
-          </button>
+          <div className="analytics-assistant-control-group">
+            <select value={assistantId} onChange={(event) => setAssistantId(event.target.value)} disabled={!assistants.length}>
+              {assistants.length < 1 && <option value="">No assistants</option>}
+              {assistants.map((assistant) => (
+                <option key={assistant.Id} value={assistant.Id}>{assistant.Name} ({assistant.Id.substring(0, 10)}...)</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="analytics-refresh-button"
+              onClick={() => setRefreshNonce((value) => value + 1)}
+              title="Refresh analytics"
+              aria-label="Refresh analytics"
+            >
+              <RefreshIcon />
+            </button>
+          </div>
+          <RangeSelector value={range} onChange={setRange} className="analytics-header-range-selector" />
         </div>
       </div>
 
@@ -621,8 +750,6 @@ function AssistantAnalyticsView() {
           <ChartShell
             title="Overview"
             subtitle={overview?.GeneratedUtc ? `Generated ${formatDateTime(overview.GeneratedUtc)}` : ''}
-            range={ranges.overview}
-            onRangeChange={(value) => setChartRange('overview', value)}
             loading={loading}
             error={error}
           >
@@ -639,57 +766,55 @@ function AssistantAnalyticsView() {
           </ChartShell>
 
           <div className="analytics-grid analytics-grid-two">
-            <ChartShell title="Request Volume and Outcome" range={ranges.volume} onRangeChange={(value) => setChartRange('volume', value)} loading={loading} error={error}>
-              <StackedBarChart series={volumeSeries} rangeId={ranges.volume} unit="count" />
+            <ChartShell title="Request Volume and Outcome" loading={loading} error={error}>
+              <StackedBarChart series={volumeSeries} rangeId={range} unit="count" />
             </ChartShell>
 
-            <ChartShell title="End-to-End Latency Percentiles" range={ranges.latency} onRangeChange={(value) => setChartRange('latency', value)} loading={loading} error={error}>
-              <LineChart series={latencySeries} rangeId={ranges.latency} unit="ms" />
+            <ChartShell title="End-to-End Latency Percentiles" loading={loading} error={error}>
+              <LineChart series={latencySeries} rangeId={range} unit="ms" />
             </ChartShell>
           </div>
 
-          <ChartShell title="Hot-Path Stage Duration Breakdown" range={ranges.stages} onRangeChange={(value) => setChartRange('stages', value)} loading={loading} error={error}>
-            <StackedBarChart series={stageSeries} rangeId={ranges.stages} unit="ms" emptyMessage="No stage telemetry in this range." />
+          <ChartShell title="Hot-Path Stage Duration Breakdown" loading={loading} error={error}>
+            <StackedBarChart series={stageSeries} rangeId={range} unit="ms" emptyMessage="No stage telemetry in this range." />
           </ChartShell>
 
           <div className="analytics-grid analytics-grid-two">
-            <ChartShell title="Inference Provider Timing" range={ranges.provider} onRangeChange={(value) => setChartRange('provider', value)} loading={loading} error={error}>
-              <LineChart series={providerSeries} rangeId={ranges.provider} unit="ms" emptyMessage="No provider timing telemetry in this range." />
+            <ChartShell title="Inference Provider Timing" loading={loading} error={error}>
+              <LineChart series={providerSeries} rangeId={range} unit="ms" emptyMessage="No provider timing telemetry in this range." />
             </ChartShell>
 
-            <ChartShell title="Provider Throughput" range={ranges.provider} onRangeChange={(value) => setChartRange('provider', value)} loading={loading} error={error}>
-              <LineChart series={throughputSeries} rangeId={ranges.provider} unit="tokens/s" emptyMessage="No provider throughput telemetry in this range." />
+            <ChartShell title="Provider Throughput" loading={loading} error={error}>
+              <LineChart series={throughputSeries} rangeId={range} unit="tokens/s" emptyMessage="No provider throughput telemetry in this range." />
             </ChartShell>
           </div>
 
           <div className="analytics-grid analytics-grid-two">
-            <ChartShell title="Query Rewrite, Rerank, and Inference Activity" range={ranges.activity} onRangeChange={(value) => setChartRange('activity', value)} loading={loading} error={error}>
-              <StackedBarChart series={activitySeries} rangeId={ranges.activity} unit="count" emptyMessage="No rewrite, rerank, or inference activity in this range." />
+            <ChartShell title="Query Rewrite, Rerank, and Inference Activity" loading={loading} error={error}>
+              <StackedBarChart series={activitySeries} rangeId={range} unit="count" emptyMessage="No rewrite, rerank, or inference activity in this range." />
             </ChartShell>
 
-            <ChartShell title="Retrieval Fanout and Chunk Flow" range={ranges.activity} onRangeChange={(value) => setChartRange('activity', value)} loading={loading} error={error}>
-              <LineChart series={retrievalSeries} rangeId={ranges.activity} unit="count" emptyMessage="No retrieval fanout telemetry in this range." />
+            <ChartShell title="Retrieval Fanout and Chunk Flow" loading={loading} error={error}>
+              <LineChart series={retrievalSeries} rangeId={range} unit="count" emptyMessage="No retrieval fanout telemetry in this range." />
             </ChartShell>
           </div>
 
-          <ChartShell title="Endpoint and Model Usage Mix" range={ranges.endpoints} onRangeChange={(value) => setChartRange('endpoints', value)} loading={loading} error={error}>
+          <ChartShell title="Endpoint and Model Usage Mix" loading={loading} error={error}>
             <EndpointTable result={data.endpoints} />
           </ChartShell>
 
-          <div className="analytics-grid analytics-grid-two">
-            <ChartShell title="Slowest Requests" range={ranges.slowest} onRangeChange={(value) => setChartRange('slowest', value)} loading={loading} error={error}>
-              <SlowestRequestsTable
-                result={data.slowest}
-                onOpenHistory={openHistory}
-                onOpenRequestHistory={openRequestHistory}
-                canOpenRequestHistory={canOpenRequestHistory}
-              />
-            </ChartShell>
+          <ChartShell title="Slowest Requests" loading={loading} error={error}>
+            <SlowestRequestsTable
+              result={data.slowest}
+              onOpenHistory={openHistory}
+              onOpenRequestHistory={openRequestHistory}
+              canOpenRequestHistory={canOpenRequestHistory}
+            />
+          </ChartShell>
 
-            <ChartShell title="Feedback Trend" range={ranges.feedback} onRangeChange={(value) => setChartRange('feedback', value)} loading={loading} error={error}>
-              <FeedbackChart result={data.feedback} rangeId={ranges.feedback} />
-            </ChartShell>
-          </div>
+          <ChartShell title="Feedback Trend" loading={loading} error={error}>
+            <FeedbackChart result={data.feedback} rangeId={range} />
+          </ChartShell>
         </>
       )}
     </div>

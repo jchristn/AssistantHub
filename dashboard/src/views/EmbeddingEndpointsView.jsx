@@ -6,6 +6,7 @@ import DataTable from '../components/DataTable';
 import CopyableId from '../components/CopyableId';
 import EmbeddingEndpointFormModal from '../components/modals/EmbeddingEndpointFormModal';
 import EmbeddingEndpointTestModal from '../components/modals/EmbeddingEndpointTestModal';
+import EndpointModelLoadModal from '../components/modals/EndpointModelLoadModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
@@ -25,6 +26,7 @@ function EmbeddingEndpointsView() {
   const [healthData, setHealthData] = useState({});
   const [healthDetailModal, setHealthDetailModal] = useState({ isOpen: false, data: null });
   const [testTarget, setTestTarget] = useState(null);
+  const [loadTarget, setLoadTarget] = useState(null);
 
   const loadHealth = useCallback(async () => {
     try {
@@ -108,6 +110,7 @@ function EmbeddingEndpointsView() {
 
   const getRowActions = (row) => [
     { label: 'Test', onClick: () => setTestTarget(row) },
+    { label: 'Load Model', onClick: () => setLoadTarget(row) },
     { label: 'Open In Explorer', onClick: () => navigate('/api-explorer', { state: { preset: { type: 'embeddingTest', endpointId: row.Id, endpointName: row.Name || row.Model } } }) },
     { label: 'Edit', onClick: () => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); } },
     { label: 'Duplicate', onClick: () => handleDuplicate(row) },
@@ -168,6 +171,7 @@ function EmbeddingEndpointsView() {
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditEndpoint(row); setInitialFormData(null); setShowForm(true); }} />
       {showForm && <EmbeddingEndpointFormModal endpoint={editEndpoint} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditEndpoint(null); setInitialFormData(null); }} />}
       {testTarget && <EmbeddingEndpointTestModal api={api} endpoint={testTarget} onClose={() => setTestTarget(null)} />}
+      {loadTarget && <EndpointModelLoadModal api={api} endpoint={loadTarget} endpointType="embedding" onClose={() => setLoadTarget(null)} />}
       {showJson && <JsonViewModal title="Embedding Endpoint JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Embedding Endpoint" message={`Are you sure you want to delete embedding endpoint "${deleteTarget.Name || deleteTarget.Model}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

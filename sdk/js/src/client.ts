@@ -11,10 +11,14 @@ import type {
   Assistant,
   AssistantSettings,
   AssistantPublicInfo,
+  AssistantChatOpenResult,
   SlackVerificationRequest,
   SlackVerificationResponse,
   AssistantDocument,
   DocumentUploadRequest,
+  DocumentReindexRequest,
+  DocumentReindexResult,
+  DocumentReindexBatchResult,
   IngestionRule,
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -47,6 +51,13 @@ import type {
   PullProgress,
   Collection,
   CollectionRecord,
+  CollectionSearchRequest,
+  CollectionSearchResponse,
+  Index,
+  IndexRecord,
+  IndexSearchRequest,
+  IndexSearchResponse,
+  IndexTermsResponse,
   BucketCreateRequest,
   BucketListResponse,
   BucketObject,
@@ -394,6 +405,11 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/public`);
   }
 
+  /** Notify the server that an assistant chat window was opened, loading configured endpoint models when enabled. */
+  async openAssistantChat(assistantId: string): Promise<AssistantChatOpenResult> {
+    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/chat/open`);
+  }
+
   // --------------------------------------------------------------------------
   // Assistant Settings
   // --------------------------------------------------------------------------
@@ -474,7 +490,17 @@ export class AssistantHubClient {
 
   /** Bulk delete documents by IDs. */
   async bulkDeleteDocuments(documentIds: string[]): Promise<void> {
-    return this._request("POST", "/v1.0/documents/delete", documentIds);
+    return this._request("POST", "/v1.0/documents/delete", { DocumentIds: documentIds });
+  }
+
+  /** Reindex a single completed document into Verbex. */
+  async reindexDocument(documentId: string): Promise<DocumentReindexResult> {
+    return this._request("POST", `/v1.0/documents/${encodeURIComponent(documentId)}/reindex`, {});
+  }
+
+  /** Reindex completed documents into Verbex. */
+  async reindexDocuments(request?: DocumentReindexRequest, query?: EnumerationQuery): Promise<DocumentReindexBatchResult> {
+    return this._request("POST", `/v1.0/documents/reindex${this._qs(query)}`, request || {});
   }
 
   /** Get processing log for a document. */
@@ -853,6 +879,130 @@ export class AssistantHubClient {
   /** Batch delete records in a collection. */
   async batchDeleteCollectionRecords(collectionId: string, recordIds: string[]): Promise<void> {
     return this._request("POST", `/v1.0/collections/${encodeURIComponent(collectionId)}/records/batch/delete`, recordIds);
+  }
+
+  /** Search records in a RecallDB collection. */
+  async searchCollection(collectionId: string, request: CollectionSearchRequest): Promise<CollectionSearchResponse> {
+    return this._request("POST", `/v1.0/collections/${encodeURIComponent(collectionId)}/search`, request);
+  }
+
+  // --------------------------------------------------------------------------
+  // Indices (Verbex proxy)
+  // --------------------------------------------------------------------------
+
+  /** List inverted indices. */
+  async listIndices(query?: EnumerationQuery): Promise<EnumerationResult<Index>> {
+    return this._request("GET", `/v1.0/indices${this._qs(query)}`);
+  }
+
+  /** Create an inverted index. */
+  async createIndex(index: Index): Promise<Index> {
+    return this._request("PUT", "/v1.0/indices", index);
+  }
+
+  /** Get an inverted index by ID. */
+  async getIndex(indexId: string): Promise<Index> {
+    return this._request("GET", `/v1.0/indices/${encodeURIComponent(indexId)}`);
+  }
+
+  /** Update an inverted index. */
+  async updateIndex(indexId: string, index: Index): Promise<Index> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}`, index);
+  }
+
+  /** Delete an inverted index. */
+  async deleteIndex(indexId: string): Promise<void> {
+    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}`);
+  }
+
+  /** Check if an inverted index exists. */
+  async indexExists(indexId: string): Promise<boolean> {
+    return this._head(`/v1.0/indices/${encodeURIComponent(indexId)}`);
+  }
+
+  /** Update labels on an inverted index. */
+  async updateIndexLabels(indexId: string, labels: unknown): Promise<Index> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/labels`, labels);
+  }
+
+  /** Update tags on an inverted index. */
+  async updateIndexTags(indexId: string, tags: unknown): Promise<Index> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/tags`, tags);
+  }
+
+  /** Update custom metadata on an inverted index. */
+  async updateIndexCustomMetadata(indexId: string, customMetadata: unknown): Promise<Index> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/custom-metadata`, customMetadata);
+  }
+
+  /** Get top terms from an inverted index. */
+  async getIndexTopTerms(indexId: string, maxResults?: number): Promise<IndexTermsResponse> {
+    const qs = maxResults && maxResults > 0 ? `?maxResults=${encodeURIComponent(String(maxResults))}` : "";
+    return this._request("GET", `/v1.0/indices/${encodeURIComponent(indexId)}/terms/top${qs}`);
+  }
+
+  /** Search an inverted index. */
+  async searchIndex(indexId: string, request: IndexSearchRequest): Promise<IndexSearchResponse> {
+    return this._request("POST", `/v1.0/indices/${encodeURIComponent(indexId)}/search`, request);
+  }
+
+  // --------------------------------------------------------------------------
+  // Index Records
+  // --------------------------------------------------------------------------
+
+  /** List records in an inverted index. */
+  async listIndexRecords(indexId: string, query?: EnumerationQuery): Promise<EnumerationResult<IndexRecord>> {
+    return this._request("GET", `/v1.0/indices/${encodeURIComponent(indexId)}/records${this._qs(query)}`);
+  }
+
+  /** Create a record in an inverted index. */
+  async createIndexRecord(indexId: string, record: IndexRecord): Promise<IndexRecord> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/records`, record);
+  }
+
+  /** Create records in an inverted index in batch. */
+  async createIndexRecordsBatch(indexId: string, records: IndexRecord[] | Record<string, unknown>): Promise<unknown> {
+    return this._request("POST", `/v1.0/indices/${encodeURIComponent(indexId)}/records/batch`, records);
+  }
+
+  /** Check whether multiple inverted-index records exist. */
+  async checkIndexRecordsExist(indexId: string, recordIds: string[] | Record<string, unknown>): Promise<unknown> {
+    return this._request("POST", `/v1.0/indices/${encodeURIComponent(indexId)}/records/exists`, recordIds);
+  }
+
+  /** Delete multiple records from an inverted index. */
+  async deleteIndexRecords(indexId: string, recordIds: string[]): Promise<void> {
+    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}/records?ids=${encodeURIComponent(recordIds.join(","))}`);
+  }
+
+  /** Get an inverted-index record by ID. */
+  async getIndexRecord(indexId: string, recordId: string): Promise<IndexRecord> {
+    return this._request("GET", `/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}`);
+  }
+
+  /** Check if an inverted-index record exists. */
+  async indexRecordExists(indexId: string, recordId: string): Promise<boolean> {
+    return this._head(`/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}`);
+  }
+
+  /** Delete an inverted-index record. */
+  async deleteIndexRecord(indexId: string, recordId: string): Promise<void> {
+    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}`);
+  }
+
+  /** Update labels on an inverted-index record. */
+  async updateIndexRecordLabels(indexId: string, recordId: string, labels: unknown): Promise<IndexRecord> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}/labels`, labels);
+  }
+
+  /** Update tags on an inverted-index record. */
+  async updateIndexRecordTags(indexId: string, recordId: string, tags: unknown): Promise<IndexRecord> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}/tags`, tags);
+  }
+
+  /** Update custom metadata on an inverted-index record. */
+  async updateIndexRecordCustomMetadata(indexId: string, recordId: string, customMetadata: unknown): Promise<IndexRecord> {
+    return this._request("PUT", `/v1.0/indices/${encodeURIComponent(indexId)}/records/${encodeURIComponent(recordId)}/custom-metadata`, customMetadata);
   }
 
   // --------------------------------------------------------------------------

@@ -24,7 +24,7 @@ namespace AssistantHub.Server.Handlers
     public class EmbeddingEndpointHandler : HandlerBase
     {
         private static readonly string _Header = "[EmbeddingEndpointHandler] ";
-        private static readonly HttpClient _HttpClient = new HttpClient();
+        private readonly IEmbeddingEndpointService _EmbeddingEndpoints;
 
         /// <summary>
         /// Instantiate.
@@ -34,12 +34,14 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
-            InferenceService inference)
+            InferenceService inference,
+            IEmbeddingEndpointService embeddingEndpoints)
             : base(database, logging, settings, authentication, storage, ingestion, retrieval, inference)
         {
+            _EmbeddingEndpoints = embeddingEndpoints ?? throw new ArgumentNullException(nameof(embeddingEndpoints));
         }
 
         /// <summary>
@@ -60,14 +62,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = InjectTenantId(ctx.Request.DataAsString);
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding";
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
@@ -103,14 +99,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/enumerate";
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/endpoints/embedding/enumerate", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -152,12 +142,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId;
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Get, "/v1.0/endpoints/embedding/" + endpointId).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -191,14 +177,8 @@ namespace AssistantHub.Server.Handlers
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
                 string body = InjectTenantId(ctx.Request.DataAsString);
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId;
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding/" + endpointId, body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
@@ -234,12 +214,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId;
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Delete, "/v1.0/endpoints/embedding/" + endpointId).ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
                     AssistantHubServer.HealthCheckService?.OnEndpointDeleted(endpointId);
@@ -281,12 +257,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId;
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Head, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Head, "/v1.0/endpoints/embedding/" + endpointId).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 await ctx.Response.Send().ConfigureAwait(false);
@@ -326,19 +298,12 @@ namespace AssistantHub.Server.Handlers
 
                 request.EndpointId = endpointId;
 
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/explorer/embedding";
-                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, partioUrl))
-                {
-                    req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                    req.Content = new StringContent(Serializer.SerializeJson(request), Encoding.UTF8, "application/json");
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/explorer/embedding", Serializer.SerializeJson(request)).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                    HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
-                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                    ctx.Response.StatusCode = (int)resp.StatusCode;
-                    ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(respBody).ConfigureAwait(false);
-                }
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(respBody).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -368,22 +333,15 @@ namespace AssistantHub.Server.Handlers
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
                 string body = String.IsNullOrWhiteSpace(ctx.Request.DataAsString) ? "{}" : ctx.Request.DataAsString;
-                string partioUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/" + endpointId + "/load";
 
-                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, partioUrl))
+                using (HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/endpoints/embedding/" + endpointId + "/load", body).ConfigureAwait(false))
                 {
-                    req.Headers.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    CopyModelLoadHeaders(resp, ctx);
 
-                    using (HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false))
-                    {
-                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        CopyModelLoadHeaders(resp, ctx);
-
-                        ctx.Response.StatusCode = (int)resp.StatusCode;
-                        ctx.Response.ContentType = "application/json";
-                        await ctx.Response.Send(respBody).ConfigureAwait(false);
-                    }
+                    ctx.Response.StatusCode = (int)resp.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
                 }
             }
             catch (Exception e)

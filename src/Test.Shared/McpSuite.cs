@@ -142,6 +142,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("S3").GetProperty("SecretKey").GetString(), "S3 secret key redaction");
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("Chunking").GetProperty("AccessKey").GetString(), "Chunking access key redaction");
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("RecallDb").GetProperty("AccessKey").GetString(), "RecallDb access key redaction");
+                AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("Verbex").GetProperty("AccessKey").GetString(), "Verbex access key redaction");
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("Inference").GetProperty("ApiKey").GetString(), "Inference API key redaction");
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("AdminApiKeys")[0].GetString(), "Admin API keys redaction");
             }).ConfigureAwait(false);
@@ -155,6 +156,7 @@ namespace Test.Automated
                 using JsonDocument doc = JsonDocument.Parse(resultJson);
                 AssertHelper.AreEqual("default", doc.RootElement.GetProperty("S3").GetProperty("AccessKey").GetString(), "S3 access key when includeSecrets=true");
                 AssertHelper.AreEqual("default", doc.RootElement.GetProperty("S3").GetProperty("SecretKey").GetString(), "S3 secret key when includeSecrets=true");
+                AssertHelper.AreEqual("default", doc.RootElement.GetProperty("Verbex").GetProperty("AccessKey").GetString(), "Verbex access key when includeSecrets=true");
                 AssertHelper.AreEqual("assistanthubadmin", doc.RootElement.GetProperty("AdminApiKeys")[0].GetString(), "Admin API key when includeSecrets=true");
             }).ConfigureAwait(false);
 

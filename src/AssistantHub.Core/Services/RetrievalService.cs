@@ -27,7 +27,9 @@ namespace AssistantHub.Core.Services
 
         private string _Header = "[RetrievalService] ";
         private ChunkingSettings _ChunkingSettings = null;
+        private IChunkingService _ChunkingService = null;
         private RecallDbSettings _RecallDbSettings = null;
+        private IVectorStoreService _VectorStore = null;
         private LoggingModule _Logging = null;
         private HttpClient _HttpClient = null;
 
@@ -48,11 +50,15 @@ namespace AssistantHub.Core.Services
         /// <param name="chunkingSettings">Chunking service settings.</param>
         /// <param name="recallDbSettings">RecallDb service settings.</param>
         /// <param name="logging">Logging module.</param>
-        public RetrievalService(ChunkingSettings chunkingSettings, RecallDbSettings recallDbSettings, LoggingModule logging)
+        /// <param name="vectorStore">Optional vector-store service implementation.</param>
+        /// <param name="chunkingService">Optional chunking service implementation.</param>
+        public RetrievalService(ChunkingSettings chunkingSettings, RecallDbSettings recallDbSettings, LoggingModule logging, IVectorStoreService vectorStore = null, IChunkingService chunkingService = null)
         {
             _ChunkingSettings = chunkingSettings ?? throw new ArgumentNullException(nameof(chunkingSettings));
+            _ChunkingService = chunkingService ?? new PartioChunkingService(_ChunkingSettings, logging);
             _RecallDbSettings = recallDbSettings ?? throw new ArgumentNullException(nameof(recallDbSettings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
+            _VectorStore = vectorStore ?? new RecallDbVectorStoreService(_RecallDbSettings, _Logging);
             _HttpClient = new HttpClient();
         }
 
@@ -264,19 +270,11 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private async Task<List<SearchResult>> ExecuteSearchAsync(string tenantId, string collectionId, object requestBody, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/search";
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/search";
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
 
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Post, path, json, token).ConfigureAwait(false))
             {
-                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                {
-                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -299,26 +297,17 @@ namespace AssistantHub.Core.Services
         /// <returns>Embedding vector.</returns>
         private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token, string embeddingEndpointId = null)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            string effectiveEndpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
+            object requestBody = new
             {
-                string effectiveEndpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
-                object requestBody = new
-                {
-                    Type = "Text",
-                    Text = query,
-                    EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
-                };
-                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                Type = "Text",
+                Text = query,
+                EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
+            };
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
 
-                if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+            using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
+            {
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)

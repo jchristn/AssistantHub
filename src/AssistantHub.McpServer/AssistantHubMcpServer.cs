@@ -312,6 +312,8 @@ namespace AssistantHub.McpServer
             RegisterTransport(CredentialRegistrations.RegisterHttpTools, CredentialRegistrations.RegisterTcpMethods, CredentialRegistrations.RegisterWebSocketMethods);
             RegisterTransport(CollectionRegistrations.RegisterHttpTools, CollectionRegistrations.RegisterTcpMethods, CollectionRegistrations.RegisterWebSocketMethods);
             RegisterTransport(CollectionRecordRegistrations.RegisterHttpTools, CollectionRecordRegistrations.RegisterTcpMethods, CollectionRecordRegistrations.RegisterWebSocketMethods);
+            RegisterTransport(IndexRegistrations.RegisterHttpTools, IndexRegistrations.RegisterTcpMethods, IndexRegistrations.RegisterWebSocketMethods);
+            RegisterTransport(IndexRecordRegistrations.RegisterHttpTools, IndexRecordRegistrations.RegisterTcpMethods, IndexRecordRegistrations.RegisterWebSocketMethods);
             RegisterTransport(BucketRegistrations.RegisterHttpTools, BucketRegistrations.RegisterTcpMethods, BucketRegistrations.RegisterWebSocketMethods);
             RegisterTransport(BucketObjectRegistrations.RegisterHttpTools, BucketObjectRegistrations.RegisterTcpMethods, BucketObjectRegistrations.RegisterWebSocketMethods);
             RegisterTransport(AssistantRegistrations.RegisterHttpTools, AssistantRegistrations.RegisterTcpMethods, AssistantRegistrations.RegisterWebSocketMethods);

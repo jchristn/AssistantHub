@@ -31,8 +31,13 @@ function getStatusBadgeClass(status) {
   return 'info';
 }
 
+function canReindexDocument(row) {
+  const status = (row?.Status || '').toLowerCase();
+  return status === 'completed' || status === 'indexed' || status === 'active';
+}
+
 function DocumentsView() {
-  const { serverUrl, credential, isGlobalAdmin } = useAuth();
+  const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const navigate = useNavigate();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showUpload, setShowUpload] = useState(false);
@@ -133,11 +138,27 @@ function DocumentsView() {
     return await api.getDocuments(filterParams);
   }, [serverUrl, credential, bucketFilter, collectionFilter, crawlerFilter]);
 
+  const handleReindex = async (row) => {
+    try {
+      const result = await api.reindexDocument(row.Id);
+      setRefresh(r => r + 1);
+      setAlert({
+        title: result.Success ? 'Reindex Complete' : 'Reindex Failed',
+        message: result.Message || `Status: ${result.Status || 'Unknown'}`
+      });
+    } catch (err) {
+      setAlert({ title: 'Reindex Failed', message: err.message || 'Failed to reindex document' });
+    }
+  };
+
   const getRowActions = (row) => {
     const actions = [
       { label: 'View JSON', onClick: () => setShowJson(row) },
       { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
     ];
+    if ((isAdmin || isTenantAdmin) && canReindexDocument(row)) {
+      actions.push({ label: 'Reindex into Verbex', onClick: () => handleReindex(row) });
+    }
     if (row.CrawlOperationId) {
       actions.push({ label: 'View Crawl Operation', onClick: () => {
         navigate(`/crawlers?op=${row.CrawlOperationId}&plan=${row.CrawlPlanId}`);
@@ -224,7 +245,7 @@ function DocumentsView() {
       <div className="content-header">
         <div>
           <h1 className="content-title">Documents</h1>
-          <p className="content-subtitle">Upload and manage documents for knowledgebases.  Ingested documents are stored within RecallDB collections and optionally stored in S3 buckets.</p>
+          <p className="content-subtitle">Upload and manage documents for knowledgebases. Ingested documents are stored in RecallDB collections and indexed into Verbex for text search.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowUpload(true)}>Upload Document</button>
       </div>

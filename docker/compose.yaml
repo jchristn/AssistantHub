@@ -189,6 +189,9 @@ services:
       RECALLDB_DB_NAME: ${RECALLDB_DB_NAME:-recalldb}
       RECALLDB_DB_USER: ${RECALLDB_DB_USER:-recalldb_app}
       RECALLDB_DB_PASS: ${RECALLDB_DB_PASS:-recalldb_password}
+      VERBEX_DB_NAME: ${VERBEX_DB_NAME:-verbex}
+      VERBEX_DB_USER: ${VERBEX_DB_USER:-verbex_app}
+      VERBEX_DB_PASS: ${VERBEX_DB_PASS:-verbex_password}
       PGPASSWORD: ${POSTGRES_SUPERPASS:-password}
     volumes:
       - ./postgres/init.sh:/init/postgres-init.sh:ro
@@ -239,10 +242,44 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # --- Inverted Index (Verbex) ---
+
+  verbex-server:
+    image: jchristn77/verbex-server:v0.1.0
+    container_name: assistanthub-verbex-server
+    ports:
+      - "8501:8080"
+    volumes:
+      - ./verbex/verbex.json:/app/verbex.json:ro
+      - ./verbex/data/:/app/data/
+      - ./verbex/logs/:/app/logs/
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 2s
+      retries: 2
+      start_period: 30s
+    restart: unless-stopped
+
+  verbex-dashboard:
+    image: jchristn77/verbex-dashboard:v0.1.0
+    container_name: assistanthub-verbex-dashboard
+    ports:
+      - "8502:8200"
+    environment:
+      VERBEX_SERVER_URL: "http://localhost:8501"
+    depends_on:
+      verbex-server:
+        condition: service_healthy
+    restart: unless-stopped
+
   # --- AssistantHub ---
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.13.0
+    image: jchristn77/assistanthub-server:v0.14.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
@@ -258,6 +295,8 @@ services:
         condition: service_healthy
       recalldb-server:
         condition: service_healthy
+      verbex-server:
+        condition: service_healthy
       documentatom-server:
         condition: service_healthy
       partio-server:
@@ -271,7 +310,7 @@ services:
     restart: unless-stopped
 
   assistanthub-mcp-server:
-    image: jchristn77/assistanthub-mcp:v0.13.0
+    image: jchristn77/assistanthub-mcp:v0.14.0
     container_name: assistanthub-mcp-server
     ports:
       - "8820:8820"
@@ -288,7 +327,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.13.0
+    image: jchristn77/assistanthub-dashboard:v0.14.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

@@ -3,6 +3,7 @@ namespace AssistantHub.Server.Handlers
     using System;
     using System.Net.Http;
     using System.Text;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -21,7 +22,7 @@ namespace AssistantHub.Server.Handlers
     public class CollectionHandler : HandlerBase
     {
         private static readonly string _Header = "[CollectionHandler] ";
-        private static readonly HttpClient _HttpClient = new HttpClient();
+        private readonly IVectorStoreService _VectorStore;
 
         /// <summary>
         /// Instantiate.
@@ -34,17 +35,20 @@ namespace AssistantHub.Server.Handlers
         /// <param name="ingestion">Ingestion service.</param>
         /// <param name="retrieval">Retrieval service.</param>
         /// <param name="inference">Inference service.</param>
+        /// <param name="vectorStore">Vector-store service.</param>
         public CollectionHandler(
             DatabaseDriverBase database,
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
-            InferenceService inference)
+            InferenceService inference,
+            IVectorStoreService vectorStore)
             : base(database, logging, settings, authentication, storage, ingestion, retrieval, inference)
         {
+            _VectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
         }
 
         /// <summary>
@@ -67,12 +71,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(auth.TenantId, null));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(auth.TenantId, null), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -110,11 +109,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbUrl(auth.TenantId, "enumerate"));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                req.Content = new StringContent(enumerateBody, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(auth.TenantId, "enumerate"), enumerateBody).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -158,10 +153,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbUrl(auth.TenantId, collectionId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -206,12 +198,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbUrl(auth.TenantId, collectionId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(auth.TenantId, collectionId), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -255,10 +242,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbUrl(auth.TenantId, collectionId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -307,10 +291,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Head, BuildRecallDbUrl(auth.TenantId, collectionId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Head, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 await ctx.Response.Send().ConfigureAwait(false);
@@ -320,6 +301,94 @@ namespace AssistantHub.Server.Handlers
                 Logging.Warn(_Header + "exception in HeadCollectionAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 await ctx.Response.Send().ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/collections/{collectionId}/search - Search records in a RecallDB collection.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task SearchCollectionAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireGlobalAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string collectionId = ctx.Request.Url.Parameters["collectionId"];
+                if (String.IsNullOrEmpty(collectionId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = NormalizeCollectionSearchBody(ctx.Request.DataAsString);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(auth.TenantId, collectionId + "/search"), body).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                ctx.Response.StatusCode = (int)resp.StatusCode;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(respBody).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in SearchCollectionAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        private static string NormalizeCollectionSearchBody(string body)
+        {
+            if (String.IsNullOrWhiteSpace(body)) return body;
+
+            try
+            {
+                JsonNode node = JsonNode.Parse(body);
+                if (node is not JsonObject obj) return body;
+
+                string propertyName = null;
+                JsonNode includeNeighbors = null;
+                foreach (var kvp in obj)
+                {
+                    if (String.Equals(kvp.Key, "IncludeNeighbors", StringComparison.OrdinalIgnoreCase))
+                    {
+                        propertyName = kvp.Key;
+                        includeNeighbors = kvp.Value;
+                        break;
+                    }
+                }
+
+                if (String.IsNullOrEmpty(propertyName) || includeNeighbors == null) return body;
+
+                try
+                {
+                    bool boolValue = includeNeighbors.GetValue<bool>();
+                    if (boolValue)
+                        obj[propertyName] = 1;
+                    else
+                        obj.Remove(propertyName);
+                    return obj.ToJsonString();
+                }
+                catch
+                {
+                    return body;
+                }
+            }
+            catch
+            {
+                return body;
             }
         }
 
@@ -356,11 +425,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, "enumerate"));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                req.Content = new StringContent(enumerateBody, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(auth.TenantId, collectionId, "enumerate"), enumerateBody).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -405,10 +470,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, recordId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentPath(auth.TenantId, collectionId, recordId)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -453,10 +515,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, recordId));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentPath(auth.TenantId, collectionId, recordId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -508,12 +567,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, "batch/delete"));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(auth.TenantId, collectionId, "batch/delete"), body).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -565,12 +619,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentUrl(auth.TenantId, collectionId, null));
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                if (!String.IsNullOrEmpty(body))
-                    req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentPath(auth.TenantId, collectionId, null), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -612,11 +661,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string url = BuildRecallDbUrl(auth.TenantId, collectionId + "/labels/distinct");
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId + "/labels/distinct")).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -658,11 +703,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string url = BuildRecallDbUrl(auth.TenantId, collectionId + "/tags/distinct");
-                HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
-                req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId + "/tags/distinct")).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -682,19 +723,17 @@ namespace AssistantHub.Server.Handlers
 
         #region Private-Methods
 
-        private string BuildRecallDbUrl(string tenantId, string path)
+        private string BuildRecallDbPath(string tenantId, string path)
         {
-            string baseUrl = Settings.RecallDb.Endpoint.TrimEnd('/');
-            string url = baseUrl + "/v1.0/tenants/" + tenantId + "/collections";
+            string url = "/v1.0/tenants/" + tenantId + "/collections";
             if (!String.IsNullOrEmpty(path))
                 url += "/" + path;
             return url;
         }
 
-        private string BuildRecallDbDocumentUrl(string tenantId, string collectionId, string path)
+        private string BuildRecallDbDocumentPath(string tenantId, string collectionId, string path)
         {
-            string baseUrl = Settings.RecallDb.Endpoint.TrimEnd('/');
-            string url = baseUrl + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
+            string url = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
             if (!String.IsNullOrEmpty(path))
                 url += "/" + path;
             return url;

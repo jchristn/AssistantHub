@@ -39,7 +39,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference)
@@ -114,30 +114,23 @@ namespace AssistantHub.Server.Handlers
                 // Auto-assign first available inference endpoint
                 try
                 {
-                    string completionUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/enumerate";
-                    using (HttpClient client = new HttpClient())
+                    Dictionary<string, object> enumBody = new Dictionary<string, object>
                     {
-                        if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
-                            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                        { "MaxResults", 1 }
+                    };
+                    HttpResponseMessage response = await InferenceEndpoints.SendAsync(
+                        System.Net.Http.HttpMethod.Post,
+                        "/v1.0/endpoints/completion/enumerate",
+                        JsonSerializer.Serialize(enumBody)).ConfigureAwait(false);
 
-                        Dictionary<string, object> enumBody = new Dictionary<string, object>
-                        {
-                            { "MaxResults", 1 }
-                        };
-                        StringContent content = new StringContent(
-                            JsonSerializer.Serialize(enumBody),
-                            Encoding.UTF8, "application/json");
-                        HttpResponseMessage response = await client.PostAsync(completionUrl, content).ConfigureAwait(false);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            PartioEnumerationEnvelope<PartioEndpointConfig> result =
-                                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
-                            string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
-                            if (!String.IsNullOrEmpty(endpointId))
-                                settings.InferenceEndpointId = endpointId;
-                        }
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        PartioEnumerationEnvelope<PartioEndpointConfig> result =
+                            JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
+                        string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
+                        if (!String.IsNullOrEmpty(endpointId))
+                            settings.InferenceEndpointId = endpointId;
                     }
                 }
                 catch (Exception ex)
@@ -148,30 +141,23 @@ namespace AssistantHub.Server.Handlers
                 // Auto-assign first available embedding endpoint
                 try
                 {
-                    string embeddingUrl = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/embedding/enumerate";
-                    using (HttpClient client = new HttpClient())
+                    Dictionary<string, object> enumBody = new Dictionary<string, object>
                     {
-                        if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
-                            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
+                        { "MaxResults", 1 }
+                    };
+                    HttpResponseMessage response = await EmbeddingEndpoints.SendAsync(
+                        System.Net.Http.HttpMethod.Post,
+                        "/v1.0/endpoints/embedding/enumerate",
+                        JsonSerializer.Serialize(enumBody)).ConfigureAwait(false);
 
-                        Dictionary<string, object> enumBody = new Dictionary<string, object>
-                        {
-                            { "MaxResults", 1 }
-                        };
-                        StringContent content = new StringContent(
-                            JsonSerializer.Serialize(enumBody),
-                            Encoding.UTF8, "application/json");
-                        HttpResponseMessage response = await client.PostAsync(embeddingUrl, content).ConfigureAwait(false);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            PartioEnumerationEnvelope<PartioEndpointConfig> result =
-                                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
-                            string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
-                            if (!String.IsNullOrEmpty(endpointId))
-                                settings.EmbeddingEndpointId = endpointId;
-                        }
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        PartioEnumerationEnvelope<PartioEndpointConfig> result =
+                            JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(respBody);
+                        string endpointId = result?.Data != null && result.Data.Count > 0 ? result.Data[0].Id : null;
+                        if (!String.IsNullOrEmpty(endpointId))
+                            settings.EmbeddingEndpointId = endpointId;
                     }
                 }
                 catch (Exception ex)

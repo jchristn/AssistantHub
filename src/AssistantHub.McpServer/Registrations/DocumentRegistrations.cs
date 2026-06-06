@@ -136,6 +136,42 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
+                    Name = "document/reindex",
+                    Description = "Reindex a single completed document into Verbex.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            documentId = new { type = "string", description = "Document identifier." }
+                        },
+                        required = new[] { "documentId" }
+                    },
+                    Handler = args => AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.ReindexDocumentAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "documentId")).GetAwaiter().GetResult(), includeSecrets: true)
+                },
+                new()
+                {
+                    Name = "document/reindex-batch",
+                    Description = "Reindex completed documents into Verbex using optional DocumentReindexRequest and EnumerationQuery payloads.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            requestJson = new { type = "string", description = "Optional DocumentReindexRequest serialized as JSON string." },
+                            queryJson = new { type = "string", description = "Optional EnumerationQuery serialized as JSON string for page-based backfill." }
+                        },
+                        required = System.Array.Empty<string>()
+                    },
+                    Handler = args =>
+                    {
+                        DocumentReindexRequest? request = AssistantHubMcpServerHelpers.DeserializeOptional<DocumentReindexRequest>(args, "requestJson");
+                        EnumerationQuery? query = AssistantHubMcpServerHelpers.DeserializeOptional<EnumerationQuery>(args, "queryJson");
+                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.ReindexDocumentsAsync(request, query).GetAwaiter().GetResult(), includeSecrets: true);
+                    }
+                },
+                new()
+                {
                     Name = "document/processing-log",
                     Description = "Get a document processing log payload.",
                     InputSchema = new

@@ -201,6 +201,12 @@ namespace AssistantHub.Sdk.Models
         public string EmbeddingEndpointId { get; set; }
 
         /// <summary>
+        /// Whether to load or warm configured endpoint models when a chat window is opened.
+        /// </summary>
+        [JsonPropertyName("LoadModelsOnChatOpen")]
+        public bool LoadModelsOnChatOpen { get; set; }
+
+        /// <summary>
         /// Title displayed as the heading on the chat window.
         /// </summary>
         [JsonPropertyName("Title")]

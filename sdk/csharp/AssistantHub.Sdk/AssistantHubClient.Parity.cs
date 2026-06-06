@@ -278,6 +278,37 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Check whether an inverted index exists.
+        /// </summary>
+        /// <param name="indexId">Index identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if the index exists.</returns>
+        public async Task<bool> IndexExistsAsync(string indexId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+
+            return await HeadAsync("/v1.0/indices/" + UrlEncode(indexId), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Check whether an inverted-index record exists.
+        /// </summary>
+        /// <param name="indexId">Index identifier.</param>
+        /// <param name="recordId">Record identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if the index record exists.</returns>
+        public async Task<bool> IndexRecordExistsAsync(string indexId, string recordId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+
+            return await HeadAsync("/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Check whether a tenant exists.
         /// </summary>
         /// <param name="tenantId">Tenant identifier.</param>

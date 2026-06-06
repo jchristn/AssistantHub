@@ -400,6 +400,7 @@ namespace Test.Automated
                 AssertHelper.IsNull(s.RetrievalGateInferenceEndpointId, "RetrievalGateInferenceEndpointId default");
                 AssertHelper.IsNull(s.QueryRewriteInferenceEndpointId, "QueryRewriteInferenceEndpointId default");
                 AssertHelper.IsNull(s.RerankInferenceEndpointId, "RerankInferenceEndpointId default");
+                AssertHelper.AreEqual(false, s.LoadModelsOnChatOpen, "LoadModelsOnChatOpen default");
             });
 
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: JSON round-trip", async () =>
@@ -409,6 +410,7 @@ namespace Test.Automated
                 s.RetrievalGateInferenceEndpointId = "ep_gate";
                 s.QueryRewriteInferenceEndpointId = "ep_rewrite";
                 s.RerankInferenceEndpointId = "ep_rerank";
+                s.LoadModelsOnChatOpen = true;
 
                 string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
                 AssistantSettings? d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
@@ -417,6 +419,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual("ep_gate", d.RetrievalGateInferenceEndpointId, "round-trip RetrievalGateInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rewrite", d.QueryRewriteInferenceEndpointId, "round-trip QueryRewriteInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rerank", d.RerankInferenceEndpointId, "round-trip RerankInferenceEndpointId");
+                AssertHelper.AreEqual(true, d.LoadModelsOnChatOpen, "round-trip LoadModelsOnChatOpen");
             });
 
             await ExecuteTestAsync("ChatHistory.RerankDurationMs: defaults to 0", async () =>
@@ -813,6 +816,87 @@ namespace Test.Automated
                 RecallDbSettings rdb = new RecallDbSettings();
                 AssertHelper.IsNotNull(rdb, "RecallDbSettings");
                 AssertHelper.AreEqual("", rdb.DashboardUrl, "DashboardUrl default");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: defaults validate", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings();
+                AssertHelper.IsNotNull(verbex, "VerbexSettings");
+                AssertHelper.AreEqual("http://localhost:8501", verbex.Endpoint, "Endpoint default");
+                AssertHelper.AreEqual("default", verbex.DefaultIndexId, "DefaultIndexId default");
+                AssertHelper.AreEqual(0, verbex.MaxContentCharacters, "MaxContentCharacters default");
+                AssertHelper.IsEmpty(verbex.Validate(), "Verbex default validation errors");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: validates endpoint", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings
+                {
+                    Endpoint = "ftp://verbex-server",
+                    AccessKey = "secret",
+                    DefaultIndexId = "default"
+                };
+
+                List<string> errors = verbex.Validate();
+                AssertHelper.IsTrue(errors.Count == 1, "Invalid endpoint should produce one error");
+                AssertHelper.StringContains(errors[0], "Endpoint", "Endpoint validation error");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: validates access key when ingestion enabled", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings
+                {
+                    Endpoint = "http://verbex-server:8080",
+                    AccessKey = "",
+                    EnableIngestion = true,
+                    RequireIngestion = false
+                };
+
+                List<string> errors = verbex.Validate();
+                AssertHelper.IsTrue(errors.Count == 1, "Missing access key should produce one error");
+                AssertHelper.StringContains(errors[0], "AccessKey", "AccessKey validation error");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: validates default index path safety", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings
+                {
+                    Endpoint = "http://verbex-server:8080",
+                    AccessKey = "secret",
+                    DefaultIndexId = "tenant/default"
+                };
+
+                List<string> errors = verbex.Validate();
+                AssertHelper.IsTrue(errors.Count == 1, "Unsafe default index should produce one error");
+                AssertHelper.StringContains(errors[0], "DefaultIndexId", "DefaultIndexId validation error");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: disabled ingestion does not require access key", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings
+                {
+                    Endpoint = "http://verbex-server:8080",
+                    AccessKey = "",
+                    EnableIngestion = false,
+                    RequireIngestion = true
+                };
+
+                List<string> errors = verbex.Validate();
+                AssertHelper.IsEmpty(errors, "Validation errors when ingestion is disabled");
+            });
+
+            await ExecuteTestAsync("Settings.VerbexSettings: clamps max content characters", async () =>
+            {
+                VerbexSettings verbex = new VerbexSettings
+                {
+                    MaxContentCharacters = -10
+                };
+
+                AssertHelper.AreEqual(0, verbex.MaxContentCharacters, "Negative MaxContentCharacters clamps to unlimited");
+
+                verbex.MaxContentCharacters = 1024;
+                AssertHelper.AreEqual(1024, verbex.MaxContentCharacters, "Positive MaxContentCharacters retained");
+                AssertHelper.IsEmpty(verbex.Validate(), "Validation errors");
             });
 
             await ExecuteTestAsync("Settings.ChunkingSettings: defaults", async () =>

@@ -113,7 +113,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference)
@@ -803,15 +803,10 @@ namespace AssistantHub.Server.Handlers
         {
             try
             {
-                string url = Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
-                using (HttpClient client = new HttpClient())
+                using (HttpResponseMessage response = await InferenceEndpoints.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(Settings.Chunking.AccessKey))
-                    {
-                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + Settings.Chunking.AccessKey);
-                    }
-
-                    HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
                         Logging.Warn(_Header + "failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);

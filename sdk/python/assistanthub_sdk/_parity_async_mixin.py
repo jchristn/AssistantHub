@@ -15,6 +15,7 @@ from .models import (
     AssistantAnalyticsStageResult,
     AssistantAnalyticsTimeSeriesResult,
     AssistantFeedback,
+    AssistantChatOpenResult,
     AssistantPublicInfo,
     AssistantSettings,
     AuthenticateRequest,
@@ -23,6 +24,9 @@ from .models import (
     ChatCompletionRequest,
     ChatHistory,
     CollectionRecord,
+    DocumentReindexBatchResult,
+    DocumentReindexRequest,
+    DocumentReindexResult,
     EndpointExplorerCompletionRequest,
     EndpointExplorerCompletionResponse,
     EndpointExplorerEmbeddingRequest,
@@ -105,6 +109,10 @@ class AsyncAssistantHubClientParityMixin:
     async def get_assistant_public(self, assistant_id: str) -> AssistantPublicInfo:
         response = await self._request("GET", f"/v1.0/assistants/{assistant_id}/public")
         return AssistantPublicInfo.model_validate(response.json())
+
+    async def open_assistant_chat(self, assistant_id: str) -> AssistantChatOpenResult:
+        response = await self._request("POST", f"/v1.0/assistants/{assistant_id}/chat/open")
+        return AssistantChatOpenResult.model_validate(response.json())
 
     async def get_assistant_settings(self, assistant_id: str) -> AssistantSettings:
         response = await self._request("GET", f"/v1.0/assistants/{assistant_id}/settings")
@@ -293,6 +301,31 @@ class AsyncAssistantHubClientParityMixin:
         response = await self._request("GET", f"/v1.0/documents/{document_id}/processing-log")
         return response.json()
 
+    async def reindex_document(self, document_id: str) -> DocumentReindexResult:
+        response = await self._request("POST", f"/v1.0/documents/{document_id}/reindex", json={})
+        return DocumentReindexResult.model_validate(response.json())
+
+    async def reindex_documents(
+        self,
+        request: DocumentReindexRequest | dict[str, Any] | None = None,
+        *,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+        bucket_name: Optional[str] = None,
+        collection_id: Optional[str] = None,
+    ) -> DocumentReindexBatchResult:
+        payload = request.model_dump(by_alias=True, exclude_none=True) if isinstance(request, DocumentReindexRequest) else (request or {})
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        if bucket_name is not None:
+            params["bucketName"] = bucket_name
+        if collection_id is not None:
+            params["collectionId"] = collection_id
+
+        response = await self._request("POST", "/v1.0/documents/reindex", params=params, json=payload)
+        return DocumentReindexBatchResult.model_validate(response.json())
+
     async def download_document(self, document_id: str) -> httpx.Response:
         return await self._request("GET", f"/v1.0/documents/{document_id}/download")
 
@@ -359,6 +392,109 @@ class AsyncAssistantHubClientParityMixin:
 
     async def batch_delete_collection_records(self, collection_id: str, record_ids: list[str]) -> None:
         await self._request("POST", f"/v1.0/collections/{collection_id}/records/batch/delete", json=record_ids)
+
+    async def search_collection(self, collection_id: str, request: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("POST", f"/v1.0/collections/{collection_id}/search", json=request)
+        return response.json()
+
+    async def list_indices(
+        self,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        response = await self._request("GET", "/v1.0/indices", params=params)
+        return response.json()
+
+    async def create_index(self, index: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("PUT", "/v1.0/indices", json=index)
+        return response.json()
+
+    async def get_index(self, index_id: str) -> dict[str, Any]:
+        response = await self._request("GET", f"/v1.0/indices/{index_id}")
+        return response.json()
+
+    async def update_index(self, index_id: str, index: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}", json=index)
+        return response.json()
+
+    async def delete_index(self, index_id: str) -> None:
+        await self._request("DELETE", f"/v1.0/indices/{index_id}")
+
+    async def index_exists(self, index_id: str) -> bool:
+        return await self._head(f"/v1.0/indices/{index_id}")
+
+    async def update_index_labels(self, index_id: str, labels: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/labels", json=labels)
+        return response.json()
+
+    async def update_index_tags(self, index_id: str, tags: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/tags", json=tags)
+        return response.json()
+
+    async def update_index_custom_metadata(self, index_id: str, custom_metadata: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/custom-metadata", json=custom_metadata)
+        return response.json()
+
+    async def get_index_top_terms(self, index_id: str, max_results: Optional[int] = None) -> dict[str, Any]:
+        params = {"maxResults": max_results} if max_results is not None else None
+        response = await self._request("GET", f"/v1.0/indices/{index_id}/terms/top", params=params)
+        return response.json()
+
+    async def search_index(self, index_id: str, request: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("POST", f"/v1.0/indices/{index_id}/search", json=request)
+        return response.json()
+
+    async def list_index_records(
+        self,
+        index_id: str,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        response = await self._request("GET", f"/v1.0/indices/{index_id}/records", params=params)
+        return response.json()
+
+    async def create_index_record(self, index_id: str, record: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/records", json=record)
+        return response.json()
+
+    async def create_index_records_batch(self, index_id: str, records: list[dict[str, Any]] | dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("POST", f"/v1.0/indices/{index_id}/records/batch", json=records)
+        return response.json()
+
+    async def check_index_records_exist(self, index_id: str, record_ids: list[str] | dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("POST", f"/v1.0/indices/{index_id}/records/exists", json=record_ids)
+        return response.json()
+
+    async def delete_index_records(self, index_id: str, record_ids: list[str]) -> None:
+        await self._request("DELETE", f"/v1.0/indices/{index_id}/records", params={"ids": ",".join(record_ids)})
+
+    async def get_index_record(self, index_id: str, record_id: str) -> dict[str, Any]:
+        response = await self._request("GET", f"/v1.0/indices/{index_id}/records/{record_id}")
+        return response.json()
+
+    async def index_record_exists(self, index_id: str, record_id: str) -> bool:
+        return await self._head(f"/v1.0/indices/{index_id}/records/{record_id}")
+
+    async def delete_index_record(self, index_id: str, record_id: str) -> None:
+        await self._request("DELETE", f"/v1.0/indices/{index_id}/records/{record_id}")
+
+    async def update_index_record_labels(self, index_id: str, record_id: str, labels: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/records/{record_id}/labels", json=labels)
+        return response.json()
+
+    async def update_index_record_tags(self, index_id: str, record_id: str, tags: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/records/{record_id}/tags", json=tags)
+        return response.json()
+
+    async def update_index_record_custom_metadata(self, index_id: str, record_id: str, custom_metadata: Any) -> dict[str, Any]:
+        response = await self._request("PUT", f"/v1.0/indices/{index_id}/records/{record_id}/custom-metadata", json=custom_metadata)
+        return response.json()
 
     async def create_bucket(self, request: BucketCreateRequest | dict[str, Any]) -> dict[str, Any]:
         payload = request.model_dump(by_alias=True, exclude_none=True) if isinstance(request, BucketCreateRequest) else request

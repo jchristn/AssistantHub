@@ -3,6 +3,15 @@
 ## Unreleased
 
 ### Added
+- **Verbex text search integration**: Added Verbex server/dashboard Docker services, PostgreSQL database provisioning, factory reset handling, settings/UI configuration, and first-run tenant/default-index provisioning.
+- **Inverted-index artifact APIs**: Added AssistantHub REST, OpenAPI, Postman, SDK, and MCP coverage for Verbex indices, index records, and index search, with all requests marshaled through AssistantHub.
+- **Document text indexing**: Added Verbex ingestion after DocumentAtom text extraction, including ingestion-rule/document label and tag propagation, stable document-backed record IDs, duplicate-record replacement, document delete garbage collection, and admin reindex/backfill APIs.
+- **Search dashboard surfaces**: Added `ARTIFACTS > Indices`, `ARTIFACTS > Indices > Records`, `ARTIFACTS > Indices > Search`, and `ARTIFACTS > Collections > Search` for Verbex text search and RecallDB collection search.
+- **Search dashboard completion**: Expanded index, index-record, Verbex search, and RecallDB search pages with metadata editing, filters, detail modals, top terms, score/timing display, empty/error states, and raw JSON inspection.
+- **Verbex search result enrichment**: Updated `ARTIFACTS > Indices > Search` to request Verbex matched terms, per-term details, and document term statistics, then render unique terms, total term occurrences, matched query terms, and richer result metadata in the table and detail modal.
+- **Search result UI polish**: Simplified the index-records table, aligned record/search result detail modals into three-column layouts, widened the index search result modal, and added copy-to-clipboard controls for JSON payloads in index and collection search result details.
+- **RecallDB collection search proxy**: Added AssistantHub-marshaled RecallDB collection search APIs across REST, MCP, SDKs, OpenAPI, Postman, and dashboard.
+- **External service contracts**: Added interface/implementation wrappers for Less3 object storage, DocumentAtom atomization, Partio chunking/endpoint management, RecallDB vector storage, Verbex inverted indexing, and aggregate subordinate service health checks.
 - **AssistantHub MCP server**: Added standalone `AssistantHub.McpServer` with Voltaic HTTP, TCP, and WebSocket transports plus install support for Claude/Cursor MCP clients.
 - **Endpoint model loading**: Added AssistantHub proxy routes and dashboard actions for loading or warming Partio-managed embedding and inference endpoint models, with a custom status modal for Partio's load result payload.
 - **MCP management surface**: Added MCP tools for system/runtime inspection, authentication, tenants, users, credentials, buckets, bucket objects, collections, assistants, assistant settings, documents, ingestion rules, feedback, history, request history, endpoints, models, crawl plans, crawl operations, evaluation, and runtime configuration.
@@ -11,12 +20,17 @@
 - **Docker status scripts**: Added `docker/status.bat` and `docker/status.sh` for a concise `docker ps -a` view of container ID, name, creation time, status, and ports.
 
 ### Changed
-- **Docker PostgreSQL defaults**: The local Docker deployment now defaults AssistantHub, Less3, Partio, and RecallDB to a shared PostgreSQL/pgvector container with separate service databases and application roles, plus a one-shot `postgres-init` verifier before services start.
+- **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, Postman, and documentation metadata to `0.14.0`.
+- **Verbex Docker database**: Added Verbex to the shared PostgreSQL deployment model alongside AssistantHub, Less3, Partio, and RecallDB.
+- **Document management**: Document deletion now also removes associated Verbex text-search records, and the dashboard exposes a completed-document reindex action for admin users.
+- **Docker PostgreSQL defaults**: The local Docker deployment now defaults AssistantHub, Less3, Partio, RecallDB, and Verbex to a shared PostgreSQL/pgvector container with separate service databases and application roles, plus a one-shot `postgres-init` verifier before services start.
 - **Archived PostgreSQL migration plan**: Moved the completed Docker PostgreSQL migration plan to `archive/POSTGRES_MIGRATION.md`.
 - **SDK parity for MCP-backed routes**: C#, JavaScript, and Python SDKs now expose request-history APIs and align the eval judge-prompt/eval-results contracts used by the MCP server.
 - **Testing documentation and runners**: Root test docs and wrappers document the Touchstone-backed `Test.Automated`, `Test.Xunit`, and `Test.Nunit` layout plus MCP-focused environment controls.
 
 ### Fixed
+- **Verbex configuration validation**: Added validation for Verbex endpoint, access key when ingestion is enabled, default index ID, and dashboard URL.
+- **Verbex large-document controls**: Added optional `Verbex.MaxContentCharacters` to cap normalized document text sent to Verbex per record; the default `0` keeps full-text indexing unlimited.
 - **Request-history query parsing**: Request-history filter parsing now URL-decodes reserved characters before building filters, fixing MCP and REST summary/list queries that include encoded path or timestamp values.
 - **Assistant analytics database portability**: Retained-chat analytics scoping now uses the active database driver's boolean formatting instead of a hard-coded literal, keeping the fix valid for SQLite, MySQL, PostgreSQL, and SQL Server.
 

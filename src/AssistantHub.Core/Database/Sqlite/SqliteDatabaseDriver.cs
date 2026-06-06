@@ -86,6 +86,7 @@ namespace AssistantHub.Core.Database.Sqlite
             await ExecuteQueryAsync(pragmas, false, token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateTables(), false, token).ConfigureAwait(false);
             await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
+            await EnsureSearchIndexColumnsAsync(token).ConfigureAwait(false);
             await EnsureTelemetryColumnsAsync(token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.CreateIndices(), false, token).ConfigureAwait(false);
 
@@ -208,6 +209,28 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "rerank_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "load_models_on_chat_open"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, true, token).ConfigureAwait(false);
+        }
+
+        private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
+        {
+            DataTable documentColumns = await ExecuteQueryAsync("PRAGMA table_info(assistant_documents);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "verbex_tenant_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsVerbexTenantIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "verbex_index_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsVerbexIndexIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "verbex_record_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsVerbexRecordIdColumn, true, token).ConfigureAwait(false);
+
+            DataTable ruleColumns = await ExecuteQueryAsync("PRAGMA table_info(ingestion_rules);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(ruleColumns, "verbex_index_id"))
+                await ExecuteQueryAsync(TableQueries.AddIngestionRulesVerbexIndexIdColumn, true, token).ConfigureAwait(false);
         }
 
         private async Task EnsureTelemetryColumnsAsync(CancellationToken token)

@@ -90,6 +90,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  query_rewrite_inference_endpoint_id TEXT, " +
                 "  rerank_inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
+                "  load_models_on_chat_open INTEGER NOT NULL DEFAULT 0, " +
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
                 "  favicon_url TEXT, " +
@@ -118,6 +119,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  ingestion_rule_id TEXT, " +
                 "  bucket_name TEXT, " +
                 "  collection_id TEXT, " +
+                "  verbex_tenant_id TEXT, " +
+                "  verbex_index_id TEXT, " +
+                "  verbex_record_id TEXT, " +
                 "  labels_json TEXT, " +
                 "  tags_json TEXT, " +
                 "  chunk_record_ids TEXT, " +
@@ -147,6 +151,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  bucket TEXT NOT NULL, " +
                 "  collection_name TEXT NOT NULL, " +
                 "  collection_id TEXT, " +
+                "  verbex_index_id TEXT, " +
                 "  labels_json TEXT, " +
                 "  tags_json TEXT, " +
                 "  atomization_json TEXT, " +
@@ -383,6 +388,36 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN rerank_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the load-models-on-chat-open column.
+        /// </summary>
+        public static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN load_models_on_chat_open INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the Verbex tenant ID column to assistant documents.
+        /// </summary>
+        public static string AddAssistantDocumentsVerbexTenantIdColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN verbex_tenant_id TEXT;";
+
+        /// <summary>
+        /// Add the Verbex index ID column to assistant documents.
+        /// </summary>
+        public static string AddAssistantDocumentsVerbexIndexIdColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN verbex_index_id TEXT;";
+
+        /// <summary>
+        /// Add the Verbex record ID column to assistant documents.
+        /// </summary>
+        public static string AddAssistantDocumentsVerbexRecordIdColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN verbex_record_id TEXT;";
+
+        /// <summary>
+        /// Add the Verbex index ID column to ingestion rules.
+        /// </summary>
+        public static string AddIngestionRulesVerbexIndexIdColumn =
+            "ALTER TABLE ingestion_rules ADD COLUMN verbex_index_id TEXT;";
 
         /// <summary>
         /// Add the trace ID column to chat history.

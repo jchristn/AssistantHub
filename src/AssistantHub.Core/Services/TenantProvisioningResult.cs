@@ -39,6 +39,12 @@ namespace AssistantHub.Core.Services
         /// <summary>Default bearer token.</summary>
         public string BearerToken { get; set; }
 
+        /// <summary>Verbex tenant identifier created for the AssistantHub tenant.</summary>
+        public string VerbexTenantId { get; set; }
+
+        /// <summary>Default Verbex index identifier created for the AssistantHub tenant.</summary>
+        public string VerbexDefaultIndexId { get; set; }
+
         /// <summary>Admin user created during provisioning.</summary>
         public UserMaster User { get; set; }
 

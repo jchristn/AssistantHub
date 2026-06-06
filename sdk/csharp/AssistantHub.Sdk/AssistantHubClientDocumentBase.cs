@@ -146,7 +146,34 @@ namespace AssistantHub.Sdk
             if (documentIds == null)
                 throw new ArgumentNullException(nameof(documentIds));
 
-            await SendAsync(HttpMethod.Post, "/v1.0/documents/delete", documentIds, cancellationToken).ConfigureAwait(false);
+            await SendAsync(HttpMethod.Post, "/v1.0/documents/delete", new { DocumentIds = documentIds }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Reindex a single completed document into Verbex.
+        /// </summary>
+        /// <param name="documentId">Document identifier.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Reindex result.</returns>
+        public async Task<DocumentReindexResult> ReindexDocumentAsync(string documentId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentNullException(nameof(documentId));
+
+            return await SendAsync<DocumentReindexResult>(HttpMethod.Post, "/v1.0/documents/" + Uri.EscapeDataString(documentId) + "/reindex", new { }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Reindex completed documents into Verbex.
+        /// </summary>
+        /// <param name="request">Optional reindex request.</param>
+        /// <param name="query">Optional enumeration query for page-based backfill.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Batch reindex result.</returns>
+        public async Task<DocumentReindexBatchResult> ReindexDocumentsAsync(DocumentReindexRequest request = null, EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            string path = AppendEnumerationQuery("/v1.0/documents/reindex", query);
+            return await SendAsync<DocumentReindexBatchResult>(HttpMethod.Post, path, request ?? new DocumentReindexRequest(), cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

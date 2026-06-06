@@ -24,6 +24,16 @@
             Logo.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.VerbexTenantIdTag">
+            <summary>
+            Tenant tag key containing the corresponding Verbex tenant identifier.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Constants.VerbexDefaultIndexIdTag">
+            <summary>
+            Tenant tag key containing the default Verbex index identifier for the tenant.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.SettingsFile">
             <summary>
             Settings file.
@@ -498,6 +508,17 @@
             </summary>
             <param name="id">Assistant document identifier.</param>
             <param name="chunkRecordIdsJson">JSON array of record IDs.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update Verbex indexing metadata for a document after full-text indexing.
+            </summary>
+            <param name="id">Assistant document identifier.</param>
+            <param name="verbexTenantId">Verbex tenant identifier.</param>
+            <param name="verbexIndexId">Verbex index identifier.</param>
+            <param name="verbexRecordId">Verbex record identifier.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
@@ -1358,6 +1379,9 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods">
             <summary>
             MySQL assistant feedback methods implementation.
@@ -1824,6 +1848,9 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods">
@@ -2299,6 +2326,9 @@
             <param name="chunkRecordIdsJson">Chunk record IDs in JSON form.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods">
             <summary>
@@ -2811,6 +2841,26 @@
             Add the rerank inference endpoint ID column.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexTenantIdColumn">
+            <summary>
+            Add the Verbex tenant ID column to assistant documents.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexIndexIdColumn">
+            <summary>
+            Add the Verbex index ID column to assistant documents.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexRecordIdColumn">
+            <summary>
+            Add the Verbex record ID column to assistant documents.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddIngestionRulesVerbexIndexIdColumn">
+            <summary>
+            Add the Verbex index ID column to ingestion rules.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryTraceIdColumn">
             <summary>
             Add the trace ID column to chat history.
@@ -2939,6 +2989,9 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateChunkRecordIdsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods">
@@ -4967,6 +5020,21 @@
         <member name="P:AssistantHub.Core.Models.AssistantDocument.CollectionId">
             <summary>
             RecallDB collection identifier for embeddings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.VerbexTenantId">
+            <summary>
+            Verbex tenant identifier used for full-text indexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.VerbexIndexId">
+            <summary>
+            Verbex index identifier used for full-text indexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.VerbexRecordId">
+            <summary>
+            Verbex record identifier used for full-text indexing.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.Labels">
@@ -7089,6 +7157,116 @@
             <param name="row">Data row.</param>
             <returns>Credential instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.DocumentReindexBatchResult">
+            <summary>
+            Result for a batch document Verbex reindex operation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Requested">
+            <summary>
+            Number of documents considered by this request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Eligible">
+            <summary>
+            Number of documents eligible for reindexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Reindexed">
+            <summary>
+            Number of documents reindexed successfully.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Skipped">
+            <summary>
+            Number of documents skipped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Failed">
+            <summary>
+            Number of documents that failed reindexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.ContinuationToken">
+            <summary>
+            Continuation token for the next enumerated batch when document IDs are not supplied explicitly.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.EndOfResults">
+            <summary>
+            Indicates whether the end of enumerated documents has been reached.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.Results">
+            <summary>
+            Per-document results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexBatchResult.TotalMs">
+            <summary>
+            Total milliseconds elapsed.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.DocumentReindexRequest">
+            <summary>
+            Request body for document Verbex reindex operations.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexRequest.DocumentIds">
+            <summary>
+            Optional explicit document identifiers to reindex. When omitted, the server enumerates documents for the caller's tenant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexRequest.IncludeAlreadyIndexed">
+            <summary>
+            Reindex documents even when Verbex metadata is already present.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.DocumentReindexResult">
+            <summary>
+            Result for a single document Verbex reindex operation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.DocumentId">
+            <summary>
+            AssistantHub document identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.Success">
+            <summary>
+            Whether the reindex operation succeeded or was intentionally skipped.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.Status">
+            <summary>
+            Operation status: Reindexed, Skipped, Failed, or NotFound.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.Message">
+            <summary>
+            Human-readable operation result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.VerbexTenantId">
+            <summary>
+            Verbex tenant identifier used for indexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.VerbexIndexId">
+            <summary>
+            Verbex index identifier used for indexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.VerbexRecordId">
+            <summary>
+            Verbex record identifier used for indexing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentReindexResult.TotalMs">
+            <summary>
+            Total milliseconds elapsed.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.EmbeddingCallDetail">
             <summary>
             Captures details of a single HTTP call made to an upstream embedding endpoint.
@@ -8106,6 +8284,11 @@
         <member name="P:AssistantHub.Core.Models.IngestionRule.CollectionId">
             <summary>
             RecallDB collection GUID for API calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionRule.VerbexIndexId">
+            <summary>
+            Verbex index identifier for full-text indexing. Null uses the tenant default.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionRule.Labels">
@@ -9850,7 +10033,7 @@
             Cancellation token.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
             <summary>
             Instantiate.
             </summary>
@@ -9930,7 +10113,7 @@
             Factory for creating crawler instances based on repository type.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerFactory.Create(AssistantHub.Core.Enums.RepositoryTypeEnum,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerFactory.Create(AssistantHub.Core.Enums.RepositoryTypeEnum,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
             <summary>
             Create a crawler for the specified repository type.
             </summary>
@@ -9951,7 +10134,7 @@
             Web repository crawler implementation using CrawlSharp.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
             <summary>
             Instantiate.
             </summary>
@@ -9980,6 +10163,25 @@
             </summary>
             <param name="filename">Filename.</param>
             <returns>Always false.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.DocumentAtomAtomizationService">
+            <summary>
+            DocumentAtom implementation of the atomization service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.#ctor(AssistantHub.Core.Settings.DocumentAtomSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">DocumentAtom settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="processingLog">Optional processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.DetectDocumentTypeAsync(System.String,System.Byte[],System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.ExtractTextAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Services.EndpointConcurrencyLimiter">
             <summary>
@@ -10030,7 +10232,7 @@
             Default judge prompt template.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.EvalService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Core.Services.EvalService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IInferenceEndpointService)">
             <summary>
             Instantiate.
             </summary>
@@ -10054,6 +10256,65 @@
             <summary>
             List of Gemini models.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IAtomizationService">
+            <summary>
+            Document atomization and type-detection service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IAtomizationService.DetectDocumentTypeAsync(System.String,System.Byte[],System.String,System.Threading.CancellationToken)">
+            <summary>
+            Detect the type of a document.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IAtomizationService.ExtractTextAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Extract text content from a document.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IChunkingService">
+            <summary>
+            Chunking service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IChunkingService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Send a request to the backing chunking service.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IEmbeddingEndpointService">
+            <summary>
+            Embedding endpoint management service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IEmbeddingEndpointService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Send a request to the backing embedding endpoint management service.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IInferenceEndpointService">
+            <summary>
+            Inference endpoint management service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IInferenceEndpointService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Send a request to the backing inference endpoint management service.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IInvertedIndexService">
+            <summary>
+            Inverted index service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IInvertedIndexService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String)">
+            <summary>
+            Send a request to the backing inverted index service.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="relativePathAndQuery">Relative service path and query string.</param>
+            <param name="body">Optional JSON request body.</param>
+            <returns>HTTP response from the backing service.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.InferenceService">
             <summary>
@@ -10207,7 +10468,7 @@
             Background document ingestion pipeline service.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Core.Services.IngestionService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,AssistantHub.Core.Settings.VerbexSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -10216,8 +10477,25 @@
             <param name="documentAtomSettings">DocumentAtom service settings.</param>
             <param name="chunkingSettings">Chunking service settings.</param>
             <param name="recallDbSettings">RecallDb service settings.</param>
+            <param name="verbexSettings">Verbex service settings.</param>
             <param name="logging">Logging module.</param>
             <param name="processingLog">Optional processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ReindexDocumentTextAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Reindex a document's extracted text into Verbex.
+            </summary>
+            <param name="documentId">Assistant document identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Reindex result.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.ReindexDocumentTextAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <summary>
+            Reindex a document's extracted text into Verbex.
+            </summary>
+            <param name="document">Assistant document record.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Reindex result.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.ProcessDocumentAsync(System.String,System.Threading.CancellationToken)">
             <summary>
@@ -10247,12 +10525,32 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteIndexRecordAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an indexed document record from Verbex.
+            </summary>
+            <param name="tenantId">AssistantHub tenant identifier.</param>
+            <param name="indexId">Index identifier.</param>
+            <param name="recordId">Record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.DeleteIndexRecordBatchAsync(System.String,System.String,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Delete multiple indexed document records from a Verbex index.
+            </summary>
+            <param name="tenantId">AssistantHub tenant identifier.</param>
+            <param name="indexId">Index identifier.</param>
+            <param name="recordIds">Record identifiers.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.IngestionServiceBase">
             <summary>
             Provides shared document ingestion pipeline helpers.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Settings.DocumentAtomSettings,AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,AssistantHub.Core.Settings.VerbexSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate the ingestion service helper base.
             </summary>
@@ -10261,8 +10559,24 @@
             <param name="documentAtomSettings">DocumentAtom service settings.</param>
             <param name="chunkingSettings">Chunking service settings.</param>
             <param name="recallDbSettings">RecallDb service settings.</param>
+            <param name="verbexSettings">Verbex service settings.</param>
             <param name="logging">Logging module.</param>
             <param name="processingLog">Optional processing log service.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.NormalizeTextForIndexing(System.String)">
+            <summary>
+            Normalize extracted text before full-text indexing without collapsing meaningful interior whitespace.
+            </summary>
+            <param name="content">Extracted text content.</param>
+            <returns>Normalized text content.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ApplyVerbexContentLimit(System.String,System.Int32)">
+            <summary>
+            Apply the optional Verbex indexing content limit after normalization.
+            </summary>
+            <param name="content">Normalized text content.</param>
+            <param name="maxContentCharacters">Maximum content characters, or zero for unlimited.</param>
+            <returns>Limited text content.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.UpdateDocumentStatusAsync(System.String,AssistantHub.Core.Enums.DocumentStatusEnum,System.String,System.Threading.CancellationToken)">
             <summary>
@@ -10329,6 +10643,31 @@
             Collections must be created via the dashboard/RecallDB before ingestion.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.EnsureVerbexIndexExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Ensure a Verbex index exists.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ResolveVerbexScopeAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resolve the Verbex tenant and default index identifiers for an AssistantHub tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ResolveVerbexScopeAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resolve the Verbex tenant and target index identifiers for an AssistantHub tenant.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.IndexDocumentTextAsync(AssistantHub.Core.Models.AssistantDocument,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken)">
+            <summary>
+            Index extracted document text into Verbex.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.DeleteIndexRecordInternalAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an indexed document record from Verbex.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.StoreEmbeddingAsync(System.String,System.String,System.String,AssistantHub.Core.Services.ChunkResult,System.Int32,System.Threading.CancellationToken)">
             <summary>
             Store a single chunk embedding in RecallDB.
@@ -10377,6 +10716,61 @@
             Merge tags from ingestion rule and document.
             Document tags override rule tags for the same key.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IObjectStorageService">
+            <summary>
+            Object storage service abstraction for Less3/S3-compatible storage.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.UploadAsync(System.String,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Upload a file to the default bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.UploadAsync(System.String,System.String,System.String,System.Byte[],System.Threading.CancellationToken)">
+            <summary>
+            Upload a file to a specific bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.DownloadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Download a file from the default bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.DownloadAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Download a file from a specific bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a file from the default bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.DeleteAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a file from a specific bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.ExistsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check whether a file exists in the default bucket.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IVectorStoreService">
+            <summary>
+            Vector-store service abstraction.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IVectorStoreService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Send a request to the backing vector-store service.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="relativePathAndQuery">Relative service path and query string.</param>
+            <param name="body">Optional JSON request body.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>HTTP response from the backing service.</returns>
         </member>
         <member name="P:AssistantHub.Core.Services.OllamaChatResponse.Message">
             <summary>
@@ -10458,6 +10852,45 @@
             List of model entries.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Services.PartioChunkingService">
+            <summary>
+            Partio implementation of the chunking service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioChunkingService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioChunkingService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.PartioEmbeddingEndpointService">
+            <summary>
+            Partio implementation of embedding endpoint management.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioEmbeddingEndpointService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioEmbeddingEndpointService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.PartioInferenceEndpointService">
+            <summary>
+            Partio implementation of inference endpoint management.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioInferenceEndpointService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.PartioInferenceEndpointService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Services.ProcessChunk">
             <summary>
             A single chunk from the Partio process response.
@@ -10534,18 +10967,35 @@
             Document key (unique identifier within the collection).
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Services.RecallDbVectorStoreService">
+            <summary>
+            RecallDB implementation of the vector-store service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RecallDbVectorStoreService.#ctor(AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">RecallDB settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RecallDbVectorStoreService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService">
             <summary>
             Retrieval service for querying embedded document chunks.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule)">
+        <member name="M:AssistantHub.Core.Services.RetrievalService.#ctor(AssistantHub.Core.Settings.ChunkingSettings,AssistantHub.Core.Settings.RecallDbSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Services.IVectorStoreService,AssistantHub.Core.Services.IChunkingService)">
             <summary>
             Instantiate.
             </summary>
             <param name="chunkingSettings">Chunking service settings.</param>
             <param name="recallDbSettings">RecallDb service settings.</param>
             <param name="logging">Logging module.</param>
+            <param name="vectorStore">Optional vector-store service implementation.</param>
+            <param name="chunkingService">Optional chunking service implementation.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.RetrieveAsync(System.String,System.String,System.String,System.Int32,System.Double,System.Threading.CancellationToken,System.String,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
@@ -10741,6 +11191,12 @@
         <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.BearerToken">
             <summary>Default bearer token.</summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.VerbexTenantId">
+            <summary>Verbex tenant identifier created for the AssistantHub tenant.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.VerbexDefaultIndexId">
+            <summary>Default Verbex index identifier created for the AssistantHub tenant.</summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.TenantProvisioningResult.User">
             <summary>Admin user created during provisioning.</summary>
         </member>
@@ -10757,6 +11213,16 @@
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TenantProvisioningService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.IVectorStoreService,AssistantHub.Core.Services.IInvertedIndexService)">
+            <summary>
+            Instantiate with explicit subordinate service implementations.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">AssistantHub settings.</param>
+            <param name="vectorStore">Vector store implementation.</param>
+            <param name="invertedIndex">Inverted index implementation.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.TenantProvisioningService.ProvisionAsync(AssistantHub.Core.Models.TenantMetadata)">
             <summary>
@@ -10787,6 +11253,29 @@
             <summary>
             Detected document type.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.VerbexInvertedIndexService">
+            <summary>
+            Verbex implementation of the inverted index service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.VerbexInvertedIndexService.#ctor(AssistantHub.Core.Settings.VerbexSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Verbex settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.VerbexInvertedIndexService.#ctor(AssistantHub.Core.Settings.VerbexSettings,SyslogLogging.LoggingModule,System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Verbex settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="httpClient">HTTP client.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.VerbexInvertedIndexService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String)">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
             <summary>
@@ -10841,6 +11330,11 @@
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.RecallDb">
             <summary>
             RecallDb service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Verbex">
+            <summary>
+            Verbex service settings.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Logging">
@@ -11329,6 +11823,57 @@
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.VerbexSettings">
+            <summary>
+            Verbex service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.Endpoint">
+            <summary>
+            Endpoint URL for the Verbex service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.AccessKey">
+            <summary>
+            Access key for the Verbex service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.DashboardUrl">
+            <summary>
+            Browser URL for the Verbex dashboard.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.DefaultIndexId">
+            <summary>
+            Default index identifier used for document ingestion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.EnableIngestion">
+            <summary>
+            Enable document text ingestion into Verbex.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.RequireIngestion">
+            <summary>
+            Fail document ingestion when Verbex indexing fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.MaxContentCharacters">
+            <summary>
+            Maximum normalized content characters sent to Verbex for one record.  Zero means unlimited.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.VerbexSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.VerbexSettings.Validate">
+            <summary>
+            Validate Verbex settings.
+            </summary>
+            <returns>List of validation errors.</returns>
         </member>
         <member name="T:AssistantHub.Core.Settings.WebserverSettings">
             <summary>

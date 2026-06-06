@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.13.0` adds assistant analytics over the v0.12.0 telemetry stream. The dashboard now includes an assistant-scoped Analytics page with request volume, latency, stage, endpoint/model, provider timing, token, retrieval fanout, slow-request, and feedback trends over the last hour, day, week, or month. Assistant Analytics is scoped to surviving Assistant History rows, with Request History joined only as supporting telemetry.
+`v0.14.0` adds Verbex inverted-index search and RecallDB collection search. The Docker deployment includes Verbex server/dashboard services, AssistantHub exposes proxied index/search APIs, and the dashboard has Artifacts pages for Indices, Index Records, Index Search, and Collection Search.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -30,13 +30,21 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.13.0
+## New in v0.14.0
+
+- **Verbex deployment plumbing** -- Docker Compose includes `jchristn77/verbex-server:v0.1.0` and `jchristn77/verbex-dashboard:v0.1.0`, backed by the shared PostgreSQL service.
+- **Inverted-index APIs** -- AssistantHub now has proxied REST routes for indices, index records, index search, and collection search.
+- **Collection search API** -- AssistantHub now marshals RecallDB collection search through `POST /v1.0/collections/{collectionId}/search`.
+- **Dashboard search surfaces** -- Artifacts includes `Collections > Search`, `Indices`, `Indices > Records`, and `Indices > Search` with filters, metadata editing, result details, scoring, and raw JSON inspection.
+- **Implementation plan** -- The remaining whole-product work is tracked in [`SEARCH.md`](SEARCH.md).
+
+## Previous Release Highlights
 
 - **Assistant Analytics dashboard** -- New `Assistants > Analytics` page with per-assistant charts for request volume, success/failure, latency percentiles, stage duration, endpoint/model usage, provider timings, token throughput, retrieval fanout, slowest requests, and feedback trend, scoped to retained Assistant History rows.
 - **Analytics REST API** -- Added `GET /v1.0/assistants/{assistantId}/analytics/*` endpoints for overview, time series, stage buckets, endpoint summaries, slowest requests, and feedback analytics.
 - **Efficient assistant-scoped telemetry queries** -- `chat_history_performance_events` now carries `assistant_id`, with startup migrations and provider scripts adding backfill and indexes for SQLite, PostgreSQL, MySQL, and SQL Server.
 - **SDK and MCP coverage** -- C#, JavaScript/TypeScript, Python, Postman, OpenAPI, and MCP all expose the new assistant analytics read APIs.
-- **Schema migration** -- Existing deployments can add analytics indexes and backfill performance events with the matching `migrations/011_upgrade_to_v0.13.0.*.sql` provider script.
+- **Schema migration** -- Existing deployments can add analytics indexes and backfill performance events with the matching assistant analytics provider script.
 
 Implementation planning notes for Assistant Analytics are archived in [`archive/ASSISTANT_ANALYTICS.md`](archive/ASSISTANT_ANALYTICS.md).
 
@@ -173,7 +181,7 @@ Operational notes:
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
 - **Endpoint Management** -- Manage, test, and explicitly load or warm embedding and completion (inference) endpoint models on the Partio service directly from the dashboard or API.
-- **Search** -- Leverages pgvector and RecallDB for vector, full-text, and hybrid search. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
+- **Search** -- Leverages Verbex for TF-IDF/text document search and pgvector/RecallDB for vector, full-text, and hybrid retrieval. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
 - **Retrieval Gate** -- Optional LLM-based retrieval gate that intelligently decides whether each user message requires a new document search or can be answered from existing conversation context, reducing unnecessary retrieval calls.
 - **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (Ollama, OpenAI, Gemini). Supports real-time SSE streaming.
 - **Conversation Compaction** -- Automatic summarization of older messages when the conversation approaches the context window limit, preserving continuity across long conversations.
@@ -191,7 +199,7 @@ Operational notes:
 
 ## Quick Start (Docker)
 
-The fastest way to run AssistantHub and all its dependencies is with Docker Compose. This is the recommended deployment method. The Docker deployment uses PostgreSQL by default for AssistantHub, Less3, Partio, and RecallDB metadata.
+The fastest way to run AssistantHub and all its dependencies is with Docker Compose. This is the recommended deployment method. The Docker deployment uses PostgreSQL by default for AssistantHub, Less3, Partio, RecallDB, and Verbex metadata.
 
 ```bash
 cd docker
@@ -202,7 +210,7 @@ Once all services are healthy, open [http://localhost:8801](http://localhost:880
 
 On a fresh startup, `assistanthub-server` now waits for `partio-server` to become healthy before it starts. This avoids the transient `partio-server:8400` DNS/startup race that could previously abort AssistantHub startup immediately after a factory reset.
 
-> **Note:** Deploying individual services outside of Docker is also possible, but requires manual configuration and deployment of each dependency (PostgreSQL with pgvector, Ollama, Less3, DocumentAtom, Partio, RecallDB). The Docker Compose stack handles all service wiring, health checks, and startup ordering automatically, which is why manual setup documentation is not provided.
+> **Note:** Deploying individual services outside of Docker is also possible, but requires manual configuration and deployment of each dependency (PostgreSQL with pgvector, Ollama, Less3, DocumentAtom, Partio, RecallDB, Verbex). The Docker Compose stack handles all service wiring, health checks, and startup ordering automatically, which is why manual setup documentation is not provided.
 
 ### Services
 
@@ -220,14 +228,16 @@ The Docker Compose stack orchestrates the following services:
 | **documentatom-dashboard** | 8302 | Web-based management UI for DocumentAtom. |
 | **partio-server** | 8321 | Text chunking, embedding, and summarization service. Splits extracted text into chunks using configurable strategies, computes vector embeddings via configurable embedding endpoints, and optionally summarizes content using a completion endpoint. Also manages embedding and completion endpoint configurations. |
 | **partio-dashboard** | 8322 | Web-based management UI for Partio. Allows direct management of embedding and completion endpoints. |
-| **postgres** | 5432 | PostgreSQL with the pgvector extension. Provides separate databases for AssistantHub, Less3, Partio, and RecallDB. |
+| **postgres** | 5432 | PostgreSQL with the pgvector extension. Provides separate databases for AssistantHub, Less3, Partio, RecallDB, and Verbex. |
 | **postgres-init** | n/a | One-shot initialization verifier that creates service roles/databases, installs `vector` for RecallDB, and verifies service-role connectivity before app services start. |
 | **recalldb-server** | 8401 | Vector and full-text search database. Wraps PostgreSQL/pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
 | **recalldb-dashboard** | 8402 | Web-based management UI for RecallDB. Allows direct browsing of collections, records, and search testing. |
+| **verbex-server** | 8501 | Inverted-index search server. Stores document text records and supports TF-IDF/text search through AssistantHub proxy APIs. |
+| **verbex-dashboard** | 8502 | Web-based management UI for Verbex. Allows direct browsing of indices, records, and search testing. |
 
 ### Docker PostgreSQL Defaults
 
-The Docker stack uses a single `postgres` container with a named `postgres-data` volume. `postgres-init` creates separate databases and application roles before AssistantHub, Less3, Partio, and RecallDB start.
+The Docker stack uses a single `postgres` container with a named `postgres-data` volume. `postgres-init` creates separate databases and application roles before AssistantHub, Less3, Partio, RecallDB, and Verbex start.
 
 | Service | Database | Role |
 |---|---|---|
@@ -235,6 +245,7 @@ The Docker stack uses a single `postgres` container with a named `postgres-data`
 | Less3 | `less3` | `less3_app` |
 | Partio | `partio` | `partio_app` |
 | RecallDB | `recalldb` | `recalldb_app` |
+| Verbex | `verbex` | `verbex_app` |
 
 Local-only database defaults are in `docker/.env` and are mirrored in the mounted JSON config files. Keep those values synchronized if you change database names or credentials.
 
@@ -337,10 +348,37 @@ docker compose up -d
 | **AssistantHub** | [http://localhost:8801](http://localhost:8801) | Email: `admin@assistanthub`, Password: `password` |
 | **Less3** | [http://localhost:8001](http://localhost:8001) | Admin API Key: `less3admin`, Access Key: `default`, Secret Key: `default` |
 | **DocumentAtom** | [http://localhost:8302](http://localhost:8302) | No authentication configured by default |
+| **Verbex** | [http://localhost:8502](http://localhost:8502) | Admin API Key: `verbexadmin` |
 | **Partio** | [http://localhost:8322](http://localhost:8322) | Email: `admin@partio`, Password: `password`, Admin API Key: `partioadmin` |
 | **RecallDB** | [http://localhost:8402](http://localhost:8402) | Email: `admin@recall`, Password: `password`, Admin API Key: `recalldbadmin` |
 
 **Important:** Change all default passwords immediately after first login.
+
+Verbex powers text/TF-IDF document search in `ARTIFACTS > Indices > Search`. The dashboard requests Verbex matched terms, per-term score/frequency details, and document term statistics so results can show unique terms, total term occurrences, matched query terms, and score details. The dashboard also includes `ARTIFACTS > Indices` for index metadata/top terms and `ARTIFACTS > Indices > Records` for browsing, creating, updating labels/tags/custom metadata, and deleting Verbex records through AssistantHub. Search result detail modals expose copyable IDs and JSON payloads for inspection. RecallDB collection search remains available in `ARTIFACTS > Collections > Search` with full-text, vector, label/tag, term, date, document, neighbor, and continuation-token controls. Ingestion rules can optionally set `VerbexIndexId`; leaving it blank uses the tenant default Verbex index.
+
+### Search Backfill
+
+New document ingestion indexes extracted text into Verbex automatically when `Verbex.EnableIngestion` is enabled. Existing completed documents from deployments upgraded to `v0.14.0` need a one-time admin reindex before they appear in `ARTIFACTS > Indices > Search`.
+
+Reindex one document:
+
+```bash
+curl -X POST http://localhost:8800/v1.0/documents/{documentId}/reindex \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d "{}"
+```
+
+Reindex a bounded page of completed documents:
+
+```bash
+curl -X POST "http://localhost:8800/v1.0/documents/reindex?maxResults=100" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"IncludeAlreadyIndexed\":false}"
+```
+
+Repeat the batch call with the returned `ContinuationToken` until `EndOfResults` is `true`. Set `IncludeAlreadyIndexed` to `true` to repair or replace existing Verbex records. To verify search, upload or reindex a text document, then search the target index from `ARTIFACTS > Indices > Search` or call `POST /v1.0/indices/{indexId}/search` with a term from the document.
 
 ---
 
@@ -400,6 +438,15 @@ The server reads configuration from `assistanthub.json` in the working directory
     "Endpoint": "http://recalldb-server:8600",
     "AccessKey": "recalldbadmin"
   },
+  "Verbex": {
+    "Endpoint": "http://verbex-server:8080",
+    "AccessKey": "verbexadmin",
+    "DashboardUrl": "http://localhost:8502",
+    "DefaultIndexId": "default",
+    "EnableIngestion": true,
+    "RequireIngestion": true,
+    "MaxContentCharacters": 0
+  },
   "AdminApiKeys": [
     "changeme"
   ],
@@ -442,6 +489,7 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `Embeddings` | Endpoint, access key, and default endpoint ID for the Partio embeddings service. |
 | `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model. |
 | `RecallDb` | Endpoint and access key for the RecallDB vector database service. |
+| `Verbex` | Endpoint, access key, dashboard URL, default index ID, and ingestion failure policy for Verbex text search. |
 | `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
 | `ProcessingLog` | Directory and retention for per-document processing logs (namespaced by tenant). |
@@ -463,7 +511,7 @@ cd factory
 reset.bat         # Windows
 ```
 
-The script will prompt you to type `RESET` to confirm. This destroys all runtime data (PostgreSQL data, uploaded documents, logs, request history) and restores factory-default configuration files. Downloaded Ollama models are kept by default; pass `--include-models` to remove them as well.
+The script will prompt you to type `RESET` to confirm. This destroys all runtime data (PostgreSQL data, uploaded documents, logs, request history, and Verbex runtime data) and restores factory-default configuration files. Downloaded Ollama models are kept by default; pass `--include-models` to remove them as well.
 
 After the reset completes, start the environment again:
 
@@ -700,6 +748,7 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
 - **Frontend:** React 19, Vite 6, JavaScript
 - **Database:** PostgreSQL by default in Docker; product binaries also support SQLite, SQL Server, and MySQL
 - **Vector Search:** RecallDB backed by PostgreSQL with pgvector
+- **Text Search:** Verbex backed by PostgreSQL
 - **Document Processing:** DocumentAtom (text extraction), Partio (chunking, embedding, summarization)
 - **Object Storage:** Less3 (S3-compatible)
 - **Inference Providers:** Ollama (local), OpenAI (cloud), Gemini (cloud)

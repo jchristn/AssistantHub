@@ -5,15 +5,21 @@ namespace Test.Automated
     using System.Data;
     using System.IO;
     using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Reflection;
     using System.Text;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Core;
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Server;
     using AssistantHub.Server.Services;
     using SyslogLogging;
     using Test.Shared;
@@ -561,6 +567,415 @@ namespace Test.Automated
                 }
             });
 
+            await ExecuteTestAsync("VerbexInvertedIndexService: constructs endpoint-relative URLs", async () =>
+            {
+                CapturingHttpHandler handler = new CapturingHttpHandler();
+                using HttpClient httpClient = new HttpClient(handler);
+                VerbexInvertedIndexService service = new VerbexInvertedIndexService(
+                    new VerbexSettings
+                    {
+                        Endpoint = "http://verbex-server:8080/api/",
+                        AccessKey = "secret"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                using HttpResponseMessage response = await service.SendAsync(HttpMethod.Get, "v1.0/indices?maxResults=10").ConfigureAwait(false);
+
+                AssertHelper.AreEqual(HttpStatusCode.OK, response.StatusCode, "response status");
+                AssertHelper.AreEqual("GET", handler.LastMethod, "HTTP method");
+                AssertHelper.AreEqual("http://verbex-server:8080/api/v1.0/indices?maxResults=10", handler.LastUri, "Verbex request URI");
+            });
+
+            await ExecuteTestAsync("VerbexInvertedIndexService: forwards bearer access key", async () =>
+            {
+                CapturingHttpHandler handler = new CapturingHttpHandler();
+                using HttpClient httpClient = new HttpClient(handler);
+                VerbexInvertedIndexService service = new VerbexInvertedIndexService(
+                    new VerbexSettings
+                    {
+                        Endpoint = "http://verbex-server:8080",
+                        AccessKey = "verbex-secret"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                using HttpResponseMessage response = await service.SendAsync(HttpMethod.Head, "/v1.0/indices/default").ConfigureAwait(false);
+
+                AssertHelper.AreEqual(HttpStatusCode.OK, response.StatusCode, "response status");
+                AssertHelper.AreEqual("Bearer verbex-secret", handler.AuthorizationHeader, "Authorization header");
+                AssertHelper.IsNull(handler.LastBody, "HEAD request body");
+            });
+
+            await ExecuteTestAsync("VerbexInvertedIndexService: forwards JSON body for write requests", async () =>
+            {
+                CapturingHttpHandler handler = new CapturingHttpHandler();
+                using HttpClient httpClient = new HttpClient(handler);
+                VerbexInvertedIndexService service = new VerbexInvertedIndexService(
+                    new VerbexSettings
+                    {
+                        Endpoint = "http://verbex-server:8080",
+                        AccessKey = "verbex-secret"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                using HttpResponseMessage response = await service.SendAsync(HttpMethod.Post, "/v1.0/indices", "{\"Id\":\"default\"}").ConfigureAwait(false);
+
+                AssertHelper.AreEqual(HttpStatusCode.OK, response.StatusCode, "response status");
+                AssertHelper.AreEqual("POST", handler.LastMethod, "HTTP method");
+                AssertHelper.AreEqual("{\"Id\":\"default\"}", handler.LastBody, "request body");
+                AssertHelper.AreEqual("application/json", handler.LastContentType, "request content type");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.NormalizeTextForIndexing: normalizes line endings and trailing line whitespace", async () =>
+            {
+                string input = " first line  \r\nsecond\t\rthird  \n\n";
+                string normalized = IngestionServiceBase.NormalizeTextForIndexing(input);
+                AssertHelper.AreEqual(" first line\nsecond\nthird\n\n", normalized, "normalized indexed text");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.ApplyVerbexContentLimit: zero means unlimited", async () =>
+            {
+                string content = "abcdef";
+                string limited = IngestionServiceBase.ApplyVerbexContentLimit(content, 0);
+                AssertHelper.AreEqual(content, limited, "Unlimited content");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.ApplyVerbexContentLimit: truncates when configured", async () =>
+            {
+                string content = "abcdef";
+                string limited = IngestionServiceBase.ApplyVerbexContentLimit(content, 3);
+                AssertHelper.AreEqual("abc", limited, "Limited content");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.MergeLabels and MergeTags: document values carry forward", async () =>
+            {
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), new RecordingInvertedIndexService());
+                IngestionRule rule = CreateVerbexTestRule();
+                rule.Labels = new List<string> { "rule-label" };
+                rule.Tags = new Dictionary<string, string>
+                {
+                    ["source"] = "rule",
+                    ["priority"] = "normal"
+                };
+
+                AssistantDocument document = CreateVerbexTestDocument();
+                document.Labels = JsonSerializer.Serialize(new List<string> { "document-label" });
+                document.Tags = JsonSerializer.Serialize(new Dictionary<string, string>
+                {
+                    ["source"] = "document",
+                    ["owner"] = "qa"
+                });
+
+                List<string> labels = InvokeMergeLabels(service, rule, document);
+                Dictionary<string, string> tags = InvokeMergeTags(service, rule, document);
+
+                AssertHelper.Contains(labels, "rule-label", "merged labels");
+                AssertHelper.Contains(labels, "document-label", "merged labels");
+                AssertHelper.AreEqual("document", tags["source"], "document tag overrides rule tag");
+                AssertHelper.AreEqual("normal", tags["priority"], "rule tag retained");
+                AssertHelper.AreEqual("qa", tags["owner"], "document tag added");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: sends content labels and tags to Verbex", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+
+                IngestionService service = CreateTestIngestionService(database, new VerbexSettings(), invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument();
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                IngestionRule rule = CreateVerbexTestRule();
+                List<string> labels = new List<string> { "rule-label", "document-label" };
+                Dictionary<string, string> tags = new Dictionary<string, string>
+                {
+                    ["source"] = "document",
+                    ["priority"] = "normal"
+                };
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, "hello\r\nworld  ", rule, labels, tags).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(indexed, "Document should be indexed");
+                AssertHelper.HasCount(invertedIndex.Calls, 2, "Verbex calls");
+                AssertHelper.AreEqual("HEAD", invertedIndex.Calls[0].Method, "index check method");
+                AssertHelper.AreEqual("/v1.0/indices/default", invertedIndex.Calls[0].Path, "index check path");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[1].Method, "record create method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents", invertedIndex.Calls[1].Path, "record create path");
+
+                using JsonDocument body = JsonDocument.Parse(invertedIndex.Calls[1].Body);
+                AssertHelper.AreEqual(document.Id, body.RootElement.GetProperty("Id").GetString(), "Verbex record id");
+                AssertHelper.AreEqual("Verbex Test Document", body.RootElement.GetProperty("Name").GetString(), "Verbex record name");
+                AssertHelper.AreEqual("hello\nworld", body.RootElement.GetProperty("Content").GetString(), "normalized Verbex content");
+                AssertHelper.Contains(body.RootElement.GetProperty("Labels").EnumerateArray().Select(e => e.GetString()).ToList(), "rule-label", "record labels");
+                AssertHelper.Contains(body.RootElement.GetProperty("Labels").EnumerateArray().Select(e => e.GetString()).ToList(), "document-label", "record labels");
+                AssertHelper.AreEqual("document", body.RootElement.GetProperty("Tags").GetProperty("source").GetString(), "record source tag");
+                AssertHelper.AreEqual("normal", body.RootElement.GetProperty("Tags").GetProperty("priority").GetString(), "record priority tag");
+                AssertHelper.AreEqual(document.Id, body.RootElement.GetProperty("CustomMetadata").GetProperty("AssistantHubDocumentId").GetString(), "metadata document id");
+                AssertHelper.AreEqual("Verbex Test Document", body.RootElement.GetProperty("CustomMetadata").GetProperty("ObjectName").GetString(), "metadata object name");
+
+                AssistantDocument updated = await database.AssistantDocument.ReadAsync(document.Id).ConfigureAwait(false);
+                AssertHelper.AreEqual(Constants.DefaultTenantId, updated.VerbexTenantId, "persisted Verbex tenant id");
+                AssertHelper.AreEqual("default", updated.VerbexIndexId, "persisted Verbex index id");
+                AssertHelper.AreEqual(document.Id, updated.VerbexRecordId, "persisted Verbex record id");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: uses object key for default document name", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+
+                IngestionService service = CreateTestIngestionService(database, new VerbexSettings(), invertedIndex);
+                AssistantDocument document = new AssistantDocument
+                {
+                    Id = "adoc_object_name",
+                    TenantId = Constants.DefaultTenantId,
+                    ContentType = "application/pdf",
+                    CollectionId = "collection-test",
+                    IngestionRuleId = "irule-test",
+                    BucketName = "default",
+                    S3Key = "incoming/2026/quarterly-report.pdf"
+                };
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, "quarterly report content", CreateVerbexTestRule(), null, null).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(indexed, "Document should be indexed");
+                AssertHelper.HasCount(invertedIndex.Calls, 2, "Verbex calls");
+
+                using JsonDocument body = JsonDocument.Parse(invertedIndex.Calls[1].Body);
+                AssertHelper.AreEqual("quarterly-report.pdf", body.RootElement.GetProperty("Name").GetString(), "Verbex record name");
+                AssertHelper.AreEqual("quarterly-report.pdf", body.RootElement.GetProperty("CustomMetadata").GetProperty("ObjectName").GetString(), "metadata object name");
+                AssertHelper.AreEqual("incoming/2026/quarterly-report.pdf", body.RootElement.GetProperty("CustomMetadata").GetProperty("ObjectKey").GetString(), "metadata object key");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: skips empty extracted text", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument("adoc_empty_text");
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, " \r\n\t ", CreateVerbexTestRule(), null, null).ConfigureAwait(false);
+
+                AssertHelper.IsFalse(indexed, "Empty text should not be indexed");
+                AssertHelper.HasCount(invertedIndex.Calls, 0, "Verbex calls");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: replaces duplicate Verbex records", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.Conflict, "duplicate");
+                invertedIndex.Enqueue(HttpStatusCode.NoContent);
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+
+                IngestionService service = CreateTestIngestionService(database, new VerbexSettings(), invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument("adoc_duplicate");
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, "duplicate content", CreateVerbexTestRule(), null, null).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(indexed, "Document should be indexed after duplicate replacement");
+                AssertHelper.HasCount(invertedIndex.Calls, 4, "Verbex calls");
+                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[2].Method, "duplicate delete method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/adoc_duplicate", invertedIndex.Calls[2].Path, "duplicate delete path");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[3].Method, "retry create method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents", invertedIndex.Calls[3].Path, "retry create path");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: best-effort Verbex failures return false", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.InternalServerError, "broken");
+
+                VerbexSettings settings = new VerbexSettings
+                {
+                    RequireIngestion = false
+                };
+
+                IngestionService service = CreateTestIngestionService(database, settings, invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument("adoc_best_effort");
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, "failure content", CreateVerbexTestRule(), null, null).ConfigureAwait(false);
+
+                AssertHelper.IsFalse(indexed, "Best-effort failure should return false");
+                AssistantDocument updated = await database.AssistantDocument.ReadAsync(document.Id).ConfigureAwait(false);
+                AssertHelper.IsNull(updated.VerbexRecordId, "Verbex metadata should not be persisted on failure");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: required Verbex failures throw", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.InternalServerError, "broken");
+
+                IngestionService service = CreateTestIngestionService(database, new VerbexSettings { RequireIngestion = true }, invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument("adoc_required");
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                AssertHelper.ThrowsAsync<InvalidOperationException>(
+                    async () => await InvokeIndexDocumentTextAsync(service, document, "failure content", CreateVerbexTestRule(), null, null).ConfigureAwait(false),
+                    "Required Verbex ingestion failure");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.DeleteIndexRecordInternalAsync: deletes Verbex record by default index", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.NoContent);
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+
+                await InvokeDeleteIndexRecordInternalAsync(service, Constants.DefaultTenantId, "default", "adoc_delete").ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex delete calls");
+                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[0].Method, "delete method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/adoc_delete", invertedIndex.Calls[0].Path, "delete path");
+            });
+
+            await ExecuteTestAsync("IngestionServiceBase.DeleteIndexRecordInternalAsync: treats missing Verbex records as cleanup success", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.NotFound);
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+
+                await InvokeDeleteIndexRecordInternalAsync(service, Constants.DefaultTenantId, "default", "adoc_missing").ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex delete calls");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/adoc_missing", invertedIndex.Calls[0].Path, "missing delete path");
+            });
+
+            await ExecuteTestAsync("IngestionService.DeleteIndexRecordBatchAsync: deletes distinct Verbex records by index", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.NoContent);
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+
+                await service.DeleteIndexRecordBatchAsync(
+                    Constants.DefaultTenantId,
+                    "default",
+                    new List<string> { "adoc_one", "ADOC_ONE", "", null, "adoc_two" }).ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex batch delete calls");
+                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[0].Method, "batch delete method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_one,adoc_two", invertedIndex.Calls[0].Path, "batch delete path");
+            });
+
+            await ExecuteTestAsync("IngestionService.DeleteIndexRecordBatchAsync: cleanup failure does not throw", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.InternalServerError, "broken");
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+
+                await service.DeleteIndexRecordBatchAsync(Constants.DefaultTenantId, "default", new List<string> { "adoc_failed" }).ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex batch delete calls");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_failed", invertedIndex.Calls[0].Path, "failed batch delete path");
+            });
+
+            await ExecuteTestAsync("TenantProvisioningService.ProvisionAsync: creates Verbex tenant and default index", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                TenantMetadata tenant = new TenantMetadata
+                {
+                    Id = "ten_search",
+                    Name = "Search Tenant"
+                };
+                await database.Tenant.CreateAsync(tenant).ConfigureAwait(false);
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{}");
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Id\":\"collection-default\"}");
+
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{\"Data\":{\"Tenant\":{\"Identifier\":\"verbex-ten-search\"}}}");
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+
+                TenantProvisioningService service = CreateTenantProvisioningService(database, vectorStore, invertedIndex);
+                TenantProvisioningResult result = await service.ProvisionAsync(tenant).ConfigureAwait(false);
+
+                AssertHelper.AreEqual("verbex-ten-search", result.VerbexTenantId, "result Verbex tenant id");
+                AssertHelper.AreEqual("ten_search_default", result.VerbexDefaultIndexId, "result Verbex default index id");
+                AssertHelper.HasCount(invertedIndex.Calls, 2, "Verbex provisioning calls");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[0].Method, "tenant create method");
+                AssertHelper.AreEqual("/v1.0/tenants", invertedIndex.Calls[0].Path, "tenant create path");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[1].Method, "index create method");
+                AssertHelper.AreEqual("/v1.0/indices", invertedIndex.Calls[1].Path, "index create path");
+
+                using JsonDocument indexBody = JsonDocument.Parse(invertedIndex.Calls[1].Body);
+                AssertHelper.AreEqual("ten_search_default", indexBody.RootElement.GetProperty("Identifier").GetString(), "created index identifier");
+                AssertHelper.AreEqual("verbex-ten-search", indexBody.RootElement.GetProperty("TenantId").GetString(), "created index tenant id");
+                AssertHelper.AreEqual("Search Tenant", JsonDocument.Parse(invertedIndex.Calls[0].Body).RootElement.GetProperty("name").GetString(), "created tenant name");
+
+                TenantMetadata updatedTenant = await database.Tenant.ReadByIdAsync("ten_search").ConfigureAwait(false);
+                AssertHelper.AreEqual("verbex-ten-search", updatedTenant.Tags[Constants.VerbexTenantIdTag], "persisted Verbex tenant tag");
+                AssertHelper.AreEqual("ten_search_default", updatedTenant.Tags[Constants.VerbexDefaultIndexIdTag], "persisted Verbex default index tag");
+            });
+
+            await ExecuteTestAsync("TenantProvisioningService.DeprovisionAsync: deletes mapped Verbex tenant", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                TenantMetadata tenant = new TenantMetadata
+                {
+                    Id = "ten_delete",
+                    Name = "Delete Tenant",
+                    Tags = new Dictionary<string, string>
+                    {
+                        [Constants.VerbexTenantIdTag] = "verbex-ten-delete"
+                    }
+                };
+                await database.Tenant.CreateAsync(tenant).ConfigureAwait(false);
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.NoContent);
+
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.NoContent);
+
+                TenantProvisioningService service = CreateTenantProvisioningService(database, vectorStore, invertedIndex);
+                await service.DeprovisionAsync("ten_delete").ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex deprovision calls");
+                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[0].Method, "tenant delete method");
+                AssertHelper.AreEqual("/v1.0/tenants/verbex-ten-delete", invertedIndex.Calls[0].Path, "tenant delete path");
+                AssertHelper.IsFalse(await database.Tenant.ExistsByIdAsync("ten_delete").ConfigureAwait(false), "Tenant should be deleted");
+            });
+
+            await ExecuteTestAsync("AssistantHubServer.EnsureFirstRunVerbexAsync: ensures default index when available", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+                invertedIndex.Enqueue(HttpStatusCode.Conflict, "{}");
+
+                bool ensured = await AssistantHubServer.EnsureFirstRunVerbexAsync(invertedIndex, new VerbexSettings(), CreateSilentLogging()).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(ensured, "Default Verbex index should be ensured");
+                AssertHelper.HasCount(invertedIndex.Calls, 2, "Verbex first-run calls");
+                AssertHelper.AreEqual("GET", invertedIndex.Calls[0].Method, "default tenant check method");
+                AssertHelper.AreEqual("/v1.0/tenants/default", invertedIndex.Calls[0].Path, "default tenant check path");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[1].Method, "default index create method");
+                AssertHelper.AreEqual("/v1.0/indices", invertedIndex.Calls[1].Path, "default index create path");
+                using JsonDocument body = JsonDocument.Parse(invertedIndex.Calls[1].Body);
+                AssertHelper.AreEqual("default", body.RootElement.GetProperty("Identifier").GetString(), "default index identifier");
+            });
+
+            await ExecuteTestAsync("AssistantHubServer.EnsureFirstRunVerbexAsync: returns false when unavailable", async () =>
+            {
+                ThrowingInvertedIndexService invertedIndex = new ThrowingInvertedIndexService();
+                bool ensured = await AssistantHubServer.EnsureFirstRunVerbexAsync(invertedIndex, new VerbexSettings(), CreateSilentLogging()).ConfigureAwait(false);
+
+                AssertHelper.IsFalse(ensured, "Unavailable Verbex should not be ensured");
+                AssertHelper.AreEqual(1, invertedIndex.CallCount, "Verbex first-run unavailable call count");
+            });
+
             return GetResults();
         }
 
@@ -575,6 +990,233 @@ namespace Test.Automated
             }
             catch (UnauthorizedAccessException)
             {
+            }
+        }
+
+        private static LoggingModule CreateSilentLogging()
+        {
+            LoggingModule logging = new LoggingModule();
+            logging.Settings.EnableConsole = false;
+            logging.Settings.MinimumSeverity = Severity.Warn;
+            return logging;
+        }
+
+        private static IngestionService CreateTestIngestionService(MockDatabaseDriver database, VerbexSettings verbexSettings, RecordingInvertedIndexService invertedIndex)
+        {
+            IngestionService service = new IngestionService(
+                database,
+                new NoOpObjectStorageService(),
+                new DocumentAtomSettings(),
+                new ChunkingSettings(),
+                new RecallDbSettings(),
+                verbexSettings,
+                CreateSilentLogging());
+
+            FieldInfo field = typeof(IngestionServiceBase).GetField("_InvertedIndex", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.SetValue(service, invertedIndex);
+            return service;
+        }
+
+        private static TenantProvisioningService CreateTenantProvisioningService(MockDatabaseDriver database, RecordingVectorStoreService vectorStore, RecordingInvertedIndexService invertedIndex)
+        {
+            AssistantHubSettings settings = new AssistantHubSettings();
+            settings.S3.EndpointUrl = "";
+            settings.S3.BaseUrl = "";
+            settings.RecallDb.Endpoint = "http://recalldb-server:8600";
+            settings.Verbex.Endpoint = "http://verbex-server:8080";
+            settings.Verbex.DefaultIndexId = "default";
+
+            return new TenantProvisioningService(
+                database,
+                CreateSilentLogging(),
+                settings,
+                vectorStore,
+                invertedIndex);
+        }
+
+        private static AssistantDocument CreateVerbexTestDocument(string id = "adoc_verbex_test")
+        {
+            return new AssistantDocument
+            {
+                Id = id,
+                TenantId = Constants.DefaultTenantId,
+                Name = "Verbex Test Document",
+                OriginalFilename = "verbex-test.txt",
+                ContentType = "text/plain",
+                CollectionId = "collection-test",
+                IngestionRuleId = "irule-test",
+                BucketName = "default",
+                S3Key = "documents/verbex-test.txt"
+            };
+        }
+
+        private static IngestionRule CreateVerbexTestRule()
+        {
+            return new IngestionRule
+            {
+                Id = "irule-test",
+                TenantId = Constants.DefaultTenantId,
+                Name = "Verbex Test Rule",
+                Bucket = "default",
+                CollectionName = "Default",
+                CollectionId = "collection-test",
+                VerbexIndexId = "default"
+            };
+        }
+
+        private static async Task<bool> InvokeIndexDocumentTextAsync(
+            IngestionService service,
+            AssistantDocument document,
+            string content,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags)
+        {
+            MethodInfo method = typeof(IngestionServiceBase).GetMethod("IndexDocumentTextAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+            Task<bool> task = (Task<bool>)method.Invoke(service, new object[] { document, content, rule, labels, tags, CancellationToken.None });
+            return await task.ConfigureAwait(false);
+        }
+
+        private static List<string> InvokeMergeLabels(IngestionService service, IngestionRule rule, AssistantDocument document)
+        {
+            MethodInfo method = typeof(IngestionServiceBase).GetMethod("MergeLabels", BindingFlags.Instance | BindingFlags.NonPublic);
+            return (List<string>)method.Invoke(service, new object[] { rule, document });
+        }
+
+        private static Dictionary<string, string> InvokeMergeTags(IngestionService service, IngestionRule rule, AssistantDocument document)
+        {
+            MethodInfo method = typeof(IngestionServiceBase).GetMethod("MergeTags", BindingFlags.Instance | BindingFlags.NonPublic);
+            return (Dictionary<string, string>)method.Invoke(service, new object[] { rule, document });
+        }
+
+        private static async Task InvokeDeleteIndexRecordInternalAsync(IngestionService service, string tenantId, string indexId, string recordId)
+        {
+            MethodInfo method = typeof(IngestionServiceBase).GetMethod("DeleteIndexRecordInternalAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+            Task task = (Task)method.Invoke(service, new object[] { tenantId, indexId, recordId, CancellationToken.None });
+            await task.ConfigureAwait(false);
+        }
+
+        private class NoOpObjectStorageService : IObjectStorageService
+        {
+            public Task UploadAsync(string key, string contentType, byte[] data, CancellationToken token = default) => Task.CompletedTask;
+            public Task UploadAsync(string bucketName, string key, string contentType, byte[] data, CancellationToken token = default) => Task.CompletedTask;
+            public Task<byte[]> DownloadAsync(string key, CancellationToken token = default) => Task.FromResult(Array.Empty<byte>());
+            public Task<byte[]> DownloadAsync(string bucketName, string key, CancellationToken token = default) => Task.FromResult(Array.Empty<byte>());
+            public Task DeleteAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+            public Task DeleteAsync(string bucketName, string key, CancellationToken token = default) => Task.CompletedTask;
+            public Task<bool> ExistsAsync(string key, CancellationToken token = default) => Task.FromResult(true);
+        }
+
+        private class RecordingInvertedIndexService : IInvertedIndexService
+        {
+            private readonly Queue<(HttpStatusCode StatusCode, string Body)> _Responses = new Queue<(HttpStatusCode StatusCode, string Body)>();
+
+            public List<RecordedHttpCall> Calls { get; } = new List<RecordedHttpCall>();
+
+            public void Enqueue(HttpStatusCode statusCode, string body = "")
+            {
+                _Responses.Enqueue((statusCode, body));
+            }
+
+            public Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null)
+            {
+                Calls.Add(new RecordedHttpCall
+                {
+                    Method = method.Method,
+                    Path = relativePathAndQuery,
+                    Body = body
+                });
+
+                (HttpStatusCode statusCode, string responseBody) = _Responses.Count > 0
+                    ? _Responses.Dequeue()
+                    : (HttpStatusCode.OK, "");
+
+                HttpResponseMessage response = new HttpResponseMessage(statusCode)
+                {
+                    Content = new StringContent(responseBody ?? "", Encoding.UTF8, "application/json")
+                };
+
+                return Task.FromResult(response);
+            }
+        }
+
+        private class RecordingVectorStoreService : IVectorStoreService
+        {
+            private readonly Queue<(HttpStatusCode StatusCode, string Body)> _Responses = new Queue<(HttpStatusCode StatusCode, string Body)>();
+
+            public List<RecordedHttpCall> Calls { get; } = new List<RecordedHttpCall>();
+
+            public void Enqueue(HttpStatusCode statusCode, string body = "")
+            {
+                _Responses.Enqueue((statusCode, body));
+            }
+
+            public Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
+            {
+                Calls.Add(new RecordedHttpCall
+                {
+                    Method = method.Method,
+                    Path = relativePathAndQuery,
+                    Body = body
+                });
+
+                (HttpStatusCode statusCode, string responseBody) = _Responses.Count > 0
+                    ? _Responses.Dequeue()
+                    : (HttpStatusCode.OK, "");
+
+                HttpResponseMessage response = new HttpResponseMessage(statusCode)
+                {
+                    Content = new StringContent(responseBody ?? "", Encoding.UTF8, "application/json")
+                };
+
+                return Task.FromResult(response);
+            }
+        }
+
+        private class ThrowingInvertedIndexService : IInvertedIndexService
+        {
+            public int CallCount { get; private set; }
+
+            public Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null)
+            {
+                CallCount++;
+                throw new HttpRequestException("Verbex unavailable");
+            }
+        }
+
+        private class RecordedHttpCall
+        {
+            public string Method { get; set; }
+            public string Path { get; set; }
+            public string Body { get; set; }
+        }
+
+        private class CapturingHttpHandler : HttpMessageHandler
+        {
+            public string LastMethod { get; private set; }
+            public string LastUri { get; private set; }
+            public string AuthorizationHeader { get; private set; }
+            public string LastBody { get; private set; }
+            public string LastContentType { get; private set; }
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                LastMethod = request.Method.Method;
+                LastUri = request.RequestUri?.ToString();
+
+                if (request.Headers.TryGetValues("Authorization", out IEnumerable<string> authorizationValues))
+                    AuthorizationHeader = authorizationValues.FirstOrDefault();
+
+                if (request.Content != null)
+                {
+                    LastContentType = request.Content.Headers.ContentType?.MediaType;
+                    LastBody = await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}")
+                };
             }
         }
     }

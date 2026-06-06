@@ -89,6 +89,7 @@ namespace AssistantHub.Server.Services
         private protected readonly AssistantHubSettings _Settings;
         private protected readonly RetrievalService _Retrieval;
         private protected readonly InferenceService _Inference;
+        private protected readonly IInferenceEndpointService _InferenceEndpoints;
 
         private protected ChatMetadataFilter BuildEffectiveMetadataFilter(AssistantSettings settings, ChatMetadataFilter requestFilter)
         {
@@ -296,6 +297,7 @@ namespace AssistantHub.Server.Services
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
+            _InferenceEndpoints = new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
         }
 
         private protected async Task<ChatHistory> WriteChatHistoryAsync(
@@ -422,13 +424,12 @@ namespace AssistantHub.Server.Services
 
             try
             {
-                string url = _Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
-                using (HttpClient client = new HttpClient())
+                using (HttpResponseMessage response = await _InferenceEndpoints.SendAsync(
+                    HttpMethod.Get,
+                    "/v1.0/endpoints/completion/" + endpointId,
+                    null,
+                    token).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(_Settings.Chunking.AccessKey))
-                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _Settings.Chunking.AccessKey);
-
-                    HttpResponseMessage response = await client.GetAsync(url, token).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
                         _Logging.Warn(_Header + "failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);

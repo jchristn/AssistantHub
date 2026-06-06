@@ -17,7 +17,7 @@ namespace AssistantHub.Core
         /// <summary>
         /// Product version.
         /// </summary>
-        public static string ProductVersion = "0.13.0";
+        public static string ProductVersion = "0.14.0";
 
         /// <summary>
         /// Logo.
@@ -29,6 +29,20 @@ namespace AssistantHub.Core
             @"  / _` / __/ __|| / ___|  _/ _` | '_ \| __| '_ \| | | | '_ \ " + Environment.NewLine +
             @" | (_| \__ \__ \| \__ \| || (_| | | | | |_| | | | |_| | |_) |" + Environment.NewLine +
             @"  \__,_|___/___/|_|___/ \__\__,_|_| |_|\__|_| |_|\__,_|_.__/ " + Environment.NewLine;
+
+        #endregion
+
+        #region External-Service-Metadata
+
+        /// <summary>
+        /// Tenant tag key containing the corresponding Verbex tenant identifier.
+        /// </summary>
+        public static string VerbexTenantIdTag = "VerbexTenantId";
+
+        /// <summary>
+        /// Tenant tag key containing the default Verbex index identifier for the tenant.
+        /// </summary>
+        public static string VerbexDefaultIndexIdTag = "VerbexDefaultIndexId";
 
         #endregion
 

@@ -89,6 +89,21 @@ namespace AssistantHub.Core.Models
         public string CollectionId { get; set; } = null;
 
         /// <summary>
+        /// Verbex tenant identifier used for full-text indexing.
+        /// </summary>
+        public string VerbexTenantId { get; set; } = null;
+
+        /// <summary>
+        /// Verbex index identifier used for full-text indexing.
+        /// </summary>
+        public string VerbexIndexId { get; set; } = null;
+
+        /// <summary>
+        /// Verbex record identifier used for full-text indexing.
+        /// </summary>
+        public string VerbexRecordId { get; set; } = null;
+
+        /// <summary>
         /// Labels associated with this document (JSON).
         /// </summary>
         public string Labels { get; set; } = null;
@@ -169,6 +184,9 @@ namespace AssistantHub.Core.Models
             obj.IngestionRuleId = DataTableHelper.GetStringValue(row, "ingestion_rule_id");
             obj.BucketName = DataTableHelper.GetStringValue(row, "bucket_name");
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
+            obj.VerbexTenantId = DataTableHelper.GetStringValue(row, "verbex_tenant_id");
+            obj.VerbexIndexId = DataTableHelper.GetStringValue(row, "verbex_index_id");
+            obj.VerbexRecordId = DataTableHelper.GetStringValue(row, "verbex_record_id");
             obj.Labels = DataTableHelper.GetStringValue(row, "labels_json");
             obj.Tags = DataTableHelper.GetStringValue(row, "tags_json");
             obj.ChunkRecordIds = DataTableHelper.GetStringValue(row, "chunk_record_ids");

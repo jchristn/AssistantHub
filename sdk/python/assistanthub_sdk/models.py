@@ -140,6 +140,7 @@ class AssistantPublicInfo(BaseModel):
     title: Optional[str] = Field(None, alias="Title")
     logo_url: Optional[str] = Field(None, alias="LogoUrl")
     favicon_url: Optional[str] = Field(None, alias="FaviconUrl")
+    load_models_on_chat_open: bool = Field(False, alias="LoadModelsOnChatOpen")
 
 
 class AssistantSettings(BaseModel):
@@ -183,6 +184,7 @@ class AssistantSettings(BaseModel):
         None, alias="rerankInferenceEndpointId"
     )
     embedding_endpoint_id: Optional[str] = Field(None, alias="embeddingEndpointId")
+    load_models_on_chat_open: bool = Field(False, alias="loadModelsOnChatOpen")
     title: Optional[str] = None
     logo_url: Optional[str] = Field(None, alias="logoUrl")
     favicon_url: Optional[str] = Field(None, alias="faviconUrl")
@@ -197,6 +199,25 @@ class AssistantSettings(BaseModel):
     slack_message_prefix: Optional[str] = Field(None, alias="slackMessagePrefix")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class AssistantChatOpenModelLoadResult(BaseModel):
+    """Result of loading one configured assistant endpoint model during chat open."""
+
+    endpoint_type: Optional[str] = Field(None, alias="endpointType")
+    success: bool = False
+    status_code: int = Field(0, alias="statusCode")
+
+
+class AssistantChatOpenResult(BaseModel):
+    """Result returned when a chat window is opened for an assistant."""
+
+    success: bool = False
+    enabled: bool = False
+    loaded: bool = False
+    completion_endpoint_count: int = Field(0, alias="completionEndpointCount")
+    embedding_endpoint_count: int = Field(0, alias="embeddingEndpointCount")
+    results: Optional[list[AssistantChatOpenModelLoadResult]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +240,9 @@ class AssistantDocument(BaseModel):
     ingestion_rule_id: Optional[str] = Field(None, alias="ingestionRuleId")
     bucket_name: Optional[str] = Field(None, alias="bucketName")
     collection_id: Optional[str] = Field(None, alias="collectionId")
+    verbex_tenant_id: Optional[str] = Field(None, alias="verbexTenantId")
+    verbex_index_id: Optional[str] = Field(None, alias="verbexIndexId")
+    verbex_record_id: Optional[str] = Field(None, alias="verbexRecordId")
     labels: Optional[str] = None
     tags: Optional[str] = None
     chunk_record_ids: Optional[str] = Field(None, alias="chunkRecordIds")
@@ -227,6 +251,40 @@ class AssistantDocument(BaseModel):
     source_url: Optional[str] = Field(None, alias="sourceUrl")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class DocumentReindexRequest(BaseModel):
+    """Request body for document Verbex reindex operations."""
+
+    document_ids: Optional[list[str]] = Field(None, alias="DocumentIds")
+    include_already_indexed: bool = Field(False, alias="IncludeAlreadyIndexed")
+
+
+class DocumentReindexResult(BaseModel):
+    """Result for a single document Verbex reindex operation."""
+
+    document_id: Optional[str] = Field(None, alias="DocumentId")
+    success: bool = Field(False, alias="Success")
+    status: Optional[str] = Field(None, alias="Status")
+    message: Optional[str] = Field(None, alias="Message")
+    verbex_tenant_id: Optional[str] = Field(None, alias="VerbexTenantId")
+    verbex_index_id: Optional[str] = Field(None, alias="VerbexIndexId")
+    verbex_record_id: Optional[str] = Field(None, alias="VerbexRecordId")
+    total_ms: float = Field(0.0, alias="TotalMs")
+
+
+class DocumentReindexBatchResult(BaseModel):
+    """Result for a batch document Verbex reindex operation."""
+
+    requested: int = Field(0, alias="Requested")
+    eligible: int = Field(0, alias="Eligible")
+    reindexed: int = Field(0, alias="Reindexed")
+    skipped: int = Field(0, alias="Skipped")
+    failed: int = Field(0, alias="Failed")
+    continuation_token: Optional[str] = Field(None, alias="ContinuationToken")
+    end_of_results: bool = Field(True, alias="EndOfResults")
+    results: list[DocumentReindexResult] = Field(default_factory=list, alias="Results")
+    total_ms: float = Field(0.0, alias="TotalMs")
 
 
 # ---------------------------------------------------------------------------
@@ -1108,6 +1166,7 @@ class IngestionRule(BaseModel):
     bucket: Optional[str] = None
     collection_name: Optional[str] = Field(None, alias="collectionName")
     collection_id: Optional[str] = Field(None, alias="collectionId")
+    verbex_index_id: Optional[str] = Field(None, alias="verbexIndexId")
     labels: Optional[list[str]] = None
     tags: Optional[dict[str, str]] = None
     atomization: Optional[dict[str, Any]] = None

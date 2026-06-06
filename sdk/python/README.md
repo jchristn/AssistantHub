@@ -175,6 +175,7 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `search(assistant_id, query, ...)` -- RAG search via chat
 - `generate(assistant_id, messages, ...)` -- Generate without RAG
 - `generate_stream(assistant_id, messages, ...)` -- Stream generation without RAG
+- `open_assistant_chat(assistant_id)` -- Notify AssistantHub that a chat window opened and warm configured endpoint models when enabled
 
 ### Documents
 
@@ -183,6 +184,8 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `upload_document(ingestion_rule_id, content, ...)` -- Upload a document
 - `delete_document(document_id)` -- Delete a document
 - `bulk_delete_documents(document_ids)` -- Delete multiple documents
+- `reindex_document(document_id)` -- Reindex one completed document into Verbex
+- `reindex_documents(request, ...)` -- Reindex a bounded page or explicit list of completed documents into Verbex
 
 ### Ingestion Rules
 
@@ -199,6 +202,35 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `create_collection(collection)` -- Create a collection
 - `update_collection(collection_id, collection)` -- Update a collection
 - `delete_collection(collection_id)` -- Delete a collection
+- `search_collection(collection_id, request)` -- Search RecallDB collection records through AssistantHub
+
+### Indices
+
+- `list_indices(...)` -- List Verbex inverted indices
+- `create_index(index)` -- Create a Verbex inverted index
+- `get_index(index_id)` -- Get Verbex index metadata
+- `index_exists(index_id)` -- Check whether a Verbex index exists
+- `update_index(index_id, index)` -- Update Verbex index metadata
+- `delete_index(index_id)` -- Delete a Verbex index
+- `update_index_labels(index_id, labels)` -- Replace Verbex index labels
+- `update_index_tags(index_id, tags)` -- Replace Verbex index tags
+- `update_index_custom_metadata(index_id, metadata)` -- Replace Verbex index custom metadata
+- `get_index_top_terms(index_id, max_results=None)` -- Get top terms for a Verbex index
+- `search_index(index_id, request)` -- Search a Verbex index
+
+### Index Records
+
+- `list_index_records(index_id, ...)` -- List records in a Verbex index
+- `create_index_record(index_id, record)` -- Create one Verbex index record
+- `create_index_records_batch(index_id, records)` -- Create Verbex index records in batch
+- `check_index_records_exist(index_id, record_ids)` -- Check multiple Verbex record IDs
+- `get_index_record(index_id, record_id)` -- Get one Verbex index record
+- `index_record_exists(index_id, record_id)` -- Check whether a Verbex index record exists
+- `delete_index_record(index_id, record_id)` -- Delete one Verbex index record
+- `delete_index_records(index_id, record_ids)` -- Delete multiple Verbex index records
+- `update_index_record_labels(index_id, record_id, labels)` -- Replace Verbex record labels
+- `update_index_record_tags(index_id, record_id, tags)` -- Replace Verbex record tags
+- `update_index_record_custom_metadata(index_id, record_id, metadata)` -- Replace Verbex record custom metadata
 
 ### Threads
 

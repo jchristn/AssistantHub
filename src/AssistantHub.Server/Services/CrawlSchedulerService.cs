@@ -34,7 +34,7 @@ namespace AssistantHub.Server.Services
         private readonly LoggingModule _Logging;
         private readonly AssistantHubSettings _Settings;
         private readonly IngestionService _Ingestion;
-        private readonly StorageService _Storage;
+        private readonly IObjectStorageService _Storage;
         private readonly ProcessingLogService _ProcessingLog;
         private readonly ConcurrentDictionary<string, RunningCrawler> _RunningCrawlers
             = new ConcurrentDictionary<string, RunningCrawler>();
@@ -60,7 +60,7 @@ namespace AssistantHub.Server.Services
             LoggingModule logging,
             AssistantHubSettings settings,
             IngestionService ingestion,
-            StorageService storage,
+            IObjectStorageService storage,
             ProcessingLogService processingLog)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));

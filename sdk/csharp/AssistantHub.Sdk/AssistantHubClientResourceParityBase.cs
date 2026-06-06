@@ -123,6 +123,280 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Search records in a RecallDB collection.
+        /// </summary>
+        public async Task<JsonElement> SearchCollectionAsync(string collectionId, object request, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(collectionId))
+                throw new ArgumentNullException(nameof(collectionId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<JsonElement>(HttpMethod.Post, "/v1.0/collections/" + UrlEncode(collectionId) + "/search", request, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// List inverted indices.
+        /// </summary>
+        public async Task<JsonElement> ListIndicesAsync(EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<JsonElement>(HttpMethod.Get, AppendEnumerationQuery("/v1.0/indices", query), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create an inverted index.
+        /// </summary>
+        public async Task<JsonElement> CreateIndexAsync(object index, CancellationToken cancellationToken = default)
+        {
+            if (index == null)
+                throw new ArgumentNullException(nameof(index));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices", index, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get inverted index metadata.
+        /// </summary>
+        public async Task<JsonElement> GetIndexAsync(string indexId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/indices/" + UrlEncode(indexId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update inverted index metadata.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexAsync(string indexId, object index, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (index == null)
+                throw new ArgumentNullException(nameof(index));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId), index, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an inverted index.
+        /// </summary>
+        public async Task DeleteIndexAsync(string indexId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/indices/" + UrlEncode(indexId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update labels on an inverted index.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexLabelsAsync(string indexId, object labels, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (labels == null)
+                throw new ArgumentNullException(nameof(labels));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/labels", labels, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update tags on an inverted index.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexTagsAsync(string indexId, object tags, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (tags == null)
+                throw new ArgumentNullException(nameof(tags));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/tags", tags, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update custom metadata on an inverted index.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexCustomMetadataAsync(string indexId, object customMetadata, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (customMetadata == null)
+                throw new ArgumentNullException(nameof(customMetadata));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/custom-metadata", customMetadata, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get top terms from an inverted index.
+        /// </summary>
+        public async Task<JsonElement> GetIndexTopTermsAsync(string indexId, int? maxResults = null, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
+            if (maxResults.HasValue && maxResults.Value > 0)
+                parameters["maxResults"] = maxResults.Value.ToString();
+
+            string path = AppendQueryString("/v1.0/indices/" + UrlEncode(indexId) + "/terms/top", parameters);
+            return await SendAsync<JsonElement>(HttpMethod.Get, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Search an inverted index.
+        /// </summary>
+        public async Task<JsonElement> SearchIndexAsync(string indexId, object request, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<JsonElement>(HttpMethod.Post, "/v1.0/indices/" + UrlEncode(indexId) + "/search", request, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// List records in an inverted index.
+        /// </summary>
+        public async Task<JsonElement> ListIndexRecordsAsync(string indexId, EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, AppendEnumerationQuery("/v1.0/indices/" + UrlEncode(indexId) + "/records", query), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a record in an inverted index.
+        /// </summary>
+        public async Task<JsonElement> CreateIndexRecordAsync(string indexId, object record, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (record == null)
+                throw new ArgumentNullException(nameof(record));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/records", record, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create records in an inverted index in batch.
+        /// </summary>
+        public async Task<JsonElement> CreateIndexRecordsBatchAsync(string indexId, object records, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (records == null)
+                throw new ArgumentNullException(nameof(records));
+
+            return await SendAsync<JsonElement>(HttpMethod.Post, "/v1.0/indices/" + UrlEncode(indexId) + "/records/batch", records, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Check whether multiple inverted-index records exist.
+        /// </summary>
+        public async Task<JsonElement> CheckIndexRecordsExistAsync(string indexId, object recordIds, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (recordIds == null)
+                throw new ArgumentNullException(nameof(recordIds));
+
+            return await SendAsync<JsonElement>(HttpMethod.Post, "/v1.0/indices/" + UrlEncode(indexId) + "/records/exists", recordIds, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete multiple records from an inverted index.
+        /// </summary>
+        public async Task DeleteIndexRecordsAsync(string indexId, List<string> recordIds, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (recordIds == null)
+                throw new ArgumentNullException(nameof(recordIds));
+
+            string path = AppendQueryString("/v1.0/indices/" + UrlEncode(indexId) + "/records", new Dictionary<string, string>
+            {
+                ["ids"] = String.Join(",", recordIds)
+            });
+
+            await SendAsync(HttpMethod.Delete, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get an inverted-index record.
+        /// </summary>
+        public async Task<JsonElement> GetIndexRecordAsync(string indexId, string recordId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an inverted-index record.
+        /// </summary>
+        public async Task DeleteIndexRecordAsync(string indexId, string recordId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update labels on an inverted-index record.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexRecordLabelsAsync(string indexId, string recordId, object labels, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+            if (labels == null)
+                throw new ArgumentNullException(nameof(labels));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId) + "/labels", labels, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update tags on an inverted-index record.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexRecordTagsAsync(string indexId, string recordId, object tags, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+            if (tags == null)
+                throw new ArgumentNullException(nameof(tags));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId) + "/tags", tags, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Update custom metadata on an inverted-index record.
+        /// </summary>
+        public async Task<JsonElement> UpdateIndexRecordCustomMetadataAsync(string indexId, string recordId, object customMetadata, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(indexId))
+                throw new ArgumentNullException(nameof(indexId));
+            if (String.IsNullOrWhiteSpace(recordId))
+                throw new ArgumentNullException(nameof(recordId));
+            if (customMetadata == null)
+                throw new ArgumentNullException(nameof(customMetadata));
+
+            return await SendAsync<JsonElement>(HttpMethod.Put, "/v1.0/indices/" + UrlEncode(indexId) + "/records/" + UrlEncode(recordId) + "/custom-metadata", customMetadata, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Create a bucket.
         /// </summary>
         public async Task<JsonElement> CreateBucketAsync(BucketCreateRequest request, CancellationToken cancellationToken = default)

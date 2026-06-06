@@ -19,6 +19,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const [waitMessage, setWaitMessage] = useState('');
   const recentWaitMessages = useRef([]);
   const abortControllerRef = useRef(null);
+  const chatOpenModelLoadRef = useRef(null);
 
   function pickWaitMessage() {
     const available = WAIT_MESSAGES.filter(m => !recentWaitMessages.current.includes(m));
@@ -115,6 +116,15 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     };
     fetchAssistant();
   }, [serverUrl, assistantId]);
+
+  useEffect(() => {
+    if (!assistantId || !serverUrl || !assistant?.LoadModelsOnChatOpen) return;
+    if (chatOpenModelLoadRef.current === assistantId) return;
+    chatOpenModelLoadRef.current = assistantId;
+    ApiClient.openChat(serverUrl, assistantId).catch((err) => {
+      console.error('Failed to load models on chat open:', err);
+    });
+  }, [assistantId, serverUrl, assistant?.LoadModelsOnChatOpen]);
 
   // Persist threadId to localStorage
   useEffect(() => {

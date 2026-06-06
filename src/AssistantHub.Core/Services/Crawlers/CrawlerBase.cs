@@ -55,7 +55,7 @@ namespace AssistantHub.Core.Services.Crawlers
         /// <summary>
         /// Storage service.
         /// </summary>
-        protected StorageService _Storage = null;
+        protected IObjectStorageService _Storage = null;
 
         /// <summary>
         /// Processing log service.
@@ -107,7 +107,7 @@ namespace AssistantHub.Core.Services.Crawlers
             CrawlPlan crawlPlan,
             CrawlOperation crawlOperation,
             IngestionService ingestion,
-            StorageService storage,
+            IObjectStorageService storage,
             ProcessingLogService processingLog,
             string enumerationDirectory,
             CancellationToken token)

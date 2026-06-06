@@ -31,7 +31,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference)

@@ -674,6 +674,16 @@
             Registration methods for history and thread operations.
             </summary>
         </member>
+        <member name="T:AssistantHub.McpServer.Registrations.IndexRecordRegistrations">
+            <summary>
+            Registration methods for Verbex inverted-index record operations.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Registrations.IndexRegistrations">
+            <summary>
+            Registration methods for Verbex inverted-index operations.
+            </summary>
+        </member>
         <member name="T:AssistantHub.McpServer.Registrations.IngestionRuleRegistrations">
             <summary>
             Registration methods for ingestion rule operations.

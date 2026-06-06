@@ -1,6 +1,7 @@
 namespace AssistantHub.McpServer.Registrations
 {
     using System.Collections.Generic;
+    using System.Text.Json;
     using AssistantHub.McpServer.Classes;
     using AssistantHub.Sdk.Models;
     using Voltaic;
@@ -158,8 +159,36 @@ namespace AssistantHub.McpServer.Registrations
                         required = new[] { "collectionId" }
                     },
                     Handler = args => AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetCollectionDistinctTagsAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "collectionId")).GetAwaiter().GetResult(), includeSecrets: true)
+                },
+                new()
+                {
+                    Name = "collection/search",
+                    Description = "Search records in a RecallDB collection.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            collectionId = new { type = "string", description = "Collection identifier." },
+                            requestJson = new { type = "string", description = "RecallDB search request serialized as JSON string." }
+                        },
+                        required = new[] { "collectionId", "requestJson" }
+                    },
+                    Handler = args =>
+                    {
+                        string collectionId = AssistantHubMcpServerHelpers.GetStringRequired(args, "collectionId");
+                        JsonElement request = GetJsonBody(args, "requestJson");
+                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.SearchCollectionAsync(collectionId, request).GetAwaiter().GetResult(), includeSecrets: true);
+                    }
                 }
             };
+        }
+
+        private static JsonElement GetJsonBody(JsonElement? args, string propertyName)
+        {
+            string json = AssistantHubMcpServerHelpers.GetJsonRequired(args, propertyName);
+            using JsonDocument document = JsonDocument.Parse(json);
+            return document.RootElement.Clone();
         }
     }
 }

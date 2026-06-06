@@ -21,6 +21,10 @@ AssistantHub also ships a standalone MCP server that maps the management surface
 - [Bucket Objects (Tenant-Scoped)](#bucket-objects-tenant-scoped)
 - [Collections (Admin Only)](#collections-admin-only)
 - [Collection Records (Admin Only)](#collection-records-admin-only)
+- [Collection Search (Admin Only)](#collection-search-admin-only)
+- [Indices (Admin Only)](#indices-admin-only)
+- [Index Records (Admin Only)](#index-records-admin-only)
+- [Index Search (Admin Only)](#index-search-admin-only)
 - [Ingestion Rules](#ingestion-rules)
 - [Embedding Endpoints (Admin Only)](#embedding-endpoints-admin-only)
 - [Completion Endpoints (Admin Only)](#completion-endpoints-admin-only)
@@ -208,7 +212,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.13.0",
+  "Version": "0.14.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -352,7 +356,7 @@ Update an existing tenant.
 
 ### DELETE /v1.0/tenants/{tenantId}
 
-Delete a tenant and deprovision all associated resources (users, credentials, assistants, documents, S3 buckets, RecallDB tenant).
+Delete a tenant and deprovision all associated resources (users, credentials, assistants, documents, S3 buckets, RecallDB tenant, and mapped Verbex tenant/index resources).
 
 **Auth:** Required (global admin only)
 
@@ -1107,9 +1111,204 @@ Returns a JSON array of unique tag key strings found in the collection.
 
 ---
 
+## Collection Search (Admin Only)
+
+Search RecallDB collection records through AssistantHub. AssistantHub authenticates the caller, scopes the request to the caller tenant, and forwards the request to RecallDB.
+
+### POST /v1.0/collections/{collectionId}/search
+
+**Auth:** Required (global admin only, matching existing collection APIs)
+
+**Request Body:** RecallDB search request. The request may include full-text, vector, label, tag, term, date, document ID, and paging filters.
+
+```json
+{
+  "FullText": {
+    "Query": "contract renewal",
+    "SearchType": "TsRankCd",
+    "Language": "english",
+    "Normalization": 32
+  },
+  "MaxResults": 25
+}
+```
+
+**Response:** RecallDB search response, including matching documents, scores, labels, tags, continuation token, and timing metadata.
+
+---
+
+## Indices (Admin Only)
+
+Manage Verbex inverted indices through AssistantHub. AssistantHub exposes user-facing `indices` routes and marshals requests to Verbex. For the default tenant, the configured `Verbex.DefaultIndexId` is used directly. For new non-default tenants, AssistantHub stores the generated Verbex tenant ID and deterministic default index ID in tenant tags (`VerbexTenantId`, `VerbexDefaultIndexId`) during provisioning.
+
+### GET /v1.0/indices
+
+List Verbex indices. Supports pagination query parameters such as `maxResults`, `continuationToken`, and `ordering`.
+
+**Auth:** Required (global admin only)
+
+### PUT /v1.0/indices
+
+Create a Verbex index. AssistantHub forwards this as `POST /v1.0/indices` to Verbex and injects the authenticated tenant ID when the request body omits `TenantId`.
+
+**Auth:** Required (global admin only)
+
+```json
+{
+  "Identifier": "default",
+  "Name": "Default",
+  "Description": "Default AssistantHub text search index"
+}
+```
+
+### GET /v1.0/indices/{indexId}
+
+Get Verbex index metadata and statistics.
+
+**Auth:** Required (global admin only)
+
+### HEAD /v1.0/indices/{indexId}
+
+Check whether an index exists.
+
+**Auth:** Required (global admin only)
+
+### PUT /v1.0/indices/{indexId}
+
+Update Verbex index metadata.
+
+**Auth:** Required (global admin only)
+
+### DELETE /v1.0/indices/{indexId}
+
+Delete a Verbex index.
+
+**Auth:** Required (global admin only)
+
+### PUT /v1.0/indices/{indexId}/labels
+
+Replace index labels.
+
+### PUT /v1.0/indices/{indexId}/tags
+
+Replace index tags.
+
+### PUT /v1.0/indices/{indexId}/custom-metadata
+
+Replace index custom metadata. AssistantHub maps this to Verbex `customMetadata`.
+
+### GET /v1.0/indices/{indexId}/terms/top
+
+Return top terms for an index. Supports Verbex top-term query parameters.
+
+---
+
+## Index Records (Admin Only)
+
+Browse and manage Verbex records through AssistantHub. AssistantHub uses `records` terminology and maps upstream calls to Verbex `documents` endpoints.
+Records created by document ingestion use the AssistantHub document ID as the record ID. Labels and tags from both the document and ingestion rule are propagated to Verbex, and custom metadata includes AssistantHub tenant, collection, bucket, object, and content-type fields.
+
+### GET /v1.0/indices/{indexId}/records
+
+List records in an index. Supports Verbex pagination and filters, including `labels` and `tag.{key}` query parameters.
+
+### PUT /v1.0/indices/{indexId}/records
+
+Create one index record. If `Name` is omitted or blank, AssistantHub populates it from `ObjectName`, `CustomMetadata.ObjectName`, object key/source URL basename, `Id`/`Identifier`, or `record`, and sets `CustomMetadata.ObjectName` when absent.
+
+```json
+{
+  "Id": "adoc_example",
+  "Name": "example.txt",
+  "Content": "Searchable document text.",
+  "Labels": ["support"],
+  "Tags": {
+    "department": "support"
+  },
+  "CustomMetadata": {
+    "ObjectName": "example.txt"
+  }
+}
+```
+
+### POST /v1.0/indices/{indexId}/records/batch
+
+Create records in batch. Each record is normalized the same way as the single-record create route so `Name` and `CustomMetadata.ObjectName` are populated before the request is proxied to Verbex.
+
+### POST /v1.0/indices/{indexId}/records/exists
+
+Check whether records exist in batch.
+
+### GET /v1.0/indices/{indexId}/records/{recordId}
+
+Get one index record.
+
+### HEAD /v1.0/indices/{indexId}/records/{recordId}
+
+Check whether one index record exists.
+
+### DELETE /v1.0/indices/{indexId}/records/{recordId}
+
+Delete one index record.
+
+### DELETE /v1.0/indices/{indexId}/records?ids=record1,record2
+
+Delete records in batch.
+
+### PUT /v1.0/indices/{indexId}/records/{recordId}/labels
+
+Replace record labels.
+
+### PUT /v1.0/indices/{indexId}/records/{recordId}/tags
+
+Replace record tags.
+
+### PUT /v1.0/indices/{indexId}/records/{recordId}/custom-metadata
+
+Replace record custom metadata. AssistantHub maps this to Verbex `customMetadata`.
+
+---
+
+## Index Search (Admin Only)
+
+Search Verbex inverted indices through AssistantHub.
+
+### POST /v1.0/indices/{indexId}/search
+
+**Request Body:**
+
+```json
+{
+  "Query": "contract renewal",
+  "MaxResults": 25,
+  "UseAndLogic": false,
+  "Labels": ["customer"],
+  "Tags": {
+    "department": "legal"
+  },
+  "IncludeMatchedTerms": true,
+  "IncludeTermDetails": true,
+  "IncludeDocumentTermStats": true
+}
+```
+
+Use `Query: "*"` to browse records.
+
+AssistantHub passes the Verbex search request through directly. The optional enrichment flags are additive:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `IncludeMatchedTerms` | bool | Adds `MatchedTerms` to each result. |
+| `IncludeTermDetails` | bool | Adds `TermDetails` with per-term `Term`, `Score`, and `Frequency`, and also includes `MatchedTerms`. |
+| `IncludeDocumentTermStats` | bool | Adds `DocumentTermStats` with `UniqueTermCount` and `TotalTermOccurrences`. Verbex fulfills this with one grouped query for returned document IDs. |
+
+**Response:** Verbex search response, including scored results, document metadata, matched terms, term scores, frequencies, labels, tags, document term statistics, and timing metadata when requested. The dashboard uses `MatchedTerms`, `TermDetails`, `DocumentTermStats.UniqueTermCount`, and `DocumentTermStats.TotalTermOccurrences` for the `ARTIFACTS > Indices > Search` results table and detail modal.
+
+---
+
 ## Ingestion Rules
 
-Ingestion rules define how documents are processed, summarized, chunked, and embedded. Each rule specifies a target S3 bucket and RecallDB collection, along with optional summarization, chunking, and embedding configuration.
+Ingestion rules define how documents are indexed, summarized, chunked, and embedded. Each rule specifies a target S3 bucket, RecallDB collection, and optional Verbex index, along with optional summarization, chunking, and embedding configuration.
 
 ### PUT /v1.0/ingestion-rules
 
@@ -1126,6 +1325,7 @@ Create a new ingestion rule.
   "Bucket": "kb-documents",
   "CollectionName": "my-collection",
   "CollectionId": "collection-uuid-here",
+  "VerbexIndexId": "default",
   "Labels": ["support", "knowledge-base"],
   "Tags": { "department": "engineering", "priority": "high" },
   "Summarization": {
@@ -1155,6 +1355,8 @@ Create a new ingestion rule.
   }
 }
 ```
+
+`VerbexIndexId` is optional. When omitted or set to the configured `Verbex.DefaultIndexId`, AssistantHub indexes extracted document text into the tenant default Verbex index. When set to a different value, AssistantHub treats it as an explicit Verbex index ID and ensures that index exists before writing the document text record.
 
 **Summarization Configuration (optional):**
 
@@ -1884,6 +2086,7 @@ Retrieve settings for an assistant.
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": "ep_def456...",
+  "LoadModelsOnChatOpen": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -1935,6 +2138,7 @@ Retrieve settings for an assistant.
 | `QueryRewriteInferenceEndpointId` | string? | Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to `InferenceEndpointId`. |
 | `RerankInferenceEndpointId` | string? | Optional managed completion endpoint ID for re-ranking calls. Null or empty falls back to `InferenceEndpointId`. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
+| `LoadModelsOnChatOpen`     | bool    | Load or warm configured completion and embedding endpoint models when a chat window opens. Default `false`. |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
@@ -1992,6 +2196,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": null,
+  "LoadModelsOnChatOpen": true,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2070,7 +2275,7 @@ Notes:
 
 ## Documents
 
-Documents are uploaded via a JSON request body that references an ingestion rule. The ingestion rule defines the target S3 bucket, RecallDB collection, and processing configuration. Documents are automatically processed through the ingestion pipeline (storage, text extraction, chunking, embedding). On deletion, the S3 object and all associated RecallDB embeddings are cleaned up.
+Documents are uploaded via a JSON request body that references an ingestion rule. The ingestion rule defines the target S3 bucket, RecallDB collection, Verbex index target, and processing configuration. Documents are automatically processed through the ingestion pipeline (storage, text extraction, Verbex indexing, chunking, embedding). On deletion, the S3 object, associated RecallDB embeddings, and associated Verbex text-search record are cleaned up.
 
 ### PUT /v1.0/documents
 
@@ -2117,6 +2322,9 @@ Upload a new document using an ingestion rule.
   "IngestionRuleId": "irule_abc123...",
   "BucketName": "kb-documents",
   "CollectionId": "collection-uuid-here",
+  "VerbexTenantId": "default",
+  "VerbexIndexId": "default",
+  "VerbexRecordId": "adoc_abc123...",
   "Labels": "[\"user-guide\",\"v2\"]",
   "Tags": "{\"version\":\"2.0\"}",
   "ChunkRecordIds": null,
@@ -2178,7 +2386,7 @@ Retrieve a single document record by ID.
 
 ### DELETE /v1.0/documents/{documentId}
 
-Delete a document, its S3 object, and all associated RecallDB embeddings.
+Delete a document, its S3 object, all associated RecallDB embeddings, and its Verbex text-search record. Missing subordinate records are treated as successful cleanup; subordinate cleanup failures are logged and document deletion continues.
 
 **Auth:** Required
 
@@ -2189,7 +2397,7 @@ Delete a document, its S3 object, and all associated RecallDB embeddings.
 
 ### POST /v1.0/documents/delete
 
-Bulk delete multiple documents, their S3 objects, and all associated RecallDB embeddings.
+Bulk delete multiple documents, their S3 objects, all associated RecallDB embeddings, and associated Verbex text-search records.
 
 **Auth:** Required
 
@@ -2209,6 +2417,84 @@ Bulk delete multiple documents, their S3 objects, and all associated RecallDB em
 
 **Error Responses:**
 - `400` -- Invalid request.
+
+### POST /v1.0/documents/{documentId}/reindex
+
+Re-run DocumentAtom extraction for one document from its stored Less3/S3 object and reindex the extracted text into Verbex using the document's ingestion rule labels, tags, and `VerbexIndexId` selection. The operation is idempotent: the Verbex record ID remains the AssistantHub document ID and existing Verbex records are replaced.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):**
+
+```json
+{
+  "DocumentId": "adoc_abc123...",
+  "Success": true,
+  "Status": "Reindexed",
+  "Message": "Document text reindexed into Verbex.",
+  "VerbexTenantId": "default",
+  "VerbexIndexId": "default",
+  "VerbexRecordId": "adoc_abc123...",
+  "TotalMs": 842.7
+}
+```
+
+**Error Responses:**
+- `403` -- Caller is not an admin.
+- `404` -- Document not found.
+- `502` -- Document was found, but extraction or Verbex indexing failed.
+
+### POST /v1.0/documents/reindex
+
+Reindex a bounded page of completed documents into Verbex for upgrade/backfill and repair workflows. When `DocumentIds` is omitted, documents are enumerated for the caller's tenant using pagination query parameters. Batch mode skips non-completed documents and, by default, skips documents that already have `VerbexRecordId`.
+
+**Auth:** Required (admin only)
+
+**Query Parameters:** See [Pagination](#pagination). `bucketName` and `collectionId` filters are also supported.
+
+**Request Body:**
+
+```json
+{
+  "DocumentIds": ["adoc_abc123...", "adoc_def456..."],
+  "IncludeAlreadyIndexed": false
+}
+```
+
+| Field                   | Type     | Required | Description |
+|-------------------------|----------|----------|-------------|
+| `DocumentIds`           | string[] | No       | Explicit document IDs to reindex. When omitted, AssistantHub enumerates a page of documents. |
+| `IncludeAlreadyIndexed` | bool     | No       | When true, reindex documents even when Verbex metadata is already present. |
+
+**Response (200 OK):**
+
+```json
+{
+  "Requested": 2,
+  "Eligible": 1,
+  "Reindexed": 1,
+  "Skipped": 1,
+  "Failed": 0,
+  "ContinuationToken": null,
+  "EndOfResults": true,
+  "Results": [
+    {
+      "DocumentId": "adoc_abc123...",
+      "Success": true,
+      "Status": "Reindexed",
+      "VerbexIndexId": "default",
+      "VerbexRecordId": "adoc_abc123..."
+    }
+  ],
+  "TotalMs": 1240.4
+}
+```
+
+Use `ContinuationToken` to continue page-based backfill until `EndOfResults` is true.
+
+**Error Responses:**
+- `403` -- Caller is not an admin.
+- `500` -- Internal error before per-document processing could be reported.
 
 ### GET /v1.0/documents/{documentId}/processing-log
 
@@ -2845,21 +3131,61 @@ Retrieve public information about an assistant. Returns basic details and appear
   "Description": "Answers questions about our product documentation.",
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
-  "FaviconUrl": "https://example.com/favicon.ico"
+  "FaviconUrl": "https://example.com/favicon.ico",
+  "LoadModelsOnChatOpen": true
 }
 ```
 
-| Field        | Type   | Description                                                                      |
-|--------------|--------|----------------------------------------------------------------------------------|
-| `Id`         | string | The assistant's unique identifier.                                               |
-| `Name`       | string | Display name of the assistant.                                                   |
-| `Description`| string | Description of the assistant (may be null).                                      |
-| `Title`      | string | Custom chat window heading (null if not set; falls back to Name on the client).  |
-| `LogoUrl`    | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
-| `FaviconUrl` | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
+| Field                  | Type   | Description                                                                      |
+|------------------------|--------|----------------------------------------------------------------------------------|
+| `Id`                   | string | The assistant's unique identifier.                                               |
+| `Name`                 | string | Display name of the assistant.                                                   |
+| `Description`          | string | Description of the assistant (may be null).                                      |
+| `Title`                | string | Custom chat window heading (null if not set; falls back to Name on the client).  |
+| `LogoUrl`              | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
+| `FaviconUrl`           | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
+| `LoadModelsOnChatOpen` | bool   | Whether clients should call `POST /v1.0/assistants/{assistantId}/chat/open` when opening chat. |
 
 **Error Responses:**
 - `404` -- Assistant not found or not active.
+
+### POST /v1.0/assistants/{assistantId}/chat/open
+
+Notify AssistantHub that a chat window was opened. If `LoadModelsOnChatOpen` is enabled in assistant settings, the server performs best-effort model-load or warm requests for the assistant's configured completion endpoint IDs and configured embedding endpoint ID.
+
+**Auth:** None
+
+**Request Body:** None
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "Enabled": true,
+  "Loaded": true,
+  "CompletionEndpointCount": 1,
+  "EmbeddingEndpointCount": 1,
+  "Results": [
+    {
+      "EndpointType": "Completion",
+      "Success": true,
+      "StatusCode": 200
+    },
+    {
+      "EndpointType": "Embedding",
+      "Success": true,
+      "StatusCode": 200
+    }
+  ]
+}
+```
+
+When the setting is disabled, `Enabled` and `Loaded` are `false` and no endpoint load requests are made. Endpoint IDs and upstream response bodies are not exposed by this public endpoint.
+
+**Error Responses:**
+- `404` -- Assistant not found or not active.
+- `500` -- Assistant settings are missing or an internal error occurred.
 
 ### POST /v1.0/assistants/{assistantId}/threads
 
@@ -3753,7 +4079,7 @@ Retrieve the current server configuration.
 
 **Auth:** Required (admin only)
 
-**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `ProcessingLog`, `ChatHistory`, and `Logging`.
+**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `Verbex`, `ProcessingLog`, `ChatHistory`, and `Logging`.
 
 ### PUT /v1.0/configuration
 
@@ -3768,6 +4094,34 @@ Update the server configuration. The updated settings are saved to disk.
 **Error Responses:**
 - `400` -- Invalid request body.
 - `403` -- Not an admin user.
+
+### Verbex Settings
+
+Verbex inverted-index search is configured under the `Verbex` section:
+
+```json
+{
+  "Verbex": {
+    "Endpoint": "http://verbex-server:8080",
+    "AccessKey": "verbexadmin",
+    "DashboardUrl": "http://localhost:8502",
+    "DefaultIndexId": "default",
+    "EnableIngestion": true,
+    "RequireIngestion": true,
+    "MaxContentCharacters": 0
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `Endpoint` | string | `http://localhost:8501` | Verbex server endpoint used by AssistantHub server-side proxy and ingestion code. |
+| `AccessKey` | string | `verbexadmin` | Bearer token used for Verbex API calls. Treat this as a secret. |
+| `DashboardUrl` | string | empty | Browser URL for the standalone Verbex dashboard. |
+| `DefaultIndexId` | string | `default` | Base index identifier. Non-default tenants receive deterministic tenant-specific default index IDs via tenant tags. |
+| `EnableIngestion` | bool | `true` | When true, extracted document text is indexed into Verbex after DocumentAtom extraction. |
+| `RequireIngestion` | bool | `true` | When true, document ingestion fails if Verbex indexing fails. When false, failures are logged and ingestion continues. |
+| `MaxContentCharacters` | int | `0` | Optional maximum normalized text characters sent to Verbex per document record. `0` means unlimited. |
 
 ---
 

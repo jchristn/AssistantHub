@@ -6,6 +6,7 @@ namespace AssistantHub.Core.Services
     using System.Net.Http;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using Amazon.Runtime;
     using Amazon.S3;
@@ -26,7 +27,8 @@ namespace AssistantHub.Core.Services
         private readonly DatabaseDriverBase _Database;
         private readonly LoggingModule _Logging;
         private readonly AssistantHubSettings _Settings;
-        private static readonly HttpClient _HttpClient = new HttpClient();
+        private readonly IVectorStoreService _VectorStore;
+        private readonly IInvertedIndexService _InvertedIndex;
         private readonly AmazonS3Client _S3Client;
 
         /// <summary>
@@ -36,10 +38,30 @@ namespace AssistantHub.Core.Services
             DatabaseDriverBase database,
             LoggingModule logging,
             AssistantHubSettings settings)
+            : this(database, logging, settings, null, null)
+        {
+        }
+
+        /// <summary>
+        /// Instantiate with explicit subordinate service implementations.
+        /// </summary>
+        /// <param name="database">Database driver.</param>
+        /// <param name="logging">Logging module.</param>
+        /// <param name="settings">AssistantHub settings.</param>
+        /// <param name="vectorStore">Vector store implementation.</param>
+        /// <param name="invertedIndex">Inverted index implementation.</param>
+        public TenantProvisioningService(
+            DatabaseDriverBase database,
+            LoggingModule logging,
+            AssistantHubSettings settings,
+            IVectorStoreService vectorStore,
+            IInvertedIndexService invertedIndex)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _VectorStore = vectorStore ?? new RecallDbVectorStoreService(_Settings.RecallDb, _Logging);
+            _InvertedIndex = invertedIndex ?? new VerbexInvertedIndexService(_Settings.Verbex, _Logging);
 
             if (_Settings.S3 != null && !String.IsNullOrEmpty(_Settings.S3.EndpointUrl))
             {
@@ -72,6 +94,22 @@ namespace AssistantHub.Core.Services
 
             // Step 2: Create default RecallDB collection
             string collectionId = await ProvisionRecallDbCollectionAsync(tenant.Id).ConfigureAwait(false);
+
+            // Step 2b: Create Verbex tenant and default index
+            VerbexProvisioningInfo verbex = await ProvisionVerbexAsync(tenant).ConfigureAwait(false);
+            if (verbex != null)
+            {
+                result.VerbexTenantId = verbex.TenantId;
+                result.VerbexDefaultIndexId = verbex.IndexId;
+
+                tenant.Tags ??= new Dictionary<string, string>();
+                if (!String.IsNullOrEmpty(verbex.TenantId))
+                    tenant.Tags[Constants.VerbexTenantIdTag] = verbex.TenantId;
+                if (!String.IsNullOrEmpty(verbex.IndexId))
+                    tenant.Tags[Constants.VerbexDefaultIndexIdTag] = verbex.IndexId;
+                tenant.LastUpdateUtc = DateTime.UtcNow;
+                await _Database.Tenant.UpdateAsync(tenant).ConfigureAwait(false);
+            }
 
             // Step 3: Create default admin user
             string sanitizedName = tenant.Name.ToLower().Replace(" ", "");
@@ -130,6 +168,7 @@ namespace AssistantHub.Core.Services
             rule.Bucket = tenantBucket;
             rule.CollectionName = "default";
             rule.CollectionId = collectionId ?? "default";
+            rule.VerbexIndexId = _Settings.Verbex.DefaultIndexId;
             rule.Chunking = new IngestionChunkingConfig();
             rule.Embedding = new IngestionEmbeddingConfig
             {
@@ -192,8 +231,15 @@ namespace AssistantHub.Core.Services
             // Delete tenant S3 buckets
             await DeleteTenantS3BucketsAsync(tenantId).ConfigureAwait(false);
 
+            string verbexTenantId = null;
+            if (tenant?.Tags != null && tenant.Tags.TryGetValue(Constants.VerbexTenantIdTag, out string mappedVerbexTenantId))
+                verbexTenantId = mappedVerbexTenantId;
+
             // Delete RecallDB tenant
             await DeleteRecallDbTenantAsync(tenantId).ConfigureAwait(false);
+
+            // Delete Verbex tenant and all associated index data
+            await DeleteVerbexTenantAsync(String.IsNullOrEmpty(verbexTenantId) ? tenantId : verbexTenantId).ConfigureAwait(false);
 
             // Delete tenant row
             await _Database.Tenant.DeleteByIdAsync(tenantId).ConfigureAwait(false);
@@ -201,16 +247,127 @@ namespace AssistantHub.Core.Services
             _Logging.Info(_Header + "deprovisioned tenant " + tenantId);
         }
 
+        private async Task<VerbexProvisioningInfo> ProvisionVerbexAsync(TenantMetadata tenant)
+        {
+            try
+            {
+                string verbexTenantId = await ProvisionVerbexTenantAsync(tenant).ConfigureAwait(false);
+                if (String.IsNullOrEmpty(verbexTenantId))
+                    return null;
+
+                string indexId = await ProvisionVerbexDefaultIndexAsync(tenant.Id, verbexTenantId).ConfigureAwait(false);
+                return new VerbexProvisioningInfo
+                {
+                    TenantId = verbexTenantId,
+                    IndexId = indexId
+                };
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception provisioning Verbex for tenant " + tenant.Id + ": " + e.Message);
+                return null;
+            }
+        }
+
+        private async Task<string> ProvisionVerbexTenantAsync(TenantMetadata tenant)
+        {
+            try
+            {
+                object body = new
+                {
+                    name = tenant.Name,
+                    description = "AssistantHub tenant " + tenant.Id
+                };
+
+                HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Post, "/v1.0/tenants", JsonSerializer.Serialize(body)).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    _Logging.Warn(_Header + "failed to create Verbex tenant for AssistantHub tenant " + tenant.Id + ": HTTP " + (int)resp.StatusCode + " " + respBody);
+                    return null;
+                }
+
+                string verbexTenantId = ExtractString(respBody, "Data", "Tenant", "Identifier");
+                if (String.IsNullOrEmpty(verbexTenantId))
+                    verbexTenantId = ExtractString(respBody, "Data", "Tenant", "TenantId");
+
+                if (String.IsNullOrEmpty(verbexTenantId))
+                {
+                    _Logging.Warn(_Header + "Verbex tenant response did not include a tenant identifier for AssistantHub tenant " + tenant.Id);
+                    return null;
+                }
+
+                _Logging.Info(_Header + "created Verbex tenant " + verbexTenantId + " for AssistantHub tenant " + tenant.Id);
+                return verbexTenantId;
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception creating Verbex tenant for AssistantHub tenant " + tenant.Id + ": " + e.Message);
+                return null;
+            }
+        }
+
+        private async Task<string> ProvisionVerbexDefaultIndexAsync(string assistantHubTenantId, string verbexTenantId)
+        {
+            string indexId = BuildVerbexDefaultIndexId(assistantHubTenantId);
+
+            try
+            {
+                object body = new
+                {
+                    Identifier = indexId,
+                    TenantId = verbexTenantId,
+                    Name = _Settings.Verbex.DefaultIndexId,
+                    Description = "Default AssistantHub text search index for tenant " + assistantHubTenantId,
+                    Labels = new[] { "assistanthub", "default" },
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "AssistantHubTenantId", assistantHubTenantId },
+                        { "Purpose", "DocumentTextSearch" }
+                    }
+                };
+
+                HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Post, "/v1.0/indices", JsonSerializer.Serialize(body)).ConfigureAwait(false);
+                string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    _Logging.Info(_Header + "ensured Verbex default index " + indexId + " for AssistantHub tenant " + assistantHubTenantId);
+                    return indexId;
+                }
+
+                _Logging.Warn(_Header + "failed to create Verbex default index " + indexId + " for AssistantHub tenant " + assistantHubTenantId + ": HTTP " + (int)resp.StatusCode + " " + respBody);
+                return null;
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception creating Verbex default index " + indexId + " for AssistantHub tenant " + assistantHubTenantId + ": " + e.Message);
+                return null;
+            }
+        }
+
+        private async Task DeleteVerbexTenantAsync(string verbexTenantId)
+        {
+            if (String.IsNullOrEmpty(verbexTenantId)) return;
+
+            try
+            {
+                HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Delete, "/v1.0/tenants/" + Uri.EscapeDataString(verbexTenantId)).ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    _Logging.Info(_Header + "deleted Verbex tenant " + verbexTenantId);
+                else
+                    _Logging.Warn(_Header + "failed to delete Verbex tenant " + verbexTenantId + ": HTTP " + (int)resp.StatusCode);
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception deleting Verbex tenant " + verbexTenantId + ": " + e.Message);
+            }
+        }
+
         private async Task DeleteRecallDbTenantAsync(string tenantId)
         {
             try
             {
-                string url = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "?force=true";
-
-                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Delete, url);
-                req.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(HttpMethod.Delete, "/v1.0/tenants/" + tenantId + "?force=true").ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
                     _Logging.Info(_Header + "deleted RecallDB tenant " + tenantId);
                 else
@@ -226,14 +383,9 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                string url = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants";
                 string body = "{\"Id\":\"" + tenantId + "\",\"Name\":\"" + tenantName.Replace("\"", "\\\"") + "\"}";
 
-                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, url);
-                req.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
-                req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(HttpMethod.Put, "/v1.0/tenants", body).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
                     string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -254,14 +406,9 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                string url = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections";
                 string body = "{\"Name\":\"default\"}";
 
-                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, url);
-                req.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
-                req.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(HttpMethod.Put, "/v1.0/tenants/" + tenantId + "/collections", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
@@ -290,6 +437,57 @@ namespace AssistantHub.Core.Services
                 _Logging.Warn(_Header + "exception creating RecallDB collection for tenant " + tenantId + ": " + e.Message);
                 return null;
             }
+        }
+
+        private string BuildVerbexDefaultIndexId(string assistantHubTenantId)
+        {
+            string configured = String.IsNullOrEmpty(_Settings.Verbex.DefaultIndexId) ? "default" : _Settings.Verbex.DefaultIndexId;
+            if (String.Equals(assistantHubTenantId, Constants.DefaultTenantId, StringComparison.OrdinalIgnoreCase))
+                return configured;
+
+            return assistantHubTenantId + "_" + configured;
+        }
+
+        private static string ExtractString(string json, params string[] path)
+        {
+            if (String.IsNullOrEmpty(json) || path == null || path.Length < 1)
+                return null;
+
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement current = doc.RootElement;
+                foreach (string segment in path)
+                {
+                    if (!TryGetPropertyCaseInsensitive(current, segment, out JsonElement next))
+                        return null;
+                    current = next;
+                }
+
+                return current.ValueKind == JsonValueKind.String ? current.GetString() : current.GetRawText();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty property in element.EnumerateObject())
+                {
+                    if (String.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        value = property.Value;
+                        return true;
+                    }
+                }
+            }
+
+            value = default;
+            return false;
         }
 
         private async Task ProvisionS3BucketAsync(string bucketName)
@@ -375,6 +573,12 @@ namespace AssistantHub.Core.Services
                     sb.Append(b.ToString("x2"));
                 return sb.ToString();
             }
+        }
+
+        private class VerbexProvisioningInfo
+        {
+            public string TenantId { get; set; }
+            public string IndexId { get; set; }
         }
     }
 }

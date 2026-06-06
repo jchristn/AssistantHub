@@ -60,7 +60,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
             string query =
                 "INSERT INTO ingestion_rules " +
                 "(id, tenant_id, name, description, bucket, collection_name, collection_id, " +
-                "labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, " +
+                "verbex_index_id, labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, " +
                 "created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(rule.Id) + "', " +
@@ -70,6 +70,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "'" + _Driver.Sanitize(rule.Bucket) + "', " +
                 "'" + _Driver.Sanitize(rule.CollectionName) + "', " +
                 _Driver.FormatNullableString(rule.CollectionId) + ", " +
+                _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
@@ -124,6 +125,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "bucket = '" + _Driver.Sanitize(rule.Bucket) + "', " +
                 "collection_name = '" + _Driver.Sanitize(rule.CollectionName) + "', " +
                 "collection_id = " + _Driver.FormatNullableString(rule.CollectionId) + ", " +
+                "verbex_index_id = " + _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 "labels_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 "atomization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +

@@ -72,11 +72,13 @@ create_role "${ASSISTANTHUB_DB_USER}" "${ASSISTANTHUB_DB_PASS}"
 create_role "${PARTIO_DB_USER}" "${PARTIO_DB_PASS}"
 create_role "${LESS3_DB_USER}" "${LESS3_DB_PASS}"
 create_role "${RECALLDB_DB_USER}" "${RECALLDB_DB_PASS}"
+create_role "${VERBEX_DB_USER}" "${VERBEX_DB_PASS}"
 
 create_database "${ASSISTANTHUB_DB_NAME}" "${ASSISTANTHUB_DB_USER}"
 create_database "${PARTIO_DB_NAME}" "${PARTIO_DB_USER}"
 create_database "${LESS3_DB_NAME}" "${LESS3_DB_USER}"
 create_database "${RECALLDB_DB_NAME}" "${RECALLDB_DB_USER}"
+create_database "${VERBEX_DB_NAME}" "${VERBEX_DB_USER}"
 
 echo "Ensuring pgvector extension exists in '${RECALLDB_DB_NAME}'."
 psql_super "${RECALLDB_DB_NAME}" "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -85,10 +87,12 @@ verify_login "${ASSISTANTHUB_DB_NAME}" "${ASSISTANTHUB_DB_USER}" "${ASSISTANTHUB
 verify_login "${PARTIO_DB_NAME}" "${PARTIO_DB_USER}" "${PARTIO_DB_PASS}"
 verify_login "${LESS3_DB_NAME}" "${LESS3_DB_USER}" "${LESS3_DB_PASS}"
 verify_login "${RECALLDB_DB_NAME}" "${RECALLDB_DB_USER}" "${RECALLDB_DB_PASS}"
+verify_login "${VERBEX_DB_NAME}" "${VERBEX_DB_USER}" "${VERBEX_DB_PASS}"
 
 verify_denied "${PARTIO_DB_NAME}" "${ASSISTANTHUB_DB_USER}" "${ASSISTANTHUB_DB_PASS}"
 verify_denied "${LESS3_DB_NAME}" "${PARTIO_DB_USER}" "${PARTIO_DB_PASS}"
 verify_denied "${RECALLDB_DB_NAME}" "${LESS3_DB_USER}" "${LESS3_DB_PASS}"
 verify_denied "${ASSISTANTHUB_DB_NAME}" "${RECALLDB_DB_USER}" "${RECALLDB_DB_PASS}"
+verify_denied "${ASSISTANTHUB_DB_NAME}" "${VERBEX_DB_USER}" "${VERBEX_DB_PASS}"
 
 echo "PostgreSQL initialization complete."

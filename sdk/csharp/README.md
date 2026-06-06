@@ -330,6 +330,7 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `GenerateAsync(assistantId, request, threadId?)` | Send a message (no RAG) |
 | `GenerateStreamAsync(assistantId, request, threadId?)` | Stream a response (no RAG) |
 | `SearchAsync(assistantId, request, threadId?)` | Search documents |
+| `OpenAssistantChatAsync(assistantId)` | Notify AssistantHub that a chat window opened and warm configured endpoint models when enabled |
 
 ### Assistant Analytics
 
@@ -362,6 +363,36 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `DownloadDocumentAsync(documentId)` | Download document content |
 | `DeleteDocumentAsync(documentId)` | Delete a document |
 | `BulkDeleteDocumentsAsync(documentIds)` | Delete multiple documents |
+| `ReindexDocumentAsync(documentId)` | Reindex one completed document into Verbex |
+| `ReindexDocumentsAsync(request?, query?)` | Reindex a bounded page or explicit list of completed documents into Verbex |
+
+### Search Artifacts
+
+| Method | Description |
+|---|---|
+| `SearchCollectionAsync(collectionId, request)` | Search RecallDB collection records through AssistantHub |
+| `ListIndicesAsync(query?)` | List Verbex inverted indices |
+| `CreateIndexAsync(index)` | Create a Verbex inverted index |
+| `GetIndexAsync(indexId)` | Get Verbex index metadata |
+| `IndexExistsAsync(indexId)` | Check whether a Verbex index exists |
+| `UpdateIndexAsync(indexId, index)` | Update Verbex index metadata |
+| `DeleteIndexAsync(indexId)` | Delete a Verbex index |
+| `UpdateIndexLabelsAsync(indexId, labels)` | Replace Verbex index labels |
+| `UpdateIndexTagsAsync(indexId, tags)` | Replace Verbex index tags |
+| `UpdateIndexCustomMetadataAsync(indexId, metadata)` | Replace Verbex index custom metadata |
+| `GetIndexTopTermsAsync(indexId, maxResults?)` | Get top terms for a Verbex index |
+| `SearchIndexAsync(indexId, request)` | Search a Verbex index |
+| `ListIndexRecordsAsync(indexId, query?)` | List records in a Verbex index |
+| `CreateIndexRecordAsync(indexId, record)` | Create one Verbex index record |
+| `CreateIndexRecordsBatchAsync(indexId, records)` | Create Verbex index records in batch |
+| `CheckIndexRecordsExistAsync(indexId, recordIds)` | Check multiple Verbex record IDs |
+| `GetIndexRecordAsync(indexId, recordId)` | Get one Verbex index record |
+| `IndexRecordExistsAsync(indexId, recordId)` | Check whether a Verbex index record exists |
+| `DeleteIndexRecordAsync(indexId, recordId)` | Delete one Verbex index record |
+| `DeleteIndexRecordsAsync(indexId, recordIds)` | Delete multiple Verbex index records |
+| `UpdateIndexRecordLabelsAsync(indexId, recordId, labels)` | Replace Verbex record labels |
+| `UpdateIndexRecordTagsAsync(indexId, recordId, tags)` | Replace Verbex record tags |
+| `UpdateIndexRecordCustomMetadataAsync(indexId, recordId, metadata)` | Replace Verbex record custom metadata |
 
 ### Ingestion Rules
 

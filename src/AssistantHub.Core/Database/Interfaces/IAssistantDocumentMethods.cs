@@ -78,5 +78,16 @@ namespace AssistantHub.Core.Database.Interfaces
         /// <param name="token">Cancellation token.</param>
         /// <returns>Task.</returns>
         Task UpdateChunkRecordIdsAsync(string id, string chunkRecordIdsJson, CancellationToken token = default);
+
+        /// <summary>
+        /// Update Verbex indexing metadata for a document after full-text indexing.
+        /// </summary>
+        /// <param name="id">Assistant document identifier.</param>
+        /// <param name="verbexTenantId">Verbex tenant identifier.</param>
+        /// <param name="verbexIndexId">Verbex index identifier.</param>
+        /// <param name="verbexRecordId">Verbex record identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        Task UpdateVerbexIndexMetadataAsync(string id, string verbexTenantId, string verbexIndexId, string verbexRecordId, CancellationToken token = default);
     }
 }

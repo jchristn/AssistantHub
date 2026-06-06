@@ -288,6 +288,7 @@ export interface AssistantSettings {
   QueryRewriteInferenceEndpointId?: string;
   RerankInferenceEndpointId?: string;
   EmbeddingEndpointId?: string;
+  LoadModelsOnChatOpen?: boolean;
   Title?: string;
   LogoUrl?: string;
   FaviconUrl?: string;
@@ -312,6 +313,24 @@ export interface AssistantPublicInfo {
   Title?: string;
   LogoUrl?: string;
   FaviconUrl?: string;
+  LoadModelsOnChatOpen?: boolean;
+}
+
+/** Result of loading one configured assistant endpoint model during chat open. */
+export interface AssistantChatOpenModelLoadResult {
+  EndpointType?: string;
+  Success: boolean;
+  StatusCode?: number;
+}
+
+/** Result returned when a chat window is opened for an assistant. */
+export interface AssistantChatOpenResult {
+  Success: boolean;
+  Enabled: boolean;
+  Loaded: boolean;
+  CompletionEndpointCount: number;
+  EmbeddingEndpointCount: number;
+  Results?: AssistantChatOpenModelLoadResult[];
 }
 
 /** Slack verification request. */
@@ -347,7 +366,10 @@ export interface DocumentUploadRequest {
   IngestionRuleId?: string;
   Base64Content?: string;
   Name?: string;
+  OriginalFilename?: string;
   ContentType?: string;
+  Labels?: string[];
+  Tags?: Record<string, string>;
 }
 
 /** Document resource. */
@@ -364,6 +386,9 @@ export interface AssistantDocument {
   IngestionRuleId?: string;
   BucketName?: string;
   CollectionId?: string;
+  VerbexTenantId?: string;
+  VerbexIndexId?: string;
+  VerbexRecordId?: string;
   Labels?: string;
   Tags?: string;
   ChunkRecordIds?: string;
@@ -372,6 +397,37 @@ export interface AssistantDocument {
   SourceUrl?: string;
   CreatedUtc?: string;
   LastUpdateUtc?: string;
+}
+
+/** Request body for document Verbex reindex operations. */
+export interface DocumentReindexRequest {
+  DocumentIds?: string[];
+  IncludeAlreadyIndexed?: boolean;
+}
+
+/** Result for a single document Verbex reindex operation. */
+export interface DocumentReindexResult {
+  DocumentId?: string;
+  Success: boolean;
+  Status?: string;
+  Message?: string;
+  VerbexTenantId?: string;
+  VerbexIndexId?: string;
+  VerbexRecordId?: string;
+  TotalMs: number;
+}
+
+/** Result for a batch document Verbex reindex operation. */
+export interface DocumentReindexBatchResult {
+  Requested: number;
+  Eligible: number;
+  Reindexed: number;
+  Skipped: number;
+  Failed: number;
+  ContinuationToken?: string | null;
+  EndOfResults: boolean;
+  Results: DocumentReindexResult[];
+  TotalMs: number;
 }
 
 // ============================================================================
@@ -387,6 +443,7 @@ export interface IngestionRule {
   Bucket?: string;
   CollectionName?: string;
   CollectionId?: string;
+  VerbexIndexId?: string;
   Labels?: string[];
   Tags?: Record<string, string>;
   Atomization?: Record<string, unknown>;
@@ -873,6 +930,38 @@ export interface CollectionRecord {
   Id?: string;
   [key: string]: unknown;
 }
+
+/** RecallDB collection search request payload. */
+export type CollectionSearchRequest = Record<string, unknown>;
+
+/** RecallDB collection search response payload. */
+export type CollectionSearchResponse = Record<string, unknown>;
+
+// ============================================================================
+// Indices (Verbex proxy)
+// ============================================================================
+
+/** Inverted index metadata (proxied from Verbex). */
+export interface Index {
+  Id?: string;
+  Name?: string;
+  [key: string]: unknown;
+}
+
+/** A record within an inverted index. */
+export interface IndexRecord {
+  Id?: string;
+  [key: string]: unknown;
+}
+
+/** Verbex index search request payload. */
+export type IndexSearchRequest = Record<string, unknown>;
+
+/** Verbex index search response payload. */
+export type IndexSearchResponse = Record<string, unknown>;
+
+/** Verbex top terms response payload. */
+export type IndexTermsResponse = Record<string, unknown>;
 
 // ============================================================================
 // Buckets (S3)

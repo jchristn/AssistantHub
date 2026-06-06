@@ -4,11 +4,32 @@ import ActionMenu from './ActionMenu';
 import Tooltip from './Tooltip';
 import ConfirmModal from './ConfirmModal';
 
+const extractRows = (result) => {
+  if (Array.isArray(result)) return result;
+
+  const candidates = [
+    result?.Objects,
+    result?.Data?.Objects,
+    result?.Records,
+    result?.Data?.Records,
+    result?.Items,
+    result?.Data?.Items,
+    result?.Indices,
+    result?.Data?.Indices,
+    result?.Documents,
+    result?.Data?.Documents,
+    result?.Data,
+  ];
+
+  return candidates.find((candidate) => Array.isArray(candidate)) || [];
+};
+
 function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [refreshState, setRefreshState] = useState('idle');
   const [filters, setFilters] = useState(initialFilters || {});
   const [sortKey, setSortKey] = useState(null);
@@ -20,15 +41,14 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const result = await fetchData({ maxResults: 1000 });
-      if (result && result.Objects) {
-        setAllData(result.Objects);
-      } else if (result && Array.isArray(result)) {
-        setAllData(result);
-      }
+      setAllData(extractRows(result));
     } catch (err) {
       console.error('Failed to load data:', err);
+      setError(err.message || 'Failed to load records.');
+      setAllData([]);
     } finally {
       setLoading(false);
     }
@@ -175,6 +195,8 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
       </div>
       {loading ? (
         <div className="loading"><div className="spinner" /></div>
+      ) : error ? (
+        <div className="empty-state error-state"><p>{error}</p></div>
       ) : allData.length === 0 ? (
         <div className="empty-state"><p>No records found.</p></div>
       ) : (

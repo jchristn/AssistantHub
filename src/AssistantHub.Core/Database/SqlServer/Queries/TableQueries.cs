@@ -104,6 +104,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
                 rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
+                load_models_on_chat_open BIT NOT NULL DEFAULT 0,
                 title NVARCHAR(MAX) NULL,
                 logo_url NVARCHAR(MAX) NULL,
                 favicon_url NVARCHAR(MAX) NULL,
@@ -132,6 +133,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF COL_LENGTH('assistant_settings', 'rerank_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD rerank_inference_endpoint_id NVARCHAR(MAX) NULL;";
 
+        internal static readonly string AddAssistantSettingsLoadModelsOnChatOpenColumn =
+            @"IF COL_LENGTH('assistant_settings', 'load_models_on_chat_open') IS NULL
+            ALTER TABLE assistant_settings ADD load_models_on_chat_open BIT NOT NULL DEFAULT 0;";
+
         internal static readonly string CreateAssistantDocumentsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')
             CREATE TABLE assistant_documents (
@@ -147,6 +152,9 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 ingestion_rule_id NVARCHAR(256) NULL,
                 bucket_name NVARCHAR(MAX) NULL,
                 collection_id NVARCHAR(MAX) NULL,
+                verbex_tenant_id NVARCHAR(MAX) NULL,
+                verbex_index_id NVARCHAR(MAX) NULL,
+                verbex_record_id NVARCHAR(MAX) NULL,
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 chunk_record_ids NVARCHAR(MAX) NULL,
@@ -184,6 +192,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 bucket NVARCHAR(MAX) NOT NULL,
                 collection_name NVARCHAR(MAX) NOT NULL,
                 collection_id NVARCHAR(MAX) NULL,
+                verbex_index_id NVARCHAR(MAX) NULL,
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 atomization_json NVARCHAR(MAX) NULL,
@@ -194,6 +203,22 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_ingestion_rules PRIMARY KEY (id)
             );";
+
+        internal static readonly string AddAssistantDocumentsVerbexTenantIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_tenant_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_tenant_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsVerbexIndexIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_index_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_index_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsVerbexRecordIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_record_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_record_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddIngestionRulesVerbexIndexIdColumn =
+            @"IF COL_LENGTH('ingestion_rules', 'verbex_index_id') IS NULL
+            ALTER TABLE ingestion_rules ADD verbex_index_id NVARCHAR(MAX) NULL;";
 
         internal static readonly string CreateCrawlPlansTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'crawl_plans')

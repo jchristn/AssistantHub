@@ -9,6 +9,7 @@ namespace AssistantHub.Server.Services
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Models;
+    using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
 
@@ -27,6 +28,7 @@ namespace AssistantHub.Server.Services
         private readonly LoggingModule _Logging;
         private readonly AssistantHubSettings _Settings;
         private readonly string _Header = "[HealthCheck] ";
+        private readonly IChunkingService _ChunkingService;
         private readonly ConcurrentDictionary<string, EndpointHealthState> _States = new ConcurrentDictionary<string, EndpointHealthState>();
         private readonly ConcurrentDictionary<string, CancellationTokenSource> _CancellationTokens = new ConcurrentDictionary<string, CancellationTokenSource>();
         private readonly ConcurrentDictionary<string, Task> _RunningTasks = new ConcurrentDictionary<string, Task>();
@@ -40,6 +42,7 @@ namespace AssistantHub.Server.Services
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
+            _ChunkingService = new PartioChunkingService(_Settings.Chunking, _Logging);
         }
 
         /// <summary>
@@ -69,13 +72,7 @@ namespace AssistantHub.Server.Services
 
             try
             {
-                string partioUrl = _Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + endpointType + "/enumerate";
-
-                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, partioUrl);
-                req.Headers.Add("Authorization", "Bearer " + _Settings.Chunking.AccessKey);
-                req.Content = new StringContent("{\"MaxResults\":1000}", Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resp = await _HttpClient.SendAsync(req).ConfigureAwait(false);
+                HttpResponseMessage resp = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/endpoints/" + endpointType + "/enumerate", "{\"MaxResults\":1000}").ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
                     _Logging.Warn(_Header + "failed to enumerate " + endpointType + " endpoints from Partio: HTTP " + (int)resp.StatusCode);

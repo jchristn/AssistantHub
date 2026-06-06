@@ -113,7 +113,7 @@ namespace AssistantHub.Server.Services
             }
 
             string normalizedMethod = method.ToLowerInvariant();
-            pathItem[normalizedMethod] = new JsonObject
+            JsonObject operation = new JsonObject
             {
                 ["tags"] = new JsonArray(GetTagForPath(path)),
                 ["summary"] = BuildSummary(method, path),
@@ -121,7 +121,115 @@ namespace AssistantHub.Server.Services
                 ["parameters"] = BuildOperationParameters(path),
                 ["security"] = authenticated
                     ? new JsonArray { new JsonObject { ["BearerAuth"] = new JsonArray() } }
-                    : new JsonArray()
+                    : new JsonArray(),
+                ["responses"] = BuildGenericResponses(method)
+            };
+
+            if (MethodUsuallyHasJsonBody(normalizedMethod))
+                operation["requestBody"] = BuildGenericJsonRequestBody(path);
+
+            pathItem[normalizedMethod] = operation;
+        }
+
+        private JsonObject BuildGenericResponses(string method)
+        {
+            string normalizedMethod = method?.ToUpperInvariant() ?? "GET";
+            JsonObject responses = new JsonObject();
+            if (normalizedMethod == "DELETE")
+                responses["204"] = new JsonObject { ["description"] = "Deleted or completed with no response body." };
+            else if (normalizedMethod == "HEAD")
+                responses["200"] = new JsonObject { ["description"] = "Resource exists." };
+            else
+                responses["200"] = new JsonObject
+                {
+                    ["description"] = "Successful response.",
+                    ["content"] = new JsonObject
+                    {
+                        ["application/json"] = new JsonObject
+                        {
+                            ["schema"] = new JsonObject
+                            {
+                                ["type"] = "object",
+                                ["additionalProperties"] = true
+                            }
+                        }
+                    }
+                };
+
+            responses["400"] = new JsonObject { ["description"] = "Bad request." };
+            responses["401"] = new JsonObject { ["description"] = "Authentication failed." };
+            responses["403"] = new JsonObject { ["description"] = "Authorization failed." };
+            responses["404"] = new JsonObject { ["description"] = "Resource not found." };
+            responses["500"] = new JsonObject { ["description"] = "Internal server error." };
+            return responses;
+        }
+
+        private bool MethodUsuallyHasJsonBody(string normalizedMethod)
+        {
+            return String.Equals(normalizedMethod, "post", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(normalizedMethod, "put", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(normalizedMethod, "patch", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private JsonObject BuildGenericJsonRequestBody(string path)
+        {
+            bool required = !path.EndsWith("/reindex", StringComparison.OrdinalIgnoreCase);
+
+            if (String.Equals(path, "/v1.0/indices/{indexId}/search", StringComparison.OrdinalIgnoreCase))
+                return BuildIndexSearchRequestBody(required);
+
+            return new JsonObject
+            {
+                ["required"] = required,
+                ["description"] = "JSON request payload for " + path + ". Pass-through proxy routes preserve the subordinate service schema.",
+                ["content"] = new JsonObject
+                {
+                    ["application/json"] = new JsonObject
+                    {
+                        ["schema"] = new JsonObject
+                        {
+                            ["type"] = "object",
+                            ["additionalProperties"] = true
+                        }
+                    }
+                }
+            };
+        }
+
+        private JsonObject BuildIndexSearchRequestBody(bool required)
+        {
+            return new JsonObject
+            {
+                ["required"] = required,
+                ["description"] = "Verbex index search request. AssistantHub proxies the request to Verbex and supports opt-in enriched result fields.",
+                ["content"] = new JsonObject
+                {
+                    ["application/json"] = new JsonObject
+                    {
+                        ["schema"] = new JsonObject
+                        {
+                            ["type"] = "object",
+                            ["additionalProperties"] = true,
+                            ["required"] = new JsonArray { "Query" },
+                            ["properties"] = new JsonObject
+                            {
+                                ["Query"] = new JsonObject { ["type"] = "string", ["description"] = "TF-IDF query text. Use * to browse all records." },
+                                ["MaxResults"] = new JsonObject { ["type"] = "integer", ["description"] = "Maximum number of results to return.", ["default"] = 100 },
+                                ["UseAndLogic"] = new JsonObject { ["type"] = "boolean", ["description"] = "When true, all query terms must match.", ["default"] = false },
+                                ["Labels"] = new JsonObject
+                                {
+                                    ["type"] = "array",
+                                    ["description"] = "Required labels. Verbex applies AND logic.",
+                                    ["items"] = new JsonObject { ["type"] = "string" }
+                                },
+                                ["Tags"] = new JsonObject { ["type"] = "object", ["description"] = "Required key/value tag filters. Verbex applies AND logic." },
+                                ["IncludeMatchedTerms"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include MatchedTerms on each result.", ["default"] = false },
+                                ["IncludeTermDetails"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include per-term score/frequency details and MatchedTerms on each result.", ["default"] = false },
+                                ["IncludeDocumentTermStats"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include whole-document UniqueTermCount and TotalTermOccurrences. Adds one grouped Verbex query.", ["default"] = false }
+                            }
+                        }
+                    }
+                }
             };
         }
 
@@ -156,7 +264,19 @@ namespace AssistantHub.Server.Services
             if (path.Contains("/analytics/", StringComparison.OrdinalIgnoreCase))
                 AddAnalyticsQueryParameters(parameters, path);
 
+            if (String.Equals(path, "/v1.0/documents", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(path, "/v1.0/documents/reindex", StringComparison.OrdinalIgnoreCase))
+                AddDocumentEnumerationQueryParameters(parameters);
+
             return parameters;
+        }
+
+        private void AddDocumentEnumerationQueryParameters(JsonArray parameters)
+        {
+            AddQueryParameter(parameters, "maxResults", "integer", "Maximum number of documents to process or return.");
+            AddQueryParameter(parameters, "continuationToken", "string", "Continuation token for the next page.");
+            AddQueryParameter(parameters, "bucketName", "string", "Optional bucket-name filter.");
+            AddQueryParameter(parameters, "collectionId", "string", "Optional collection identifier filter.");
         }
 
         private void AddAnalyticsQueryParameters(JsonArray parameters, string path)
@@ -218,6 +338,10 @@ namespace AssistantHub.Server.Services
                 BuildTag("Bucket Objects", "Bucket object routes."),
                 BuildTag("Collections", "Collection management routes."),
                 BuildTag("Collection Records", "Collection record routes."),
+                BuildTag("Collection Search", "RecallDB collection search routes."),
+                BuildTag("Indices", "Verbex inverted index routes."),
+                BuildTag("Index Records", "Verbex inverted index record routes."),
+                BuildTag("Index Search", "Verbex inverted index search routes."),
                 BuildTag("Assistants", "Assistant management routes."),
                 BuildTag("Assistant Settings", "Assistant settings routes."),
                 BuildTag("Assistant Analytics", "Assistant performance analytics routes."),
@@ -257,8 +381,12 @@ namespace AssistantHub.Server.Services
             if (path.StartsWith("/v1.0/tenants", StringComparison.OrdinalIgnoreCase)) return "Tenants";
             if (path.StartsWith("/v1.0/buckets/", StringComparison.OrdinalIgnoreCase) && path.Contains("/objects", StringComparison.OrdinalIgnoreCase)) return "Bucket Objects";
             if (path.StartsWith("/v1.0/buckets", StringComparison.OrdinalIgnoreCase)) return "Buckets";
+            if (path.StartsWith("/v1.0/collections/", StringComparison.OrdinalIgnoreCase) && path.Contains("/search", StringComparison.OrdinalIgnoreCase)) return "Collection Search";
             if (path.StartsWith("/v1.0/collections/", StringComparison.OrdinalIgnoreCase) && path.Contains("/records", StringComparison.OrdinalIgnoreCase)) return "Collection Records";
             if (path.StartsWith("/v1.0/collections", StringComparison.OrdinalIgnoreCase)) return "Collections";
+            if (path.StartsWith("/v1.0/indices/", StringComparison.OrdinalIgnoreCase) && path.Contains("/records", StringComparison.OrdinalIgnoreCase)) return "Index Records";
+            if (path.StartsWith("/v1.0/indices/", StringComparison.OrdinalIgnoreCase) && path.Contains("/search", StringComparison.OrdinalIgnoreCase)) return "Index Search";
+            if (path.StartsWith("/v1.0/indices", StringComparison.OrdinalIgnoreCase)) return "Indices";
             if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase)
                 && (path.Contains("/public", StringComparison.OrdinalIgnoreCase)
                     || path.Contains("/chat", StringComparison.OrdinalIgnoreCase)

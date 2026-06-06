@@ -270,7 +270,7 @@ services:
     ports:
       - "8502:8200"
     environment:
-      VERBEX_SERVER_URL: "http://assistanthub-verbex-server:8080"
+      VERBEX_SERVER_URL: "http://localhost:8501"
     depends_on:
       verbex-server:
         condition: service_healthy

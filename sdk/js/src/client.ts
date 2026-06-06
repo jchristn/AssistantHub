@@ -11,6 +11,7 @@ import type {
   Assistant,
   AssistantSettings,
   AssistantPublicInfo,
+  AssistantChatOpenResult,
   SlackVerificationRequest,
   SlackVerificationResponse,
   AssistantDocument,
@@ -402,6 +403,11 @@ export class AssistantHubClient {
   /** Get public info for an assistant (no auth required). */
   async getAssistantPublic(assistantId: string): Promise<AssistantPublicInfo> {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/public`);
+  }
+
+  /** Notify the server that an assistant chat window was opened, loading configured endpoint models when enabled. */
+  async openAssistantChat(assistantId: string): Promise<AssistantChatOpenResult> {
+    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/chat/open`);
   }
 
   // --------------------------------------------------------------------------

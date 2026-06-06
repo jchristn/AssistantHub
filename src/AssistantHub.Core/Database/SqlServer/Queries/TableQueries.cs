@@ -104,6 +104,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
                 rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
+                load_models_on_chat_open BIT NOT NULL DEFAULT 0,
                 title NVARCHAR(MAX) NULL,
                 logo_url NVARCHAR(MAX) NULL,
                 favicon_url NVARCHAR(MAX) NULL,
@@ -131,6 +132,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             @"IF COL_LENGTH('assistant_settings', 'rerank_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD rerank_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsLoadModelsOnChatOpenColumn =
+            @"IF COL_LENGTH('assistant_settings', 'load_models_on_chat_open') IS NULL
+            ALTER TABLE assistant_settings ADD load_models_on_chat_open BIT NOT NULL DEFAULT 0;";
 
         internal static readonly string CreateAssistantDocumentsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')

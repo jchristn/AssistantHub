@@ -236,7 +236,7 @@ AssistantHub should use user-facing `records` naming in its API and UI, while ma
 
 | AssistantHub REST API | Verbex upstream | Notes |
 | --- | --- | --- |
-| `POST /v1.0/indices/{indexId}/search` | `POST /v1.0/indices/{id}/search` | Supports `Query`, `MaxResults`, `UseAndLogic`, `Labels`, and `Tags`. |
+| `POST /v1.0/indices/{indexId}/search` | `POST /v1.0/indices/{id}/search` | Supports `Query`, `MaxResults`, `UseAndLogic`, `Labels`, `Tags`, and opt-in Verbex result enrichment flags. |
 
 Search request shape:
 
@@ -248,7 +248,10 @@ Search request shape:
   "Labels": ["customer"],
   "Tags": {
     "department": "legal"
-  }
+  },
+  "IncludeMatchedTerms": true,
+  "IncludeTermDetails": true,
+  "IncludeDocumentTermStats": true
 }
 ```
 
@@ -256,6 +259,7 @@ Notes:
 
 - [x] Preserve Verbex support for `Query: "*"` as browse-all search.
 - [x] Preserve result scoring fields so the dashboard can render score bars, matched terms, term scores, frequencies, and timing. Pass-through fields are preserved and rendered in the index search detail experience where available.
+- [x] Request Verbex enriched search result fields for the dashboard index search page: `MatchedTerms`, `TermDetails`, and `DocumentTermStats` (`UniqueTermCount`, `TotalTermOccurrences`).
 - [x] Add OpenAPI metadata for route parameters, query parameters, request body, response body, and auth requirements.
 
 ### RecallDB Collection Search API
@@ -370,7 +374,7 @@ Checklist:
 - [x] Mount `docker/verbex/verbex.json` into the server container.
 - [x] Mount Verbex logs/data directories as needed.
 - [x] Add health checks if the image has a health endpoint or if `GET /` is reliable.
-- [x] Set dashboard environment `VERBEX_SERVER_URL=http://verbex-server:8080`.
+- [x] Set dashboard environment `VERBEX_SERVER_URL=http://localhost:8501` so the browser-hosted Verbex dashboard can reach the published Verbex server port.
 - [x] Add service labels/names consistent with existing subordinate services.
 - [x] Add service URL to README/docker docs.
 
@@ -1080,3 +1084,5 @@ Add dated notes here as work proceeds.
 - [x] 2026-06-06: Added `View Records` and `Search` row actions to `ARTIFACTS > Collections`, linking to `/records?collectionId=...` and `/collections/search?collectionId=...`; both target pages now preselect the requested collection from navigation state or query string, and Records unwraps `Data.Objects`. Validation passed: `npm.cmd run build` in `dashboard`.
 - [x] 2026-06-06: Ensured Verbex indexed records always populate `Name` from the explicit document name, original filename, object key basename, source URL basename, or document ID; added `ObjectName` to Verbex custom metadata; normalized AssistantHub single/batch index-record create payloads before proxying to Verbex; and added service/API-suite coverage. Validation passed: `dotnet build src/AssistantHub.sln --no-restore`, `ASSISTANTHUB_TEST_SUITES=service dotnet run --project src/Test.Automated/Test.Automated.csproj --no-build`, `ASSISTANTHUB_TEST_SUITES=api dotnet run --project src/Test.Automated/Test.Automated.csproj --no-build`, OpenAPI/Postman JSON parse, and `git diff --check`.
 - [x] 2026-06-06: Replaced free-form label/tag search filter inputs on `ARTIFACTS > Indices > Search` and `ARTIFACTS > Collections > Search` with row-based label text boxes and tag key/value pairs, including per-row delete controls and last-row add controls. Validation passed: `npm.cmd run build` in `dashboard`.
+- [x] 2026-06-06: Completed final search dashboard polish: index search requests Verbex enriched result fields, the index-search table renders unique terms and term occurrences, index/search result details use clearer three-column metadata layouts, index records table omits labels/tags, and index/collection search JSON sections have copy-to-clipboard controls. Validation passed: `npm.cmd run build` in `dashboard`, focused API suite, OpenAPI/Postman JSON parse, and `git diff --check`.
+- [x] 2026-06-06: Completed final documentation pass before merge: README, CHANGELOG, REST/MCP docs, Docker docs, SDK READMEs, Postman, OpenAPI, compose, and local Docker defaults now reflect v0.14.0 Verbex/RecallDB search, Verbex PostgreSQL provisioning, enriched index-search result fields, and chat-open model warming. Validation passed: `npm.cmd run build` in `dashboard`, `npm.cmd run build` in `sdk/js`, `python -m compileall assistanthub_sdk`, `docker compose -f docker/compose.yaml config --quiet`, OpenAPI/Postman JSON parse, `git diff --check`, `dotnet build src/AssistantHub.sln --no-restore`, and `$env:ASSISTANTHUB_TEST_SUITES='api'; dotnet test src/Test.Xunit/Test.Xunit.csproj --no-restore`.

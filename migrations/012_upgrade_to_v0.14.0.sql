@@ -1,0 +1,8 @@
+-- Migration script for AssistantHub v0.14.0
+-- Assistant chat-open model loading setting
+--
+-- Use the provider-specific script that matches your backend:
+--   012_upgrade_to_v0.14.0.sqlite.sql
+--   012_upgrade_to_v0.14.0.postgresql.sql
+--   012_upgrade_to_v0.14.0.mysql.sql
+--   012_upgrade_to_v0.14.0.sqlserver.sql

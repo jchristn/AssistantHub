@@ -324,7 +324,7 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Settings | `getAssistantSettings()`, `updateAssistantSettings()`, `verifySlack()` |
 | Documents | `createDocument()`, `listDocuments()`, `getDocument()`, `deleteDocument()`, `documentExists()`, `bulkDeleteDocuments()`, `reindexDocument()`, `reindexDocuments()`, `getDocumentProcessingLog()`, `downloadDocument()`, `downloadDocumentPublic()` |
 | Ingestion Rules | `createIngestionRule()`, `listIngestionRules()`, `getIngestionRule()`, `updateIngestionRule()`, `deleteIngestionRule()`, `ingestionRuleExists()` |
-| Chat | `chatCompletion()`, `chatCompletionStream()`, `submitFeedback()`, `compact()`, `generate()` |
+| Chat | `chatCompletion()`, `chatCompletionStream()`, `submitFeedback()`, `compact()`, `generate()`, `openAssistantChat()` |
 | Threads | `createThread()`, `getThreadHistory()`, `listThreads()` |
 | Labels/Tags | `getDistinctLabels()`, `getDistinctTags()` |
 | Feedback | `listFeedback()`, `getFeedback()`, `deleteFeedback()` |

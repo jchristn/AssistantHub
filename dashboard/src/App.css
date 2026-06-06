@@ -598,6 +598,27 @@ body {
   font-size: 0.8125rem;
 }
 
+.data-table td.artifact-content-cell-truncate {
+  max-width: 520px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+.artifact-search-results-container {
+  overflow-x: auto;
+}
+
+.artifact-index-search-table {
+  min-width: 1120px;
+}
+
+.artifact-number-cell {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
 /* DataTable Filter Row */
 .data-table-filter-row td {
   padding: 0.25rem 0.5rem;
@@ -717,6 +738,10 @@ body {
 
 .modal-container.extra-wide {
   max-width: 1400px;
+}
+
+.modal-container.extra-wide.index-search-result-modal {
+  max-width: 1750px;
 }
 
 .modal-container.fullscreen {
@@ -945,6 +970,12 @@ body {
   flex-wrap: wrap;
 }
 
+.artifact-chip-list-compact {
+  max-width: 280px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
 .artifact-chip {
   display: inline-flex;
   align-items: center;
@@ -957,6 +988,26 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.artifact-more-chip {
+  flex: 0 0 auto;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent-color);
+}
+
+.artifact-score-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent-color);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .artifact-score {
@@ -1021,6 +1072,45 @@ body {
   word-break: break-word;
 }
 
+.artifact-modal-field-rows {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.artifact-modal-field-row {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.artifact-modal-field-row.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.artifact-modal-field-row.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.artifact-modal-field-row.one {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.artifact-modal-field-row .copyable-id {
+  max-width: 100%;
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+  .artifact-modal-field-row.three,
+  .artifact-modal-field-row.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .artifact-detail-section {
   margin-top: 1rem;
 }
@@ -1029,6 +1119,22 @@ body {
   margin: 0 0 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.artifact-detail-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.artifact-detail-section-header h4 {
+  margin: 0;
+}
+
+.artifact-detail-section-header .copy-btn {
+  flex: 0 0 auto;
 }
 
 .artifact-content-preview {
@@ -1179,6 +1285,7 @@ body {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   white-space: nowrap;
+  word-break: normal;
 }
 
 /* Status Badges */

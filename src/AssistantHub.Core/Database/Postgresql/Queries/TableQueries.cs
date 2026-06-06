@@ -95,6 +95,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  query_rewrite_inference_endpoint_id TEXT, " +
             "  rerank_inference_endpoint_id TEXT, " +
             "  embedding_endpoint_id TEXT, " +
+            "  load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE, " +
             "  title TEXT, " +
             "  logo_url TEXT, " +
             "  favicon_url TEXT, " +
@@ -118,6 +119,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +

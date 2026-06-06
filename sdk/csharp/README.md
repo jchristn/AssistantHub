@@ -330,6 +330,7 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `GenerateAsync(assistantId, request, threadId?)` | Send a message (no RAG) |
 | `GenerateStreamAsync(assistantId, request, threadId?)` | Stream a response (no RAG) |
 | `SearchAsync(assistantId, request, threadId?)` | Search documents |
+| `OpenAssistantChatAsync(assistantId)` | Notify AssistantHub that a chat window opened and warm configured endpoint models when enabled |
 
 ### Assistant Analytics
 

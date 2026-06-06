@@ -48,6 +48,17 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Notify the server that an assistant chat window was opened, loading configured endpoint models when enabled.
+        /// </summary>
+        public async Task<AssistantChatOpenResult> OpenAssistantChatAsync(string assistantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+
+            return await SendAsync<AssistantChatOpenResult>(HttpMethod.Post, "/v1.0/assistants/" + UrlEncode(assistantId) + "/chat/open", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Retrieve assistant settings.
         /// </summary>
         public async Task<AssistantSettings> GetAssistantSettingsAsync(string assistantId, CancellationToken cancellationToken = default)

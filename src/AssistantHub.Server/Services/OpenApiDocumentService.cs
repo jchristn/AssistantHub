@@ -175,6 +175,9 @@ namespace AssistantHub.Server.Services
         {
             bool required = !path.EndsWith("/reindex", StringComparison.OrdinalIgnoreCase);
 
+            if (String.Equals(path, "/v1.0/indices/{indexId}/search", StringComparison.OrdinalIgnoreCase))
+                return BuildIndexSearchRequestBody(required);
+
             return new JsonObject
             {
                 ["required"] = required,
@@ -187,6 +190,43 @@ namespace AssistantHub.Server.Services
                         {
                             ["type"] = "object",
                             ["additionalProperties"] = true
+                        }
+                    }
+                }
+            };
+        }
+
+        private JsonObject BuildIndexSearchRequestBody(bool required)
+        {
+            return new JsonObject
+            {
+                ["required"] = required,
+                ["description"] = "Verbex index search request. AssistantHub proxies the request to Verbex and supports opt-in enriched result fields.",
+                ["content"] = new JsonObject
+                {
+                    ["application/json"] = new JsonObject
+                    {
+                        ["schema"] = new JsonObject
+                        {
+                            ["type"] = "object",
+                            ["additionalProperties"] = true,
+                            ["required"] = new JsonArray { "Query" },
+                            ["properties"] = new JsonObject
+                            {
+                                ["Query"] = new JsonObject { ["type"] = "string", ["description"] = "TF-IDF query text. Use * to browse all records." },
+                                ["MaxResults"] = new JsonObject { ["type"] = "integer", ["description"] = "Maximum number of results to return.", ["default"] = 100 },
+                                ["UseAndLogic"] = new JsonObject { ["type"] = "boolean", ["description"] = "When true, all query terms must match.", ["default"] = false },
+                                ["Labels"] = new JsonObject
+                                {
+                                    ["type"] = "array",
+                                    ["description"] = "Required labels. Verbex applies AND logic.",
+                                    ["items"] = new JsonObject { ["type"] = "string" }
+                                },
+                                ["Tags"] = new JsonObject { ["type"] = "object", ["description"] = "Required key/value tag filters. Verbex applies AND logic." },
+                                ["IncludeMatchedTerms"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include MatchedTerms on each result.", ["default"] = false },
+                                ["IncludeTermDetails"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include per-term score/frequency details and MatchedTerms on each result.", ["default"] = false },
+                                ["IncludeDocumentTermStats"] = new JsonObject { ["type"] = "boolean", ["description"] = "Include whole-document UniqueTermCount and TotalTermOccurrences. Adds one grouped Verbex query.", ["default"] = false }
+                            }
                         }
                     }
                 }

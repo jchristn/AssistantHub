@@ -9,6 +9,7 @@
 | DocumentAtom  | http://localhost:8302        |
 | Partio        | http://localhost:8322        |
 | RecallDB      | http://localhost:8402        |
+| Verbex        | http://localhost:8502        |
 
 ## AssistantHub Dashboard Configuration
 
@@ -61,6 +62,12 @@ No authentication configured by default.
 | Password       | password             |
 | Bearer Token   | default              |
 
+### Verbex (Inverted Index)
+
+| Field          | Value                |
+|----------------|----------------------|
+| Admin API Key  | verbexadmin          |
+
 ### PostgreSQL
 
 | Service | Database | Username | Password |
@@ -70,6 +77,7 @@ No authentication configured by default.
 | Less3 | less3 | less3_app | less3_password |
 | Partio | partio | partio_app | partio_password |
 | RecallDB | recalldb | recalldb_app | recalldb_password |
+| Verbex | verbex | verbex_app | verbex_password |
 
 ## Backend Services
 
@@ -80,5 +88,6 @@ No authentication configured by default.
 | DocumentAtom  | http://localhost:8301        |
 | Partio        | http://localhost:8321        |
 | RecallDB      | http://localhost:8401        |
+| Verbex        | http://localhost:8501        |
 | Ollama        | http://localhost:11434       |
 | PostgreSQL    | localhost:5432               |

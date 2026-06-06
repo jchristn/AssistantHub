@@ -238,6 +238,11 @@ namespace AssistantHub.Core.Models
         public string EmbeddingEndpointId { get; set; } = null;
 
         /// <summary>
+        /// Whether to load or warm configured endpoint models when a chat window is opened.
+        /// </summary>
+        public bool LoadModelsOnChatOpen { get; set; } = false;
+
+        /// <summary>
         /// Title displayed as the heading on the chat window.
         /// </summary>
         public string Title { get; set; } = null;
@@ -377,6 +382,7 @@ namespace AssistantHub.Core.Models
             obj.QueryRewriteInferenceEndpointId = DataTableHelper.GetStringValue(row, "query_rewrite_inference_endpoint_id");
             obj.RerankInferenceEndpointId = DataTableHelper.GetStringValue(row, "rerank_inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
+            obj.LoadModelsOnChatOpen = DataTableHelper.GetBooleanValue(row, "load_models_on_chat_open", false);
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");

@@ -99,6 +99,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `query_rewrite_inference_endpoint_id` TEXT, " +
             "  `rerank_inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
+            "  `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
@@ -123,6 +124,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +

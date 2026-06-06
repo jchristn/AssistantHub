@@ -90,12 +90,113 @@ namespace AssistantHub.Server.Handlers
                     Description = assistant.Description,
                     Title = settings?.Title,
                     LogoUrl = settings?.LogoUrl,
-                    FaviconUrl = settings?.FaviconUrl
+                    FaviconUrl = settings?.FaviconUrl,
+                    LoadModelsOnChatOpen = settings?.LoadModelsOnChatOpen ?? false
                 })).ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetAssistantPublicAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/chat/open - Load configured endpoint models when a chat window opens.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PostChatOpenAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Assistant settings not configured."))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!settings.LoadModelsOnChatOpen)
+                {
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new
+                    {
+                        Success = true,
+                        Enabled = false,
+                        Loaded = false,
+                        CompletionEndpointCount = 0,
+                        EmbeddingEndpointCount = 0,
+                        Results = Array.Empty<object>()
+                    })).ConfigureAwait(false);
+                    return;
+                }
+
+                HashSet<string> completionEndpointIds = new HashSet<string>(StringComparer.Ordinal);
+                AddEndpointId(completionEndpointIds, settings.InferenceEndpointId);
+                AddEndpointId(completionEndpointIds, settings.RetrievalGateInferenceEndpointId);
+                AddEndpointId(completionEndpointIds, settings.QueryRewriteInferenceEndpointId);
+                AddEndpointId(completionEndpointIds, settings.RerankInferenceEndpointId);
+
+                HashSet<string> embeddingEndpointIds = new HashSet<string>(StringComparer.Ordinal);
+                AddEndpointId(embeddingEndpointIds, settings.EmbeddingEndpointId);
+
+                List<object> results = new List<object>();
+                bool allSucceeded = true;
+
+                foreach (string endpointId in completionEndpointIds)
+                {
+                    (object Result, bool Success) result = await LoadConfiguredEndpointModelAsync("Completion", endpointId).ConfigureAwait(false);
+                    results.Add(result.Result);
+                    allSucceeded &= result.Success;
+                }
+
+                foreach (string endpointId in embeddingEndpointIds)
+                {
+                    (object Result, bool Success) result = await LoadConfiguredEndpointModelAsync("Embedding", endpointId).ConfigureAwait(false);
+                    results.Add(result.Result);
+                    allSucceeded &= result.Success;
+                }
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new
+                {
+                    Success = allSucceeded,
+                    Enabled = true,
+                    Loaded = results.Count > 0,
+                    CompletionEndpointCount = completionEndpointIds.Count,
+                    EmbeddingEndpointCount = embeddingEndpointIds.Count,
+                    Results = results
+                })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PostChatOpenAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
@@ -743,6 +844,63 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
+        }
+
+        private async Task<(object Result, bool Success)> LoadConfiguredEndpointModelAsync(string endpointType, string endpointId)
+        {
+            try
+            {
+                string requestBody = Serializer.SerializeJson(new
+                {
+                    Strategy = "Auto",
+                    TimeoutMs = 60000,
+                    KeepAlive = "30m",
+                    SampleInput = "AssistantHub chat open model load",
+                    MaxTokens = 1,
+                    RecordRequestHistory = false,
+                    RequireNativeLoad = false
+                }, false);
+
+                bool isEmbedding = String.Equals(endpointType, "Embedding", StringComparison.OrdinalIgnoreCase);
+                string path = isEmbedding
+                    ? "/v1.0/endpoints/embedding/" + endpointId + "/load"
+                    : "/v1.0/endpoints/completion/" + endpointId + "/load";
+
+                using (HttpResponseMessage resp = isEmbedding
+                    ? await EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, path, requestBody).ConfigureAwait(false)
+                    : await InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, path, requestBody).ConfigureAwait(false))
+                {
+                    string body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    bool success = resp.IsSuccessStatusCode;
+                    if (!success)
+                        Logging.Warn(_Header + "chat-open model load failed for " + endpointType.ToLowerInvariant() + " endpoint " + endpointId + ": HTTP " + (int)resp.StatusCode + " " + body);
+
+                    return (new
+                    {
+                        EndpointType = endpointType,
+                        Success = success,
+                        StatusCode = (int)resp.StatusCode
+                    }, success);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "chat-open model load exception for " + endpointType.ToLowerInvariant() + " endpoint " + endpointId + ": " + e.Message);
+                return (new
+                {
+                    EndpointType = endpointType,
+                    Success = false,
+                    StatusCode = 0
+                }, false);
+            }
+        }
+
+        private static void AddEndpointId(HashSet<string> endpointIds, string endpointId)
+        {
+            if (endpointIds == null) return;
+            string trimmed = endpointId?.Trim();
+            if (!String.IsNullOrEmpty(trimmed))
+                endpointIds.Add(trimmed);
         }
 
 

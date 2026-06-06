@@ -292,7 +292,7 @@ Search the default Verbex text index:
   "tool": "index/search",
   "arguments": {
     "indexId": "default",
-    "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10}"
+    "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10,\"IncludeMatchedTerms\":true,\"IncludeTermDetails\":true,\"IncludeDocumentTermStats\":true}"
   }
 }
 ```

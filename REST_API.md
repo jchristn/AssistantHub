@@ -1285,13 +1285,24 @@ Search Verbex inverted indices through AssistantHub.
   "Labels": ["customer"],
   "Tags": {
     "department": "legal"
-  }
+  },
+  "IncludeMatchedTerms": true,
+  "IncludeTermDetails": true,
+  "IncludeDocumentTermStats": true
 }
 ```
 
 Use `Query: "*"` to browse records.
 
-**Response:** Verbex search response, including scored results, matched terms, term scores, frequencies, labels, tags, and timing metadata.
+AssistantHub passes the Verbex search request through directly. The optional enrichment flags are additive:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `IncludeMatchedTerms` | bool | Adds `MatchedTerms` to each result. |
+| `IncludeTermDetails` | bool | Adds `TermDetails` with per-term `Term`, `Score`, and `Frequency`, and also includes `MatchedTerms`. |
+| `IncludeDocumentTermStats` | bool | Adds `DocumentTermStats` with `UniqueTermCount` and `TotalTermOccurrences`. Verbex fulfills this with one grouped query for returned document IDs. |
+
+**Response:** Verbex search response, including scored results, document metadata, matched terms, term scores, frequencies, labels, tags, document term statistics, and timing metadata when requested. The dashboard uses `MatchedTerms`, `TermDetails`, `DocumentTermStats.UniqueTermCount`, and `DocumentTermStats.TotalTermOccurrences` for the `ARTIFACTS > Indices > Search` results table and detail modal.
 
 ---
 
@@ -2075,6 +2086,7 @@ Retrieve settings for an assistant.
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": "ep_def456...",
+  "LoadModelsOnChatOpen": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2126,6 +2138,7 @@ Retrieve settings for an assistant.
 | `QueryRewriteInferenceEndpointId` | string? | Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to `InferenceEndpointId`. |
 | `RerankInferenceEndpointId` | string? | Optional managed completion endpoint ID for re-ranking calls. Null or empty falls back to `InferenceEndpointId`. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
+| `LoadModelsOnChatOpen`     | bool    | Load or warm configured completion and embedding endpoint models when a chat window opens. Default `false`. |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
@@ -2183,6 +2196,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": null,
+  "LoadModelsOnChatOpen": true,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -3117,21 +3131,61 @@ Retrieve public information about an assistant. Returns basic details and appear
   "Description": "Answers questions about our product documentation.",
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
-  "FaviconUrl": "https://example.com/favicon.ico"
+  "FaviconUrl": "https://example.com/favicon.ico",
+  "LoadModelsOnChatOpen": true
 }
 ```
 
-| Field        | Type   | Description                                                                      |
-|--------------|--------|----------------------------------------------------------------------------------|
-| `Id`         | string | The assistant's unique identifier.                                               |
-| `Name`       | string | Display name of the assistant.                                                   |
-| `Description`| string | Description of the assistant (may be null).                                      |
-| `Title`      | string | Custom chat window heading (null if not set; falls back to Name on the client).  |
-| `LogoUrl`    | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
-| `FaviconUrl` | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
+| Field                  | Type   | Description                                                                      |
+|------------------------|--------|----------------------------------------------------------------------------------|
+| `Id`                   | string | The assistant's unique identifier.                                               |
+| `Name`                 | string | Display name of the assistant.                                                   |
+| `Description`          | string | Description of the assistant (may be null).                                      |
+| `Title`                | string | Custom chat window heading (null if not set; falls back to Name on the client).  |
+| `LogoUrl`              | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
+| `FaviconUrl`           | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
+| `LoadModelsOnChatOpen` | bool   | Whether clients should call `POST /v1.0/assistants/{assistantId}/chat/open` when opening chat. |
 
 **Error Responses:**
 - `404` -- Assistant not found or not active.
+
+### POST /v1.0/assistants/{assistantId}/chat/open
+
+Notify AssistantHub that a chat window was opened. If `LoadModelsOnChatOpen` is enabled in assistant settings, the server performs best-effort model-load or warm requests for the assistant's configured completion endpoint IDs and configured embedding endpoint ID.
+
+**Auth:** None
+
+**Request Body:** None
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "Enabled": true,
+  "Loaded": true,
+  "CompletionEndpointCount": 1,
+  "EmbeddingEndpointCount": 1,
+  "Results": [
+    {
+      "EndpointType": "Completion",
+      "Success": true,
+      "StatusCode": 200
+    },
+    {
+      "EndpointType": "Embedding",
+      "Success": true,
+      "StatusCode": 200
+    }
+  ]
+}
+```
+
+When the setting is disabled, `Enabled` and `Loaded` are `false` and no endpoint load requests are made. Endpoint IDs and upstream response bodies are not exposed by this public endpoint.
+
+**Error Responses:**
+- `404` -- Assistant not found or not active.
+- `500` -- Assistant settings are missing or an internal error occurred.
 
 ### POST /v1.0/assistants/{assistantId}/threads
 

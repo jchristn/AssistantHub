@@ -28,8 +28,107 @@ export const getIndexId = (row) => row?.Identifier || row?.Id || row?.GUID || ro
 export const getRecordId = (row) => row?.Id || row?.DocumentId || row?.DocumentKey || row?.GUID || row?.Identifier || '';
 export const getCollectionId = (row) => row?.GUID || row?.Id || row?.Name || '';
 
+export const getRecordEnvelope = (row) => row?.Document || row?.Record || row || {};
+
+export const getRecordPath = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.DocumentPath || record?.DocumentKey || record?.Path || record?.Name || row?.DocumentPath || '';
+};
+
+export const getOriginalFileName = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.OriginalFileName || record?.OriginalFilename || record?.Filename || row?.OriginalFileName || '';
+};
+
+export const getDocumentLength = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.DocumentLength ?? record?.Length ?? row?.DocumentLength ?? null;
+};
+
+export const getContentLength = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.ContentLength ?? record?.ContentSize ?? record?.Length ?? row?.ContentLength ?? null;
+};
+
+export const getContentType = (row) => {
+  const record = getRecordEnvelope(row);
+  const metadata = getCustomMetadata(row);
+  return record?.ContentType || record?.Type || row?.ContentType || metadata?.ContentType || '';
+};
+
+export const getIndexedDate = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.IndexedDate || record?.IndexedUtc || row?.IndexedDate || '';
+};
+
+export const getLastModified = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.LastModified || record?.LastModifiedUtc || row?.LastModified || '';
+};
+
+export const getContentSha256 = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.ContentSha256 || record?.ContentSHA256 || row?.ContentSha256 || '';
+};
+
+export const getRecordTerms = (row) => {
+  const record = getRecordEnvelope(row);
+  const value = record?.Terms || row?.Terms;
+  return Array.isArray(value)
+    ? value.map((term) => typeof term === 'string' ? term : term?.Term || term?.Text || JSON.stringify(term)).filter(Boolean)
+    : [];
+};
+
+export const getTotalTerms = (row) => {
+  const record = getRecordEnvelope(row);
+  const stats = row?.DocumentTermStats || row?.Document?.DocumentTermStats || row?.Record?.DocumentTermStats;
+  const value =
+    stats?.UniqueTermCount ??
+    record?.TermCount ??
+    record?.TotalTerms ??
+    record?.TotalTermCount ??
+    row?.DocumentTermStats?.UniqueTermCount ??
+    row?.TermCount ??
+    row?.TotalTerms ??
+    row?.TotalTermCount;
+  if (value != null && value !== '') return value;
+  const terms = getRecordTerms(row);
+  return terms.length > 0 ? terms.length : null;
+};
+
+export const getTotalTermOccurrences = (row) => {
+  const record = getRecordEnvelope(row);
+  const stats = row?.DocumentTermStats || row?.Document?.DocumentTermStats || row?.Record?.DocumentTermStats;
+  return stats?.TotalTermOccurrences ??
+    record?.TotalTermOccurrences ??
+    record?.TermOccurrences ??
+    row?.DocumentTermStats?.TotalTermOccurrences ??
+    row?.TotalTermOccurrences ??
+    row?.TermOccurrences ??
+    null;
+};
+
+export const getTermMatchCount = (row) =>
+  row?.TotalTermMatches ??
+  row?.MatchedTermCount ??
+  row?.Document?.TotalTermMatches ??
+  row?.Record?.TotalTermMatches ??
+  row?.Document?.MatchedTermCount ??
+  row?.Record?.MatchedTermCount ??
+  null;
+
+export const getIsDeleted = (row) => {
+  const record = getRecordEnvelope(row);
+  return Boolean(record?.IsDeleted ?? row?.IsDeleted);
+};
+
+export const getIndexingRuntimeMs = (row) => {
+  const record = getRecordEnvelope(row);
+  return record?.IndexingRuntimeMs ?? row?.IndexingRuntimeMs ?? null;
+};
+
 export const getRecordContent = (row) => {
-  const record = row?.Document || row?.Record || row;
+  const record = getRecordEnvelope(row);
   return record?.Content || record?.Text || row?.Content || '';
 };
 
@@ -126,12 +225,28 @@ export const getMatchedTerms = (result) => {
   const value = result?.MatchedTerms || result?.Terms || result?.TermMatches || result?.Data?.MatchedTerms;
   if (Array.isArray(value)) return value.map((term) => typeof term === 'string' ? term : term?.Term || term?.Text || JSON.stringify(term)).filter(Boolean);
   if (typeof value === 'string') return parseListInput(value);
+  const termScores = result?.TermScores || result?.Document?.TermScores || result?.Record?.TermScores;
+  if (termScores && typeof termScores === 'object' && !Array.isArray(termScores)) return Object.keys(termScores).filter(Boolean);
+  const termFrequencies = result?.TermFrequencies || result?.Document?.TermFrequencies || result?.Record?.TermFrequencies;
+  if (termFrequencies && typeof termFrequencies === 'object' && !Array.isArray(termFrequencies)) return Object.keys(termFrequencies).filter(Boolean);
   return [];
 };
 
 export const getTermDetails = (result) => {
+  const explicitDetails = result?.TermDetails || result?.Document?.TermDetails || result?.Record?.TermDetails;
+  if (Array.isArray(explicitDetails)) return explicitDetails.filter((item) => item && typeof item === 'object');
+
   const candidates = result?.TermScores || result?.TermFrequencies || result?.Terms || result?.MatchedTerms || [];
-  return Array.isArray(candidates) ? candidates.filter((item) => typeof item === 'object') : [];
+  if (Array.isArray(candidates)) return candidates.filter((item) => typeof item === 'object');
+
+  const scores = result?.TermScores && typeof result.TermScores === 'object' && !Array.isArray(result.TermScores) ? result.TermScores : {};
+  const frequencies = result?.TermFrequencies && typeof result.TermFrequencies === 'object' && !Array.isArray(result.TermFrequencies) ? result.TermFrequencies : {};
+  const terms = Array.from(new Set([...Object.keys(scores), ...Object.keys(frequencies)])).filter(Boolean);
+  return terms.map((term) => ({
+    Term: term,
+    Score: scores[term] ?? '',
+    Frequency: frequencies[term] ?? '',
+  }));
 };
 
 export function BadgeList({ values, empty = '' }) {
@@ -153,7 +268,13 @@ export function TagBadges({ tags }) {
   );
 }
 
-export function LabelConstraintInput({ value, onChange }) {
+export function LabelConstraintInput({
+  value,
+  onChange,
+  inputTitle = 'Label value. Enter one label per row.',
+  addTitle = 'Add another label row.',
+  deleteTitle = 'Delete this label row.',
+}) {
   const rows = normalizeLabelRows(value);
   const updateRow = (index, nextValue) => onChange(rows.map((item, itemIndex) => itemIndex === index ? nextValue : item));
   const addRow = () => onChange([...rows, '']);
@@ -165,13 +286,13 @@ export function LabelConstraintInput({ value, onChange }) {
         const isLast = index === rows.length - 1;
         return (
           <div key={index} className="artifact-label-constraint-row">
-            <input value={item} onChange={(e) => updateRow(index, e.target.value)} />
+            <input title={inputTitle} value={item} onChange={(e) => updateRow(index, e.target.value)} />
             {isLast ? (
-              <button type="button" className="artifact-constraint-icon" title="Add label" aria-label="Add label" onClick={addRow}>+</button>
+              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}>+</button>
             ) : (
               <span className="artifact-constraint-spacer" aria-hidden="true" />
             )}
-            <button type="button" className="artifact-constraint-icon danger" title="Delete label" aria-label="Delete label" onClick={() => deleteRow(index)}>&times;</button>
+            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}>&times;</button>
           </div>
         );
       })}
@@ -179,7 +300,14 @@ export function LabelConstraintInput({ value, onChange }) {
   );
 }
 
-export function TagConstraintInput({ value, onChange }) {
+export function TagConstraintInput({
+  value,
+  onChange,
+  keyTitle = 'Tag key.',
+  valueTitle = 'Tag value.',
+  addTitle = 'Add another tag row.',
+  deleteTitle = 'Delete this tag row.',
+}) {
   const rows = normalizeTagRows(value);
   const updateRow = (index, field, nextValue) => onChange(rows.map((item, itemIndex) => (
     itemIndex === index ? { ...item, [field]: nextValue } : item
@@ -193,14 +321,14 @@ export function TagConstraintInput({ value, onChange }) {
         const isLast = index === rows.length - 1;
         return (
           <div key={index} className="artifact-tag-constraint-row">
-            <input value={item.key} onChange={(e) => updateRow(index, 'key', e.target.value)} placeholder="Key" />
-            <input value={item.value} onChange={(e) => updateRow(index, 'value', e.target.value)} placeholder="Value" />
+            <input title={keyTitle} value={item.key} onChange={(e) => updateRow(index, 'key', e.target.value)} placeholder="Key" />
+            <input title={valueTitle} value={item.value} onChange={(e) => updateRow(index, 'value', e.target.value)} placeholder="Value" />
             {isLast ? (
-              <button type="button" className="artifact-constraint-icon" title="Add tag" aria-label="Add tag" onClick={addRow}>+</button>
+              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}>+</button>
             ) : (
               <span className="artifact-constraint-spacer" aria-hidden="true" />
             )}
-            <button type="button" className="artifact-constraint-icon danger" title="Delete tag" aria-label="Delete tag" onClick={() => deleteRow(index)}>&times;</button>
+            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}>&times;</button>
           </div>
         );
       })}
@@ -218,6 +346,11 @@ export function ScoreBar({ score }) {
       <span className="artifact-score-track"><span style={{ width: `${Math.max(4, normalized * 100)}%` }} /></span>
     </div>
   );
+}
+
+export function ScoreBadge({ score }) {
+  if (score == null || score === '') return '';
+  return <span className="artifact-score-badge">{formatNumber(score)}</span>;
 }
 
 export function FieldGrid({ rows }) {

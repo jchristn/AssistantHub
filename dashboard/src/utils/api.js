@@ -676,6 +676,16 @@ export class ApiClient {
     return response.json();
   }
 
+  // Chat open hook (unauthenticated)
+  static async openChat(serverUrl, assistantId) {
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/chat/open`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error(`Chat open failed with status ${response.status}`);
+    return response.json();
+  }
+
   // Thread history (unauthenticated)
   static async getThreadHistory(serverUrl, assistantId, threadId) {
     const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/threads/${threadId}/history`);

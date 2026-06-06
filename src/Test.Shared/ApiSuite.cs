@@ -267,6 +267,17 @@ namespace Test.Automated
 
                 JsonElement indexSearch = paths.GetProperty("/v1.0/indices/{indexId}/search").GetProperty("post");
                 AssertHelper.IsTrue(indexSearch.TryGetProperty("requestBody", out _), "Index search OpenAPI request body");
+                JsonElement indexSearchSchema = indexSearch
+                    .GetProperty("requestBody")
+                    .GetProperty("content")
+                    .GetProperty("application/json")
+                    .GetProperty("schema");
+                JsonElement indexSearchProperties = indexSearchSchema.TryGetProperty("properties", out JsonElement inlineProperties)
+                    ? inlineProperties
+                    : document.RootElement.GetProperty("components").GetProperty("schemas").GetProperty("SearchRequest").GetProperty("properties");
+                AssertHelper.IsTrue(indexSearchProperties.TryGetProperty("IncludeMatchedTerms", out _), "Index search OpenAPI IncludeMatchedTerms");
+                AssertHelper.IsTrue(indexSearchProperties.TryGetProperty("IncludeTermDetails", out _), "Index search OpenAPI IncludeTermDetails");
+                AssertHelper.IsTrue(indexSearchProperties.TryGetProperty("IncludeDocumentTermStats", out _), "Index search OpenAPI IncludeDocumentTermStats");
                 JsonElement collectionSearch = paths.GetProperty("/v1.0/collections/{collectionId}/search").GetProperty("post");
                 AssertHelper.IsTrue(collectionSearch.TryGetProperty("requestBody", out _), "Collection search OpenAPI request body");
             });
@@ -279,6 +290,9 @@ namespace Test.Automated
 
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/collections/{{collectionId}}/search", "collection search Postman request");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/search", "index search Postman request");
+                AssertHelper.StringContains(postman, "\\\"IncludeMatchedTerms\\\": true", "index search Postman IncludeMatchedTerms");
+                AssertHelper.StringContains(postman, "\\\"IncludeTermDetails\\\": true", "index search Postman IncludeTermDetails");
+                AssertHelper.StringContains(postman, "\\\"IncludeDocumentTermStats\\\": true", "index search Postman IncludeDocumentTermStats");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/terms/top", "index top terms Postman request");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/custom-metadata", "index custom metadata Postman request");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/labels", "index record labels Postman request");

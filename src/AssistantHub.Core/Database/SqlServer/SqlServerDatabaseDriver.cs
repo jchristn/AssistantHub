@@ -81,6 +81,7 @@ namespace AssistantHub.Core.Database.SqlServer
                 TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn,
                 TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn,
                 TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn,
+                TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn,
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.AddAssistantDocumentsVerbexTenantIdColumn,
                 TableQueries.AddAssistantDocumentsVerbexIndexIdColumn,

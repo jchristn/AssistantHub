@@ -10,14 +10,22 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import {
   BadgeList,
-  FieldGrid,
   TagBadges,
   formatJson,
+  getContentSha256,
   getCustomMetadata,
+  getDocumentLength,
   getIndexId,
+  getIndexedDate,
+  getIndexingRuntimeMs,
+  getIsDeleted,
   getLabels,
+  getLastModified,
+  getOriginalFileName,
   getRecordContent,
   getRecordId,
+  getRecordPath,
+  getRecordTerms,
   getTags,
   parseJsonInput,
   parseListInput,
@@ -27,6 +35,31 @@ import {
 } from '../utils/artifactSearch.jsx';
 
 const emptyRecordForm = { Id: '', Name: '', Content: '', Labels: '', Tags: '', CustomMetadata: '{}' };
+const numberFormatter = new Intl.NumberFormat();
+
+const formatDateTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+};
+
+const formatInteger = (value) => {
+  if (value == null || value === '') return '';
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numberFormatter.format(numeric) : String(value);
+};
+
+const formatRuntime = (value) => {
+  if (value == null || value === '') return '';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  return `${numeric.toFixed(numeric >= 10 ? 0 : 1)} ms`;
+};
+
+const getSourceDocumentId = (record) => {
+  const metadata = getCustomMetadata(record);
+  return metadata.AssistantHubDocumentId || metadata.AssistantDocumentId || metadata.DocumentId || metadata.ObjectId || '';
+};
 
 function IndexRecordsView() {
   const { serverUrl, credential } = useAuth();
@@ -93,7 +126,12 @@ function IndexRecordsView() {
       let items = unwrapObjects(result);
       if (filters.recordId.trim()) {
         const needle = filters.recordId.trim().toLowerCase();
-        items = items.filter((record) => getRecordId(record).toLowerCase().includes(needle));
+        items = items.filter((record) => [
+          getRecordId(record),
+          getRecordPath(record),
+          getOriginalFileName(record),
+          getContentSha256(record),
+        ].some((value) => String(value || '').toLowerCase().includes(needle)));
       }
       setRecords(items);
     } catch (err) {
@@ -108,7 +146,7 @@ function IndexRecordsView() {
 
   const buildRecordBody = (source) => {
     const body = {
-      Name: source.Name || source.Id || 'record',
+      Name: source.Name || source.DocumentPath || source.Id || 'record',
       Content: source.Content,
     };
     if (source.Id) body.Id = source.Id;
@@ -265,10 +303,10 @@ function IndexRecordsView() {
               <tr>
                 <th style={{ width: '2.5rem', textAlign: 'center' }}><input type="checkbox" checked={selectedAll} onChange={toggleAll} /></th>
                 <th>ID</th>
-                <th>Name</th>
-                <th>Content</th>
-                <th>Labels</th>
-                <th>Tags</th>
+                <th>Document Path</th>
+                <th>Original File</th>
+                <th>Length</th>
+                <th>Indexed</th>
                 <th>Source Document</th>
                 <th className="actions-cell"></th>
               </tr>
@@ -276,18 +314,18 @@ function IndexRecordsView() {
             <tbody>
               {records.map((record, idx) => {
                 const recordId = getRecordId(record);
-                const metadata = getCustomMetadata(record);
+                const sourceDocumentId = getSourceDocumentId(record);
                 return (
                   <tr key={recordId || idx} onClick={() => setDetailTarget(record)} style={{ cursor: 'pointer' }}>
                     <td style={{ width: '2.5rem', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selectedIds.has(recordId)} onChange={() => toggleSelected(recordId)} />
                     </td>
                     <td><CopyableId id={recordId} /></td>
-                    <td>{record.Name || record.Document?.Name || ''}</td>
-                    <td className="artifact-content-cell">{String(getRecordContent(record)).slice(0, 180)}</td>
-                    <td><BadgeList values={getLabels(record)} /></td>
-                    <td><TagBadges tags={getTags(record)} /></td>
-                    <td>{metadata.AssistantHubDocumentId ? <CopyableId id={metadata.AssistantHubDocumentId} /> : ''}</td>
+                    <td className="artifact-content-cell">{getRecordPath(record)}</td>
+                    <td>{getOriginalFileName(record)}</td>
+                    <td>{formatInteger(getDocumentLength(record))}</td>
+                    <td>{formatDateTime(getIndexedDate(record))}</td>
+                    <td>{sourceDocumentId ? <CopyableId id={sourceDocumentId} /> : ''}</td>
                     <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu items={[
                         { label: 'View Details', onClick: () => setDetailTarget(record) },
@@ -309,7 +347,7 @@ function IndexRecordsView() {
           <form onSubmit={createRecord}>
             <div className="form-row">
               <div className="form-group"><label>Record ID</label><input value={recordForm.Id} onChange={(e) => setRecordForm({ ...recordForm, Id: e.target.value })} /></div>
-              <div className="form-group"><label>Name</label><input value={recordForm.Name} onChange={(e) => setRecordForm({ ...recordForm, Name: e.target.value })} /></div>
+              <div className="form-group"><label>Document Path</label><input value={recordForm.Name} onChange={(e) => setRecordForm({ ...recordForm, Name: e.target.value })} /></div>
             </div>
             <div className="form-group"><label>Content</label><textarea value={recordForm.Content} onChange={(e) => setRecordForm({ ...recordForm, Content: e.target.value })} /></div>
             <div className="form-row">
@@ -331,17 +369,70 @@ function IndexRecordsView() {
 
       {detailTarget && (
         <Modal title="Index Record Details" onClose={() => setDetailTarget(null)} extraWide>
-          <FieldGrid rows={[
-            { label: 'Record ID', value: <CopyableId id={getRecordId(detailTarget)} /> },
-            { label: 'Name', value: detailTarget.Name || detailTarget.Document?.Name },
-            { label: 'Labels', value: <BadgeList values={getLabels(detailTarget)} /> },
-            { label: 'Tags', value: <TagBadges tags={getTags(detailTarget)} /> },
-            { label: 'AssistantHub Document', value: getCustomMetadata(detailTarget).AssistantHubDocumentId ? <CopyableId id={getCustomMetadata(detailTarget).AssistantHubDocumentId} /> : '' },
-          ]} />
-          <div className="artifact-detail-section">
-            <h4>Content</h4>
-            <pre className="artifact-content-preview">{getRecordContent(detailTarget)}</pre>
+          <div className="artifact-modal-field-rows">
+            <div className="artifact-modal-field-row three">
+              <div className="artifact-field">
+                <div className="artifact-field-label">Record ID</div>
+                <div className="artifact-field-value"><CopyableId id={getRecordId(detailTarget)} /></div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Document Path</div>
+                <div className="artifact-field-value">{getRecordPath(detailTarget)}</div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Content SHA-256</div>
+                <div className="artifact-field-value">{getContentSha256(detailTarget) ? <CopyableId id={getContentSha256(detailTarget)} /> : ''}</div>
+              </div>
+            </div>
+            <div className="artifact-modal-field-row three">
+              <div className="artifact-field">
+                <div className="artifact-field-label">Document Length</div>
+                <div className="artifact-field-value">{formatInteger(getDocumentLength(detailTarget))}</div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Indexed</div>
+                <div className="artifact-field-value">{formatDateTime(getIndexedDate(detailTarget))}</div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Last Modified</div>
+                <div className="artifact-field-value">{formatDateTime(getLastModified(detailTarget))}</div>
+              </div>
+            </div>
+            <div className="artifact-modal-field-row three">
+              <div className="artifact-field">
+                <div className="artifact-field-label">Indexing Runtime</div>
+                <div className="artifact-field-value">{formatRuntime(getIndexingRuntimeMs(detailTarget))}</div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Deleted</div>
+                <div className="artifact-field-value">{getIsDeleted(detailTarget) ? 'Yes' : 'No'}</div>
+              </div>
+              <div className="artifact-field artifact-field-empty" aria-hidden="true"></div>
+            </div>
+            <div className="artifact-modal-field-row three">
+              <div className="artifact-field">
+                <div className="artifact-field-label">Labels</div>
+                <div className="artifact-field-value"><BadgeList values={getLabels(detailTarget)} /></div>
+              </div>
+              <div className="artifact-field">
+                <div className="artifact-field-label">Tags</div>
+                <div className="artifact-field-value"><TagBadges tags={getTags(detailTarget)} /></div>
+              </div>
+              <div className="artifact-field artifact-field-empty" aria-hidden="true"></div>
+            </div>
           </div>
+          {getRecordTerms(detailTarget).length > 0 && (
+            <div className="artifact-detail-section">
+              <h4>Terms</h4>
+              <BadgeList values={getRecordTerms(detailTarget).slice(0, 100)} />
+            </div>
+          )}
+          {getRecordContent(detailTarget) && (
+            <div className="artifact-detail-section">
+              <h4>Content</h4>
+              <pre className="artifact-content-preview">{getRecordContent(detailTarget)}</pre>
+            </div>
+          )}
           <div className="artifact-detail-section">
             <h4>Custom Metadata</h4>
             <pre className="json-view compact">{formatJson(getCustomMetadata(detailTarget))}</pre>

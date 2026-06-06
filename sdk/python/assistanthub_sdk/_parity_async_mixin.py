@@ -15,6 +15,7 @@ from .models import (
     AssistantAnalyticsStageResult,
     AssistantAnalyticsTimeSeriesResult,
     AssistantFeedback,
+    AssistantChatOpenResult,
     AssistantPublicInfo,
     AssistantSettings,
     AuthenticateRequest,
@@ -108,6 +109,10 @@ class AsyncAssistantHubClientParityMixin:
     async def get_assistant_public(self, assistant_id: str) -> AssistantPublicInfo:
         response = await self._request("GET", f"/v1.0/assistants/{assistant_id}/public")
         return AssistantPublicInfo.model_validate(response.json())
+
+    async def open_assistant_chat(self, assistant_id: str) -> AssistantChatOpenResult:
+        response = await self._request("POST", f"/v1.0/assistants/{assistant_id}/chat/open")
+        return AssistantChatOpenResult.model_validate(response.json())
 
     async def get_assistant_settings(self, assistant_id: str) -> AssistantSettings:
         response = await self._request("GET", f"/v1.0/assistants/{assistant_id}/settings")

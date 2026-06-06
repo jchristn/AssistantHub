@@ -10,6 +10,7 @@ The Docker deployment uses one `pgvector/pgvector:pg17` PostgreSQL container for
 | Partio | `partio` | `partio_app` |
 | Less3 | `less3` | `less3_app` |
 | RecallDB | `recalldb` | `recalldb_app` |
+| Verbex | `verbex` | `verbex_app` |
 
 RecallDB is the only service that requires the `vector` extension. The init container installs it as the PostgreSQL superuser before RecallDB starts.
 
@@ -32,6 +33,7 @@ docker exec -e PGPASSWORD=assistanthub_password assistanthub-postgres psql -U as
 docker exec -e PGPASSWORD=partio_password assistanthub-postgres psql -U partio_app -d partio -c "SELECT current_database(), current_user;"
 docker exec -e PGPASSWORD=less3_password assistanthub-postgres psql -U less3_app -d less3 -c "SELECT current_database(), current_user;"
 docker exec -e PGPASSWORD=recalldb_password assistanthub-postgres psql -U recalldb_app -d recalldb -c "SELECT current_database(), current_user;"
+docker exec -e PGPASSWORD=verbex_password assistanthub-postgres psql -U verbex_app -d verbex -c "SELECT current_database(), current_user;"
 docker exec assistanthub-postgres psql -U postgres -d recalldb -c "SELECT extname FROM pg_extension WHERE extname = 'vector';"
 docker logs assistanthub-postgres-init
 docker compose ps

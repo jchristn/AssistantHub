@@ -74,6 +74,7 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn,
                 TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn,
                 TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn,
+                TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn,
                 TableQueries.CreateAssistantDocumentsTable,
                 TableQueries.AddAssistantDocumentsVerbexTenantIdColumn,
                 TableQueries.AddAssistantDocumentsVerbexIndexIdColumn,

@@ -228,10 +228,12 @@ The Docker Compose stack orchestrates the following services:
 | **documentatom-dashboard** | 8302 | Web-based management UI for DocumentAtom. |
 | **partio-server** | 8321 | Text chunking, embedding, and summarization service. Splits extracted text into chunks using configurable strategies, computes vector embeddings via configurable embedding endpoints, and optionally summarizes content using a completion endpoint. Also manages embedding and completion endpoint configurations. |
 | **partio-dashboard** | 8322 | Web-based management UI for Partio. Allows direct management of embedding and completion endpoints. |
-| **postgres** | 5432 | PostgreSQL with the pgvector extension. Provides separate databases for AssistantHub, Less3, Partio, and RecallDB. |
+| **postgres** | 5432 | PostgreSQL with the pgvector extension. Provides separate databases for AssistantHub, Less3, Partio, RecallDB, and Verbex. |
 | **postgres-init** | n/a | One-shot initialization verifier that creates service roles/databases, installs `vector` for RecallDB, and verifies service-role connectivity before app services start. |
 | **recalldb-server** | 8401 | Vector and full-text search database. Wraps PostgreSQL/pgvector with a REST API for storing, searching, and managing document embeddings. Supports vector search (semantic similarity), full-text search (keyword matching), and hybrid search (weighted combination). |
 | **recalldb-dashboard** | 8402 | Web-based management UI for RecallDB. Allows direct browsing of collections, records, and search testing. |
+| **verbex-server** | 8501 | Inverted-index search server. Stores document text records and supports TF-IDF/text search through AssistantHub proxy APIs. |
+| **verbex-dashboard** | 8502 | Web-based management UI for Verbex. Allows direct browsing of indices, records, and search testing. |
 
 ### Docker PostgreSQL Defaults
 
@@ -243,6 +245,7 @@ The Docker stack uses a single `postgres` container with a named `postgres-data`
 | Less3 | `less3` | `less3_app` |
 | Partio | `partio` | `partio_app` |
 | RecallDB | `recalldb` | `recalldb_app` |
+| Verbex | `verbex` | `verbex_app` |
 
 Local-only database defaults are in `docker/.env` and are mirrored in the mounted JSON config files. Keep those values synchronized if you change database names or credentials.
 
@@ -351,7 +354,7 @@ docker compose up -d
 
 **Important:** Change all default passwords immediately after first login.
 
-Verbex powers text/TF-IDF document search in `ARTIFACTS > Indices > Search`. The dashboard also includes `ARTIFACTS > Indices` for index metadata/top terms and `ARTIFACTS > Indices > Records` for browsing, creating, updating labels/tags/custom metadata, and deleting Verbex records through AssistantHub. RecallDB collection search remains available in `ARTIFACTS > Collections > Search` with full-text, vector, label/tag, term, date, document, neighbor, and continuation-token controls. Ingestion rules can optionally set `VerbexIndexId`; leaving it blank uses the tenant default Verbex index.
+Verbex powers text/TF-IDF document search in `ARTIFACTS > Indices > Search`. The dashboard requests Verbex matched terms, per-term score/frequency details, and document term statistics so results can show unique terms, total term occurrences, matched query terms, and score details. The dashboard also includes `ARTIFACTS > Indices` for index metadata/top terms and `ARTIFACTS > Indices > Records` for browsing, creating, updating labels/tags/custom metadata, and deleting Verbex records through AssistantHub. Search result detail modals expose copyable IDs and JSON payloads for inspection. RecallDB collection search remains available in `ARTIFACTS > Collections > Search` with full-text, vector, label/tag, term, date, document, neighbor, and continuation-token controls. Ingestion rules can optionally set `VerbexIndexId`; leaving it blank uses the tenant default Verbex index.
 
 ### Search Backfill
 

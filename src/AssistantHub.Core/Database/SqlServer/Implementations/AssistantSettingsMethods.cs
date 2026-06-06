@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
+                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -91,6 +91,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
+                (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(settings.Title) + ", " +
                 _Driver.FormatNullableString(settings.LogoUrl) + ", " +
                 _Driver.FormatNullableString(settings.FaviconUrl) + ", " +
@@ -173,6 +174,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "query_rewrite_inference_endpoint_id = " + _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 "rerank_inference_endpoint_id = " + _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
+                "load_models_on_chat_open = " + (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
                 "title = " + _Driver.FormatNullableString(settings.Title) + ", " +
                 "logo_url = " + _Driver.FormatNullableString(settings.LogoUrl) + ", " +
                 "favicon_url = " + _Driver.FormatNullableString(settings.FaviconUrl) + ", " +

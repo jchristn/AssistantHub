@@ -140,6 +140,7 @@ class AssistantPublicInfo(BaseModel):
     title: Optional[str] = Field(None, alias="Title")
     logo_url: Optional[str] = Field(None, alias="LogoUrl")
     favicon_url: Optional[str] = Field(None, alias="FaviconUrl")
+    load_models_on_chat_open: bool = Field(False, alias="LoadModelsOnChatOpen")
 
 
 class AssistantSettings(BaseModel):
@@ -183,6 +184,7 @@ class AssistantSettings(BaseModel):
         None, alias="rerankInferenceEndpointId"
     )
     embedding_endpoint_id: Optional[str] = Field(None, alias="embeddingEndpointId")
+    load_models_on_chat_open: bool = Field(False, alias="loadModelsOnChatOpen")
     title: Optional[str] = None
     logo_url: Optional[str] = Field(None, alias="logoUrl")
     favicon_url: Optional[str] = Field(None, alias="faviconUrl")
@@ -197,6 +199,25 @@ class AssistantSettings(BaseModel):
     slack_message_prefix: Optional[str] = Field(None, alias="slackMessagePrefix")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class AssistantChatOpenModelLoadResult(BaseModel):
+    """Result of loading one configured assistant endpoint model during chat open."""
+
+    endpoint_type: Optional[str] = Field(None, alias="endpointType")
+    success: bool = False
+    status_code: int = Field(0, alias="statusCode")
+
+
+class AssistantChatOpenResult(BaseModel):
+    """Result returned when a chat window is opened for an assistant."""
+
+    success: bool = False
+    enabled: bool = False
+    loaded: bool = False
+    completion_endpoint_count: int = Field(0, alias="completionEndpointCount")
+    embedding_endpoint_count: int = Field(0, alias="embeddingEndpointCount")
+    results: Optional[list[AssistantChatOpenModelLoadResult]] = None
 
 
 # ---------------------------------------------------------------------------

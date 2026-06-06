@@ -209,6 +209,9 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "rerank_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "load_models_on_chat_open"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, true, token).ConfigureAwait(false);
         }
 
         private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)

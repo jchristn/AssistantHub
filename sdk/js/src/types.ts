@@ -288,6 +288,7 @@ export interface AssistantSettings {
   QueryRewriteInferenceEndpointId?: string;
   RerankInferenceEndpointId?: string;
   EmbeddingEndpointId?: string;
+  LoadModelsOnChatOpen?: boolean;
   Title?: string;
   LogoUrl?: string;
   FaviconUrl?: string;
@@ -312,6 +313,24 @@ export interface AssistantPublicInfo {
   Title?: string;
   LogoUrl?: string;
   FaviconUrl?: string;
+  LoadModelsOnChatOpen?: boolean;
+}
+
+/** Result of loading one configured assistant endpoint model during chat open. */
+export interface AssistantChatOpenModelLoadResult {
+  EndpointType?: string;
+  Success: boolean;
+  StatusCode?: number;
+}
+
+/** Result returned when a chat window is opened for an assistant. */
+export interface AssistantChatOpenResult {
+  Success: boolean;
+  Enabled: boolean;
+  Loaded: boolean;
+  CompletionEndpointCount: number;
+  EmbeddingEndpointCount: number;
+  Results?: AssistantChatOpenModelLoadResult[];
 }
 
 /** Slack verification request. */

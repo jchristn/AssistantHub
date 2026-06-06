@@ -175,6 +175,7 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `search(assistant_id, query, ...)` -- RAG search via chat
 - `generate(assistant_id, messages, ...)` -- Generate without RAG
 - `generate_stream(assistant_id, messages, ...)` -- Stream generation without RAG
+- `open_assistant_chat(assistant_id)` -- Notify AssistantHub that a chat window opened and warm configured endpoint models when enabled
 
 ### Documents
 

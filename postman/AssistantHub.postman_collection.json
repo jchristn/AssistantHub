@@ -1242,7 +1242,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Query\": \"{{searchQuery}}\",\n\t\"MaxResults\": 10\n}"
+              "raw": "{\n\t\"Query\": \"{{searchQuery}}\",\n\t\"MaxResults\": 10,\n\t\"UseAndLogic\": false,\n\t\"IncludeMatchedTerms\": true,\n\t\"IncludeTermDetails\": true,\n\t\"IncludeDocumentTermStats\": true\n}"
             }
           }
         }

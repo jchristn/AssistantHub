@@ -3,6 +3,7 @@ namespace AssistantHub.Server.Handlers
     using System;
     using System.Net.Http;
     using System.Text;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
@@ -331,7 +332,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = ctx.Request.DataAsString;
+                string body = NormalizeCollectionSearchBody(ctx.Request.DataAsString);
                 HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(auth.TenantId, collectionId + "/search"), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -345,6 +346,49 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        private static string NormalizeCollectionSearchBody(string body)
+        {
+            if (String.IsNullOrWhiteSpace(body)) return body;
+
+            try
+            {
+                JsonNode node = JsonNode.Parse(body);
+                if (node is not JsonObject obj) return body;
+
+                string propertyName = null;
+                JsonNode includeNeighbors = null;
+                foreach (var kvp in obj)
+                {
+                    if (String.Equals(kvp.Key, "IncludeNeighbors", StringComparison.OrdinalIgnoreCase))
+                    {
+                        propertyName = kvp.Key;
+                        includeNeighbors = kvp.Value;
+                        break;
+                    }
+                }
+
+                if (String.IsNullOrEmpty(propertyName) || includeNeighbors == null) return body;
+
+                try
+                {
+                    bool boolValue = includeNeighbors.GetValue<bool>();
+                    if (boolValue)
+                        obj[propertyName] = 1;
+                    else
+                        obj.Remove(propertyName);
+                    return obj.ToJsonString();
+                }
+                catch
+                {
+                    return body;
+                }
+            }
+            catch
+            {
+                return body;
             }
         }
 

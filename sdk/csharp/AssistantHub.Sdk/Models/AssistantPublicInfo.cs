@@ -42,5 +42,11 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("FaviconUrl")]
         public string FaviconUrl { get; set; }
+
+        /// <summary>
+        /// Whether configured endpoint models should be loaded when a chat window opens.
+        /// </summary>
+        [JsonPropertyName("LoadModelsOnChatOpen")]
+        public bool LoadModelsOnChatOpen { get; set; }
     }
 }

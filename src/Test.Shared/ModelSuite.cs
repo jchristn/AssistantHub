@@ -400,6 +400,7 @@ namespace Test.Automated
                 AssertHelper.IsNull(s.RetrievalGateInferenceEndpointId, "RetrievalGateInferenceEndpointId default");
                 AssertHelper.IsNull(s.QueryRewriteInferenceEndpointId, "QueryRewriteInferenceEndpointId default");
                 AssertHelper.IsNull(s.RerankInferenceEndpointId, "RerankInferenceEndpointId default");
+                AssertHelper.AreEqual(false, s.LoadModelsOnChatOpen, "LoadModelsOnChatOpen default");
             });
 
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: JSON round-trip", async () =>
@@ -409,6 +410,7 @@ namespace Test.Automated
                 s.RetrievalGateInferenceEndpointId = "ep_gate";
                 s.QueryRewriteInferenceEndpointId = "ep_rewrite";
                 s.RerankInferenceEndpointId = "ep_rerank";
+                s.LoadModelsOnChatOpen = true;
 
                 string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
                 AssistantSettings? d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
@@ -417,6 +419,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual("ep_gate", d.RetrievalGateInferenceEndpointId, "round-trip RetrievalGateInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rewrite", d.QueryRewriteInferenceEndpointId, "round-trip QueryRewriteInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rerank", d.RerankInferenceEndpointId, "round-trip RerankInferenceEndpointId");
+                AssertHelper.AreEqual(true, d.LoadModelsOnChatOpen, "round-trip LoadModelsOnChatOpen");
             });
 
             await ExecuteTestAsync("ChatHistory.RerankDurationMs: defaults to 0", async () =>

@@ -532,6 +532,7 @@ namespace Test.Automated
                         { "AssistantId", settingsAssistantId },
                         { "Temperature", 0.8 },
                         { "InferenceEndpointId", "ep_test_inference" },
+                        { "LoadModelsOnChatOpen", true },
                         { "EnableReranking", true },
                         { "RerankerTopK", 3 },
                         { "RerankerScoreThreshold", 5.0 }
@@ -554,6 +555,7 @@ namespace Test.Automated
 
                     string body = await resp.Content.ReadAsStringAsync();
                     AssertHelper.IsTrue(body.Contains("ep_test_inference"), "response should contain inference endpoint id");
+                    AssertHelper.IsTrue(body.Contains("LoadModelsOnChatOpen"), "response should contain LoadModelsOnChatOpen");
                 });
 
                 await ExecuteTestAsync("CRUD.Settings.Cleanup", async () =>

@@ -6452,12 +6452,120 @@
       "SearchRequest": {
         "type": "object",
         "additionalProperties": true,
-        "description": "Verbex or RecallDB search request payload."
+        "description": "Verbex or RecallDB search request payload. Verbex index search supports opt-in enriched result fields.",
+        "properties": {
+          "Query": {
+            "type": "string",
+            "description": "Search query text. Use * to browse Verbex index records."
+          },
+          "MaxResults": {
+            "type": "integer",
+            "description": "Maximum number of results to return."
+          },
+          "UseAndLogic": {
+            "type": "boolean",
+            "description": "When true, all Verbex query terms must match."
+          },
+          "Labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Required label filters."
+          },
+          "Tags": {
+            "type": "object",
+            "description": "Required key/value tag filters."
+          },
+          "IncludeMatchedTerms": {
+            "type": "boolean",
+            "default": false,
+            "description": "Verbex index search only. Include MatchedTerms on each result."
+          },
+          "IncludeTermDetails": {
+            "type": "boolean",
+            "default": false,
+            "description": "Verbex index search only. Include per-term score/frequency details and MatchedTerms on each result."
+          },
+          "IncludeDocumentTermStats": {
+            "type": "boolean",
+            "default": false,
+            "description": "Verbex index search only. Include whole-document UniqueTermCount and TotalTermOccurrences."
+          }
+        }
       },
       "SearchResponse": {
         "type": "object",
         "additionalProperties": true,
-        "description": "Verbex or RecallDB search response payload."
+        "description": "Verbex or RecallDB search response payload.",
+        "properties": {
+          "Data": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "Query": {
+                "type": "string"
+              },
+              "Results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "DocumentId": {
+                      "type": "string"
+                    },
+                    "Score": {
+                      "type": "number",
+                      "format": "double"
+                    },
+                    "MatchedTermCount": {
+                      "type": "integer"
+                    },
+                    "TotalTermMatches": {
+                      "type": "integer"
+                    },
+                    "MatchedTerms": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "TermDetails": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "Term": {
+                            "type": "string"
+                          },
+                          "Score": {
+                            "type": "number",
+                            "format": "double"
+                          },
+                          "Frequency": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "DocumentTermStats": {
+                      "type": "object",
+                      "properties": {
+                        "UniqueTermCount": {
+                          "type": "integer"
+                        },
+                        "TotalTermOccurrences": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "DocumentReindexRequest": {
         "type": "object",

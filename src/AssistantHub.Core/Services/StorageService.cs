@@ -12,7 +12,7 @@ namespace AssistantHub.Core.Services
     /// <summary>
     /// Storage service wrapping an S3-compatible blob client.
     /// </summary>
-    public class StorageService
+    public class StorageService : IObjectStorageService
     {
         #region Public-Members
 

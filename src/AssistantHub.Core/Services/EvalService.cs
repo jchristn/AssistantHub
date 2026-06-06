@@ -26,6 +26,7 @@ namespace AssistantHub.Core.Services
         private LoggingModule _Logging = null;
         private DatabaseDriverBase _Database = null;
         private InferenceService _Inference = null;
+        private IInferenceEndpointService _InferenceEndpoints = null;
 
         private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -61,12 +62,14 @@ namespace AssistantHub.Core.Services
             AssistantHubSettings settings,
             LoggingModule logging,
             DatabaseDriverBase database,
-            InferenceService inference)
+            InferenceService inference,
+            IInferenceEndpointService inferenceEndpoints = null)
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
+            _InferenceEndpoints = inferenceEndpoints ?? new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
         }
 
         #endregion
@@ -303,15 +306,10 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                string url = _Settings.Chunking.Endpoint.TrimEnd('/') + "/v1.0/endpoints/completion/" + endpointId;
-                using (HttpClient client = new HttpClient())
+                using (HttpResponseMessage response = await _InferenceEndpoints.SendAsync(
+                    HttpMethod.Get,
+                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(_Settings.Chunking.AccessKey))
-                    {
-                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _Settings.Chunking.AccessKey);
-                    }
-
-                    HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
                         _Logging.Warn(_Header + "failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);

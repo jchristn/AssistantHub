@@ -58,5 +58,16 @@ namespace Test.Shared
                 d.ChunkRecordIds = chunkRecordIdsJson;
             return Task.CompletedTask;
         }
+
+        public Task UpdateVerbexIndexMetadataAsync(string id, string verbexTenantId, string verbexIndexId, string verbexRecordId, CancellationToken token = default)
+        {
+            if (Store.TryGetValue(id, out AssistantDocument? d))
+            {
+                d.VerbexTenantId = verbexTenantId;
+                d.VerbexIndexId = verbexIndexId;
+                d.VerbexRecordId = verbexRecordId;
+            }
+            return Task.CompletedTask;
+        }
     }
 }

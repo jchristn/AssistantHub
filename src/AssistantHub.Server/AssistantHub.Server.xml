@@ -24,12 +24,21 @@
             Entry point.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.AssistantHubServer.EnsureFirstRunVerbexAsync(AssistantHub.Core.Services.IInvertedIndexService,AssistantHub.Core.Settings.VerbexSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Ensure the default Verbex tenant and index during first-run initialization.
+            </summary>
+            <param name="invertedIndex">Inverted index service implementation.</param>
+            <param name="settings">Verbex settings.</param>
+            <param name="logging">Logging module.</param>
+            <returns>True when the default index was ensured.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.AssistantAnalyticsHandler">
             <summary>
             Handles assistant analytics routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.AssistantAnalyticsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -81,7 +90,7 @@
             Handles assistant CRUD routes with ownership checks.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -135,7 +144,7 @@
             Handles assistant settings GET and PUT routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -171,7 +180,7 @@
             Handles POST /v1.0/authenticate route.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.AuthenticateHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.AuthenticateHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -195,7 +204,7 @@
             Handles bearer token authentication for protected routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.AuthenticationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.AuthenticationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -219,7 +228,7 @@
             Handles S3 bucket CRUD routes using AmazonS3Client (admin only).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.BucketHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.BucketHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -314,7 +323,7 @@
             Handles public assistant info, chat, and feedback submission routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -338,7 +347,7 @@
             Provides shared execution helpers for chat handlers.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandlerExecutionBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerExecutionBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate the chat handler execution base.
             </summary>
@@ -356,7 +365,7 @@
             Provides secondary public chat route handlers.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate the chat route base.
             </summary>
@@ -429,7 +438,7 @@
             Handles collection CRUD routes by proxying to RecallDB (admin only).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IVectorStoreService)">
             <summary>
             Instantiate.
             </summary>
@@ -441,6 +450,7 @@
             <param name="ingestion">Ingestion service.</param>
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
+            <param name="vectorStore">Vector-store service.</param>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CollectionHandler.PutCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
@@ -475,6 +485,12 @@
         <member name="M:AssistantHub.Server.Handlers.CollectionHandler.HeadCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/collections/{collectionId} - Check collection existence.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CollectionHandler.SearchCollectionAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/collections/{collectionId}/search - Search records in a RecallDB collection.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -523,7 +539,7 @@
             Handles completion endpoint CRUD routes by proxying to Partio (admin only).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IInferenceEndpointService)">
             <summary>
             Instantiate.
             </summary>
@@ -605,7 +621,7 @@
             Handles server configuration routes (admin only).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -625,7 +641,7 @@
             Handles crawl operation routes under /v1.0/crawlplans/{planId}/operations.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Server.Handlers.CrawlOperationHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -680,7 +696,7 @@
             Handles crawl plan CRUD and control routes under /v1.0/crawlplans.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService,AssistantHub.Server.Services.CrawlSchedulerService)">
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService,AssistantHub.Server.Services.CrawlSchedulerService)">
             <summary>
             Instantiate.
             </summary>
@@ -760,7 +776,7 @@
             Handles credential CRUD routes under /v1.0/tenants/{tenantId}/credentials.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.CredentialHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -814,7 +830,7 @@
             Handles document upload, CRUD, and existence check routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -864,6 +880,18 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.ReindexDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/documents/{documentId}/reindex - Reindex a single document into Verbex.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.ReindexDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/documents/reindex - Reindex completed documents into Verbex.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.HeadDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             HEAD /v1.0/documents/{documentId} - Check document existence.
@@ -881,7 +909,7 @@
             Handles embedding endpoint CRUD routes by proxying to Partio (admin only).
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IEmbeddingEndpointService)">
             <summary>
             Instantiate.
             </summary>
@@ -963,7 +991,7 @@
             Handles RAG evaluation routes: facts CRUD, run management, results, and SSE streaming.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.EvalHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.EvalService)">
+        <member name="M:AssistantHub.Server.Handlers.EvalHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.EvalService)">
             <summary>
             Instantiate.
             </summary>
@@ -1038,7 +1066,7 @@
             Handles feedback list, read, and delete routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.FeedbackHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1098,10 +1126,22 @@
         <member name="F:AssistantHub.Server.Handlers.HandlerBase.Inference">
             <summary>Inference service instance.</summary>
         </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.ChunkingService">
+            <summary>Partio chunking service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.EmbeddingEndpoints">
+            <summary>Partio embedding endpoint service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.InferenceEndpoints">
+            <summary>Partio inference endpoint service instance.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.Handlers.HandlerBase.VectorStore">
+            <summary>RecallDB vector-store service instance.</summary>
+        </member>
         <member name="F:AssistantHub.Server.Handlers.HandlerBase.ProcessingLog">
             <summary>Processing log service instance.</summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.HandlerBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -1194,7 +1234,7 @@
             Handles chat history list, read, and delete routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.HistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1231,12 +1271,132 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.IndexHandler">
+            <summary>
+            Handles inverted index routes by proxying to Verbex (admin only).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IInvertedIndexService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetIndicesAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/indices - List indices.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutIndexAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices - Create an index.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetIndexAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/indices/{indexId} - Get index metadata.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.HeadIndexAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/indices/{indexId} - Check index existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutIndexByIdAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId} - Update index metadata.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.DeleteIndexAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/indices/{indexId} - Delete an index.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutIndexLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/labels - Update index labels.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutIndexTagsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/tags - Update index tags.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutIndexCustomMetadataAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/custom-metadata - Update index custom metadata.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetTopTermsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/indices/{indexId}/terms/top - Get top index terms.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/indices/{indexId}/records - List index records.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/records - Create an index record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PostRecordBatchAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/indices/{indexId}/records/batch - Create records in batch.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PostRecordExistsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/indices/{indexId}/records/exists - Check record existence in batch.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.DeleteRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/indices/{indexId}/records?ids=a,b - Delete records in batch.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/indices/{indexId}/records/{recordId} - Get an index record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.HeadRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            HEAD /v1.0/indices/{indexId}/records/{recordId} - Check index record existence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.DeleteRecordAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/indices/{indexId}/records/{recordId} - Delete an index record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutRecordLabelsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/records/{recordId}/labels - Update record labels.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutRecordTagsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/records/{recordId}/tags - Update record tags.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PutRecordCustomMetadataAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/indices/{indexId}/records/{recordId}/custom-metadata - Update record custom metadata.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.IndexHandler.PostSearchAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/indices/{indexId}/search - Search an index.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.InferenceHandler">
             <summary>
             Handles inference model listing and pull routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.InferenceHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1289,7 +1449,7 @@
             Handles ingestion rule CRUD routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.IngestionRuleHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1343,7 +1503,7 @@
             Handles runtime OpenAPI document requests.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.OpenApiHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Server.Services.OpenApiDocumentService)">
+        <member name="M:AssistantHub.Server.Handlers.OpenApiHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Server.Services.OpenApiDocumentService)">
             <summary>
             Instantiate.
             </summary>
@@ -1359,7 +1519,7 @@
             Handles request-history routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.RequestHistoryHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1399,7 +1559,7 @@
             Handles GET / and HEAD / routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.RootHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.RootHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1429,7 +1589,7 @@
             Handles tenant CRUD routes.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.TenantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.TenantHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1489,7 +1649,7 @@
             Handles user CRUD routes under /v1.0/tenants/{tenantId}/users.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.UserHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Handlers.UserHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
             <summary>
             Instantiate.
             </summary>
@@ -1727,7 +1887,7 @@
             Background service that manages crawl scheduling, startup recovery, and on-demand crawl execution.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.StorageService,AssistantHub.Core.Services.ProcessingLogService)">
+        <member name="M:AssistantHub.Server.Services.CrawlSchedulerService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService)">
             <summary>
             Instantiate.
             </summary>
@@ -1834,6 +1994,30 @@
             <summary>
             Parse endpoint health config fields from a JSON element (Partio response).
             </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ExternalServiceHealthService">
+            <summary>
+            Validates connectivity to subordinate services used by AssistantHub.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ExternalServiceHealthService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ExternalServiceHealthService.ValidateConnectivityAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Server.Services.IExternalServiceHealthService">
+            <summary>
+            Aggregate health validation for subordinate external services.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.IExternalServiceHealthService.ValidateConnectivityAsync">
+            <summary>
+            Validate connectivity to all required external services.
+            </summary>
+            <returns>True if all required services are reachable.</returns>
         </member>
         <member name="T:AssistantHub.Server.Services.ISlackAssistantConnectionManager">
             <summary>

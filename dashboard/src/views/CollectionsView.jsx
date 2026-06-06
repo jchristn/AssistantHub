@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -7,10 +8,12 @@ import CollectionFormModal from '../components/modals/CollectionFormModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { getCollectionId } from '../utils/artifactSearch.jsx';
 
 function CollectionsView() {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editCollection, setEditCollection] = useState(null);
   const [showJson, setShowJson] = useState(null);
@@ -31,11 +34,16 @@ function CollectionsView() {
     return await api.getCollections(params);
   }, [serverUrl, credential]);
 
-  const getRowActions = (row) => [
-    { label: 'Edit', onClick: () => { setEditCollection(row); setShowForm(true); } },
-    { label: 'View JSON', onClick: () => setShowJson(row) },
-    { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
-  ];
+  const getRowActions = (row) => {
+    const id = getCollectionId(row);
+    return [
+      { label: 'View Records', onClick: () => navigate(`/records?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
+      { label: 'Search', onClick: () => navigate(`/collections/search?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
+      { label: 'Edit', onClick: () => { setEditCollection(row); setShowForm(true); } },
+      { label: 'View JSON', onClick: () => setShowJson(row) },
+      { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
+    ];
+  };
 
   const handleSave = async (data) => {
     try {

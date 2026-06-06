@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>AssistantHub.Core</Title>
-    <Version>0.13.0</Version>
+    <Version>0.14.0</Version>
     <Authors>Joel Christner</Authors>
     <Description>AssistantHub core library including models, database, settings, services, and helpers.</Description>
     <Copyright>(c)2025 Joel Christner</Copyright>

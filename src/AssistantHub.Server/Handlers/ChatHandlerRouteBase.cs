@@ -43,7 +43,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference)
@@ -781,19 +781,14 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string url = Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/labels/distinct";
-                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url))
+                using (HttpResponseMessage resp = await VectorStore.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/labels/distinct").ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(Settings.RecallDb.AccessKey))
-                        req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                    using (HttpClient client = new HttpClient())
-                    {
-                        HttpResponseMessage resp = await client.SendAsync(req).ConfigureAwait(false);
-                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        ctx.Response.StatusCode = (int)resp.StatusCode;
-                        ctx.Response.ContentType = "application/json";
-                        await ctx.Response.Send(respBody).ConfigureAwait(false);
-                    }
+                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    ctx.Response.StatusCode = (int)resp.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -841,19 +836,14 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string url = Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/tags/distinct";
-                using (HttpRequestMessage req = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, url))
+                using (HttpResponseMessage resp = await VectorStore.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/tenants/" + assistant.TenantId + "/collections/" + settings.CollectionId + "/tags/distinct").ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(Settings.RecallDb.AccessKey))
-                        req.Headers.Add("Authorization", "Bearer " + Settings.RecallDb.AccessKey);
-                    using (HttpClient client = new HttpClient())
-                    {
-                        HttpResponseMessage resp = await client.SendAsync(req).ConfigureAwait(false);
-                        string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        ctx.Response.StatusCode = (int)resp.StatusCode;
-                        ctx.Response.ContentType = "application/json";
-                        await ctx.Response.Send(respBody).ConfigureAwait(false);
-                    }
+                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    ctx.Response.StatusCode = (int)resp.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(respBody).ConfigureAwait(false);
                 }
             }
             catch (Exception e)

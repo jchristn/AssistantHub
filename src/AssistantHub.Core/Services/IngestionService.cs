@@ -37,23 +37,167 @@ namespace AssistantHub.Core.Services
         /// <param name="documentAtomSettings">DocumentAtom service settings.</param>
         /// <param name="chunkingSettings">Chunking service settings.</param>
         /// <param name="recallDbSettings">RecallDb service settings.</param>
+        /// <param name="verbexSettings">Verbex service settings.</param>
         /// <param name="logging">Logging module.</param>
         /// <param name="processingLog">Optional processing log service.</param>
         public IngestionService(
             DatabaseDriverBase database,
-            StorageService storage,
+            IObjectStorageService storage,
             DocumentAtomSettings documentAtomSettings,
             ChunkingSettings chunkingSettings,
             RecallDbSettings recallDbSettings,
+            VerbexSettings verbexSettings,
             LoggingModule logging,
             ProcessingLogService processingLog = null)
-            : base(database, storage, documentAtomSettings, chunkingSettings, recallDbSettings, logging, processingLog)
+            : base(database, storage, documentAtomSettings, chunkingSettings, recallDbSettings, verbexSettings, logging, processingLog)
         {
         }
 
         #endregion
 
         #region Public-Methods
+
+        /// <summary>
+        /// Reindex a document's extracted text into Verbex.
+        /// </summary>
+        /// <param name="documentId">Assistant document identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Reindex result.</returns>
+        public async Task<DocumentReindexResult> ReindexDocumentTextAsync(string documentId, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(documentId)) throw new ArgumentNullException(nameof(documentId));
+
+            AssistantDocument document = await _Database.AssistantDocument.ReadAsync(documentId, token).ConfigureAwait(false);
+            if (document == null)
+            {
+                return new DocumentReindexResult
+                {
+                    DocumentId = documentId,
+                    Success = false,
+                    Status = "NotFound",
+                    Message = "Document not found."
+                };
+            }
+
+            return await ReindexDocumentTextAsync(document, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Reindex a document's extracted text into Verbex.
+        /// </summary>
+        /// <param name="document">Assistant document record.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Reindex result.</returns>
+        public async Task<DocumentReindexResult> ReindexDocumentTextAsync(AssistantDocument document, CancellationToken token = default)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            Stopwatch sw = Stopwatch.StartNew();
+            DocumentReindexResult result = new DocumentReindexResult
+            {
+                DocumentId = document.Id,
+                VerbexTenantId = document.VerbexTenantId,
+                VerbexIndexId = document.VerbexIndexId,
+                VerbexRecordId = document.VerbexRecordId
+            };
+
+            try
+            {
+                if (!_VerbexSettings.EnableIngestion)
+                {
+                    result.Success = true;
+                    result.Status = "Skipped";
+                    result.Message = "Verbex ingestion is disabled in configuration.";
+                    return result;
+                }
+
+                if (String.IsNullOrEmpty(document.S3Key))
+                {
+                    result.Success = false;
+                    result.Status = "Failed";
+                    result.Message = "Document has no stored object key.";
+                    return result;
+                }
+
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex reindex started for document " + document.Id).ConfigureAwait(false);
+
+                byte[] fileBytes;
+                if (!String.IsNullOrEmpty(document.BucketName))
+                    fileBytes = await _Storage.DownloadAsync(document.BucketName, document.S3Key, token).ConfigureAwait(false);
+                else
+                    fileBytes = await _Storage.DownloadAsync(document.S3Key, token).ConfigureAwait(false);
+
+                if (fileBytes == null || fileBytes.Length == 0)
+                {
+                    result.Success = false;
+                    result.Status = "Failed";
+                    result.Message = "File data is empty or could not be downloaded.";
+                    return result;
+                }
+
+                string filename = document.OriginalFilename ?? document.Name ?? document.Id;
+                TypeDetectResponse typeDetectResult = await DetectDocumentTypeAsync(document.Id, fileBytes, filename, token).ConfigureAwait(false);
+                string detectedType = typeDetectResult?.Type;
+                if (String.IsNullOrEmpty(detectedType) || String.Equals(detectedType, "unknown", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Success = false;
+                    result.Status = "Failed";
+                    result.Message = "Document type could not be detected.";
+                    return result;
+                }
+
+                if (!String.IsNullOrEmpty(typeDetectResult?.MimeType) && document.ContentType != typeDetectResult.MimeType)
+                {
+                    document.ContentType = typeDetectResult.MimeType;
+                    await _Database.AssistantDocument.UpdateAsync(document, token).ConfigureAwait(false);
+                }
+
+                string extractedContent = await ProcessDocumentContentAsync(document.Id, fileBytes, detectedType, filename, token).ConfigureAwait(false);
+                if (String.IsNullOrWhiteSpace(extractedContent))
+                {
+                    result.Success = false;
+                    result.Status = "Failed";
+                    result.Message = "Failed to extract text from document.";
+                    return result;
+                }
+
+                IngestionRule rule = null;
+                if (!String.IsNullOrEmpty(document.IngestionRuleId))
+                    rule = await _Database.IngestionRule.ReadAsync(document.IngestionRuleId, token).ConfigureAwait(false);
+
+                List<string> mergedLabels = MergeLabels(rule, document);
+                Dictionary<string, string> mergedTags = MergeTags(rule, document);
+                bool indexed = await IndexDocumentTextAsync(document, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
+
+                result.Success = indexed;
+                result.Status = indexed ? "Reindexed" : "Failed";
+                result.Message = indexed
+                    ? "Document text reindexed into Verbex."
+                    : "Verbex indexing did not complete.";
+                result.VerbexTenantId = document.VerbexTenantId;
+                result.VerbexIndexId = document.VerbexIndexId;
+                result.VerbexRecordId = document.VerbexRecordId;
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception during Verbex reindex of document " + document.Id + ": " + e.Message);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "ERROR", "Verbex reindex failed: " + e.Message).ConfigureAwait(false);
+
+                result.Success = false;
+                result.Status = "Failed";
+                result.Message = e.Message;
+                return result;
+            }
+            finally
+            {
+                sw.Stop();
+                result.TotalMs = sw.Elapsed.TotalMilliseconds;
+            }
+        }
 
         /// <summary>
         /// Process a document through the full ingestion pipeline.
@@ -190,6 +334,10 @@ namespace AssistantHub.Core.Services
                 // Step 9: Merge labels and tags from rule + document
                 List<string> mergedLabels = MergeLabels(rule, document);
                 Dictionary<string, string> mergedTags = MergeTags(rule, document);
+
+                // Step 9b: Index full extracted text stream into Verbex
+                currentStep = "Verbex indexing";
+                await IndexDocumentTextAsync(document, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
 
                 // Step 10: Call Partio processing service with rule config
                 currentStep = "Chunking and embedding via Partio";
@@ -373,21 +521,12 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (recordIds == null || recordIds.Count == 0) return;
 
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch/delete";
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch/delete";
 
             string body = JsonSerializer.Serialize(new { DocumentKeys = recordIds });
 
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Post, path, body, token).ConfigureAwait(false))
             {
-                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                {
-                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                }
-
-                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -414,17 +553,10 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
             if (String.IsNullOrEmpty(recordId)) throw new ArgumentNullException(nameof(recordId));
 
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/" + recordId;
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/" + recordId;
 
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, url))
+            using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Delete, path, null, token).ConfigureAwait(false))
             {
-                if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                {
-                    request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -434,6 +566,60 @@ namespace AssistantHub.Core.Services
                 {
                     _Logging.Debug(_Header + "deleted embedding record " + recordId + " from collection " + collectionId);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Delete an indexed document record from Verbex.
+        /// </summary>
+        /// <param name="tenantId">AssistantHub tenant identifier.</param>
+        /// <param name="indexId">Index identifier.</param>
+        /// <param name="recordId">Record identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public async Task DeleteIndexRecordAsync(string tenantId, string indexId, string recordId, CancellationToken token = default)
+        {
+            await DeleteIndexRecordInternalAsync(tenantId, indexId, recordId, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete multiple indexed document records from a Verbex index.
+        /// </summary>
+        /// <param name="tenantId">AssistantHub tenant identifier.</param>
+        /// <param name="indexId">Index identifier.</param>
+        /// <param name="recordIds">Record identifiers.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        public async Task DeleteIndexRecordBatchAsync(string tenantId, string indexId, List<string> recordIds, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (recordIds == null || recordIds.Count == 0) return;
+
+            List<string> distinctIds = recordIds
+                .Where(id => !String.IsNullOrEmpty(id))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (distinctIds.Count == 0) return;
+
+            (string _, string scopedIndexId) = await ResolveVerbexScopeAsync(tenantId, token).ConfigureAwait(false);
+            string configuredIndexId = String.IsNullOrEmpty(_VerbexSettings.DefaultIndexId) ? "default" : _VerbexSettings.DefaultIndexId;
+            string effectiveIndexId = String.IsNullOrEmpty(indexId) || String.Equals(indexId, configuredIndexId, StringComparison.OrdinalIgnoreCase)
+                ? scopedIndexId
+                : indexId;
+
+            string idsQuery = String.Join(",", distinctIds.Select(Uri.EscapeDataString));
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(effectiveIndexId) + "/documents?ids=" + idsQuery;
+
+            using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Delete, path).ConfigureAwait(false))
+            {
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _Logging.Debug(_Header + "batch deleted " + distinctIds.Count + " Verbex index records from index " + effectiveIndexId + " for tenant " + tenantId);
+                    return;
+                }
+
+                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                _Logging.Warn(_Header + "Verbex batch delete returned " + (int)response.StatusCode + " for " + distinctIds.Count + " records in index " + effectiveIndexId + " for tenant " + tenantId + ": " + responseBody);
             }
         }
 

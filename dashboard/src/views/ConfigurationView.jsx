@@ -36,6 +36,10 @@ const configTooltips = {
   ConsoleLogging: 'Whether to output logs to the console',
   EnableColors: 'Whether to use colored console output',
   DashboardUrl: 'Browser URL for the service dashboard',
+  DefaultIndexId: 'Default inverted index used for document text ingestion',
+  EnableIngestion: 'Whether extracted document text is indexed into Verbex',
+  RequireIngestion: 'Whether document ingestion fails when Verbex indexing fails',
+  MaxContentCharacters: 'Maximum normalized text characters sent to Verbex per document; 0 means unlimited',
 };
 
 const getExternalServiceLinks = (config) => {
@@ -44,9 +48,30 @@ const getExternalServiceLinks = (config) => {
   return [
     { key: 's3', label: 'Less3 (S3 Storage)', url: config.S3?.DashboardUrl },
     { key: 'documentatom', label: 'DocumentAtom', url: config.DocumentAtom?.DashboardUrl },
+    { key: 'verbex', label: 'Verbex (Inverted Index)', url: config.Verbex?.DashboardUrl },
     { key: 'partio', label: 'Partio (Chunking/Embeddings)', url: config.Chunking?.DashboardUrl || config.Inference?.DashboardUrl },
     { key: 'recalldb', label: 'RecallDb (Retrieval)', url: config.RecallDb?.DashboardUrl },
   ].filter(link => typeof link.url === 'string' && link.url.trim().length > 0);
+};
+
+const isSensitiveConfigKey = (key) => {
+  return /accesskey|secretkey|apikey|password/i.test(key || '');
+};
+
+const renderConfigValue = (key, value) => {
+  if (isSensitiveConfigKey(key)) {
+    return value ? '••••••••' : '';
+  }
+
+  if (typeof value === 'boolean') {
+    return <span className={`status-badge ${value ? 'active' : 'inactive'}`}>{value ? 'Yes' : 'No'}</span>;
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    return JSON.stringify(value);
+  }
+
+  return String(value ?? '');
 };
 
 function ConfigurationView() {
@@ -93,13 +118,7 @@ function ConfigurationView() {
             <React.Fragment key={key}>
               <span className="config-summary-label">{configTooltips[key] ? <Tooltip text={configTooltips[key]}>{key}</Tooltip> : key}</span>
               <span className="config-summary-value">
-                {typeof value === 'boolean' ? (
-                  <span className={`status-badge ${value ? 'active' : 'inactive'}`}>{value ? 'Yes' : 'No'}</span>
-                ) : typeof value === 'object' && value !== null ? (
-                  JSON.stringify(value)
-                ) : (
-                  String(value ?? '')
-                )}
+                {renderConfigValue(key, value)}
               </span>
             </React.Fragment>
           ))}
@@ -135,6 +154,7 @@ function ConfigurationView() {
           {renderSummarySection('Database', config.Database)}
           {renderSummarySection('S3 Storage', config.S3)}
           {renderSummarySection('DocumentAtom', config.DocumentAtom)}
+          {renderSummarySection('Verbex', config.Verbex)}
           {renderSummarySection('Chunking', config.Chunking)}
           {renderSummarySection('Inference', config.Inference)}
           {renderSummarySection('RecallDb', config.RecallDb)}

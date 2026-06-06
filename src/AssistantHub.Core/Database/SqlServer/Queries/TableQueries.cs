@@ -147,6 +147,9 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 ingestion_rule_id NVARCHAR(256) NULL,
                 bucket_name NVARCHAR(MAX) NULL,
                 collection_id NVARCHAR(MAX) NULL,
+                verbex_tenant_id NVARCHAR(MAX) NULL,
+                verbex_index_id NVARCHAR(MAX) NULL,
+                verbex_record_id NVARCHAR(MAX) NULL,
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 chunk_record_ids NVARCHAR(MAX) NULL,
@@ -184,6 +187,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 bucket NVARCHAR(MAX) NOT NULL,
                 collection_name NVARCHAR(MAX) NOT NULL,
                 collection_id NVARCHAR(MAX) NULL,
+                verbex_index_id NVARCHAR(MAX) NULL,
                 labels_json NVARCHAR(MAX) NULL,
                 tags_json NVARCHAR(MAX) NULL,
                 atomization_json NVARCHAR(MAX) NULL,
@@ -194,6 +198,22 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_ingestion_rules PRIMARY KEY (id)
             );";
+
+        internal static readonly string AddAssistantDocumentsVerbexTenantIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_tenant_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_tenant_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsVerbexIndexIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_index_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_index_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsVerbexRecordIdColumn =
+            @"IF COL_LENGTH('assistant_documents', 'verbex_record_id') IS NULL
+            ALTER TABLE assistant_documents ADD verbex_record_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddIngestionRulesVerbexIndexIdColumn =
+            @"IF COL_LENGTH('ingestion_rules', 'verbex_index_id') IS NULL
+            ALTER TABLE ingestion_rules ADD verbex_index_id NVARCHAR(MAX) NULL;";
 
         internal static readonly string CreateCrawlPlansTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'crawl_plans')

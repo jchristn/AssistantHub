@@ -69,6 +69,11 @@ namespace AssistantHub.Core.Models
         public string CollectionId { get; set; } = null;
 
         /// <summary>
+        /// Verbex index identifier for full-text indexing. Null uses the tenant default.
+        /// </summary>
+        public string VerbexIndexId { get; set; } = null;
+
+        /// <summary>
         /// Labels to apply to ingested documents.
         /// </summary>
         public List<string> Labels { get; set; } = null;
@@ -150,6 +155,7 @@ namespace AssistantHub.Core.Models
             obj.Bucket = DataTableHelper.GetStringValue(row, "bucket");
             obj.CollectionName = DataTableHelper.GetStringValue(row, "collection_name");
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
+            obj.VerbexIndexId = DataTableHelper.GetStringValue(row, "verbex_index_id");
 
             string labelsJson = DataTableHelper.GetStringValue(row, "labels_json");
             if (!String.IsNullOrEmpty(labelsJson))

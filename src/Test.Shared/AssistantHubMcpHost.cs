@@ -274,6 +274,15 @@ namespace Test.Shared
                     AccessKey = "default",
                     DashboardUrl = String.Empty
                 },
+                Verbex = new VerbexSettings
+                {
+                    Endpoint = dependencyEndpoint,
+                    AccessKey = "default",
+                    DashboardUrl = String.Empty,
+                    DefaultIndexId = "default",
+                    EnableIngestion = true,
+                    RequireIngestion = true
+                },
                 Logging = new LoggingSettings
                 {
                     ConsoleLogging = false,

@@ -458,12 +458,38 @@ export class ApiClient {
   getCollection(id) { return this.request('GET', `/v1.0/collections/${id}`); }
   updateCollection(id, collection) { return this.request('PUT', `/v1.0/collections/${id}`, collection); }
   deleteCollection(id) { return this.request('DELETE', `/v1.0/collections/${id}`); }
+  searchCollection(collectionId, request) { return this.request('POST', `/v1.0/collections/${collectionId}/search`, request); }
 
   // Collection Records
   createRecord(collectionId, record) { return this.request('PUT', `/v1.0/collections/${collectionId}/records`, record); }
   getRecords(collectionId, params) { return this.request('GET', `/v1.0/collections/${collectionId}/records` + this.buildQuery(params)); }
   getRecord(collectionId, recordId) { return this.request('GET', `/v1.0/collections/${collectionId}/records/${recordId}`); }
   deleteRecord(collectionId, recordId) { return this.request('DELETE', `/v1.0/collections/${collectionId}/records/${recordId}`); }
+
+  // Indices
+  createIndex(index) { return this.request('PUT', '/v1.0/indices', index); }
+  getIndices(params) { return this.request('GET', '/v1.0/indices' + this.buildQuery(params)); }
+  getIndex(id) { return this.request('GET', `/v1.0/indices/${id}`); }
+  updateIndex(id, index) { return this.request('PUT', `/v1.0/indices/${id}`, index); }
+  deleteIndex(id) { return this.request('DELETE', `/v1.0/indices/${id}`); }
+  searchIndex(id, request) { return this.request('POST', `/v1.0/indices/${id}/search`, request); }
+  getIndexTopTerms(id, params) { return this.request('GET', `/v1.0/indices/${id}/terms/top` + this.buildQuery(params)); }
+  updateIndexLabels(id, labels) { return this.request('PUT', `/v1.0/indices/${id}/labels`, labels); }
+  updateIndexTags(id, tags) { return this.request('PUT', `/v1.0/indices/${id}/tags`, tags); }
+  updateIndexCustomMetadata(id, metadata) { return this.request('PUT', `/v1.0/indices/${id}/custom-metadata`, metadata); }
+  rebuildIndexCache(id, request = {}) { return this.request('POST', `/v1.0/indices/${id}/cache/rebuild`, request); }
+
+  // Index Records
+  createIndexRecord(indexId, record) { return this.request('PUT', `/v1.0/indices/${indexId}/records`, record); }
+  createIndexRecordsBatch(indexId, request) { return this.request('POST', `/v1.0/indices/${indexId}/records/batch`, request); }
+  getIndexRecords(indexId, params) { return this.request('GET', `/v1.0/indices/${indexId}/records` + this.buildQuery(params)); }
+  getIndexRecord(indexId, recordId) { return this.request('GET', `/v1.0/indices/${indexId}/records/${recordId}`); }
+  deleteIndexRecord(indexId, recordId) { return this.request('DELETE', `/v1.0/indices/${indexId}/records/${recordId}`); }
+  deleteIndexRecords(indexId, ids) { return this.request('DELETE', `/v1.0/indices/${indexId}/records` + this.buildQuery({ ids: Array.isArray(ids) ? ids.join(',') : ids })); }
+  indexRecordsExist(indexId, request) { return this.request('POST', `/v1.0/indices/${indexId}/records/exists`, request); }
+  updateIndexRecordLabels(indexId, recordId, labels) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/labels`, labels); }
+  updateIndexRecordTags(indexId, recordId, tags) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/tags`, tags); }
+  updateIndexRecordCustomMetadata(indexId, recordId, metadata) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/custom-metadata`, metadata); }
 
   // Assistants
   createAssistant(asst) { return this.request('PUT', '/v1.0/assistants', asst); }
@@ -556,6 +582,7 @@ export class ApiClient {
   getDocuments(params) { return this.request('GET', '/v1.0/documents' + this.buildQuery(params)); }
   getDocument(id) { return this.request('GET', `/v1.0/documents/${id}`); }
   getDocumentProcessingLog(id) { return this.request('GET', `/v1.0/documents/${id}/processing-log`); }
+  reindexDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reindex`, {}); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
   deleteDocuments(ids) { return this.request('POST', '/v1.0/documents/delete', { DocumentIds: ids }); }
 

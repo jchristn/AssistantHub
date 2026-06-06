@@ -16,9 +16,13 @@ import AssistantAnalyticsView from '../views/AssistantAnalyticsView';
 import RequestHistoryView from '../views/RequestHistoryView';
 import ApiExplorerView from '../views/ApiExplorerView';
 import CollectionsView from '../views/CollectionsView';
+import CollectionSearchView from '../views/CollectionSearchView';
 import BucketsView from '../views/BucketsView';
 import ObjectsView from '../views/ObjectsView';
 import RecordsView from '../views/RecordsView';
+import IndicesView from '../views/IndicesView';
+import IndexRecordsView from '../views/IndexRecordsView';
+import IndexSearchView from '../views/IndexSearchView';
 import ModelsView from '../views/ModelsView';
 import ConfigurationView from '../views/ConfigurationView';
 import AssistantSettingsView from '../views/AssistantSettingsView';
@@ -83,6 +87,10 @@ function Dashboard() {
             {isAdmin && <Route path="/objects" element={<ObjectsView />} />}
             {isAdmin && <Route path="/collections" element={<CollectionsView />} />}
             {isAdmin && <Route path="/records" element={<RecordsView />} />}
+            {isAdmin && <Route path="/collections/search" element={<CollectionSearchView />} />}
+            {isAdmin && <Route path="/indices" element={<IndicesView />} />}
+            {isAdmin && <Route path="/indices/records" element={<IndexRecordsView />} />}
+            {isAdmin && <Route path="/indices/search" element={<IndexSearchView />} />}
             <Route path="/assistants" element={<AssistantsView />} />
             <Route path="/assistant-settings" element={<AssistantSettingsView onOpenChatDrawer={openChatDrawer} />} />
             {isAdmin && <Route path="/endpoints/embedding" element={<EmbeddingEndpointsView />} />}

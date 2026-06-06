@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import Pagination from '../components/Pagination';
@@ -9,10 +10,14 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import RecordFormModal from '../components/modals/RecordFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { getCollectionId, unwrapObjects } from '../utils/artifactSearch.jsx';
 
 function RecordsView() {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const requestedCollection = searchParams.get('collectionId') || location.state?.collectionId || '';
 
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('');
@@ -33,15 +38,16 @@ function RecordsView() {
     (async () => {
       try {
         const result = await api.getCollections({ maxResults: 1000 });
-        const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
+        const items = unwrapObjects(result);
         setCollections(items);
-        if (items.length === 1) {
-          const id = items[0].GUID || items[0].Id;
-          if (id) setSelectedCollection(id);
-        }
+        setSelectedCollection((current) => {
+          if (requestedCollection && items.some((item) => getCollectionId(item) === requestedCollection)) return requestedCollection;
+          if (!current && items.length === 1) return getCollectionId(items[0]);
+          return current;
+        });
       } catch (err) { console.error('Failed to load collections', err); }
     })();
-  }, [serverUrl, credential]);
+  }, [serverUrl, credential, requestedCollection]);
 
   useEffect(() => {
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
@@ -53,13 +59,9 @@ function RecordsView() {
     try {
       const offset = (currentPage - 1) * pageSize;
       const result = await api.getRecords(selectedCollection, { maxResults: pageSize, continuationToken: offset > 0 ? String(offset) : null });
-      if (result && result.Objects) {
-        setData(result.Objects);
-        setTotalRecords(result.TotalRecords || 0);
-      } else if (result && Array.isArray(result)) {
-        setData(result);
-        setTotalRecords(result.length);
-      }
+      const items = unwrapObjects(result);
+      setData(items);
+      setTotalRecords(result?.TotalRecords ?? result?.Data?.TotalRecords ?? items.length);
     } catch (err) {
       console.error('Failed to load records', err);
     } finally {

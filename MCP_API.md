@@ -167,7 +167,8 @@ Streaming status:
 | Authentication | `auth/authenticate` |
 | Tenants / Users / Credentials | `tenant/*`, `user/*`, `credential/*` |
 | Storage | `bucket/*`, `bucket/object/*` |
-| Collections | `collection/*`, `collection/record/*` |
+| Collections | `collection/*`, `collection/record/*`, `collection/search` |
+| Indices | `index/*`, `index/record/*`, `index/search` |
 | Assistants | `assistant/*`, `assistant/settings/*` |
 | Documents / Ingestion | `document/*`, `ingestionrule/*` |
 | Monitoring | `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*` |
@@ -191,11 +192,15 @@ Streaming status:
 | `bucket objects` list/put/delete/metadata/download/upload | `bucket/object/put`, `bucket/object/list`, `bucket/object/metadata`, `bucket/object/delete`, `bucket/object/download`, `bucket/object/upload` | Mapped | Binary transfers use base64 |
 | `collections` CRUD + HEAD + distinct metadata | `collection/list`, `collection/get`, `collection/create`, `collection/update`, `collection/delete`, `collection/exists`, `collection/labels/distinct`, `collection/tags/distinct` | Mapped | |
 | `collection records` list/get/create/delete/batch-delete | `collection/record/list`, `collection/record/get`, `collection/record/create`, `collection/record/delete`, `collection/record/batch-delete` | Mapped | |
+| `collection search` | `collection/search` | Mapped | Marshals RecallDB search requests through AssistantHub |
+| `indices` CRUD + HEAD + labels/tags/custom metadata + top terms | `index/list`, `index/get`, `index/create`, `index/update`, `index/delete`, `index/exists`, `index/labels/update`, `index/tags/update`, `index/custom-metadata/update`, `index/terms/top` | Mapped | Marshals Verbex index requests through AssistantHub |
+| `index records` list/get/create/batch-create/delete/batch-delete/HEAD/metadata | `index/record/list`, `index/record/get`, `index/record/create`, `index/record/create-batch`, `index/record/delete`, `index/record/batch-delete`, `index/record/exists`, `index/record/exists-batch`, `index/record/labels/update`, `index/record/tags/update`, `index/record/custom-metadata/update` | Mapped | AssistantHub uses `records`; Verbex upstream uses `documents` |
+| `index search` | `index/search` | Mapped | Marshals Verbex search requests through AssistantHub |
 | `assistants` CRUD + HEAD | `assistant/list`, `assistant/get`, `assistant/create`, `assistant/update`, `assistant/delete`, `assistant/exists` | Mapped | |
 | `assistant settings` get/update/slack verify | `assistant/settings/get`, `assistant/settings/update`, `assistant/settings/slack/verify` | Mapped | `includeSecrets` opt-in |
 | `assistant analytics` overview/timeseries/stages/endpoints/slowest/feedback | `assistantanalytics/overview`, `assistantanalytics/timeseries`, `assistantanalytics/stages`, `assistantanalytics/endpoints`, `assistantanalytics/slowest`, `assistantanalytics/feedback` | Mapped | Uses `assistantId` plus optional `AssistantAnalyticsQuery` JSON |
 | `assistant public info + labels/tags` | `assistant/public/get`, `assistant/labels/distinct`, `assistant/tags/distinct` | Mapped | Public metadata only |
-| `documents` list/get/upload/delete/HEAD/log/download/bulk-delete | `document/list`, `document/get`, `document/upload`, `document/delete`, `document/exists`, `document/processing-log`, `document/download`, `document/bulk-delete` | Mapped | Binary transfers use base64 |
+| `documents` list/get/upload/delete/HEAD/log/download/bulk-delete/reindex | `document/list`, `document/get`, `document/upload`, `document/delete`, `document/exists`, `document/processing-log`, `document/download`, `document/bulk-delete`, `document/reindex`, `document/reindex-batch` | Mapped | Binary transfers use base64; reindex tools backfill Verbex |
 | `ingestion-rules` CRUD + HEAD | `ingestionrule/list`, `ingestionrule/get`, `ingestionrule/create`, `ingestionrule/update`, `ingestionrule/delete`, `ingestionrule/exists` | Mapped | |
 | `feedback` list/get/delete | `feedback/list`, `feedback/get`, `feedback/delete` | Mapped | |
 | `history` list/get/delete | `history/list`, `history/get`, `history/delete` | Mapped | |
@@ -253,6 +258,53 @@ Download a document through the MCP wrapper:
   "tool": "document/download",
   "arguments": {
     "documentId": "adoc_123"
+  }
+}
+```
+
+Reindex one completed document into Verbex:
+
+```json
+{
+  "tool": "document/reindex",
+  "arguments": {
+    "documentId": "adoc_123"
+  }
+}
+```
+
+Reindex a page of completed documents into Verbex:
+
+```json
+{
+  "tool": "document/reindex-batch",
+  "arguments": {
+    "requestJson": "{\"IncludeAlreadyIndexed\":false}",
+    "queryJson": "{\"MaxResults\":50}"
+  }
+}
+```
+
+Search the default Verbex text index:
+
+```json
+{
+  "tool": "index/search",
+  "arguments": {
+    "indexId": "default",
+    "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10}"
+  }
+}
+```
+
+Search a RecallDB collection:
+
+```json
+{
+  "tool": "collection/search",
+  "arguments": {
+    "collectionId": "default",
+    "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10}"
   }
 }
 ```

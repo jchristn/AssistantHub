@@ -53,6 +53,12 @@ namespace AssistantHub.Sdk.Models
         public string CollectionId { get; set; }
 
         /// <summary>
+        /// Verbex index identifier for full-text indexing. Null uses the tenant default.
+        /// </summary>
+        [JsonPropertyName("VerbexIndexId")]
+        public string VerbexIndexId { get; set; }
+
+        /// <summary>
         /// Labels.
         /// </summary>
         [JsonPropertyName("Labels")]

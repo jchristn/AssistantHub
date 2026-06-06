@@ -82,6 +82,24 @@ namespace AssistantHub.Sdk.Models
         public string CollectionId { get; set; }
 
         /// <summary>
+        /// Verbex tenant identifier used for full-text indexing.
+        /// </summary>
+        [JsonPropertyName("VerbexTenantId")]
+        public string VerbexTenantId { get; set; }
+
+        /// <summary>
+        /// Verbex index identifier used for full-text indexing.
+        /// </summary>
+        [JsonPropertyName("VerbexIndexId")]
+        public string VerbexIndexId { get; set; }
+
+        /// <summary>
+        /// Verbex record identifier used for full-text indexing.
+        /// </summary>
+        [JsonPropertyName("VerbexRecordId")]
+        public string VerbexRecordId { get; set; }
+
+        /// <summary>
         /// Labels associated with this document (JSON).
         /// </summary>
         [JsonPropertyName("Labels")]

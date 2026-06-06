@@ -90,6 +90,7 @@ namespace AssistantHub.Core.Database.Mysql
 
             await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
             await EnsureAssistantSettingsEndpointColumnsAsync(token).ConfigureAwait(false);
+            await EnsureSearchIndexColumnsAsync(token).ConfigureAwait(false);
             await EnsureTelemetryColumnsAsync(token).ConfigureAwait(false);
 
             // MySQL does not support CREATE INDEX IF NOT EXISTS;
@@ -273,6 +274,14 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("assistant_settings", "retrieval_gate_inference_endpoint_id", TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
+        }
+
+        private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
+        {
+            await EnsureColumnAsync("assistant_documents", "verbex_tenant_id", TableQueries.AddAssistantDocumentsVerbexTenantIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "verbex_index_id", TableQueries.AddAssistantDocumentsVerbexIndexIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "verbex_record_id", TableQueries.AddAssistantDocumentsVerbexRecordIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("ingestion_rules", "verbex_index_id", TableQueries.AddIngestionRulesVerbexIndexIdColumn, token).ConfigureAwait(false);
         }
 
         private async Task EnsureTelemetryColumnsAsync(CancellationToken token)

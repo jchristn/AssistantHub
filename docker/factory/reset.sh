@@ -34,11 +34,13 @@ echo "WARNING: This is a DESTRUCTIVE action. The following will"
 echo "be permanently deleted:"
 echo ""
 echo "  - All PostgreSQL data (AssistantHub, Less3, Partio,"
-echo "    RecallDB collections, embeddings, tenants, users)"
+echo "    RecallDB collections, Verbex indices, embeddings,"
+echo "    tenants, users)"
 echo "  - Stale local SQLite database files from older deployments"
 echo "  - All object storage files (uploaded documents)"
 echo "  - All log files and processing logs"
 echo "  - All Partio request history"
+echo "  - All Verbex index data"
 echo "  - Service configuration changes"
 if [ "$INCLUDE_MODELS" = true ]; then
   echo "  - All downloaded Ollama models"
@@ -106,6 +108,13 @@ echo "        Restored partio.json and removed stale Partio SQLite files"
 cp "$FACTORY_DIR/recalldb.json" "$DOCKER_DIR/recalldb/recalldb.json"
 echo "        Restored recalldb.json"
 
+# Verbex
+rm -f "$DOCKER_DIR/verbex/data/verbex.db"
+rm -f "$DOCKER_DIR/verbex/data/verbex.db-shm"
+rm -f "$DOCKER_DIR/verbex/data/verbex.db-wal"
+cp "$FACTORY_DIR/verbex.json" "$DOCKER_DIR/verbex/verbex.json"
+echo "        Restored verbex.json and removed stale Verbex SQLite files"
+
 # -------------------------------------------------------------------------
 # Clear object storage
 # -------------------------------------------------------------------------
@@ -133,6 +142,10 @@ echo "        Cleared DocumentAtom logs"
 rm -f "$DOCKER_DIR/partio/logs/"*
 rm -f "$DOCKER_DIR/partio/request-history/"*
 echo "        Cleared Partio logs and request history"
+
+rm -f "$DOCKER_DIR/verbex/logs/"*
+rm -rf "$DOCKER_DIR/verbex/data/"*
+echo "        Cleared Verbex logs and index data"
 
 # -------------------------------------------------------------------------
 # Done

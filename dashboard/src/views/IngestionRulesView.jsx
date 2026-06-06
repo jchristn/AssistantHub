@@ -19,6 +19,7 @@ function IngestionRulesView() {
   const [refresh, setRefresh] = useState(0);
   const [buckets, setBuckets] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [indices, setIndices] = useState([]);
   const [inferenceEndpoints, setInferenceEndpoints] = useState([]);
   const [embeddingEndpoints, setEmbeddingEndpoints] = useState([]);
 
@@ -33,6 +34,12 @@ function IngestionRulesView() {
         const collectionItems = (collectionsResult && collectionsResult.Objects) ? collectionsResult.Objects : Array.isArray(collectionsResult) ? collectionsResult : [];
         setCollections(collectionItems);
 
+        if (isGlobalAdmin) {
+          const indicesResult = await api.getIndices({ maxResults: 1000 });
+          const indexItems = (indicesResult && indicesResult.Objects) ? indicesResult.Objects : Array.isArray(indicesResult) ? indicesResult : [];
+          setIndices(indexItems);
+        }
+
         const inferenceResult = await api.enumerateCompletionEndpoints({ maxResults: 1000 });
         const inferenceItems = (inferenceResult && inferenceResult.Objects) ? inferenceResult.Objects : Array.isArray(inferenceResult) ? inferenceResult : [];
         setInferenceEndpoints(inferenceItems);
@@ -41,11 +48,11 @@ function IngestionRulesView() {
         const embeddingItems = (embeddingResult && embeddingResult.Objects) ? embeddingResult.Objects : Array.isArray(embeddingResult) ? embeddingResult : [];
         setEmbeddingEndpoints(embeddingItems);
       } catch (err) {
-        setAlert({ title: 'Error', message: err.message || 'Failed to load buckets or collections' });
+        setAlert({ title: 'Error', message: err.message || 'Failed to load ingestion rule lookups' });
       }
     };
     loadLookups();
-  }, [serverUrl, credential]);
+  }, [serverUrl, credential, isGlobalAdmin]);
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this ingestion rule', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
@@ -53,6 +60,7 @@ function IngestionRulesView() {
     { key: 'Name', label: 'Name', tooltip: 'Display name for this ingestion rule', filterable: true },
     { key: 'Bucket', label: 'Bucket', tooltip: 'Source storage bucket that this rule monitors', filterable: true },
     { key: 'CollectionName', label: 'Collection', tooltip: 'Target vector collection for processed documents', filterable: true },
+    { key: 'VerbexIndexId', label: 'Index', tooltip: 'Target Verbex inverted index for full-text search', filterable: true, render: (row) => row.VerbexIndexId || 'default' },
     { key: 'Summarization', label: 'Summarization', tooltip: 'Whether summarization is configured for this rule', render: (row) => row.Summarization ? 'Enabled' : 'Disabled' },
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the rule was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
@@ -113,7 +121,7 @@ function IngestionRulesView() {
         <button className="btn btn-primary" onClick={() => { setEditRule(null); setShowForm(true); }}>Create Ingestion Rule</button>
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditRule(row); setShowForm(true); }} />
-      {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
+      {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} indices={indices} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
       {showJson && <JsonViewModal title="Ingestion Rule JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Ingestion Rule" message={`Are you sure you want to delete ingestion rule "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

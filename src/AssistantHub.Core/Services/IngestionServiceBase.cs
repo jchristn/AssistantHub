@@ -25,13 +25,19 @@ namespace AssistantHub.Core.Services
 
         private protected string _Header = "[IngestionService] ";
         private protected DatabaseDriverBase _Database = null;
-        private protected StorageService _Storage = null;
+        private protected IObjectStorageService _Storage = null;
         private protected DocumentAtomSettings _DocumentAtomSettings = null;
+        private protected IAtomizationService _Atomization = null;
         private protected ChunkingSettings _ChunkingSettings = null;
+        private protected IChunkingService _ChunkingService = null;
         private protected RecallDbSettings _RecallDbSettings = null;
+        private protected IVectorStoreService _VectorStore = null;
+        private protected VerbexSettings _VerbexSettings = null;
+        private protected IInvertedIndexService _InvertedIndex = null;
         private protected LoggingModule _Logging = null;
         private protected ProcessingLogService _ProcessingLog = null;
         private protected HttpClient _HttpClient = null;
+        private const string DefaultAssistantDocumentName = "Untitled Document";
 
         private protected JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -50,25 +56,67 @@ namespace AssistantHub.Core.Services
         /// <param name="documentAtomSettings">DocumentAtom service settings.</param>
         /// <param name="chunkingSettings">Chunking service settings.</param>
         /// <param name="recallDbSettings">RecallDb service settings.</param>
+        /// <param name="verbexSettings">Verbex service settings.</param>
         /// <param name="logging">Logging module.</param>
         /// <param name="processingLog">Optional processing log service.</param>
         protected IngestionServiceBase(
             DatabaseDriverBase database,
-            StorageService storage,
+            IObjectStorageService storage,
             DocumentAtomSettings documentAtomSettings,
             ChunkingSettings chunkingSettings,
             RecallDbSettings recallDbSettings,
+            VerbexSettings verbexSettings,
             LoggingModule logging,
             ProcessingLogService processingLog = null)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _DocumentAtomSettings = documentAtomSettings ?? throw new ArgumentNullException(nameof(documentAtomSettings));
+            _Atomization = new DocumentAtomAtomizationService(_DocumentAtomSettings, logging, processingLog);
             _ChunkingSettings = chunkingSettings ?? throw new ArgumentNullException(nameof(chunkingSettings));
+            _ChunkingService = new PartioChunkingService(_ChunkingSettings, logging);
             _RecallDbSettings = recallDbSettings ?? throw new ArgumentNullException(nameof(recallDbSettings));
+            _VectorStore = new RecallDbVectorStoreService(_RecallDbSettings, logging);
+            _VerbexSettings = verbexSettings ?? throw new ArgumentNullException(nameof(verbexSettings));
+            _InvertedIndex = new VerbexInvertedIndexService(_VerbexSettings, logging);
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _ProcessingLog = processingLog;
             _HttpClient = new HttpClient();
+        }
+
+        /// <summary>
+        /// Normalize extracted text before full-text indexing without collapsing meaningful interior whitespace.
+        /// </summary>
+        /// <param name="content">Extracted text content.</param>
+        /// <returns>Normalized text content.</returns>
+        public static string NormalizeTextForIndexing(string content)
+        {
+            if (content == null) return null;
+
+            string normalized = content.Replace("\r\n", "\n").Replace('\r', '\n');
+            string[] lines = normalized.Split('\n');
+            StringBuilder sb = new StringBuilder(normalized.Length);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (i > 0) sb.Append('\n');
+                sb.Append(lines[i].TrimEnd(' ', '\t'));
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Apply the optional Verbex indexing content limit after normalization.
+        /// </summary>
+        /// <param name="content">Normalized text content.</param>
+        /// <param name="maxContentCharacters">Maximum content characters, or zero for unlimited.</param>
+        /// <returns>Limited text content.</returns>
+        public static string ApplyVerbexContentLimit(string content, int maxContentCharacters)
+        {
+            if (content == null) return null;
+            if (maxContentCharacters <= 0 || content.Length <= maxContentCharacters) return content;
+            return content.Substring(0, maxContentCharacters);
         }
 
         #region Private-Methods
@@ -97,37 +145,7 @@ namespace AssistantHub.Core.Services
         /// <returns>Detected document type string.</returns>
         private protected async Task<TypeDetectResponse> DetectDocumentTypeAsync(string documentId, byte[] fileBytes, string filename, CancellationToken token)
         {
-            string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + "/typedetect";
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
-                request.Content = new ByteArrayContent(fileBytes);
-                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-                if (!String.IsNullOrEmpty(_DocumentAtomSettings.AccessKey))
-                {
-                    request.Headers.Add("x-api-key", _DocumentAtomSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(_Header + "type detection returned " + (int)response.StatusCode + ": " + responseBody);
-                    if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Type detection API returned HTTP " + (int)response.StatusCode + ": " + responseBody).ConfigureAwait(false);
-                    return null;
-                }
-
-                TypeDetectResponse typeResult = JsonSerializer.Deserialize<TypeDetectResponse>(responseBody, _JsonOptions);
-
-                _Logging.Debug(_Header + "type detection response for document " + documentId + ": " + typeResult?.MimeType);
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Type detection response: " + typeResult?.MimeType).ConfigureAwait(false);
-
-                return typeResult;
-            }
+            return await _Atomization.DetectDocumentTypeAsync(documentId, fileBytes, filename, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -141,72 +159,7 @@ namespace AssistantHub.Core.Services
         /// <returns>Extracted text content.</returns>
         private protected async Task<string> ProcessDocumentContentAsync(string documentId, byte[] fileBytes, string documentType, string filename, CancellationToken token)
         {
-            string atomPath = GetAtomPath(documentType);
-            if (String.IsNullOrEmpty(atomPath))
-            {
-                _Logging.Warn(_Header + "no atom endpoint for document type: " + documentType);
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "ERROR", "No atom endpoint for document type: " + documentType).ConfigureAwait(false);
-                return null;
-            }
-
-            string url = _DocumentAtomSettings.Endpoint.TrimEnd('/') + atomPath;
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
-                // v3.0.0: Send JSON envelope with base64-encoded data
-                object atomRequest = new
-                {
-                    Settings = (object)null,
-                    Data = Convert.ToBase64String(fileBytes)
-                };
-
-                string requestJson = JsonSerializer.Serialize(atomRequest, _JsonOptions);
-                request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-
-                if (!String.IsNullOrEmpty(_DocumentAtomSettings.AccessKey))
-                {
-                    request.Headers.Add("x-api-key", _DocumentAtomSettings.AccessKey);
-                }
-
-                HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _Logging.Warn(_Header + "document processing returned " + (int)response.StatusCode + ": " + responseBody);
-                    if (_ProcessingLog != null)
-                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Atom extraction API returned HTTP " + (int)response.StatusCode + ": " + responseBody).ConfigureAwait(false);
-                    return null;
-                }
-
-                _Logging.Debug(_Header + "atom extraction response for document " + documentId + ": " + responseBody.Length + " characters");
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom extraction response: " + responseBody.Length + " characters").ConfigureAwait(false);
-
-                List<AtomResponse> atoms = JsonSerializer.Deserialize<List<AtomResponse>>(responseBody, _JsonOptions);
-                if (atoms == null || atoms.Count == 0)
-                    return null;
-
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Atoms extracted: " + atoms.Count + " atom(s)").ConfigureAwait(false);
-
-                StringBuilder sb = new StringBuilder();
-                int atomIndex = 0;
-                foreach (AtomResponse atom in atoms)
-                {
-                    atomIndex++;
-                    if (!String.IsNullOrEmpty(atom.Text))
-                    {
-                        if (sb.Length > 0) sb.Append(Environment.NewLine);
-                        sb.Append(atom.Text);
-                        if (_ProcessingLog != null)
-                            await _ProcessingLog.LogAsync(documentId, "DEBUG", "Atom [" + atomIndex + "/" + atoms.Count + "] - " + atom.Text.Length + " characters").ConfigureAwait(false);
-                    }
-                }
-
-                return sb.Length > 0 ? sb.ToString() : null;
-            }
+            return await _Atomization.ExtractTextAsync(documentId, fileBytes, documentType, filename, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -287,10 +240,6 @@ namespace AssistantHub.Core.Services
                 return new List<ChunkResult> { singleChunk };
             }
 
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/process";
-
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
-            {
                 // Build SemanticCellRequest body
                 Dictionary<string, object> requestBody = new Dictionary<string, object>();
                 requestBody["Type"] = "Text";
@@ -368,7 +317,6 @@ namespace AssistantHub.Core.Services
                 string chunkStrategy = (rule?.Chunking?.Strategy) ?? "default";
 
                 string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogAsync(documentId, "INFO",
@@ -377,11 +325,6 @@ namespace AssistantHub.Core.Services
                         + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
                         + ", chunkingStrategy=" + chunkStrategy
                         + ", requestBodyLength=" + json.Length + " chars").ConfigureAwait(false);
-
-                if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
-                }
 
                 Stopwatch apiSw = Stopwatch.StartNew();
                 string completionEndpointId = rule?.Summarization?.CompletionEndpointId;
@@ -394,44 +337,45 @@ namespace AssistantHub.Core.Services
                     },
                     token).ConfigureAwait(false))
                 {
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
-                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    apiSw.Stop();
-
-                    if (!response.IsSuccessStatusCode)
+                    using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
                     {
-                        _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
-                        if (_ProcessingLog != null)
-                        {
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Request config: embeddingEndpoint=" + embEndpointId
-                                + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
-                                + ", strategy=" + chunkStrategy).ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Response body: " + responseBody).ConfigureAwait(false);
-                        }
-                        return null;
-                    }
+                        string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        apiSw.Stop();
 
-                    SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
-                    if (cellResult == null)
-                    {
-                        if (_ProcessingLog != null)
+                        if (!response.IsSuccessStatusCode)
                         {
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
-                            await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                "Response body: " + responseBody).ConfigureAwait(false);
+                            _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
+                            if (_ProcessingLog != null)
+                            {
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                        "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Request config: embeddingEndpoint=" + embEndpointId
+                                    + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
+                                    + ", strategy=" + chunkStrategy).ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Response body: " + responseBody).ConfigureAwait(false);
+                            }
+                            return null;
                         }
-                        return null;
+
+                        SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
+                        if (cellResult == null)
+                        {
+                            if (_ProcessingLog != null)
+                            {
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
+                                await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Response body: " + responseBody).ConfigureAwait(false);
+                            }
+                            return null;
+                        }
+                        return FlattenChunks(cellResult);
                     }
-                    return FlattenChunks(cellResult);
                 }
-            }
         }
 
         /// <summary>
@@ -456,35 +400,28 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private protected async Task<List<float>> ComputeEmbeddingAsync(string documentId, string text, IngestionRule rule, CancellationToken token)
         {
-            string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/embed";
-
             try
             {
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+                Dictionary<string, object> requestBody = new Dictionary<string, object>();
+                requestBody["Text"] = text;
+
+                string endpointId = _ChunkingSettings.EndpointId;
+                if (rule?.Embedding != null && !String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
+                    endpointId = rule.Embedding.EmbeddingEndpointId;
+                requestBody["EmbeddingEndpointId"] = endpointId;
+
+                if (rule?.Embedding != null)
+                    requestBody["L2Normalization"] = rule.Embedding.L2Normalization;
+
+                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+
+                using (IDisposable limiterLease = await AcquireEndpointLimitersAsync(
+                    documentId,
+                    new List<EndpointLimiterTarget> { new EndpointLimiterTarget("embedding", endpointId) },
+                    token).ConfigureAwait(false))
                 {
-                    Dictionary<string, object> requestBody = new Dictionary<string, object>();
-                    requestBody["Text"] = text;
-
-                    string endpointId = _ChunkingSettings.EndpointId;
-                    if (rule?.Embedding != null && !String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
-                        endpointId = rule.Embedding.EmbeddingEndpointId;
-                    requestBody["EmbeddingEndpointId"] = endpointId;
-
-                    if (rule?.Embedding != null)
-                        requestBody["L2Normalization"] = rule.Embedding.L2Normalization;
-
-                    string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
-                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
-
-                    using (IDisposable limiterLease = await AcquireEndpointLimitersAsync(
-                        documentId,
-                        new List<EndpointLimiterTarget> { new EndpointLimiterTarget("embedding", endpointId) },
-                        token).ConfigureAwait(false))
+                    using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/embed", json, token).ConfigureAwait(false))
                     {
-                        HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                         string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode)
@@ -527,16 +464,12 @@ namespace AssistantHub.Core.Services
         /// </summary>
         private protected async Task<bool> EnsureCollectionExistsAsync(string tenantId, string collectionId, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId;
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId;
 
             try
             {
-                using (HttpRequestMessage headReq = new HttpRequestMessage(HttpMethod.Head, url))
+                using (HttpResponseMessage headResp = await _VectorStore.SendAsync(HttpMethod.Head, path, null, token).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                        headReq.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-
-                    HttpResponseMessage headResp = await _HttpClient.SendAsync(headReq, token).ConfigureAwait(false);
                     if (headResp.IsSuccessStatusCode)
                         return true;
 
@@ -552,6 +485,332 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Ensure a Verbex index exists.
+        /// </summary>
+        private protected async Task<bool> EnsureVerbexIndexExistsAsync(string tenantId, string indexId, CancellationToken token)
+        {
+            if (String.IsNullOrEmpty(indexId)) return false;
+
+            try
+            {
+                using (HttpResponseMessage headResp = await _InvertedIndex.SendAsync(HttpMethod.Head, "/v1.0/indices/" + Uri.EscapeDataString(indexId)).ConfigureAwait(false))
+                {
+                    if (headResp.IsSuccessStatusCode)
+                        return true;
+
+                    if (headResp.StatusCode != System.Net.HttpStatusCode.NotFound)
+                    {
+                        _Logging.Warn(_Header + "Verbex index " + indexId + " check returned HTTP " + (int)headResp.StatusCode);
+                        return false;
+                    }
+                }
+
+                Dictionary<string, object> createBody = new Dictionary<string, object>
+                {
+                    { "Identifier", indexId },
+                    { "TenantId", tenantId },
+                    { "Name", indexId },
+                    { "Description", "AssistantHub text search index" }
+                };
+
+                string json = JsonSerializer.Serialize(createBody, _JsonOptions);
+                using (HttpResponseMessage createResp = await _InvertedIndex.SendAsync(HttpMethod.Post, "/v1.0/indices", json).ConfigureAwait(false))
+                {
+                    if (createResp.IsSuccessStatusCode || createResp.StatusCode == System.Net.HttpStatusCode.Conflict)
+                        return true;
+
+                    string responseBody = await createResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    _Logging.Warn(_Header + "Verbex index " + indexId + " create returned HTTP " + (int)createResp.StatusCode + ": " + responseBody);
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception ensuring Verbex index " + indexId + ": " + e.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Resolve the Verbex tenant and default index identifiers for an AssistantHub tenant.
+        /// </summary>
+        private protected async Task<(string TenantId, string IndexId)> ResolveVerbexScopeAsync(string assistantHubTenantId, CancellationToken token)
+        {
+            return await ResolveVerbexScopeAsync(assistantHubTenantId, null, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Resolve the Verbex tenant and target index identifiers for an AssistantHub tenant.
+        /// </summary>
+        private protected async Task<(string TenantId, string IndexId)> ResolveVerbexScopeAsync(string assistantHubTenantId, string requestedIndexId, CancellationToken token)
+        {
+            string configuredIndexId = String.IsNullOrEmpty(_VerbexSettings.DefaultIndexId) ? "default" : _VerbexSettings.DefaultIndexId;
+            string effectiveTenantId = String.IsNullOrEmpty(assistantHubTenantId) ? Constants.DefaultTenantId : assistantHubTenantId;
+            string verbexTenantId = effectiveTenantId;
+            string verbexIndexId = BuildVerbexDefaultIndexId(effectiveTenantId, configuredIndexId);
+            bool isDefaultIndexRequest = String.IsNullOrEmpty(requestedIndexId)
+                || String.Equals(requestedIndexId, configuredIndexId, StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                TenantMetadata tenant = await _Database.Tenant.ReadByIdAsync(effectiveTenantId, token).ConfigureAwait(false);
+                if (tenant?.Tags != null)
+                {
+                    if (tenant.Tags.TryGetValue(Constants.VerbexTenantIdTag, out string mappedTenantId) && !String.IsNullOrEmpty(mappedTenantId))
+                        verbexTenantId = mappedTenantId;
+
+                    if (isDefaultIndexRequest
+                        && tenant.Tags.TryGetValue(Constants.VerbexDefaultIndexIdTag, out string mappedIndexId)
+                        && !String.IsNullOrEmpty(mappedIndexId))
+                        verbexIndexId = mappedIndexId;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception resolving Verbex scope for tenant " + effectiveTenantId + ": " + e.Message);
+            }
+
+            if (!isDefaultIndexRequest)
+            {
+                verbexIndexId = requestedIndexId;
+            }
+
+            return (verbexTenantId, verbexIndexId);
+        }
+
+        private protected string BuildVerbexDefaultIndexId(string assistantHubTenantId, string configuredIndexId = null)
+        {
+            string effectiveIndexId = String.IsNullOrEmpty(configuredIndexId) ? "default" : configuredIndexId;
+            if (String.Equals(assistantHubTenantId, Constants.DefaultTenantId, StringComparison.OrdinalIgnoreCase))
+                return effectiveIndexId;
+
+            return assistantHubTenantId + "_" + effectiveIndexId;
+        }
+
+        /// <summary>
+        /// Index extracted document text into Verbex.
+        /// </summary>
+        private protected async Task<bool> IndexDocumentTextAsync(
+            AssistantDocument document,
+            string content,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags,
+            CancellationToken token)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+            content = NormalizeTextForIndexing(content);
+
+            if (!_VerbexSettings.EnableIngestion)
+            {
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing skipped - disabled in configuration").ConfigureAwait(false);
+                return false;
+            }
+
+            if (String.IsNullOrWhiteSpace(content))
+            {
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing skipped - extracted text is empty").ConfigureAwait(false);
+                return false;
+            }
+
+            int originalContentLength = content.Length;
+            content = ApplyVerbexContentLimit(content, _VerbexSettings.MaxContentCharacters);
+            if (content.Length != originalContentLength)
+            {
+                _Logging.Warn(_Header + "Verbex indexing content truncated for document " + document.Id + " from " + originalContentLength + " to " + content.Length + " chars");
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "WARN", "Verbex indexing content truncated from " + originalContentLength + " to " + content.Length + " chars").ConfigureAwait(false);
+            }
+
+            try
+            {
+                (string verbexTenantId, string indexId) = await ResolveVerbexScopeAsync(document.TenantId, rule?.VerbexIndexId, token).ConfigureAwait(false);
+
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing started - index: " + indexId + ", contentLength: " + content.Length + " chars").ConfigureAwait(false);
+
+                bool indexReady = await EnsureVerbexIndexExistsAsync(verbexTenantId, indexId, token).ConfigureAwait(false);
+                if (!indexReady)
+                    throw new InvalidOperationException("Verbex index is not available: " + indexId);
+
+                string recordName = ResolveVerbexRecordName(document);
+
+                Dictionary<string, object> metadata = new Dictionary<string, object>
+                {
+                    { "AssistantHubDocumentId", document.Id },
+                    { "AssistantHubTenantId", document.TenantId },
+                    { "VerbexTenantId", verbexTenantId },
+                    { "VerbexIndexId", indexId },
+                    { "ObjectName", recordName },
+                    { "CollectionId", document.CollectionId },
+                    { "IngestionRuleId", document.IngestionRuleId },
+                    { "Bucket", document.BucketName },
+                    { "ObjectKey", document.S3Key },
+                    { "ContentType", document.ContentType },
+                    { "OriginalFileName", document.OriginalFilename },
+                    { "SourceUrl", document.SourceUrl }
+                };
+
+                Dictionary<string, object> record = new Dictionary<string, object>
+                {
+                    { "Id", document.Id },
+                    { "Name", recordName },
+                    { "Content", content },
+                    { "CustomMetadata", metadata }
+                };
+
+                if (labels != null && labels.Count > 0)
+                    record["Labels"] = labels;
+
+                if (tags != null && tags.Count > 0)
+                    record["Tags"] = tags;
+
+                string json = JsonSerializer.Serialize(record, _JsonOptions);
+                string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents";
+
+                using (HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
+                {
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
+                        if (_ProcessingLog != null)
+                            await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete - record: " + document.Id).ConfigureAwait(false);
+                        return true;
+                    }
+
+                    if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    {
+                        await DeleteIndexRecordInternalAsync(document.TenantId, indexId, document.Id, token).ConfigureAwait(false);
+                        using (HttpResponseMessage retryResp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
+                        {
+                            if (retryResp.IsSuccessStatusCode)
+                            {
+                                await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
+                                if (_ProcessingLog != null)
+                                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete after replacing existing record - record: " + document.Id).ConfigureAwait(false);
+                                return true;
+                            }
+
+                            string retryBody = await retryResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                            throw new InvalidOperationException("Verbex indexing retry returned HTTP " + (int)retryResp.StatusCode + ": " + retryBody);
+                        }
+                    }
+
+                    string responseBody = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    throw new InvalidOperationException("Verbex indexing returned HTTP " + (int)resp.StatusCode + ": " + responseBody);
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "Verbex indexing failed for document " + document.Id + ": " + e.Message);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(document.Id, "ERROR", "Verbex indexing failed: " + e.Message).ConfigureAwait(false);
+
+                if (_VerbexSettings.RequireIngestion)
+                    throw;
+
+                return false;
+            }
+        }
+
+        private protected static string ResolveVerbexRecordName(AssistantDocument document)
+        {
+            if (document == null) return null;
+
+            if (IsMeaningfulDocumentName(document.Name))
+                return document.Name.Trim();
+
+            if (!String.IsNullOrWhiteSpace(document.OriginalFilename))
+                return document.OriginalFilename.Trim();
+
+            string objectName = ExtractObjectName(document.S3Key);
+            if (!String.IsNullOrWhiteSpace(objectName))
+                return objectName;
+
+            string sourceName = ExtractObjectName(document.SourceUrl);
+            if (!String.IsNullOrWhiteSpace(sourceName))
+                return sourceName;
+
+            if (!String.IsNullOrWhiteSpace(document.Id))
+                return document.Id;
+
+            return "document";
+        }
+
+        private static bool IsMeaningfulDocumentName(string name)
+        {
+            return !String.IsNullOrWhiteSpace(name)
+                && !String.Equals(name.Trim(), DefaultAssistantDocumentName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ExtractObjectName(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return null;
+
+            string candidate = value.Trim();
+            if (Uri.TryCreate(candidate, UriKind.Absolute, out Uri uri) && !String.IsNullOrWhiteSpace(uri.AbsolutePath))
+                candidate = uri.AbsolutePath;
+
+            candidate = candidate.TrimEnd('/', '\\');
+            if (String.IsNullOrWhiteSpace(candidate)) return null;
+
+            int slash = candidate.LastIndexOf('/');
+            int backslash = candidate.LastIndexOf('\\');
+            int separator = Math.Max(slash, backslash);
+
+            if (separator >= 0 && separator < candidate.Length - 1)
+                return candidate.Substring(separator + 1);
+
+            return candidate;
+        }
+
+        private protected async Task PersistVerbexIndexMetadataAsync(AssistantDocument document, string verbexTenantId, string indexId, CancellationToken token)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            document.VerbexTenantId = verbexTenantId;
+            document.VerbexIndexId = indexId;
+            document.VerbexRecordId = document.Id;
+
+            await _Database.AssistantDocument.UpdateVerbexIndexMetadataAsync(
+                document.Id,
+                document.VerbexTenantId,
+                document.VerbexIndexId,
+                document.VerbexRecordId,
+                token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete an indexed document record from Verbex.
+        /// </summary>
+        private protected async Task DeleteIndexRecordInternalAsync(string tenantId, string indexId, string recordId, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(recordId)) throw new ArgumentNullException(nameof(recordId));
+
+            (string _, string scopedIndexId) = await ResolveVerbexScopeAsync(tenantId, token).ConfigureAwait(false);
+            string configuredIndexId = String.IsNullOrEmpty(_VerbexSettings.DefaultIndexId) ? "default" : _VerbexSettings.DefaultIndexId;
+            string effectiveIndexId = String.IsNullOrEmpty(indexId) || String.Equals(indexId, configuredIndexId, StringComparison.OrdinalIgnoreCase)
+                ? scopedIndexId
+                : indexId;
+
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(effectiveIndexId) + "/documents/" + Uri.EscapeDataString(recordId);
+
+            using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Delete, path).ConfigureAwait(false))
+            {
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _Logging.Debug(_Header + "deleted Verbex index record " + recordId + " from index " + effectiveIndexId + " for tenant " + tenantId);
+                    return;
+                }
+
+                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                _Logging.Warn(_Header + "Verbex delete returned " + (int)response.StatusCode + " for record " + recordId + " in index " + effectiveIndexId + " for tenant " + tenantId + ": " + responseBody);
+            }
+        }
+
+        /// <summary>
         /// Store a single chunk embedding in RecallDB.
         /// </summary>
         /// <param name="tenantId">Tenant identifier.</param>
@@ -563,36 +822,29 @@ namespace AssistantHub.Core.Services
         /// <returns>Document key if stored successfully, null otherwise.</returns>
         private protected async Task<string> StoreEmbeddingAsync(string tenantId, string collectionId, string documentId, ChunkResult chunk, int chunkIndex, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents";
 
             try
             {
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, url))
+                Dictionary<string, object> requestBody = new Dictionary<string, object>
                 {
-                    Dictionary<string, object> requestBody = new Dictionary<string, object>
-                    {
-                        { "Content", chunk.Text },
-                        { "Embeddings", chunk.Embeddings },
-                        { "DocumentId", documentId },
-                        { "Position", chunkIndex },
-                        { "ContentType", "Text" }
-                    };
+                    { "Content", chunk.Text },
+                    { "Embeddings", chunk.Embeddings },
+                    { "DocumentId", documentId },
+                    { "Position", chunkIndex },
+                    { "ContentType", "Text" }
+                };
 
-                    if (chunk.Labels != null && chunk.Labels.Count > 0)
-                        requestBody["Labels"] = chunk.Labels;
+                if (chunk.Labels != null && chunk.Labels.Count > 0)
+                    requestBody["Labels"] = chunk.Labels;
 
-                    if (chunk.Tags != null && chunk.Tags.Count > 0)
-                        requestBody["Tags"] = chunk.Tags;
+                if (chunk.Tags != null && chunk.Tags.Count > 0)
+                    requestBody["Tags"] = chunk.Tags;
 
-                    string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
 
-                    if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                    {
-                        request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                    }
-
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+                using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Put, path, json, token).ConfigureAwait(false))
+                {
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
@@ -646,7 +898,7 @@ namespace AssistantHub.Core.Services
         /// <returns>List of stored document keys.</returns>
         private protected async Task<List<string>> StoreEmbeddingBatchAsync(string tenantId, string collectionId, string documentId, List<ChunkResult> chunks, CancellationToken token)
         {
-            string url = _RecallDbSettings.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch";
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/batch";
 
             try
             {
@@ -674,16 +926,8 @@ namespace AssistantHub.Core.Services
 
                 string json = JsonSerializer.Serialize(documents, _JsonOptions);
 
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+                using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Post, path, json, token).ConfigureAwait(false))
                 {
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                    if (!String.IsNullOrEmpty(_RecallDbSettings.AccessKey))
-                    {
-                        request.Headers.Add("Authorization", "Bearer " + _RecallDbSettings.AccessKey);
-                    }
-
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
@@ -753,14 +997,12 @@ namespace AssistantHub.Core.Services
 
             try
             {
-                string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + endpointType + "/" + endpointId;
-
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(
+                    HttpMethod.Get,
+                    "/v1.0/endpoints/" + endpointType + "/" + endpointId,
+                    null,
+                    token).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
-                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
-
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                         return null;
 
@@ -825,14 +1067,12 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                string url = _ChunkingSettings.Endpoint.TrimEnd('/') + "/v1.0/endpoints/" + endpointType + "/" + endpointId;
-
-                using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(
+                    HttpMethod.Get,
+                    "/v1.0/endpoints/" + endpointType + "/" + endpointId,
+                    null,
+                    token).ConfigureAwait(false))
                 {
-                    if (!String.IsNullOrEmpty(_ChunkingSettings.AccessKey))
-                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _ChunkingSettings.AccessKey);
-
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
                         _Logging.Warn(_Header + "could not resolve max concurrency for " + endpointType + " endpoint " + endpointId + ": HTTP " + (int)response.StatusCode);

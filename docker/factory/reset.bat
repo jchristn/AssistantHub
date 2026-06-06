@@ -30,11 +30,13 @@ echo WARNING: This is a DESTRUCTIVE action. The following will
 echo be permanently deleted:
 echo.
 echo   - All PostgreSQL data (AssistantHub, Less3, Partio,
-echo     RecallDB collections, embeddings, tenants, users)
+echo     RecallDB collections, Verbex indices, embeddings,
+echo     tenants, users)
 echo   - Stale local SQLite database files from older deployments
 echo   - All object storage files (uploaded documents)
 echo   - All log files and processing logs
 echo   - All Partio request history
+echo   - All Verbex index data
 echo   - Service configuration changes
 if "%INCLUDE_MODELS%"=="true" (
     echo   - All downloaded Ollama models
@@ -100,6 +102,12 @@ echo         Restored partio.json and removed stale Partio SQLite files
 copy /y "%FACTORY_DIR%recalldb.json" "%DOCKER_DIR%recalldb\recalldb.json" >nul
 echo         Restored recalldb.json
 
+del /q "%DOCKER_DIR%verbex\data\verbex.db" 2>nul
+del /q "%DOCKER_DIR%verbex\data\verbex.db-shm" 2>nul
+del /q "%DOCKER_DIR%verbex\data\verbex.db-wal" 2>nul
+copy /y "%FACTORY_DIR%verbex.json" "%DOCKER_DIR%verbex\verbex.json" >nul
+echo         Restored verbex.json and removed stale Verbex SQLite files
+
 REM -------------------------------------------------------------------------
 REM Clear object storage
 REM -------------------------------------------------------------------------
@@ -131,6 +139,11 @@ echo         Cleared DocumentAtom logs
 del /q "%DOCKER_DIR%partio\logs\*" 2>nul
 del /q "%DOCKER_DIR%partio\request-history\*" 2>nul
 echo         Cleared Partio logs and request history
+
+del /q "%DOCKER_DIR%verbex\logs\*" 2>nul
+rd /s /q "%DOCKER_DIR%verbex\data" 2>nul
+mkdir "%DOCKER_DIR%verbex\data" 2>nul
+echo         Cleared Verbex logs and index data
 
 REM -------------------------------------------------------------------------
 REM Done

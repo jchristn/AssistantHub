@@ -97,6 +97,15 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
+        /// Verbex service settings.
+        /// </summary>
+        public VerbexSettings Verbex
+        {
+            get => _Verbex;
+            set { if (value != null) _Verbex = value; }
+        }
+
+        /// <summary>
         /// Logging settings.
         /// </summary>
         public LoggingSettings Logging
@@ -153,6 +162,7 @@ namespace AssistantHub.Core.Settings
         private EmbeddingsSettings _Embeddings = new EmbeddingsSettings();
         private InferenceSettings _Inference = new InferenceSettings();
         private RecallDbSettings _RecallDb = new RecallDbSettings();
+        private VerbexSettings _Verbex = new VerbexSettings();
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();

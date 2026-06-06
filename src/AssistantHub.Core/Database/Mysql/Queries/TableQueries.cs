@@ -138,6 +138,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `ingestion_rule_id` TEXT, " +
             "  `bucket_name` TEXT, " +
             "  `collection_id` TEXT, " +
+            "  `verbex_tenant_id` TEXT, " +
+            "  `verbex_index_id` TEXT, " +
+            "  `verbex_record_id` TEXT, " +
             "  `labels_json` TEXT, " +
             "  `tags_json` TEXT, " +
             "  `chunk_record_ids` TEXT, " +
@@ -173,6 +176,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `bucket` TEXT NOT NULL, " +
             "  `collection_name` TEXT NOT NULL, " +
             "  `collection_id` TEXT, " +
+            "  `verbex_index_id` TEXT, " +
             "  `labels_json` TEXT, " +
             "  `tags_json` TEXT, " +
             "  `atomization_json` TEXT, " +
@@ -183,6 +187,18 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
             ")";
+
+        internal static string AddAssistantDocumentsVerbexTenantIdColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `verbex_tenant_id` TEXT";
+
+        internal static string AddAssistantDocumentsVerbexIndexIdColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `verbex_index_id` TEXT";
+
+        internal static string AddAssistantDocumentsVerbexRecordIdColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `verbex_record_id` TEXT";
+
+        internal static string AddIngestionRulesVerbexIndexIdColumn =
+            "ALTER TABLE `ingestion_rules` ADD COLUMN `verbex_index_id` TEXT";
 
         internal static string CreateCrawlPlansTable =
             "CREATE TABLE IF NOT EXISTS `crawl_plans` (" +

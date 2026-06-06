@@ -13,6 +13,7 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
     Database: false,
     S3: false,
     DocumentAtom: false,
+    Verbex: false,
     Chunking: false,
     Inference: false,
     RecallDb: false,
@@ -195,6 +196,18 @@ function ConfigurationFormModal({ api, onSave, onClose }) {
           {renderTextField('DocumentAtom', 'Endpoint', 'Endpoint', 'text', 'URL of the DocumentAtom service for document parsing')}
           {renderTextField('DocumentAtom', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the DocumentAtom dashboard')}
           {renderTextField('DocumentAtom', 'AccessKey', 'Access Key', 'password', 'Authentication key for the DocumentAtom service')}
+        </>)}
+
+        {renderSection('Verbex', 'Verbex', <>
+          {renderTextField('Verbex', 'Endpoint', 'Endpoint', 'text', 'URL of the Verbex inverted index endpoint')}
+          {renderTextField('Verbex', 'DashboardUrl', 'Dashboard URL', 'text', 'Browser URL for the Verbex dashboard')}
+          {renderTextField('Verbex', 'AccessKey', 'Access Key', 'password', 'Authentication key for Verbex access')}
+          {renderTextField('Verbex', 'DefaultIndexId', 'Default Index ID', 'text', 'Default Verbex index used for document text ingestion')}
+          {renderTextField('Verbex', 'MaxContentCharacters', 'Max Content Characters', 'number', 'Maximum normalized text characters sent to Verbex per document; 0 means unlimited')}
+          <div className="form-row">
+            {renderToggle('Verbex', 'EnableIngestion', 'Enable Ingestion', 'Index extracted document text into Verbex')}
+            {renderToggle('Verbex', 'RequireIngestion', 'Require Ingestion', 'Fail document ingestion when Verbex indexing fails')}
+          </div>
         </>)}
 
         {renderSection('Chunking', 'Chunking', <>

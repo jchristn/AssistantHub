@@ -35,14 +35,20 @@ namespace AssistantHub.Server
         private static LoggingModule _Logging = null;
         private static DatabaseDriverBase _Database = null;
         private static AuthenticationService _Authentication = null;
-        private static StorageService _Storage = null;
+        private static IObjectStorageService _Storage = null;
         private static IngestionService _Ingestion = null;
         private static RetrievalService _Retrieval = null;
         private static InferenceService _Inference = null;
+        private static IChunkingService _ChunkingService = null;
+        private static IEmbeddingEndpointService _EmbeddingEndpointService = null;
+        private static IInferenceEndpointService _InferenceEndpointService = null;
+        private static IVectorStoreService _VectorStore = null;
+        private static IInvertedIndexService _InvertedIndex = null;
         private static ProcessingLogService _ProcessingLog = null;
         private static WatsonWebserver.Webserver _Server = null;
         private static RequestHistoryCaptureService _RequestHistoryCapture = null;
         private static EndpointHealthCheckService _HealthCheckService = null;
+        private static IExternalServiceHealthService _ExternalServiceHealth = null;
         private static CrawlSchedulerService _CrawlScheduler = null;
         private static CrawlOperationCleanupService _CrawlOperationCleanup = null;
         private static ISlackAssistantConnectionManager _SlackConnectionManager = null;
@@ -144,8 +150,33 @@ namespace AssistantHub.Server
 
             string settingsJson = File.ReadAllText(Constants.SettingsFile);
             _Settings = Serializer.DeserializeJson<AssistantHubSettings>(settingsJson);
+            if (!ValidateSettings(_Settings))
+                return false;
+
             Console.WriteLine("Settings loaded from " + Constants.SettingsFile);
             return true;
+        }
+
+        private static bool ValidateSettings(AssistantHubSettings settings)
+        {
+            if (settings == null)
+            {
+                Console.WriteLine("Settings file could not be parsed.");
+                return false;
+            }
+
+            List<string> errors = new List<string>();
+            if (settings.Verbex != null)
+                errors.AddRange(settings.Verbex.Validate());
+
+            if (errors.Count < 1)
+                return true;
+
+            Console.WriteLine("Invalid settings:");
+            foreach (string error in errors)
+                Console.WriteLine("- " + error);
+
+            return false;
         }
 
         private static void InitializeLogging()
@@ -271,6 +302,7 @@ namespace AssistantHub.Server
             defaultRule.Bucket = "default";
             defaultRule.CollectionName = "default";
             defaultRule.CollectionId = "default";
+            defaultRule.VerbexIndexId = _Settings.Verbex.DefaultIndexId;
             defaultRule.Chunking = new IngestionChunkingConfig();
             defaultRule.Embedding = new IngestionEmbeddingConfig
             {
@@ -286,46 +318,95 @@ namespace AssistantHub.Server
             // Step 5: Provision RecallDB tenant and collection
             try
             {
-                using (HttpClient http = new HttpClient())
+                IVectorStoreService vectorStore = new RecallDbVectorStoreService(_Settings.RecallDb, _Logging);
+
+                object tenantBody = new { Id = Constants.DefaultTenantId, Name = defaultTenant.Name };
+                using (HttpResponseMessage tenantResp = await vectorStore.SendAsync(
+                    System.Net.Http.HttpMethod.Put,
+                    "/v1.0/tenants",
+                    JsonSerializer.Serialize(tenantBody)).ConfigureAwait(false))
                 {
-                    // Create RecallDB tenant
-                    string tenantUrl = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants";
-                    using (HttpRequestMessage tenantReq = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, tenantUrl))
-                    {
-                        object tenantBody = new { Id = Constants.DefaultTenantId, Name = defaultTenant.Name };
-                        tenantReq.Content = new StringContent(JsonSerializer.Serialize(tenantBody), Encoding.UTF8, "application/json");
+                    if (tenantResp.IsSuccessStatusCode)
+                        _Logging.Info(_Header + "default RecallDB tenant created");
+                    else
+                        _Logging.Warn(_Header + "failed to create default RecallDB tenant: HTTP " + (int)tenantResp.StatusCode);
+                }
 
-                        if (!String.IsNullOrEmpty(_Settings.RecallDb.AccessKey))
-                            tenantReq.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
-
-                        HttpResponseMessage tenantResp = await http.SendAsync(tenantReq).ConfigureAwait(false);
-                        if (tenantResp.IsSuccessStatusCode)
-                            _Logging.Info(_Header + "default RecallDB tenant created");
-                        else
-                            _Logging.Warn(_Header + "failed to create default RecallDB tenant: HTTP " + (int)tenantResp.StatusCode);
-                    }
-
-                    // Create default collection in RecallDB
-                    string collUrl = _Settings.RecallDb.Endpoint.TrimEnd('/') + "/v1.0/tenants/" + Constants.DefaultTenantId + "/collections";
-                    using (HttpRequestMessage collReq = new HttpRequestMessage(System.Net.Http.HttpMethod.Put, collUrl))
-                    {
-                        object collBody = new { Id = "default", Name = "default" };
-                        collReq.Content = new StringContent(JsonSerializer.Serialize(collBody), Encoding.UTF8, "application/json");
-
-                        if (!String.IsNullOrEmpty(_Settings.RecallDb.AccessKey))
-                            collReq.Headers.Add("Authorization", "Bearer " + _Settings.RecallDb.AccessKey);
-
-                        HttpResponseMessage collResp = await http.SendAsync(collReq).ConfigureAwait(false);
-                        if (collResp.IsSuccessStatusCode)
-                            _Logging.Info(_Header + "default RecallDB collection created");
-                        else
-                            _Logging.Warn(_Header + "failed to create default RecallDB collection: HTTP " + (int)collResp.StatusCode);
-                    }
+                object collBody = new { Id = "default", Name = "default" };
+                using (HttpResponseMessage collResp = await vectorStore.SendAsync(
+                    System.Net.Http.HttpMethod.Put,
+                    "/v1.0/tenants/" + Constants.DefaultTenantId + "/collections",
+                    JsonSerializer.Serialize(collBody)).ConfigureAwait(false))
+                {
+                    if (collResp.IsSuccessStatusCode)
+                        _Logging.Info(_Header + "default RecallDB collection created");
+                    else
+                        _Logging.Warn(_Header + "failed to create default RecallDB collection: HTTP " + (int)collResp.StatusCode);
                 }
             }
             catch (Exception e)
             {
                 _Logging.Warn(_Header + "could not provision RecallDB: " + e.Message);
+            }
+
+            // Step 6: Provision Verbex tenant and default index
+            IInvertedIndexService invertedIndex = new VerbexInvertedIndexService(_Settings.Verbex, _Logging);
+            await EnsureFirstRunVerbexAsync(invertedIndex, _Settings.Verbex, _Logging).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Ensure the default Verbex tenant and index during first-run initialization.
+        /// </summary>
+        /// <param name="invertedIndex">Inverted index service implementation.</param>
+        /// <param name="settings">Verbex settings.</param>
+        /// <param name="logging">Logging module.</param>
+        /// <returns>True when the default index was ensured.</returns>
+        public static async Task<bool> EnsureFirstRunVerbexAsync(IInvertedIndexService invertedIndex, VerbexSettings settings, LoggingModule logging)
+        {
+            if (invertedIndex == null) throw new ArgumentNullException(nameof(invertedIndex));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+            if (logging == null) throw new ArgumentNullException(nameof(logging));
+
+            try
+            {
+                using (HttpResponseMessage tenantResp = await invertedIndex.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/tenants/" + Constants.DefaultTenantId).ConfigureAwait(false))
+                {
+                    if (tenantResp.IsSuccessStatusCode)
+                        logging.Info(_Header + "default Verbex tenant found");
+                    else
+                        logging.Warn(_Header + "default Verbex tenant check returned HTTP " + (int)tenantResp.StatusCode);
+                }
+
+                string indexId = settings.DefaultIndexId;
+                object indexBody = new
+                {
+                    Identifier = indexId,
+                    TenantId = Constants.DefaultTenantId,
+                    Name = indexId,
+                    Description = "Default AssistantHub text search index"
+                };
+
+                using (HttpResponseMessage indexResp = await invertedIndex.SendAsync(
+                    System.Net.Http.HttpMethod.Post,
+                    "/v1.0/indices",
+                    JsonSerializer.Serialize(indexBody)).ConfigureAwait(false))
+                {
+                    if (indexResp.IsSuccessStatusCode || indexResp.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    {
+                        logging.Info(_Header + "default Verbex index ensured: " + indexId);
+                        return true;
+                    }
+
+                    logging.Warn(_Header + "failed to create default Verbex index: HTTP " + (int)indexResp.StatusCode);
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                logging.Warn(_Header + "could not provision Verbex: " + e.Message);
+                return false;
             }
         }
 
@@ -361,15 +442,21 @@ namespace AssistantHub.Server
 
             if (_Storage != null)
             {
-                _Ingestion = new IngestionService(_Database, _Storage, _Settings.DocumentAtom, _Settings.Chunking, _Settings.RecallDb, _Logging, _ProcessingLog);
+                _Ingestion = new IngestionService(_Database, _Storage, _Settings.DocumentAtom, _Settings.Chunking, _Settings.RecallDb, _Settings.Verbex, _Logging, _ProcessingLog);
             }
             else
             {
                 _Logging.Warn(_Header + "ingestion service unavailable (no storage configured)");
             }
 
-            _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging);
             _Inference = new InferenceService(_Settings.Inference, _Logging);
+            _ChunkingService = new PartioChunkingService(_Settings.Chunking, _Logging);
+            _EmbeddingEndpointService = new PartioEmbeddingEndpointService(_Settings.Chunking, _Logging);
+            _InferenceEndpointService = new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
+            _VectorStore = new RecallDbVectorStoreService(_Settings.RecallDb, _Logging);
+            _Retrieval = new RetrievalService(_Settings.Chunking, _Settings.RecallDb, _Logging, _VectorStore, _ChunkingService);
+            _InvertedIndex = new VerbexInvertedIndexService(_Settings.Verbex, _Logging);
+            _ExternalServiceHealth = new ExternalServiceHealthService(_Settings, _Logging);
             _RequestHistoryCapture = new RequestHistoryCaptureService(_Database, _Settings, _Logging);
             _SlackConnectionManager = new SlackAssistantConnectionManager(_Database, _Logging, _Settings, _Retrieval, _Inference);
             _Logging.Info(_Header + "services initialized");
@@ -377,49 +464,7 @@ namespace AssistantHub.Server
 
         private static async Task ValidateConnectivityAsync()
         {
-            _Logging.Info(_Header + "validating connectivity to subordinate services");
-
-            bool allSucceeded = true;
-
-            using (HttpClient http = new HttpClient())
-            {
-                http.Timeout = TimeSpan.FromSeconds(10);
-
-                // S3 (Less3) - HEAD request matching Docker healthcheck pattern
-                allSucceeded &= await CheckServiceAsync(http, "S3 (Less3)",
-                    System.Net.Http.HttpMethod.Head,
-                    _Settings.S3.EndpointUrl.TrimEnd('/') + "/");
-
-                // DocumentAtom - HEAD request
-                allSucceeded &= await CheckServiceAsync(http, "DocumentAtom",
-                    System.Net.Http.HttpMethod.Head,
-                    _Settings.DocumentAtom.Endpoint.TrimEnd('/') + "/");
-
-                // Chunking (Partio) - HEAD request
-                allSucceeded &= await CheckServiceAsync(http, "Chunking (Partio)",
-                    System.Net.Http.HttpMethod.Head,
-                    _Settings.Chunking.Endpoint.TrimEnd('/') + "/",
-                    bearerToken: _Settings.Chunking.AccessKey);
-
-                // Embeddings (Partio) - HEAD request
-                allSucceeded &= await CheckServiceAsync(http, "Embeddings (Partio)",
-                    System.Net.Http.HttpMethod.Head,
-                    _Settings.Embeddings.Endpoint.TrimEnd('/') + "/",
-                    bearerToken: _Settings.Embeddings.AccessKey);
-
-                // Inference - provider-specific model listing request
-                allSucceeded &= await CheckServiceAsync(http, "Inference (" + _Settings.Inference.Provider.ToString() + ")",
-                    System.Net.Http.HttpMethod.Get,
-                    InferenceProviderHelper.GetModelsUrl(_Settings.Inference.Endpoint, _Settings.Inference.Provider),
-                    _Settings.Inference.Provider,
-                    _Settings.Inference.ApiKey);
-
-                // RecallDb - HEAD request
-                allSucceeded &= await CheckServiceAsync(http, "RecallDb",
-                    System.Net.Http.HttpMethod.Head,
-                    _Settings.RecallDb.Endpoint.TrimEnd('/') + "/",
-                    bearerToken: _Settings.RecallDb.AccessKey);
-            }
+            bool allSucceeded = await _ExternalServiceHealth.ValidateConnectivityAsync().ConfigureAwait(false);
 
             if (!allSucceeded)
             {
@@ -428,57 +473,6 @@ namespace AssistantHub.Server
             }
 
             _Logging.Info(_Header + "all subordinate services are reachable");
-        }
-
-        private static async Task<bool> CheckServiceAsync(
-            HttpClient http,
-            string serviceName,
-            System.Net.Http.HttpMethod method,
-            string url,
-            string bearerToken = null)
-        {
-            return await CheckServiceAsync(http, serviceName, method, url, null, bearerToken).ConfigureAwait(false);
-        }
-
-        private static async Task<bool> CheckServiceAsync(
-            HttpClient http,
-            string serviceName,
-            System.Net.Http.HttpMethod method,
-            string url,
-            Enums.InferenceProviderEnum? inferenceProvider,
-            string apiKey = null)
-        {
-            try
-            {
-                using (HttpRequestMessage req = new HttpRequestMessage(method, url))
-                {
-                    if (inferenceProvider.HasValue)
-                    {
-                        InferenceProviderHelper.ApplyAuthentication(req, inferenceProvider.Value, apiKey);
-                    }
-                    else if (!String.IsNullOrEmpty(apiKey))
-                    {
-                        req.Headers.Add("Authorization", "Bearer " + apiKey);
-                    }
-
-                    HttpResponseMessage resp = await http.SendAsync(req).ConfigureAwait(false);
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        _Logging.Info(_Header + serviceName + " reachable at " + url + " (HTTP " + (int)resp.StatusCode + ")");
-                        return true;
-                    }
-                    else
-                    {
-                        _Logging.Warn(_Header + serviceName + " returned HTTP " + (int)resp.StatusCode + " at " + url);
-                        return false;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + serviceName + " unreachable at " + url + ": " + e.Message);
-                return false;
-            }
         }
 
         private static void StartProcessingLogCleanup()
@@ -616,15 +610,16 @@ namespace AssistantHub.Server
             TenantHandler tenantHandler = new TenantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             UserHandler userHandler = new UserHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CredentialHandler credentialHandler = new CredentialHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
-            CollectionHandler collectionHandler = new CollectionHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            CollectionHandler collectionHandler = new CollectionHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _VectorStore);
+            IndexHandler indexHandler = new IndexHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _InvertedIndex);
             BucketHandler bucketHandler = new BucketHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantHandler assistantHandler = new AssistantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantAnalyticsHandler assistantAnalyticsHandler = new AssistantAnalyticsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
             IngestionRuleHandler ingestionRuleHandler = new IngestionRuleHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
-            EmbeddingEndpointHandler embeddingEndpointHandler = new EmbeddingEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
-            CompletionEndpointHandler completionEndpointHandler = new CompletionEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            EmbeddingEndpointHandler embeddingEndpointHandler = new EmbeddingEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _EmbeddingEndpointService);
+            CompletionEndpointHandler completionEndpointHandler = new CompletionEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _InferenceEndpointService);
             FeedbackHandler feedbackHandler = new FeedbackHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             HistoryHandler historyHandler = new HistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             RequestHistoryHandler requestHistoryHandler = new RequestHistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
@@ -632,7 +627,7 @@ namespace AssistantHub.Server
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog, _CrawlScheduler);
             CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
-            EvalService evalService = new EvalService(_Settings, _Logging, _Database, _Inference);
+            EvalService evalService = new EvalService(_Settings, _Logging, _Database, _Inference, _InferenceEndpointService);
             EvalHandler evalHandler = new EvalHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, evalService);
 
             // Unauthenticated routes
@@ -689,6 +684,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}", collectionHandler.PutCollectionByIdAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}", collectionHandler.DeleteCollectionAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/collections/{collectionId}", collectionHandler.HeadCollectionAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/search", collectionHandler.SearchCollectionAsync);
 
             // Authenticated routes - Collection Records (admin only)
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}/records", collectionHandler.PutRecordAsync);
@@ -698,6 +694,32 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/records/batch/delete", collectionHandler.BatchDeleteRecordsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/labels/distinct", collectionHandler.GetDistinctLabelsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/tags/distinct", collectionHandler.GetDistinctTagsAsync);
+
+            // Authenticated routes - Indices (admin only, proxied to Verbex)
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices", indexHandler.GetIndicesAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices", indexHandler.PutIndexAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}", indexHandler.GetIndexAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}", indexHandler.PutIndexByIdAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}", indexHandler.DeleteIndexAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}", indexHandler.HeadIndexAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/labels", indexHandler.PutIndexLabelsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/tags", indexHandler.PutIndexTagsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/custom-metadata", indexHandler.PutIndexCustomMetadataAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/terms/top", indexHandler.GetTopTermsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/search", indexHandler.PostSearchAsync);
+
+            // Authenticated routes - Index Records (admin only, proxied to Verbex)
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records", indexHandler.GetRecordsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records", indexHandler.PutRecordAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}/records", indexHandler.DeleteRecordsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/batch", indexHandler.PostRecordBatchAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/exists", indexHandler.PostRecordExistsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.GetRecordAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.DeleteRecordAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.HeadRecordAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/labels", indexHandler.PutRecordLabelsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/tags", indexHandler.PutRecordTagsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/custom-metadata", indexHandler.PutRecordCustomMetadataAsync);
 
             // Authenticated routes - Buckets (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets", bucketHandler.PutBucketAsync);
@@ -774,6 +796,8 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/documents/{documentId}", documentHandler.DeleteDocumentAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/documents/{documentId}", documentHandler.HeadDocumentAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/delete", documentHandler.BulkDeleteDocumentsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/reindex", documentHandler.ReindexDocumentsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reindex", documentHandler.ReindexDocumentAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/processing-log", documentHandler.GetDocumentProcessingLogAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/download", documentHandler.DownloadDocumentAsync);
 

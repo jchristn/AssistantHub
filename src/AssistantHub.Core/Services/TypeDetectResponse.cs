@@ -20,7 +20,7 @@ namespace AssistantHub.Core.Services
     /// <summary>
     /// Type detection response from DocumentAtom.
     /// </summary>
-    internal class TypeDetectResponse
+    public class TypeDetectResponse
     {
         /// <summary>
         /// Detected MIME type.

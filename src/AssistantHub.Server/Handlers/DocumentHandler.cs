@@ -2,6 +2,7 @@ namespace AssistantHub.Server.Handlers
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Text.Json;
     using System.Threading.Tasks;
     using AssistantHub.Core;
@@ -39,7 +40,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference,
@@ -411,6 +412,21 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                // Delete indexed text from Verbex
+                if (Ingestion != null)
+                {
+                    try
+                    {
+                        string indexId = String.IsNullOrEmpty(doc.VerbexIndexId) ? Settings.Verbex.DefaultIndexId : doc.VerbexIndexId;
+                        string recordId = String.IsNullOrEmpty(doc.VerbexRecordId) ? doc.Id : doc.VerbexRecordId;
+                        await Ingestion.DeleteIndexRecordAsync(doc.TenantId, indexId, recordId).ConfigureAwait(false);
+                    }
+                    catch (Exception indexEx)
+                    {
+                        Logging.Warn(_Header + "failed to delete Verbex record for document " + documentId + " in tenant " + doc.TenantId + ": " + indexEx.Message);
+                    }
+                }
+
                 await Database.AssistantDocument.DeleteAsync(documentId).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 204;
@@ -466,6 +482,7 @@ namespace AssistantHub.Server.Handlers
 
                 // Group chunk record IDs by collection for batch delete
                 Dictionary<string, List<string>> recordIdsByCollection = new Dictionary<string, List<string>>();
+                Dictionary<string, (string TenantId, string IndexId, List<string> RecordIds)> recordIdsByIndex = new Dictionary<string, (string TenantId, string IndexId, List<string> RecordIds)>();
                 foreach (AssistantDocument doc in docs)
                 {
                     if (!String.IsNullOrEmpty(doc.ChunkRecordIds) && !String.IsNullOrEmpty(doc.CollectionId))
@@ -485,6 +502,13 @@ namespace AssistantHub.Server.Handlers
                             Logging.Warn(_Header + "failed to parse chunk record IDs for document " + doc.Id + ": " + parseEx.Message);
                         }
                     }
+
+                    string indexId = String.IsNullOrEmpty(doc.VerbexIndexId) ? Settings.Verbex.DefaultIndexId : doc.VerbexIndexId;
+                    string recordId = String.IsNullOrEmpty(doc.VerbexRecordId) ? doc.Id : doc.VerbexRecordId;
+                    string indexKey = doc.TenantId + "|" + indexId;
+                    if (!recordIdsByIndex.ContainsKey(indexKey))
+                        recordIdsByIndex[indexKey] = (doc.TenantId, indexId, new List<string>());
+                    recordIdsByIndex[indexKey].RecordIds.Add(recordId);
                 }
 
                 // Batch delete embeddings per collection
@@ -499,6 +523,22 @@ namespace AssistantHub.Server.Handlers
                         catch (Exception embeddingEx)
                         {
                             Logging.Warn(_Header + "failed to batch delete embeddings for collection " + kvp.Key + ": " + embeddingEx.Message);
+                        }
+                    }
+                }
+
+                // Batch delete indexed text per Verbex index
+                if (Ingestion != null)
+                {
+                    foreach (KeyValuePair<string, (string TenantId, string IndexId, List<string> RecordIds)> kvp in recordIdsByIndex)
+                    {
+                        try
+                        {
+                            await Ingestion.DeleteIndexRecordBatchAsync(kvp.Value.TenantId, kvp.Value.IndexId, kvp.Value.RecordIds).ConfigureAwait(false);
+                        }
+                        catch (Exception indexEx)
+                        {
+                            Logging.Warn(_Header + "failed to batch delete Verbex records for tenant " + kvp.Value.TenantId + " index " + kvp.Value.IndexId + ": " + indexEx.Message);
                         }
                     }
                 }
@@ -530,6 +570,186 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in BulkDeleteDocumentsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/documents/{documentId}/reindex - Reindex a single document into Verbex.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task ReindexDocumentAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "DocumentId is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                DocumentReindexResult result = await Ingestion.ReindexDocumentTextAsync(doc).ConfigureAwait(false);
+                ctx.Response.StatusCode = result.Success ? 200 : 502;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in ReindexDocumentAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/documents/reindex - Reindex completed documents into Verbex.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task ReindexDocumentsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            Stopwatch sw = Stopwatch.StartNew();
+            DocumentReindexBatchResult batch = new DocumentReindexBatchResult();
+
+            try
+            {
+                AuthContext auth = RequireAdmin(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                DocumentReindexRequest request = null;
+                string body = ctx.Request.DataAsString;
+                if (!String.IsNullOrWhiteSpace(body))
+                    request = Serializer.DeserializeJson<DocumentReindexRequest>(body);
+                request ??= new DocumentReindexRequest();
+
+                List<AssistantDocument> docs = new List<AssistantDocument>();
+
+                if (request.DocumentIds != null && request.DocumentIds.Count > 0)
+                {
+                    batch.Requested = request.DocumentIds.Count;
+
+                    foreach (string documentId in request.DocumentIds)
+                    {
+                        if (String.IsNullOrWhiteSpace(documentId)) continue;
+
+                        AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                        if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
+                        {
+                            batch.Results.Add(new DocumentReindexResult
+                            {
+                                DocumentId = documentId,
+                                Success = false,
+                                Status = "NotFound",
+                                Message = "Document not found."
+                            });
+                            batch.Failed++;
+                            continue;
+                        }
+
+                        docs.Add(doc);
+                    }
+
+                    batch.EndOfResults = true;
+                }
+                else
+                {
+                    EnumerationQuery query = BuildEnumerationQuery(ctx);
+                    EnumerationResult<AssistantDocument> page = await Database.AssistantDocument.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                    docs.AddRange(page.Objects);
+                    batch.Requested = docs.Count;
+                    batch.ContinuationToken = page.ContinuationToken;
+                    batch.EndOfResults = page.EndOfResults;
+                }
+
+                foreach (AssistantDocument doc in docs)
+                {
+                    if (doc.Status != Enums.DocumentStatusEnum.Completed)
+                    {
+                        batch.Skipped++;
+                        batch.Results.Add(new DocumentReindexResult
+                        {
+                            DocumentId = doc.Id,
+                            Success = true,
+                            Status = "Skipped",
+                            Message = "Document status is " + doc.Status + "; only completed documents are batch reindexed.",
+                            VerbexTenantId = doc.VerbexTenantId,
+                            VerbexIndexId = doc.VerbexIndexId,
+                            VerbexRecordId = doc.VerbexRecordId
+                        });
+                        continue;
+                    }
+
+                    if (!request.IncludeAlreadyIndexed && !String.IsNullOrEmpty(doc.VerbexRecordId))
+                    {
+                        batch.Skipped++;
+                        batch.Results.Add(new DocumentReindexResult
+                        {
+                            DocumentId = doc.Id,
+                            Success = true,
+                            Status = "Skipped",
+                            Message = "Document already has Verbex indexing metadata.",
+                            VerbexTenantId = doc.VerbexTenantId,
+                            VerbexIndexId = doc.VerbexIndexId,
+                            VerbexRecordId = doc.VerbexRecordId
+                        });
+                        continue;
+                    }
+
+                    batch.Eligible++;
+                    DocumentReindexResult result = await Ingestion.ReindexDocumentTextAsync(doc).ConfigureAwait(false);
+                    batch.Results.Add(result);
+
+                    if (String.Equals(result.Status, "Reindexed", StringComparison.OrdinalIgnoreCase))
+                        batch.Reindexed++;
+                    else if (String.Equals(result.Status, "Skipped", StringComparison.OrdinalIgnoreCase))
+                        batch.Skipped++;
+                    else
+                        batch.Failed++;
+                }
+
+                sw.Stop();
+                batch.TotalMs = sw.Elapsed.TotalMilliseconds;
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(batch)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in ReindexDocumentsAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);

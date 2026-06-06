@@ -40,6 +40,10 @@ logs/
 *.db-wal
 *.sqlite-shm
 *.sqlite-wal
+docker/less3/disk/
+docker/partio/request-history/
+docker/verbex/data/
+docker/verbex/logs/
 
 # Docker configuration
 !docker/**/*.json

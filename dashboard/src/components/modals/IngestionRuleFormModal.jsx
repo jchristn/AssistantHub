@@ -59,7 +59,7 @@ const defaultEmbedding = {
   L2Normalization: false
 };
 
-function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
+function IngestionRuleFormModal({ rule, buckets, collections, indices, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
   const isEdit = !!rule;
 
   const [form, setForm] = useState({
@@ -68,6 +68,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
     Bucket: rule?.Bucket || '',
     CollectionId: rule?.CollectionId || '',
     CollectionName: rule?.CollectionName || '',
+    VerbexIndexId: rule?.VerbexIndexId || '',
     Labels: rule?.Labels ? [...rule.Labels] : [],
     Tags: rule?.Tags ? { ...rule.Tags } : {},
     Summarization: rule?.Summarization ? { ...defaultSummarization, ...rule.Summarization } : { ...defaultSummarization },
@@ -156,6 +157,7 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
         Bucket: form.Bucket,
         CollectionId: form.CollectionId,
         CollectionName: form.CollectionName,
+        VerbexIndexId: form.VerbexIndexId?.trim() || undefined,
         Labels: form.Labels,
         Tags: form.Tags,
         Summarization: summarizationEnabled ? {
@@ -210,6 +212,10 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
     fontWeight: 600,
     color: 'var(--text-primary)'
   };
+
+  const indexIds = Array.from(new Set((indices || [])
+    .map(index => index.Id || index.GUID || index.IndexId || index.Name)
+    .filter(Boolean)));
 
   return (
     <Modal
@@ -287,6 +293,23 @@ function IngestionRuleFormModal({ rule, buckets, collections, inferenceEndpoints
               <option key={c.GUID || c.Id} value={c.GUID || c.Id}>{c.Name || c.GUID || c.Id}</option>
             ))}
           </select>
+        </div>
+
+        {/* Verbex Index */}
+        <div className="form-group">
+          <label><Tooltip text="Target Verbex inverted index for searchable full document text. Leave blank to use the tenant default index">Verbex Index</Tooltip></label>
+          <input
+            type="text"
+            list="verbex-index-options"
+            value={form.VerbexIndexId}
+            onChange={(e) => handleChange('VerbexIndexId', e.target.value)}
+            placeholder="default"
+          />
+          <datalist id="verbex-index-options">
+            {indexIds.map(indexId => (
+              <option key={indexId} value={indexId} />
+            ))}
+          </datalist>
         </div>
 
         {/* Labels */}

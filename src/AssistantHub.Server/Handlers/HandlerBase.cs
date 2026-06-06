@@ -30,7 +30,7 @@ namespace AssistantHub.Server.Handlers
         protected readonly AuthenticationService Authentication;
 
         /// <summary>Storage service instance.</summary>
-        protected readonly StorageService Storage;
+        protected readonly IObjectStorageService Storage;
 
         /// <summary>Ingestion service instance.</summary>
         protected readonly IngestionService Ingestion;
@@ -40,6 +40,18 @@ namespace AssistantHub.Server.Handlers
 
         /// <summary>Inference service instance.</summary>
         protected readonly InferenceService Inference;
+
+        /// <summary>Partio chunking service instance.</summary>
+        protected readonly IChunkingService ChunkingService;
+
+        /// <summary>Partio embedding endpoint service instance.</summary>
+        protected readonly IEmbeddingEndpointService EmbeddingEndpoints;
+
+        /// <summary>Partio inference endpoint service instance.</summary>
+        protected readonly IInferenceEndpointService InferenceEndpoints;
+
+        /// <summary>RecallDB vector-store service instance.</summary>
+        protected readonly IVectorStoreService VectorStore;
 
         /// <summary>Processing log service instance.</summary>
         protected readonly ProcessingLogService ProcessingLog;
@@ -61,7 +73,7 @@ namespace AssistantHub.Server.Handlers
             LoggingModule logging,
             AssistantHubSettings settings,
             AuthenticationService authentication,
-            StorageService storage,
+            IObjectStorageService storage,
             IngestionService ingestion,
             RetrievalService retrieval,
             InferenceService inference,
@@ -75,6 +87,10 @@ namespace AssistantHub.Server.Handlers
             Ingestion = ingestion;
             Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             Inference = inference ?? throw new ArgumentNullException(nameof(inference));
+            ChunkingService = new PartioChunkingService(Settings.Chunking, Logging);
+            EmbeddingEndpoints = new PartioEmbeddingEndpointService(Settings.Chunking, Logging);
+            InferenceEndpoints = new PartioInferenceEndpointService(Settings.Chunking, Logging);
+            VectorStore = new RecallDbVectorStoreService(Settings.RecallDb, Logging);
             ProcessingLog = processingLog;
         }
 

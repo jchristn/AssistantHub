@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "INSERT INTO assistant_documents " +
                 "(id, tenant_id, name, original_filename, content_type, size_bytes, s3_key, " +
                 "status, status_message, ingestion_rule_id, bucket_name, collection_id, " +
-                "labels_json, tags_json, chunk_record_ids, " +
+                "verbex_tenant_id, verbex_index_id, verbex_record_id, labels_json, tags_json, chunk_record_ids, " +
                 "crawl_plan_id, crawl_operation_id, source_url, " +
                 "created_utc, last_update_utc) " +
                 "VALUES (" +
@@ -73,6 +73,9 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(document.IngestionRuleId) + ", " +
                 _Driver.FormatNullableString(document.BucketName) + ", " +
                 _Driver.FormatNullableString(document.CollectionId) + ", " +
+                _Driver.FormatNullableString(document.VerbexTenantId) + ", " +
+                _Driver.FormatNullableString(document.VerbexIndexId) + ", " +
+                _Driver.FormatNullableString(document.VerbexRecordId) + ", " +
                 _Driver.FormatNullableString(document.Labels) + ", " +
                 _Driver.FormatNullableString(document.Tags) + ", " +
                 _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
@@ -119,6 +122,9 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "ingestion_rule_id = " + _Driver.FormatNullableString(document.IngestionRuleId) + ", " +
                 "bucket_name = " + _Driver.FormatNullableString(document.BucketName) + ", " +
                 "collection_id = " + _Driver.FormatNullableString(document.CollectionId) + ", " +
+                "verbex_tenant_id = " + _Driver.FormatNullableString(document.VerbexTenantId) + ", " +
+                "verbex_index_id = " + _Driver.FormatNullableString(document.VerbexIndexId) + ", " +
+                "verbex_record_id = " + _Driver.FormatNullableString(document.VerbexRecordId) + ", " +
                 "labels_json = " + _Driver.FormatNullableString(document.Labels) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(document.Tags) + ", " +
                 "chunk_record_ids = " + _Driver.FormatNullableString(document.ChunkRecordIds) + ", " +
@@ -245,6 +251,22 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "UPDATE assistant_documents SET " +
                 "chunk_record_ids = " + _Driver.FormatNullableString(chunkRecordIdsJson) + ", " +
                 "last_update_utc = '" + DateTime.UtcNow.ToString("o") + "' " +
+                "WHERE id = '" + _Driver.Sanitize(id) + "'";
+
+            await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task UpdateVerbexIndexMetadataAsync(string id, string verbexTenantId, string verbexIndexId, string verbexRecordId, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+
+            string query =
+                "UPDATE assistant_documents SET " +
+                "verbex_tenant_id = " + _Driver.FormatNullableString(verbexTenantId) + ", " +
+                "verbex_index_id = " + _Driver.FormatNullableString(verbexIndexId) + ", " +
+                "verbex_record_id = " + _Driver.FormatNullableString(verbexRecordId) + ", " +
+                "last_update_utc = '" + _Driver.FormatDateTime(DateTime.UtcNow) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(id) + "'";
 
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);

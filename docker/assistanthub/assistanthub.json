@@ -54,6 +54,15 @@
     "AccessKey": "recalldbadmin",
     "DashboardUrl": "http://localhost:8402"
   },
+  "Verbex": {
+    "Endpoint": "http://verbex-server:8080",
+    "AccessKey": "verbexadmin",
+    "DashboardUrl": "http://localhost:8502",
+    "DefaultIndexId": "default",
+    "EnableIngestion": true,
+    "RequireIngestion": true,
+    "MaxContentCharacters": 0
+  },
   "AdminApiKeys": [
     "changeme"
   ],

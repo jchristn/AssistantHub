@@ -3,6 +3,7 @@ namespace Test.Automated
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Models;
@@ -182,7 +183,115 @@ namespace Test.Automated
                 AssertHelper.StringContains(apiExplorerSource, "POST:/v1.0/endpoints/completion/{endpointId}/load", "completion load explorer template");
             });
 
+            await ExecuteTestAsync("Verbex index proxy: routes marshal through AssistantHub", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string indexHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "IndexHandler.cs"));
+
+                AssertHelper.StringContains(serverSource, "/v1.0/indices", "index list/create route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}", "index item route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/labels", "index labels route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/tags", "index tags route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/custom-metadata", "index custom metadata route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/terms/top", "index top terms route");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyAsync(ctx, NetHttpMethod.Get, AppendRequestQuery(ctx, \"/v1.0/indices\"))", "index list proxy");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyAuthorizedAsync(ctx, NetHttpMethod.Post, \"/v1.0/indices\", body)", "index create proxy");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyIndexAsync(ctx, NetHttpMethod.Put, \"labels\", ctx.Request.DataAsString)", "index labels proxy");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyIndexAsync(ctx, NetHttpMethod.Get, AppendRequestQuery(ctx, \"terms/top\"))", "top terms proxy");
+            });
+
+            await ExecuteTestAsync("Verbex index record proxy: records map to upstream documents", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string indexHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "IndexHandler.cs"));
+
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records", "index records route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/batch", "index record batch route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/exists", "index record exists route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/{recordId}", "index record item route");
+                AssertHelper.StringContains(indexHandlerSource, "\"/documents\"", "records proxy uses Verbex documents path");
+                AssertHelper.StringContains(indexHandlerSource, "+ \"/documents/\" + Uri.EscapeDataString(recordId)", "record item proxy uses Verbex documents path");
+                AssertHelper.StringContains(indexHandlerSource, "PopulateIndexRecordNames(ctx.Request.DataAsString)", "record create populates names before proxy");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, \"batch\", PopulateIndexRecordNames(ctx.Request.DataAsString), false)", "batch create records proxy");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Delete, null, null, true)", "batch delete records proxy");
+            });
+
+            await ExecuteTestAsync("Verbex search proxy: route forwards request body", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string indexHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "IndexHandler.cs"));
+
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/search", "index search route");
+                AssertHelper.StringContains(indexHandlerSource, "PostSearchAsync(HttpContextBase ctx) => ProxyIndexAsync(ctx, NetHttpMethod.Post, \"search\", ctx.Request.DataAsString)", "index search proxy body forwarding");
+            });
+
+            await ExecuteTestAsync("RecallDB collection search proxy: route forwards request body", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string collectionHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "CollectionHandler.cs"));
+
+                AssertHelper.StringContains(serverSource, "/v1.0/collections/{collectionId}/search", "collection search route");
+                AssertHelper.StringContains(serverSource, "collectionHandler.SearchCollectionAsync", "collection search handler registration");
+                AssertHelper.StringContains(collectionHandlerSource, "SearchCollectionAsync(HttpContextBase ctx)", "collection search handler");
+                AssertHelper.StringContains(collectionHandlerSource, "BuildRecallDbPath(auth.TenantId, collectionId + \"/search\"), body", "collection search proxy body forwarding");
+            });
+
+            await ExecuteTestAsync("OpenAPI: search artifact routes and request bodies are documented", async () =>
+            {
+                string root = GetRepositoryRoot();
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "openapi.json")));
+                JsonElement paths = document.RootElement.GetProperty("paths");
+
+                AssertOpenApiOperation(paths, "/v1.0/collections/{collectionId}/search", "post", "collection search OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices", "get", "index list OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices", "put", "index create OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/search", "post", "index search OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/labels", "put", "index labels OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/tags", "put", "index tags OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/custom-metadata", "put", "index custom metadata OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/terms/top", "get", "index top terms OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "get", "index record list OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "put", "index record create OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "delete", "index record batch delete OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/batch", "post", "index record batch create OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/exists", "post", "index record exists OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}", "get", "index record get OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}", "delete", "index record delete OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}/labels", "put", "index record labels OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}/tags", "put", "index record tags OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}/custom-metadata", "put", "index record custom metadata OpenAPI route");
+
+                JsonElement indexSearch = paths.GetProperty("/v1.0/indices/{indexId}/search").GetProperty("post");
+                AssertHelper.IsTrue(indexSearch.TryGetProperty("requestBody", out _), "Index search OpenAPI request body");
+                JsonElement collectionSearch = paths.GetProperty("/v1.0/collections/{collectionId}/search").GetProperty("post");
+                AssertHelper.IsTrue(collectionSearch.TryGetProperty("requestBody", out _), "Collection search OpenAPI request body");
+            });
+
+            await ExecuteTestAsync("Postman: search artifact requests are present", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string postman = File.ReadAllText(Path.Combine(root, "postman", "AssistantHub.postman_collection.json"));
+                JsonDocument.Parse(postman).Dispose();
+
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/collections/{{collectionId}}/search", "collection search Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/search", "index search Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/terms/top", "index top terms Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/custom-metadata", "index custom metadata Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/labels", "index record labels Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/custom-metadata", "index record custom metadata Postman request");
+            });
+
             return GetResults();
+        }
+
+        private static void AssertOpenApiOperation(JsonElement paths, string path, string method, string name)
+        {
+            AssertHelper.IsTrue(paths.TryGetProperty(path, out JsonElement pathItem), name + " path");
+            AssertHelper.IsTrue(pathItem.TryGetProperty(method, out _), name + " method");
         }
 
         private static string GetRepositoryRoot()

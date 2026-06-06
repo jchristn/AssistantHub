@@ -45,7 +45,7 @@ namespace AssistantHub.Core.Services.Crawlers
             CrawlPlan crawlPlan,
             CrawlOperation crawlOperation,
             IngestionService ingestion,
-            StorageService storage,
+            IObjectStorageService storage,
             ProcessingLogService processingLog,
             string enumerationDirectory,
             CancellationToken token)

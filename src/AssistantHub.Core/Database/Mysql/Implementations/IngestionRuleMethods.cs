@@ -60,7 +60,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
 
             string query =
                 "INSERT INTO ingestion_rules " +
-                "(id, tenant_id, name, description, bucket, collection_name, collection_id, labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, created_utc, last_update_utc) " +
+                "(id, tenant_id, name, description, bucket, collection_name, collection_id, verbex_index_id, labels_json, tags_json, atomization_json, summarization_json, chunking_json, embedding_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(rule.Id) + "', " +
                 "'" + _Driver.Sanitize(rule.TenantId) + "', " +
@@ -69,6 +69,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "'" + _Driver.Sanitize(rule.Bucket) + "', " +
                 "'" + _Driver.Sanitize(rule.CollectionName) + "', " +
                 _Driver.FormatNullableString(rule.CollectionId) + ", " +
+                _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
@@ -123,6 +124,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "bucket = '" + _Driver.Sanitize(rule.Bucket) + "', " +
                 "collection_name = '" + _Driver.Sanitize(rule.CollectionName) + "', " +
                 "collection_id = " + _Driver.FormatNullableString(rule.CollectionId) + ", " +
+                "verbex_index_id = " + _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 "labels_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
                 "atomization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +

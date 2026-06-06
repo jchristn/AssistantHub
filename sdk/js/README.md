@@ -322,7 +322,7 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Credentials | `createCredential()`, `listCredentials()`, `getCredential()`, `updateCredential()`, `deleteCredential()`, `credentialExists()` |
 | Assistants | `createAssistant()`, `listAssistants()`, `getAssistant()`, `updateAssistant()`, `deleteAssistant()`, `assistantExists()`, `getAssistantPublic()` |
 | Settings | `getAssistantSettings()`, `updateAssistantSettings()`, `verifySlack()` |
-| Documents | `createDocument()`, `listDocuments()`, `getDocument()`, `deleteDocument()`, `documentExists()`, `bulkDeleteDocuments()`, `getDocumentProcessingLog()`, `downloadDocument()`, `downloadDocumentPublic()` |
+| Documents | `createDocument()`, `listDocuments()`, `getDocument()`, `deleteDocument()`, `documentExists()`, `bulkDeleteDocuments()`, `reindexDocument()`, `reindexDocuments()`, `getDocumentProcessingLog()`, `downloadDocument()`, `downloadDocumentPublic()` |
 | Ingestion Rules | `createIngestionRule()`, `listIngestionRules()`, `getIngestionRule()`, `updateIngestionRule()`, `deleteIngestionRule()`, `ingestionRuleExists()` |
 | Chat | `chatCompletion()`, `chatCompletionStream()`, `submitFeedback()`, `compact()`, `generate()` |
 | Threads | `createThread()`, `getThreadHistory()`, `listThreads()` |
@@ -334,7 +334,10 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Completion Endpoints | `createCompletionEndpoint()`, `listCompletionEndpoints()`, `getCompletionEndpoint()`, `updateCompletionEndpoint()`, `deleteCompletionEndpoint()`, `completionEndpointExists()`, `getCompletionEndpointHealth()`, `getCompletionEndpointHealthById()`, `testCompletionEndpoint()` |
 | Models | `listModels()`, `pullModel()`, `getPullStatus()`, `deleteModel()` |
 | Collections | `createCollection()`, `listCollections()`, `getCollection()`, `updateCollection()`, `deleteCollection()`, `collectionExists()`, `getCollectionDistinctLabels()`, `getCollectionDistinctTags()` |
+| Collection Search | `searchCollection()` |
 | Collection Records | `createCollectionRecord()`, `listCollectionRecords()`, `getCollectionRecord()`, `deleteCollectionRecord()`, `batchDeleteCollectionRecords()` |
+| Indices | `listIndices()`, `createIndex()`, `getIndex()`, `updateIndex()`, `deleteIndex()`, `indexExists()`, `updateIndexLabels()`, `updateIndexTags()`, `updateIndexCustomMetadata()`, `getIndexTopTerms()`, `searchIndex()` |
+| Index Records | `listIndexRecords()`, `createIndexRecord()`, `createIndexRecordsBatch()`, `checkIndexRecordsExist()`, `getIndexRecord()`, `indexRecordExists()`, `deleteIndexRecord()`, `deleteIndexRecords()`, `updateIndexRecordLabels()`, `updateIndexRecordTags()`, `updateIndexRecordCustomMetadata()` |
 | Buckets | `createBucket()`, `listBuckets()`, `getBucket()`, `deleteBucket()`, `bucketExists()`, `putBucketObject()`, `listBucketObjects()`, `deleteBucketObject()`, `getBucketObjectMetadata()`, `downloadBucketObject()` |
 | Crawl Plans | `createCrawlPlan()`, `listCrawlPlans()`, `getCrawlPlan()`, `updateCrawlPlan()`, `deleteCrawlPlan()`, `crawlPlanExists()`, `startCrawl()`, `stopCrawl()`, `testCrawlConnectivity()`, `enumerateCrawl()` |
 | Crawl Operations | `listCrawlOperations()`, `getCrawlPlanStatistics()`, `getCrawlOperation()`, `getCrawlOperationStatistics()`, `deleteCrawlOperation()`, `getCrawlOperationEnumeration()` |

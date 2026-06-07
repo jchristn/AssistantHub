@@ -308,12 +308,6 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                   <input className="form-input" type="text" value={settings.FaviconUrl} onChange={(e) => handleChange('FaviconUrl', e.target.value)} placeholder="Image URL for browser tab favicon" />
                 </div>
               </div>
-              <div className="form-group form-toggle">
-                <label>
-                  <input type="checkbox" checked={settings.LoadModelsOnChatOpen} onChange={(e) => handleChange('LoadModelsOnChatOpen', e.target.checked)} />
-                  <Tooltip text="Load or warm the configured endpoint models when a chat window is opened.">Load models on chat open</Tooltip>
-                </label>
-              </div>
             </div>
 
             <div className="settings-section">
@@ -356,6 +350,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                     {renderInferenceEndpointOptions('-- Use response endpoint --')}
                   </select>
                 </div>
+              </div>
+              <div className="form-group form-toggle">
+                <label>
+                  <input type="checkbox" checked={settings.LoadModelsOnChatOpen} onChange={(e) => handleChange('LoadModelsOnChatOpen', e.target.checked)} />
+                  <Tooltip text="Load or warm the configured endpoint models when a chat window is opened.">Load models on chat open</Tooltip>
+                </label>
               </div>
             </div>
 

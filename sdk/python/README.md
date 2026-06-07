@@ -158,6 +158,72 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
     print(overview.request_count, len(series.series or []), len(endpoints.endpoints or []))
 ```
 
+## Crawl Plans
+
+```python
+from assistanthub_sdk import (
+    AssistantHubClient,
+    CifsCrawlRepositorySettings,
+    CrawlPlan,
+    NfsCrawlRepositorySettings,
+    NfsVersion,
+    RepositoryType,
+    WebCrawlRepositorySettings,
+)
+
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
+    connectivity = client.test_crawl_plan_draft_connectivity(
+        CrawlPlan(
+            name="Website Connectivity Probe",
+            repository_type=RepositoryType.WEB,
+            repository_settings=WebCrawlRepositorySettings(
+                start_url="https://docs.example.com",
+                follow_links=False,
+            ),
+        )
+    )
+
+    web_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="Website Crawl",
+            repository_type=RepositoryType.WEB,
+            repository_settings=WebCrawlRepositorySettings(
+                start_url="https://docs.example.com",
+                max_depth=3,
+            ),
+        )
+    )
+
+    cifs_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="CIFS Share Crawl",
+            repository_type=RepositoryType.CIFS,
+            repository_settings=CifsCrawlRepositorySettings(
+                cifs_hostname="fileserver.example.com",
+                cifs_username="crawler",
+                cifs_password="secret",
+                cifs_share_name="content",
+                include_subdirectories=True,
+            ),
+        )
+    )
+
+    nfs_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="NFS Export Crawl",
+            repository_type=RepositoryType.NFS,
+            repository_settings=NfsCrawlRepositorySettings(
+                nfs_hostname="nfs.example.com",
+                nfs_user_id=1000,
+                nfs_group_id=1000,
+                nfs_share_name="/exports/content",
+                nfs_version=NfsVersion.V3,
+                include_subdirectories=True,
+            ),
+        )
+    )
+```
+
 ## Available Methods
 
 ### Assistants
@@ -311,6 +377,7 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 - `start_crawl(plan_id)` -- Start a crawl
 - `stop_crawl(plan_id)` -- Stop a crawl
 - `test_crawl_connectivity(plan_id)` -- Test connectivity
+- `test_crawl_plan_draft_connectivity(plan)` -- Test unsaved crawl plan settings
 - `enumerate_crawl_contents(plan_id)` -- Enumerate available contents
 
 ### Crawl Operations

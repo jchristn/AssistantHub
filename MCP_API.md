@@ -177,17 +177,65 @@ Streaming status:
 | Evaluation | `eval/fact/*`, `eval/run/*`, `eval/result/get`, `eval/judge-prompt/default` |
 | Runtime configuration | `configuration/get`, `configuration/update` |
 
+## Crawl Plan Repository Types
+
+The `crawlplan/create` and `crawlplan/update` tools accept a `planJson` string containing the same `CrawlPlan` JSON contract used by REST and the SDKs. Supported `RepositoryType` values are:
+
+| Value | Settings type | Notes |
+|---|---|---|
+| `Web` | `WebCrawlRepositorySettings` | Uses `StartUrl`, web authentication fields, link-following settings, sitemap/robots settings, depth, parallelism, and crawl delay. |
+| `CIFS` | `CifsCrawlRepositorySettings` | Uses `CifsHostname`, `CifsUsername`, `CifsPassword`, `CifsShareName`, and `IncludeSubdirectories`. |
+| `NFS` | `NfsCrawlRepositorySettings` | Uses `NfsHostname`, `NfsUserId`, `NfsGroupId`, `NfsShareName`, `NfsVersion`, and `IncludeSubdirectories`. |
+
+CIFS passwords, web passwords, bearer tokens, and API keys are secret-bearing repository settings. MCP responses are redacted by default when serialized through the helper layer; callers should keep `includeSecrets=false` unless raw settings are explicitly needed.
+
+Example CIFS `planJson` payload:
+
+```json
+{
+  "Name": "CIFS Share Crawl",
+  "RepositoryType": "CIFS",
+  "RepositorySettings": {
+    "RepositoryType": "CIFS",
+    "CifsHostname": "fileserver.example.com",
+    "CifsUsername": "crawler",
+    "CifsPassword": "secret",
+    "CifsShareName": "content",
+    "IncludeSubdirectories": true
+  }
+}
+```
+
+Example NFS `planJson` payload:
+
+```json
+{
+  "Name": "NFS Export Crawl",
+  "RepositoryType": "NFS",
+  "RepositorySettings": {
+    "RepositoryType": "NFS",
+    "NfsHostname": "nfs.example.com",
+    "NfsUserId": 1000,
+    "NfsGroupId": 1000,
+    "NfsShareName": "/exports/content",
+    "NfsVersion": "V3",
+    "IncludeSubdirectories": true
+  }
+}
+```
+
 ## Route Coverage Matrix
 
 `Mapped` means there is an MCP tool for the route family. `Deferred` means the route exists in REST but is intentionally not exposed from the current MCP release.
 
 | REST surface | MCP tools | Status | Notes |
 |---|---|---|---|
-| `GET /`, `HEAD /`, `GET /openapi.json`, `GET /v1.0/whoami` | `system/health`, `system/openapi`, `system/whoami` | Mapped | Health/head collapse into `system/health` |
+| `GET /`, `HEAD /`, `GET /openapi.json`, `GET /v1.0/openapi.json`, `GET /v1.0/whoami` | `system/health`, `system/openapi`, `system/whoami` | Mapped | Health/head collapse into `system/health`; both OpenAPI routes return the same document |
+| `GET /swagger` | None | Deferred | Browser Swagger UI; use `system/openapi` for the OpenAPI JSON from MCP |
 | `POST /v1.0/authenticate` | `auth/authenticate` | Mapped | Useful for diagnosing upstream auth |
 | `tenants` CRUD + HEAD | `tenant/list`, `tenant/get`, `tenant/create`, `tenant/update`, `tenant/delete`, `tenant/exists` | Mapped | |
-| `users` CRUD + HEAD | `user/list`, `user/get`, `user/create`, `user/update`, `user/delete`, `user/exists` | Mapped | |
-| `credentials` CRUD + HEAD | `credential/list`, `credential/get`, `credential/create`, `credential/update`, `credential/delete`, `credential/exists` | Mapped | `includeSecrets` opt-in |
+| tenant-scoped `users` CRUD + HEAD | `user/list`, `user/get`, `user/create`, `user/update`, `user/delete`, `user/exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/users...` |
+| tenant-scoped `credentials` CRUD + HEAD | `credential/list`, `credential/get`, `credential/create`, `credential/update`, `credential/delete`, `credential/exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/credentials...`; `includeSecrets` opt-in |
 | `buckets` CRUD + HEAD | `bucket/list`, `bucket/get`, `bucket/create`, `bucket/delete`, `bucket/exists` | Mapped | |
 | `bucket objects` list/put/delete/metadata/download/upload | `bucket/object/put`, `bucket/object/list`, `bucket/object/metadata`, `bucket/object/delete`, `bucket/object/download`, `bucket/object/upload` | Mapped | Binary transfers use base64 |
 | `collections` CRUD + HEAD + distinct metadata | `collection/list`, `collection/get`, `collection/create`, `collection/update`, `collection/delete`, `collection/exists`, `collection/labels/distinct`, `collection/tags/distinct` | Mapped | |
@@ -207,16 +255,19 @@ Streaming status:
 | `threads` list/get/create/delete | `thread/list`, `thread/get`, `thread/create`, `thread/delete` | Mapped | |
 | `requesthistory` list/summary/get/detail/delete/bulk-delete | `requesthistory/list`, `requesthistory/summary`, `requesthistory/get`, `requesthistory/detail`, `requesthistory/delete`, `requesthistory/bulk-delete` | Mapped | |
 | `embedding endpoints` CRUD + HEAD + health + test | `embeddingendpoint/list`, `embeddingendpoint/get`, `embeddingendpoint/create`, `embeddingendpoint/update`, `embeddingendpoint/delete`, `embeddingendpoint/exists`, `embeddingendpoint/health`, `embeddingendpoint/test` | Mapped | |
+| `embedding endpoint load` | None | Deferred | Use REST `POST /v1.0/endpoints/embedding/{endpointId}/load` |
 | `completion endpoints` CRUD + HEAD + health + test | `completionendpoint/list`, `completionendpoint/get`, `completionendpoint/create`, `completionendpoint/update`, `completionendpoint/delete`, `completionendpoint/exists`, `completionendpoint/health`, `completionendpoint/test` | Mapped | |
+| `completion endpoint load` | None | Deferred | Use REST `POST /v1.0/endpoints/completion/{endpointId}/load` |
 | `models` list/pull/pull-status/delete | `model/list`, `model/pull`, `model/pull/status`, `model/delete` | Mapped | |
 | `crawlplans` CRUD + HEAD + start/stop/connectivity/enumerate | `crawlplan/list`, `crawlplan/get`, `crawlplan/create`, `crawlplan/update`, `crawlplan/delete`, `crawlplan/exists`, `crawlplan/start`, `crawlplan/stop`, `crawlplan/connectivity`, `crawlplan/enumerate` | Mapped | |
+| `crawl plan draft connectivity` | None | Deferred | Use REST `POST /v1.0/crawlplans/connectivity` to test unsaved repository settings |
 | `crawl operations` list/get/delete/statistics/enumeration | `crawloperation/list`, `crawloperation/get`, `crawloperation/delete`, `crawloperation/statistics`, `crawloperation/enumeration` | Mapped | |
 | `eval facts` CRUD | `eval/fact/list`, `eval/fact/get`, `eval/fact/create`, `eval/fact/update`, `eval/fact/delete` | Mapped | |
 | `eval runs` create/list/get/delete/results | `eval/run/create`, `eval/run/list`, `eval/run/get`, `eval/run/delete`, `eval/run/results` | Mapped | |
 | `eval result` get + judge prompt | `eval/result/get`, `eval/judge-prompt/default` | Mapped | |
 | `eval stream` | None | Deferred | Use REST SSE endpoint |
 | `configuration` get/update | `configuration/get`, `configuration/update` | Mapped | `configuration/get` redacts by default |
-| Public assistant `chat`, `generate`, `compact`, `feedback`, `documents/{id}/download` | None | Deferred | Management-first release; use REST directly |
+| Public assistant `chat/open`, `chat`, `generate`, `compact`, `feedback`, `documents/{id}/download` | None | Deferred | Use REST directly |
 
 ## Example Tool Calls
 

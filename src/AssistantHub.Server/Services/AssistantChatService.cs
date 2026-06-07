@@ -445,7 +445,9 @@ namespace AssistantHub.Server.Services
             List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(request.Messages);
             string baseSystemPrompt = null;
             int systemMessageIndex = -1;
-            bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
+            bool hasSystemMessage = messages.Any(m =>
+                String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
+                && !IsConversationSummaryMessage(m));
             if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
             {
                 baseSystemPrompt = settings.SystemPrompt;
@@ -460,7 +462,8 @@ namespace AssistantHub.Server.Services
             {
                 for (int i = 0; i < messages.Count; i++)
                 {
-                    if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase))
+                    if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase)
+                        && !IsConversationSummaryMessage(messages[i]))
                     {
                         baseSystemPrompt = messages[i].Content;
                         messages[i] = new ChatCompletionMessage

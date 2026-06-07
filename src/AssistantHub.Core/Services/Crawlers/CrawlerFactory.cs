@@ -44,6 +44,14 @@ namespace AssistantHub.Core.Services.Crawlers
                     return new WebRepositoryCrawler(
                         logging, database, crawlPlan, crawlOperation,
                         ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.CIFS:
+                    return new CifsRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.NFS:
+                    return new NfsRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
                 default:
                     throw new NotSupportedException("Repository type " + type + " is not supported.");
             }

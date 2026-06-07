@@ -132,6 +132,22 @@ Optional environment variables:
 - `ASSISTANTHUB_URL` default: `http://localhost:6600`
 - `ASSISTANTHUB_API_KEY` default: `default`
 
+## File-Server Crawler Validation
+
+The default automated suite covers repository enum/model serialization, polymorphic repository settings, crawler factory registration, SDK payload models, and dashboard builds. CIFS and NFS network connectivity still requires an environment with reachable file servers.
+
+Manual validation checklist:
+
+- Create Web, CIFS, and NFS crawl plans in the dashboard Create Crawl Plan modal.
+- For CIFS, verify the AssistantHub server or container can resolve and reach the configured host/share with the configured username and password.
+- For NFS, verify the AssistantHub server or container can resolve and reach the export, and that `NfsUserId`, `NfsGroupId`, and `NfsVersion` match the export policy.
+- In the local Docker deployment, `localhost` inside the server container is not the host machine. The compose stack provides `host.docker.internal`, and AssistantHub maps loopback CIFS/NFS hostnames to that alias when it is resolvable.
+- Run `POST /v1.0/crawlplans/{id}/connectivity` before starting a full crawl.
+- Run `GET /v1.0/crawlplans/{id}/enumerate` and confirm file metadata is returned without downloading file bytes during enumeration.
+- Start a crawl against a small test share/export and confirm AssistantDocument records are created and ingestion starts for accepted files.
+
+The default Docker Compose stack does not add Samba or NFS fixtures. CIFS/NFS crawlers connect to remote file servers over the network and do not require extra AssistantHub volume mounts for remote repositories.
+
 ### Python SDK
 
 From `sdk/python`:

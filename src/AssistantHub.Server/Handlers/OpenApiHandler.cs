@@ -18,6 +18,43 @@ namespace AssistantHub.Server.Handlers
     /// </summary>
     public class OpenApiHandler : HandlerBase
     {
+        private const string SwaggerHtml = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AssistantHub Swagger</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #ffffff; }
+    #swagger-ui { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function () {
+      window.ui = SwaggerUIBundle({
+        url: "/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        displayRequestDuration: true,
+        persistAuthorization: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>
+""";
+
         private readonly OpenApiDocumentService _OpenApi;
 
         /// <summary>
@@ -57,6 +94,17 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// GET /swagger - Swagger UI.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetSwaggerAsync(HttpContextBase ctx)
+        {
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = "text/html; charset=utf-8";
+            await ctx.Response.Send(SwaggerHtml).ConfigureAwait(false);
         }
     }
 }

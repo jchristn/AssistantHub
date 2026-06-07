@@ -1,8 +1,7 @@
 namespace AssistantHub.Core.Models
 {
     using System;
-    using System.Text.Json;
-    using System.Text.Json.Serialization;
+    using System.Collections.Generic;
     using AssistantHub.Core.Enums;
 
     /// <summary>
@@ -26,6 +25,19 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public CrawlRepositorySettings()
         {
+        }
+
+        #endregion
+
+        #region Public-Methods
+
+        /// <summary>
+        /// Validate repository settings.
+        /// </summary>
+        /// <returns>Validation errors.</returns>
+        public virtual List<string> Validate()
+        {
+            return new List<string>();
         }
 
         #endregion

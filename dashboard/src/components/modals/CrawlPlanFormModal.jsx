@@ -3,29 +3,62 @@ import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 import PasswordInput from '../PasswordInput';
 
-const REPOSITORY_TYPES = ['Web'];
-const AUTH_TYPES = ['None', 'Basic', 'Bearer', 'ApiKey'];
+const REPOSITORY_TYPES = [
+  { value: 'Web', label: 'Web' },
+  { value: 'CIFS', label: 'CIFS File Server' },
+  { value: 'NFS', label: 'NFS File Server' },
+];
+
+const AUTH_TYPES = [
+  { value: 'None', label: 'None' },
+  { value: 'Basic', label: 'Basic' },
+  { value: 'BearerToken', label: 'Bearer Token' },
+  { value: 'ApiKey', label: 'API Key' },
+];
+
+const NFS_VERSIONS = ['V2', 'V3', 'V4'];
 const INTERVAL_TYPES = ['Minutes', 'Hours', 'Days', 'Weeks'];
 
-const defaultRepository = {
-  StartUrl: '',
-  AuthType: 'None',
-  Username: '',
-  Password: '',
-  BearerToken: '',
-  ApiKey: '',
-  UserAgent: '',
-  FollowLinks: true,
-  FollowRedirects: true,
-  ExtractSitemapLinks: true,
-  RestrictToChildUrls: true,
-  RestrictToSubdomain: true,
-  RestrictToRootDomain: true,
-  IgnoreRobotsTxt: false,
-  UseHeadlessBrowser: true,
-  MaxDepth: 5,
-  MaxParallelTasks: 4,
-  CrawlDelayMs: 100,
+const defaultRepositories = {
+  Web: {
+    RepositoryType: 'Web',
+    StartUrl: '',
+    AuthType: 'None',
+    Username: '',
+    Password: '',
+    BearerToken: '',
+    ApiKeyHeader: '',
+    ApiKey: '',
+    UserAgent: '',
+    FollowLinks: true,
+    FollowRedirects: true,
+    ExtractSitemapLinks: true,
+    RestrictToChildUrls: true,
+    RestrictToSubdomain: true,
+    RestrictToRootDomain: true,
+    IgnoreRobotsTxt: false,
+    UseHeadlessBrowser: true,
+    MaxDepth: 5,
+    MaxParallelTasks: 4,
+    CrawlDelayMs: 100,
+  },
+  CIFS: {
+    RepositoryType: 'CIFS',
+    CifsHostname: '',
+    CifsUsername: '',
+    CifsPassword: '',
+    CifsShareName: '',
+    IncludeSubdirectories: true,
+  },
+  NFS: {
+    RepositoryType: 'NFS',
+    NfsHostname: '',
+    NfsUserId: '',
+    NfsGroupId: '',
+    NfsShareName: '',
+    NfsVersion: 'V3',
+    IncludeSubdirectories: true,
+  },
 };
 
 const defaultSchedule = {
@@ -48,25 +81,64 @@ const defaultProcessing = {
   MaxDrainTasks: 4,
 };
 
-function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) {
+const getRepositoryDefaults = (repositoryType) => ({
+  ...(defaultRepositories[repositoryType] || defaultRepositories.Web),
+});
+
+const normalizeRepositorySettings = (repoSettings, repositoryType) => {
+  const selectedType = repoSettings?.RepositoryType || repositoryType || 'Web';
+  const defaults = getRepositoryDefaults(selectedType);
+  const normalized = {
+    ...defaults,
+    ...(repoSettings || {}),
+  };
+
+  if (selectedType === 'Web') {
+    normalized.AuthType = repoSettings?.AuthenticationType || repoSettings?.AuthType || defaults.AuthType;
+    normalized.ApiKey = repoSettings?.ApiKeyValue || repoSettings?.ApiKey || defaults.ApiKey;
+    normalized.ApiKeyHeader = repoSettings?.ApiKeyHeader || defaults.ApiKeyHeader;
+  }
+
+  if (selectedType === 'NFS') {
+    normalized.NfsUserId = repoSettings?.NfsUserId ?? defaults.NfsUserId;
+    normalized.NfsGroupId = repoSettings?.NfsGroupId ?? defaults.NfsGroupId;
+  }
+
+  return normalized;
+};
+
+const parseNumberOrDefault = (value, fallback) => {
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const parseOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) return undefined;
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+const isNonNegativeInteger = (value) => {
+  if (value === '' || value === null || value === undefined) return false;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0;
+};
+
+function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onTestConnectivity, onClose }) {
   const isEdit = !!plan;
 
   const repoSettings = plan?.RepositorySettings;
   const ingestionSettings = plan?.IngestionSettings;
   const filterSettings = plan?.Filter;
+  const initialRepositoryType = plan?.RepositoryType || repoSettings?.RepositoryType || 'Web';
 
   const [form, setForm] = useState({
     Name: plan?.Name || '',
-    RepositoryType: plan?.RepositoryType || 'Web',
+    RepositoryType: initialRepositoryType,
     IngestionRuleId: ingestionSettings?.IngestionRuleId || '',
     StoreInS3: ingestionSettings?.StoreInS3 ?? false,
     S3BucketName: ingestionSettings?.S3BucketName || '',
-    Repository: repoSettings ? {
-      ...defaultRepository,
-      ...repoSettings,
-      AuthType: repoSettings.AuthenticationType || 'None',
-      ApiKey: repoSettings.ApiKeyValue || '',
-    } : { ...defaultRepository },
+    Repository: normalizeRepositorySettings(repoSettings, initialRepositoryType),
     Schedule: plan?.Schedule ? { ...defaultSchedule, ...plan.Schedule } : { ...defaultSchedule },
     Filter: filterSettings ? {
       ObjectPrefix: filterSettings.ObjectPrefix || '',
@@ -93,6 +165,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
   }, [buckets]);
 
   const [saving, setSaving] = useState(false);
+  const [testingConnectivity, setTestingConnectivity] = useState(false);
+  const [connectivityResult, setConnectivityResult] = useState(null);
   const [generalOpen, setGeneralOpen] = useState(true);
   const [ingestionOpen, setIngestionOpen] = useState(false);
   const [repoOpen, setRepoOpen] = useState(false);
@@ -106,9 +180,19 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
   };
 
   const handleRepoChange = (field, value) => {
+    setConnectivityResult(null);
     setForm(prev => ({
       ...prev,
       Repository: { ...prev.Repository, [field]: value }
+    }));
+  };
+
+  const handleRepositoryTypeChange = (repositoryType) => {
+    setConnectivityResult(null);
+    setForm(prev => ({
+      ...prev,
+      RepositoryType: repositoryType,
+      Repository: getRepositoryDefaults(repositoryType),
     }));
   };
 
@@ -133,61 +217,140 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
     }));
   };
 
+  const buildRepositorySettings = () => {
+    if (form.RepositoryType === 'CIFS') {
+      return {
+        RepositoryType: 'CIFS',
+        CifsHostname: form.Repository.CifsHostname,
+        CifsUsername: form.Repository.CifsUsername,
+        CifsPassword: form.Repository.CifsPassword,
+        CifsShareName: form.Repository.CifsShareName,
+        IncludeSubdirectories: form.Repository.IncludeSubdirectories,
+      };
+    }
+
+    if (form.RepositoryType === 'NFS') {
+      return {
+        RepositoryType: 'NFS',
+        NfsHostname: form.Repository.NfsHostname,
+        NfsUserId: parseOptionalNumber(form.Repository.NfsUserId),
+        NfsGroupId: parseOptionalNumber(form.Repository.NfsGroupId),
+        NfsShareName: form.Repository.NfsShareName,
+        NfsVersion: form.Repository.NfsVersion || 'V3',
+        IncludeSubdirectories: form.Repository.IncludeSubdirectories,
+      };
+    }
+
+    return {
+      RepositoryType: 'Web',
+      StartUrl: form.Repository.StartUrl,
+      AuthenticationType: form.Repository.AuthType,
+      ...(form.Repository.AuthType === 'Basic' ? { Username: form.Repository.Username, Password: form.Repository.Password } : {}),
+      ...(form.Repository.AuthType === 'BearerToken' ? { BearerToken: form.Repository.BearerToken } : {}),
+      ...(form.Repository.AuthType === 'ApiKey' ? { ApiKeyHeader: form.Repository.ApiKeyHeader, ApiKeyValue: form.Repository.ApiKey } : {}),
+      UserAgent: form.Repository.UserAgent || undefined,
+      FollowLinks: form.Repository.FollowLinks,
+      FollowRedirects: form.Repository.FollowRedirects,
+      ExtractSitemapLinks: form.Repository.ExtractSitemapLinks,
+      RestrictToChildUrls: form.Repository.RestrictToChildUrls,
+      RestrictToSubdomain: form.Repository.RestrictToSubdomain,
+      RestrictToRootDomain: form.Repository.RestrictToRootDomain,
+      IgnoreRobotsTxt: form.Repository.IgnoreRobotsTxt,
+      UseHeadlessBrowser: form.Repository.UseHeadlessBrowser,
+      MaxDepth: parseNumberOrDefault(form.Repository.MaxDepth, 5),
+      MaxParallelTasks: parseNumberOrDefault(form.Repository.MaxParallelTasks, 8),
+      CrawlDelayMs: parseNumberOrDefault(form.Repository.CrawlDelayMs, 100),
+    };
+  };
+
+  const isRepositoryValid = () => {
+    if (form.RepositoryType === 'CIFS') {
+      return !!(
+        form.Repository.CifsHostname?.trim()
+        && form.Repository.CifsUsername?.trim()
+        && form.Repository.CifsPassword?.trim()
+        && form.Repository.CifsShareName?.trim()
+      );
+    }
+
+    if (form.RepositoryType === 'NFS') {
+      return !!(
+        form.Repository.NfsHostname?.trim()
+        && isNonNegativeInteger(form.Repository.NfsUserId)
+        && isNonNegativeInteger(form.Repository.NfsGroupId)
+        && form.Repository.NfsShareName?.trim()
+      );
+    }
+
+    return !!form.Repository.StartUrl?.trim();
+  };
+
+  const buildCrawlPlanPayload = () => {
+    const data = {
+      Name: form.Name,
+      RepositoryType: form.RepositoryType,
+      IngestionSettings: {
+        IngestionRuleId: form.IngestionRuleId || undefined,
+        StoreInS3: form.StoreInS3,
+        S3BucketName: form.StoreInS3 ? form.S3BucketName : undefined,
+      },
+      RepositorySettings: buildRepositorySettings(),
+      Schedule: {
+        IntervalType: form.Schedule.IntervalType,
+        IntervalValue: parseNumberOrDefault(form.Schedule.IntervalValue, 24),
+      },
+      Filter: {
+        ObjectPrefix: form.Filter.ObjectPrefix || undefined,
+        ObjectSuffix: form.Filter.ObjectSuffix || undefined,
+        AllowedContentTypes: form.Filter.AllowedContentTypes
+          ? form.Filter.AllowedContentTypes.split(',').map(s => s.trim()).filter(Boolean)
+          : undefined,
+        MinimumSize: parseOptionalNumber(form.Filter.MinimumSize),
+        MaximumSize: parseOptionalNumber(form.Filter.MaximumSize),
+      },
+      ProcessAdditions: form.Processing.ProcessAdditions,
+      ProcessUpdates: form.Processing.ProcessUpdates,
+      ProcessDeletions: form.Processing.ProcessDeletions,
+      MaxDrainTasks: parseNumberOrDefault(form.Processing.MaxDrainTasks, 8),
+      RetentionDays: form.RetentionDays !== '' ? parseNumberOrDefault(form.RetentionDays, 7) : 7,
+    };
+
+    if (isEdit && (plan.Id || plan.GUID)) {
+      data.Id = plan.Id || plan.GUID;
+      data.GUID = plan.GUID || plan.Id;
+    }
+
+    return data;
+  };
+
+  const handleTestConnectivity = async () => {
+    if (!onTestConnectivity || testingConnectivity || !isRepositoryValid()) return;
+
+    setTestingConnectivity(true);
+    setConnectivityResult({ success: null, message: 'Testing repository connectivity...' });
+
+    try {
+      const result = await onTestConnectivity(buildCrawlPlanPayload());
+      const success = result?.Success ?? result?.success ?? false;
+      setConnectivityResult({
+        success,
+        message: result?.Message || result?.message || (success ? 'Repository connectivity verified.' : 'Repository is not reachable with the supplied settings.'),
+      });
+    } catch (err) {
+      setConnectivityResult({
+        success: false,
+        message: err.message || 'Connectivity test failed.',
+      });
+    } finally {
+      setTestingConnectivity(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const data = {
-        Name: form.Name,
-        RepositoryType: form.RepositoryType,
-        IngestionSettings: {
-          IngestionRuleId: form.IngestionRuleId || undefined,
-          StoreInS3: form.StoreInS3,
-          S3BucketName: form.StoreInS3 ? form.S3BucketName : undefined,
-        },
-        RepositorySettings: {
-          StartUrl: form.Repository.StartUrl,
-          AuthenticationType: form.Repository.AuthType,
-          ...(form.Repository.AuthType === 'Basic' ? { Username: form.Repository.Username, Password: form.Repository.Password } : {}),
-          ...(form.Repository.AuthType === 'Bearer' ? { BearerToken: form.Repository.BearerToken } : {}),
-          ...(form.Repository.AuthType === 'ApiKey' ? { ApiKeyValue: form.Repository.ApiKey } : {}),
-          UserAgent: form.Repository.UserAgent || undefined,
-          FollowLinks: form.Repository.FollowLinks,
-          FollowRedirects: form.Repository.FollowRedirects,
-          ExtractSitemapLinks: form.Repository.ExtractSitemapLinks,
-          RestrictToChildUrls: form.Repository.RestrictToChildUrls,
-          RestrictToSubdomain: form.Repository.RestrictToSubdomain,
-          RestrictToRootDomain: form.Repository.RestrictToRootDomain,
-          IgnoreRobotsTxt: form.Repository.IgnoreRobotsTxt,
-          UseHeadlessBrowser: form.Repository.UseHeadlessBrowser,
-          MaxDepth: parseInt(form.Repository.MaxDepth) || 5,
-          MaxParallelTasks: parseInt(form.Repository.MaxParallelTasks) || 8,
-          CrawlDelayMs: parseInt(form.Repository.CrawlDelayMs) ?? 100,
-        },
-        Schedule: {
-          IntervalType: form.Schedule.IntervalType,
-          IntervalValue: parseInt(form.Schedule.IntervalValue) || 24,
-        },
-        Filter: {
-          ObjectPrefix: form.Filter.ObjectPrefix || undefined,
-          ObjectSuffix: form.Filter.ObjectSuffix || undefined,
-          AllowedContentTypes: form.Filter.AllowedContentTypes
-            ? form.Filter.AllowedContentTypes.split(',').map(s => s.trim()).filter(Boolean)
-            : undefined,
-          MinimumSize: form.Filter.MinimumSize !== '' ? parseInt(form.Filter.MinimumSize) : undefined,
-          MaximumSize: form.Filter.MaximumSize !== '' ? parseInt(form.Filter.MaximumSize) : undefined,
-        },
-        ProcessAdditions: form.Processing.ProcessAdditions,
-        ProcessUpdates: form.Processing.ProcessUpdates,
-        ProcessDeletions: form.Processing.ProcessDeletions,
-        MaxDrainTasks: parseInt(form.Processing.MaxDrainTasks) || 8,
-        RetentionDays: form.RetentionDays !== '' ? parseInt(form.RetentionDays) : 7,
-      };
-      if (isEdit && (plan.Id || plan.GUID)) {
-        data.Id = plan.Id || plan.GUID;
-        data.GUID = plan.GUID || plan.Id;
-      }
-      await onSave(data);
+      await onSave(buildCrawlPlanPayload());
     } finally {
       setSaving(false);
     }
@@ -214,7 +377,7 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={saving || !form.Name.trim()}
+            disabled={saving || !form.Name.trim() || !isRepositoryValid()}
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -235,8 +398,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
               </div>
               <div className="form-group">
                 <label><Tooltip text="Repository type to crawl">Repository Type</Tooltip></label>
-                <select value={form.RepositoryType} onChange={(e) => handleChange('RepositoryType', e.target.value)}>
-                  {REPOSITORY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                <select value={form.RepositoryType} onChange={(e) => handleRepositoryTypeChange(e.target.value)}>
+                  {REPOSITORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
             </div>
@@ -291,6 +454,8 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
           </button>
           {repoOpen && (
             <div style={{ marginTop: '0.5rem' }}>
+              {form.RepositoryType === 'Web' && (
+                <>
               <div className="form-group">
                 <label><Tooltip text="Starting URL for the web crawl">Start URL</Tooltip></label>
                 <input type="text" value={form.Repository.StartUrl} onChange={(e) => handleRepoChange('StartUrl', e.target.value)} placeholder="https://example.com" />
@@ -298,7 +463,7 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
               <div className="form-group">
                 <label><Tooltip text="Authentication type for accessing the repository">Auth Type</Tooltip></label>
                 <select value={form.Repository.AuthType} onChange={(e) => handleRepoChange('AuthType', e.target.value)}>
-                  {AUTH_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  {AUTH_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               {form.Repository.AuthType === 'Basic' && (
@@ -313,17 +478,23 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
                   </div>
                 </>
               )}
-              {form.Repository.AuthType === 'Bearer' && (
+              {form.Repository.AuthType === 'BearerToken' && (
                 <div className="form-group">
                   <label><Tooltip text="Bearer token for authentication">Bearer Token</Tooltip></label>
                   <PasswordInput value={form.Repository.BearerToken} onChange={(e) => handleRepoChange('BearerToken', e.target.value)} />
                 </div>
               )}
               {form.Repository.AuthType === 'ApiKey' && (
-                <div className="form-group">
-                  <label><Tooltip text="API key for authentication">API Key</Tooltip></label>
-                  <PasswordInput value={form.Repository.ApiKey} onChange={(e) => handleRepoChange('ApiKey', e.target.value)} />
-                </div>
+                <>
+                  <div className="form-group">
+                    <label><Tooltip text="Header name used to send the API key">API Key Header</Tooltip></label>
+                    <input type="text" value={form.Repository.ApiKeyHeader} onChange={(e) => handleRepoChange('ApiKeyHeader', e.target.value)} placeholder="x-api-key" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="API key for authentication">API Key</Tooltip></label>
+                    <PasswordInput value={form.Repository.ApiKey} onChange={(e) => handleRepoChange('ApiKey', e.target.value)} />
+                  </div>
+                </>
               )}
               <div className="form-group">
                 <label><Tooltip text="User agent string sent with HTTP requests. Default: assistanthub-crawler">User Agent</Tooltip></label>
@@ -414,6 +585,97 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onClose }) 
               <div className="form-group">
                 <label><Tooltip text="Delay in milliseconds between consecutive requests to the same host. Range: 0-60000, default: 100">Crawl Delay (ms)</Tooltip></label>
                 <input type="number" value={form.Repository.CrawlDelayMs} onChange={(e) => handleRepoChange('CrawlDelayMs', e.target.value)} min="0" max="60000" step="100" />
+              </div>
+                </>
+              )}
+              {form.RepositoryType === 'CIFS' && (
+                <>
+                  <div className="form-group">
+                    <label><Tooltip text="Hostname or IP address of the CIFS file server">Hostname</Tooltip></label>
+                    <input type="text" value={form.Repository.CifsHostname} onChange={(e) => handleRepoChange('CifsHostname', e.target.value)} placeholder="fileserver.example.com" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="Username used to connect to the CIFS share">Username</Tooltip></label>
+                    <input type="text" value={form.Repository.CifsUsername} onChange={(e) => handleRepoChange('CifsUsername', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="Password used to connect to the CIFS share">Password</Tooltip></label>
+                    <PasswordInput value={form.Repository.CifsPassword} onChange={(e) => handleRepoChange('CifsPassword', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="Name of the CIFS share to crawl">Share Name</Tooltip></label>
+                    <input type="text" value={form.Repository.CifsShareName} onChange={(e) => handleRepoChange('CifsShareName', e.target.value)} placeholder="share" />
+                  </div>
+                  <div className="form-group">
+                    <div className="form-toggle">
+                      <label className="toggle-switch">
+                        <input type="checkbox" checked={form.Repository.IncludeSubdirectories} onChange={(e) => handleRepoChange('IncludeSubdirectories', e.target.checked)} />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span><Tooltip text="Include files below the share root in nested directories">Include Subdirectories</Tooltip></span>
+                    </div>
+                  </div>
+                </>
+              )}
+              {form.RepositoryType === 'NFS' && (
+                <>
+                  <div className="form-group">
+                    <label><Tooltip text="Hostname or IP address of the NFS file server">Hostname</Tooltip></label>
+                    <input type="text" value={form.Repository.NfsHostname} onChange={(e) => handleRepoChange('NfsHostname', e.target.value)} placeholder="nfs.example.com" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="Numeric NFS user ID used when connecting. Minimum: 0">User ID</Tooltip></label>
+                    <input type="number" value={form.Repository.NfsUserId} onChange={(e) => handleRepoChange('NfsUserId', e.target.value)} min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="Numeric NFS group ID used when connecting. Minimum: 0">Group ID</Tooltip></label>
+                    <input type="number" value={form.Repository.NfsGroupId} onChange={(e) => handleRepoChange('NfsGroupId', e.target.value)} min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="NFS export or share path to crawl">Share Name</Tooltip></label>
+                    <input type="text" value={form.Repository.NfsShareName} onChange={(e) => handleRepoChange('NfsShareName', e.target.value)} placeholder="/exports/content" />
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="NFS protocol version. Default: V3">NFS Version</Tooltip></label>
+                    <select value={form.Repository.NfsVersion} onChange={(e) => handleRepoChange('NfsVersion', e.target.value)}>
+                      {NFS_VERSIONS.map(version => <option key={version} value={version}>{version}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <div className="form-toggle">
+                      <label className="toggle-switch">
+                        <input type="checkbox" checked={form.Repository.IncludeSubdirectories} onChange={(e) => handleRepoChange('IncludeSubdirectories', e.target.checked)} />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span><Tooltip text="Include files below the export root in nested directories">Include Subdirectories</Tooltip></span>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="form-group">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleTestConnectivity}
+                  disabled={!onTestConnectivity || testingConnectivity || !isRepositoryValid()}
+                >
+                  {testingConnectivity ? 'Testing...' : 'Test Connectivity'}
+                </button>
+                {connectivityResult && (
+                  <div
+                    style={{
+                      marginTop: '0.5rem',
+                      fontSize: '0.875rem',
+                      color: connectivityResult.success === true
+                        ? 'var(--success-color, #15803d)'
+                        : connectivityResult.success === null
+                          ? 'var(--text-secondary)'
+                          : 'var(--danger-color, #b91c1c)',
+                    }}
+                  >
+                    {connectivityResult.message}
+                  </div>
+                )}
               </div>
             </div>
           )}

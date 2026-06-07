@@ -20,6 +20,8 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const recentWaitMessages = useRef([]);
   const abortControllerRef = useRef(null);
   const chatOpenModelLoadRef = useRef(null);
+  const autoCompactionRunRef = useRef(0);
+  const lastAutoCompactionSignatureRef = useRef(null);
 
   function pickWaitMessage() {
     const available = WAIT_MESSAGES.filter(m => !recentWaitMessages.current.includes(m));
@@ -87,6 +89,8 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     setChatName(null);
     setContextUsage(null);
     titleRequestedRef.current = false;
+    autoCompactionRunRef.current += 1;
+    lastAutoCompactionSignatureRef.current = null;
     setAssistant(null);
     setThreadId(localStorage.getItem(`ah_thread_${assistantId}`) || null);
     setMetadataFilter(null);
@@ -182,10 +186,104 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     }
   }, [input]);
 
+  const isConversationSummaryMessage = (message) => {
+    const role = message.role || message.Role;
+    const content = message.content || message.Content || '';
+    return String(role).toLowerCase() === 'system' && content.startsWith('[Conversation Summary]');
+  };
+
+  const normalizeCompactMessages = (compactMessages) => {
+    return compactMessages.map(m => {
+      const normalized = {
+        role: m.role || m.Role,
+        content: m.content || m.Content || ''
+      };
+      if (isConversationSummaryMessage(m)) {
+        normalized.hidden = true;
+      }
+      return normalized;
+    });
+  };
+
+  const appendAssistantMessageIfMissing = (targetMessages, assistantContent, userMessage, citations) => {
+    const lastMessage = targetMessages.length > 0 ? targetMessages[targetMessages.length - 1] : null;
+    const alreadyPresent = lastMessage
+      && lastMessage.role === 'assistant'
+      && lastMessage.content === assistantContent;
+
+    if (!alreadyPresent) {
+      targetMessages.push({
+        role: 'assistant',
+        content: assistantContent,
+        userMessage,
+        citations: citations || null
+      });
+    }
+  };
+
+  const getChatMessages = (sourceMessages) => {
+    return sourceMessages
+      .filter(m => !m.isError && !m.isSystem)
+      .map(({ role, content }) => ({ role, content }));
+  };
+
+  const buildCompactionSignature = (compactionMessages) => {
+    return JSON.stringify(compactionMessages.map(m => [m.role, m.content]));
+  };
+
+  const cancelAutomaticCompaction = () => {
+    autoCompactionRunRef.current += 1;
+    setCompacting(false);
+  };
+
+  const scheduleAutomaticCompaction = (usage, compactionMessages, assistantContent, userMessage, citations, currentThreadId) => {
+    if (!usage || !usage.context_window || usage.context_window <= 0) return;
+
+    const usageRatio = (usage.total_tokens || 0) / usage.context_window;
+    if (usageRatio < 0.75 || compactionMessages.length < 3) return;
+
+    const signature = buildCompactionSignature(compactionMessages);
+    if (signature === lastAutoCompactionSignatureRef.current) return;
+    lastAutoCompactionSignatureRef.current = signature;
+
+    const runId = autoCompactionRunRef.current + 1;
+    autoCompactionRunRef.current = runId;
+    setCompacting(true);
+
+    setTimeout(() => {
+      void (async () => {
+        try {
+          const compactResult = await ApiClient.compact(serverUrl, assistantId, compactionMessages, currentThreadId);
+          if (autoCompactionRunRef.current !== runId) return;
+
+          if (compactResult.messages) {
+            const compacted = normalizeCompactMessages(compactResult.messages);
+            appendAssistantMessageIfMissing(compacted, assistantContent, userMessage, citations);
+            compacted.push({
+              role: 'system',
+              content: 'Conversation automatically compacted to free up context space.',
+              isSystem: true
+            });
+            setMessages(compacted);
+          }
+          if (compactResult.usage && autoCompactionRunRef.current === runId) {
+            setContextUsage(compactResult.usage);
+          }
+        } catch (compactErr) {
+          console.error('Pre-emptive compaction failed:', compactErr);
+        } finally {
+          if (autoCompactionRunRef.current === runId) {
+            setCompacting(false);
+          }
+        }
+      })();
+    }, 0);
+  };
+
   const generateChatTitle = async (conversationMessages) => {
     try {
       const titleMessages = [
-        ...conversationMessages.filter(m => !m.isError).map(({ role, content }) => ({ role, content })),
+        ...conversationMessages.filter(m => !m.isError && !m.isSystem && !m.hidden).map(({ role, content }) => ({ role, content })),
         {
           role: 'user',
           content: 'Generate a short title (max 6 words) for this conversation. Reply with ONLY the title text, nothing else.'
@@ -210,10 +308,12 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     setFeedbackSent({});
     setError(null);
     setContextUsage(null);
+    cancelAutomaticCompaction();
+    lastAutoCompactionSignatureRef.current = null;
   };
 
   const handleCompact = async () => {
-    const chatMessages = messages.filter(m => !m.isError && !m.isSystem).map(({ role, content }) => ({ role, content }));
+    const chatMessages = getChatMessages(messages);
     if (chatMessages.length < 3) {
       setMessages(prev => [...prev, { role: 'system', content: 'Not enough conversation to compact.', isSystem: true }]);
       return;
@@ -224,10 +324,10 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     try {
       const result = await ApiClient.compact(serverUrl, assistantId, chatMessages, threadId);
       if (result.messages) {
-        const compacted = result.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content }));
+        const compacted = normalizeCompactMessages(result.messages);
         const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.isError);
         if (lastAssistant) {
-          compacted.push({ role: 'assistant', content: lastAssistant.content, userMessage: lastAssistant.userMessage, citations: lastAssistant.citations || null });
+          appendAssistantMessageIfMissing(compacted, lastAssistant.content, lastAssistant.userMessage, lastAssistant.citations);
         }
         compacted.push({ role: 'system', content: 'Conversation compacted successfully.', isSystem: true });
         setMessages(compacted);
@@ -283,6 +383,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     const userMessage = input.trim();
+    cancelAutomaticCompaction();
     setInput('');
 
     // Handle slash commands
@@ -331,9 +432,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
       }
 
       const updatedMessages = [...messages, { role: 'user', content: userMessage }];
-      const chatMessages = updatedMessages
-        .filter(m => !m.isError && !m.isSystem)
-        .map(({ role, content }) => ({ role, content }));
+      const chatMessages = getChatMessages(updatedMessages);
 
       let streamingIndex = null;
       let compactionDetected = false;
@@ -406,37 +505,10 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         }
       }
 
-      if (hadSuccess && result.usage && result.usage.context_window > 0) {
-        const usageRatio = (result.usage.total_tokens || 0) / result.usage.context_window;
-        if (usageRatio >= 0.75) {
-          const assistantContent = result.choices[0].message.content;
-          const messagesForCompaction = [...chatMessages, { role: 'assistant', content: assistantContent }];
-          if (messagesForCompaction.length >= 3) {
-            try {
-              const compactResult = await ApiClient.compact(serverUrl, assistantId, messagesForCompaction, currentThreadId);
-              if (compactResult.messages) {
-                const compacted = compactResult.messages.map(m => ({ role: m.role || m.Role, content: m.content || m.Content }));
-                compacted.push({
-                  role: 'assistant',
-                  content: assistantContent,
-                  userMessage,
-                  citations: result.citations || null
-                });
-                compacted.push({
-                  role: 'system',
-                  content: 'Conversation automatically compacted to free up context space.',
-                  isSystem: true
-                });
-                setMessages(compacted);
-              }
-              if (compactResult.usage) {
-                setContextUsage(compactResult.usage);
-              }
-            } catch (compactErr) {
-              console.error('Pre-emptive compaction failed:', compactErr);
-            }
-          }
-        }
+      if (hadSuccess && result.choices && result.choices.length > 0) {
+        const assistantContent = result.choices[0].message.content;
+        const messagesForCompaction = [...chatMessages, { role: 'assistant', content: assistantContent }];
+        scheduleAutomaticCompaction(result.usage, messagesForCompaction, assistantContent, userMessage, result.citations, currentThreadId);
       }
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -487,7 +559,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
     try {
       const messageHistory = messages
-        .filter(m => !m.isError)
+        .filter(m => !m.isError && !m.isSystem && !m.hidden)
         .map(({ role, content }) => ({ role, content }));
 
       await ApiClient.submitFeedback(serverUrl, {
@@ -664,6 +736,8 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             </div>
           )}
           {messages.map((msg, idx) => {
+            if (msg.hidden) return null;
+
             codeBlockCounter.current = 0;
 
             if (msg.isSystem) {

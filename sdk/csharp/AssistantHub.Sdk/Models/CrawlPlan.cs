@@ -43,7 +43,8 @@ namespace AssistantHub.Sdk.Models
         /// Repository settings.
         /// </summary>
         [JsonPropertyName("RepositorySettings")]
-        public WebCrawlRepositorySettings RepositorySettings { get; set; }
+        [JsonConverter(typeof(CrawlRepositorySettingsConverter))]
+        public CrawlRepositorySettings RepositorySettings { get; set; }
 
         /// <summary>
         /// Schedule settings.

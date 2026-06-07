@@ -8,6 +8,7 @@ namespace Test.Automated
     using System.Net;
     using System.Net.Http;
     using System.Reflection;
+    using System.Runtime.CompilerServices;
     using System.Text;
     using System.Text.Json;
     using System.Threading;
@@ -18,9 +19,11 @@ namespace Test.Automated
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
+    using AssistantHub.Core.Services.Crawlers;
     using AssistantHub.Core.Settings;
     using AssistantHub.Server;
     using AssistantHub.Server.Services;
+    using Blobject.Core;
     using SyslogLogging;
     using Test.Shared;
 
@@ -29,6 +32,223 @@ namespace Test.Automated
         public async Task<IReadOnlyList<AutomatedTestResult>> RunAsync()
         {
             ClearResults();
+
+            await ExecuteTestAsync("CrawlerFactory.Create: returns crawler for each repository type", async () =>
+            {
+                LoggingModule logging = CreateSilentLogging();
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                CrawlOperation operation = new CrawlOperation();
+
+                CrawlPlan webPlan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.Web,
+                    RepositorySettings = new WebCrawlRepositorySettings
+                    {
+                        StartUrl = "https://example.com"
+                    }
+                };
+
+                using (CrawlerBase webCrawler = CrawlerFactory.Create(
+                    RepositoryTypeEnum.Web,
+                    logging,
+                    database,
+                    webPlan,
+                    operation,
+                    null,
+                    null,
+                    null,
+                    "./crawl-enumerations/",
+                    CancellationToken.None))
+                {
+                    AssertHelper.IsTrue(webCrawler is WebRepositoryCrawler, "web crawler type");
+                }
+
+                CrawlPlan cifsPlan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "localhost",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content"
+                    }
+                };
+
+                using (CrawlerBase cifsCrawler = CrawlerFactory.Create(
+                    RepositoryTypeEnum.CIFS,
+                    logging,
+                    database,
+                    cifsPlan,
+                    operation,
+                    null,
+                    null,
+                    null,
+                    "./crawl-enumerations/",
+                    CancellationToken.None))
+                {
+                    AssertHelper.IsTrue(cifsCrawler is CifsRepositoryCrawler, "CIFS crawler type");
+                }
+
+                CrawlPlan nfsPlan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.NFS,
+                    RepositorySettings = new NfsCrawlRepositorySettings
+                    {
+                        NfsHostname = "localhost",
+                        NfsUserId = 1000,
+                        NfsGroupId = 1000,
+                        NfsShareName = "/exports/content",
+                        NfsVersion = NfsVersionEnum.V3
+                    }
+                };
+
+                using (CrawlerBase nfsCrawler = CrawlerFactory.Create(
+                    RepositoryTypeEnum.NFS,
+                    logging,
+                    database,
+                    nfsPlan,
+                    operation,
+                    null,
+                    null,
+                    null,
+                    "./crawl-enumerations/",
+                    CancellationToken.None))
+                {
+                    AssertHelper.IsTrue(nfsCrawler is NfsRepositoryCrawler, "NFS crawler type");
+                }
+            });
+
+            await ExecuteTestAsync("FileServerRepositoryCrawlerBase.ValidateConnectivity: checks configured repository root", async () =>
+            {
+                FakeBlobClient blob = new FakeBlobClient();
+                CrawlPlan plan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "localhost",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content"
+                    }
+                };
+
+                using (TestFileServerCrawler crawler = new TestFileServerCrawler(
+                    CreateSilentLogging(),
+                    new MockDatabaseDriver(),
+                    plan,
+                    new CrawlOperation(),
+                    blob,
+                    true))
+                {
+                    CrawlConnectivityResult result = await crawler.GetConnectivityStatusAsync().ConfigureAwait(false);
+                    AssertHelper.IsTrue(result.Success, "connectivity should succeed");
+                    AssertHelper.StringContains(result.Message, "share/export 'content'", "connectivity success share detail");
+                    AssertHelper.StringContains(result.Message, "user 'crawler'", "connectivity success principal detail");
+                    AssertHelper.AreEqual(1, blob.ValidateConnectivityCount, "host validation count");
+                    AssertHelper.AreEqual(1, blob.GetMetadataCount, "root metadata validation count");
+                    AssertHelper.AreEqual(String.Empty, blob.LastMetadataKey, "root metadata key");
+                }
+            });
+
+            await ExecuteTestAsync("FileServerRepositoryCrawlerBase.ValidateConnectivity: fails when configured repository root is inaccessible", async () =>
+            {
+                FakeBlobClient blob = new FakeBlobClient();
+                blob.ThrowOnGetMetadata = true;
+
+                CrawlPlan plan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "localhost",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content"
+                    }
+                };
+
+                using (TestFileServerCrawler crawler = new TestFileServerCrawler(
+                    CreateSilentLogging(),
+                    new MockDatabaseDriver(),
+                    plan,
+                    new CrawlOperation(),
+                    blob,
+                    true))
+                {
+                    CrawlConnectivityResult result = await crawler.GetConnectivityStatusAsync().ConfigureAwait(false);
+                    AssertHelper.IsFalse(result.Success, "connectivity should fail");
+                    AssertHelper.StringContains(result.Message, "share/export 'content'", "connectivity failure share detail");
+                    AssertHelper.StringContains(result.Message, "user 'crawler'", "connectivity failure principal detail");
+                    AssertHelper.StringContains(result.Message, "username, password", "connectivity failure credential guidance");
+                    AssertHelper.StringContains(result.Message, "metadata unavailable", "connectivity failure exception detail");
+                    AssertHelper.AreEqual(1, blob.ValidateConnectivityCount, "host validation count");
+                    AssertHelper.AreEqual(1, blob.GetMetadataCount, "root metadata validation count");
+                }
+            });
+
+            await ExecuteTestAsync("FileServerRepositoryCrawlerBase.EnumerateContentsAsync: sends non-null Blobject filters", async () =>
+            {
+                FakeBlobClient blob = new FakeBlobClient();
+                blob.ThrowOnNullPrefix = true;
+                blob.Objects.Add(new BlobMetadata
+                {
+                    Key = "alpha.txt",
+                    IsFolder = false,
+                    ContentLength = 5,
+                    ContentType = "text/plain"
+                });
+
+                CrawlPlan plan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "localhost",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content"
+                    },
+                    Filter = new CrawlFilterSettings()
+                };
+
+                using (TestFileServerCrawler crawler = new TestFileServerCrawler(
+                    CreateSilentLogging(),
+                    new MockDatabaseDriver(),
+                    plan,
+                    new CrawlOperation(),
+                    blob,
+                    true))
+                {
+                    List<CrawledObject> objects = await crawler.EnumerateContentsAsync().ConfigureAwait(false);
+                    AssertHelper.HasCount(objects, 1, "enumerated object count");
+                    AssertHelper.IsNotNull(blob.LastAsyncFilter, "async enumeration filter");
+                    AssertHelper.AreEqual(String.Empty, blob.LastAsyncFilter.Prefix, "prefix should be empty string");
+                    AssertHelper.AreEqual(String.Empty, blob.LastAsyncFilter.Suffix, "suffix should be empty string");
+                }
+            });
+
+            await ExecuteTestAsync("FileServerRepositoryCrawlerBase.ResolveEffectiveHostname: maps Docker localhost to host gateway", async () =>
+            {
+                string resolved = TestFileServerCrawler.ResolveHostnameForTest("localhost", true, true);
+                AssertHelper.AreEqual("host.docker.internal", resolved, "container localhost mapping");
+
+                string loopbackResolved = TestFileServerCrawler.ResolveHostnameForTest("127.0.0.1", true, true);
+                AssertHelper.AreEqual("host.docker.internal", loopbackResolved, "container loopback mapping");
+            });
+
+            await ExecuteTestAsync("FileServerRepositoryCrawlerBase.ResolveEffectiveHostname: preserves localhost outside Docker or without host alias", async () =>
+            {
+                string outsideDocker = TestFileServerCrawler.ResolveHostnameForTest("localhost", false, true);
+                AssertHelper.AreEqual("localhost", outsideDocker, "outside Docker mapping");
+
+                string noAlias = TestFileServerCrawler.ResolveHostnameForTest("localhost", true, false);
+                AssertHelper.AreEqual("localhost", noAlias, "missing host alias mapping");
+
+                string remote = TestFileServerCrawler.ResolveHostnameForTest("fileserver", true, true);
+                AssertHelper.AreEqual("fileserver", remote, "remote hostname mapping");
+            });
 
             await ExecuteTestAsync("SlackAssistantUtilities.BuildThreadId: deterministic for same input", async () =>
             {
@@ -1181,6 +1401,153 @@ namespace Test.Automated
             {
                 CallCount++;
                 throw new HttpRequestException("Verbex unavailable");
+            }
+        }
+
+        private class TestFileServerCrawler : FileServerRepositoryCrawlerBase
+        {
+            public TestFileServerCrawler(
+                LoggingModule logging,
+                DatabaseDriverBase database,
+                CrawlPlan crawlPlan,
+                CrawlOperation crawlOperation,
+                BlobClientBase blob,
+                bool includeSubdirectories)
+                : base(
+                      logging,
+                      database,
+                      crawlPlan,
+                      crawlOperation,
+                      null,
+                      null,
+                      null,
+                      "./crawl-enumerations/",
+                      CancellationToken.None,
+                      blob,
+                      includeSubdirectories,
+                      false)
+            {
+            }
+
+            public static string ResolveHostnameForTest(string hostname, bool runningInContainer, bool hostDockerInternalAvailable)
+            {
+                return ResolveEffectiveHostname(hostname, runningInContainer, hostDockerInternalAvailable);
+            }
+        }
+
+        private class FakeBlobClient : BlobClientBase
+        {
+            public List<BlobMetadata> Objects { get; } = new List<BlobMetadata>();
+
+            public int ValidateConnectivityCount { get; private set; }
+
+            public int GetMetadataCount { get; private set; }
+
+            public string LastMetadataKey { get; private set; }
+
+            public EnumerationFilter LastAsyncFilter { get; private set; }
+
+            public bool ThrowOnGetMetadata { get; set; }
+
+            public bool ThrowOnNullPrefix { get; set; }
+
+            public override Task<bool> ValidateConnectivity(CancellationToken token = default)
+            {
+                ValidateConnectivityCount++;
+                return Task.FromResult(true);
+            }
+
+            public override Task<byte[]> GetAsync(string key, CancellationToken token = default)
+            {
+                return Task.FromResult(Array.Empty<byte>());
+            }
+
+            public override Task<BlobData> GetStreamAsync(string key, CancellationToken token = default)
+            {
+                return Task.FromResult(new BlobData());
+            }
+
+            public override Task<BlobMetadata> GetMetadataAsync(string key, CancellationToken token = default)
+            {
+                GetMetadataCount++;
+                LastMetadataKey = key;
+
+                if (ThrowOnGetMetadata) throw new InvalidOperationException("metadata unavailable");
+
+                BlobMetadata metadata = new BlobMetadata
+                {
+                    Key = key,
+                    IsFolder = true,
+                    ContentLength = 0,
+                    ContentType = "application/octet-stream"
+                };
+
+                return Task.FromResult(metadata);
+            }
+
+            public override Task WriteAsync(string key, string contentType, string data, CancellationToken token = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public override Task WriteAsync(string key, string contentType, byte[] data, CancellationToken token = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public override Task WriteAsync(string key, string contentType, long contentLength, Stream stream, CancellationToken token = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public override Task WriteManyAsync(List<WriteRequest> objects, CancellationToken token = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public override Task DeleteAsync(string key, CancellationToken token = default)
+            {
+                return Task.CompletedTask;
+            }
+
+            public override Task<bool> ExistsAsync(string key, CancellationToken token = default)
+            {
+                return Task.FromResult(true);
+            }
+
+            public override string GenerateUrl(string key, CancellationToken token = default)
+            {
+                return key;
+            }
+
+            public override IEnumerable<BlobMetadata> Enumerate(EnumerationFilter filter = null)
+            {
+                if (ThrowOnNullPrefix && (filter == null || filter.Prefix == null))
+                    throw new InvalidOperationException("prefix must not be null");
+
+                foreach (BlobMetadata obj in Objects)
+                {
+                    yield return obj;
+                }
+            }
+
+            public override async IAsyncEnumerable<BlobMetadata> EnumerateAsync(EnumerationFilter filter = null, [EnumeratorCancellation] CancellationToken token = default)
+            {
+                LastAsyncFilter = filter;
+
+                if (ThrowOnNullPrefix && (filter == null || filter.Prefix == null))
+                    throw new InvalidOperationException("prefix must not be null");
+
+                foreach (BlobMetadata obj in Objects)
+                {
+                    await Task.Yield();
+                    yield return obj;
+                }
+            }
+
+            public override Task<EmptyResult> EmptyAsync(CancellationToken token = default)
+            {
+                return Task.FromResult(new EmptyResult());
             }
         }
 

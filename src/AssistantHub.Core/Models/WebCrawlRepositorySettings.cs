@@ -1,8 +1,7 @@
 namespace AssistantHub.Core.Models
 {
     using System;
-    using System.Text.Json;
-    using System.Text.Json.Serialization;
+    using System.Collections.Generic;
     using AssistantHub.Core.Enums;
 
     /// <summary>
@@ -160,6 +159,18 @@ namespace AssistantHub.Core.Models
         public WebCrawlRepositorySettings()
         {
             RepositoryType = RepositoryTypeEnum.Web;
+        }
+
+        #endregion
+
+        #region Public-Methods
+
+        /// <inheritdoc />
+        public override List<string> Validate()
+        {
+            List<string> errors = new List<string>();
+            if (String.IsNullOrWhiteSpace(StartUrl)) errors.Add("StartUrl is required for web crawl repository settings.");
+            return errors;
         }
 
         #endregion

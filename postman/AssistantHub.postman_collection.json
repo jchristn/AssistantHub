@@ -140,6 +140,61 @@
       "key": "searchQuery",
       "value": "deployment reset",
       "type": "string"
+    },
+    {
+      "key": "cifsHostname",
+      "value": "fileserver.example.com",
+      "type": "string"
+    },
+    {
+      "key": "cifsUsername",
+      "value": "crawler",
+      "type": "string"
+    },
+    {
+      "key": "cifsPassword",
+      "value": "secret",
+      "type": "string"
+    },
+    {
+      "key": "cifsShareName",
+      "value": "content",
+      "type": "string"
+    },
+    {
+      "key": "nfsHostname",
+      "value": "nfs.example.com",
+      "type": "string"
+    },
+    {
+      "key": "nfsUserId",
+      "value": "1000",
+      "type": "string"
+    },
+    {
+      "key": "nfsGroupId",
+      "value": "1000",
+      "type": "string"
+    },
+    {
+      "key": "nfsShareName",
+      "value": "/exports/content",
+      "type": "string"
+    },
+    {
+      "key": "nfsVersion",
+      "value": "V3",
+      "type": "string"
+    },
+    {
+      "key": "recordId",
+      "value": "rec_abc123",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "req_abc123",
+      "type": "string"
     }
   ],
   "item": [
@@ -174,6 +229,58 @@
               ],
               "path": [
                 ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OpenAPI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/openapi.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Versioned OpenAPI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/openapi.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "openapi.json"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Swagger UI",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/swagger",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "swagger"
               ]
             }
           }
@@ -283,20 +390,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+              "raw": "{{baseUrl}}/v1.0/tenants/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "tenants",
-                ":tenantId"
-              ],
-              "variable": [
-                {
-                  "key": "tenantId",
-                  "value": "{{tenantId}}"
-                }
+                ":id"
               ]
             }
           }
@@ -316,20 +417,14 @@
               "raw": "{\n\t\"Name\": \"Acme Corp Updated\",\n\t\"Active\": true,\n\t\"IsProtected\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+              "raw": "{{baseUrl}}/v1.0/tenants/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "tenants",
-                ":tenantId"
-              ],
-              "variable": [
-                {
-                  "key": "tenantId",
-                  "value": "{{tenantId}}"
-                }
+                ":id"
               ]
             }
           }
@@ -340,20 +435,14 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+              "raw": "{{baseUrl}}/v1.0/tenants/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "tenants",
-                ":tenantId"
-              ],
-              "variable": [
-                {
-                  "key": "tenantId",
-                  "value": "{{tenantId}}"
-                }
+                ":id"
               ]
             }
           }
@@ -364,20 +453,14 @@
             "method": "HEAD",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/tenants/:tenantId",
+              "raw": "{{baseUrl}}/v1.0/tenants/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "tenants",
-                ":tenantId"
-              ],
-              "variable": [
-                {
-                  "key": "tenantId",
-                  "value": "{{tenantId}}"
-                }
+                ":id"
               ]
             }
           }
@@ -1706,6 +1789,24 @@
               "raw": "{\n\t\"Query\": \"{{searchQuery}}\",\n\t\"MaxResults\": 10\n}"
             }
           }
+        },
+        {
+          "name": "Check Index Exists",
+          "request": {
+            "method": "HEAD",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "indices",
+                "{{indexId}}"
+              ]
+            }
+          }
         }
       ]
     },
@@ -1823,7 +1924,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records?ids={{indexRecordId}}",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records?ids={{recordId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1832,12 +1933,6 @@
                 "indices",
                 "{{indexId}}",
                 "records"
-              ],
-              "query": [
-                {
-                  "key": "ids",
-                  "value": "{{indexRecordId}}"
-                }
               ]
             }
           }
@@ -1848,7 +1943,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1857,7 +1952,7 @@
                 "indices",
                 "{{indexId}}",
                 "records",
-                "{{indexRecordId}}"
+                "{{recordId}}"
               ]
             }
           }
@@ -1868,7 +1963,7 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1877,7 +1972,7 @@
                 "indices",
                 "{{indexId}}",
                 "records",
-                "{{indexRecordId}}"
+                "{{recordId}}"
               ]
             }
           }
@@ -1893,7 +1988,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/labels",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}/labels",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1902,7 +1997,7 @@
                 "indices",
                 "{{indexId}}",
                 "records",
-                "{{indexRecordId}}",
+                "{{recordId}}",
                 "labels"
               ]
             },
@@ -1923,7 +2018,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/tags",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}/tags",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1932,7 +2027,7 @@
                 "indices",
                 "{{indexId}}",
                 "records",
-                "{{indexRecordId}}",
+                "{{recordId}}",
                 "tags"
               ]
             },
@@ -1953,7 +2048,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/custom-metadata",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}/custom-metadata",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1962,13 +2057,33 @@
                 "indices",
                 "{{indexId}}",
                 "records",
-                "{{indexRecordId}}",
+                "{{recordId}}",
                 "custom-metadata"
               ]
             },
             "body": {
               "mode": "raw",
               "raw": "{\n\t\"CustomMetadata\": {\n\t\t\"Reviewed\": true\n\t}\n}"
+            }
+          }
+        },
+        {
+          "name": "Check Index Record Exists",
+          "request": {
+            "method": "HEAD",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "indices",
+                "{{indexId}}",
+                "records",
+                "{{recordId}}"
+              ]
             }
           }
         }
@@ -2274,6 +2389,40 @@
               ]
             }
           }
+        },
+        {
+          "name": "Load Embedding Endpoint Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Strategy\": \"Auto\",\n  \"TimeoutMs\": 60000,\n  \"KeepAlive\": \"30m\",\n  \"SampleInput\": \"Partio model load probe\",\n  \"MaxTokens\": 1,\n  \"RecordRequestHistory\": true,\n  \"RequireNativeLoad\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/embedding/:endpointId/load",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "embedding",
+                ":endpointId",
+                "load"
+              ]
+            }
+          }
         }
       ]
     },
@@ -2574,6 +2723,40 @@
                   "key": "endpointId",
                   "value": "endpoint-guid-here"
                 }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Load Completion Endpoint Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Strategy\": \"Auto\",\n  \"TimeoutMs\": 60000,\n  \"KeepAlive\": \"30m\",\n  \"SampleInput\": \"Partio model load probe\",\n  \"MaxTokens\": 1,\n  \"RecordRequestHistory\": true,\n  \"RequireNativeLoad\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/endpoints/completion/:endpointId/load",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "endpoints",
+                "completion",
+                ":endpointId",
+                "load"
               ]
             }
           }
@@ -3769,20 +3952,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
+              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "requesthistory",
-                ":requestHistoryId"
-              ],
-              "variable": [
-                {
-                  "key": "requestHistoryId",
-                  "value": "{{requestHistoryId}}"
-                }
+                ":requestId"
               ]
             },
             "description": "Returns TraceId and ChatHistoryId when the captured request produced an assistant history row."
@@ -3794,21 +3971,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId/detail",
+              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestId/detail",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "requesthistory",
-                ":requestHistoryId",
+                ":requestId",
                 "detail"
-              ],
-              "variable": [
-                {
-                  "key": "requestHistoryId",
-                  "value": "{{requestHistoryId}}"
-                }
               ]
             },
             "description": "Hydrated request-history detail. Use the returned ChatHistoryId with the History folder to inspect PerformanceJson telemetry."
@@ -3820,20 +3991,14 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestHistoryId",
+              "raw": "{{baseUrl}}/v1.0/requesthistory/:requestId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "v1.0",
                 "requesthistory",
-                ":requestHistoryId"
-              ],
-              "variable": [
-                {
-                  "key": "requestHistoryId",
-                  "value": "{{requestHistoryId}}"
-                }
+                ":requestId"
               ]
             }
           }
@@ -4036,7 +4201,7 @@
       "name": "Crawl Plans",
       "item": [
         {
-          "name": "Create Crawl Plan",
+          "name": "Create Web Crawl Plan",
           "request": {
             "method": "PUT",
             "header": [
@@ -4048,6 +4213,58 @@
             "body": {
               "mode": "raw",
               "raw": "{\n\t\"Name\": \"My Web Crawl\",\n\t\"RepositoryType\": \"Web\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"Web\",\n\t\t\"AuthenticationType\": \"None\",\n\t\t\"UserAgent\": \"assistanthub-crawler\",\n\t\t\"StartUrl\": \"https://example.com\",\n\t\t\"UseHeadlessBrowser\": false,\n\t\t\"FollowLinks\": true,\n\t\t\"FollowRedirects\": true,\n\t\t\"ExtractSitemapLinks\": true,\n\t\t\"RestrictToChildUrls\": true,\n\t\t\"RestrictToSubdomain\": false,\n\t\t\"RestrictToRootDomain\": true,\n\t\t\"IgnoreRobotsTxt\": false,\n\t\t\"MaxDepth\": 5,\n\t\t\"MaxParallelTasks\": 8,\n\t\t\"CrawlDelayMs\": 100\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": [\"text/html\", \"application/pdf\"],\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create CIFS Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My CIFS Crawl\",\n\t\"RepositoryType\": \"CIFS\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"CIFS\",\n\t\t\"CifsHostname\": \"{{cifsHostname}}\",\n\t\t\"CifsUsername\": \"{{cifsUsername}}\",\n\t\t\"CifsPassword\": \"{{cifsPassword}}\",\n\t\t\"CifsShareName\": \"{{cifsShareName}}\",\n\t\t\"IncludeSubdirectories\": true\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create NFS Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My NFS Crawl\",\n\t\"RepositoryType\": \"NFS\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"NFS\",\n\t\t\"NfsHostname\": \"{{nfsHostname}}\",\n\t\t\"NfsUserId\": {{nfsUserId}},\n\t\t\"NfsGroupId\": {{nfsGroupId}},\n\t\t\"NfsShareName\": \"{{nfsShareName}}\",\n\t\t\"NfsVersion\": \"{{nfsVersion}}\",\n\t\t\"IncludeSubdirectories\": true\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/crawlplans",
@@ -4229,6 +4446,33 @@
                   "key": "id",
                   "value": "cplan_guid-here"
                 }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test Draft Connectivity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Connectivity Probe\",\n  \"RepositoryType\": \"Web\",\n  \"RepositorySettings\": {\n    \"RepositoryType\": \"Web\",\n    \"AuthenticationType\": \"None\",\n    \"StartUrl\": \"https://example.com\",\n    \"FollowLinks\": false,\n    \"FollowRedirects\": true,\n    \"ExtractSitemapLinks\": false,\n    \"RestrictToChildUrls\": true,\n    \"RestrictToSubdomain\": true,\n    \"RestrictToRootDomain\": true,\n    \"IgnoreRobotsTxt\": false,\n    \"UseHeadlessBrowser\": false,\n    \"MaxDepth\": 1,\n    \"MaxParallelTasks\": 1,\n    \"CrawlDelayMs\": 100\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans/connectivity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans",
+                "connectivity"
               ]
             }
           }
@@ -5179,6 +5423,26 @@
                   "key": "assistantId",
                   "value": "assistant-guid-here"
                 }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Open Chat",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat/open",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat",
+                "open"
               ]
             }
           }

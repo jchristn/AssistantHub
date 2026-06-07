@@ -7,12 +7,12 @@ namespace AssistantHub.Sdk.Models
     /// <summary>
     /// Web crawl repository settings.
     /// </summary>
-    public class WebCrawlRepositorySettings
+    public class WebCrawlRepositorySettings : CrawlRepositorySettings
     {
         /// <summary>
         /// Web authentication type.
         /// </summary>
-        [JsonPropertyName("AuthType")]
+        [JsonPropertyName("AuthenticationType")]
         public WebAuthTypeEnum AuthType { get; set; }
 
         /// <summary>
@@ -52,6 +52,12 @@ namespace AssistantHub.Sdk.Models
         public string StartUrl { get; set; }
 
         /// <summary>
+        /// User agent string sent with HTTP requests.
+        /// </summary>
+        [JsonPropertyName("UserAgent")]
+        public string UserAgent { get; set; }
+
+        /// <summary>
         /// Maximum crawl depth (1-100).
         /// </summary>
         [JsonPropertyName("MaxDepth")]
@@ -82,16 +88,22 @@ namespace AssistantHub.Sdk.Models
         public bool FollowRedirects { get; set; }
 
         /// <summary>
-        /// Whether to respect robots.txt.
+        /// Whether to extract URLs from sitemaps.
         /// </summary>
-        [JsonPropertyName("RespectRobotsTxt")]
-        public bool RespectRobotsTxt { get; set; }
+        [JsonPropertyName("ExtractSitemapLinks")]
+        public bool ExtractSitemapLinks { get; set; }
 
         /// <summary>
-        /// Whether to use sitemaps.
+        /// Whether to ignore robots.txt.
         /// </summary>
-        [JsonPropertyName("UseSitemaps")]
-        public bool UseSitemaps { get; set; }
+        [JsonPropertyName("IgnoreRobotsTxt")]
+        public bool IgnoreRobotsTxt { get; set; }
+
+        /// <summary>
+        /// Whether to use a headless browser.
+        /// </summary>
+        [JsonPropertyName("UseHeadlessBrowser")]
+        public bool UseHeadlessBrowser { get; set; }
 
         /// <summary>
         /// Restrict crawl to child URLs of the start URL.
@@ -110,5 +122,13 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("RestrictToRootDomain")]
         public bool RestrictToRootDomain { get; set; }
+
+        /// <summary>
+        /// Instantiate.
+        /// </summary>
+        public WebCrawlRepositorySettings()
+        {
+            RepositoryType = RepositoryTypeEnum.Web;
+        }
     }
 }

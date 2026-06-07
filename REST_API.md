@@ -212,7 +212,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.14.0",
+  "Version": "0.15.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -238,6 +238,20 @@ Returns the live runtime OpenAPI document generated from the currently registere
 Operational note:
 
 - The dashboard API Explorer consumes this route directly so the explorer reflects the running server rather than a manually maintained static spec.
+
+### GET /swagger
+
+Serves the Swagger UI for the live AssistantHub OpenAPI document. **Unauthenticated.**
+
+Protected API operations in Swagger use the OpenAPI `BearerAuth` security scheme. Use the Swagger `Authorize` control to enter an AssistantHub admin API key or bearer token; Swagger sends it as `Authorization: Bearer <token>` when calling protected APIs.
+
+**Response (200 OK):** Swagger UI HTML.
+
+### GET /v1.0/openapi.json
+
+Returns the same live runtime OpenAPI document as `/openapi.json`. **Unauthenticated.**
+
+**Response (200 OK):** OpenAPI 3.0 JSON document.
 
 ---
 
@@ -307,7 +321,7 @@ List all tenants with pagination.
 
 **Response (200 OK):** Paginated envelope containing `TenantMetadata` objects.
 
-### GET /v1.0/tenants/{tenantId}
+### GET /v1.0/tenants/{id}
 
 Retrieve a single tenant by ID.
 
@@ -331,7 +345,7 @@ Retrieve a single tenant by ID.
 **Error Responses:**
 - `404` -- Tenant not found.
 
-### PUT /v1.0/tenants/{tenantId}
+### PUT /v1.0/tenants/{id}
 
 Update an existing tenant.
 
@@ -354,7 +368,7 @@ Update an existing tenant.
 **Error Responses:**
 - `404` -- Tenant not found.
 
-### DELETE /v1.0/tenants/{tenantId}
+### DELETE /v1.0/tenants/{id}
 
 Delete a tenant and deprovision all associated resources (users, credentials, assistants, documents, S3 buckets, RecallDB tenant, and mapped Verbex tenant/index resources).
 
@@ -366,7 +380,7 @@ Delete a tenant and deprovision all associated resources (users, credentials, as
 - `403` -- Tenant is protected. Deactivate by setting `Active` to `false` instead.
 - `404` -- Tenant not found.
 
-### HEAD /v1.0/tenants/{tenantId}
+### HEAD /v1.0/tenants/{id}
 
 Check whether a tenant exists.
 
@@ -3484,7 +3498,7 @@ Public document download endpoint for citation linking. Proxies the file from S3
 
 ### POST /v1.0/assistants/{assistantId}/compact
 
-Force conversation compaction. Summarizes the provided message history into a shorter form to free up context window space. Useful for long conversations where the client wants to explicitly trigger compaction rather than waiting for automatic compaction during chat.
+Force conversation compaction. Summarizes the provided message history into a shorter form to free up context window space. Useful for long conversations where the client wants to explicitly trigger compaction rather than waiting for automatic compaction during chat. The generated summary is returned as a `system` message; clients should retain it for the next chat request and may hide it from the visible transcript.
 
 **Auth:** None
 
@@ -3517,13 +3531,13 @@ Force conversation compaction. Summarizes the provided message history into a sh
 ```json
 {
   "messages": [
-    { "role": "user", "content": "What is machine learning?" },
-    { "role": "assistant", "content": "Previous conversation summary: We discussed machine learning fundamentals and supervised learning techniques..." }
+    { "role": "system", "content": "[Conversation Summary]\nWe discussed machine learning fundamentals and supervised learning techniques..." },
+    { "role": "user", "content": "How does supervised learning work?" }
   ],
   "usage": {
-    "promptTokens": 250,
-    "totalTokens": 350,
-    "contextWindow": 8192
+    "prompt_tokens": 250,
+    "total_tokens": 250,
+    "context_window": 8192
   }
 }
 ```
@@ -3590,7 +3604,7 @@ Submit feedback for an assistant response.
 
 ## Crawl Plans (Admin Only)
 
-Manage web crawl plans that define how content is discovered and ingested from external sources.
+Manage crawl plans that define how content is discovered and ingested from external sources. Supported repository types are `Web`, `CIFS`, and `NFS`.
 
 ### PUT /v1.0/crawlplans
 
@@ -3608,8 +3622,9 @@ Create a new crawl plan.
     "IngestionRuleId": "irule_abc123..."
   },
   "RepositorySettings": {
-    "BaseUrl": "https://docs.example.com",
-    "AuthType": "None",
+    "RepositoryType": "Web",
+    "AuthenticationType": "None",
+    "StartUrl": "https://docs.example.com",
     "MaxDepth": 3
   },
   "Schedule": {
@@ -3631,9 +3646,9 @@ Create a new crawl plan.
 | Field               | Type   | Default | Description                                                    |
 |---------------------|--------|---------|----------------------------------------------------------------|
 | `Name`              | string | "My crawl plan" | Display name for the crawl plan.                        |
-| `RepositoryType`    | string | Web     | Repository type: `Web`.                                        |
+| `RepositoryType`    | string | Web     | Repository type: `Web`, `CIFS`, or `NFS`.                       |
 | `IngestionSettings` | object | null    | Ingestion configuration (e.g., `IngestionRuleId`).             |
-| `RepositorySettings`| object | null    | Repository-specific settings (e.g., `BaseUrl`, `AuthType`).   |
+| `RepositorySettings`| object | null    | Repository-specific settings. See examples below.              |
 | `Schedule`          | object | null    | Schedule configuration (`Interval`: `OneTime`, `Minutes`, `Hours`, `Days`, `Weeks`; `IntervalCount`). |
 | `Filter`            | object | null    | URL/path filter settings.                                      |
 | `ProcessAdditions`  | bool   | true    | Whether to process newly discovered content.                   |
@@ -3642,7 +3657,66 @@ Create a new crawl plan.
 | `MaxDrainTasks`     | int    | 8       | Maximum concurrent drain tasks (1-64).                         |
 | `RetentionDays`     | int    | 7       | Days to retain crawl operations (0-14).                        |
 
-**Web Authentication Types (`AuthType`):** `None`, `Basic`, `ApiKey`, `BearerToken`
+**Repository Type Values:**
+
+| Value  | Description |
+|--------|-------------|
+| `Web`  | Crawls HTTP/HTTPS pages starting at `StartUrl`. |
+| `CIFS` | Crawls a CIFS/SMB file share. |
+| `NFS`  | Crawls an NFS export. |
+
+**Web Authentication Types (`AuthenticationType`):** `None`, `Basic`, `ApiKey`, `BearerToken`
+
+**Web Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "Web",
+  "AuthenticationType": "None",
+  "UserAgent": "assistanthub-crawler",
+  "StartUrl": "https://docs.example.com",
+  "UseHeadlessBrowser": false,
+  "FollowLinks": true,
+  "FollowRedirects": true,
+  "ExtractSitemapLinks": true,
+  "RestrictToChildUrls": true,
+  "RestrictToSubdomain": false,
+  "RestrictToRootDomain": true,
+  "IgnoreRobotsTxt": false,
+  "MaxDepth": 5,
+  "MaxParallelTasks": 8,
+  "CrawlDelayMs": 100
+}
+```
+
+**CIFS Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "CIFS",
+  "CifsHostname": "fileserver.example.com",
+  "CifsUsername": "crawler",
+  "CifsPassword": "secret",
+  "CifsShareName": "content",
+  "IncludeSubdirectories": true
+}
+```
+
+**NFS Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "NFS",
+  "NfsHostname": "nfs.example.com",
+  "NfsUserId": 1000,
+  "NfsGroupId": 1000,
+  "NfsShareName": "/exports/content",
+  "NfsVersion": "V3",
+  "IncludeSubdirectories": true
+}
+```
+
+CIFS passwords, web passwords, API keys, and bearer tokens are stored in crawl-plan repository settings until a future credential abstraction is introduced. Treat crawl-plan JSON responses and admin JSON views as sensitive.
 
 **Response (201 Created):** The created `CrawlPlan` object.
 
@@ -3679,6 +3753,52 @@ Update an existing crawl plan.
 
 **Error Responses:**
 - `404` -- Crawl plan not found.
+
+### POST /v1.0/crawlplans/connectivity
+
+Test connectivity for a draft crawl plan payload without creating or updating a persisted crawl plan. Use this from create/edit workflows to verify the repository settings and credentials currently entered in the UI.
+
+For CIFS and NFS plans, connectivity is tested from the AssistantHub server process or container to the configured file-server hostname/share.
+Failure messages include the first failing diagnostic step where possible, such as hostname resolution, TCP port reachability, or configured share/export access with the supplied credentials.
+When AssistantHub runs in Docker and `host.docker.internal` resolves, loopback file-server hostnames such as `localhost`, `127.0.0.1`, and `::1` are treated as the Docker host so local shares can be tested from the server container.
+
+**Auth:** Required
+
+**Request Body:** A `CrawlPlan` JSON object. Only `RepositoryType` and `RepositorySettings` are required for the connectivity test.
+
+```json
+{
+  "Name": "Connectivity Probe",
+  "RepositoryType": "CIFS",
+  "RepositorySettings": {
+    "RepositoryType": "CIFS",
+    "CifsHostname": "fileserver.example.com",
+    "CifsUsername": "crawler",
+    "CifsPassword": "secret",
+    "CifsShareName": "content",
+    "IncludeSubdirectories": true
+  }
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "Message": "CIFS repository connectivity verified. Hostname 'fileserver.example.com' resolved, port 445 is reachable, and share/export 'content' is accessible with user 'crawler'."
+}
+```
+
+Validation errors return `400 Bad Request`. A failed repository connection returns `200 OK` with `Success=false`.
+For example, a CIFS share access failure can return:
+
+```json
+{
+  "Success": false,
+  "Message": "Resolved CIFS hostname 'fileserver.example.com' and reached port 445, but could not access share/export 'content' with user 'crawler'. Verify the share name, username, password, and share permissions."
+}
+```
 
 ### DELETE /v1.0/crawlplans/{id}
 
@@ -3727,13 +3847,18 @@ Stop a running crawl operation.
 
 Test connectivity to the crawl plan's target repository.
 
+For CIFS and NFS plans, connectivity is tested from the AssistantHub server process or container to the configured file-server hostname/share.
+Failure messages include the first failing diagnostic step where possible, such as hostname resolution, TCP port reachability, or configured share/export access with the supplied credentials.
+When AssistantHub runs in Docker and `host.docker.internal` resolves, loopback file-server hostnames such as `localhost`, `127.0.0.1`, and `::1` are treated as the Docker host so local shares can be tested from the server container.
+
 **Auth:** Required
 
 **Response (200 OK):**
 
 ```json
 {
-  "Success": true
+  "Success": true,
+  "Message": "NFS repository connectivity verified. Hostname 'nfs.example.com' resolved, port 2049 is reachable, and share/export '/exports/content' is accessible with identity 'UID 1000/GID 1000, V3'."
 }
 ```
 
@@ -3743,6 +3868,9 @@ Test connectivity to the crawl plan's target repository.
 ### GET /v1.0/crawlplans/{id}/enumerate
 
 Enumerate contents available at the crawl plan's target repository without performing a crawl.
+
+For CIFS and NFS plans, enumeration returns file metadata from the configured share/export. File bytes are retrieved lazily only when a crawl processes additions or updates.
+In Docker, loopback file-server hostnames are normalized the same way as connectivity checks, so enumeration uses the same effective host.
 
 **Auth:** Required
 

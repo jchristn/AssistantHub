@@ -183,6 +183,13 @@ namespace AssistantHub.Core.Services.Crawlers
             return false;
         }
 
+        /// <inheritdoc />
+        protected override Task<byte[]> RetrieveDataAsync(CrawledObject obj, CancellationToken token = default)
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Task.FromResult(obj.Data ?? Array.Empty<byte>());
+        }
+
         #endregion
 
         #region Private-Methods

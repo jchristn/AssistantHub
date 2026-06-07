@@ -385,7 +385,11 @@ export class ApiClient {
     const data = await response.json();
 
     if (!response.ok) {
-      const message = data?.Message || data?.message || data?.Detail || `Request failed with status ${response.status}`;
+      const primary = data?.Message || data?.message;
+      const detail = data?.Description || data?.description || data?.Detail || data?.detail;
+      const message = detail && (!primary || primary === 'The requested resource was not found.')
+        ? detail
+        : primary || detail || `Request failed with status ${response.status}`;
       throw new Error(message);
     }
 
@@ -874,6 +878,7 @@ export class ApiClient {
   startCrawl(id) { return this.request('POST', `/v1.0/crawlplans/${id}/start`); }
   stopCrawl(id) { return this.request('POST', `/v1.0/crawlplans/${id}/stop`); }
   testCrawlConnectivity(id) { return this.request('POST', `/v1.0/crawlplans/${id}/connectivity`); }
+  testDraftCrawlConnectivity(plan) { return this.request('POST', '/v1.0/crawlplans/connectivity', plan); }
   enumerateCrawlContents(id, params) { return this.request('GET', `/v1.0/crawlplans/${id}/enumerate` + this.buildQuery(params)); }
 
   // Crawl Operations

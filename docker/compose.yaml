@@ -152,6 +152,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     container_name: assistanthub-postgres
+    command: ["postgres", "-c", "max_connections=250"]
     environment:
       POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERPASS:-password}
@@ -279,10 +280,12 @@ services:
   # --- AssistantHub ---
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.14.0
+    image: jchristn77/assistanthub-server:v0.15.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./assistanthub/assistanthub.json:/app/assistanthub.json
       - ./assistanthub/logs/:/app/logs/
@@ -310,7 +313,7 @@ services:
     restart: unless-stopped
 
   assistanthub-mcp-server:
-    image: jchristn77/assistanthub-mcp:v0.14.0
+    image: jchristn77/assistanthub-mcp:v0.15.0
     container_name: assistanthub-mcp-server
     ports:
       - "8820:8820"
@@ -327,7 +330,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.14.0
+    image: jchristn77/assistanthub-dashboard:v0.15.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

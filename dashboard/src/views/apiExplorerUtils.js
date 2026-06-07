@@ -1,6 +1,6 @@
 export const RECENT_REQUESTS_KEY = 'ah_api_explorer_recent';
 
-const SPECIAL_OPERATION_OVERRIDES = {
+export const SPECIAL_OPERATION_OVERRIDES = {
   'POST:/v1.0/endpoints/completion/{endpointId}/test': {
     summary: 'Test completion endpoint',
     description: 'Run a smoke test through AssistantHub against a Partio completion endpoint.',
@@ -43,6 +43,30 @@ const SPECIAL_OPERATION_OVERRIDES = {
       MaxTokens: 1,
       RecordRequestHistory: true,
       RequireNativeLoad: false,
+    },
+  },
+  'POST:/v1.0/crawlplans/connectivity': {
+    summary: 'Test draft crawl-plan connectivity',
+    description: 'Validate unsaved repository settings and credentials without creating or updating a crawl plan.',
+    bodyTemplate: {
+      Name: 'Connectivity Probe',
+      RepositoryType: 'Web',
+      RepositorySettings: {
+        RepositoryType: 'Web',
+        AuthenticationType: 'None',
+        StartUrl: 'https://example.com',
+        FollowLinks: false,
+        FollowRedirects: true,
+        ExtractSitemapLinks: false,
+        RestrictToChildUrls: true,
+        RestrictToSubdomain: true,
+        RestrictToRootDomain: true,
+        IgnoreRobotsTxt: false,
+        UseHeadlessBrowser: false,
+        MaxDepth: 1,
+        MaxParallelTasks: 1,
+        CrawlDelayMs: 100,
+      },
     },
   },
 };
@@ -92,12 +116,21 @@ export const ASSISTANT_TEMPLATES = [
     },
   },
   {
+    key: 'assistant-chat-open',
+    method: 'POST',
+    path: '/v1.0/assistants/{assistantId}/chat/open',
+    tags: ['Assistant Public APIs'],
+    summary: 'Open assistant chat',
+    description: 'Load or warm the configured assistant endpoint models before a chat session.',
+    includeAuth: false,
+  },
+  {
     key: 'assistant-compact',
     method: 'POST',
     path: '/v1.0/assistants/{assistantId}/compact',
     tags: ['Assistant Public APIs'],
     summary: 'Force conversation compaction',
-    description: 'Compact an assistant conversation to reduce token pressure.',
+    description: 'Compact an assistant conversation to reduce token pressure and return a summary system message for the next turn.',
     includeAuth: false,
     headersText: 'X-Thread-ID: ',
     bodyTemplate: {
@@ -135,6 +168,15 @@ export const ASSISTANT_TEMPLATES = [
       FeedbackText: '',
       MessageHistory: [],
     },
+  },
+  {
+    key: 'assistant-document-download',
+    method: 'GET',
+    path: '/v1.0/assistants/{assistantId}/documents/{documentId}/download',
+    tags: ['Assistant Public APIs'],
+    summary: 'Download public assistant document',
+    description: 'Download a document exposed through the public assistant document route.',
+    includeAuth: false,
   },
   {
     key: 'assistant-labels',

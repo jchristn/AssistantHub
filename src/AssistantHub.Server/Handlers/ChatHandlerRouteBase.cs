@@ -432,7 +432,9 @@ namespace AssistantHub.Server.Handlers
 
                 List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(chatReq.Messages);
 
-                bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
+                bool hasSystemMessage = messages.Any(m =>
+                    String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
+                    && !IsConversationSummaryMessage(m));
                 if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
                 {
                     string fullSystemMessage = Inference.BuildSystemMessage(
@@ -444,7 +446,8 @@ namespace AssistantHub.Server.Handlers
                 {
                     for (int i = 0; i < messages.Count; i++)
                     {
-                        if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase))
+                        if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase)
+                            && !IsConversationSummaryMessage(messages[i]))
                         {
                             messages[i] = new ChatCompletionMessage
                             {
@@ -495,9 +498,12 @@ namespace AssistantHub.Server.Handlers
                     null,
                     force: true).ConfigureAwait(false);
 
-                // Filter out system messages for the response
+                // Return the generated conversation summary so clients can carry it into the next turn.
+                // The configured assistant system prompt is still excluded because the server injects it.
                 List<ChatCompletionMessage> responseMessages = messages
-                    .Where(m => !String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase))
+                    .Where(m =>
+                        !String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
+                        || IsConversationSummaryMessage(m))
                     .ToList();
 
                 int promptTokens = EstimateTokenCount(messages);

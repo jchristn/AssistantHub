@@ -1,6 +1,7 @@
 namespace AssistantHub.Core.Models
 {
     using System;
+    using System.Collections.Generic;
     using System.Data;
     using System.Text.Json.Serialization;
     using AssistantHub.Core.Enums;
@@ -184,6 +185,12 @@ namespace AssistantHub.Core.Models
                     case RepositoryTypeEnum.Web:
                         obj.RepositorySettings = Serializer.DeserializeJson<WebCrawlRepositorySettings>(repoJson);
                         break;
+                    case RepositoryTypeEnum.CIFS:
+                        obj.RepositorySettings = Serializer.DeserializeJson<CifsCrawlRepositorySettings>(repoJson);
+                        break;
+                    case RepositoryTypeEnum.NFS:
+                        obj.RepositorySettings = Serializer.DeserializeJson<NfsCrawlRepositorySettings>(repoJson);
+                        break;
                     default:
                         obj.RepositorySettings = Serializer.DeserializeJson<WebCrawlRepositorySettings>(repoJson);
                         break;
@@ -214,6 +221,80 @@ namespace AssistantHub.Core.Models
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;
+        }
+
+        #endregion
+
+        #region Public-Methods
+
+        /// <summary>
+        /// Normalize repository settings using the selected repository type.
+        /// </summary>
+        public void NormalizeRepositorySettings()
+        {
+            if (RepositorySettings == null)
+            {
+                RepositorySettings = CreateRepositorySettings(RepositoryType);
+                return;
+            }
+
+            RepositorySettings.RepositoryType = RepositoryType;
+        }
+
+        /// <summary>
+        /// Validate repository settings.
+        /// </summary>
+        /// <returns>Validation errors.</returns>
+        public List<string> ValidateRepositorySettings()
+        {
+            List<string> errors = new List<string>();
+            NormalizeRepositorySettings();
+
+            if (RepositorySettings == null)
+            {
+                errors.Add("RepositorySettings is required.");
+                return errors;
+            }
+
+            switch (RepositoryType)
+            {
+                case RepositoryTypeEnum.Web:
+                    if (!(RepositorySettings is WebCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be WebCrawlRepositorySettings when RepositoryType is Web.");
+                    break;
+                case RepositoryTypeEnum.CIFS:
+                    if (!(RepositorySettings is CifsCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be CifsCrawlRepositorySettings when RepositoryType is CIFS.");
+                    break;
+                case RepositoryTypeEnum.NFS:
+                    if (!(RepositorySettings is NfsCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be NfsCrawlRepositorySettings when RepositoryType is NFS.");
+                    break;
+                default:
+                    errors.Add("Unsupported repository type " + RepositoryType + ".");
+                    break;
+            }
+
+            errors.AddRange(RepositorySettings.Validate());
+            return errors;
+        }
+
+        #endregion
+
+        #region Private-Methods
+
+        private static CrawlRepositorySettings CreateRepositorySettings(RepositoryTypeEnum repositoryType)
+        {
+            switch (repositoryType)
+            {
+                case RepositoryTypeEnum.CIFS:
+                    return new CifsCrawlRepositorySettings();
+                case RepositoryTypeEnum.NFS:
+                    return new NfsCrawlRepositorySettings();
+                case RepositoryTypeEnum.Web:
+                default:
+                    return new WebCrawlRepositorySettings();
+            }
         }
 
         #endregion

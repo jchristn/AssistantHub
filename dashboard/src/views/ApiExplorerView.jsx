@@ -7,6 +7,7 @@ import AlertModal from '../components/AlertModal';
 import {
   ASSISTANT_TEMPLATES,
   RECENT_REQUESTS_KEY,
+  SPECIAL_OPERATION_OVERRIDES,
   buildCurlSnippet,
   buildFetchSnippet,
   buildOperationOptionLabel,
@@ -82,7 +83,33 @@ function ApiExplorerView() {
   }, [serverUrl, credential]);
 
   const systemOperations = useMemo(() => operations.filter((operation) => operation.tags?.[0] !== 'Assistant Public APIs'), [operations]);
-  const assistantOperations = useMemo(() => ASSISTANT_TEMPLATES, []);
+  const assistantOperations = useMemo(() => {
+    const publicOperations = operations.filter((operation) => operation.tags?.[0] === 'Assistant Public APIs');
+    if (publicOperations.length < 1) return ASSISTANT_TEMPLATES;
+
+    const templatesByRoute = new Map(ASSISTANT_TEMPLATES.map((template) => [`${template.method}:${template.path}`, template]));
+    const mergedRoutes = new Set();
+    const merged = publicOperations.map((operation) => {
+      const routeKey = `${operation.method}:${operation.path}`;
+      const template = templatesByRoute.get(routeKey) || {};
+      mergedRoutes.add(routeKey);
+      return {
+        ...operation,
+        ...template,
+        key: operation.key,
+        method: operation.method,
+        path: operation.path,
+        tags: operation.tags,
+      };
+    });
+
+    ASSISTANT_TEMPLATES.forEach((template) => {
+      const routeKey = `${template.method}:${template.path}`;
+      if (!mergedRoutes.has(routeKey)) merged.push(template);
+    });
+
+    return merged;
+  }, [operations]);
 
   const visibleOperations = useMemo(() => {
     const source = mode === 'assistant' ? assistantOperations : systemOperations;

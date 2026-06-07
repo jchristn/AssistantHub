@@ -177,6 +177,14 @@ namespace AssistantHub.Server.Services
                 .Replace("{lastUserMessage}", lastUserMessage);
         }
 
+        private protected static bool IsConversationSummaryMessage(ChatCompletionMessage message)
+        {
+            return message != null
+                && String.Equals(message.Role, "system", StringComparison.OrdinalIgnoreCase)
+                && !String.IsNullOrEmpty(message.Content)
+                && message.Content.StartsWith("[Conversation Summary]", StringComparison.OrdinalIgnoreCase);
+        }
+
         private protected async Task<List<ChatCompletionMessage>> CompactIfNeeded(
             List<ChatCompletionMessage> messages,
             AssistantSettings settings,

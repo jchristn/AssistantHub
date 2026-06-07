@@ -91,6 +91,15 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 plan.TenantId = auth.TenantId;
+                List<string> errors = plan.ValidateRepositorySettings();
+                if (errors.Count > 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                    return;
+                }
+
                 plan = await Database.CrawlPlan.CreateAsync(plan).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 201;
@@ -245,6 +254,14 @@ namespace AssistantHub.Server.Handlers
                 updated.TenantId = existing.TenantId;
                 updated.CreatedUtc = existing.CreatedUtc;
                 updated.LastUpdateUtc = DateTime.UtcNow;
+                List<string> errors = updated.ValidateRepositorySettings();
+                if (errors.Count > 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                    return;
+                }
 
                 updated = await Database.CrawlPlan.UpdateAsync(updated).ConfigureAwait(false);
 
@@ -454,24 +471,70 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                CrawlOperation tempOp = new CrawlOperation();
-                tempOp.TenantId = plan.TenantId;
-                tempOp.CrawlPlanId = plan.Id;
-
-                using (CrawlerBase crawler = CrawlerFactory.Create(
-                    plan.RepositoryType, Logging, Database, plan, tempOp,
-                    null, null, null, Settings.Crawl?.EnumerationDirectory ?? "./crawl-enumerations/", CancellationToken.None))
-                {
-                    bool success = await crawler.ValidateConnectivityAsync().ConfigureAwait(false);
-
-                    ctx.Response.StatusCode = 200;
-                    ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(Serializer.SerializeJson(new { Success = success })).ConfigureAwait(false);
-                }
+                CrawlConnectivityResult result = await ExecuteConnectivityTestAsync(plan).ConfigureAwait(false);
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in TestConnectivityAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/crawlplans/connectivity - Test connectivity for a draft crawl plan without persisting it.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task TestDraftConnectivityAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = null;
+                using (StreamReader reader = new StreamReader(ctx.Request.Data))
+                    body = await reader.ReadToEndAsync().ConfigureAwait(false);
+
+                CrawlPlan plan = Serializer.DeserializeJson<CrawlPlan>(body);
+                if (plan == null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                plan.TenantId = auth.TenantId;
+                List<string> errors = plan.ValidateRepositorySettings();
+                if (errors.Count > 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, String.Join("; ", errors)))).ConfigureAwait(false);
+                    return;
+                }
+
+                CrawlConnectivityResult result = await ExecuteConnectivityTestAsync(plan).ConfigureAwait(false);
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in TestDraftConnectivityAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
@@ -575,6 +638,34 @@ namespace AssistantHub.Server.Handlers
                 Logging.Warn(_Header + "exception in HeadCrawlPlanAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 await ctx.Response.Send().ConfigureAwait(false);
+            }
+        }
+
+        private async Task<CrawlConnectivityResult> ExecuteConnectivityTestAsync(CrawlPlan plan)
+        {
+            if (plan == null) throw new ArgumentNullException(nameof(plan));
+
+            CrawlOperation tempOp = new CrawlOperation();
+            tempOp.TenantId = plan.TenantId;
+            tempOp.CrawlPlanId = plan.Id;
+
+            try
+            {
+                using (CrawlerBase crawler = CrawlerFactory.Create(
+                    plan.RepositoryType, Logging, Database, plan, tempOp,
+                    null, null, null, Settings.Crawl?.EnumerationDirectory ?? "./crawl-enumerations/", CancellationToken.None))
+                {
+                    return await crawler.GetConnectivityStatusAsync().ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "connectivity test failed for repository type " + plan.RepositoryType + ": " + e.Message);
+                return new CrawlConnectivityResult
+                {
+                    Success = false,
+                    Message = "Unable to initialize repository connectivity test for repository type " + plan.RepositoryType + ". Detail: " + e.Message
+                };
             }
         }
     }

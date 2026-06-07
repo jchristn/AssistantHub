@@ -564,12 +564,23 @@ namespace AssistantHub.Sdk
         /// <summary>
         /// Test connectivity for a crawl plan.
         /// </summary>
-        public async Task<JsonElement> TestCrawlConnectivityAsync(string planId, CancellationToken cancellationToken = default)
+        public async Task<CrawlConnectivityResult> TestCrawlConnectivityAsync(string planId, CancellationToken cancellationToken = default)
         {
             if (String.IsNullOrWhiteSpace(planId))
                 throw new ArgumentNullException(nameof(planId));
 
-            return await SendAsync<JsonElement>(HttpMethod.Post, "/v1.0/crawlplans/" + UrlEncode(planId) + "/connectivity", cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await SendAsync<CrawlConnectivityResult>(HttpMethod.Post, "/v1.0/crawlplans/" + UrlEncode(planId) + "/connectivity", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Test connectivity for an unsaved crawl plan.
+        /// </summary>
+        public async Task<CrawlConnectivityResult> TestCrawlPlanDraftConnectivityAsync(CrawlPlan plan, CancellationToken cancellationToken = default)
+        {
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
+            return await SendAsync<CrawlConnectivityResult>(HttpMethod.Post, "/v1.0/crawlplans/connectivity", plan, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

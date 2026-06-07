@@ -139,12 +139,13 @@ const rule = await client.createIngestionRule({
 ### Crawl Plans
 
 ```typescript
-import { ScheduleInterval, RepositoryType } from "assistanthub-sdk";
+import { NfsVersion, RepositoryType, ScheduleInterval } from "assistanthub-sdk";
 
-const plan = await client.createCrawlPlan({
+const webPlan = await client.createCrawlPlan({
   Name: "Website Crawl",
   RepositoryType: RepositoryType.Web,
   RepositorySettings: {
+    RepositoryType: RepositoryType.Web,
     StartUrl: "https://docs.example.com",
     MaxDepth: 3,
   },
@@ -154,11 +155,48 @@ const plan = await client.createCrawlPlan({
   },
 });
 
+const connectivity = await client.testCrawlPlanDraftConnectivity({
+  Name: "Website Connectivity Probe",
+  RepositoryType: RepositoryType.Web,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.Web,
+    StartUrl: "https://docs.example.com",
+    FollowLinks: false,
+  },
+});
+
+const cifsPlan = await client.createCrawlPlan({
+  Name: "CIFS Share Crawl",
+  RepositoryType: RepositoryType.CIFS,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.CIFS,
+    CifsHostname: "fileserver.example.com",
+    CifsUsername: "crawler",
+    CifsPassword: "secret",
+    CifsShareName: "content",
+    IncludeSubdirectories: true,
+  },
+});
+
+const nfsPlan = await client.createCrawlPlan({
+  Name: "NFS Export Crawl",
+  RepositoryType: RepositoryType.NFS,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.NFS,
+    NfsHostname: "nfs.example.com",
+    NfsUserId: 1000,
+    NfsGroupId: 1000,
+    NfsShareName: "/exports/content",
+    NfsVersion: NfsVersion.V3,
+    IncludeSubdirectories: true,
+  },
+});
+
 // Start crawling
-await client.startCrawl(plan.Id!);
+await client.startCrawl(webPlan.Id!);
 
 // Check operations
-const ops = await client.listCrawlOperations(plan.Id!);
+const ops = await client.listCrawlOperations(webPlan.Id!);
 ```
 
 ### Collections
@@ -339,7 +377,7 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Indices | `listIndices()`, `createIndex()`, `getIndex()`, `updateIndex()`, `deleteIndex()`, `indexExists()`, `updateIndexLabels()`, `updateIndexTags()`, `updateIndexCustomMetadata()`, `getIndexTopTerms()`, `searchIndex()` |
 | Index Records | `listIndexRecords()`, `createIndexRecord()`, `createIndexRecordsBatch()`, `checkIndexRecordsExist()`, `getIndexRecord()`, `indexRecordExists()`, `deleteIndexRecord()`, `deleteIndexRecords()`, `updateIndexRecordLabels()`, `updateIndexRecordTags()`, `updateIndexRecordCustomMetadata()` |
 | Buckets | `createBucket()`, `listBuckets()`, `getBucket()`, `deleteBucket()`, `bucketExists()`, `putBucketObject()`, `listBucketObjects()`, `deleteBucketObject()`, `getBucketObjectMetadata()`, `downloadBucketObject()` |
-| Crawl Plans | `createCrawlPlan()`, `listCrawlPlans()`, `getCrawlPlan()`, `updateCrawlPlan()`, `deleteCrawlPlan()`, `crawlPlanExists()`, `startCrawl()`, `stopCrawl()`, `testCrawlConnectivity()`, `enumerateCrawl()` |
+| Crawl Plans | `createCrawlPlan()`, `listCrawlPlans()`, `getCrawlPlan()`, `updateCrawlPlan()`, `deleteCrawlPlan()`, `crawlPlanExists()`, `startCrawl()`, `stopCrawl()`, `testCrawlConnectivity()`, `testCrawlPlanDraftConnectivity()`, `enumerateCrawl()` |
 | Crawl Operations | `listCrawlOperations()`, `getCrawlPlanStatistics()`, `getCrawlOperation()`, `getCrawlOperationStatistics()`, `deleteCrawlOperation()`, `getCrawlOperationEnumeration()` |
 | Eval Facts | `createEvalFact()`, `listEvalFacts()`, `getEvalFact()`, `updateEvalFact()`, `deleteEvalFact()` |
 | Eval Runs | `createEvalRun()`, `listEvalRuns()`, `getEvalRun()`, `deleteEvalRun()`, `getEvalRunResults()`, `streamEvalRunResults()`, `getEvalResult()`, `getDefaultJudgePrompt()` |

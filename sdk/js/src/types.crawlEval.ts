@@ -1,4 +1,4 @@
-import type { CrawlOperationState, CrawlPlanState, EvalStatus, RepositoryType, ScheduleInterval, WebAuthType } from './types';
+import type { CrawlOperationState, CrawlPlanState, EvalStatus, NfsVersion, RepositoryType, ScheduleInterval, WebAuthType } from './types';
 
 /** Crawl plan configuration. */
 export interface CrawlPlan {
@@ -30,9 +30,14 @@ export interface CrawlIngestionSettings {
   S3BucketName?: string;
 }
 
-/** Crawl repository settings. */
-export interface CrawlRepositorySettings {
+/** Shared crawl repository settings. */
+export interface CrawlRepositorySettingsBase {
   RepositoryType?: RepositoryType;
+}
+
+/** Web crawl repository settings. */
+export interface WebCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'Web';
   AuthenticationType?: WebAuthType;
   Username?: string;
   Password?: string;
@@ -52,6 +57,39 @@ export interface CrawlRepositorySettings {
   MaxDepth?: number;
   MaxParallelTasks?: number;
   CrawlDelayMs?: number;
+}
+
+/** CIFS crawl repository settings. */
+export interface CifsCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'CIFS';
+  CifsHostname?: string;
+  CifsUsername?: string;
+  CifsPassword?: string;
+  CifsShareName?: string;
+  IncludeSubdirectories?: boolean;
+}
+
+/** NFS crawl repository settings. */
+export interface NfsCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'NFS';
+  NfsHostname?: string;
+  NfsUserId?: number | null;
+  NfsGroupId?: number | null;
+  NfsShareName?: string;
+  NfsVersion?: NfsVersion;
+  IncludeSubdirectories?: boolean;
+}
+
+/** Crawl repository settings. */
+export type CrawlRepositorySettings =
+  | WebCrawlRepositorySettings
+  | CifsCrawlRepositorySettings
+  | NfsCrawlRepositorySettings;
+
+/** Crawl repository connectivity test result. */
+export interface CrawlConnectivityResult {
+  Success: boolean;
+  Message?: string | null;
 }
 
 /** Crawl schedule settings. */

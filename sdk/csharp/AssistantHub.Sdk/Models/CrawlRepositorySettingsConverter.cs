@@ -1,13 +1,12 @@
-namespace AssistantHub.Core.Models
+namespace AssistantHub.Sdk.Models
 {
     using System;
     using System.Text.Json;
     using System.Text.Json.Serialization;
-    using AssistantHub.Core.Enums;
+    using AssistantHub.Sdk.Enums;
 
     /// <summary>
-    /// JSON converter for CrawlRepositorySettings polymorphic deserialization.
-    /// Uses the RepositoryType property to determine the derived type.
+    /// JSON converter for crawl repository settings polymorphic deserialization.
     /// </summary>
     public class CrawlRepositorySettingsConverter : JsonConverter<CrawlRepositorySettings>
     {

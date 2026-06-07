@@ -3,7 +3,9 @@ namespace Test.Automated
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Text.Json;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Models;
@@ -282,6 +284,80 @@ namespace Test.Automated
                 AssertHelper.IsTrue(collectionSearch.TryGetProperty("requestBody", out _), "Collection search OpenAPI request body");
             });
 
+            await ExecuteTestAsync("OpenAPI: crawl plan repository types are documented", async () =>
+            {
+                string root = GetRepositoryRoot();
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "openapi.json")));
+                JsonElement paths = document.RootElement.GetProperty("paths");
+                JsonElement schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans", "put", "crawl plan create OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans", "get", "crawl plan list OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans/connectivity", "post", "crawl plan draft connectivity OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans/{id}", "get", "crawl plan get OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans/{id}/connectivity", "post", "crawl plan connectivity OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/crawlplans/{id}/enumerate", "get", "crawl plan enumerate OpenAPI route");
+
+                JsonElement repositoryTypeEnum = schemas.GetProperty("RepositoryTypeEnum").GetProperty("enum");
+                AssertHelper.IsTrue(repositoryTypeEnum.ToString().Contains("Web"), "OpenAPI repository type Web");
+                AssertHelper.IsTrue(repositoryTypeEnum.ToString().Contains("CIFS"), "OpenAPI repository type CIFS");
+                AssertHelper.IsTrue(repositoryTypeEnum.ToString().Contains("NFS"), "OpenAPI repository type NFS");
+
+                AssertHelper.IsTrue(schemas.TryGetProperty("CrawlRepositorySettings", out JsonElement settingsSchema), "OpenAPI CrawlRepositorySettings schema");
+                AssertHelper.IsTrue(settingsSchema.TryGetProperty("oneOf", out _), "OpenAPI CrawlRepositorySettings oneOf");
+                AssertHelper.IsTrue(schemas.TryGetProperty("CifsCrawlRepositorySettings", out _), "OpenAPI CIFS settings schema");
+                AssertHelper.IsTrue(schemas.TryGetProperty("NfsCrawlRepositorySettings", out _), "OpenAPI NFS settings schema");
+                AssertHelper.IsTrue(schemas.TryGetProperty("NfsVersionEnum", out _), "OpenAPI NFS version schema");
+            });
+
+            await ExecuteTestAsync("API route contracts: backend, OpenAPI, Postman, REST docs, and explorer stay aligned", async () =>
+            {
+                string root = GetRepositoryRoot();
+                SortedSet<string> backendRoutes = ExtractBackendRoutes(root);
+                SortedSet<string> openApiRoutes = ExtractOpenApiRoutes(root);
+                SortedSet<string> postmanRoutes = ExtractPostmanRoutes(root);
+                SortedSet<string> restRoutes = ExtractRestApiRoutes(root);
+
+                AssertHelper.AreEqual(183, backendRoutes.Count, "backend route count");
+                AssertRouteSetsEqual(backendRoutes, openApiRoutes, "OpenAPI");
+                AssertRouteSetsEqual(backendRoutes, postmanRoutes, "Postman");
+                AssertRouteSetsEqual(backendRoutes, restRoutes, "REST_API.md");
+
+                using JsonDocument routeDocument = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "openapi.json")));
+                JsonElement routePaths = routeDocument.RootElement.GetProperty("paths");
+                JsonElement swaggerOperation = routePaths.GetProperty("/swagger").GetProperty("get");
+                JsonElement swaggerSecurity = swaggerOperation.GetProperty("security");
+                JsonElement securitySchemes = routeDocument.RootElement.GetProperty("components").GetProperty("securitySchemes");
+                JsonElement bearerAuth;
+                AssertHelper.AreEqual(0, swaggerSecurity.GetArrayLength(), "Swagger UI OpenAPI route should not require auth");
+                AssertHelper.IsTrue(securitySchemes.TryGetProperty("BearerAuth", out bearerAuth), "OpenAPI BearerAuth security scheme");
+
+                string serverSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+                string explorerSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "ApiExplorerView.jsx"));
+                string explorerUtilsSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "apiExplorerUtils.js"));
+                string crawlPlanModalSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "components", "modals", "CrawlPlanFormModal.jsx"));
+                string dashboardApiSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "utils", "api.js"));
+                string csharpSdkSource = File.ReadAllText(Path.Combine(root, "sdk", "csharp", "AssistantHub.Sdk", "AssistantHubClientResourceParityBase.cs"));
+                string jsSdkSource = File.ReadAllText(Path.Combine(root, "sdk", "js", "src", "client.ts"));
+                string pythonSdkSource = File.ReadAllText(Path.Combine(root, "sdk", "python", "assistanthub_sdk", "client.py"));
+                string mcpDocs = File.ReadAllText(Path.Combine(root, "MCP_API.md"));
+                AssertHelper.StringContains(serverSource, "Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, \"/swagger\", openApiHandler.GetSwaggerAsync)", "Swagger UI pre-auth route");
+                AssertHelper.StringContains(explorerSource, "operation.tags?.[0] === 'Assistant Public APIs'", "API Explorer public assistant OpenAPI merge");
+                AssertHelper.StringContains(explorerUtilsSource, "POST:/v1.0/crawlplans/connectivity", "API Explorer draft crawl connectivity template");
+                AssertHelper.StringContains(explorerUtilsSource, "assistant-chat-open", "API Explorer chat-open template");
+                AssertHelper.StringContains(explorerUtilsSource, "assistant-document-download", "API Explorer document download template");
+                AssertHelper.StringContains(crawlPlanModalSource, "Test Connectivity", "Create Crawl Plan modal connectivity button");
+                AssertHelper.StringContains(dashboardApiSource, "/v1.0/crawlplans/connectivity", "Dashboard draft crawl connectivity client route");
+                AssertHelper.StringContains(csharpSdkSource, "TestCrawlPlanDraftConnectivityAsync", "C# SDK draft crawl connectivity method");
+                AssertHelper.StringContains(jsSdkSource, "testCrawlPlanDraftConnectivity", "JS SDK draft crawl connectivity method");
+                AssertHelper.StringContains(pythonSdkSource, "test_crawl_plan_draft_connectivity", "Python SDK draft crawl connectivity method");
+                AssertHelper.StringContains(mcpDocs, "`GET /swagger`", "MCP docs Swagger UI route");
+                AssertHelper.StringContains(mcpDocs, "`crawl plan draft connectivity` | None | Deferred", "MCP docs draft crawl connectivity deferred");
+                AssertHelper.StringContains(mcpDocs, "`GET /v1.0/openapi.json`", "MCP docs versioned OpenAPI route");
+                AssertHelper.StringContains(mcpDocs, "`embedding endpoint load` | None | Deferred", "MCP docs embedding load deferred");
+                AssertHelper.StringContains(mcpDocs, "`completion endpoint load` | None | Deferred", "MCP docs completion load deferred");
+            });
+
             await ExecuteTestAsync("Postman: search artifact requests are present", async () =>
             {
                 string root = GetRepositoryRoot();
@@ -295,8 +371,23 @@ namespace Test.Automated
                 AssertHelper.StringContains(postman, "\\\"IncludeDocumentTermStats\\\": true", "index search Postman IncludeDocumentTermStats");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/terms/top", "index top terms Postman request");
                 AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/custom-metadata", "index custom metadata Postman request");
-                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/labels", "index record labels Postman request");
-                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{indexRecordId}}/custom-metadata", "index record custom metadata Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}/labels", "index record labels Postman request");
+                AssertHelper.StringContains(postman, "{{baseUrl}}/v1.0/indices/{{indexId}}/records/{{recordId}}/custom-metadata", "index record custom metadata Postman request");
+            });
+
+            await ExecuteTestAsync("Postman: crawl plan repository examples are present", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string postman = File.ReadAllText(Path.Combine(root, "postman", "AssistantHub.postman_collection.json"));
+                JsonDocument.Parse(postman).Dispose();
+
+                AssertHelper.StringContains(postman, "\"name\": \"Create Web Crawl Plan\"", "Postman web crawl plan request");
+                AssertHelper.StringContains(postman, "\"name\": \"Create CIFS Crawl Plan\"", "Postman CIFS crawl plan request");
+                AssertHelper.StringContains(postman, "\"name\": \"Create NFS Crawl Plan\"", "Postman NFS crawl plan request");
+                AssertHelper.StringContains(postman, "\"key\": \"cifsHostname\"", "Postman CIFS hostname variable");
+                AssertHelper.StringContains(postman, "\"key\": \"nfsHostname\"", "Postman NFS hostname variable");
+                AssertHelper.StringContains(postman, "\\\"CifsHostname\\\": \\\"{{cifsHostname}}\\\"", "Postman CIFS settings payload");
+                AssertHelper.StringContains(postman, "\\\"NfsUserId\\\": {{nfsUserId}}", "Postman NFS user ID payload");
             });
 
             return GetResults();
@@ -306,6 +397,132 @@ namespace Test.Automated
         {
             AssertHelper.IsTrue(paths.TryGetProperty(path, out JsonElement pathItem), name + " path");
             AssertHelper.IsTrue(pathItem.TryGetProperty(method, out _), name + " method");
+        }
+
+        private static void AssertRouteSetsEqual(SortedSet<string> expected, SortedSet<string> actual, string artifactName)
+        {
+            List<string> missing = expected.Where(route => !actual.Contains(route)).ToList();
+            List<string> extra = actual.Where(route => !expected.Contains(route)).ToList();
+
+            AssertHelper.IsTrue(
+                missing.Count == 0,
+                artifactName + " missing backend routes: " + String.Join(", ", missing.Take(20)));
+
+            AssertHelper.IsTrue(
+                extra.Count == 0,
+                artifactName + " has routes not registered by backend: " + String.Join(", ", extra.Take(20)));
+        }
+
+        private static SortedSet<string> ExtractBackendRoutes(string root)
+        {
+            string source = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+            Regex regex = new Regex("Routes\\.(PreAuthentication|PostAuthentication)\\.(Static|Parameter)\\.Add\\(WatsonWebserver\\.Core\\.HttpMethod\\.(\\w+),\\s*\"([^\"]+)\"");
+            MatchCollection matches = regex.Matches(source);
+            SortedSet<string> routes = new SortedSet<string>();
+
+            foreach (Match match in matches)
+            {
+                routes.Add(match.Groups[3].Value.ToUpperInvariant() + " " + match.Groups[4].Value);
+            }
+
+            return routes;
+        }
+
+        private static SortedSet<string> ExtractOpenApiRoutes(string root)
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "openapi.json")));
+            SortedSet<string> routes = new SortedSet<string>();
+            JsonElement paths = document.RootElement.GetProperty("paths");
+
+            foreach (JsonProperty pathProperty in paths.EnumerateObject())
+            {
+                foreach (JsonProperty methodProperty in pathProperty.Value.EnumerateObject())
+                {
+                    string method = methodProperty.Name.ToUpperInvariant();
+                    if (IsHttpMethod(method))
+                    {
+                        routes.Add(method + " " + pathProperty.Name);
+                    }
+                }
+            }
+
+            return routes;
+        }
+
+        private static SortedSet<string> ExtractPostmanRoutes(string root)
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "postman", "AssistantHub.postman_collection.json")));
+            SortedSet<string> routes = new SortedSet<string>();
+            JsonElement items = document.RootElement.GetProperty("item");
+            ExtractPostmanRoutesRecursive(items, routes);
+            return routes;
+        }
+
+        private static void ExtractPostmanRoutesRecursive(JsonElement items, SortedSet<string> routes)
+        {
+            foreach (JsonElement item in items.EnumerateArray())
+            {
+                if (item.TryGetProperty("item", out JsonElement children))
+                {
+                    ExtractPostmanRoutesRecursive(children, routes);
+                }
+
+                if (!item.TryGetProperty("request", out JsonElement request)) continue;
+                if (!request.TryGetProperty("method", out JsonElement methodElement)) continue;
+                if (!request.TryGetProperty("url", out JsonElement urlElement)) continue;
+
+                string method = methodElement.GetString()?.ToUpperInvariant();
+                string rawUrl = null;
+
+                if (urlElement.ValueKind == JsonValueKind.String)
+                {
+                    rawUrl = urlElement.GetString();
+                }
+                else if (urlElement.ValueKind == JsonValueKind.Object && urlElement.TryGetProperty("raw", out JsonElement rawElement))
+                {
+                    rawUrl = rawElement.GetString();
+                }
+
+                if (String.IsNullOrEmpty(method) || String.IsNullOrEmpty(rawUrl)) continue;
+                string path = rawUrl.Replace("{{baseUrl}}", "");
+                routes.Add(method + " " + NormalizeRoutePath(path));
+            }
+        }
+
+        private static SortedSet<string> ExtractRestApiRoutes(string root)
+        {
+            string source = File.ReadAllText(Path.Combine(root, "REST_API.md"));
+            Regex regex = new Regex("^###\\s+(GET|POST|PUT|DELETE|HEAD|PATCH)\\s+([^\\s]+)", RegexOptions.Multiline);
+            MatchCollection matches = regex.Matches(source);
+            SortedSet<string> routes = new SortedSet<string>();
+
+            foreach (Match match in matches)
+            {
+                routes.Add(match.Groups[1].Value.ToUpperInvariant() + " " + NormalizeRoutePath(match.Groups[2].Value));
+            }
+
+            return routes;
+        }
+
+        private static string NormalizeRoutePath(string path)
+        {
+            string normalized = path;
+            int queryIndex = normalized.IndexOf("?", StringComparison.Ordinal);
+            if (queryIndex >= 0) normalized = normalized.Substring(0, queryIndex);
+            normalized = Regex.Replace(normalized, "\\{\\{([A-Za-z0-9_]+)\\}\\}", "{$1}");
+            normalized = Regex.Replace(normalized, ":([A-Za-z0-9_]+)", "{$1}");
+            return normalized;
+        }
+
+        private static bool IsHttpMethod(string method)
+        {
+            return
+                method == "GET" ||
+                method == "POST" ||
+                method == "PUT" ||
+                method == "DELETE" ||
+                method == "HEAD" ||
+                method == "PATCH";
         }
 
         private static string GetRepositoryRoot()

@@ -118,10 +118,20 @@ namespace Test.Automated
                 AssertHelper.AreEqual(2, Enum.GetValues<EnumerationOrderEnum>().Length, "count");
             });
 
-            await ExecuteTestAsync("Enum.RepositoryTypeEnum: Web", async () =>
+            await ExecuteTestAsync("Enum.RepositoryTypeEnum: Web, CIFS, and NFS", async () =>
             {
                 AssertHelper.AreEqual(RepositoryTypeEnum.Web, Enum.Parse<RepositoryTypeEnum>("Web"), "Web");
-                AssertHelper.AreEqual(1, Enum.GetValues<RepositoryTypeEnum>().Length, "count");
+                AssertHelper.AreEqual(RepositoryTypeEnum.CIFS, Enum.Parse<RepositoryTypeEnum>("CIFS"), "CIFS");
+                AssertHelper.AreEqual(RepositoryTypeEnum.NFS, Enum.Parse<RepositoryTypeEnum>("NFS"), "NFS");
+                AssertHelper.AreEqual(3, Enum.GetValues<RepositoryTypeEnum>().Length, "count");
+            });
+
+            await ExecuteTestAsync("Enum.NfsVersionEnum: V2, V3, and V4", async () =>
+            {
+                AssertHelper.AreEqual(NfsVersionEnum.V2, Enum.Parse<NfsVersionEnum>("V2"), "V2");
+                AssertHelper.AreEqual(NfsVersionEnum.V3, Enum.Parse<NfsVersionEnum>("V3"), "V3");
+                AssertHelper.AreEqual(NfsVersionEnum.V4, Enum.Parse<NfsVersionEnum>("V4"), "V4");
+                AssertHelper.AreEqual(3, Enum.GetValues<NfsVersionEnum>().Length, "count");
             });
 
             await ExecuteTestAsync("Enum.WebAuthTypeEnum: all values", async () =>
@@ -283,6 +293,141 @@ namespace Test.Automated
                 AssertHelper.IsNotNull(plan.Filter, "Filter");
                 AssertHelper.AreEqual(8, plan.MaxDrainTasks, "default MaxDrainTasks");
                 AssertHelper.AreEqual(7, plan.RetentionDays, "default RetentionDays");
+            });
+
+            await ExecuteTestAsync("Model.CifsCrawlRepositorySettings: defaults and validation", async () =>
+            {
+                CifsCrawlRepositorySettings settings = new CifsCrawlRepositorySettings();
+                AssertHelper.AreEqual(RepositoryTypeEnum.CIFS, settings.RepositoryType, "RepositoryType");
+                AssertHelper.AreEqual(true, settings.IncludeSubdirectories, "IncludeSubdirectories");
+
+                List<string> missing = settings.Validate();
+                AssertHelper.AreEqual(4, missing.Count, "missing field count");
+
+                settings.CifsHostname = "fileserver";
+                settings.CifsUsername = "crawler";
+                settings.CifsPassword = "secret";
+                settings.CifsShareName = "content";
+                AssertHelper.IsEmpty(settings.Validate(), "valid CIFS settings errors");
+            });
+
+            await ExecuteTestAsync("Model.NfsCrawlRepositorySettings: defaults and validation", async () =>
+            {
+                NfsCrawlRepositorySettings settings = new NfsCrawlRepositorySettings();
+                AssertHelper.AreEqual(RepositoryTypeEnum.NFS, settings.RepositoryType, "RepositoryType");
+                AssertHelper.AreEqual(NfsVersionEnum.V3, settings.NfsVersion, "default NfsVersion");
+                AssertHelper.AreEqual(true, settings.IncludeSubdirectories, "IncludeSubdirectories");
+
+                List<string> missing = settings.Validate();
+                AssertHelper.AreEqual(4, missing.Count, "missing field count");
+
+                settings.NfsHostname = "nfs-server";
+                settings.NfsUserId = 0;
+                settings.NfsGroupId = 0;
+                settings.NfsShareName = "/exports/content";
+                AssertHelper.IsEmpty(settings.Validate(), "valid NFS settings errors");
+
+                bool threw = false;
+                try
+                {
+                    settings.NfsUserId = -1;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    threw = true;
+                }
+                AssertHelper.IsTrue(threw, "negative NfsUserId should throw");
+            });
+
+            await ExecuteTestAsync("Model.CrawlPlan: repository settings JSON round-trip", async () =>
+            {
+                CrawlPlan cifsPlan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "fileserver",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content",
+                        IncludeSubdirectories = false
+                    }
+                };
+
+                string cifsJson = JsonSerializer.Serialize(cifsPlan, _jsonOptionsDefault);
+                CrawlPlan cifsCopy = JsonSerializer.Deserialize<CrawlPlan>(cifsJson, _jsonOptionsDefault);
+                AssertHelper.IsTrue(cifsCopy.RepositorySettings is CifsCrawlRepositorySettings, "CIFS settings type");
+                CifsCrawlRepositorySettings cifsSettings = cifsCopy.RepositorySettings as CifsCrawlRepositorySettings;
+                AssertHelper.AreEqual("fileserver", cifsSettings.CifsHostname, "CifsHostname");
+                AssertHelper.AreEqual(false, cifsSettings.IncludeSubdirectories, "CIFS IncludeSubdirectories");
+
+                CrawlPlan nfsPlan = new CrawlPlan
+                {
+                    RepositoryType = RepositoryTypeEnum.NFS,
+                    RepositorySettings = new NfsCrawlRepositorySettings
+                    {
+                        NfsHostname = "nfs-server",
+                        NfsUserId = 1000,
+                        NfsGroupId = 1000,
+                        NfsShareName = "/exports/content",
+                        NfsVersion = NfsVersionEnum.V4
+                    }
+                };
+
+                string nfsJson = JsonSerializer.Serialize(nfsPlan, _jsonOptionsDefault);
+                CrawlPlan nfsCopy = JsonSerializer.Deserialize<CrawlPlan>(nfsJson, _jsonOptionsDefault);
+                AssertHelper.IsTrue(nfsCopy.RepositorySettings is NfsCrawlRepositorySettings, "NFS settings type");
+                NfsCrawlRepositorySettings nfsSettings = nfsCopy.RepositorySettings as NfsCrawlRepositorySettings;
+                AssertHelper.AreEqual("nfs-server", nfsSettings.NfsHostname, "NfsHostname");
+                AssertHelper.AreEqual(1000, nfsSettings.NfsUserId.Value, "NfsUserId");
+                AssertHelper.AreEqual(NfsVersionEnum.V4, nfsSettings.NfsVersion, "NfsVersion");
+            });
+
+            await ExecuteTestAsync("Model.CrawlRepositorySettingsConverter: detects concrete types", async () =>
+            {
+                JsonSerializerOptions options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Converters =
+                    {
+                        new JsonStringEnumConverter(),
+                        new CrawlRepositorySettingsConverter()
+                    }
+                };
+
+                CrawlRepositorySettings web = JsonSerializer.Deserialize<CrawlRepositorySettings>(
+                    "{\"RepositoryType\":\"Web\",\"StartUrl\":\"https://example.com\"}",
+                    options);
+                AssertHelper.IsTrue(web is WebCrawlRepositorySettings, "web settings type");
+
+                CrawlRepositorySettings cifs = JsonSerializer.Deserialize<CrawlRepositorySettings>(
+                    "{\"RepositoryType\":\"CIFS\",\"CifsHostname\":\"fileserver\",\"CifsUsername\":\"crawler\",\"CifsPassword\":\"secret\",\"CifsShareName\":\"content\"}",
+                    options);
+                AssertHelper.IsTrue(cifs is CifsCrawlRepositorySettings, "CIFS settings type");
+
+                CrawlRepositorySettings nfs = JsonSerializer.Deserialize<CrawlRepositorySettings>(
+                    "{\"RepositoryType\":\"NFS\",\"NfsHostname\":\"nfs-server\",\"NfsUserId\":1000,\"NfsGroupId\":1000,\"NfsShareName\":\"/exports/content\",\"NfsVersion\":\"V3\"}",
+                    options);
+                AssertHelper.IsTrue(nfs is NfsCrawlRepositorySettings, "NFS settings type");
+
+                CrawlRepositorySettings legacyWeb = JsonSerializer.Deserialize<CrawlRepositorySettings>(
+                    "{\"StartUrl\":\"https://legacy.example.com\"}",
+                    options);
+                AssertHelper.IsTrue(legacyWeb is WebCrawlRepositorySettings, "legacy web settings type");
+
+                bool threw = false;
+                try
+                {
+                    JsonSerializer.Deserialize<CrawlRepositorySettings>(
+                        "{\"RepositoryType\":\"Unknown\",\"StartUrl\":\"https://example.com\"}",
+                        options);
+                }
+                catch (JsonException)
+                {
+                    threw = true;
+                }
+
+                AssertHelper.IsTrue(threw, "unknown repository type should throw");
             });
 
             await ExecuteTestAsync("Model.CrawlOperation: defaults and state", async () =>

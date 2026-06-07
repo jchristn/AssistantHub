@@ -23,6 +23,8 @@ namespace Test.Sdk.Tests
         public static async Task RunAsync(TestRunner runner, AssistantHubClient client, CancellationToken token)
         {
             string createdPlanId = null;
+            string createdCifsPlanId = null;
+            string createdNfsPlanId = null;
             string uniqueSuffix = Guid.NewGuid().ToString("N").Substring(0, 8);
 
             await runner.RunTestAsync("CrawlPlan: Create crawl plan", async (CancellationToken ct) =>
@@ -40,7 +42,8 @@ namespace Test.Sdk.Tests
                         CrawlDelayMs = 1000,
                         FollowLinks = false,
                         FollowRedirects = true,
-                        RespectRobotsTxt = true,
+                        ExtractSitemapLinks = true,
+                        IgnoreRobotsTxt = false,
                         RestrictToChildUrls = true
                     },
                     Schedule = new CrawlScheduleSettings
@@ -63,14 +66,86 @@ namespace Test.Sdk.Tests
                 createdPlanId = created.Id;
             }, token).ConfigureAwait(false);
 
+            await runner.RunTestAsync("CrawlPlan: Create CIFS crawl plan", async (CancellationToken ct) =>
+            {
+                CrawlPlan plan = new CrawlPlan
+                {
+                    Name = "test-cifs-crawlplan-" + uniqueSuffix,
+                    RepositoryType = RepositoryTypeEnum.CIFS,
+                    RepositorySettings = new CifsCrawlRepositorySettings
+                    {
+                        CifsHostname = "fileserver.example.com",
+                        CifsUsername = "crawler",
+                        CifsPassword = "secret",
+                        CifsShareName = "content",
+                        IncludeSubdirectories = true
+                    },
+                    Schedule = new CrawlScheduleSettings
+                    {
+                        IntervalType = ScheduleIntervalEnum.OneTime,
+                        IntervalValue = 1
+                    },
+                    ProcessAdditions = true,
+                    ProcessUpdates = true,
+                    ProcessDeletions = false,
+                    MaxDrainTasks = 1,
+                    RetentionDays = 7
+                };
+
+                CrawlPlan created = await client.CreateCrawlPlanAsync(plan, ct).ConfigureAwait(false);
+                AssertHelper.IsNotNull(created, "Create CIFS crawl plan result");
+                AssertHelper.IsNotNull(created.Id, "Created CIFS crawl plan ID");
+                AssertHelper.AreEqual(RepositoryTypeEnum.CIFS, created.RepositoryType, "Created CIFS repository type");
+                AssertHelper.IsTrue(created.RepositorySettings is CifsCrawlRepositorySettings, "Created CIFS repository settings type");
+                createdCifsPlanId = created.Id;
+            }, token).ConfigureAwait(false);
+
+            await runner.RunTestAsync("CrawlPlan: Create NFS crawl plan", async (CancellationToken ct) =>
+            {
+                CrawlPlan plan = new CrawlPlan
+                {
+                    Name = "test-nfs-crawlplan-" + uniqueSuffix,
+                    RepositoryType = RepositoryTypeEnum.NFS,
+                    RepositorySettings = new NfsCrawlRepositorySettings
+                    {
+                        NfsHostname = "nfs.example.com",
+                        NfsUserId = 1000,
+                        NfsGroupId = 1000,
+                        NfsShareName = "/exports/content",
+                        NfsVersion = NfsVersionEnum.V3,
+                        IncludeSubdirectories = true
+                    },
+                    Schedule = new CrawlScheduleSettings
+                    {
+                        IntervalType = ScheduleIntervalEnum.OneTime,
+                        IntervalValue = 1
+                    },
+                    ProcessAdditions = true,
+                    ProcessUpdates = true,
+                    ProcessDeletions = false,
+                    MaxDrainTasks = 1,
+                    RetentionDays = 7
+                };
+
+                CrawlPlan created = await client.CreateCrawlPlanAsync(plan, ct).ConfigureAwait(false);
+                AssertHelper.IsNotNull(created, "Create NFS crawl plan result");
+                AssertHelper.IsNotNull(created.Id, "Created NFS crawl plan ID");
+                AssertHelper.AreEqual(RepositoryTypeEnum.NFS, created.RepositoryType, "Created NFS repository type");
+                AssertHelper.IsTrue(created.RepositorySettings is NfsCrawlRepositorySettings, "Created NFS repository settings type");
+                createdNfsPlanId = created.Id;
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("CrawlPlan: List crawl plans includes created one", async (CancellationToken ct) =>
             {
                 AssertHelper.IsNotNull(createdPlanId, "createdPlanId from previous test");
+                AssertHelper.IsNotNull(createdCifsPlanId, "createdCifsPlanId from previous test");
+                AssertHelper.IsNotNull(createdNfsPlanId, "createdNfsPlanId from previous test");
                 EnumerationResult<CrawlPlan> result = await client.ListCrawlPlansAsync(ct).ConfigureAwait(false);
                 AssertHelper.IsNotNull(result, "ListCrawlPlans result");
                 AssertHelper.IsNotNull(result.Objects, "ListCrawlPlans result.Objects");
-                bool found = result.Objects.Any(p => p.Id == createdPlanId);
-                AssertHelper.IsTrue(found, "Created crawl plan should appear in list");
+                AssertHelper.IsTrue(result.Objects.Any(p => p.Id == createdPlanId), "Created web crawl plan should appear in list");
+                AssertHelper.IsTrue(result.Objects.Any(p => p.Id == createdCifsPlanId), "Created CIFS crawl plan should appear in list");
+                AssertHelper.IsTrue(result.Objects.Any(p => p.Id == createdNfsPlanId), "Created NFS crawl plan should appear in list");
             }, token).ConfigureAwait(false);
 
             await runner.RunTestAsync("CrawlPlan: Get crawl plan by ID", async (CancellationToken ct) =>
@@ -98,7 +173,8 @@ namespace Test.Sdk.Tests
                         CrawlDelayMs = 500,
                         FollowLinks = true,
                         FollowRedirects = true,
-                        RespectRobotsTxt = true,
+                        ExtractSitemapLinks = true,
+                        IgnoreRobotsTxt = false,
                         RestrictToChildUrls = true
                     },
                     Schedule = new CrawlScheduleSettings
@@ -122,6 +198,14 @@ namespace Test.Sdk.Tests
             {
                 AssertHelper.IsNotNull(createdPlanId, "createdPlanId from previous test");
                 await client.DeleteCrawlPlanAsync(createdPlanId, ct).ConfigureAwait(false);
+                if (!String.IsNullOrEmpty(createdCifsPlanId))
+                {
+                    await client.DeleteCrawlPlanAsync(createdCifsPlanId, ct).ConfigureAwait(false);
+                }
+                if (!String.IsNullOrEmpty(createdNfsPlanId))
+                {
+                    await client.DeleteCrawlPlanAsync(createdNfsPlanId, ct).ConfigureAwait(false);
+                }
             }, token).ConfigureAwait(false);
         }
     }

@@ -475,6 +475,55 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `DeleteCrawlPlanAsync(planId)` | Delete a crawl plan |
 | `StartCrawlAsync(planId)` | Start a crawl |
 | `StopCrawlAsync(planId)` | Stop a running crawl |
+| `TestCrawlConnectivityAsync(planId)` | Test saved crawl plan connectivity |
+| `TestCrawlPlanDraftConnectivityAsync(plan)` | Test unsaved crawl plan settings |
+
+Repository settings are polymorphic. Use `WebCrawlRepositorySettings`, `CifsCrawlRepositorySettings`, or `NfsCrawlRepositorySettings` with the matching `RepositoryTypeEnum` value.
+
+```csharp
+CrawlPlan webPlan = new CrawlPlan
+{
+    Name = "Web Crawl",
+    RepositoryType = RepositoryTypeEnum.Web,
+    RepositorySettings = new WebCrawlRepositorySettings
+    {
+        StartUrl = "https://example.com",
+        AuthenticationType = WebAuthTypeEnum.None,
+        FollowLinks = true
+    }
+};
+
+CrawlConnectivityResult connectivity = await client.TestCrawlPlanDraftConnectivityAsync(webPlan);
+
+CrawlPlan cifsPlan = new CrawlPlan
+{
+    Name = "CIFS Share Crawl",
+    RepositoryType = RepositoryTypeEnum.CIFS,
+    RepositorySettings = new CifsCrawlRepositorySettings
+    {
+        CifsHostname = "fileserver.example.com",
+        CifsUsername = "crawler",
+        CifsPassword = "secret",
+        CifsShareName = "content",
+        IncludeSubdirectories = true
+    }
+};
+
+CrawlPlan nfsPlan = new CrawlPlan
+{
+    Name = "NFS Export Crawl",
+    RepositoryType = RepositoryTypeEnum.NFS,
+    RepositorySettings = new NfsCrawlRepositorySettings
+    {
+        NfsHostname = "nfs.example.com",
+        NfsUserId = 1000,
+        NfsGroupId = 1000,
+        NfsShareName = "/exports/content",
+        NfsVersion = NfsVersionEnum.V3,
+        IncludeSubdirectories = true
+    }
+};
+```
 
 ### Crawl Operations
 

@@ -65,7 +65,9 @@ namespace AssistantHub.Server.Services
                         ["BearerAuth"] = new JsonObject
                         {
                             ["type"] = "http",
-                            ["scheme"] = "bearer"
+                            ["scheme"] = "bearer",
+                            ["bearerFormat"] = "Admin API key or bearer token",
+                            ["description"] = "Enter an AssistantHub admin API key or bearer token. Swagger sends it as Authorization: Bearer <token>."
                         }
                     }
                 }
@@ -104,31 +106,68 @@ namespace AssistantHub.Server.Services
         private void AddOperation(JsonObject paths, string path, string method, bool authenticated)
         {
             if (String.IsNullOrEmpty(path) || String.IsNullOrEmpty(method)) return;
-            if (String.Equals(path, "/v1.0/openapi.json", StringComparison.OrdinalIgnoreCase)) return;
+            string normalizedPath = NormalizeRoutePath(path);
 
-            if (!(paths[path] is JsonObject pathItem))
+            if (!(paths[normalizedPath] is JsonObject pathItem))
             {
                 pathItem = new JsonObject();
-                paths[path] = pathItem;
+                paths[normalizedPath] = pathItem;
             }
 
             string normalizedMethod = method.ToLowerInvariant();
             JsonObject operation = new JsonObject
             {
-                ["tags"] = new JsonArray(GetTagForPath(path)),
-                ["summary"] = BuildSummary(method, path),
-                ["operationId"] = BuildOperationId(method, path),
-                ["parameters"] = BuildOperationParameters(path),
+                ["tags"] = new JsonArray(GetTagForPath(normalizedPath)),
+                ["summary"] = BuildSummary(method, normalizedPath),
+                ["operationId"] = BuildOperationId(method, normalizedPath),
+                ["parameters"] = BuildOperationParameters(normalizedPath),
                 ["security"] = authenticated
                     ? new JsonArray { new JsonObject { ["BearerAuth"] = new JsonArray() } }
                     : new JsonArray(),
-                ["responses"] = BuildGenericResponses(method)
+                ["responses"] = String.Equals(normalizedPath, "/swagger", StringComparison.OrdinalIgnoreCase)
+                    ? BuildSwaggerResponses()
+                    : BuildGenericResponses(method)
             };
 
             if (MethodUsuallyHasJsonBody(normalizedMethod))
-                operation["requestBody"] = BuildGenericJsonRequestBody(path);
+                operation["requestBody"] = BuildGenericJsonRequestBody(normalizedPath);
 
             pathItem[normalizedMethod] = operation;
+        }
+
+        private string NormalizeRoutePath(string path)
+        {
+            if (String.IsNullOrEmpty(path)) return path;
+
+            string normalized = path;
+            while (normalized.Length > 1 && normalized.EndsWith("/", StringComparison.Ordinal))
+                normalized = normalized.Substring(0, normalized.Length - 1);
+
+            return normalized;
+        }
+
+        private JsonObject BuildSwaggerResponses()
+        {
+            JsonObject responses = new JsonObject
+            {
+                ["200"] = new JsonObject
+                {
+                    ["description"] = "Swagger UI HTML page.",
+                    ["content"] = new JsonObject
+                    {
+                        ["text/html"] = new JsonObject
+                        {
+                            ["schema"] = new JsonObject
+                            {
+                                ["type"] = "string"
+                            }
+                        }
+                    }
+                }
+            };
+
+            responses["500"] = new JsonObject { ["description"] = "Internal server error." };
+            return responses;
         }
 
         private JsonObject BuildGenericResponses(string method)
@@ -373,7 +412,9 @@ namespace AssistantHub.Server.Services
         private string GetTagForPath(string path)
         {
             if (path == "/") return "Health";
-            if (String.Equals(path, "/openapi.json", StringComparison.OrdinalIgnoreCase)) return "OpenAPI";
+            if (String.Equals(path, "/openapi.json", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(path, "/v1.0/openapi.json", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(path, "/swagger", StringComparison.OrdinalIgnoreCase)) return "OpenAPI";
             if (path.StartsWith("/v1.0/authenticate", StringComparison.OrdinalIgnoreCase)) return "Authentication";
             if (path.StartsWith("/v1.0/requesthistory", StringComparison.OrdinalIgnoreCase)) return "Request History";
             if (path.StartsWith("/v1.0/tenants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/users", StringComparison.OrdinalIgnoreCase)) return "Users";

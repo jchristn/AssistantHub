@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Generic, Optional, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .enums import (
     ApiError,
@@ -15,6 +15,7 @@ from .enums import (
     EnumerationOrder,
     EvalStatus,
     FeedbackRating,
+    NfsVersion,
     RepositoryType,
     ScheduleInterval,
     SummarizationOrder,
@@ -1185,6 +1186,8 @@ class IngestionRule(BaseModel):
 class CrawlScheduleSettings(BaseModel):
     """Schedule configuration for a crawl plan."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     interval_type: ScheduleInterval = Field(
         ScheduleInterval.ONE_TIME, alias="intervalType"
     )
@@ -1193,6 +1196,8 @@ class CrawlScheduleSettings(BaseModel):
 
 class CrawlFilterSettings(BaseModel):
     """Filter configuration for a crawl plan."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     object_prefix: Optional[str] = Field(None, alias="objectPrefix")
     object_suffix: Optional[str] = Field(None, alias="objectSuffix")
@@ -1206,6 +1211,8 @@ class CrawlFilterSettings(BaseModel):
 class CrawlIngestionSettings(BaseModel):
     """Ingestion settings for a crawl plan."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     ingestion_rule_id: Optional[str] = Field(None, alias="ingestionRuleId")
     store_in_s3: bool = Field(False, alias="storeInS3")
     s3_bucket_name: Optional[str] = Field(None, alias="s3BucketName")
@@ -1213,6 +1220,8 @@ class CrawlIngestionSettings(BaseModel):
 
 class CrawlRepositorySettings(BaseModel):
     """Base repository settings for crawling."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     repository_type: RepositoryType = Field(
         RepositoryType.WEB, alias="repositoryType"
@@ -1222,6 +1231,9 @@ class CrawlRepositorySettings(BaseModel):
 class WebCrawlRepositorySettings(CrawlRepositorySettings):
     """Web-specific repository settings for crawling."""
 
+    repository_type: RepositoryType = Field(
+        RepositoryType.WEB, alias="repositoryType"
+    )
     authentication_type: WebAuthType = Field(
         WebAuthType.NONE, alias="authenticationType"
     )
@@ -1245,8 +1257,42 @@ class WebCrawlRepositorySettings(CrawlRepositorySettings):
     crawl_delay_ms: int = Field(1000, alias="crawlDelayMs")
 
 
+class CifsCrawlRepositorySettings(CrawlRepositorySettings):
+    """CIFS-specific repository settings for crawling."""
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.CIFS, alias="repositoryType"
+    )
+    cifs_hostname: Optional[str] = Field(None, alias="cifsHostname")
+    cifs_username: Optional[str] = Field(None, alias="cifsUsername")
+    cifs_password: Optional[str] = Field(None, alias="cifsPassword")
+    cifs_share_name: Optional[str] = Field(None, alias="cifsShareName")
+    include_subdirectories: bool = Field(True, alias="includeSubdirectories")
+
+
+class NfsCrawlRepositorySettings(CrawlRepositorySettings):
+    """NFS-specific repository settings for crawling."""
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.NFS, alias="repositoryType"
+    )
+    nfs_hostname: Optional[str] = Field(None, alias="nfsHostname")
+    nfs_user_id: Optional[int] = Field(None, alias="nfsUserId")
+    nfs_group_id: Optional[int] = Field(None, alias="nfsGroupId")
+    nfs_share_name: Optional[str] = Field(None, alias="nfsShareName")
+    nfs_version: NfsVersion = Field(NfsVersion.V3, alias="nfsVersion")
+    include_subdirectories: bool = Field(True, alias="includeSubdirectories")
+
+
+RepositorySettingsValue = (
+    WebCrawlRepositorySettings | CifsCrawlRepositorySettings | NfsCrawlRepositorySettings
+)
+
+
 class CrawlPlan(BaseModel):
     """A crawl plan defining how to crawl a repository."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Optional[str] = None
     tenant_id: Optional[str] = Field(None, alias="tenantId")
@@ -1257,7 +1303,7 @@ class CrawlPlan(BaseModel):
     ingestion_settings: Optional[CrawlIngestionSettings] = Field(
         None, alias="ingestionSettings"
     )
-    repository_settings: Optional[CrawlRepositorySettings] = Field(
+    repository_settings: Optional[RepositorySettingsValue] = Field(
         None, alias="repositorySettings"
     )
     schedule: Optional[CrawlScheduleSettings] = None
@@ -1275,6 +1321,32 @@ class CrawlPlan(BaseModel):
     last_crawl_success: Optional[bool] = Field(None, alias="lastCrawlSuccess")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+    @field_validator("repository_settings", mode="before")
+    @classmethod
+    def _parse_repository_settings(cls, value: Any) -> Any:
+        if value is None or isinstance(value, CrawlRepositorySettings):
+            return value
+
+        if isinstance(value, dict):
+            repository_type = (
+                value.get("repositoryType")
+                or value.get("RepositoryType")
+                or value.get("repository_type")
+            )
+
+            if repository_type == RepositoryType.CIFS.value:
+                return CifsCrawlRepositorySettings.model_validate(value)
+            if repository_type == RepositoryType.NFS.value:
+                return NfsCrawlRepositorySettings.model_validate(value)
+            if "cifsHostname" in value or "CifsHostname" in value:
+                return CifsCrawlRepositorySettings.model_validate(value)
+            if "nfsHostname" in value or "NfsHostname" in value:
+                return NfsCrawlRepositorySettings.model_validate(value)
+
+            return WebCrawlRepositorySettings.model_validate(value)
+
+        return value
 
 
 class CrawlOperation(BaseModel):

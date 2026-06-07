@@ -100,8 +100,18 @@ export type WebAuthType = (typeof WebAuthType)[keyof typeof WebAuthType];
 /** Repository type for crawls. */
 export const RepositoryType = {
   Web: "Web",
+  CIFS: "CIFS",
+  NFS: "NFS",
 } as const;
 export type RepositoryType = (typeof RepositoryType)[keyof typeof RepositoryType];
+
+/** NFS protocol version. */
+export const NfsVersion = {
+  V2: "V2",
+  V3: "V3",
+  V4: "V4",
+} as const;
+export type NfsVersion = (typeof NfsVersion)[keyof typeof NfsVersion];
 
 /** Summarization order. */
 export const SummarizationOrder = {

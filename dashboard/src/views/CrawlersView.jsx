@@ -67,13 +67,32 @@ function CrawlersView() {
     return new Date(last.getTime() + intervalMs);
   };
 
+  const getRepositorySource = (row) => {
+    const settings = row.RepositorySettings || {};
+    const repositoryType = row.RepositoryType || settings.RepositoryType || 'Web';
+
+    if (repositoryType === 'CIFS') {
+      const hostname = settings.CifsHostname || '';
+      const shareName = settings.CifsShareName || '';
+      return hostname || shareName ? `//${hostname}/${shareName}` : '';
+    }
+
+    if (repositoryType === 'NFS') {
+      const hostname = settings.NfsHostname || '';
+      const shareName = settings.NfsShareName || '';
+      return hostname || shareName ? `${hostname}:${shareName}` : '';
+    }
+
+    return settings.StartUrl || row.StartUrl || '';
+  };
+
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this crawl plan', filterable: true, render: (row) => <CopyableId id={row.Id || row.GUID} /> },
     { key: 'Name', label: 'Name', tooltip: 'Display name for this crawl plan', filterable: true },
-    { key: 'RepositoryType', label: 'Type', tooltip: 'Repository type (e.g. Web)', filterable: true, style: { width: '4.5rem', whiteSpace: 'nowrap' } },
-    { key: 'StartUrl', label: 'URL', tooltip: 'Start URL for this crawler', filterable: true, style: { maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, render: (row) => {
-      const url = row.RepositorySettings?.StartUrl || row.StartUrl || '';
-      return <span title={url}>{url}</span>;
+    { key: 'RepositoryType', label: 'Type', tooltip: 'Repository type for this crawler', filterable: true, style: { width: '4.5rem', whiteSpace: 'nowrap' } },
+    { key: 'Source', label: 'Source', tooltip: 'Repository source for this crawler', filterable: true, style: { maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, render: (row) => {
+      const source = getRepositorySource(row);
+      return <span title={source}>{source}</span>;
     }},
     { key: 'State', label: 'State', tooltip: 'Current state of the crawler', render: (row) => {
       const state = row.State || 'Stopped';
@@ -114,6 +133,10 @@ function CrawlersView() {
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to save crawl plan' });
     }
+  };
+
+  const handleTestDraftConnectivity = async (data) => {
+    return await api.testDraftCrawlConnectivity(data);
   };
 
   const handleDelete = async () => {
@@ -194,6 +217,7 @@ function CrawlersView() {
           ingestionRules={ingestionRules}
           buckets={buckets}
           onSave={handleSave}
+          onTestConnectivity={handleTestDraftConnectivity}
           onClose={() => setShowForm(null)}
         />
       )}

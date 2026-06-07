@@ -64,6 +64,7 @@ import type {
   BucketObjectListResponse,
   BucketObjectMetadata,
   BucketSummary,
+  CrawlConnectivityResult,
   CrawlPlan,
   CrawlOperation,
   EvalFact,
@@ -1119,8 +1120,13 @@ export class AssistantHubClient {
   }
 
   /** Test connectivity for a crawl plan's URL. */
-  async testCrawlConnectivity(planId: string): Promise<{ Connected: boolean; Status?: string; Message?: string }> {
+  async testCrawlConnectivity(planId: string): Promise<CrawlConnectivityResult> {
     return this._request("POST", `/v1.0/crawlplans/${encodeURIComponent(planId)}/connectivity`);
+  }
+
+  /** Test connectivity for an unsaved crawl plan. */
+  async testCrawlPlanDraftConnectivity(plan: CrawlPlan): Promise<CrawlConnectivityResult> {
+    return this._request("POST", "/v1.0/crawlplans/connectivity", plan);
   }
 
   /** Enumerate crawl plan contents. */

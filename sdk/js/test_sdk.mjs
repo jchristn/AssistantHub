@@ -728,20 +728,24 @@ async function requestHistoryTests(runner, client) {
 async function crawlPlanTests(runner, client) {
   const suffix = uniqueSuffix();
   let createdPlanId = null;
+  let createdCifsPlanId = null;
+  let createdNfsPlanId = null;
 
   await runner.runTest("CrawlPlan: Create crawl plan", async () => {
     const result = await client.createCrawlPlan({
       Name: "test-crawl-plan-" + suffix,
       RepositoryType: "Web",
       RepositorySettings: {
-        AuthType: "None",
+        RepositoryType: "Web",
+        AuthenticationType: "None",
         StartUrl: "https://example.com",
         MaxDepth: 1,
         MaxParallelTasks: 1,
         CrawlDelayMs: 1000,
         FollowLinks: false,
         FollowRedirects: true,
-        RespectRobotsTxt: true,
+        ExtractSitemapLinks: true,
+        IgnoreRobotsTxt: false,
         RestrictToChildUrls: true,
       },
       Schedule: {
@@ -760,13 +764,73 @@ async function crawlPlanTests(runner, client) {
     createdPlanId = result.Id;
   });
 
+  await runner.runTest("CrawlPlan: Create CIFS crawl plan", async () => {
+    const result = await client.createCrawlPlan({
+      Name: "test-cifs-crawl-plan-" + suffix,
+      RepositoryType: "CIFS",
+      RepositorySettings: {
+        RepositoryType: "CIFS",
+        CifsHostname: "fileserver.example.com",
+        CifsUsername: "crawler",
+        CifsPassword: "secret",
+        CifsShareName: "content",
+        IncludeSubdirectories: true,
+      },
+      Schedule: {
+        IntervalType: "OneTime",
+        IntervalValue: 1,
+      },
+      ProcessAdditions: true,
+      ProcessUpdates: true,
+      ProcessDeletions: false,
+      MaxDrainTasks: 1,
+      RetentionDays: 7,
+    });
+    assertNotNull(result, "Create CIFS CrawlPlan result");
+    assertNotNull(result.Id, "CIFS CrawlPlan ID");
+    assertEqual("CIFS", result.RepositoryType, "CIFS RepositoryType");
+    createdCifsPlanId = result.Id;
+  });
+
+  await runner.runTest("CrawlPlan: Create NFS crawl plan", async () => {
+    const result = await client.createCrawlPlan({
+      Name: "test-nfs-crawl-plan-" + suffix,
+      RepositoryType: "NFS",
+      RepositorySettings: {
+        RepositoryType: "NFS",
+        NfsHostname: "nfs.example.com",
+        NfsUserId: 1000,
+        NfsGroupId: 1000,
+        NfsShareName: "/exports/content",
+        NfsVersion: "V3",
+        IncludeSubdirectories: true,
+      },
+      Schedule: {
+        IntervalType: "OneTime",
+        IntervalValue: 1,
+      },
+      ProcessAdditions: true,
+      ProcessUpdates: true,
+      ProcessDeletions: false,
+      MaxDrainTasks: 1,
+      RetentionDays: 7,
+    });
+    assertNotNull(result, "Create NFS CrawlPlan result");
+    assertNotNull(result.Id, "NFS CrawlPlan ID");
+    assertEqual("NFS", result.RepositoryType, "NFS RepositoryType");
+    createdNfsPlanId = result.Id;
+  });
+
   await runner.runTest("CrawlPlan: List crawl plans includes created one", async () => {
     assertNotNull(createdPlanId, "createdPlanId from previous test");
+    assertNotNull(createdCifsPlanId, "createdCifsPlanId from previous test");
+    assertNotNull(createdNfsPlanId, "createdNfsPlanId from previous test");
     const result = await client.listCrawlPlans();
     assertNotNull(result, "ListCrawlPlans result");
     assertNotNull(result.Objects, "ListCrawlPlans Objects");
-    const found = result.Objects.some((p) => p.Id === createdPlanId);
-    assertTrue(found, "Created crawl plan should appear in list");
+    assertTrue(result.Objects.some((p) => p.Id === createdPlanId), "Created web crawl plan should appear in list");
+    assertTrue(result.Objects.some((p) => p.Id === createdCifsPlanId), "Created CIFS crawl plan should appear in list");
+    assertTrue(result.Objects.some((p) => p.Id === createdNfsPlanId), "Created NFS crawl plan should appear in list");
   });
 
   await runner.runTest("CrawlPlan: Get crawl plan by ID", async () => {
@@ -783,14 +847,16 @@ async function crawlPlanTests(runner, client) {
       Name: "test-crawl-plan-updated-" + suffix,
       RepositoryType: "Web",
       RepositorySettings: {
-        AuthType: "None",
+        RepositoryType: "Web",
+        AuthenticationType: "None",
         StartUrl: "https://example.com/updated",
         MaxDepth: 2,
         MaxParallelTasks: 1,
         CrawlDelayMs: 500,
         FollowLinks: true,
         FollowRedirects: true,
-        RespectRobotsTxt: true,
+        ExtractSitemapLinks: true,
+        IgnoreRobotsTxt: false,
         RestrictToChildUrls: true,
       },
       Schedule: {
@@ -809,6 +875,8 @@ async function crawlPlanTests(runner, client) {
   await runner.runTest("CrawlPlan: Delete crawl plan", async () => {
     assertNotNull(createdPlanId, "createdPlanId from previous test");
     await client.deleteCrawlPlan(createdPlanId);
+    if (createdCifsPlanId) await client.deleteCrawlPlan(createdCifsPlanId);
+    if (createdNfsPlanId) await client.deleteCrawlPlan(createdNfsPlanId);
   });
 }
 

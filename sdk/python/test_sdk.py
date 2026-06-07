@@ -18,10 +18,12 @@ from assistanthub_sdk import AssistantHubClient
 from assistanthub_sdk.models import (
     Assistant,
     AssistantDocument,
+    CifsCrawlRepositorySettings,
     CrawlPlan,
     CrawlScheduleSettings,
     Credential,
     EvalFact,
+    NfsCrawlRepositorySettings,
     PartioEndpointConfig,
     PartioEndpointRequest,
     TenantMetadata,
@@ -29,6 +31,7 @@ from assistanthub_sdk.models import (
     WebCrawlRepositorySettings,
 )
 from assistanthub_sdk.enums import (
+    NfsVersion,
     RepositoryType,
     ScheduleInterval,
     WebAuthType,
@@ -836,6 +839,8 @@ def run_request_history_tests(runner: TestRunner, client: AssistantHubClient) ->
 
 def run_crawl_plan_tests(runner: TestRunner, client: AssistantHubClient) -> None:
     created_plan_id: list[Optional[str]] = [None]
+    created_cifs_plan_id: list[Optional[str]] = [None]
+    created_nfs_plan_id: list[Optional[str]] = [None]
     suffix = unique_suffix()
 
     def test_create() -> None:
@@ -870,13 +875,88 @@ def run_crawl_plan_tests(runner: TestRunner, client: AssistantHubClient) -> None
         assert_equal("test-crawlplan-" + suffix, created.name, "Created crawl plan name")
         created_plan_id[0] = created.id
 
+    def test_create_cifs() -> None:
+        plan = CrawlPlan(
+            name="test-cifs-crawlplan-" + suffix,
+            repository_type=RepositoryType.CIFS,
+            repository_settings=CifsCrawlRepositorySettings(
+                cifs_hostname="fileserver.example.com",
+                cifs_username="crawler",
+                cifs_password="secret",
+                cifs_share_name="content",
+                include_subdirectories=True,
+            ),
+            schedule=CrawlScheduleSettings(
+                interval_type=ScheduleInterval.ONE_TIME,
+                interval_value=1,
+            ),
+            process_additions=True,
+            process_updates=True,
+            process_deletions=False,
+            max_drain_tasks=1,
+            retention_days=7,
+        )
+        created = client.create_crawl_plan(plan)
+        assert_not_none(created, "Create CIFS CrawlPlan result")
+        assert_not_none(created.id, "Created CIFS crawl plan ID")
+        assert_equal(RepositoryType.CIFS, created.repository_type, "Created CIFS repository type")
+        assert_true(
+            isinstance(created.repository_settings, CifsCrawlRepositorySettings),
+            "Created CIFS repository settings type",
+        )
+        created_cifs_plan_id[0] = created.id
+
+    def test_create_nfs() -> None:
+        plan = CrawlPlan(
+            name="test-nfs-crawlplan-" + suffix,
+            repository_type=RepositoryType.NFS,
+            repository_settings=NfsCrawlRepositorySettings(
+                nfs_hostname="nfs.example.com",
+                nfs_user_id=1000,
+                nfs_group_id=1000,
+                nfs_share_name="/exports/content",
+                nfs_version=NfsVersion.V3,
+                include_subdirectories=True,
+            ),
+            schedule=CrawlScheduleSettings(
+                interval_type=ScheduleInterval.ONE_TIME,
+                interval_value=1,
+            ),
+            process_additions=True,
+            process_updates=True,
+            process_deletions=False,
+            max_drain_tasks=1,
+            retention_days=7,
+        )
+        created = client.create_crawl_plan(plan)
+        assert_not_none(created, "Create NFS CrawlPlan result")
+        assert_not_none(created.id, "Created NFS crawl plan ID")
+        assert_equal(RepositoryType.NFS, created.repository_type, "Created NFS repository type")
+        assert_true(
+            isinstance(created.repository_settings, NfsCrawlRepositorySettings),
+            "Created NFS repository settings type",
+        )
+        created_nfs_plan_id[0] = created.id
+
     def test_list() -> None:
         assert_not_none(created_plan_id[0], "createdPlanId from previous test")
+        assert_not_none(created_cifs_plan_id[0], "createdCifsPlanId from previous test")
+        assert_not_none(created_nfs_plan_id[0], "createdNfsPlanId from previous test")
         result = client.list_crawl_plans()
         assert_not_none(result, "ListCrawlPlans result")
         assert_not_none(result.objects, "ListCrawlPlans result.objects")
-        found = any(p.id == created_plan_id[0] for p in result.objects)
-        assert_true(found, "Created crawl plan should appear in list")
+        assert_true(
+            any(p.id == created_plan_id[0] for p in result.objects),
+            "Created web crawl plan should appear in list",
+        )
+        assert_true(
+            any(p.id == created_cifs_plan_id[0] for p in result.objects),
+            "Created CIFS crawl plan should appear in list",
+        )
+        assert_true(
+            any(p.id == created_nfs_plan_id[0] for p in result.objects),
+            "Created NFS crawl plan should appear in list",
+        )
 
     def test_get() -> None:
         assert_not_none(created_plan_id[0], "createdPlanId from previous test")
@@ -920,8 +1000,14 @@ def run_crawl_plan_tests(runner: TestRunner, client: AssistantHubClient) -> None
     def test_delete() -> None:
         assert_not_none(created_plan_id[0], "createdPlanId from previous test")
         client.delete_crawl_plan(created_plan_id[0])
+        if created_cifs_plan_id[0] is not None:
+            client.delete_crawl_plan(created_cifs_plan_id[0])
+        if created_nfs_plan_id[0] is not None:
+            client.delete_crawl_plan(created_nfs_plan_id[0])
 
     runner.run_test("CrawlPlan: Create crawl plan", test_create)
+    runner.run_test("CrawlPlan: Create CIFS crawl plan", test_create_cifs)
+    runner.run_test("CrawlPlan: Create NFS crawl plan", test_create_nfs)
     runner.run_test("CrawlPlan: List crawl plans includes created one", test_list)
     runner.run_test("CrawlPlan: Get crawl plan by ID", test_get)
     runner.run_test("CrawlPlan: Update crawl plan", test_update)

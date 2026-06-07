@@ -144,10 +144,15 @@ namespace Test.Shared
             CrawlSchedulerService crawlScheduler = new CrawlSchedulerService(Database, Logging, Settings, null, null, null);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, null, crawlScheduler);
             CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, null);
+            OpenApiDocumentService openApiDocumentService = new OpenApiDocumentService(() => _server);
+            OpenApiHandler openApiHandler = new OpenApiHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, openApiDocumentService);
 
             // Unauthenticated routes
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/", rootHandler.GetRootAsync);
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/", rootHandler.HeadRootAsync);
+            _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/openapi.json", openApiHandler.GetOpenApiAsync);
+            _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/openapi.json", openApiHandler.GetOpenApiAsync);
+            _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/swagger", openApiHandler.GetSwaggerAsync);
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/authenticate", authenticateHandler.PostAuthenticateAsync);
 
             // Authentication handler
@@ -203,6 +208,7 @@ namespace Test.Shared
             // Authenticated routes - Crawl Plans
             _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans", crawlPlanHandler.PutCrawlPlanAsync);
             _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans", crawlPlanHandler.GetCrawlPlansAsync);
+            _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/connectivity", crawlPlanHandler.TestDraftConnectivityAsync);
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}", crawlPlanHandler.GetCrawlPlanAsync);
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{id}", crawlPlanHandler.DeleteCrawlPlanAsync);
 

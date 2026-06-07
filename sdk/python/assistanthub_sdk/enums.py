@@ -95,6 +95,16 @@ class RepositoryType(str, Enum):
     """Repository types for crawling."""
 
     WEB = "Web"
+    CIFS = "CIFS"
+    NFS = "NFS"
+
+
+class NfsVersion(str, Enum):
+    """NFS protocol versions."""
+
+    V2 = "V2"
+    V3 = "V3"
+    V4 = "V4"
 
 
 class ScheduleInterval(str, Enum):

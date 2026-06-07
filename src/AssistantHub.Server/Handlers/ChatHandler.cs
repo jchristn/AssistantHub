@@ -682,7 +682,9 @@ namespace AssistantHub.Server.Handlers
                 int systemMessageIndex = -1;
 
                 // If no system message in request, prepend one from settings
-                bool hasSystemMessage = messages.Any(m => String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase));
+                bool hasSystemMessage = messages.Any(m =>
+                    String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
+                    && !IsConversationSummaryMessage(m));
                 if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
                 {
                     baseSystemPrompt = settings.SystemPrompt;
@@ -697,7 +699,8 @@ namespace AssistantHub.Server.Handlers
                     // Append RAG context to existing system message
                     for (int i = 0; i < messages.Count; i++)
                     {
-                        if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase))
+                        if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase)
+                            && !IsConversationSummaryMessage(messages[i]))
                         {
                             baseSystemPrompt = messages[i].Content;
                             messages[i] = new ChatCompletionMessage

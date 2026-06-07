@@ -1437,6 +1437,22 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
         )
         return response.json()
 
+    def test_crawl_plan_draft_connectivity(self, plan: CrawlPlan) -> dict[str, Any]:
+        """Test connectivity for an unsaved crawl plan.
+
+        Args:
+            plan: The draft CrawlPlan object to test.
+
+        Returns:
+            A dict with Success and Message fields.
+        """
+        response = self._request(
+            "POST",
+            "/v1.0/crawlplans/connectivity",
+            json=plan.model_dump(by_alias=True, exclude_none=True),
+        )
+        return response.json()
+
     def enumerate_crawl_contents(self, plan_id: str) -> list[dict[str, Any]]:
         """Enumerate contents available for a crawl plan.
 

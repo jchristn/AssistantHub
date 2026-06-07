@@ -10,6 +10,48 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function sumContentLength(files) {
+  return asArray(files).reduce((total, file) => total + (Number(file?.ContentLength) || 0), 0);
+}
+
+function normalizeEnumerationData(result) {
+  if (Array.isArray(result)) {
+    return {
+      AllFiles: result,
+      Added: [],
+      Changed: [],
+      Deleted: [],
+      Success: [],
+      Failed: [],
+      Statistics: {
+        TotalFiles: result.length,
+        TotalBytes: sumContentLength(result),
+      },
+    };
+  }
+
+  if (!result) return result;
+
+  const allFiles = asArray(result.AllFiles);
+  return {
+    ...result,
+    AllFiles: allFiles,
+    Added: asArray(result.Added),
+    Changed: asArray(result.Changed),
+    Deleted: asArray(result.Deleted),
+    Success: asArray(result.Success),
+    Failed: asArray(result.Failed),
+    Statistics: result.Statistics || {
+      TotalFiles: allFiles.length,
+      TotalBytes: sumContentLength(allFiles),
+    },
+  };
+}
+
 function EnumerationSection({ title, files, totalBytes }) {
   const [expanded, setExpanded] = useState(false);
   const items = files || [];
@@ -79,7 +121,7 @@ function CrawlEnumerationModal({ api, planId, operationId, onClose }) {
         } else {
           result = await api.enumerateCrawlContents(planId);
         }
-        setData(result);
+        setData(normalizeEnumerationData(result));
       } catch (err) {
         setError(err.message || 'Failed to load enumeration');
       } finally {

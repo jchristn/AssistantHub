@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.14.0` adds Verbex inverted-index search and RecallDB collection search. The Docker deployment includes Verbex server/dashboard services, AssistantHub exposes proxied index/search APIs, and the dashboard has Artifacts pages for Indices, Index Records, Index Search, and Collection Search.
+`v0.15.0` adds CIFS and NFS file-server crawler support alongside the existing web crawler. Crawl plans now use an extensible repository-type enum, polymorphic repository settings, shared crawler base behavior, and type-specific dashboard/SDK/API examples for web, CIFS, and NFS repositories.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,12 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 </details>
 
 ---
+
+## New in v0.15.0
+
+- **CIFS and NFS crawlers** -- Crawl plans can target web sites, CIFS/SMB file shares, or NFS exports through the shared crawler lifecycle.
+- **Shared crawler architecture** -- `CrawlerBase` now supports lazy content retrieval so web, CIFS, and NFS crawlers share delta, upload, document creation, ingestion, scheduling, and retention behavior.
+- **Repository settings contract** -- CIFS and NFS settings are mapped from View's `DataRepository` fields and exposed through REST, OpenAPI, Postman, the dashboard, and C#/TypeScript/Python SDKs.
 
 ## New in v0.14.0
 
@@ -177,7 +183,7 @@ Operational notes:
 
 - **Assistants** -- Create and manage multiple AI assistants, each with their own configuration, personality, and knowledge base.
 - **Documents** -- Upload documents (PDF, text, HTML, and more) to build a knowledge base for each assistant. Documents are automatically chunked, embedded, and indexed.
-- **Crawlers** -- Native web crawling engine that automatically discovers, retrieves, and ingests website content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, and web authentication (Basic, API Key, Bearer Token). Each crawled document is traceable back to its source crawler and operation.
+- **Crawlers** -- Native web, CIFS/SMB, and NFS crawling engine that automatically discovers, retrieves, and ingests repository content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, web authentication, and CIFS/NFS connectivity validation. Each crawled document is traceable back to its source crawler and operation.
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
 - **Endpoint Management** -- Manage, test, and explicitly load or warm embedding and completion (inference) endpoint models on the Partio service directly from the dashboard or API.
@@ -210,6 +216,8 @@ Once all services are healthy, open [http://localhost:8801](http://localhost:880
 
 On a fresh startup, `assistanthub-server` now waits for `partio-server` to become healthy before it starts. This avoids the transient `partio-server:8400` DNS/startup race that could previously abort AssistantHub startup immediately after a factory reset.
 
+For CIFS/NFS crawl plans in the local Docker deployment, remember that `localhost` from inside `assistanthub-server` means the container, not the host machine. The default compose file maps `host.docker.internal` to the Docker host, and AssistantHub normalizes loopback file-server hostnames to that alias when it is available so local shares such as `//localhost/Share` can be reached from the server container.
+
 > **Note:** Deploying individual services outside of Docker is also possible, but requires manual configuration and deployment of each dependency (PostgreSQL with pgvector, Ollama, Less3, DocumentAtom, Partio, RecallDB, Verbex). The Docker Compose stack handles all service wiring, health checks, and startup ordering automatically, which is why manual setup documentation is not provided.
 
 ### Services
@@ -238,6 +246,7 @@ The Docker Compose stack orchestrates the following services:
 ### Docker PostgreSQL Defaults
 
 The Docker stack uses a single `postgres` container with a named `postgres-data` volume. `postgres-init` creates separate databases and application roles before AssistantHub, Less3, Partio, RecallDB, and Verbex start.
+The compose stack starts PostgreSQL with `max_connections=250` so concurrent document ingestion, Verbex indexing, RecallDB embedding writes, object storage, and dashboard/API activity have enough connection headroom during crawler bursts.
 
 | Service | Database | Role |
 |---|---|---|
@@ -556,7 +565,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
 | Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify` | Per-assistant endpoint, prompt, RAG, and Slack configuration. Includes draft Slack connectivity verification (owner or admin). |
 | Assistant Analytics | `GET /v1.0/assistants/{id}/analytics/{overview,timeseries,stages,endpoints,slowest,feedback}` | Assistant-scoped performance, endpoint, retrieval, slow request, and feedback analytics |
-| Crawl Plans | `PUT/GET /v1.0/crawlplans`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, connectivity testing, and content preview |
+| Crawl Plans | `PUT/GET /v1.0/crawlplans`, `POST /v1.0/crawlplans/connectivity`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, draft/saved connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
 | Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |
 | Feedback | `GET /v1.0/feedback`, `GET/DELETE /v1.0/feedback/{id}` | View and manage user feedback |

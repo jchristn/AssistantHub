@@ -155,6 +155,21 @@ namespace AssistantHub.Core.Services.Crawlers
         #region Public-Methods
 
         /// <summary>
+        /// Get detailed connectivity status for the repository.
+        /// </summary>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Connectivity result.</returns>
+        public virtual async Task<CrawlConnectivityResult> GetConnectivityStatusAsync(CancellationToken token = default)
+        {
+            bool success = await ValidateConnectivityAsync(token).ConfigureAwait(false);
+            return new CrawlConnectivityResult
+            {
+                Success = success,
+                Message = success ? "Repository connectivity verified." : "Repository is not reachable with the supplied settings."
+            };
+        }
+
+        /// <summary>
         /// Start the crawl operation.
         /// </summary>
         /// <returns>Task.</returns>
@@ -567,15 +582,25 @@ namespace AssistantHub.Core.Services.Crawlers
             {
                 string documentId = null;
 
-                if (_Storage != null && _CrawlPlan.IngestionSettings != null && _CrawlPlan.IngestionSettings.StoreInS3 && obj.Data != null)
+                if (_Storage != null && _CrawlPlan.IngestionSettings != null && _CrawlPlan.IngestionSettings.StoreInS3)
                 {
+                    byte[] data = obj.Data;
+                    if (data == null)
+                    {
+                        data = await RetrieveDataAsync(obj, _Token).ConfigureAwait(false);
+                        obj.Data = data;
+                    }
+
+                    if (data == null) data = Array.Empty<byte>();
+                    if (obj.ContentLength <= 0) obj.ContentLength = data.LongLength;
+
                     string s3Key = _CrawlPlan.Id + "/" + Guid.NewGuid().ToString() + "/" + SanitizeFilename(obj.Key);
                     string bucketName = _CrawlPlan.IngestionSettings.S3BucketName;
 
                     if (!String.IsNullOrEmpty(bucketName))
-                        await _Storage.UploadAsync(bucketName, s3Key, obj.ContentType ?? "application/octet-stream", obj.Data, _Token).ConfigureAwait(false);
+                        await _Storage.UploadAsync(bucketName, s3Key, obj.ContentType ?? "application/octet-stream", data, _Token).ConfigureAwait(false);
                     else
-                        await _Storage.UploadAsync(s3Key, obj.ContentType ?? "application/octet-stream", obj.Data, _Token).ConfigureAwait(false);
+                        await _Storage.UploadAsync(s3Key, obj.ContentType ?? "application/octet-stream", data, _Token).ConfigureAwait(false);
 
                     // Create document record
                     string ingestionRuleId = _CrawlPlan.IngestionSettings?.IngestionRuleId;
@@ -606,17 +631,8 @@ namespace AssistantHub.Core.Services.Crawlers
                     // Trigger ingestion
                     if (_Ingestion != null)
                     {
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await _Ingestion.ProcessDocumentAsync(documentId, _Token).ConfigureAwait(false);
-                            }
-                            catch (Exception ex)
-                            {
-                                _Logging.Warn(_Header + "ingestion failed for document " + documentId + ": " + ex.Message);
-                            }
-                        });
+                        await _Ingestion.ProcessDocumentAsync(documentId, _Token).ConfigureAwait(false);
+                        await EnsureDocumentIngestionCompletedAsync(documentId, obj.Key).ConfigureAwait(false);
                     }
                 }
 
@@ -637,6 +653,20 @@ namespace AssistantHub.Core.Services.Crawlers
                     _CrawlOperation.ObjectsFailed++;
                     _CrawlOperation.BytesFailed += obj.ContentLength;
                 }
+            }
+        }
+
+        private async Task EnsureDocumentIngestionCompletedAsync(string documentId, string objectKey)
+        {
+            if (String.IsNullOrEmpty(documentId)) throw new ArgumentNullException(nameof(documentId));
+
+            AssistantDocument document = await _Database.AssistantDocument.ReadAsync(documentId, _Token).ConfigureAwait(false);
+            if (document == null) throw new InvalidOperationException("Document " + documentId + " was not found after ingestion.");
+
+            if (document.Status != DocumentStatusEnum.Completed)
+            {
+                string statusMessage = !String.IsNullOrWhiteSpace(document.StatusMessage) ? document.StatusMessage : "Document status is " + document.Status + ".";
+                throw new InvalidOperationException("Ingestion failed for crawled object " + objectKey + ": " + statusMessage);
             }
         }
 
@@ -779,6 +809,18 @@ namespace AssistantHub.Core.Services.Crawlers
             {
                 _Logging.Warn(_Header + "error during document cleanup for " + doc.Id + ": " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Retrieve data for a crawled object.
+        /// </summary>
+        /// <param name="obj">Crawled object.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Object bytes.</returns>
+        protected virtual Task<byte[]> RetrieveDataAsync(CrawledObject obj, CancellationToken token = default)
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Task.FromResult(obj.Data ?? Array.Empty<byte>());
         }
 
         private async Task DrainTasksAsync(List<Task> tasks)

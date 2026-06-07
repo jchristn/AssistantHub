@@ -3,6 +3,16 @@
 ## Unreleased
 
 ### Added
+- **CIFS and NFS crawler support**: Added CIFS/SMB and NFS repository types, file-server repository settings mapped from View's `DataRepository`, shared Blobject-backed crawler infrastructure, and lazy file-byte retrieval through `CrawlerBase`.
+- **File-server crawler product coverage**: Added dashboard create/edit support, REST/OpenAPI/Postman examples, C#/TypeScript/Python SDK models and tests, and `FILE_CRAWLERS.md` as the implementation checklist for v0.15.0.
+
+### Changed
+- **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, REST, and documentation metadata to `0.15.0`.
+- **Crawl-plan model**: Repository settings now deserialize polymorphically for Web, CIFS, and NFS while preserving legacy web settings that omit `RepositoryType`.
+
+## v0.14.0 - Search, MCP, and Verbex
+
+### Added
 - **Verbex text search integration**: Added Verbex server/dashboard Docker services, PostgreSQL database provisioning, factory reset handling, settings/UI configuration, and first-run tenant/default-index provisioning.
 - **Inverted-index artifact APIs**: Added AssistantHub REST, OpenAPI, Postman, SDK, and MCP coverage for Verbex indices, index records, and index search, with all requests marshaled through AssistantHub.
 - **Document text indexing**: Added Verbex ingestion after DocumentAtom text extraction, including ingestion-rule/document label and tag propagation, stable document-backed record IDs, duplicate-record replacement, document delete garbage collection, and admin reindex/backfill APIs.

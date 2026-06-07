@@ -50,6 +50,32 @@ namespace Test.Automated
                     AssertHelper.AreEqual((int)HttpStatusCode.Unauthorized, (int)resp.StatusCode, "unauthenticated request should return 401");
                 });
 
+                await ExecuteTestAsync("Server.Swagger_Returns200WithoutAuthentication", async () =>
+                {
+                    using HttpClient noAuthClient = new HttpClient();
+                    noAuthClient.BaseAddress = new Uri(server.BaseUrl);
+
+                    HttpResponseMessage swaggerResp = await noAuthClient.GetAsync("/swagger");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)swaggerResp.StatusCode, "Swagger UI should be unauthenticated");
+
+                    string swaggerBody = await swaggerResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(swaggerBody, "SwaggerUIBundle", "Swagger UI bundle reference");
+                    AssertHelper.StringContains(swaggerBody, "/openapi.json", "Swagger UI OpenAPI document route");
+
+                    HttpResponseMessage openApiResp = await noAuthClient.GetAsync("/openapi.json");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)openApiResp.StatusCode, "OpenAPI should be unauthenticated");
+
+                    string openApiBody = await openApiResp.Content.ReadAsStringAsync();
+                    using JsonDocument openApiDocument = JsonDocument.Parse(openApiBody);
+                    JsonElement securitySchemes = openApiDocument.RootElement.GetProperty("components").GetProperty("securitySchemes");
+                    JsonElement bearerAuth;
+                    AssertHelper.StringContains(openApiBody, "\"/swagger\"", "Runtime OpenAPI Swagger route");
+                    AssertHelper.StringContains(openApiBody, "\"security\": []", "Runtime OpenAPI unauthenticated route marker");
+                    AssertHelper.StringContains(openApiBody, "\"/v1.0/tenants\"", "Runtime OpenAPI protected tenant route");
+                    AssertHelper.StringContains(openApiBody, "\"BearerAuth\"", "Runtime OpenAPI protected route auth marker");
+                    AssertHelper.IsTrue(securitySchemes.TryGetProperty("BearerAuth", out bearerAuth), "OpenAPI BearerAuth scheme");
+                });
+
                 await ExecuteTestAsync("Server.InvalidToken_Returns401", async () =>
                 {
                     using HttpClient badClient = new HttpClient();
@@ -58,6 +84,43 @@ namespace Test.Automated
 
                     HttpResponseMessage resp = await badClient.GetAsync("/v1.0/tenants");
                     AssertHelper.AreEqual((int)HttpStatusCode.Unauthorized, (int)resp.StatusCode, "invalid token should return 401");
+                });
+
+                await ExecuteTestAsync("CrawlPlan.DraftConnectivity_UsesSuppliedRepositorySettings", async () =>
+                {
+                    Dictionary<string, object> repositorySettings = new Dictionary<string, object>
+                    {
+                        { "RepositoryType", "Web" },
+                        { "AuthenticationType", "None" },
+                        { "StartUrl", server.BaseUrl + "/" },
+                        { "FollowLinks", false },
+                        { "FollowRedirects", true },
+                        { "ExtractSitemapLinks", false },
+                        { "RestrictToChildUrls", true },
+                        { "RestrictToSubdomain", true },
+                        { "RestrictToRootDomain", true },
+                        { "IgnoreRobotsTxt", true },
+                        { "UseHeadlessBrowser", false },
+                        { "MaxDepth", 1 },
+                        { "MaxParallelTasks", 1 },
+                        { "CrawlDelayMs", 0 }
+                    };
+
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "Name", "Draft Connectivity Probe" },
+                        { "RepositoryType", "Web" },
+                        { "RepositorySettings", repositorySettings }
+                    };
+
+                    string json = JsonSerializer.Serialize(payload);
+                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                    HttpResponseMessage resp = await server.Client.PostAsync("/v1.0/crawlplans/connectivity", content);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)resp.StatusCode, "draft connectivity should return 200");
+
+                    string body = await resp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(body, "Success", "draft connectivity response success field");
+                    AssertHelper.StringContains(body, "Message", "draft connectivity response message field");
                 });
 
                 await ExecuteTestAsync("Server.WhoAmI_ReturnsAuthenticatedUser", async () =>
@@ -597,6 +660,8 @@ namespace Test.Automated
                 // --- CrawlPlan CRUD lifecycle ---
 
                 string createdCrawlPlanId = null;
+                string createdCifsCrawlPlanId = null;
+                string createdNfsCrawlPlanId = null;
 
                 await ExecuteTestAsync("CRUD.CrawlPlan.Create", async () =>
                 {
@@ -604,7 +669,15 @@ namespace Test.Automated
                     {
                         { "TenantId", tenantId },
                         { "Name", "Integration Test Crawl Plan" },
-                        { "RepositoryType", "Web" }
+                        { "RepositoryType", "Web" },
+                        {
+                            "RepositorySettings",
+                            new Dictionary<string, object>
+                            {
+                                { "RepositoryType", "Web" },
+                                { "StartUrl", "https://example.com" }
+                            }
+                        }
                     };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -623,6 +696,111 @@ namespace Test.Automated
                     AssertHelper.IsNotNull(createdCrawlPlanId, "should extract crawl plan ID");
                 });
 
+                await ExecuteTestAsync("CRUD.CrawlPlan.Create_CIFS", async () =>
+                {
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "TenantId", tenantId },
+                        { "Name", "Integration Test CIFS Crawl Plan" },
+                        { "RepositoryType", "CIFS" },
+                        {
+                            "RepositorySettings",
+                            new Dictionary<string, object>
+                            {
+                                { "RepositoryType", "CIFS" },
+                                { "CifsHostname", "fileserver.example.com" },
+                                { "CifsUsername", "crawler" },
+                                { "CifsPassword", "secret" },
+                                { "CifsShareName", "content" },
+                                { "IncludeSubdirectories", true }
+                            }
+                        }
+                    };
+                    string json = JsonSerializer.Serialize(payload);
+                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage resp = await server.Client.PutAsync("/v1.0/crawlplans", content);
+                    AssertHelper.AreEqual((int)HttpStatusCode.Created, (int)resp.StatusCode,
+                        "create CIFS crawl plan should return 201, got " + (int)resp.StatusCode);
+
+                    string body = await resp.Content.ReadAsStringAsync();
+                    using JsonDocument doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("Id", out JsonElement idElem))
+                        createdCifsCrawlPlanId = idElem.GetString();
+                    else if (doc.RootElement.TryGetProperty("id", out JsonElement idElem2))
+                        createdCifsCrawlPlanId = idElem2.GetString();
+
+                    AssertHelper.IsNotNull(createdCifsCrawlPlanId, "should extract CIFS crawl plan ID");
+                    AssertHelper.StringContains(body, "CIFS", "CIFS response repository type");
+                    AssertHelper.StringContains(body, "CifsHostname", "CIFS response settings");
+                });
+
+                await ExecuteTestAsync("CRUD.CrawlPlan.Create_NFS", async () =>
+                {
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "TenantId", tenantId },
+                        { "Name", "Integration Test NFS Crawl Plan" },
+                        { "RepositoryType", "NFS" },
+                        {
+                            "RepositorySettings",
+                            new Dictionary<string, object>
+                            {
+                                { "RepositoryType", "NFS" },
+                                { "NfsHostname", "nfs.example.com" },
+                                { "NfsUserId", 1000 },
+                                { "NfsGroupId", 1000 },
+                                { "NfsShareName", "/exports/content" },
+                                { "NfsVersion", "V3" },
+                                { "IncludeSubdirectories", true }
+                            }
+                        }
+                    };
+                    string json = JsonSerializer.Serialize(payload);
+                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage resp = await server.Client.PutAsync("/v1.0/crawlplans", content);
+                    AssertHelper.AreEqual((int)HttpStatusCode.Created, (int)resp.StatusCode,
+                        "create NFS crawl plan should return 201, got " + (int)resp.StatusCode);
+
+                    string body = await resp.Content.ReadAsStringAsync();
+                    using JsonDocument doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("Id", out JsonElement idElem))
+                        createdNfsCrawlPlanId = idElem.GetString();
+                    else if (doc.RootElement.TryGetProperty("id", out JsonElement idElem2))
+                        createdNfsCrawlPlanId = idElem2.GetString();
+
+                    AssertHelper.IsNotNull(createdNfsCrawlPlanId, "should extract NFS crawl plan ID");
+                    AssertHelper.StringContains(body, "NFS", "NFS response repository type");
+                    AssertHelper.StringContains(body, "NfsHostname", "NFS response settings");
+                });
+
+                await ExecuteTestAsync("CRUD.CrawlPlan.Create_InvalidSettings_Returns400", async () =>
+                {
+                    Dictionary<string, object> payload = new Dictionary<string, object>
+                    {
+                        { "TenantId", tenantId },
+                        { "Name", "Invalid CIFS Crawl Plan" },
+                        { "RepositoryType", "CIFS" },
+                        {
+                            "RepositorySettings",
+                            new Dictionary<string, object>
+                            {
+                                { "RepositoryType", "CIFS" },
+                                { "CifsHostname", "fileserver.example.com" },
+                                { "CifsUsername", "crawler" },
+                                { "CifsShareName", "content" }
+                            }
+                        }
+                    };
+                    string json = JsonSerializer.Serialize(payload);
+                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage resp = await server.Client.PutAsync("/v1.0/crawlplans", content);
+                    AssertHelper.AreEqual((int)HttpStatusCode.BadRequest, (int)resp.StatusCode,
+                        "invalid CIFS crawl plan should return 400, got " + (int)resp.StatusCode);
+                });
+
                 await ExecuteTestAsync("CRUD.CrawlPlan.Read", async () =>
                 {
                     AssertHelper.IsNotNull(createdCrawlPlanId, "crawl plan ID should exist");
@@ -632,6 +810,24 @@ namespace Test.Automated
 
                     string body = await resp.Content.ReadAsStringAsync();
                     AssertHelper.IsTrue(body.Contains("Integration Test Crawl Plan"), "response should contain crawl plan name");
+                });
+
+                await ExecuteTestAsync("CRUD.CrawlPlan.Read_FileServerTypes", async () =>
+                {
+                    AssertHelper.IsNotNull(createdCifsCrawlPlanId, "CIFS crawl plan ID should exist");
+                    AssertHelper.IsNotNull(createdNfsCrawlPlanId, "NFS crawl plan ID should exist");
+
+                    HttpResponseMessage cifsResp = await server.Client.GetAsync($"/v1.0/crawlplans/{createdCifsCrawlPlanId}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)cifsResp.StatusCode, "read CIFS crawl plan should return 200");
+                    string cifsBody = await cifsResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(cifsBody, "CIFS", "CIFS read repository type");
+                    AssertHelper.StringContains(cifsBody, "CifsShareName", "CIFS read settings");
+
+                    HttpResponseMessage nfsResp = await server.Client.GetAsync($"/v1.0/crawlplans/{createdNfsCrawlPlanId}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)nfsResp.StatusCode, "read NFS crawl plan should return 200");
+                    string nfsBody = await nfsResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(nfsBody, "NFS", "NFS read repository type");
+                    AssertHelper.StringContains(nfsBody, "NfsShareName", "NFS read settings");
                 });
 
                 await ExecuteTestAsync("CRUD.CrawlPlan.Enumerate", async () =>
@@ -648,6 +844,22 @@ namespace Test.Automated
                         AssertHelper.IsTrue(
                             (int)resp.StatusCode == 200 || (int)resp.StatusCode == 204,
                             "delete crawl plan should return 200 or 204, got " + (int)resp.StatusCode);
+                    }
+
+                    if (createdCifsCrawlPlanId != null)
+                    {
+                        HttpResponseMessage resp = await server.Client.DeleteAsync($"/v1.0/crawlplans/{createdCifsCrawlPlanId}");
+                        AssertHelper.IsTrue(
+                            (int)resp.StatusCode == 200 || (int)resp.StatusCode == 204,
+                            "delete CIFS crawl plan should return 200 or 204, got " + (int)resp.StatusCode);
+                    }
+
+                    if (createdNfsCrawlPlanId != null)
+                    {
+                        HttpResponseMessage resp = await server.Client.DeleteAsync($"/v1.0/crawlplans/{createdNfsCrawlPlanId}");
+                        AssertHelper.IsTrue(
+                            (int)resp.StatusCode == 200 || (int)resp.StatusCode == 204,
+                            "delete NFS crawl plan should return 200 or 204, got " + (int)resp.StatusCode);
                     }
                 });
 

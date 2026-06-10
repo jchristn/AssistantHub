@@ -1,5 +1,7 @@
 namespace AssistantHub.Core.Models
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Search options for retrieval queries supporting vector, full-text, and hybrid modes.
     /// </summary>
@@ -45,5 +47,15 @@ namespace AssistantHub.Core.Models
         /// Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
         /// </summary>
         public ChatMetadataFilter MetadataFilter { get; set; } = null;
+
+        /// <summary>
+        /// Optional AssistantDocument.Id values used to restrict retrieval to specific documents.
+        /// </summary>
+        public List<string> DocumentIds { get; set; } = null;
+
+        /// <summary>
+        /// Set by RetrievalService when a hybrid search falls back to vector-only retrieval.
+        /// </summary>
+        public bool HybridFallbackRan { get; set; } = false;
     }
 }

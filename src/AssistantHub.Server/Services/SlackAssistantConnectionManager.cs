@@ -22,6 +22,7 @@ namespace AssistantHub.Server.Services
         private readonly AssistantHubSettings _Settings;
         private readonly RetrievalService _Retrieval;
         private readonly InferenceService _Inference;
+        private readonly IObjectStorageService _Storage;
         private readonly ConcurrentDictionary<string, SlackAssistantWorker> _Workers = new ConcurrentDictionary<string, SlackAssistantWorker>();
         private CancellationTokenSource _ReconcilerTokenSource;
 
@@ -33,13 +34,15 @@ namespace AssistantHub.Server.Services
             LoggingModule logging,
             AssistantHubSettings settings,
             RetrievalService retrieval,
-            InferenceService inference)
+            InferenceService inference,
+            IObjectStorageService storage = null)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
+            _Storage = storage;
         }
 
         /// <inheritdoc />
@@ -98,7 +101,7 @@ namespace AssistantHub.Server.Services
 
             if (shouldRun)
             {
-                SlackAssistantWorker worker = new SlackAssistantWorker(_Database, _Logging, _Settings, _Retrieval, _Inference, assistantId);
+                SlackAssistantWorker worker = new SlackAssistantWorker(_Database, _Logging, _Settings, _Retrieval, _Inference, assistantId, _Storage);
                 _Workers[assistantId] = worker;
                 await worker.StartAsync(token).ConfigureAwait(false);
             }

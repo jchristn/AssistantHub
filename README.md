@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.15.0` adds CIFS and NFS file-server crawler support alongside the existing web crawler. Crawl plans now use an extensible repository-type enum, polymorphic repository settings, shared crawler base behavior, and type-specific dashboard/SDK/API examples for web, CIFS, and NFS repositories.
+`v0.16.0` adds CIFS and NFS file-server crawler support alongside the existing web crawler, attached-document chat selection for assistant collections, and the first disabled-by-default server-side tool policy surface for model-directed collection, Verbex, S3, and Tavily web-search tools.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -30,11 +30,14 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
-## New in v0.15.0
+## New in v0.16.0
 
 - **CIFS and NFS crawlers** -- Crawl plans can target web sites, CIFS/SMB file shares, or NFS exports through the shared crawler lifecycle.
 - **Shared crawler architecture** -- `CrawlerBase` now supports lazy content retrieval so web, CIFS, and NFS crawlers share delta, upload, document creation, ingestion, scheduling, and retention behavior.
 - **Repository settings contract** -- CIFS and NFS settings are mapped from View's `DataRepository` fields and exposed through REST, OpenAPI, Postman, the dashboard, and C#/TypeScript/Python SDKs.
+- **Attached-document chat** -- Public assistant chat clients can list completed documents from the assistant collection and send `attached_document_ids` to constrain RAG retrieval to selected documents for a turn.
+- **Tool-call policy foundation** -- Assistant settings now include administrator-controlled tool policy JSON, effective tool previews, validation endpoints, SDK/Postman/OpenAPI coverage, and disabled-by-default Tavily web-search configuration.
+- **Tool-call trace history** -- Non-streaming tool calls are persisted as redacted `AssistantToolCallRecord` rows linked to trace, request history, and chat history, with admin REST/Postman/OpenAPI/SDK coverage under `/v1.0/assistants/{assistantId}/tool-calls`. Trace retention follows `RequestHistory.RetentionDays`.
 
 ## New in v0.14.0
 
@@ -42,7 +45,7 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 - **Inverted-index APIs** -- AssistantHub now has proxied REST routes for indices, index records, index search, and collection search.
 - **Collection search API** -- AssistantHub now marshals RecallDB collection search through `POST /v1.0/collections/{collectionId}/search`.
 - **Dashboard search surfaces** -- Artifacts includes `Collections > Search`, `Indices`, `Indices > Records`, and `Indices > Search` with filters, metadata editing, result details, scoring, and raw JSON inspection.
-- **Implementation plan** -- The remaining whole-product work is tracked in [`SEARCH.md`](SEARCH.md).
+- **Implementation plan** -- The remaining whole-product work is tracked in [`archive/SEARCH.md`](archive/SEARCH.md).
 
 ## Previous Release Highlights
 
@@ -56,7 +59,7 @@ Implementation planning notes for Assistant Analytics are archived in [`archive/
 
 ## New in v0.12.0
 
-- **Assistant performance telemetry** -- Chat history now stores `TraceId`, `RequestHistoryId`, `PerformanceSchemaVersion`, and serialized `PerformanceJson` with per-stage timings.
+- **Assistant performance telemetry** -- Chat history now stores `TraceId`, `RequestHistoryId`, `PerformanceSchemaVersion`, and serialized `PerformanceJson` with per-stage timings, including safe aggregate tool-call counts and duration metadata for tool-enabled turns. The dashboard slowest-request table surfaces aggregate tool failures, denials, truncation counts, and slowest tool names for admin diagnosis.
 - **Provider-agnostic hot-path detail** -- Final inference telemetry captures endpoint limiter wait, request-to-headers, headers-to-first-token, first-token-to-last-token, token counts, status, endpoint/model metadata, and provider-native metrics when available.
 - **Request/history correlation** -- Request history stores `TraceId` and `ChatHistoryId`, allowing assistant request detail views to drill into linked chat timing.
 - **Dashboard drill-down** -- History details and request-history details now include expanded performance timing tables for cold-load and hot-load analysis.
@@ -189,7 +192,7 @@ Operational notes:
 - **Endpoint Management** -- Manage, test, and explicitly load or warm embedding and completion (inference) endpoint models on the Partio service directly from the dashboard or API.
 - **Search** -- Leverages Verbex for TF-IDF/text document search and pgvector/RecallDB for vector, full-text, and hybrid retrieval. Configure per-assistant search modes with tunable scoring weights for optimal retrieval from your document corpus.
 - **Retrieval Gate** -- Optional LLM-based retrieval gate that intelligently decides whether each user message requires a new document search or can be answered from existing conversation context, reducing unnecessary retrieval calls.
-- **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (Ollama, OpenAI, Gemini). Supports real-time SSE streaming.
+- **Chat** -- Public-facing chat endpoint that retrieves relevant context from your documents and generates responses using configurable LLM providers (Ollama, OpenAI, Gemini). Supports real-time SSE streaming, metadata filters, and optional `attached_document_ids` that constrain retrieval to selected assistant documents.
 - **Conversation Compaction** -- Automatic summarization of older messages when the conversation approaches the context window limit, preserving continuity across long conversations.
 - **Feedback** -- Collect thumbs-up/thumbs-down feedback and free-text comments on assistant responses to monitor quality and improve over time.
 - **Multi-Tenant** -- Full row-level tenant isolation with three-tier authorization (Global Admin via API key or `IsAdmin` flag, Tenant Admin, User). Auto-provisioning of tenant resources, per-tenant S3 bucket isolation (`{tenantId}_` prefix), and tenant-scoped RecallDB mapping.
@@ -198,8 +201,21 @@ Operational notes:
 - **Query rewrite** -- Optionally rewrite user queries into multiple semantically varied phrasings before retrieval to broaden recall and capture synonyms, alternate phrasing, and conceptual restatements
 - **LLM-based re-ranking** -- Re-ranking scores each retrieved chunk for relevance using an LLM, filtering low-quality results before context injection.
 - **Metadata filtering** -- Filter RAG retrieval by document labels (required/excluded string lists) and tags (key-value conditions with conditional operators). Configure default filters per assistant and/or override per-conversation via the `metadata_filter` field on chat completion requests.
-- **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents with bracket notation, relevance scores, and text excerpts. Configurable document linking via presigned S3 URLs or authenticated download endpoints
+- **Tool policy controls** -- Assistant owners/admins can save and validate disabled-by-default model tool policies, set assistant-level Tavily overrides, mark completion endpoints as explicitly tool-capable, and inspect effective tool availability. Assistant chat can expose enabled server-side tools to explicit OpenAI-compatible or Ollama tool-capable endpoints, execute requested tools on the server, enforce per-turn tool budgets including S3 object byte caps, and return structured tool outputs to the model. Streaming chat emits safe tool progress events and final answer chunks for tool-enabled turns; live Docker/provider/browser validation remains tracked in `TOOL_CALLS.md`.
+- **Source citations** -- Optional per-assistant citation metadata that maps model claims to source documents and citation-capable tool evidence with bracket notation, relevance scores, text excerpts, and web URLs when web search contributes evidence. Configurable document linking via presigned S3 URLs or authenticated download endpoints
 - **RAG evaluation** -- Built-in evaluation framework for measuring retrieval and response quality. Define ground-truth facts (question/expected-facts pairs) per assistant, run automated evaluation passes with LLM-based judging, and review per-fact results with pass/fail verdicts. Supports custom judge prompts and real-time SSE progress streaming.
+
+---
+
+## Admin Tool-Policy Workflow
+
+1. Mark the selected completion endpoint as tool-capable only when the backend is known to support model tool calls. Use `OpenAIChatCompletions` for OpenAI-compatible chat-completions endpoints or `OllamaChat` for Ollama.
+2. Open Assistant Settings, keep `EnableToolCalls` disabled by default, then enable only the tool groups the assistant should use: collection search/read/enumeration, Verbex search/enumeration, document-backed S3 reads, explicitly opted-in bucket-wide S3 reads, bucket enumeration, and Tavily web search.
+3. Set per-tool caps and allow-lists in `ToolPolicyJson`, then use the effective tool list, validation route, and admin dry-run diagnostics route to confirm which tools and endpoint capabilities are available. Completion endpoint tool-call capability is configured through AssistantHub fields and persisted on the Partio endpoint using reserved labels/tags. Collection search may optionally use `EnableServerGeneratedQueryVariants` to add deterministic punctuation/quote-normalized variants within `MaxSearchQueriesPerCall`; `MaxDocumentsConsideredPerSearch` and `MaxResultsConsideredPerSearch` bound exhaustive search work, and real tool timeouts fail with `ErrorCode=timeout`. `ReturnFullSearchContent` stays `false` by default so search returns excerpts and exact text is requested through `collection_read_chunks`. Search metadata includes searched queries/modes plus `DocumentsConsidered` and `ResultsConsidered` when available. Validation returns stable `ErrorCodes` such as `invalid_tool_policy_json`, `unknown_allowed_tool`, `no_tool_enabled`, and `no_available_tools`; diagnostics also checks the selected completion endpoint for explicit tool-call capability without executing tools. Tavily can use assistant-level endpoint/API-key overrides, or fall back to system-wide `ExternalSearch` settings.
+4. Test with non-streaming chat first, then validate streaming chat if browser users should see safe tool progress statuses. Streaming chat emits started, heartbeat, completed, failed, and denied tool-status events without raw arguments or outputs; recoverable failures return stable `ErrorCode` values such as `invalid_arguments`, `policy_denial`, `provider_missing`, `provider_http_error`, and `timeout`. Browser clients should mark interrupted streams clearly instead of leaving a pending spinner. Admins can inspect redacted tool-call records under assistant tool-call history and linked request-history/chat-history details.
+5. Provider usage metadata is preserved when available. OpenAI-compatible prompt, completion, total, reasoning-token, and tool-definition-token counters are normalized into assistant performance telemetry and exposed through SDK response models.
+
+Dashboard i18n baseline: the current AssistantHub dashboard remains English-only and does not yet include the required `i18next` runtime. New tool-call UI strings follow the existing dashboard convention, while server-driven tool feedback uses stable `status_code` values plus safe display labels so a future i18n pass can localize client text without changing persisted or wire-level event semantics.
 
 ---
 
@@ -445,7 +461,8 @@ The server reads configuration from `assistanthub.json` in the working directory
   },
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
-    "AccessKey": "recalldbadmin"
+    "AccessKey": "recalldbadmin",
+    "SupportsMultiDocumentFilter": true
   },
   "Verbex": {
     "Endpoint": "http://verbex-server:8080",
@@ -455,6 +472,27 @@ The server reads configuration from `assistanthub.json` in the working directory
     "EnableIngestion": true,
     "RequireIngestion": true,
     "MaxContentCharacters": 0
+  },
+  "ExternalSearch": {
+    "Enabled": false,
+    "AllowFallback": true,
+    "MaxResults": 10,
+    "TimeoutMs": 30000,
+    "SafeSearch": true,
+    "AllowRawContent": false,
+    "IncludeDomains": [],
+    "ExcludeDomains": [],
+    "Providers": [
+      {
+        "Name": "default",
+        "ProviderType": "Tavily",
+        "Endpoint": "https://api.tavily.com/search",
+        "ApiKey": "${TAVILY_API_KEY}",
+        "Enabled": false,
+        "IsDefault": true,
+        "TimeoutMs": 30000
+      }
+    ]
   },
   "AdminApiKeys": [
     "changeme"
@@ -497,8 +535,9 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking service. |
 | `Embeddings` | Endpoint, access key, and default endpoint ID for the Partio embeddings service. |
 | `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model. |
-| `RecallDb` | Endpoint and access key for the RecallDB vector database service. |
+| `RecallDb` | Endpoint, access key, dashboard URL, and capability flags for the RecallDB vector database service. `SupportsMultiDocumentFilter` defaults to `true`; set it to `false` only for RecallDB deployments that do not accept native `DocumentIds` search filters, which makes AssistantHub loop over single-document searches and log a fallback warning. |
 | `Verbex` | Endpoint, access key, dashboard URL, default index ID, and ingestion failure policy for Verbex text search. |
+| `ExternalSearch` | Disabled-by-default external web-search providers. Tavily uses `ProviderType: "Tavily"` and can read `ApiKey` from `${TAVILY_API_KEY}` when globally enabled and exposed through assistant tool policy. Both factory and runtime Docker server JSON files include the disabled Tavily provider placeholder. Admins can check redacted readiness counts with `GET /v1.0/configuration/external-search/status`. |
 | `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
 | `ProcessingLog` | Directory and retention for per-document processing logs (namespaced by tenant). |
@@ -563,7 +602,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Embedding Endpoints | `PUT /v1.0/endpoints/embedding`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test`, `POST .../load` | Partio embedding endpoint management, smoke testing, and model load/warm actions (admin only) |
 | Completion Endpoints | `PUT /v1.0/endpoints/completion`, `POST .../enumerate`, `GET/PUT/DELETE/HEAD .../{id}`, `GET .../health`, `POST .../test`, `POST .../load` | Partio completion endpoint management, smoke testing, and model load/warm actions (admin only) |
 | Assistants | `PUT/GET /v1.0/assistants`, `GET/PUT/DELETE/HEAD /v1.0/assistants/{id}` | Assistant management (owner or admin) |
-| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify` | Per-assistant endpoint, prompt, RAG, and Slack configuration. Includes draft Slack connectivity verification (owner or admin). |
+| Assistant Settings | `GET/PUT /v1.0/assistants/{id}/settings`, `POST .../settings/slack/verify`, `POST .../settings/tools/validate`, `GET .../tools` | Per-assistant endpoint, prompt, RAG, Slack, and tool policy configuration. Includes draft Slack connectivity verification and effective tool-policy inspection (owner or admin). |
 | Assistant Analytics | `GET /v1.0/assistants/{id}/analytics/{overview,timeseries,stages,endpoints,slowest,feedback}` | Assistant-scoped performance, endpoint, retrieval, slow request, and feedback analytics |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `POST /v1.0/crawlplans/connectivity`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, draft/saved connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
@@ -576,8 +615,9 @@ For complete endpoint documentation including request/response schemas and examp
 | Eval Runs | `POST/GET /v1.0/eval/runs`, `GET/DELETE /v1.0/eval/runs/{runId}`, `GET .../results`, `GET .../stream` | Start, list, and stream evaluation runs with LLM-judged results |
 | Eval Results | `GET /v1.0/eval/results/{resultId}` | Retrieve individual evaluation result details |
 | Eval Judge Prompt | `GET /v1.0/eval/judge-prompt/default` | Retrieve the default judge prompt template |
-| Configuration | `GET/PUT /v1.0/configuration` | View and update server configuration (admin only) |
-| Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG and optional metadata filtering (unauthenticated, SSE or JSON) |
+| Configuration | `GET/PUT /v1.0/configuration`, `GET /v1.0/configuration/external-search/status` | View/update server configuration and inspect safe external-search readiness counts (admin only) |
+| Public Assistant Documents | `GET /v1.0/assistants/{id}/documents` | Completed documents from the assistant collection that may be selected for attached-document chat (unauthenticated when enabled) |
+| Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG, optional metadata filtering, and optional `attached_document_ids` (unauthenticated, SSE or JSON) |
 | Public Generate | `POST /v1.0/assistants/{id}/generate` | Lightweight inference without RAG (unauthenticated) |
 | Public Compact | `POST /v1.0/assistants/{id}/compact` | Force conversation compaction (unauthenticated) |
 | Public Feedback | `POST /v1.0/assistants/{id}/feedback` | Submit feedback (unauthenticated) |
@@ -742,12 +782,13 @@ See [MCP_API.md](MCP_API.md) for the full tool catalog and route coverage matrix
                     └──────────────┘
 ```
 
-1. User sends a message to the chat endpoint with conversation history.
-2. If RAG is enabled (and the retrieval gate permits), the server embeds the query and searches RecallDB using the assistant's configured search mode (vector, full-text, or hybrid).
-3. RecallDB returns relevant document chunks ranked by similarity score.
-4. The server assembles the system prompt with retrieved context and sends the full message list to the configured inference provider (Ollama, OpenAI, or Gemini). If the conversation exceeds the context window, older messages are compacted first.
-5. The LLM generates a response.
-6. The response is streamed back to the user token-by-token via SSE (or returned as a complete JSON response). Chat history with timing metrics is persisted.
+1. User sends a message to the chat endpoint with conversation history and optional `attached_document_ids`.
+2. If attached document IDs are present, the server validates they are completed documents in the assistant tenant and collection.
+3. If RAG is enabled (and the retrieval gate permits), the server embeds the query and searches RecallDB using the assistant's configured search mode (vector, full-text, or hybrid). Attached document IDs narrow the RecallDB search; they do not force whole-document summarization.
+4. RecallDB returns relevant document chunks ranked by similarity score.
+5. The server assembles the system prompt with retrieved context and sends the full message list to the configured inference provider (Ollama, OpenAI, or Gemini). If the conversation exceeds the context window, older messages are compacted first.
+6. The LLM generates a response.
+7. The response is streamed back to the user token-by-token via SSE (or returned as a complete JSON response). Chat history with timing metrics is persisted.
 
 ---
 

@@ -20,6 +20,7 @@ namespace Test.Sdk
             TestConfig config = TestConfig.Load(args);
             Console.WriteLine($"  Base URL:  {config.BaseUrl}");
             Console.WriteLine($"  Tenant:    {config.TenantId}");
+            Console.WriteLine($"  LocalOnly: {config.LocalOnly}");
             Console.WriteLine();
 
             TestRunner runner = new TestRunner();
@@ -28,6 +29,21 @@ namespace Test.Sdk
 
             try
             {
+                await SdkContractTests.RunAsync(runner, token).ConfigureAwait(false);
+
+                if (config.LocalOnly)
+                {
+                    totalStopwatch.Stop();
+                    runner.PrintSummary(totalStopwatch.Elapsed.TotalMilliseconds);
+
+                    foreach (TestResult r in runner.Results)
+                    {
+                        if (!r.Passed) return 1;
+                    }
+
+                    return 0;
+                }
+
                 using (AssistantHubClient client = new AssistantHubClient(config.BaseUrl, config.ApiKey))
                 {
                     await HealthTests.RunAsync(runner, client, token).ConfigureAwait(false);

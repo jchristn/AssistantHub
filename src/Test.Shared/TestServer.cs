@@ -42,6 +42,11 @@ namespace Test.Shared
         /// </summary>
         public string DefaultTenantId { get; private set; }
 
+        /// <summary>
+        /// The default admin user ID created during initialization.
+        /// </summary>
+        public string DefaultUserId { get; private set; }
+
         private Webserver _server;
         private string _dbFilename;
         private int _port;
@@ -109,6 +114,7 @@ namespace Test.Shared
             };
             adminUser.SetPassword("testpassword123");
             adminUser = await Database.User.CreateAsync(adminUser);
+            DefaultUserId = adminUser.Id;
 
             Credential adminCred = new Credential
             {
@@ -138,6 +144,8 @@ namespace Test.Shared
             CredentialHandler credentialHandler = new CredentialHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
             AssistantHandler assistantHandler = new AssistantHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
+            AssistantToolCallHandler assistantToolCallHandler = new AssistantToolCallHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
+            ChatHandler chatHandler = new ChatHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
             FeedbackHandler feedbackHandler = new FeedbackHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
             HistoryHandler historyHandler = new HistoryHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
             IngestionRuleHandler ingestionRuleHandler = new IngestionRuleHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
@@ -154,6 +162,7 @@ namespace Test.Shared
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/openapi.json", openApiHandler.GetOpenApiAsync);
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/swagger", openApiHandler.GetSwaggerAsync);
             _server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/authenticate", authenticateHandler.PostAuthenticateAsync);
+            _server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents", chatHandler.GetAssistantDocumentsAsync);
 
             // Authentication handler
             _server.Routes.AuthenticateRequest = authHandler.HandleAuthenticateRequestAsync;
@@ -188,6 +197,15 @@ namespace Test.Shared
             // Authenticated routes - Assistant Settings
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync);
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/validate", assistantSettingsHandler.ValidateToolsAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/test", assistantSettingsHandler.TestToolsAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tools", assistantSettingsHandler.GetToolsAsync);
+
+            // Authenticated routes - Assistant Tool Calls
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.GetAssistantToolCallsAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.DeleteAssistantToolCallsAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.GetAssistantToolCallAsync);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.DeleteAssistantToolCallAsync);
 
             // Authenticated routes - Ingestion Rules
             _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync);

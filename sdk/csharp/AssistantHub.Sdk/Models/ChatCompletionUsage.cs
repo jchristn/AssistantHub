@@ -30,5 +30,95 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("context_window")]
         public int ContextWindow { get; set; }
+
+        /// <summary>
+        /// Reasoning tokens reported directly by the provider.
+        /// </summary>
+        [JsonPropertyName("reasoning_tokens")]
+        public int ReasoningTokens { get; set; }
+
+        /// <summary>
+        /// Tokens attributed to tool definitions, when reported by a compatible provider.
+        /// </summary>
+        [JsonPropertyName("tool_definition_tokens")]
+        public int ToolDefinitionTokens { get; set; }
+
+        /// <summary>
+        /// Alternate provider field for tokens attributed to tool definitions.
+        /// </summary>
+        [JsonPropertyName("tool_tokens")]
+        public int ToolTokens { get; set; }
+
+        /// <summary>
+        /// Provider-specific prompt token details.
+        /// </summary>
+        [JsonPropertyName("prompt_tokens_details")]
+        public ChatCompletionPromptTokensDetails PromptTokensDetails { get; set; }
+
+        /// <summary>
+        /// Provider-specific completion token details.
+        /// </summary>
+        [JsonPropertyName("completion_tokens_details")]
+        public ChatCompletionCompletionTokensDetails CompletionTokensDetails { get; set; }
+    }
+
+    /// <summary>
+    /// Provider-specific prompt token details.
+    /// </summary>
+    public class ChatCompletionPromptTokensDetails
+    {
+        /// <summary>
+        /// Cached prompt tokens.
+        /// </summary>
+        [JsonPropertyName("cached_tokens")]
+        public int CachedTokens { get; set; }
+
+        /// <summary>
+        /// Audio prompt tokens.
+        /// </summary>
+        [JsonPropertyName("audio_tokens")]
+        public int AudioTokens { get; set; }
+
+        /// <summary>
+        /// Tokens attributed to tool definitions.
+        /// </summary>
+        [JsonPropertyName("tool_definition_tokens")]
+        public int ToolDefinitionTokens { get; set; }
+
+        /// <summary>
+        /// Alternate provider field for tokens attributed to tool definitions.
+        /// </summary>
+        [JsonPropertyName("tool_tokens")]
+        public int ToolTokens { get; set; }
+    }
+
+    /// <summary>
+    /// Provider-specific completion token details.
+    /// </summary>
+    public class ChatCompletionCompletionTokensDetails
+    {
+        /// <summary>
+        /// Reasoning tokens.
+        /// </summary>
+        [JsonPropertyName("reasoning_tokens")]
+        public int ReasoningTokens { get; set; }
+
+        /// <summary>
+        /// Audio completion tokens.
+        /// </summary>
+        [JsonPropertyName("audio_tokens")]
+        public int AudioTokens { get; set; }
+
+        /// <summary>
+        /// Accepted prediction tokens.
+        /// </summary>
+        [JsonPropertyName("accepted_prediction_tokens")]
+        public int AcceptedPredictionTokens { get; set; }
+
+        /// <summary>
+        /// Rejected prediction tokens.
+        /// </summary>
+        [JsonPropertyName("rejected_prediction_tokens")]
+        public int RejectedPredictionTokens { get; set; }
     }
 }

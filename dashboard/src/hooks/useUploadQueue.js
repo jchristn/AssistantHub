@@ -1,18 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const STATUS_PERCENT = {
-  uploading: 10,
-  uploaded: 15,
-  typedetecting: 25,
-  processing: 40,
-  summarizing: 50,
-  processingchunks: 60,
-  storingembeddings: 80,
-  completed: 100,
-  indexed: 100,
-  active: 100,
-  failed: 100,
-  error: 100,
+const INGESTION_STEP_TOTAL = 9;
+
+const STATUS_STEP = {
+  queued: 0,
+  uploading: 1,
+  uploaded: 2,
+  typedetecting: 3,
+  typedetectionsuccess: 4,
+  processing: 4,
+  storingtext: 5,
+  processingchunks: 6,
+  summarizing: 7,
+  storingembeddings: 8,
+  completed: 9,
+  indexed: 9,
+  active: 9,
+  typedetectionfailed: 9,
+  failed: 9,
+  error: 9,
 };
 
 const STATUS_LABEL = {
@@ -20,7 +26,10 @@ const STATUS_LABEL = {
   uploading: 'Uploading',
   uploaded: 'Uploaded',
   typedetecting: 'Detecting type',
+  typedetectionsuccess: 'Type detected',
+  typedetectionfailed: 'Failed',
   processing: 'Processing',
+  storingtext: 'Storing text',
   summarizing: 'Summarizing',
   processingchunks: 'Chunking',
   storingembeddings: 'Storing embeddings',
@@ -43,9 +52,9 @@ const uploadQueueStore = {
 
 let nextId = 1;
 
-function statusToPercent(status) {
+function statusToStep(status) {
   if (!status) return 0;
-  return STATUS_PERCENT[status.toLowerCase()] ?? 10;
+  return STATUS_STEP[status.toLowerCase()] ?? 1;
 }
 
 function statusToLabel(status) {
@@ -56,13 +65,13 @@ function statusToLabel(status) {
 function isFinalStatus(status) {
   if (!status) return false;
   const s = status.toLowerCase();
-  return s === 'completed' || s === 'indexed' || s === 'active' || s === 'failed' || s === 'error';
+  return s === 'completed' || s === 'indexed' || s === 'active' || s === 'typedetectionfailed' || s === 'failed' || s === 'error';
 }
 
 function isErrorStatus(status) {
   if (!status) return false;
   const s = status.toLowerCase();
-  return s === 'failed' || s === 'error';
+  return s === 'typedetectionfailed' || s === 'failed' || s === 'error';
 }
 
 function isDismissibleStatus(status) {
@@ -135,7 +144,8 @@ function pollDocument(id, serverDocId) {
       const status = doc.Status || '';
       const patch = {
         status,
-        percentage: statusToPercent(status),
+        stepCount: statusToStep(status),
+        stepTotal: INGESTION_STEP_TOTAL,
         stepLabel: statusToLabel(status),
       };
 
@@ -162,7 +172,7 @@ function pollDocument(id, serverDocId) {
 
 async function processOne(item) {
   const { id, file, ruleId, labels, tags } = item;
-  updateRecord(id, { status: 'Uploading', percentage: 10, stepLabel: 'Uploading' });
+  updateRecord(id, { status: 'Uploading', stepCount: 1, stepTotal: INGESTION_STEP_TOTAL, stepLabel: 'Uploading' });
 
   try {
     const base64 = await new Promise((resolve, reject) => {
@@ -190,17 +200,18 @@ async function processOne(item) {
 
     const serverDocId = result?.Id || result?.GUID || result?.id;
     if (serverDocId) {
-      updateRecord(id, { serverDocId, status: 'Uploaded', percentage: 15, stepLabel: 'Uploaded' });
+      updateRecord(id, { serverDocId, status: 'Uploaded', stepCount: 2, stepTotal: INGESTION_STEP_TOTAL, stepLabel: 'Uploaded' });
       pollDocument(id, serverDocId);
     } else {
-      updateRecord(id, { status: 'Completed', percentage: 100, stepLabel: 'Completed', completedAt: Date.now() });
+      updateRecord(id, { status: 'Completed', stepCount: INGESTION_STEP_TOTAL, stepTotal: INGESTION_STEP_TOTAL, stepLabel: 'Completed', completedAt: Date.now() });
       uploadQueueStore.activeCount = Math.max(0, uploadQueueStore.activeCount - 1);
       processQueue();
     }
   } catch (err) {
     updateRecord(id, {
       status: 'Failed',
-      percentage: 100,
+      stepCount: INGESTION_STEP_TOTAL,
+      stepTotal: INGESTION_STEP_TOTAL,
       stepLabel: 'Failed',
       error: err.message || 'Upload failed',
       completedAt: Date.now(),
@@ -227,7 +238,8 @@ function enqueueFilesInternal(files, ruleId, labels, tags) {
       status: 'Queued',
       stepLabel: 'Queued',
       serverDocId: null,
-      percentage: 0,
+      stepCount: 0,
+      stepTotal: INGESTION_STEP_TOTAL,
       error: null,
       completedAt: null,
       _file: file,
@@ -263,6 +275,21 @@ function dismissRecordInternal(id) {
   updateRecords((records) => records.filter((item) => item.id !== id));
 }
 
+function clearFinishedRecordsInternal() {
+  const removableIds = uploadQueueStore.records
+    .filter((record) => isDismissibleStatus(record.status))
+    .map((record) => record.id);
+
+  if (removableIds.length < 1) return;
+
+  for (const id of removableIds) {
+    removePollTimer(id);
+  }
+
+  const removableSet = new Set(removableIds);
+  updateRecords((records) => records.filter((item) => !removableSet.has(item.id)));
+}
+
 export function useUploadQueue(api) {
   if (api) {
     uploadQueueStore.api = api;
@@ -290,5 +317,9 @@ export function useUploadQueue(api) {
     dismissRecordInternal(id);
   }, []);
 
-  return { records, enqueueFiles, dismissRecord };
+  const clearFinishedRecords = useCallback(() => {
+    clearFinishedRecordsInternal();
+  }, []);
+
+  return { records, enqueueFiles, dismissRecord, clearFinishedRecords };
 }

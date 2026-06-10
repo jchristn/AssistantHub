@@ -54,10 +54,10 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
                 "enable_reranking, reranker_top_k, reranker_score_threshold, rerank_prompt, " +
-                "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
+                "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
+                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -76,6 +76,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.RerankPrompt) + ", " +
                 (assistantSettings.EnableCitations ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(assistantSettings.CitationLinkMode) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableDocumentAttachments) + ", " +
+                assistantSettings.DocumentAttachmentMaxCount + ", " +
+                FormatBooleanColumn(assistantSettings.ExposeDocumentSourceUrls) + ", " +
                 _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 assistantSettings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
@@ -103,6 +106,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SlackMessagePrefix) + ", " +
+                _Driver.FormatNullableString(assistantSettings.ToolPolicyJson) + ", " +
                 "'" + _Driver.FormatDateTime(assistantSettings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "'" +
                 ")";
@@ -160,6 +164,9 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "rerank_prompt = " + _Driver.FormatNullableString(assistantSettings.RerankPrompt) + ", " +
                 "enable_citations = " + (assistantSettings.EnableCitations ? 1 : 0) + ", " +
                 "citation_link_mode = " + _Driver.FormatNullableString(assistantSettings.CitationLinkMode) + ", " +
+                "enable_document_attachments = " + FormatBooleanColumn(assistantSettings.EnableDocumentAttachments) + ", " +
+                "document_attachment_max_count = " + assistantSettings.DocumentAttachmentMaxCount + ", " +
+                "expose_document_source_urls = " + FormatBooleanColumn(assistantSettings.ExposeDocumentSourceUrls) + ", " +
                 "collection_id = " + _Driver.FormatNullableString(assistantSettings.CollectionId) + ", " +
                 "retrieval_top_k = " + assistantSettings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
@@ -187,6 +194,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "slack_bot_token = " + _Driver.FormatNullableString(assistantSettings.SlackBotToken) + ", " +
                 "slack_channel_id = " + _Driver.FormatNullableString(assistantSettings.SlackChannelId) + ", " +
                 "slack_message_prefix = " + _Driver.FormatNullableString(assistantSettings.SlackMessagePrefix) + ", " +
+                "tool_policy_json = " + _Driver.FormatNullableString(assistantSettings.ToolPolicyJson) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(assistantSettings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(assistantSettings.Id) + "'";
 

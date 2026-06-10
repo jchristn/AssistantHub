@@ -52,7 +52,8 @@
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
     "AccessKey": "recalldbadmin",
-    "DashboardUrl": "http://localhost:8402"
+    "DashboardUrl": "http://localhost:8402",
+    "SupportsMultiDocumentFilter": true
   },
   "Verbex": {
     "Endpoint": "http://verbex-server:8080",
@@ -62,6 +63,27 @@
     "EnableIngestion": true,
     "RequireIngestion": true,
     "MaxContentCharacters": 0
+  },
+  "ExternalSearch": {
+    "Enabled": false,
+    "AllowFallback": true,
+    "MaxResults": 10,
+    "TimeoutMs": 30000,
+    "SafeSearch": true,
+    "AllowRawContent": false,
+    "IncludeDomains": [],
+    "ExcludeDomains": [],
+    "Providers": [
+      {
+        "Name": "default",
+        "ProviderType": "Tavily",
+        "Endpoint": "https://api.tavily.com/search",
+        "ApiKey": "${TAVILY_API_KEY}",
+        "Enabled": false,
+        "IsDefault": true,
+        "TimeoutMs": 30000
+      }
+    ]
   },
   "AdminApiKeys": [
     "changeme"

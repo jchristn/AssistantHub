@@ -64,7 +64,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "endpoint_resolution_duration_ms, compaction_duration_ms, inference_connection_duration_ms, " +
                 "time_to_first_token_ms, time_to_last_token_ms, " +
                 "completion_tokens, tokens_per_second_overall, tokens_per_second_generation, " +
-                "metadata_filter, origin, assistant_response, created_utc, last_update_utc) " +
+                "metadata_filter, attached_document_ids_json, attached_documents_json, origin, assistant_response, created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(history.Id) + "', " +
                 _Driver.FormatNullableString(history.TraceId) + ", " +
@@ -98,6 +98,8 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatDouble(history.TokensPerSecondOverall) + ", " +
                 _Driver.FormatDouble(history.TokensPerSecondGeneration) + ", " +
                 _Driver.FormatNullableString(history.MetadataFilter) + ", " +
+                _Driver.FormatNullableString(history.AttachedDocumentIdsJson) + ", " +
+                _Driver.FormatNullableString(history.AttachedDocumentsJson) + ", " +
                 _Driver.FormatNullableString(history.Origin) + ", " +
                 _Driver.FormatNullableString(history.AssistantResponse) + ", " +
                 "'" + _Driver.FormatDateTime(history.CreatedUtc) + "', " +

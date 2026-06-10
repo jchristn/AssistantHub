@@ -25,6 +25,12 @@ namespace AssistantHub.Core.Services
         /// </summary>
         public OllamaMessage Message { get; set; } = null;
 
+        /// <summary>
+        /// Provider finish reason.
+        /// </summary>
+        [JsonPropertyName("done_reason")]
+        public string DoneReason { get; set; } = null;
+
         [JsonPropertyName("total_duration")]
         public long? TotalDuration { get; set; } = null;
 

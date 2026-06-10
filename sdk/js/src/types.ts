@@ -1,6 +1,6 @@
-export * from './types.telemetry';
-export * from './types.analytics';
-export * from './types.crawlEval';
+export * from './types.telemetry.js';
+export * from './types.analytics.js';
+export * from './types.crawlEval.js';
 
 // ============================================================================
 // Enums
@@ -26,6 +26,7 @@ export const DocumentStatus = {
   TypeDetectionSuccess: "TypeDetectionSuccess",
   TypeDetectionFailed: "TypeDetectionFailed",
   Processing: "Processing",
+  StoringText: "StoringText",
   ProcessingChunks: "ProcessingChunks",
   Summarizing: "Summarizing",
   StoringEmbeddings: "StoringEmbeddings",
@@ -157,6 +158,14 @@ export interface EnumerationQuery {
   bucketName?: string;
   collectionId?: string;
   threadId?: string;
+  requestHistoryId?: string;
+  chatHistoryId?: string;
+  traceId?: string;
+  toolName?: string;
+  success?: boolean;
+  denied?: boolean;
+  startUtc?: string;
+  endUtc?: string;
 }
 
 /** Paginated list response. */
@@ -283,6 +292,9 @@ export interface AssistantSettings {
   RerankPrompt?: string;
   EnableCitations?: boolean;
   CitationLinkMode?: string;
+  EnableDocumentAttachments?: boolean;
+  DocumentAttachmentMaxCount?: number;
+  ExposeDocumentSourceUrls?: boolean;
   CollectionId?: string;
   RetrievalTopK?: number;
   RetrievalScoreThreshold?: number;
@@ -311,8 +323,175 @@ export interface AssistantSettings {
   SlackBotToken?: string;
   SlackChannelId?: string;
   SlackMessagePrefix?: string;
+  ToolPolicyJson?: string;
+  ToolPolicy?: AssistantToolPolicy;
   CreatedUtc?: string;
   LastUpdateUtc?: string;
+}
+
+/** Administrator-controlled policy for server-side tools exposed to a model. */
+export interface AssistantToolPolicy {
+  EnableToolCalls?: boolean;
+  MaxToolIterations?: number;
+  MaxToolCallsPerTurn?: number;
+  ToolChoiceMode?: string;
+  MaxParallelToolCalls?: number;
+  AllowParallelToolCalls?: boolean;
+  ToolCallTimeoutMs?: number;
+  MaxToolOutputChars?: number;
+  MaxToolOutputCharactersPerTurn?: number;
+  MaxToolResultItems?: number;
+  ExposeToolTraceToUser?: boolean;
+  PersistToolArguments?: boolean;
+  PersistToolOutputs?: boolean;
+  RequireCitationsForToolEvidence?: boolean;
+  AllowedToolNames?: string[];
+  EnableToolFeedbackEvents?: boolean;
+  EnableSlackToolProgressMessages?: boolean;
+  EnableCollectionSearchTool?: boolean;
+  EnableCollectionReadChunksTool?: boolean;
+  EnableVerbexFullTextSearchTool?: boolean;
+  EnableS3ObjectReadTool?: boolean;
+  EnableCollectionEnumerateDocumentsTool?: boolean;
+  EnableCollectionEnumerationTool?: boolean;
+  EnableIndexEnumerateRecordsTool?: boolean;
+  EnableBucketEnumerateObjectsTool?: boolean;
+  EnableWebSearchTool?: boolean;
+  TavilyEndpoint?: string | null;
+  TavilyApiKey?: string | null;
+  MaxSearchResultsPerCall?: number;
+  MaxSearchTopK?: number;
+  MaxSearchQueriesPerCall?: number;
+  MaxDocumentsConsideredPerSearch?: number;
+  MaxResultsConsideredPerSearch?: number;
+  EnableServerGeneratedQueryVariants?: boolean;
+  MaxChunksPerRead?: number;
+  MaxReadRangesPerCall?: number;
+  MaxNeighborWindow?: number;
+  AllowedSearchModes?: string[];
+  DefaultSearchMode?: string | null;
+  AllowModelDocumentIdFilter?: boolean;
+  ReturnLabels?: boolean;
+  ReturnTags?: boolean;
+  ReturnFullSearchContent?: boolean;
+  AllowNonCompletedDocumentMetadata?: boolean;
+  EnableVerbexSearchTool?: boolean;
+  EnableIndexEnumerationTool?: boolean;
+  DefaultIndexId?: string | null;
+  MaxVerbexResults?: number;
+  AllowRawIndexRecords?: boolean;
+  RequireDocumentMapping?: boolean;
+  ReturnVerbexRecordMetadata?: boolean;
+  MaxObjectReadBytes?: number;
+  MaxObjectBytesPerTurn?: number;
+  MaxBucketEnumerationResults?: number;
+  AllowBucketWideObjectRead?: boolean;
+  DocumentBackedObjectsOnly?: boolean;
+  RedactObjectKeys?: boolean;
+  AllowBinaryObjectOutput?: boolean;
+  AllowRawWebContent?: boolean;
+  AllowWebImages?: boolean;
+  AllowUngovernedWebAccess?: boolean;
+  AllowDocumentSourceUrls?: boolean;
+  AllowDocumentMetadataDetails?: boolean;
+  AllowedVerbexIndexIds?: string[];
+  AllowedBucketNames?: string[];
+  AllowedBucketPrefixes?: string[];
+  AllowedObjectSuffixes?: string[];
+  AllowedContentTypes?: string[];
+  AllowedWebDomains?: string[];
+  BlockedWebDomains?: string[];
+  AllowedProviders?: string[];
+  MaxWebResults?: number;
+  SearchDepth?: string;
+  AllowAdvancedSearchDepth?: boolean;
+  AllowNewsTopic?: boolean;
+  RequireSafeSearch?: boolean;
+  MaxWebSearchesPerTurn?: number;
+}
+
+/** Effective server-side tool availability for an assistant. */
+export interface AssistantToolDescriptor {
+  ToolName?: string;
+  DisplayName?: string;
+  Category?: string;
+  EnabledByPolicy?: boolean;
+  Available?: boolean;
+  UnavailableReason?: string | null;
+}
+
+/** Redacted persistent trace for one model-directed assistant tool call. */
+export interface AssistantToolCallRecord {
+  Id?: string;
+  TenantId?: string;
+  AssistantId?: string | null;
+  ChatHistoryId?: string | null;
+  RequestHistoryId?: string | null;
+  TraceId?: string | null;
+  ThreadId?: string | null;
+  Origin?: string | null;
+  TurnIndex?: number;
+  Iteration?: number;
+  SequenceNumber?: number;
+  ProviderToolCallId?: string | null;
+  ToolName?: string | null;
+  ArgumentsJson?: string | null;
+  OutputJson?: string | null;
+  ResultSummaryJson?: string | null;
+  Success?: boolean;
+  Denied?: boolean;
+  Truncated?: boolean;
+  OutputCharacters?: number;
+  InputBytes?: number;
+  OutputBytes?: number;
+  DurationMs?: number;
+  ErrorType?: string | null;
+  ErrorMessage?: string | null;
+  Provider?: string | null;
+  Model?: string | null;
+  Active?: boolean;
+  StartedUtc?: string | null;
+  FinishedUtc?: string | null;
+  CreatedUtc?: string | null;
+  LastUpdateUtc?: string | null;
+}
+
+/** Request to validate an assistant tool policy without persisting it. */
+export interface AssistantToolPolicyValidationRequest {
+  ToolPolicyJson?: string | null;
+  ToolPolicy?: AssistantToolPolicy | null;
+}
+
+/** Result of validating an assistant tool policy. */
+export interface AssistantToolPolicyValidationResult {
+  Success?: boolean;
+  Message?: string | null;
+  ToolPolicyJson?: string | null;
+  ToolPolicy?: AssistantToolPolicy | null;
+  Tools?: AssistantToolDescriptor[];
+  Errors?: string[];
+  ErrorCodes?: string[];
+}
+
+/** Result of an administrator dry-run diagnostic for assistant tool policy. */
+export interface AssistantToolPolicyTestResult {
+  Success?: boolean;
+  Message?: string | null;
+  AssistantId?: string | null;
+  InferenceEndpointId?: string | null;
+  EndpointResolved?: boolean;
+  EndpointModel?: string | null;
+  EndpointApiFormat?: string | null;
+  EndpointActive?: boolean;
+  EndpointSupportsToolCalling?: boolean;
+  EndpointToolCallingApiFormat?: string | null;
+  EndpointSupportsParallelToolCalls?: boolean;
+  EndpointSupportsStreamingToolCalls?: boolean;
+  Validation?: AssistantToolPolicyValidationResult | null;
+  Tools?: AssistantToolDescriptor[];
+  Warnings?: string[];
+  Errors?: string[];
+  ErrorCodes?: string[];
 }
 
 /** Public assistant info returned for unauthenticated requests. */
@@ -324,6 +503,9 @@ export interface AssistantPublicInfo {
   LogoUrl?: string;
   FaviconUrl?: string;
   LoadModelsOnChatOpen?: boolean;
+  EnableDocumentAttachments?: boolean;
+  DocumentAttachmentMaxCount?: number;
+  ExposeDocumentSourceUrls?: boolean;
 }
 
 /** Result of loading one configured assistant endpoint model during chat open. */
@@ -404,6 +586,18 @@ export interface AssistantDocument {
   ChunkRecordIds?: string;
   CrawlPlanId?: string;
   CrawlOperationId?: string;
+  SourceUrl?: string;
+  CreatedUtc?: string;
+  LastUpdateUtc?: string;
+}
+
+/** Safe public metadata for documents selectable in assistant chat. */
+export interface AssistantDocumentSelectionItem {
+  Id?: string;
+  Name?: string;
+  OriginalFilename?: string;
+  ContentType?: string;
+  SizeBytes?: number;
   SourceUrl?: string;
   CreatedUtc?: string;
   LastUpdateUtc?: string;
@@ -508,6 +702,8 @@ export interface ChatCompletionRequest {
   TopP?: number;
   MaxTokens?: number;
   MetadataFilter?: ChatMetadataFilter;
+  AttachedDocumentIds?: string[];
+  attached_document_ids?: string[];
 }
 
 /** A single chat message. */
@@ -527,6 +723,27 @@ export interface ChatCompletionResponse {
   status?: string;
   retrieval?: ChatCompletionRetrieval;
   citations?: ChatCompletionCitations;
+  tool_calls?: ChatCompletionToolTrace[];
+}
+
+/** Safe metadata for a model-directed assistant tool call. */
+export interface ChatCompletionToolTrace {
+  tool_call_id?: string;
+  tool_name?: string;
+  display_label?: string;
+  iteration?: number;
+  sequence_number?: number;
+  success?: boolean;
+  denied?: boolean;
+  truncated?: boolean;
+  output_characters?: number;
+  result_count?: number;
+  credits_used?: number;
+  provider_latency_ms?: number;
+  duration_ms?: number;
+  summary?: string;
+  started_utc?: string;
+  finished_utc?: string;
 }
 
 /** A choice in a chat completion response. */
@@ -543,6 +760,25 @@ export interface ChatCompletionUsage {
   completion_tokens: number;
   total_tokens: number;
   context_window?: number;
+  reasoning_tokens?: number;
+  tool_definition_tokens?: number;
+  tool_tokens?: number;
+  prompt_tokens_details?: ChatCompletionPromptTokensDetails | null;
+  completion_tokens_details?: ChatCompletionCompletionTokensDetails | null;
+}
+
+export interface ChatCompletionPromptTokensDetails {
+  cached_tokens?: number;
+  audio_tokens?: number;
+  tool_definition_tokens?: number;
+  tool_tokens?: number;
+}
+
+export interface ChatCompletionCompletionTokensDetails {
+  reasoning_tokens?: number;
+  audio_tokens?: number;
+  accepted_prediction_tokens?: number;
+  rejected_prediction_tokens?: number;
 }
 
 /** Retrieval metadata from RAG. */
@@ -553,6 +789,9 @@ export interface ChatCompletionRetrieval {
   rerank_duration_ms?: number;
   rerank_input_count?: number;
   rerank_output_count?: number;
+  attached_document_ids?: string[];
+  attached_documents?: AssistantDocumentSelectionItem[];
+  document_filter_applied?: boolean;
   chunks?: RetrievalChunk[];
 }
 
@@ -566,7 +805,9 @@ export interface ChatCompletionCitations {
 /** A citation source. */
 export interface CitationSource {
   index: number;
-  document_id: string;
+  source_type?: string;
+  document_id?: string;
+  url?: string;
   document_name?: string;
   content_type?: string;
   score?: number;
@@ -598,6 +839,7 @@ export interface ChatCompletionChunk {
   usage?: ChatCompletionUsage;
   retrieval?: ChatCompletionRetrieval;
   citations?: ChatCompletionCitations;
+  tool_calls?: ChatCompletionToolTrace[];
 }
 
 /** Metadata filter for chat retrieval. */
@@ -685,6 +927,8 @@ export interface ChatHistory {
   TokensPerSecondOverall?: number;
   TokensPerSecondGeneration?: number;
   MetadataFilter?: string;
+  AttachedDocumentIdsJson?: string | null;
+  AttachedDocumentsJson?: string | null;
   Origin?: string;
   AssistantResponse?: string;
   CreatedUtc?: string;
@@ -804,6 +1048,10 @@ export interface PartioEndpointRequest {
   ApiKey?: string;
   Active?: boolean;
   MaxConcurrentRequests?: number;
+  SupportsToolCalling?: boolean;
+  ToolCallingApiFormat?: string | null;
+  SupportsParallelToolCalls?: boolean;
+  SupportsStreamingToolCalls?: boolean;
   EnableRequestHistory?: boolean;
   Labels?: string[];
   Tags?: Record<string, string>;
@@ -829,6 +1077,10 @@ export interface PartioEndpointConfig {
   ApiKey?: string;
   Active?: boolean;
   MaxConcurrentRequests?: number;
+  SupportsToolCalling?: boolean;
+  ToolCallingApiFormat?: string | null;
+  SupportsParallelToolCalls?: boolean;
+  SupportsStreamingToolCalls?: boolean;
   HealthCheckEnabled?: boolean;
   HealthCheckUrl?: string;
   HealthCheckMethod?: string;
@@ -1026,6 +1278,14 @@ export interface BucketObjectMetadata {
 /** AssistantHub server configuration (partial -- includes common fields). */
 export interface AssistantHubSettings {
   [key: string]: unknown;
+}
+
+/** Safe external-search configuration status. */
+export interface ExternalSearchConfigurationStatus {
+  Enabled: boolean;
+  EnabledProviders: number;
+  ConfiguredProviders: number;
+  MisconfiguredProviders: number;
 }
 
 // ============================================================================

@@ -49,5 +49,11 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("metadata_filter")]
         public ChatMetadataFilter MetadataFilter { get; set; }
+
+        /// <summary>
+        /// Optional AssistantDocument.Id values used to constrain retrieval.
+        /// </summary>
+        [JsonPropertyName("attached_document_ids")]
+        public List<string> AttachedDocumentIds { get; set; }
     }
 }

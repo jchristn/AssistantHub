@@ -259,11 +259,7 @@ namespace AssistantHub.Core.Services
         {
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, false);
 
-            List<object> msgObjects = new List<object>();
-            foreach (ChatCompletionMessage msg in messages)
-            {
-                msgObjects.Add(new { role = msg.Role, content = msg.Content });
-            }
+            List<object> msgObjects = BuildProviderMessages(messages);
 
             object requestBody = new
             {
@@ -307,10 +303,15 @@ namespace AssistantHub.Core.Services
 
                     if (chatResponse?.Choices != null && chatResponse.Choices.Count > 0)
                     {
-                        string content = chatResponse.Choices[0].Message?.Content;
+                        OpenAIChoice choice = chatResponse.Choices[0];
+                        string content = choice.Message?.Content;
                         _Logging.Debug(_Header + "OpenAI response received (" + (content != null ? content.Length : 0) + " characters)");
                         FinishTelemetry(telemetry, telemetrySw, true);
-                        return InferenceResult.FromSuccess(content, telemetry);
+                        return InferenceResult.FromSuccess(
+                            content,
+                            telemetry,
+                            choice.FinishReason ?? "stop",
+                            NormalizeToolCalls(choice.Message?.ToolCalls));
                     }
 
                     _Logging.Warn(_Header + "OpenAI response contained no choices");
@@ -332,11 +333,7 @@ namespace AssistantHub.Core.Services
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
 
-            List<object> msgObjects = new List<object>();
-            foreach (ChatCompletionMessage msg in messages)
-            {
-                msgObjects.Add(new { role = msg.Role, content = msg.Content });
-            }
+            List<object> msgObjects = BuildOllamaProviderMessages(messages);
 
             object requestBody = new
             {
@@ -397,10 +394,175 @@ namespace AssistantHub.Core.Services
                         string content = chatResponse.Message.Content;
                         _Logging.Debug(_Header + "Ollama response received (" + (content != null ? content.Length : 0) + " characters)");
                         FinishTelemetry(telemetry, telemetrySw, true);
-                        return InferenceResult.FromSuccess(content, telemetry);
+                        return InferenceResult.FromSuccess(
+                            content,
+                            telemetry,
+                            chatResponse.DoneReason ?? "stop",
+                            NormalizeToolCalls(chatResponse.Message.ToolCalls));
                     }
 
                     _Logging.Warn(_Header + "Ollama response contained no message");
+                    FinishTelemetry(telemetry, telemetrySw, false, "NoMessage", "Ollama response contained no message.");
+                    return InferenceResult.FromError("Ollama response contained no message.", telemetry);
+                }
+            }
+        }
+
+        private protected async Task<InferenceResult> GenerateOpenAIResponseWithToolsFromMessagesAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            string endpoint,
+            string apiKey,
+            IEnumerable<AssistantModelToolDefinition> tools,
+            string toolChoice,
+            CancellationToken token)
+        {
+            string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, false);
+
+            Dictionary<string, object> requestBody = new Dictionary<string, object>
+            {
+                ["model"] = model,
+                ["messages"] = BuildProviderMessages(messages),
+                ["max_tokens"] = maxTokens,
+                ["temperature"] = temperature,
+                ["top_p"] = topP
+            };
+
+            List<AssistantModelToolDefinition> toolList = NormalizeToolDefinitions(tools);
+            if (toolList.Count > 0)
+            {
+                requestBody["tools"] = toolList;
+                if (!String.IsNullOrWhiteSpace(toolChoice))
+                    requestBody["tool_choice"] = toolChoice.Trim();
+            }
+
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.OpenAI, model, endpoint, false);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
+
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                {
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "OpenAI tool-capable API returned status " + (int)response.StatusCode + ": " + responseBody);
+                        string error = "OpenAI API returned " + (int)response.StatusCode;
+                        FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
+                        return InferenceResult.FromError(error, telemetry);
+                    }
+
+                    OpenAIChatResponse chatResponse = JsonSerializer.Deserialize<OpenAIChatResponse>(responseBody, _JsonOptions);
+                    ApplyUsage(telemetry, chatResponse?.Usage);
+
+                    if (chatResponse?.Choices != null && chatResponse.Choices.Count > 0)
+                    {
+                        OpenAIChoice choice = chatResponse.Choices[0];
+                        List<AssistantModelToolCall> toolCalls = NormalizeToolCalls(choice.Message?.ToolCalls);
+                        string content = choice.Message?.Content;
+                        string finishReason = !String.IsNullOrWhiteSpace(choice.FinishReason)
+                            ? choice.FinishReason
+                            : (toolCalls.Count > 0 ? "tool_calls" : "stop");
+
+                        _Logging.Debug(_Header + "OpenAI tool-capable response received (" + (content != null ? content.Length : 0) + " characters, " + toolCalls.Count + " tool call(s))");
+                        FinishTelemetry(telemetry, telemetrySw, true);
+                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls);
+                    }
+
+                    _Logging.Warn(_Header + "OpenAI tool-capable response contained no choices");
+                    FinishTelemetry(telemetry, telemetrySw, false, "NoChoices", "OpenAI response contained no choices.");
+                    return InferenceResult.FromError("OpenAI response contained no choices.", telemetry);
+                }
+            }
+        }
+
+        private protected async Task<InferenceResult> GenerateOllamaResponseWithToolsFromMessagesAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            string endpoint,
+            string apiKey,
+            IEnumerable<AssistantModelToolDefinition> tools,
+            CancellationToken token)
+        {
+            string url = endpoint.TrimEnd('/') + "/api/chat";
+
+            Dictionary<string, object> requestBody = new Dictionary<string, object>
+            {
+                ["model"] = model,
+                ["messages"] = BuildOllamaProviderMessages(messages),
+                ["stream"] = false,
+                ["options"] = new
+                {
+                    temperature = temperature,
+                    top_p = topP,
+                    num_predict = maxTokens
+                }
+            };
+
+            List<AssistantModelToolDefinition> toolList = NormalizeToolDefinitions(tools);
+            if (toolList.Count > 0)
+                requestBody["tools"] = toolList;
+
+            string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            AssistantPerformanceStage telemetry = StartTelemetry(InferenceProviderEnum.Ollama, model, endpoint, false);
+            Stopwatch telemetrySw = Stopwatch.StartNew();
+
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
+            {
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (!String.IsNullOrEmpty(apiKey))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                {
+                    MarkResponseHeaders(telemetry, telemetrySw, response);
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "Ollama tool-capable API returned status " + (int)response.StatusCode + ": " + responseBody);
+                        string error = "Ollama API returned " + (int)response.StatusCode;
+                        FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
+                        return InferenceResult.FromError(error, telemetry);
+                    }
+
+                    OllamaChatResponse chatResponse = JsonSerializer.Deserialize<OllamaChatResponse>(responseBody, _JsonOptions);
+                    ApplyOllamaMetrics(
+                        telemetry,
+                        chatResponse?.TotalDuration,
+                        chatResponse?.LoadDuration,
+                        chatResponse?.PromptEvalCount,
+                        chatResponse?.PromptEvalDuration,
+                        chatResponse?.EvalCount,
+                        chatResponse?.EvalDuration);
+
+                    if (chatResponse?.Message != null)
+                    {
+                        List<AssistantModelToolCall> toolCalls = NormalizeToolCalls(chatResponse.Message.ToolCalls);
+                        string content = chatResponse.Message.Content;
+                        string finishReason = !String.IsNullOrWhiteSpace(chatResponse.DoneReason)
+                            ? chatResponse.DoneReason
+                            : (toolCalls.Count > 0 ? "tool_calls" : "stop");
+
+                        _Logging.Debug(_Header + "Ollama tool-capable response received (" + (content != null ? content.Length : 0) + " characters, " + toolCalls.Count + " tool call(s))");
+                        FinishTelemetry(telemetry, telemetrySw, true);
+                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls);
+                    }
+
+                    _Logging.Warn(_Header + "Ollama tool-capable response contained no message");
                     FinishTelemetry(telemetry, telemetrySw, false, "NoMessage", "Ollama response contained no message.");
                     return InferenceResult.FromError("Ollama response contained no message.", telemetry);
                 }
@@ -541,6 +703,145 @@ namespace AssistantHub.Core.Services
             }
 
             return sb.Length > 0 ? sb.ToString() : null;
+        }
+
+        private protected static List<object> BuildProviderMessages(List<ChatCompletionMessage> messages)
+        {
+            List<object> msgObjects = new List<object>();
+            if (messages == null) return msgObjects;
+
+            foreach (ChatCompletionMessage msg in messages)
+            {
+                if (msg == null || String.IsNullOrWhiteSpace(msg.Role)) continue;
+
+                Dictionary<string, object> message = new Dictionary<string, object>
+                {
+                    ["role"] = msg.Role
+                };
+
+                if (msg.Content != null) message["content"] = msg.Content;
+                if (msg.ToolCalls != null && msg.ToolCalls.Count > 0) message["tool_calls"] = NormalizeToolCalls(msg.ToolCalls);
+                if (!String.IsNullOrWhiteSpace(msg.ToolCallId)) message["tool_call_id"] = msg.ToolCallId.Trim();
+                if (!String.IsNullOrWhiteSpace(msg.Name)) message["name"] = msg.Name.Trim();
+
+                msgObjects.Add(message);
+            }
+
+            return msgObjects;
+        }
+
+        private protected static List<object> BuildOllamaProviderMessages(List<ChatCompletionMessage> messages)
+        {
+            List<object> msgObjects = new List<object>();
+            if (messages == null) return msgObjects;
+
+            foreach (ChatCompletionMessage msg in messages)
+            {
+                if (msg == null || String.IsNullOrWhiteSpace(msg.Role)) continue;
+
+                Dictionary<string, object> message = new Dictionary<string, object>
+                {
+                    ["role"] = msg.Role
+                };
+
+                if (msg.Content != null) message["content"] = msg.Content;
+
+                if (String.Equals(msg.Role, "tool", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!String.IsNullOrWhiteSpace(msg.Name))
+                        message["tool_name"] = msg.Name.Trim();
+
+                    msgObjects.Add(message);
+                    continue;
+                }
+
+                if (msg.ToolCalls != null && msg.ToolCalls.Count > 0)
+                    message["tool_calls"] = BuildOllamaToolCalls(msg.ToolCalls);
+
+                msgObjects.Add(message);
+            }
+
+            return msgObjects;
+        }
+
+        private protected static List<object> BuildOllamaToolCalls(IEnumerable<AssistantModelToolCall> toolCalls)
+        {
+            List<object> ollamaCalls = new List<object>();
+            int index = 0;
+
+            foreach (AssistantModelToolCall call in NormalizeToolCalls(toolCalls))
+            {
+                Dictionary<string, object> function = new Dictionary<string, object>
+                {
+                    ["index"] = index,
+                    ["name"] = call.Function.Name,
+                    ["arguments"] = ParseToolArguments(call.Function.Arguments)
+                };
+
+                ollamaCalls.Add(new Dictionary<string, object>
+                {
+                    ["type"] = String.IsNullOrWhiteSpace(call.Type) ? "function" : call.Type.Trim(),
+                    ["function"] = function
+                });
+
+                index++;
+            }
+
+            return ollamaCalls;
+        }
+
+        private protected static object ParseToolArguments(string arguments)
+        {
+            string json = String.IsNullOrWhiteSpace(arguments) ? "{}" : arguments.Trim();
+
+            try
+            {
+                using (JsonDocument document = JsonDocument.Parse(json))
+                {
+                    return document.RootElement.Clone();
+                }
+            }
+            catch
+            {
+                return new Dictionary<string, object>();
+            }
+        }
+
+        private protected static List<AssistantModelToolDefinition> NormalizeToolDefinitions(IEnumerable<AssistantModelToolDefinition> tools)
+        {
+            if (tools == null) return new List<AssistantModelToolDefinition>();
+
+            return tools
+                .Where(tool => tool != null
+                    && tool.Function != null
+                    && !String.IsNullOrWhiteSpace(tool.Function.Name))
+                .Select(tool =>
+                {
+                    tool.Type = String.IsNullOrWhiteSpace(tool.Type) ? "function" : tool.Type.Trim();
+                    tool.Function.Name = tool.Function.Name.Trim();
+                    return tool;
+                })
+                .ToList();
+        }
+
+        private protected static List<AssistantModelToolCall> NormalizeToolCalls(IEnumerable<AssistantModelToolCall> toolCalls)
+        {
+            if (toolCalls == null) return new List<AssistantModelToolCall>();
+
+            return toolCalls
+                .Where(call => call != null
+                    && call.Function != null
+                    && !String.IsNullOrWhiteSpace(call.Function.Name))
+                .Select(call =>
+                {
+                    call.Type = String.IsNullOrWhiteSpace(call.Type) ? "function" : call.Type.Trim();
+                    call.Function.Name = call.Function.Name.Trim();
+                    call.Function.Arguments = String.IsNullOrWhiteSpace(call.Function.Arguments)
+                        ? "{}"
+                        : call.Function.Arguments.Trim();
+                    return call;
+                })
+                .ToList();
         }
 
         #endregion

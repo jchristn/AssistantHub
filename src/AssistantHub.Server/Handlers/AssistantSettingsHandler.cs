@@ -1,7 +1,10 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Http;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core;
@@ -11,6 +14,7 @@ namespace AssistantHub.Server.Handlers
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Server.Services;
     using EasySlack;
     using SyslogLogging;
     using WatsonWebserver.Core;
@@ -115,6 +119,234 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/tools - Get effective tool availability for an assistant.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetToolsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !EnforceTenantOwnership(auth, assistant.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && assistant.UserId != auth.UserId)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Settings not found for this assistant."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantToolPolicyResolver resolver = new AssistantToolPolicyResolver(Settings);
+                List<AssistantToolDescriptor> tools = resolver.Resolve(assistant, settings, true);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(tools)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetToolsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/settings/tools/validate - Validate draft tool policy.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task ValidateToolsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !EnforceTenantOwnership(auth, assistant.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && assistant.UserId != auth.UserId)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Settings not found for this assistant."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantToolPolicyValidationRequest request = null;
+                if (!String.IsNullOrWhiteSpace(ctx.Request.DataAsString))
+                    request = Serializer.DeserializeJson<AssistantToolPolicyValidationRequest>(ctx.Request.DataAsString);
+                request ??= new AssistantToolPolicyValidationRequest();
+
+                AssistantToolPolicyValidationResult result = ValidateDraftToolPolicy(assistant, settings, request);
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
+            }
+            catch (JsonException e)
+            {
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Tool policy validation request must be valid JSON: " + e.Message))).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in ValidateToolsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// POST /v1.0/assistants/{assistantId}/settings/tools/test - Dry-run assistant tool diagnostics.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task TestToolsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !EnforceTenantOwnership(auth, assistant.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound, null, "Settings not found for this assistant."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantToolPolicyValidationRequest request = null;
+                if (!String.IsNullOrWhiteSpace(ctx.Request.DataAsString))
+                    request = Serializer.DeserializeJson<AssistantToolPolicyValidationRequest>(ctx.Request.DataAsString);
+                request ??= new AssistantToolPolicyValidationRequest();
+
+                AssistantToolPolicyTestResult result = await BuildToolPolicyTestResultAsync(assistant, settings, request).ConfigureAwait(false);
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
+            }
+            catch (JsonException e)
+            {
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "Tool policy diagnostics request must be valid JSON: " + e.Message))).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in TestToolsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// PUT /v1.0/assistants/{assistantId}/settings - Create or update assistant settings.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
@@ -182,6 +414,7 @@ namespace AssistantHub.Server.Handlers
 
                 NormalizeEndpointSettings(updated);
                 NormalizeSlackSettings(updated);
+                updated.DocumentAttachmentMaxCount = Math.Clamp(updated.DocumentAttachmentMaxCount, 1, 100);
 
                 string slackValidationError = ValidateSlackSettings(updated);
                 if (!String.IsNullOrEmpty(slackValidationError))
@@ -189,6 +422,15 @@ namespace AssistantHub.Server.Handlers
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
                     await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, slackValidationError))).ConfigureAwait(false);
+                    return;
+                }
+
+                string toolPolicyValidationError = ValidateToolPolicyJson(updated);
+                if (!String.IsNullOrEmpty(toolPolicyValidationError))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, toolPolicyValidationError))).ConfigureAwait(false);
                     return;
                 }
 
@@ -408,6 +650,241 @@ namespace AssistantHub.Server.Handlers
             }
 
             return null;
+        }
+
+        private static string ValidateToolPolicyJson(AssistantSettings settings)
+        {
+            if (settings == null) return "Settings payload is required.";
+
+            string policyJson = settings.ToolPolicyJson?.Trim();
+            if (String.IsNullOrEmpty(policyJson))
+            {
+                settings.ToolPolicyJson = null;
+                return null;
+            }
+
+            try
+            {
+                AssistantToolPolicy policy = JsonSerializer.Deserialize<AssistantToolPolicy>(policyJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (policy == null)
+                {
+                    settings.ToolPolicyJson = null;
+                    return null;
+                }
+
+                settings.ToolPolicy = policy;
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return "ToolPolicyJson must be valid AssistantToolPolicy JSON: " + e.Message;
+            }
+        }
+
+        private AssistantToolPolicyValidationResult ValidateDraftToolPolicy(
+            Assistant assistant,
+            AssistantSettings settings,
+            AssistantToolPolicyValidationRequest request)
+        {
+            AssistantToolPolicyValidationResult result = new AssistantToolPolicyValidationResult();
+            AssistantToolPolicy policy = request?.ToolPolicy;
+            string policyJson = request?.ToolPolicyJson?.Trim();
+
+            if (policy == null && !String.IsNullOrWhiteSpace(policyJson))
+            {
+                try
+                {
+                    policy = JsonSerializer.Deserialize<AssistantToolPolicy>(policyJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                catch (JsonException e)
+                {
+                    result.Success = false;
+                    result.Message = "Tool policy JSON is invalid.";
+                    AddToolPolicyValidationError(result, "invalid_tool_policy_json", "ToolPolicyJson must be valid AssistantToolPolicy JSON: " + e.Message);
+                    return result;
+                }
+            }
+
+            policy ??= new AssistantToolPolicy();
+            settings.ToolPolicy = policy;
+
+            AssistantToolPolicyResolver resolver = new AssistantToolPolicyResolver(Settings);
+            List<AssistantToolDescriptor> allTools = resolver.Resolve(assistant, settings, true);
+            List<AssistantToolDescriptor> availableTools = resolver.Resolve(assistant, settings, false);
+
+            foreach (string toolName in policy.AllowedToolNames ?? new List<string>())
+            {
+                if (!allTools.Any(tool => String.Equals(tool.ToolName, toolName, StringComparison.OrdinalIgnoreCase)))
+                    AddToolPolicyValidationError(result, "unknown_allowed_tool", "AllowedToolNames contains an unknown tool: " + toolName + ".");
+            }
+
+            if (policy.EnableToolCalls && !String.Equals(policy.ToolChoiceMode, "None", StringComparison.OrdinalIgnoreCase))
+            {
+                bool anyToolSwitchEnabled =
+                    policy.EnableCollectionSearchTool
+                    || policy.EnableCollectionReadChunksTool
+                    || policy.EnableCollectionEnumerateDocumentsTool
+                    || policy.EnableVerbexFullTextSearchTool
+                    || policy.EnableIndexEnumerateRecordsTool
+                    || policy.EnableS3ObjectReadTool
+                    || policy.EnableBucketEnumerateObjectsTool
+                    || policy.EnableWebSearchTool;
+
+                if (!anyToolSwitchEnabled)
+                    AddToolPolicyValidationError(result, "no_tool_enabled", "EnableToolCalls is true but no tool switch is enabled.");
+                else if (availableTools.Count == 0)
+                    AddToolPolicyValidationError(result, "no_available_tools", "EnableToolCalls is true but no enabled tool is currently executable after prerequisites and allow-lists are applied.");
+            }
+
+            result.Success = result.Errors.Count == 0;
+            result.Message = result.Success ? "Tool policy is valid." : "Tool policy is invalid.";
+            result.ToolPolicy = settings.ToolPolicy;
+            result.ToolPolicyJson = Serializer.SerializeJson(settings.ToolPolicy);
+            result.Tools = allTools;
+            return result;
+        }
+
+        private static void AddToolPolicyValidationError(AssistantToolPolicyValidationResult result, string code, string message)
+        {
+            if (result == null) return;
+            if (!String.IsNullOrWhiteSpace(code) && !result.ErrorCodes.Contains(code, StringComparer.OrdinalIgnoreCase))
+                result.ErrorCodes.Add(code);
+            if (!String.IsNullOrWhiteSpace(message))
+                result.Errors.Add(message);
+        }
+
+        private async Task<AssistantToolPolicyTestResult> BuildToolPolicyTestResultAsync(
+            Assistant assistant,
+            AssistantSettings settings,
+            AssistantToolPolicyValidationRequest request)
+        {
+            AssistantToolPolicyValidationResult validation = ValidateDraftToolPolicy(assistant, settings, request);
+            AssistantToolPolicyTestResult result = new AssistantToolPolicyTestResult
+            {
+                AssistantId = assistant?.Id,
+                InferenceEndpointId = settings?.InferenceEndpointId,
+                Validation = validation,
+                Tools = validation?.Tools ?? new List<AssistantToolDescriptor>()
+            };
+
+            foreach (string error in validation?.Errors ?? new List<string>())
+                AddToolPolicyTestError(result, null, error);
+            foreach (string code in validation?.ErrorCodes ?? new List<string>())
+                AddToolPolicyTestError(result, code, null);
+
+            AssistantToolPolicy policy = validation?.ToolPolicy ?? settings?.ToolPolicy ?? new AssistantToolPolicy();
+            bool toolCallsRequested = policy.EnableToolCalls && !String.Equals(policy.ToolChoiceMode, "None", StringComparison.OrdinalIgnoreCase);
+            if (toolCallsRequested)
+            {
+                if (String.IsNullOrWhiteSpace(settings?.InferenceEndpointId))
+                {
+                    AddToolPolicyTestError(result, "completion_endpoint_missing", "InferenceEndpointId is required before tool calls can run.");
+                }
+                else
+                {
+                    PartioEndpointConfig endpoint = await ResolveCompletionEndpointConfigForDiagnosticsAsync(settings.InferenceEndpointId).ConfigureAwait(false);
+                    if (endpoint == null)
+                    {
+                        AddToolPolicyTestError(result, "completion_endpoint_unresolved", "The selected completion endpoint could not be resolved.");
+                    }
+                    else
+                    {
+                        result.EndpointResolved = true;
+                        result.EndpointModel = endpoint.Model;
+                        result.EndpointApiFormat = endpoint.ApiFormat;
+                        result.EndpointActive = endpoint.Active;
+                        result.EndpointSupportsToolCalling = endpoint.SupportsToolCalling;
+                        result.EndpointToolCallingApiFormat = endpoint.ToolCallingApiFormat;
+                        result.EndpointSupportsParallelToolCalls = endpoint.SupportsParallelToolCalls;
+                        result.EndpointSupportsStreamingToolCalls = endpoint.SupportsStreamingToolCalls;
+
+                        if (!endpoint.Active)
+                            AddToolPolicyTestError(result, "completion_endpoint_inactive", "The selected completion endpoint is inactive.");
+                        if (!endpoint.SupportsToolCalling)
+                            AddToolPolicyTestError(result, "completion_endpoint_not_tool_capable", "The selected completion endpoint does not explicitly support tool calling.");
+                        else if (!IsSupportedToolCallingEndpoint(endpoint))
+                            AddToolPolicyTestError(result, "unsupported_tool_call_format", "The selected completion endpoint tool-call format is not supported for its provider.");
+
+                        if (policy.AllowParallelToolCalls && !endpoint.SupportsParallelToolCalls)
+                            result.Warnings.Add("The policy allows parallel tool calls, but the selected endpoint does not advertise parallel tool-call support.");
+                        if (settings.Streaming && !endpoint.SupportsStreamingToolCalls)
+                            result.Warnings.Add("Streaming chat is enabled, but the selected endpoint does not advertise streaming tool-call support; validate this path manually before production use.");
+                    }
+                }
+            }
+
+            result.Success = result.Errors.Count == 0;
+            result.Message = result.Success
+                ? "Tool diagnostics passed without blocking issues."
+                : "Tool diagnostics found blocking issues.";
+            return result;
+        }
+
+        private async Task<PartioEndpointConfig> ResolveCompletionEndpointConfigForDiagnosticsAsync(string endpointId)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId)) return null;
+
+            try
+            {
+                using HttpResponseMessage response = await InferenceEndpoints.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Logging.Warn(_Header + "tool diagnostics failed to resolve completion endpoint " + endpointId + ": " + (int)response.StatusCode);
+                    return null;
+                }
+
+                string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                PartioEndpointConfig endpoint = JsonSerializer.Deserialize<PartioEndpointConfig>(body, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                PartioEndpointToolMetadata.ReadTagsToToolFields(endpoint);
+                return endpoint;
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "tool diagnostics exception resolving completion endpoint " + endpointId + ": " + e.Message);
+                return null;
+            }
+        }
+
+        private static bool IsSupportedToolCallingEndpoint(PartioEndpointConfig endpoint)
+        {
+            if (endpoint == null || !endpoint.SupportsToolCalling) return false;
+
+            Enums.InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(endpoint.ApiFormat, Enums.InferenceProviderEnum.Ollama);
+            string format = NormalizeToolCallingApiFormat(endpoint.ToolCallingApiFormat);
+            return provider switch
+            {
+                Enums.InferenceProviderEnum.OpenAI => format == "openaichatcompletions" || format == "openai",
+                Enums.InferenceProviderEnum.Ollama => format == "ollamachat" || format == "ollama",
+                _ => false
+            };
+        }
+
+        private static string NormalizeToolCallingApiFormat(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return String.Empty;
+            return new string(value.Trim().Where(Char.IsLetterOrDigit).Select(Char.ToLowerInvariant).ToArray());
+        }
+
+        private static void AddToolPolicyTestError(AssistantToolPolicyTestResult result, string code, string message)
+        {
+            if (result == null) return;
+            if (!String.IsNullOrWhiteSpace(code) && !result.ErrorCodes.Contains(code, StringComparer.OrdinalIgnoreCase))
+                result.ErrorCodes.Add(code);
+            if (!String.IsNullOrWhiteSpace(message))
+                result.Errors.Add(message);
         }
 
         private static string ValidateSlackSettings(SlackVerificationRequest request, bool requireAll)

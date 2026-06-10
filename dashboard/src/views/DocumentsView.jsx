@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import DataTable from '../components/DataTable';
@@ -39,7 +39,9 @@ function canReindexDocument(row) {
 function DocumentsView() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
+  const requestedDocumentId = searchParams.get('documentId') || '';
   const [showUpload, setShowUpload] = useState(false);
   const [showJson, setShowJson] = useState(null);
   const [showLogs, setShowLogs] = useState(null);
@@ -60,6 +62,9 @@ function DocumentsView() {
 
   const { records, enqueueFiles } = useUploadQueue(api);
   const prevCompletedCount = useRef(0);
+  const initialTableFilters = useMemo(() => (
+    requestedDocumentId ? { Id: requestedDocumentId } : {}
+  ), [requestedDocumentId]);
 
   // Auto-refresh table when uploads complete
   useEffect(() => {
@@ -278,7 +283,7 @@ function DocumentsView() {
           </select>
         </label>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialTableFilters} onBulkDelete={handleBulkDelete} />
       {showUpload && <DocumentUploadModal ingestionRules={ingestionRules} onUpload={handleUpload} onClose={() => setShowUpload(false)} />}
       {showJson && <JsonViewModal title="Document JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}

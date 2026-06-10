@@ -4,10 +4,25 @@
 
 ### Added
 - **CIFS and NFS crawler support**: Added CIFS/SMB and NFS repository types, file-server repository settings mapped from View's `DataRepository`, shared Blobject-backed crawler infrastructure, and lazy file-byte retrieval through `CrawlerBase`.
-- **File-server crawler product coverage**: Added dashboard create/edit support, REST/OpenAPI/Postman examples, C#/TypeScript/Python SDK models and tests, and `FILE_CRAWLERS.md` as the implementation checklist for v0.15.0.
+- **File-server crawler product coverage**: Added dashboard create/edit support, REST/OpenAPI/Postman examples, C#/TypeScript/Python SDK models and tests, and archived the implementation checklist at `archive/FILE_CRAWLERS.md` for v0.16.0.
+- **Attached-document chat**: Added public assistant document listing, dashboard document selection, `attached_document_ids` chat requests, retrieval metadata for applied document filters, SDK/OpenAPI/Postman/REST coverage, and server validation that attached documents are completed records in the assistant tenant and collection.
+- **Attached-document retrieval fallback**: Added `RecallDb.SupportsMultiDocumentFilter`; when disabled, AssistantHub logs a warning and loops over single-document RecallDB searches instead of sending a native `DocumentIds` filter.
+- **Tool-call policy foundation**: Added disabled-by-default assistant tool policy settings, policy validation, admin dry-run diagnostics, effective-tool endpoints, dashboard controls, SDK/OpenAPI/Postman/MCP coverage, and initial server executors for collection search, collection document enumeration, Verbex full-text search, and Tavily web search.
+- **Assistant tool-call traces**: Added redacted `AssistantToolCallRecord` persistence for non-streaming tool-call chat, provider data access, retention pruning, chat/request-history linkage, admin REST routes including filtered bulk deletion, OpenAPI/Postman coverage, dashboard API client methods, and C#/TypeScript/Python SDK methods.
+- **Streaming tool-call progress**: Added safe named SSE lifecycle and heartbeat events for tool-enabled streaming chat, optional safe `tool_calls` chat response metadata, dashboard stream parsing with interrupted-stream handling, OpenAPI/REST documentation, and SDK contract coverage.
+- **Tool-call telemetry stage**: Added safe aggregate `tools` performance telemetry with call counts, duration totals, per-tool status counts, provider dimensions, truncation flags, and result counts when available.
+- **Tool-call analytics diagnostics**: Assistant analytics slowest-request rows and the dashboard now show safe aggregate tool-call counts, failures, denials, truncation counts, slowest tool duration, and failing tool names for admin triage.
+- **Structured tool-call errors**: Added stable model-visible, admin-trace, and tool-policy validation error codes for malformed arguments, policy denials, tool limits, provider configuration failures, provider HTTP errors, timeouts, cancellations, unavailable tool policies, and generic tool failures.
+- **S3 tool-call safety**: Added aggregate per-turn model-visible S3 object byte enforcement with structured `object_byte_limit` errors, complementing existing per-call object read limits.
+- **Provider usage telemetry**: OpenAI-compatible usage parsing now preserves optional reasoning-token and tool-definition-token counters and maps them into normalized assistant performance telemetry and SDK models.
+- **Collection search query variants**: Added an opt-in `EnableServerGeneratedQueryVariants` assistant tool-policy flag for deterministic server-side collection-search variants that remain bounded by `MaxSearchQueriesPerCall`.
+- **Collection search diagnostics**: Added safe `DocumentsConsidered` metadata to `collection_search` output so models and admins can distinguish visible document scope from raw result counts.
+- **Collection search work caps**: Added assistant tool-policy caps for `MaxDocumentsConsideredPerSearch` and `MaxResultsConsideredPerSearch`; capped exhaustive searches now report explicit incomplete reasons while timed-out tool calls fail with `ErrorCode=timeout`.
+- **Tool-derived citations**: Collection, Verbex, S3, and web tool outputs can now contribute citation sources when assistant citations are enabled; web citation sources include URLs and dashboard citation cards link them directly.
+- **Tavily external search configuration**: Added server JSON settings for external search providers with Tavily-compatible defaults, environment-variable expansion for endpoint/API-key values, safe secret handling in committed examples, response redaction for provider API keys, startup status logging, and a redacted admin status route/SDK method.
 
 ### Changed
-- **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, REST, and documentation metadata to `0.15.0`.
+- **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, REST, and documentation metadata to `0.16.0`.
 - **Crawl-plan model**: Repository settings now deserialize polymorphically for Web, CIFS, and NFS while preserving legacy web settings that omit `RepositoryType`.
 
 ## v0.14.0 - Search, MCP, and Verbex

@@ -584,6 +584,11 @@
             Registration methods for assistant settings operations.
             </summary>
         </member>
+        <member name="T:AssistantHub.McpServer.Registrations.AssistantToolCallRegistrations">
+            <summary>
+            Registration methods for assistant tool-call trace operations.
+            </summary>
+        </member>
         <member name="T:AssistantHub.McpServer.Registrations.AuthenticationRegistrations">
             <summary>
             Registration methods for authentication operations.

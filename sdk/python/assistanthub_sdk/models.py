@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Generic, Optional, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from .enums import (
     ApiError,
@@ -142,6 +142,9 @@ class AssistantPublicInfo(BaseModel):
     logo_url: Optional[str] = Field(None, alias="LogoUrl")
     favicon_url: Optional[str] = Field(None, alias="FaviconUrl")
     load_models_on_chat_open: bool = Field(False, alias="LoadModelsOnChatOpen")
+    enable_document_attachments: bool = Field(False, alias="EnableDocumentAttachments")
+    document_attachment_max_count: int = Field(10, alias="DocumentAttachmentMaxCount")
+    expose_document_source_urls: bool = Field(False, alias="ExposeDocumentSourceUrls")
 
 
 class AssistantSettings(BaseModel):
@@ -164,6 +167,9 @@ class AssistantSettings(BaseModel):
     rerank_prompt: Optional[str] = Field(None, alias="rerankPrompt")
     enable_citations: bool = Field(False, alias="enableCitations")
     citation_link_mode: Optional[str] = Field(None, alias="citationLinkMode")
+    enable_document_attachments: bool = Field(False, alias="enableDocumentAttachments")
+    document_attachment_max_count: int = Field(10, alias="documentAttachmentMaxCount")
+    expose_document_source_urls: bool = Field(False, alias="exposeDocumentSourceUrls")
     collection_id: Optional[str] = Field(None, alias="collectionId")
     retrieval_top_k: int = Field(10, alias="retrievalTopK")
     retrieval_score_threshold: float = Field(0.0, alias="retrievalScoreThreshold")
@@ -198,8 +204,223 @@ class AssistantSettings(BaseModel):
     slack_bot_token: Optional[str] = Field(None, alias="slackBotToken")
     slack_channel_id: Optional[str] = Field(None, alias="slackChannelId")
     slack_message_prefix: Optional[str] = Field(None, alias="slackMessagePrefix")
+    tool_policy_json: Optional[str] = Field(
+        None,
+        alias="ToolPolicyJson",
+        validation_alias=AliasChoices("ToolPolicyJson", "toolPolicyJson", "tool_policy_json"),
+    )
+    tool_policy: Optional[AssistantToolPolicy] = Field(
+        None,
+        alias="ToolPolicy",
+        validation_alias=AliasChoices("ToolPolicy", "toolPolicy", "tool_policy"),
+    )
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class AssistantToolPolicy(BaseModel):
+    """Administrator-controlled policy for server-side tools exposed to a model."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    enable_tool_calls: bool = Field(False, alias="EnableToolCalls", validation_alias=AliasChoices("EnableToolCalls", "enableToolCalls", "enable_tool_calls"))
+    max_tool_iterations: int = Field(6, alias="MaxToolIterations", validation_alias=AliasChoices("MaxToolIterations", "maxToolIterations", "max_tool_iterations"))
+    max_tool_calls_per_turn: int = Field(12, alias="MaxToolCallsPerTurn", validation_alias=AliasChoices("MaxToolCallsPerTurn", "maxToolCallsPerTurn", "max_tool_calls_per_turn"))
+    tool_choice_mode: str = Field("Auto", alias="ToolChoiceMode", validation_alias=AliasChoices("ToolChoiceMode", "toolChoiceMode", "tool_choice_mode"))
+    max_parallel_tool_calls: int = Field(1, alias="MaxParallelToolCalls", validation_alias=AliasChoices("MaxParallelToolCalls", "maxParallelToolCalls", "max_parallel_tool_calls"))
+    allow_parallel_tool_calls: bool = Field(False, alias="AllowParallelToolCalls", validation_alias=AliasChoices("AllowParallelToolCalls", "allowParallelToolCalls", "allow_parallel_tool_calls"))
+    tool_call_timeout_ms: int = Field(30000, alias="ToolCallTimeoutMs", validation_alias=AliasChoices("ToolCallTimeoutMs", "toolCallTimeoutMs", "tool_call_timeout_ms"))
+    max_tool_output_chars: int = Field(12000, alias="MaxToolOutputChars", validation_alias=AliasChoices("MaxToolOutputChars", "maxToolOutputChars", "max_tool_output_chars"))
+    max_tool_output_characters_per_turn: int = Field(50000, alias="MaxToolOutputCharactersPerTurn", validation_alias=AliasChoices("MaxToolOutputCharactersPerTurn", "maxToolOutputCharactersPerTurn", "max_tool_output_characters_per_turn"))
+    max_tool_result_items: int = Field(20, alias="MaxToolResultItems", validation_alias=AliasChoices("MaxToolResultItems", "maxToolResultItems", "max_tool_result_items"))
+    expose_tool_trace_to_user: bool = Field(False, alias="ExposeToolTraceToUser", validation_alias=AliasChoices("ExposeToolTraceToUser", "exposeToolTraceToUser", "expose_tool_trace_to_user"))
+    persist_tool_arguments: bool = Field(True, alias="PersistToolArguments", validation_alias=AliasChoices("PersistToolArguments", "persistToolArguments", "persist_tool_arguments"))
+    persist_tool_outputs: bool = Field(False, alias="PersistToolOutputs", validation_alias=AliasChoices("PersistToolOutputs", "persistToolOutputs", "persist_tool_outputs"))
+    require_citations_for_tool_evidence: bool = Field(True, alias="RequireCitationsForToolEvidence", validation_alias=AliasChoices("RequireCitationsForToolEvidence", "requireCitationsForToolEvidence", "require_citations_for_tool_evidence"))
+    allowed_tool_names: list[str] = Field(default_factory=list, alias="AllowedToolNames", validation_alias=AliasChoices("AllowedToolNames", "allowedToolNames", "allowed_tool_names"))
+    enable_tool_feedback_events: bool = Field(True, alias="EnableToolFeedbackEvents", validation_alias=AliasChoices("EnableToolFeedbackEvents", "enableToolFeedbackEvents", "enable_tool_feedback_events"))
+    enable_slack_tool_progress_messages: bool = Field(True, alias="EnableSlackToolProgressMessages", validation_alias=AliasChoices("EnableSlackToolProgressMessages", "enableSlackToolProgressMessages", "enable_slack_tool_progress_messages"))
+    enable_collection_search_tool: bool = Field(False, alias="EnableCollectionSearchTool", validation_alias=AliasChoices("EnableCollectionSearchTool", "enableCollectionSearchTool", "enable_collection_search_tool"))
+    enable_collection_read_chunks_tool: bool = Field(False, alias="EnableCollectionReadChunksTool", validation_alias=AliasChoices("EnableCollectionReadChunksTool", "enableCollectionReadChunksTool", "enable_collection_read_chunks_tool"))
+    enable_verbex_full_text_search_tool: bool = Field(False, alias="EnableVerbexFullTextSearchTool", validation_alias=AliasChoices("EnableVerbexFullTextSearchTool", "enableVerbexFullTextSearchTool", "enable_verbex_full_text_search_tool"))
+    enable_s3_object_read_tool: bool = Field(False, alias="EnableS3ObjectReadTool", validation_alias=AliasChoices("EnableS3ObjectReadTool", "enableS3ObjectReadTool", "enable_s3_object_read_tool"))
+    enable_collection_enumerate_documents_tool: bool = Field(False, alias="EnableCollectionEnumerateDocumentsTool", validation_alias=AliasChoices("EnableCollectionEnumerateDocumentsTool", "enableCollectionEnumerateDocumentsTool", "enable_collection_enumerate_documents_tool"))
+    enable_collection_enumeration_tool: bool = Field(False, alias="EnableCollectionEnumerationTool", validation_alias=AliasChoices("EnableCollectionEnumerationTool", "enableCollectionEnumerationTool", "enable_collection_enumeration_tool"))
+    enable_index_enumerate_records_tool: bool = Field(False, alias="EnableIndexEnumerateRecordsTool", validation_alias=AliasChoices("EnableIndexEnumerateRecordsTool", "enableIndexEnumerateRecordsTool", "enable_index_enumerate_records_tool"))
+    enable_bucket_enumerate_objects_tool: bool = Field(False, alias="EnableBucketEnumerateObjectsTool", validation_alias=AliasChoices("EnableBucketEnumerateObjectsTool", "enableBucketEnumerateObjectsTool", "enable_bucket_enumerate_objects_tool"))
+    enable_web_search_tool: bool = Field(False, alias="EnableWebSearchTool", validation_alias=AliasChoices("EnableWebSearchTool", "enableWebSearchTool", "enable_web_search_tool"))
+    tavily_endpoint: Optional[str] = Field(None, alias="TavilyEndpoint", validation_alias=AliasChoices("TavilyEndpoint", "tavilyEndpoint", "tavily_endpoint"))
+    tavily_api_key: Optional[str] = Field(None, alias="TavilyApiKey", validation_alias=AliasChoices("TavilyApiKey", "tavilyApiKey", "tavily_api_key"))
+    max_search_results_per_call: int = Field(10, alias="MaxSearchResultsPerCall", validation_alias=AliasChoices("MaxSearchResultsPerCall", "maxSearchResultsPerCall", "max_search_results_per_call"))
+    max_search_top_k: int = Field(50, alias="MaxSearchTopK", validation_alias=AliasChoices("MaxSearchTopK", "maxSearchTopK", "max_search_top_k"))
+    max_search_queries_per_call: int = Field(3, alias="MaxSearchQueriesPerCall", validation_alias=AliasChoices("MaxSearchQueriesPerCall", "maxSearchQueriesPerCall", "max_search_queries_per_call"))
+    max_documents_considered_per_search: int = Field(1000, alias="MaxDocumentsConsideredPerSearch", validation_alias=AliasChoices("MaxDocumentsConsideredPerSearch", "maxDocumentsConsideredPerSearch", "max_documents_considered_per_search"))
+    max_results_considered_per_search: int = Field(1000, alias="MaxResultsConsideredPerSearch", validation_alias=AliasChoices("MaxResultsConsideredPerSearch", "maxResultsConsideredPerSearch", "max_results_considered_per_search"))
+    enable_server_generated_query_variants: bool = Field(False, alias="EnableServerGeneratedQueryVariants", validation_alias=AliasChoices("EnableServerGeneratedQueryVariants", "enableServerGeneratedQueryVariants", "enable_server_generated_query_variants"))
+    max_chunks_per_read: int = Field(20, alias="MaxChunksPerRead", validation_alias=AliasChoices("MaxChunksPerRead", "maxChunksPerRead", "max_chunks_per_read"))
+    max_read_ranges_per_call: int = Field(5, alias="MaxReadRangesPerCall", validation_alias=AliasChoices("MaxReadRangesPerCall", "maxReadRangesPerCall", "max_read_ranges_per_call"))
+    max_neighbor_window: int = Field(2, alias="MaxNeighborWindow", validation_alias=AliasChoices("MaxNeighborWindow", "maxNeighborWindow", "max_neighbor_window"))
+    allowed_search_modes: list[str] = Field(default_factory=lambda: ["Vector", "FullText", "Hybrid"], alias="AllowedSearchModes", validation_alias=AliasChoices("AllowedSearchModes", "allowedSearchModes", "allowed_search_modes"))
+    default_search_mode: Optional[str] = Field(None, alias="DefaultSearchMode", validation_alias=AliasChoices("DefaultSearchMode", "defaultSearchMode", "default_search_mode"))
+    allow_model_document_id_filter: bool = Field(True, alias="AllowModelDocumentIdFilter", validation_alias=AliasChoices("AllowModelDocumentIdFilter", "allowModelDocumentIdFilter", "allow_model_document_id_filter"))
+    return_labels: bool = Field(False, alias="ReturnLabels", validation_alias=AliasChoices("ReturnLabels", "returnLabels", "return_labels"))
+    return_tags: bool = Field(False, alias="ReturnTags", validation_alias=AliasChoices("ReturnTags", "returnTags", "return_tags"))
+    return_full_search_content: bool = Field(False, alias="ReturnFullSearchContent", validation_alias=AliasChoices("ReturnFullSearchContent", "returnFullSearchContent", "return_full_search_content"))
+    allow_non_completed_document_metadata: bool = Field(False, alias="AllowNonCompletedDocumentMetadata", validation_alias=AliasChoices("AllowNonCompletedDocumentMetadata", "allowNonCompletedDocumentMetadata", "allow_non_completed_document_metadata"))
+    enable_verbex_search_tool: bool = Field(False, alias="EnableVerbexSearchTool", validation_alias=AliasChoices("EnableVerbexSearchTool", "enableVerbexSearchTool", "enable_verbex_search_tool"))
+    enable_index_enumeration_tool: bool = Field(False, alias="EnableIndexEnumerationTool", validation_alias=AliasChoices("EnableIndexEnumerationTool", "enableIndexEnumerationTool", "enable_index_enumeration_tool"))
+    default_index_id: Optional[str] = Field(None, alias="DefaultIndexId", validation_alias=AliasChoices("DefaultIndexId", "defaultIndexId", "default_index_id"))
+    max_verbex_results: int = Field(20, alias="MaxVerbexResults", validation_alias=AliasChoices("MaxVerbexResults", "maxVerbexResults", "max_verbex_results"))
+    allow_raw_index_records: bool = Field(False, alias="AllowRawIndexRecords", validation_alias=AliasChoices("AllowRawIndexRecords", "allowRawIndexRecords", "allow_raw_index_records"))
+    require_document_mapping: bool = Field(True, alias="RequireDocumentMapping", validation_alias=AliasChoices("RequireDocumentMapping", "requireDocumentMapping", "require_document_mapping"))
+    return_verbex_record_metadata: bool = Field(False, alias="ReturnVerbexRecordMetadata", validation_alias=AliasChoices("ReturnVerbexRecordMetadata", "returnVerbexRecordMetadata", "return_verbex_record_metadata"))
+    max_object_read_bytes: int = Field(131072, alias="MaxObjectReadBytes", validation_alias=AliasChoices("MaxObjectReadBytes", "maxObjectReadBytes", "max_object_read_bytes"))
+    max_object_bytes_per_turn: int = Field(524288, alias="MaxObjectBytesPerTurn", validation_alias=AliasChoices("MaxObjectBytesPerTurn", "maxObjectBytesPerTurn", "max_object_bytes_per_turn"))
+    max_bucket_enumeration_results: int = Field(50, alias="MaxBucketEnumerationResults", validation_alias=AliasChoices("MaxBucketEnumerationResults", "maxBucketEnumerationResults", "max_bucket_enumeration_results"))
+    allow_bucket_wide_object_read: bool = Field(False, alias="AllowBucketWideObjectRead", validation_alias=AliasChoices("AllowBucketWideObjectRead", "allowBucketWideObjectRead", "allow_bucket_wide_object_read"))
+    document_backed_objects_only: bool = Field(True, alias="DocumentBackedObjectsOnly", validation_alias=AliasChoices("DocumentBackedObjectsOnly", "documentBackedObjectsOnly", "document_backed_objects_only"))
+    redact_object_keys: bool = Field(True, alias="RedactObjectKeys", validation_alias=AliasChoices("RedactObjectKeys", "redactObjectKeys", "redact_object_keys"))
+    allow_binary_object_output: bool = Field(False, alias="AllowBinaryObjectOutput", validation_alias=AliasChoices("AllowBinaryObjectOutput", "allowBinaryObjectOutput", "allow_binary_object_output"))
+    allow_raw_web_content: bool = Field(False, alias="AllowRawWebContent", validation_alias=AliasChoices("AllowRawWebContent", "allowRawWebContent", "allow_raw_web_content"))
+    allow_web_images: bool = Field(False, alias="AllowWebImages", validation_alias=AliasChoices("AllowWebImages", "allowWebImages", "allow_web_images"))
+    allow_ungoverned_web_access: bool = Field(False, alias="AllowUngovernedWebAccess", validation_alias=AliasChoices("AllowUngovernedWebAccess", "allowUngovernedWebAccess", "allow_ungoverned_web_access"))
+    allow_document_source_urls: bool = Field(False, alias="AllowDocumentSourceUrls", validation_alias=AliasChoices("AllowDocumentSourceUrls", "allowDocumentSourceUrls", "allow_document_source_urls"))
+    allow_document_metadata_details: bool = Field(False, alias="AllowDocumentMetadataDetails", validation_alias=AliasChoices("AllowDocumentMetadataDetails", "allowDocumentMetadataDetails", "allow_document_metadata_details"))
+    allowed_verbex_index_ids: list[str] = Field(default_factory=list, alias="AllowedVerbexIndexIds", validation_alias=AliasChoices("AllowedVerbexIndexIds", "allowedVerbexIndexIds", "allowed_verbex_index_ids"))
+    allowed_bucket_names: list[str] = Field(default_factory=list, alias="AllowedBucketNames", validation_alias=AliasChoices("AllowedBucketNames", "allowedBucketNames", "allowed_bucket_names"))
+    allowed_bucket_prefixes: list[str] = Field(default_factory=list, alias="AllowedBucketPrefixes", validation_alias=AliasChoices("AllowedBucketPrefixes", "allowedBucketPrefixes", "allowed_bucket_prefixes"))
+    allowed_object_suffixes: list[str] = Field(default_factory=list, alias="AllowedObjectSuffixes", validation_alias=AliasChoices("AllowedObjectSuffixes", "allowedObjectSuffixes", "allowed_object_suffixes"))
+    allowed_content_types: list[str] = Field(default_factory=list, alias="AllowedContentTypes", validation_alias=AliasChoices("AllowedContentTypes", "allowedContentTypes", "allowed_content_types"))
+    allowed_web_domains: list[str] = Field(default_factory=list, alias="AllowedWebDomains", validation_alias=AliasChoices("AllowedWebDomains", "allowedWebDomains", "allowed_web_domains"))
+    blocked_web_domains: list[str] = Field(default_factory=list, alias="BlockedWebDomains", validation_alias=AliasChoices("BlockedWebDomains", "blockedWebDomains", "blocked_web_domains"))
+    allowed_providers: list[str] = Field(default_factory=list, alias="AllowedProviders", validation_alias=AliasChoices("AllowedProviders", "allowedProviders", "allowed_providers"))
+    max_web_results: int = Field(5, alias="MaxWebResults", validation_alias=AliasChoices("MaxWebResults", "maxWebResults", "max_web_results"))
+    search_depth: str = Field("basic", alias="SearchDepth", validation_alias=AliasChoices("SearchDepth", "searchDepth", "search_depth"))
+    allow_advanced_search_depth: bool = Field(False, alias="AllowAdvancedSearchDepth", validation_alias=AliasChoices("AllowAdvancedSearchDepth", "allowAdvancedSearchDepth", "allow_advanced_search_depth"))
+    allow_news_topic: bool = Field(True, alias="AllowNewsTopic", validation_alias=AliasChoices("AllowNewsTopic", "allowNewsTopic", "allow_news_topic"))
+    require_safe_search: bool = Field(True, alias="RequireSafeSearch", validation_alias=AliasChoices("RequireSafeSearch", "requireSafeSearch", "require_safe_search"))
+    max_web_searches_per_turn: int = Field(3, alias="MaxWebSearchesPerTurn", validation_alias=AliasChoices("MaxWebSearchesPerTurn", "maxWebSearchesPerTurn", "max_web_searches_per_turn"))
+
+
+class AssistantToolDescriptor(BaseModel):
+    """Effective server-side tool availability for an assistant."""
+
+    tool_name: Optional[str] = Field(None, alias="ToolName")
+    display_name: Optional[str] = Field(None, alias="DisplayName")
+    category: Optional[str] = Field(None, alias="Category")
+    enabled_by_policy: bool = Field(False, alias="EnabledByPolicy")
+    available: bool = Field(False, alias="Available")
+    unavailable_reason: Optional[str] = Field(None, alias="UnavailableReason")
+
+
+class AssistantToolCallRecord(BaseModel):
+    """Redacted persistent trace for one model-directed assistant tool call."""
+
+    id: Optional[str] = Field(None, alias="Id", validation_alias=AliasChoices("Id", "id"))
+    tenant_id: Optional[str] = Field(None, alias="TenantId", validation_alias=AliasChoices("TenantId", "tenantId", "tenant_id"))
+    assistant_id: Optional[str] = Field(None, alias="AssistantId", validation_alias=AliasChoices("AssistantId", "assistantId", "assistant_id"))
+    chat_history_id: Optional[str] = Field(None, alias="ChatHistoryId", validation_alias=AliasChoices("ChatHistoryId", "chatHistoryId", "chat_history_id"))
+    request_history_id: Optional[str] = Field(None, alias="RequestHistoryId", validation_alias=AliasChoices("RequestHistoryId", "requestHistoryId", "request_history_id"))
+    trace_id: Optional[str] = Field(None, alias="TraceId", validation_alias=AliasChoices("TraceId", "traceId", "trace_id"))
+    thread_id: Optional[str] = Field(None, alias="ThreadId", validation_alias=AliasChoices("ThreadId", "threadId", "thread_id"))
+    origin: Optional[str] = Field(None, alias="Origin", validation_alias=AliasChoices("Origin", "origin"))
+    turn_index: int = Field(0, alias="TurnIndex", validation_alias=AliasChoices("TurnIndex", "turnIndex", "turn_index"))
+    iteration: int = Field(0, alias="Iteration", validation_alias=AliasChoices("Iteration", "iteration"))
+    sequence_number: int = Field(0, alias="SequenceNumber", validation_alias=AliasChoices("SequenceNumber", "sequenceNumber", "sequence_number"))
+    provider_tool_call_id: Optional[str] = Field(None, alias="ProviderToolCallId", validation_alias=AliasChoices("ProviderToolCallId", "providerToolCallId", "provider_tool_call_id"))
+    tool_name: Optional[str] = Field(None, alias="ToolName", validation_alias=AliasChoices("ToolName", "toolName", "tool_name"))
+    arguments_json: Optional[str] = Field(None, alias="ArgumentsJson", validation_alias=AliasChoices("ArgumentsJson", "argumentsJson", "arguments_json"))
+    output_json: Optional[str] = Field(None, alias="OutputJson", validation_alias=AliasChoices("OutputJson", "outputJson", "output_json"))
+    result_summary_json: Optional[str] = Field(None, alias="ResultSummaryJson", validation_alias=AliasChoices("ResultSummaryJson", "resultSummaryJson", "result_summary_json"))
+    success: bool = Field(False, alias="Success", validation_alias=AliasChoices("Success", "success"))
+    denied: bool = Field(False, alias="Denied", validation_alias=AliasChoices("Denied", "denied"))
+    truncated: bool = Field(False, alias="Truncated", validation_alias=AliasChoices("Truncated", "truncated"))
+    output_characters: int = Field(0, alias="OutputCharacters", validation_alias=AliasChoices("OutputCharacters", "outputCharacters", "output_characters"))
+    input_bytes: int = Field(0, alias="InputBytes", validation_alias=AliasChoices("InputBytes", "inputBytes", "input_bytes"))
+    output_bytes: int = Field(0, alias="OutputBytes", validation_alias=AliasChoices("OutputBytes", "outputBytes", "output_bytes"))
+    duration_ms: float = Field(0.0, alias="DurationMs", validation_alias=AliasChoices("DurationMs", "durationMs", "duration_ms"))
+    error_type: Optional[str] = Field(None, alias="ErrorType", validation_alias=AliasChoices("ErrorType", "errorType", "error_type"))
+    error_message: Optional[str] = Field(None, alias="ErrorMessage", validation_alias=AliasChoices("ErrorMessage", "errorMessage", "error_message"))
+    provider: Optional[str] = Field(None, alias="Provider", validation_alias=AliasChoices("Provider", "provider"))
+    model: Optional[str] = Field(None, alias="Model", validation_alias=AliasChoices("Model", "model"))
+    active: bool = Field(True, alias="Active", validation_alias=AliasChoices("Active", "active"))
+    started_utc: Optional[datetime] = Field(None, alias="StartedUtc", validation_alias=AliasChoices("StartedUtc", "startedUtc", "started_utc"))
+    finished_utc: Optional[datetime] = Field(None, alias="FinishedUtc", validation_alias=AliasChoices("FinishedUtc", "finishedUtc", "finished_utc"))
+    created_utc: Optional[datetime] = Field(None, alias="CreatedUtc", validation_alias=AliasChoices("CreatedUtc", "createdUtc", "created_utc"))
+    last_update_utc: Optional[datetime] = Field(None, alias="LastUpdateUtc", validation_alias=AliasChoices("LastUpdateUtc", "lastUpdateUtc", "last_update_utc"))
+
+
+class AssistantToolPolicyValidationRequest(BaseModel):
+    """Request to validate an assistant tool policy without persisting it."""
+
+    tool_policy_json: Optional[str] = Field(
+        None,
+        alias="ToolPolicyJson",
+        validation_alias=AliasChoices("ToolPolicyJson", "toolPolicyJson", "tool_policy_json"),
+    )
+    tool_policy: Optional[AssistantToolPolicy] = Field(
+        None,
+        alias="ToolPolicy",
+        validation_alias=AliasChoices("ToolPolicy", "toolPolicy", "tool_policy"),
+    )
+
+
+class AssistantToolPolicyValidationResult(BaseModel):
+    """Result of validating an assistant tool policy."""
+
+    success: bool = Field(False, alias="Success")
+    message: Optional[str] = Field(None, alias="Message")
+    tool_policy_json: Optional[str] = Field(
+        None,
+        alias="ToolPolicyJson",
+        validation_alias=AliasChoices("ToolPolicyJson", "toolPolicyJson", "tool_policy_json"),
+    )
+    tool_policy: Optional[AssistantToolPolicy] = Field(
+        None,
+        alias="ToolPolicy",
+        validation_alias=AliasChoices("ToolPolicy", "toolPolicy", "tool_policy"),
+    )
+    tools: list[AssistantToolDescriptor] = Field(default_factory=list, alias="Tools")
+    errors: list[str] = Field(default_factory=list, alias="Errors")
+    error_codes: list[str] = Field(
+        default_factory=list,
+        alias="ErrorCodes",
+        validation_alias=AliasChoices("ErrorCodes", "errorCodes", "error_codes"),
+    )
+
+
+class AssistantToolPolicyTestResult(BaseModel):
+    """Result of an administrator dry-run diagnostic for assistant tool policy."""
+
+    success: bool = Field(False, alias="Success")
+    message: Optional[str] = Field(None, alias="Message")
+    assistant_id: Optional[str] = Field(
+        None,
+        alias="AssistantId",
+        validation_alias=AliasChoices("AssistantId", "assistantId", "assistant_id"),
+    )
+    inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="InferenceEndpointId",
+        validation_alias=AliasChoices("InferenceEndpointId", "inferenceEndpointId", "inference_endpoint_id"),
+    )
+    endpoint_resolved: bool = Field(False, alias="EndpointResolved")
+    endpoint_model: Optional[str] = Field(None, alias="EndpointModel")
+    endpoint_api_format: Optional[str] = Field(None, alias="EndpointApiFormat")
+    endpoint_active: bool = Field(False, alias="EndpointActive")
+    endpoint_supports_tool_calling: bool = Field(False, alias="EndpointSupportsToolCalling")
+    endpoint_tool_calling_api_format: Optional[str] = Field(None, alias="EndpointToolCallingApiFormat")
+    endpoint_supports_parallel_tool_calls: bool = Field(False, alias="EndpointSupportsParallelToolCalls")
+    endpoint_supports_streaming_tool_calls: bool = Field(False, alias="EndpointSupportsStreamingToolCalls")
+    validation: Optional[AssistantToolPolicyValidationResult] = Field(None, alias="Validation")
+    tools: list[AssistantToolDescriptor] = Field(default_factory=list, alias="Tools")
+    warnings: list[str] = Field(default_factory=list, alias="Warnings")
+    errors: list[str] = Field(default_factory=list, alias="Errors")
+    error_codes: list[str] = Field(
+        default_factory=list,
+        alias="ErrorCodes",
+        validation_alias=AliasChoices("ErrorCodes", "errorCodes", "error_codes"),
+    )
 
 
 class AssistantChatOpenModelLoadResult(BaseModel):
@@ -252,6 +473,19 @@ class AssistantDocument(BaseModel):
     source_url: Optional[str] = Field(None, alias="sourceUrl")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class AssistantDocumentSelectionItem(BaseModel):
+    """Safe public metadata for documents selectable in assistant chat."""
+
+    id: Optional[str] = Field(None, alias="Id")
+    name: Optional[str] = Field(None, alias="Name")
+    original_filename: Optional[str] = Field(None, alias="OriginalFilename")
+    content_type: Optional[str] = Field(None, alias="ContentType")
+    size_bytes: int = Field(0, alias="SizeBytes")
+    source_url: Optional[str] = Field(None, alias="SourceUrl")
+    created_utc: Optional[datetime] = Field(None, alias="CreatedUtc")
+    last_update_utc: Optional[datetime] = Field(None, alias="LastUpdateUtc")
 
 
 class DocumentReindexRequest(BaseModel):
@@ -329,6 +563,27 @@ class ChatCompletionRequest(BaseModel):
     metadata_filter: Optional[ChatMetadataFilter] = Field(
         None, alias="metadata_filter"
     )
+    attached_document_ids: Optional[list[str]] = Field(
+        None, alias="attached_document_ids"
+    )
+
+
+class ChatCompletionPromptTokensDetails(BaseModel):
+    """Provider-specific prompt token details."""
+
+    cached_tokens: int = Field(0, alias="cached_tokens")
+    audio_tokens: int = Field(0, alias="audio_tokens")
+    tool_definition_tokens: int = Field(0, alias="tool_definition_tokens")
+    tool_tokens: int = Field(0, alias="tool_tokens")
+
+
+class ChatCompletionCompletionTokensDetails(BaseModel):
+    """Provider-specific completion token details."""
+
+    reasoning_tokens: int = Field(0, alias="reasoning_tokens")
+    audio_tokens: int = Field(0, alias="audio_tokens")
+    accepted_prediction_tokens: int = Field(0, alias="accepted_prediction_tokens")
+    rejected_prediction_tokens: int = Field(0, alias="rejected_prediction_tokens")
 
 
 class ChatCompletionUsage(BaseModel):
@@ -338,16 +593,25 @@ class ChatCompletionUsage(BaseModel):
     completion_tokens: int = Field(0, alias="completion_tokens")
     total_tokens: int = Field(0, alias="total_tokens")
     context_window: int = Field(0, alias="context_window")
+    reasoning_tokens: int = Field(0, alias="reasoning_tokens")
+    tool_definition_tokens: int = Field(0, alias="tool_definition_tokens")
+    tool_tokens: int = Field(0, alias="tool_tokens")
+    prompt_tokens_details: Optional[ChatCompletionPromptTokensDetails] = Field(
+        None, alias="prompt_tokens_details"
+    )
+    completion_tokens_details: Optional[ChatCompletionCompletionTokensDetails] = Field(
+        None, alias="completion_tokens_details"
+    )
 
 
 class RetrievalChunk(BaseModel):
     """A chunk returned from retrieval search."""
 
-    document_id: Optional[str] = Field(None, alias="documentId")
+    document_id: Optional[str] = Field(None, alias="document_id")
     score: float = 0.0
-    rerank_score: Optional[float] = Field(None, alias="rerankScore")
-    fusion_score: Optional[float] = Field(None, alias="fusionScore")
-    text_score: Optional[float] = Field(None, alias="textScore")
+    rerank_score: Optional[float] = Field(None, alias="rerank_score")
+    fusion_score: Optional[float] = Field(None, alias="fusion_score")
+    text_score: Optional[float] = Field(None, alias="text_score")
     content: Optional[str] = None
     position: Optional[int] = None
     neighbors: Optional[list[RetrievalChunk]] = None
@@ -357,25 +621,36 @@ class CitationSource(BaseModel):
     """A citation source in a chat completion response."""
 
     index: int = 0
-    document_id: Optional[str] = Field(None, alias="documentId")
-    document_name: Optional[str] = Field(None, alias="documentName")
-    content_type: Optional[str] = Field(None, alias="contentType")
+    source_type: Optional[str] = Field(None, alias="source_type")
+    document_id: Optional[str] = Field(None, alias="document_id")
+    url: Optional[str] = None
+    document_name: Optional[str] = Field(None, alias="document_name")
+    content_type: Optional[str] = Field(None, alias="content_type")
     score: float = 0.0
-    fusion_score: Optional[float] = Field(None, alias="fusionScore")
-    rerank_score: Optional[float] = Field(None, alias="rerankScore")
+    fusion_score: Optional[float] = Field(None, alias="fusion_score")
+    rerank_score: Optional[float] = Field(None, alias="rerank_score")
     excerpt: Optional[str] = None
-    download_url: Optional[str] = Field(None, alias="downloadUrl")
+    download_url: Optional[str] = Field(None, alias="download_url")
 
 
 class ChatCompletionRetrieval(BaseModel):
     """Retrieval metadata in a chat completion response."""
 
-    collection_id: Optional[str] = Field(None, alias="collectionId")
-    duration_ms: float = Field(0.0, alias="durationMs")
-    chunks_returned: int = Field(0, alias="chunksReturned")
-    rerank_duration_ms: float = Field(0.0, alias="rerankDurationMs")
-    rerank_input_count: int = Field(0, alias="rerankInputCount")
-    rerank_output_count: int = Field(0, alias="rerankOutputCount")
+    collection_id: Optional[str] = Field(None, alias="collection_id")
+    duration_ms: float = Field(0.0, alias="duration_ms")
+    chunks_returned: int = Field(0, alias="chunks_returned")
+    rerank_duration_ms: float = Field(0.0, alias="rerank_duration_ms")
+    rerank_input_count: int = Field(0, alias="rerank_input_count")
+    rerank_output_count: int = Field(0, alias="rerank_output_count")
+    attached_document_ids: Optional[list[str]] = Field(
+        None, alias="attached_document_ids"
+    )
+    attached_documents: Optional[list[AssistantDocumentSelectionItem]] = Field(
+        None, alias="attached_documents"
+    )
+    document_filter_applied: bool = Field(
+        False, alias="document_filter_applied"
+    )
     chunks: Optional[list[RetrievalChunk]] = None
 
 
@@ -383,8 +658,8 @@ class ChatCompletionCitations(BaseModel):
     """Citation metadata in a chat completion response."""
 
     sources: Optional[list[CitationSource]] = None
-    referenced_indices: Optional[list[int]] = Field(None, alias="referencedIndices")
-    auto_populated: bool = Field(False, alias="autoPopulated")
+    referenced_indices: Optional[list[int]] = Field(None, alias="referenced_indices")
+    auto_populated: bool = Field(False, alias="auto_populated")
 
 
 class ChatCompletionChoice(BaseModel):
@@ -394,6 +669,27 @@ class ChatCompletionChoice(BaseModel):
     message: Optional[ChatCompletionMessage] = None
     delta: Optional[ChatCompletionMessage] = None
     finish_reason: Optional[str] = Field(None, alias="finish_reason")
+
+
+class ChatCompletionToolTrace(BaseModel):
+    """Safe metadata for a model-directed assistant tool call."""
+
+    tool_call_id: Optional[str] = Field(None, alias="tool_call_id")
+    tool_name: Optional[str] = Field(None, alias="tool_name")
+    display_label: Optional[str] = Field(None, alias="display_label")
+    iteration: int = 0
+    sequence_number: int = Field(0, alias="sequence_number")
+    success: bool = False
+    denied: bool = False
+    truncated: bool = False
+    output_characters: int = Field(0, alias="output_characters")
+    result_count: Optional[int] = Field(None, alias="result_count")
+    credits_used: Optional[int] = Field(None, alias="credits_used")
+    provider_latency_ms: Optional[float] = Field(None, alias="provider_latency_ms")
+    duration_ms: float = Field(0.0, alias="duration_ms")
+    summary: Optional[str] = None
+    started_utc: Optional[datetime] = Field(None, alias="started_utc")
+    finished_utc: Optional[datetime] = Field(None, alias="finished_utc")
 
 
 class ChatCompletionResponse(BaseModel):
@@ -408,6 +704,9 @@ class ChatCompletionResponse(BaseModel):
     status: Optional[str] = None
     retrieval: Optional[ChatCompletionRetrieval] = None
     citations: Optional[ChatCompletionCitations] = None
+    tool_calls: Optional[list[ChatCompletionToolTrace]] = Field(
+        None, alias="tool_calls"
+    )
 
 
 class AssistantPerformanceClientTimings(BaseModel):
@@ -432,6 +731,8 @@ class AssistantTokenUsageTelemetry(BaseModel):
     input: Optional[int] = Field(None, alias="Input")
     output: Optional[int] = Field(None, alias="Output")
     total: Optional[int] = Field(None, alias="Total")
+    reasoning: Optional[int] = Field(None, alias="Reasoning")
+    tool_definitions: Optional[int] = Field(None, alias="ToolDefinitions")
     prompt_eval_count: Optional[int] = Field(None, alias="PromptEvalCount")
     eval_count: Optional[int] = Field(None, alias="EvalCount")
 
@@ -493,7 +794,9 @@ class AssistantPerformanceTelemetry(BaseModel):
 class ChatHistory(BaseModel):
     """A chat history record."""
 
-    id: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: Optional[str] = Field(None, alias="Id", validation_alias=AliasChoices("Id", "id"))
     trace_id: Optional[str] = Field(None, alias="TraceId")
     request_history_id: Optional[str] = Field(None, alias="RequestHistoryId")
     performance_schema_version: int = Field(1, alias="PerformanceSchemaVersion")
@@ -531,6 +834,24 @@ class ChatHistory(BaseModel):
         0.0, alias="tokensPerSecondGeneration"
     )
     metadata_filter: Optional[str] = Field(None, alias="metadataFilter")
+    attached_document_ids_json: Optional[str] = Field(
+        None,
+        alias="AttachedDocumentIdsJson",
+        validation_alias=AliasChoices(
+            "AttachedDocumentIdsJson",
+            "attachedDocumentIdsJson",
+            "attached_document_ids_json",
+        ),
+    )
+    attached_documents_json: Optional[str] = Field(
+        None,
+        alias="AttachedDocumentsJson",
+        validation_alias=AliasChoices(
+            "AttachedDocumentsJson",
+            "attachedDocumentsJson",
+            "attached_documents_json",
+        ),
+    )
     origin: Optional[str] = None
     assistant_response: Optional[str] = Field(None, alias="assistantResponse")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
@@ -641,7 +962,9 @@ class RequestHistorySummaryResult(BaseModel):
 class RequestHistoryDeleteResult(BaseModel):
     """Bulk request-history deletion result."""
 
-    deleted_count: int = Field(0, alias="deletedCount")
+    model_config = ConfigDict(populate_by_name=True)
+
+    deleted_count: int = Field(0, alias="DeletedCount", validation_alias=AliasChoices("DeletedCount", "deletedCount", "deleted_count"))
 
 
 # ---------------------------------------------------------------------------
@@ -830,6 +1153,14 @@ class AssistantAnalyticsSlowRequest(BaseModel):
     endpoint_name: Optional[str] = Field(None, alias="endpointName")
     provider: Optional[str] = None
     model: Optional[str] = None
+    tool_call_count: int = Field(0, alias="toolCallCount")
+    tool_failure_count: int = Field(0, alias="toolFailureCount")
+    tool_denied_count: int = Field(0, alias="toolDeniedCount")
+    tool_truncated_count: int = Field(0, alias="toolTruncatedCount")
+    tool_duration_ms: Optional[float] = Field(None, alias="toolDurationMs")
+    slowest_tool_name: Optional[str] = Field(None, alias="slowestToolName")
+    slowest_tool_duration_ms: Optional[float] = Field(None, alias="slowestToolDurationMs")
+    failing_tool_names: Optional[list[str]] = Field(default_factory=list, alias="failingToolNames")
 
 
 class AssistantAnalyticsSlowestResult(BaseModel):
@@ -920,6 +1251,10 @@ class PartioEndpointConfig(BaseModel):
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
+    supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
+    tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
+    supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))
+    supports_streaming_tool_calls: bool = Field(False, alias="supportsStreamingToolCalls", validation_alias=AliasChoices("SupportsStreamingToolCalls", "supportsStreamingToolCalls", "supports_streaming_tool_calls"))
     health_check_enabled: bool = Field(False, alias="healthCheckEnabled")
     health_check_url: Optional[str] = Field(None, alias="healthCheckUrl")
     health_check_method: Optional[str] = Field(None, alias="healthCheckMethod")
@@ -944,6 +1279,10 @@ class PartioEndpointRequest(BaseModel):
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
+    supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
+    tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
+    supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))
+    supports_streaming_tool_calls: bool = Field(False, alias="supportsStreamingToolCalls", validation_alias=AliasChoices("SupportsStreamingToolCalls", "supportsStreamingToolCalls", "supports_streaming_tool_calls"))
     enable_request_history: bool = Field(False, alias="enableRequestHistory")
     labels: Optional[list[str]] = None
     tags: Optional[dict[str, str]] = None
@@ -1471,6 +1810,14 @@ class EnumerationQuery(BaseModel):
     bucket_name_filter: Optional[str] = Field(None, alias="bucketNameFilter")
     collection_id_filter: Optional[str] = Field(None, alias="collectionIdFilter")
     thread_id_filter: Optional[str] = Field(None, alias="threadIdFilter")
+    request_history_id_filter: Optional[str] = Field(None, alias="requestHistoryIdFilter")
+    chat_history_id_filter: Optional[str] = Field(None, alias="chatHistoryIdFilter")
+    trace_id_filter: Optional[str] = Field(None, alias="traceIdFilter")
+    tool_name_filter: Optional[str] = Field(None, alias="toolNameFilter")
+    success_filter: Optional[bool] = Field(None, alias="successFilter")
+    denied_filter: Optional[bool] = Field(None, alias="deniedFilter")
+    start_utc: Optional[datetime] = Field(None, alias="startUtc")
+    end_utc: Optional[datetime] = Field(None, alias="endUtc")
 
 
 class EnumerationResult(BaseModel, Generic[T]):
@@ -1532,6 +1879,17 @@ class BucketCreateRequest(BaseModel):
     name: str = Field(alias="Name")
 
 
+class ExternalSearchConfigurationStatus(BaseModel):
+    """Safe external-search configuration status."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    enabled: bool = Field(False, alias="Enabled", validation_alias=AliasChoices("Enabled", "enabled"))
+    enabled_providers: int = Field(0, alias="EnabledProviders", validation_alias=AliasChoices("EnabledProviders", "enabledProviders", "enabled_providers"))
+    configured_providers: int = Field(0, alias="ConfiguredProviders", validation_alias=AliasChoices("ConfiguredProviders", "configuredProviders", "configured_providers"))
+    misconfigured_providers: int = Field(0, alias="MisconfiguredProviders", validation_alias=AliasChoices("MisconfiguredProviders", "misconfiguredProviders", "misconfigured_providers"))
+
+
 # ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
@@ -1559,6 +1917,7 @@ class RetrievalSearchOptions(BaseModel):
     metadata_filter: Optional[ChatMetadataFilter] = Field(
         None, alias="metadataFilter"
     )
+    document_ids: Optional[list[str]] = Field(None, alias="documentIds")
 
 
 # Enable forward reference resolution for self-referencing models
@@ -1566,3 +1925,6 @@ RetrievalChunk.model_rebuild()
 
 # Enable forward reference resolution for AuthenticateResult
 AuthenticateResult.model_rebuild()
+
+# Enable forward reference resolution for AssistantSettings.ToolPolicy
+AssistantSettings.model_rebuild()

@@ -41,6 +41,24 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 }
 ```
 
+## Assistant Tool-Call Traces
+
+```csharp
+EnumerationResult<AssistantToolCallRecord> traces =
+    await client.ListAssistantToolCallsAsync("asst_abc123", new EnumerationQuery
+    {
+        ToolNameFilter = "collection_search",
+        TraceIdFilter = "trace_abc123"
+    });
+
+RequestHistoryDeleteResult deleted =
+    await client.DeleteAssistantToolCallsAsync("asst_abc123", new EnumerationQuery
+    {
+        ToolNameFilter = "collection_search"
+    });
+Console.WriteLine(deleted.DeletedCount);
+```
+
 ## Authentication
 
 All API calls require an API key passed to the client constructor:
@@ -135,6 +153,26 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
         }
     }
 }
+```
+
+### Attached-Document Chat
+
+```csharp
+EnumerationResult<AssistantDocumentSelectionItem> selectable =
+    await client.ListAssistantDocumentsAsync("asst_your-id", query: null, searchQuery: "guide", contentType: "application/pdf");
+
+string documentId = selectable.Objects[0].Id;
+
+ChatCompletionResponse response = await client.SendMessageAsync(
+    "asst_your-id",
+    new ChatCompletionRequest
+    {
+        Messages = new List<ChatCompletionMessage>
+        {
+            new ChatCompletionMessage { Role = "user", Content = "Summarize this document." }
+        },
+        AttachedDocumentIds = new List<string> { documentId }
+    });
 ```
 
 ## Chat (Streaming)
@@ -307,6 +345,9 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 |---|---|
 | `ListAssistantsAsync()` | List all assistants |
 | `GetAssistantAsync(assistantId)` | Get an assistant by ID |
+| `GetAssistantToolsAsync(assistantId)` | Get effective tool availability for an assistant |
+| `ValidateAssistantToolPolicyAsync(assistantId, request)` | Validate draft tool policy without saving it |
+| `TestAssistantToolPolicyAsync(assistantId, request)` | Run admin dry-run tool diagnostics without executing tools |
 | `CreateAssistantAsync(assistant)` | Create a new assistant |
 | `UpdateAssistantAsync(assistantId, assistant)` | Update an assistant |
 | `DeleteAssistantAsync(assistantId)` | Delete an assistant |
@@ -325,6 +366,7 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 
 | Method | Description |
 |---|---|
+| `ListAssistantDocumentsAsync(assistantId, query?, searchQuery?, contentType?)` | List safe public document metadata selectable in assistant chat |
 | `SendMessageAsync(assistantId, request, threadId?)` | Send a chat message (with RAG) |
 | `SendMessageStreamAsync(assistantId, request, threadId?)` | Stream a chat response (with RAG) |
 | `GenerateAsync(assistantId, request, threadId?)` | Send a message (no RAG) |

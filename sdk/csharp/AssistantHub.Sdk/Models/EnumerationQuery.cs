@@ -1,5 +1,6 @@
 namespace AssistantHub.Sdk.Models
 {
+    using System;
     using System.Text.Json.Serialization;
     using AssistantHub.Sdk.Enums;
 
@@ -49,5 +50,53 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("ThreadIdFilter")]
         public string ThreadIdFilter { get; set; }
+
+        /// <summary>
+        /// Filter by request-history identifier.
+        /// </summary>
+        [JsonPropertyName("RequestHistoryIdFilter")]
+        public string RequestHistoryIdFilter { get; set; }
+
+        /// <summary>
+        /// Filter by chat-history identifier.
+        /// </summary>
+        [JsonPropertyName("ChatHistoryIdFilter")]
+        public string ChatHistoryIdFilter { get; set; }
+
+        /// <summary>
+        /// Filter by trace identifier.
+        /// </summary>
+        [JsonPropertyName("TraceIdFilter")]
+        public string TraceIdFilter { get; set; }
+
+        /// <summary>
+        /// Filter by tool name.
+        /// </summary>
+        [JsonPropertyName("ToolNameFilter")]
+        public string ToolNameFilter { get; set; }
+
+        /// <summary>
+        /// Filter by success flag.
+        /// </summary>
+        [JsonPropertyName("SuccessFilter")]
+        public bool? SuccessFilter { get; set; }
+
+        /// <summary>
+        /// Filter by denied flag.
+        /// </summary>
+        [JsonPropertyName("DeniedFilter")]
+        public bool? DeniedFilter { get; set; }
+
+        /// <summary>
+        /// Filter by created UTC lower bound.
+        /// </summary>
+        [JsonPropertyName("StartUtc")]
+        public DateTime? StartUtc { get; set; }
+
+        /// <summary>
+        /// Filter by created UTC upper bound.
+        /// </summary>
+        [JsonPropertyName("EndUtc")]
+        public DateTime? EndUtc { get; set; }
     }
 }

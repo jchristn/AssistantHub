@@ -26,6 +26,20 @@ console.log(result.Objects);
 const assistant = await client.getAssistant("asst_abc123");
 ```
 
+### Assistant Tool-Call Traces
+
+```typescript
+const traces = await client.listAssistantToolCalls("asst_abc123", {
+  toolName: "collection_search",
+  traceId: "trace_abc123",
+});
+
+const deleted = await client.deleteAssistantToolCalls("asst_abc123", {
+  toolName: "collection_search",
+});
+console.log(deleted.DeletedCount);
+```
+
 ## Authentication
 
 The SDK supports bearer token authentication. You can either pass an API key directly or authenticate with email/password first:
@@ -86,6 +100,23 @@ for await (const chunk of client.chatCompletionStream("asst_abc123", {
   const delta = chunk.choices[0]?.delta?.content;
   if (delta) process.stdout.write(delta);
 }
+```
+
+### Attached-Document Chat
+
+```typescript
+const selectable = await client.listAssistantDocuments("asst_abc123", {
+  maxResults: 25,
+  query: "guide",
+  contentType: "application/pdf",
+});
+
+const documentId = selectable.Objects[0].Id;
+
+const response = await client.chatCompletion("asst_abc123", {
+  Messages: [{ role: "user", content: "Summarize this document." }],
+  attached_document_ids: [documentId],
+});
 ```
 
 ### Threads
@@ -359,10 +390,10 @@ The SDK exposes methods for all AssistantHub API endpoints organized by resource
 | Users | `createUser()`, `listUsers()`, `getUser()`, `updateUser()`, `deleteUser()`, `userExists()` |
 | Credentials | `createCredential()`, `listCredentials()`, `getCredential()`, `updateCredential()`, `deleteCredential()`, `credentialExists()` |
 | Assistants | `createAssistant()`, `listAssistants()`, `getAssistant()`, `updateAssistant()`, `deleteAssistant()`, `assistantExists()`, `getAssistantPublic()` |
-| Settings | `getAssistantSettings()`, `updateAssistantSettings()`, `verifySlack()` |
+| Settings | `getAssistantSettings()`, `getAssistantTools()`, `validateAssistantToolPolicy()`, `testAssistantToolPolicy()`, `updateAssistantSettings()`, `verifySlack()` |
 | Documents | `createDocument()`, `listDocuments()`, `getDocument()`, `deleteDocument()`, `documentExists()`, `bulkDeleteDocuments()`, `reindexDocument()`, `reindexDocuments()`, `getDocumentProcessingLog()`, `downloadDocument()`, `downloadDocumentPublic()` |
 | Ingestion Rules | `createIngestionRule()`, `listIngestionRules()`, `getIngestionRule()`, `updateIngestionRule()`, `deleteIngestionRule()`, `ingestionRuleExists()` |
-| Chat | `chatCompletion()`, `chatCompletionStream()`, `submitFeedback()`, `compact()`, `generate()`, `openAssistantChat()` |
+| Chat | `listAssistantDocuments()`, `chatCompletion()`, `chatCompletionStream()`, `submitFeedback()`, `compact()`, `generate()`, `openAssistantChat()` |
 | Threads | `createThread()`, `getThreadHistory()`, `listThreads()` |
 | Labels/Tags | `getDistinctLabels()`, `getDistinctTags()` |
 | Feedback | `listFeedback()`, `getFeedback()`, `deleteFeedback()` |

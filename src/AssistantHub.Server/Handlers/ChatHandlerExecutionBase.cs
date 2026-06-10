@@ -146,6 +146,8 @@ namespace AssistantHub.Server.Handlers
             double retrievalDurationMs = 0,
             string retrievalContext = null,
             List<RetrievalChunk> retrievalChunks = null,
+            List<string> attachedDocumentIds = null,
+            List<AssistantDocumentSelectionItem> attachedDocuments = null,
             DateTime? promptSentUtc = null,
             Stopwatch inferenceSw = null,
             int promptTokens = 0,
@@ -219,7 +221,10 @@ namespace AssistantHub.Server.Handlers
                         Chunks = retrievalChunks ?? new List<RetrievalChunk>(),
                         RerankDurationMs = rerankDurationMs,
                         RerankInputCount = rerankInputCount,
-                        RerankOutputCount = rerankOutputCount
+                        RerankOutputCount = rerankOutputCount,
+                        AttachedDocumentIds = attachedDocumentIds,
+                        AttachedDocuments = attachedDocuments,
+                        DocumentFilterApplied = attachedDocumentIds != null && attachedDocumentIds.Count > 0
                     } : null,
                     Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
                         ? CitationExtractor.Extract(citationSources, responseContent)
@@ -253,7 +258,9 @@ namespace AssistantHub.Server.Handlers
                         queryRewriteTelemetry,
                         rerankTelemetry,
                         retrievalQueryCount,
-                        retrievalChunks?.Count ?? 0);
+                        retrievalChunks?.Count ?? 0,
+                        SerializeNonEmptyJson(attachedDocumentIds),
+                        SerializeNonEmptyJson(attachedDocuments));
                     if (history != null)
                         SetChatHistoryId(ctx, history.Id);
                 }
@@ -291,6 +298,8 @@ namespace AssistantHub.Server.Handlers
             double retrievalDurationMs = 0,
             string retrievalContext = null,
             List<RetrievalChunk> retrievalChunks = null,
+            List<string> attachedDocumentIds = null,
+            List<AssistantDocumentSelectionItem> attachedDocuments = null,
             DateTime? promptSentUtc = null,
             Stopwatch inferenceSw = null,
             int promptTokens = 0,
@@ -413,7 +422,9 @@ namespace AssistantHub.Server.Handlers
                             queryRewriteTelemetry,
                             rerankTelemetry,
                             retrievalQueryCount,
-                            retrievalChunks?.Count ?? 0);
+                            retrievalChunks?.Count ?? 0,
+                            SerializeNonEmptyJson(attachedDocumentIds),
+                            SerializeNonEmptyJson(attachedDocuments));
                         if (history != null)
                             SetChatHistoryId(ctx, history.Id);
                     }
@@ -445,6 +456,9 @@ namespace AssistantHub.Server.Handlers
                             DurationMs = retrievalDurationMs,
                             ChunksReturned = retrievalChunks?.Count ?? 0,
                             Chunks = retrievalChunks ?? new List<RetrievalChunk>(),
+                            AttachedDocumentIds = attachedDocumentIds,
+                            AttachedDocuments = attachedDocuments,
+                            DocumentFilterApplied = attachedDocumentIds != null && attachedDocumentIds.Count > 0,
                             RerankDurationMs = rerankDurationMs,
                             RerankInputCount = rerankInputCount,
                             RerankOutputCount = rerankOutputCount
@@ -502,6 +516,12 @@ namespace AssistantHub.Server.Handlers
         {
             string json = JsonSerializer.Serialize(chunk, _SseJsonOptions);
             await ctx.Response.SendEvent(new ServerSentEvent { Data = json }, false).ConfigureAwait(false);
+        }
+
+        private protected async Task WriteSseNamedEvent(HttpContextBase ctx, string eventType, object payload)
+        {
+            string json = JsonSerializer.Serialize(payload, _SseJsonOptions);
+            await ctx.Response.SendEvent(new ServerSentEvent { Event = eventType, Data = json }, false).ConfigureAwait(false);
         }
 
         private protected TelemetryContext EnsureTelemetryContext(HttpContextBase ctx)
@@ -719,7 +739,9 @@ namespace AssistantHub.Server.Handlers
             AssistantPerformanceStage queryRewriteTelemetry = null,
             AssistantPerformanceStage rerankTelemetry = null,
             int retrievalQueryCount = 1,
-            int retrievalChunksReturned = 0)
+            int retrievalChunksReturned = 0,
+            string attachedDocumentIdsJson = null,
+            string attachedDocumentsJson = null)
         {
             try
             {
@@ -749,6 +771,8 @@ namespace AssistantHub.Server.Handlers
                 history.TimeToFirstTokenMs = timeToFirstTokenMs;
                 history.TimeToLastTokenMs = timeToLastTokenMs;
                 history.MetadataFilter = metadataFilterJson;
+                history.AttachedDocumentIdsJson = attachedDocumentIdsJson;
+                history.AttachedDocumentsJson = attachedDocumentsJson;
                 history.AssistantResponse = assistantResponse;
                 history.Origin = origin;
                 history.TraceId = traceId;
@@ -807,6 +831,25 @@ namespace AssistantHub.Server.Handlers
             return !String.IsNullOrWhiteSpace(utilityEndpointId) ? utilityEndpointId : fallbackEndpointId;
         }
 
+        private protected static List<string> NormalizeDocumentIds(IEnumerable<string> documentIds)
+        {
+            if (documentIds == null) return null;
+
+            List<string> normalized = documentIds
+                .Where(id => !String.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            return normalized.Count > 0 ? normalized : null;
+        }
+
+        private protected static string SerializeNonEmptyJson<T>(ICollection<T> values)
+        {
+            if (values == null || values.Count < 1) return null;
+            return JsonSerializer.Serialize(values, _JsonOptions);
+        }
+
         private protected async Task<ResolvedEndpoint?> ResolveCompletionEndpointAsync(string endpointId)
         {
             try
@@ -823,6 +866,7 @@ namespace AssistantHub.Server.Handlers
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _SseJsonOptions);
+                    PartioEndpointToolMetadata.ReadTagsToToolFields(ep);
 
                     Enums.InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, Enums.InferenceProviderEnum.Ollama);
 
@@ -833,7 +877,11 @@ namespace AssistantHub.Server.Handlers
                         Endpoint = ep?.Endpoint ?? Settings.Inference.Endpoint,
                         ApiKey = ep?.ApiKey ?? Settings.Inference.ApiKey,
                         Model = ep?.Model,
-                        MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1)
+                        MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1),
+                        SupportsToolCalling = ep?.SupportsToolCalling == true,
+                        ToolCallingApiFormat = ep?.ToolCallingApiFormat,
+                        SupportsParallelToolCalls = ep?.SupportsParallelToolCalls == true,
+                        SupportsStreamingToolCalls = ep?.SupportsStreamingToolCalls == true
                     };
                 }
             }
@@ -853,7 +901,11 @@ namespace AssistantHub.Server.Handlers
                 Endpoint = Settings.Inference.Endpoint,
                 ApiKey = Settings.Inference.ApiKey,
                 Model = Settings.Inference.DefaultModel,
-                MaxConcurrentRequests = 1
+                MaxConcurrentRequests = 1,
+                SupportsToolCalling = false,
+                ToolCallingApiFormat = null,
+                SupportsParallelToolCalls = false,
+                SupportsStreamingToolCalls = false
             };
         }
 

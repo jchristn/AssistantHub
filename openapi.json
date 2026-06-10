@@ -3,7 +3,7 @@
   "info": {
     "title": "AssistantHub REST API",
     "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
-    "version": "0.15.0"
+    "version": "0.16.0"
   },
   "servers": [
     {
@@ -76,6 +76,10 @@
     {
       "name": "Assistant Analytics",
       "description": "Assistant performance analytics and trend summaries"
+    },
+    {
+      "name": "Assistant Tool Calls",
+      "description": "Redacted assistant tool-call trace history"
     },
     {
       "name": "Documents",
@@ -181,7 +185,7 @@
                     },
                     "Version": {
                       "type": "string",
-                      "example": "0.15.0"
+                      "example": "0.16.0"
                     },
                     "Timestamp": {
                       "type": "string",
@@ -602,6 +606,432 @@
         ]
       }
     },
+    "/v1.0/assistants/{assistantId}/tool-calls": {
+      "get": {
+        "tags": [
+          "Assistant Tool Calls"
+        ],
+        "summary": "List assistant tool-call traces",
+        "operationId": "get_v1_0_assistants_assistantid_tool_calls",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxResults",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "continuationToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toolName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "traceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestHistoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatHistoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "success",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "denied",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "startUtc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endUtc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnumerationResult"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "Objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AssistantToolCallRecord"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Assistant Tool Calls"
+        ],
+        "summary": "Delete assistant tool-call traces",
+        "operationId": "delete_v1_0_assistants_assistantid_tool_calls",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxResults",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "continuationToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toolName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "traceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestHistoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatHistoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "success",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "denied",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "startUtc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endUtc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted matching assistant tool-call traces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "DeletedCount": {
+                      "type": "integer",
+                      "description": "Number of deleted trace records."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}": {
+      "get": {
+        "tags": [
+          "Assistant Tool Calls"
+        ],
+        "summary": "Get assistant tool-call trace",
+        "operationId": "get_v1_0_assistants_assistantid_tool_calls_toolcallrecordid",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toolCallRecordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantToolCallRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Assistant Tool Calls"
+        ],
+        "summary": "Delete assistant tool-call trace",
+        "operationId": "delete_v1_0_assistants_assistantid_tool_calls_toolcallrecordid",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toolCallRecordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1.0/assistants/{assistantId}/analytics/overview": {
       "get": {
         "tags": [
@@ -803,11 +1233,11 @@
         "security": [],
         "requestBody": {
           "required": false,
+          "description": "OpenAI-compatible chat request. Optional attached_document_ids constrains RAG retrieval to selected assistant documents.",
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "$ref": "#/components/schemas/ChatRequest"
               }
             }
           }
@@ -908,6 +1338,83 @@
             }
           }
         }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/documents": {
+      "get": {
+        "tags": [
+          "Assistant Public APIs"
+        ],
+        "summary": "List public assistant documents",
+        "operationId": "get_v1_0_assistants_assistantid_documents",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/maxResults"
+          },
+          {
+            "$ref": "#/components/parameters/continuationToken"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "description": "Optional case-insensitive name or filename search filter.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contentType",
+            "in": "query",
+            "required": false,
+            "description": "Optional MIME content type filter, such as application/pdf or text/*.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Selectable assistant documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/EnumerationResult"
+                    }
+                  ],
+                  "properties": {
+                    "Objects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AssistantDocumentSelectionItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": []
       }
     },
     "/v1.0/assistants/{assistantId}/documents/{documentId}/download": {
@@ -1210,6 +1717,158 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/tools": {
+      "get": {
+        "tags": [
+          "Assistant Settings"
+        ],
+        "summary": "List tools",
+        "operationId": "get_v1_0_assistants_assistantid_tools",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1.0/assistants/{assistantId}/settings/tools/validate": {
+      "post": {
+        "tags": [
+          "Assistant Settings"
+        ],
+        "summary": "Validate assistant tool policy",
+        "operationId": "post_v1_0_assistants_assistantid_settings_tools_validate",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantToolPolicyValidationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/assistants/{assistantId}/settings/tools/test": {
+      "post": {
+        "tags": [
+          "Assistant Settings"
+        ],
+        "summary": "Dry-run assistant tool policy diagnostics",
+        "operationId": "post_v1_0_assistants_assistantid_settings_tools_test",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantToolPolicyValidationRequest"
               }
             }
           }
@@ -2705,6 +3364,45 @@
             }
           }
         }
+      }
+    },
+    "/v1.0/configuration/external-search/status": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Get external-search configuration status",
+        "operationId": "get_v1_0_configuration_external_search_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalSearchConfigurationStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/v1.0/crawlplans": {
@@ -4970,6 +5668,40 @@
             }
           }
         },
+        "/v1.0/assistants/{assistantId}/tools": {
+          "get": {
+            "tags": [
+              "Assistant Settings"
+            ],
+            "summary": "Get effective assistant tool availability",
+            "parameters": [
+              {
+                "$ref": "#/components/parameters/assistantId"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Effective assistant tool list",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AssistantToolDescriptor"
+                      }
+                    }
+                  }
+                }
+              },
+              "403": {
+                "$ref": "#/components/responses/Forbidden"
+              },
+              "404": {
+                "$ref": "#/components/responses/NotFound"
+              }
+            }
+          }
+        },
         "/v1.0/assistants/{assistantId}/settings/slack/verify": {
           "post": {
             "tags": [
@@ -5555,6 +6287,216 @@
                     }
                   }
                 }
+              },
+              "400": {
+                "$ref": "#/components/responses/BadRequest"
+              },
+              "403": {
+                "$ref": "#/components/responses/Forbidden"
+              },
+              "404": {
+                "$ref": "#/components/responses/NotFound"
+              }
+            }
+          }
+        },
+        "/v1.0/assistants/{assistantId}/tool-calls": {
+          "get": {
+            "tags": [
+              "Assistant Tool Calls"
+            ],
+            "summary": "List assistant tool-call traces",
+            "description": "Enumerate redacted model-directed tool-call traces for an assistant. Tenant admins can see traces for their tenant; global admins can see all tenants.",
+            "parameters": [
+              {
+                "$ref": "#/components/parameters/assistantId"
+              },
+              {
+                "$ref": "#/components/parameters/maxResults"
+              },
+              {
+                "$ref": "#/components/parameters/continuationToken"
+              },
+              {
+                "$ref": "#/components/parameters/ordering"
+              },
+              {
+                "name": "toolName",
+                "in": "query",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by tool name."
+              },
+              {
+                "name": "traceId",
+                "in": "query",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by trace identifier."
+              },
+              {
+                "name": "requestHistoryId",
+                "in": "query",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by linked request-history identifier."
+              },
+              {
+                "name": "chatHistoryId",
+                "in": "query",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by linked chat-history identifier."
+              },
+              {
+                "name": "threadId",
+                "in": "query",
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Filter by assistant thread identifier."
+              },
+              {
+                "name": "success",
+                "in": "query",
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "Filter by tool execution success."
+              },
+              {
+                "name": "denied",
+                "in": "query",
+                "schema": {
+                  "type": "boolean"
+                },
+                "description": "Filter by policy-denied tool calls."
+              },
+              {
+                "name": "startUtc",
+                "in": "query",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "description": "Return records created at or after this UTC timestamp."
+              },
+              {
+                "name": "endUtc",
+                "in": "query",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "description": "Return records created at or before this UTC timestamp."
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Paginated list of redacted assistant tool-call traces",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/EnumerationResult"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "Objects": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AssistantToolCallRecord"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "400": {
+                "$ref": "#/components/responses/BadRequest"
+              },
+              "403": {
+                "$ref": "#/components/responses/Forbidden"
+              },
+              "404": {
+                "$ref": "#/components/responses/NotFound"
+              }
+            }
+          }
+        },
+        "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}": {
+          "get": {
+            "tags": [
+              "Assistant Tool Calls"
+            ],
+            "summary": "Get assistant tool-call trace",
+            "parameters": [
+              {
+                "$ref": "#/components/parameters/assistantId"
+              },
+              {
+                "name": "toolCallRecordId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Assistant tool-call trace identifier."
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Redacted assistant tool-call trace",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/AssistantToolCallRecord"
+                    }
+                  }
+                }
+              },
+              "400": {
+                "$ref": "#/components/responses/BadRequest"
+              },
+              "403": {
+                "$ref": "#/components/responses/Forbidden"
+              },
+              "404": {
+                "$ref": "#/components/responses/NotFound"
+              }
+            }
+          },
+          "delete": {
+            "tags": [
+              "Assistant Tool Calls"
+            ],
+            "summary": "Delete assistant tool-call trace",
+            "parameters": [
+              {
+                "$ref": "#/components/parameters/assistantId"
+              },
+              {
+                "name": "toolCallRecordId",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Assistant tool-call trace identifier."
+              }
+            ],
+            "responses": {
+              "204": {
+                "description": "Tool-call trace deleted"
               },
               "400": {
                 "$ref": "#/components/responses/BadRequest"
@@ -12447,6 +13389,275 @@
           }
         }
       },
+      "AssistantDocumentSelectionItem": {
+        "type": "object",
+        "description": "Safe public metadata for documents selectable in assistant chat.",
+        "properties": {
+          "Id": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "OriginalFilename": {
+            "type": "string",
+            "nullable": true
+          },
+          "ContentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "SizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "SourceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "CreatedUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "LastUpdateUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "description": "OpenAI-compatible chat message.",
+        "required": [
+          "role",
+          "content"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Message role such as system, user, assistant, or tool."
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content."
+          }
+        }
+      },
+      "ChatMetadataFilter": {
+        "type": "object",
+        "description": "Per-request metadata filter merged with assistant retrieval defaults.",
+        "additionalProperties": true,
+        "properties": {
+          "required_labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded_labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required_tags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "excluded_tags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "ChatRequest": {
+        "type": "object",
+        "description": "OpenAI-compatible assistant chat request.",
+        "required": [
+          "messages"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            }
+          },
+          "temperature": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "top_p": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "max_tokens": {
+            "type": "integer",
+            "nullable": true
+          },
+          "stream": {
+            "type": "boolean",
+            "description": "Ignored; streaming is controlled by assistant settings."
+          },
+          "metadata_filter": {
+            "$ref": "#/components/schemas/ChatMetadataFilter"
+          },
+          "attached_document_ids": {
+            "type": "array",
+            "description": "Optional AssistantDocument.Id values used to constrain RAG retrieval for this turn.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ChatCompletionRetrieval": {
+        "type": "object",
+        "description": "Retrieval telemetry included in assistant chat responses when RAG is active.",
+        "properties": {
+          "collection_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration_ms": {
+            "type": "number",
+            "format": "double"
+          },
+          "chunks_returned": {
+            "type": "integer"
+          },
+          "rerank_duration_ms": {
+            "type": "number",
+            "format": "double"
+          },
+          "rerank_input_count": {
+            "type": "integer"
+          },
+          "rerank_output_count": {
+            "type": "integer"
+          },
+          "attached_document_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attached_documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantDocumentSelectionItem"
+            }
+          },
+          "document_filter_applied": {
+            "type": "boolean"
+          },
+          "chunks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "ChatResult": {
+        "type": "object",
+        "description": "Assistant chat completion response.",
+        "additionalProperties": true,
+        "properties": {
+          "retrieval": {
+            "$ref": "#/components/schemas/ChatCompletionRetrieval"
+          },
+          "tool_calls": {
+            "type": "array",
+            "description": "Optional safe metadata for model-directed server-side tool calls when assistant policy exposes user-visible tool traces.",
+            "items": {
+              "$ref": "#/components/schemas/ChatCompletionToolTrace"
+            }
+          }
+        }
+      },
+      "ChatCompletionToolTrace": {
+        "type": "object",
+        "description": "Safe chat-completion extension metadata for a model-directed assistant tool call.",
+        "properties": {
+          "tool_call_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "tool_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "display_label": {
+            "type": "string",
+            "nullable": true
+          },
+          "iteration": {
+            "type": "integer"
+          },
+          "sequence_number": {
+            "type": "integer"
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "denied": {
+            "type": "boolean"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "output_characters": {
+            "type": "integer"
+          },
+          "result_count": {
+            "type": "integer",
+            "nullable": true
+          },
+          "credits_used": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Provider usage credits when available."
+          },
+          "provider_latency_ms": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "Provider-reported latency in milliseconds when available."
+          },
+          "duration_ms": {
+            "type": "number",
+            "format": "double"
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "started_utc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finished_utc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
       "DocumentBulkDeleteRequest": {
         "type": "object",
         "required": [
@@ -12455,6 +13666,550 @@
         "properties": {
           "DocumentIds": {
             "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AssistantSettings": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Assistant configuration settings. Includes model-directed server-side tool policy when configured.",
+        "properties": {
+          "ToolPolicyJson": {
+            "type": "string",
+            "nullable": true,
+            "description": "JSON-serialized AssistantToolPolicy. Null disables model-directed tool calls by default."
+          },
+          "ToolPolicy": {
+            "$ref": "#/components/schemas/AssistantToolPolicy"
+          }
+        }
+      },
+      "ExternalSearchConfigurationStatus": {
+        "type": "object",
+        "description": "Safe external-search configuration status. Does not expose endpoints, API keys, or provider names.",
+        "properties": {
+          "Enabled": {
+            "type": "boolean",
+            "description": "Whether external search is globally enabled."
+          },
+          "EnabledProviders": {
+            "type": "integer",
+            "description": "Enabled provider count."
+          },
+          "ConfiguredProviders": {
+            "type": "integer",
+            "description": "Fully configured provider count."
+          },
+          "MisconfiguredProviders": {
+            "type": "integer",
+            "description": "Enabled but incomplete provider count."
+          }
+        },
+        "example": {
+          "Enabled": true,
+          "EnabledProviders": 1,
+          "ConfiguredProviders": 1,
+          "MisconfiguredProviders": 0
+        }
+      },
+      "AssistantToolPolicy": {
+        "type": "object",
+        "description": "Administrator-controlled policy for server-side tools exposed to a model.",
+        "properties": {
+          "EnableToolCalls": {
+            "type": "boolean",
+            "default": false
+          },
+          "MaxToolIterations": {
+            "type": "integer",
+            "default": 6,
+            "minimum": 1,
+            "maximum": 20
+          },
+          "MaxToolCallsPerTurn": {
+            "type": "integer",
+            "default": 12,
+            "minimum": 1,
+            "maximum": 50
+          },
+          "ToolCallTimeoutMs": {
+            "type": "integer",
+            "default": 30000,
+            "minimum": 1000,
+            "maximum": 300000
+          },
+          "MaxToolOutputChars": {
+            "type": "integer",
+            "default": 12000,
+            "minimum": 1024,
+            "maximum": 200000
+          },
+          "EnableToolFeedbackEvents": {
+            "type": "boolean",
+            "default": true
+          },
+          "EnableSlackToolProgressMessages": {
+            "type": "boolean",
+            "default": true
+          },
+          "EnableCollectionSearchTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableCollectionReadChunksTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableVerbexFullTextSearchTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableS3ObjectReadTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableCollectionEnumerateDocumentsTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableIndexEnumerateRecordsTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableBucketEnumerateObjectsTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "EnableWebSearchTool": {
+            "type": "boolean",
+            "default": false
+          },
+          "TavilyEndpoint": {
+            "type": "string",
+            "nullable": true,
+            "description": "Assistant-level Tavily endpoint override. Null uses the system-wide provider."
+          },
+          "TavilyApiKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "Assistant-level Tavily API key override. Null uses the system-wide provider."
+          },
+          "MaxSearchResultsPerCall": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "MaxSearchTopK": {
+            "type": "integer",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "MaxSearchQueriesPerCall": {
+            "type": "integer",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 20
+          },
+          "MaxDocumentsConsideredPerSearch": {
+            "type": "integer",
+            "default": 1000,
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "Maximum assistant-visible documents a collection search may consider."
+          },
+          "MaxResultsConsideredPerSearch": {
+            "type": "integer",
+            "default": 1000,
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "Maximum raw retrieval results collection_search may consider across all passes."
+          },
+          "ReturnFullSearchContent": {
+            "type": "boolean",
+            "default": false,
+            "description": "When false, collection_search returns excerpts and ContentOmitted=true instead of full chunk content."
+          },
+          "MaxChunksPerRead": {
+            "type": "integer",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "MaxNeighborWindow": {
+            "type": "integer",
+            "default": 2,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "MaxObjectReadBytes": {
+            "type": "integer",
+            "default": 131072,
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "AllowBucketWideObjectRead": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowBinaryObjectOutput": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowRawWebContent": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowWebImages": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowUngovernedWebAccess": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowDocumentSourceUrls": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowDocumentMetadataDetails": {
+            "type": "boolean",
+            "default": false
+          },
+          "AllowedVerbexIndexIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "AllowedBucketNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "AllowedBucketPrefixes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "AllowedWebDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "BlockedWebDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "example": {
+          "EnableToolCalls": false,
+          "EnableCollectionSearchTool": false,
+          "EnableCollectionReadChunksTool": false,
+          "EnableVerbexFullTextSearchTool": false,
+          "EnableS3ObjectReadTool": false,
+          "EnableCollectionEnumerateDocumentsTool": false,
+          "EnableIndexEnumerateRecordsTool": false,
+          "EnableBucketEnumerateObjectsTool": false,
+          "EnableWebSearchTool": false,
+          "MaxSearchResultsPerCall": 10,
+          "MaxSearchTopK": 50,
+          "MaxSearchQueriesPerCall": 3,
+          "MaxDocumentsConsideredPerSearch": 1000,
+          "MaxResultsConsideredPerSearch": 1000,
+          "ReturnFullSearchContent": false,
+          "AllowBucketWideObjectRead": false,
+          "AllowBinaryObjectOutput": false,
+          "AllowRawWebContent": false,
+          "AllowWebImages": false,
+          "AllowedVerbexIndexIds": [],
+          "AllowedBucketNames": [],
+          "AllowedBucketPrefixes": [],
+          "AllowedWebDomains": [],
+          "BlockedWebDomains": []
+        }
+      },
+      "AssistantToolCallRecord": {
+        "type": "object",
+        "description": "Redacted persistent trace for one model-directed assistant tool call.",
+        "properties": {
+          "Id": {
+            "type": "string"
+          },
+          "TenantId": {
+            "type": "string"
+          },
+          "AssistantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ChatHistoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "RequestHistoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "TraceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ThreadId": {
+            "type": "string",
+            "nullable": true
+          },
+          "Origin": {
+            "type": "string",
+            "nullable": true
+          },
+          "TurnIndex": {
+            "type": "integer"
+          },
+          "Iteration": {
+            "type": "integer"
+          },
+          "SequenceNumber": {
+            "type": "integer"
+          },
+          "ProviderToolCallId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ToolName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ArgumentsJson": {
+            "type": "string",
+            "nullable": true,
+            "description": "Redacted JSON arguments."
+          },
+          "OutputJson": {
+            "type": "string",
+            "nullable": true,
+            "description": "Redacted JSON output summary."
+          },
+          "ResultSummaryJson": {
+            "type": "string",
+            "nullable": true,
+            "description": "Redacted compact result summary JSON."
+          },
+          "Success": {
+            "type": "boolean"
+          },
+          "Denied": {
+            "type": "boolean"
+          },
+          "Truncated": {
+            "type": "boolean"
+          },
+          "OutputCharacters": {
+            "type": "integer"
+          },
+          "InputBytes": {
+            "type": "integer"
+          },
+          "OutputBytes": {
+            "type": "integer"
+          },
+          "DurationMs": {
+            "type": "number",
+            "format": "double"
+          },
+          "ErrorType": {
+            "type": "string",
+            "nullable": true
+          },
+          "ErrorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "Provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "Model": {
+            "type": "string",
+            "nullable": true
+          },
+          "Active": {
+            "type": "boolean"
+          },
+          "StartedUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "FinishedUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "CreatedUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "LastUpdateUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AssistantToolDescriptor": {
+        "type": "object",
+        "description": "Effective server-side tool availability for an assistant.",
+        "properties": {
+          "ToolName": {
+            "type": "string"
+          },
+          "DisplayName": {
+            "type": "string"
+          },
+          "Category": {
+            "type": "string"
+          },
+          "EnabledByPolicy": {
+            "type": "boolean"
+          },
+          "Available": {
+            "type": "boolean"
+          },
+          "UnavailableReason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AssistantToolPolicyValidationRequest": {
+        "type": "object",
+        "description": "Request to validate an assistant tool policy without persisting it.",
+        "properties": {
+          "ToolPolicyJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "ToolPolicy": {
+            "$ref": "#/components/schemas/AssistantToolPolicy"
+          }
+        }
+      },
+      "AssistantToolPolicyValidationResult": {
+        "type": "object",
+        "description": "Result of validating an assistant tool policy.",
+        "properties": {
+          "Success": {
+            "type": "boolean"
+          },
+          "Message": {
+            "type": "string",
+            "nullable": true
+          },
+          "ToolPolicyJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "ToolPolicy": {
+            "$ref": "#/components/schemas/AssistantToolPolicy"
+          },
+          "Tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantToolDescriptor"
+            }
+          },
+          "Errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ErrorCodes": {
+            "type": "array",
+            "description": "Stable machine-readable validation error codes.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AssistantToolPolicyTestResult": {
+        "type": "object",
+        "description": "Result of an administrator dry-run diagnostic for assistant tool policy.",
+        "properties": {
+          "Success": {
+            "type": "boolean"
+          },
+          "Message": {
+            "type": "string",
+            "nullable": true
+          },
+          "AssistantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "InferenceEndpointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndpointResolved": {
+            "type": "boolean"
+          },
+          "EndpointModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndpointApiFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndpointActive": {
+            "type": "boolean"
+          },
+          "EndpointSupportsToolCalling": {
+            "type": "boolean"
+          },
+          "EndpointToolCallingApiFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "EndpointSupportsParallelToolCalls": {
+            "type": "boolean"
+          },
+          "EndpointSupportsStreamingToolCalls": {
+            "type": "boolean"
+          },
+          "Validation": {
+            "$ref": "#/components/schemas/AssistantToolPolicyValidationResult"
+          },
+          "Tools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantToolDescriptor"
+            }
+          },
+          "Warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "Errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ErrorCodes": {
+            "type": "array",
+            "description": "Stable machine-readable diagnostic error codes.",
             "items": {
               "type": "string"
             }

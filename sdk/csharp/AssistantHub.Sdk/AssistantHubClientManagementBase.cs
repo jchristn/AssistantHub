@@ -220,6 +220,16 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Get redacted external-search configuration status.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>External-search configuration status.</returns>
+        public async Task<ExternalSearchConfigurationStatus> GetExternalSearchStatusAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<ExternalSearchConfigurationStatus>(HttpMethod.Get, "/v1.0/configuration/external-search/status", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Update the server configuration.
         /// </summary>
         /// <param name="configuration">Full configuration object to apply.</param>

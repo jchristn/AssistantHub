@@ -146,6 +146,34 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
+                    Name = "assistant/documents/list",
+                    Description = "List safe public document metadata selectable in assistant chat.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            assistantId = new { type = "string", description = "Assistant identifier." },
+                            queryJson = new { type = "string", description = "Optional EnumerationQuery serialized as JSON string." },
+                            query = new { type = "string", description = "Optional text filter for document name, original filename, content type, or permitted source URL." },
+                            contentType = new { type = "string", description = "Optional MIME type filter, such as application/pdf or text/*." }
+                        },
+                        required = new[] { "assistantId" }
+                    },
+                    Handler = args =>
+                    {
+                        string assistantId = AssistantHubMcpServerHelpers.GetStringRequired(args, "assistantId");
+                        EnumerationQuery? query = AssistantHubMcpServerHelpers.DeserializeOptional<EnumerationQuery>(args, "queryJson");
+                        string? searchQuery = AssistantHubMcpServerHelpers.GetStringOptional(args, "query");
+                        string? contentType = AssistantHubMcpServerHelpers.GetStringOptional(args, "contentType");
+
+                        return AssistantHubMcpServerHelpers.Serialize(
+                            context,
+                            context.Sdk.ListAssistantDocumentsAsync(assistantId, query, searchQuery, contentType).GetAwaiter().GetResult());
+                    }
+                },
+                new()
+                {
                     Name = "assistant/labels/distinct",
                     Description = "List distinct labels for an assistant.",
                     InputSchema = new

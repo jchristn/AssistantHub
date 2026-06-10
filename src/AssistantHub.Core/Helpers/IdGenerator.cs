@@ -134,6 +134,15 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate an assistant tool-call record identifier.
+        /// </summary>
+        /// <returns>Assistant tool-call record identifier.</returns>
+        public static string NewAssistantToolCallRecordId()
+        {
+            return _Generator.GenerateKSortable(Constants.AssistantToolCallRecordIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate a crawl plan identifier.
         /// </summary>
         /// <returns>Crawl plan identifier.</returns>

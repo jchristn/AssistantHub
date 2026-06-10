@@ -8,21 +8,36 @@ import sys
 import time
 import traceback
 import uuid
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 # Add the SDK to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from assistanthub_sdk import AssistantHubClient
+from assistanthub_sdk import AssistantHubClient, AsyncAssistantHubClient
 from assistanthub_sdk.models import (
     Assistant,
     AssistantDocument,
+    AssistantDocumentSelectionItem,
+    AssistantSettings,
+    AssistantToolPolicy,
+    AssistantToolPolicyValidationRequest,
+    AssistantToolPolicyValidationResult,
+    AssistantToolPolicyTestResult,
     CifsCrawlRepositorySettings,
     CrawlPlan,
     CrawlScheduleSettings,
+    ChatCompletionMessage,
+    ChatCompletionRequest,
+    ChatCompletionRetrieval,
+    ChatCompletionResponse,
+    ChatCompletionUsage,
+    ChatHistory,
     Credential,
     EvalFact,
+    ExternalSearchConfigurationStatus,
+    AssistantTokenUsageTelemetry,
     NfsCrawlRepositorySettings,
     PartioEndpointConfig,
     PartioEndpointRequest,
@@ -149,6 +164,621 @@ def assert_gte(value: int, minimum: int, label: str) -> None:
 
 def unique_suffix() -> str:
     return uuid.uuid4().hex[:8]
+
+
+# ---------------------------------------------------------------------------
+# Local SDK contract tests
+# ---------------------------------------------------------------------------
+
+def _truthy(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in ("1", "true", "yes", "y")
+
+
+def local_only_requested() -> bool:
+    if _truthy(os.environ.get("ASSISTANTHUB_SDK_LOCAL_ONLY")):
+        return True
+
+    for arg in sys.argv[1:]:
+        normalized = arg.strip().lower()
+        if normalized in ("--local-only", "local-only", "localonly=true", "local=true"):
+            return True
+
+    return False
+
+
+def run_sdk_contract_tests(runner: TestRunner) -> None:
+    def test_request_attached_document_ids() -> None:
+        request = ChatCompletionRequest(
+            messages=[ChatCompletionMessage(role="user", content="Summarize this document.")],
+            attached_document_ids=["adoc_one", "adoc_two"],
+            top_p=0.8,
+            max_tokens=512,
+        )
+
+        payload = request.model_dump(by_alias=True, exclude_none=True)
+        assert_true("attached_document_ids" in payload, "request should use attached_document_ids")
+        assert_false("AttachedDocumentIds" in payload, "request should not use PascalCase attachment key")
+        assert_equal(["adoc_one", "adoc_two"], payload["attached_document_ids"], "attached document IDs")
+        assert_equal(0.8, payload["top_p"], "top_p alias")
+        assert_equal(512, payload["max_tokens"], "max_tokens alias")
+
+        round_trip = ChatCompletionRequest.model_validate(payload)
+        assert_equal(
+            ["adoc_one", "adoc_two"],
+            round_trip.attached_document_ids,
+            "round-trip attached document IDs",
+        )
+
+    def test_response_retrieval_attached_document_metadata() -> None:
+        response = ChatCompletionResponse.model_validate(
+            {
+                "id": "chatcmpl_local",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 12,
+                    "completion_tokens": 4,
+                    "total_tokens": 16,
+                    "tool_definition_tokens": 5,
+                    "prompt_tokens_details": {
+                        "cached_tokens": 3,
+                        "tool_tokens": 5,
+                    },
+                    "completion_tokens_details": {
+                        "reasoning_tokens": 7,
+                    },
+                },
+                "tool_calls": [
+                    {
+                        "tool_call_id": "call_search",
+                        "tool_name": "collection_search",
+                        "display_label": "Searching collection",
+                        "iteration": 1,
+                        "sequence_number": 1,
+                        "success": True,
+                        "denied": False,
+                        "truncated": False,
+                        "output_characters": 128,
+                        "result_count": 3,
+                        "credits_used": 2,
+                        "provider_latency_ms": 45.5,
+                        "duration_ms": 12.5,
+                        "summary": "Searching collection completed.",
+                    }
+                ],
+                "retrieval": {
+                    "collection_id": "col_abc123",
+                    "duration_ms": 42.7,
+                    "chunks_returned": 3,
+                    "rerank_duration_ms": 5.5,
+                    "rerank_input_count": 4,
+                    "rerank_output_count": 2,
+                    "attached_document_ids": ["adoc_one"],
+                    "attached_documents": [
+                        {
+                            "Id": "adoc_one",
+                            "Name": "Policy Handbook",
+                            "OriginalFilename": "policy.pdf",
+                            "ContentType": "application/pdf",
+                            "SizeBytes": 12345,
+                            "CreatedUtc": "2026-01-01T00:00:00Z",
+                            "LastUpdateUtc": "2026-01-02T00:00:00Z",
+                        }
+                    ],
+                    "document_filter_applied": True,
+                    "chunks": [
+                        {
+                            "document_id": "adoc_one",
+                            "score": 0.91,
+                            "rerank_score": 8.5,
+                            "fusion_score": 0.42,
+                            "text_score": 0.66,
+                            "content": "Local fixture content.",
+                            "position": 7,
+                        }
+                    ],
+                },
+                "citations": {
+                    "sources": [
+                        {
+                            "index": 1,
+                            "document_id": "adoc_one",
+                            "document_name": "Policy Handbook",
+                            "content_type": "application/pdf",
+                            "score": 0.91,
+                            "rerank_score": 8.5,
+                            "excerpt": "Local fixture content.",
+                            "download_url": "/v1.0/assistants/asst_local/documents/adoc_one/download",
+                        }
+                    ],
+                    "referenced_indices": [1],
+                    "auto_populated": False,
+                },
+            }
+        )
+
+        assert_not_none(response.retrieval, "ChatCompletionResponse retrieval")
+        retrieval = response.retrieval
+        assert_equal("col_abc123", retrieval.collection_id, "retrieval collection ID")
+        assert_equal(42.7, retrieval.duration_ms, "retrieval duration")
+        assert_equal(3, retrieval.chunks_returned, "retrieval chunks returned")
+        assert_equal(["adoc_one"], retrieval.attached_document_ids, "retrieval attached document IDs")
+        assert_true(retrieval.document_filter_applied, "document filter applied")
+        assert_not_none(retrieval.attached_documents, "attached document metadata")
+        assert_equal("adoc_one", retrieval.attached_documents[0].id, "attached document metadata ID")
+        assert_equal("policy.pdf", retrieval.attached_documents[0].original_filename, "attached document filename")
+        assert_not_none(retrieval.chunks, "retrieval chunks")
+        assert_equal("adoc_one", retrieval.chunks[0].document_id, "retrieval chunk document ID")
+        assert_equal(8.5, retrieval.chunks[0].rerank_score, "retrieval chunk rerank score")
+
+        payload = retrieval.model_dump(by_alias=True, exclude_none=True)
+        assert_true("collection_id" in payload, "retrieval payload collection_id")
+        assert_true("duration_ms" in payload, "retrieval payload duration_ms")
+        assert_true("chunks_returned" in payload, "retrieval payload chunks_returned")
+        assert_true("attached_document_ids" in payload, "retrieval payload attached_document_ids")
+        assert_true("attached_documents" in payload, "retrieval payload attached_documents")
+        assert_true("document_filter_applied" in payload, "retrieval payload document_filter_applied")
+        assert_true("document_id" in payload["chunks"][0], "retrieval chunk payload document_id")
+        assert_true("rerank_score" in payload["chunks"][0], "retrieval chunk payload rerank_score")
+
+        doc_payload = payload["attached_documents"][0]
+        assert_false("S3Key" in doc_payload, "selection metadata should not expose S3Key")
+        assert_false("BucketName" in doc_payload, "selection metadata should not expose BucketName")
+        assert_false("s3_key" in doc_payload, "selection metadata should not expose s3_key")
+        assert_false("bucket_name" in doc_payload, "selection metadata should not expose bucket_name")
+
+        assert_not_none(response.citations, "ChatCompletionResponse citations")
+        assert_equal("adoc_one", response.citations.sources[0].document_id, "citation document ID")
+        citation_payload = response.citations.model_dump(by_alias=True, exclude_none=True)
+        assert_true("referenced_indices" in citation_payload, "citation payload referenced_indices")
+        assert_true("document_id" in citation_payload["sources"][0], "citation payload document_id")
+
+        assert_not_none(response.tool_calls, "ChatCompletionResponse tool_calls")
+        assert_equal(1, len(response.tool_calls), "tool_calls count")
+        assert_equal("collection_search", response.tool_calls[0].tool_name, "tool trace name")
+        assert_equal("Searching collection", response.tool_calls[0].display_label, "tool trace label")
+        assert_equal(3, response.tool_calls[0].result_count, "tool trace result count")
+        assert_equal(2, response.tool_calls[0].credits_used, "tool trace credits used")
+        assert_equal(45.5, response.tool_calls[0].provider_latency_ms, "tool trace provider latency")
+        tool_payload = response.model_dump(by_alias=True, exclude_none=True)["tool_calls"][0]
+        assert_true("tool_name" in tool_payload, "tool trace payload tool_name")
+        assert_true("result_count" in tool_payload, "tool trace payload result_count")
+        assert_true("credits_used" in tool_payload, "tool trace payload credits_used")
+        assert_true("provider_latency_ms" in tool_payload, "tool trace payload provider_latency_ms")
+        assert_false("ArgumentsJson" in tool_payload, "tool trace should not expose arguments")
+        assert_false("OutputJson" in tool_payload, "tool trace should not expose raw output")
+
+        assert_not_none(response.usage, "ChatCompletionResponse usage")
+        assert_equal(16, response.usage.total_tokens, "usage total tokens")
+        assert_equal(5, response.usage.tool_definition_tokens, "usage tool-definition tokens")
+        assert_not_none(response.usage.prompt_tokens_details, "usage prompt token details")
+        assert_equal(3, response.usage.prompt_tokens_details.cached_tokens, "usage cached tokens")
+        assert_not_none(response.usage.completion_tokens_details, "usage completion token details")
+        assert_equal(7, response.usage.completion_tokens_details.reasoning_tokens, "usage reasoning tokens")
+
+        usage_payload = response.usage.model_dump(by_alias=True, exclude_none=True)
+        assert_true("tool_definition_tokens" in usage_payload, "usage payload tool_definition_tokens")
+        assert_true("completion_tokens_details" in usage_payload, "usage payload completion_tokens_details")
+
+        tokens = AssistantTokenUsageTelemetry.model_validate(
+            {"Input": 12, "Output": 4, "Total": 16, "Reasoning": 7, "ToolDefinitions": 5}
+        )
+        assert_equal(7, tokens.reasoning, "telemetry reasoning tokens")
+        assert_equal(5, tokens.tool_definitions, "telemetry tool-definition tokens")
+
+    def test_tool_policy_settings_round_trip() -> None:
+        settings = AssistantSettings.model_validate(
+            {
+                "ToolPolicyJson": "{}",
+                "ToolPolicy": {
+                    "EnableToolCalls": True,
+                    "EnableCollectionSearchTool": True,
+                    "EnableWebSearchTool": True,
+                    "ToolChoiceMode": "Required",
+                    "MaxToolIterations": 4,
+                    "MaxToolResultItems": 9,
+                    "AllowedToolNames": ["collection_search"],
+                    "MaxSearchTopK": 7,
+                    "MaxDocumentsConsideredPerSearch": 25,
+                    "MaxResultsConsideredPerSearch": 50,
+                    "AllowedSearchModes": ["FullText"],
+                    "ReturnFullSearchContent": True,
+                    "MaxWebResults": 3,
+                    "TavilyEndpoint": "https://assistant.tavily.test/search",
+                    "TavilyApiKey": "assistant-key",
+                    "AllowUngovernedWebAccess": True,
+                    "AllowedWebDomains": ["example.com"],
+                    "BlockedWebDomains": ["blocked.example"],
+                },
+            }
+        )
+
+        assert_equal("{}", settings.tool_policy_json, "settings ToolPolicyJson")
+        assert_not_none(settings.tool_policy, "settings ToolPolicy")
+        assert_true(settings.tool_policy.enable_tool_calls, "settings EnableToolCalls")
+        assert_true(settings.tool_policy.enable_collection_search_tool, "settings EnableCollectionSearchTool")
+        assert_true(settings.tool_policy.enable_web_search_tool, "settings EnableWebSearchTool")
+        assert_equal("Required", settings.tool_policy.tool_choice_mode, "settings ToolChoiceMode")
+        assert_equal(4, settings.tool_policy.max_tool_iterations, "settings MaxToolIterations")
+        assert_equal(9, settings.tool_policy.max_tool_result_items, "settings MaxToolResultItems")
+        assert_equal(["collection_search"], settings.tool_policy.allowed_tool_names, "settings AllowedToolNames")
+        assert_equal(7, settings.tool_policy.max_search_top_k, "settings MaxSearchTopK")
+        assert_equal(25, settings.tool_policy.max_documents_considered_per_search, "settings MaxDocumentsConsideredPerSearch")
+        assert_equal(50, settings.tool_policy.max_results_considered_per_search, "settings MaxResultsConsideredPerSearch")
+        assert_equal(["FullText"], settings.tool_policy.allowed_search_modes, "settings AllowedSearchModes")
+        assert_true(settings.tool_policy.return_full_search_content, "settings ReturnFullSearchContent")
+        assert_equal(3, settings.tool_policy.max_web_results, "settings MaxWebResults")
+        assert_equal("https://assistant.tavily.test/search", settings.tool_policy.tavily_endpoint, "settings TavilyEndpoint")
+        assert_equal("assistant-key", settings.tool_policy.tavily_api_key, "settings TavilyApiKey")
+        assert_true(settings.tool_policy.allow_ungoverned_web_access, "settings AllowUngovernedWebAccess")
+        assert_equal(["example.com"], settings.tool_policy.allowed_web_domains, "settings AllowedWebDomains")
+
+        payload = settings.model_dump(by_alias=True, exclude_none=True)
+        assert_true("ToolPolicyJson" in payload, "settings payload ToolPolicyJson")
+        assert_true("ToolPolicy" in payload, "settings payload ToolPolicy")
+        assert_true("EnableToolCalls" in payload["ToolPolicy"], "settings payload EnableToolCalls")
+        assert_true("ToolChoiceMode" in payload["ToolPolicy"], "settings payload ToolChoiceMode")
+        assert_true("AllowedToolNames" in payload["ToolPolicy"], "settings payload AllowedToolNames")
+        assert_true("AllowedSearchModes" in payload["ToolPolicy"], "settings payload AllowedSearchModes")
+        assert_true("MaxDocumentsConsideredPerSearch" in payload["ToolPolicy"], "settings payload MaxDocumentsConsideredPerSearch")
+        assert_true("MaxResultsConsideredPerSearch" in payload["ToolPolicy"], "settings payload MaxResultsConsideredPerSearch")
+        assert_true("ReturnFullSearchContent" in payload["ToolPolicy"], "settings payload ReturnFullSearchContent")
+        assert_true("TavilyEndpoint" in payload["ToolPolicy"], "settings payload TavilyEndpoint")
+        assert_true("AllowUngovernedWebAccess" in payload["ToolPolicy"], "settings payload AllowUngovernedWebAccess")
+        assert_true("AllowedWebDomains" in payload["ToolPolicy"], "settings payload AllowedWebDomains")
+        assert_false("toolPolicy" in payload, "settings payload should not use lower-camel ToolPolicy")
+        assert_false("enableToolCalls" in payload["ToolPolicy"], "policy payload should not use lower-camel EnableToolCalls")
+
+        legacy_policy = AssistantToolPolicy.model_validate(
+            {
+                "enableToolCalls": True,
+                "enableCollectionSearchTool": True,
+                "returnFullSearchContent": True,
+                "maxDocumentsConsideredPerSearch": 11,
+                "maxResultsConsideredPerSearch": 22,
+                "allowedWebDomains": ["legacy.example"],
+            }
+        )
+        assert_true(legacy_policy.enable_tool_calls, "legacy EnableToolCalls alias")
+        assert_true(legacy_policy.enable_collection_search_tool, "legacy collection search alias")
+        assert_true(legacy_policy.return_full_search_content, "legacy ReturnFullSearchContent alias")
+        assert_equal(11, legacy_policy.max_documents_considered_per_search, "legacy MaxDocumentsConsideredPerSearch alias")
+        assert_equal(22, legacy_policy.max_results_considered_per_search, "legacy MaxResultsConsideredPerSearch alias")
+        assert_equal(["legacy.example"], legacy_policy.allowed_web_domains, "legacy allowed web domains")
+
+        validation_request = AssistantToolPolicyValidationRequest(tool_policy=legacy_policy)
+        validation_payload = validation_request.model_dump(by_alias=True, exclude_none=True)
+        assert_true("ToolPolicy" in validation_payload, "validation request ToolPolicy")
+        assert_true("EnableToolCalls" in validation_payload["ToolPolicy"], "validation request EnableToolCalls")
+
+        validation_result = AssistantToolPolicyValidationResult.model_validate(
+            {
+                "Success": False,
+                "Message": "Policy invalid.",
+                "ToolPolicyJson": "{}",
+                "ToolPolicy": {
+                    "EnableToolCalls": True,
+                    "EnableCollectionSearchTool": True,
+                    "TavilyEndpoint": "https://assistant.tavily.test/search",
+                    "AllowedWebDomains": ["example.com"],
+                },
+                "Tools": [],
+                "Errors": ["EnableToolCalls is true but no enabled tool is currently executable."],
+                "ErrorCodes": ["no_available_tools"],
+            }
+        )
+        assert_true(not validation_result.success, "validation result success")
+        assert_not_none(validation_result.tool_policy, "validation result ToolPolicy")
+        assert_true(validation_result.tool_policy.enable_collection_search_tool, "validation result collection search")
+        assert_equal("https://assistant.tavily.test/search", validation_result.tool_policy.tavily_endpoint, "validation result TavilyEndpoint")
+        assert_equal(["example.com"], validation_result.tool_policy.allowed_web_domains, "validation result AllowedWebDomains")
+        assert_equal(["no_available_tools"], validation_result.error_codes, "validation result ErrorCodes")
+
+        diagnostics_result = AssistantToolPolicyTestResult.model_validate(
+            {
+                "Success": False,
+                "Message": "Tool diagnostics found blocking issues.",
+                "AssistantId": "asst_local",
+                "InferenceEndpointId": "cep_local",
+                "EndpointResolved": True,
+                "EndpointModel": "qwen3-tool",
+                "EndpointApiFormat": "OpenAI",
+                "EndpointActive": True,
+                "EndpointSupportsToolCalling": False,
+                "EndpointToolCallingApiFormat": None,
+                "EndpointSupportsParallelToolCalls": False,
+                "EndpointSupportsStreamingToolCalls": False,
+                "Validation": {"Success": True, "Errors": [], "ErrorCodes": []},
+                "Tools": [],
+                "Warnings": [],
+                "Errors": ["The selected completion endpoint does not explicitly support tool calling."],
+                "ErrorCodes": ["completion_endpoint_not_tool_capable"],
+            }
+        )
+        assert_true(not diagnostics_result.success, "diagnostics result success")
+        assert_true(diagnostics_result.endpoint_resolved, "diagnostics endpoint resolved")
+        assert_equal("qwen3-tool", diagnostics_result.endpoint_model, "diagnostics endpoint model")
+        assert_equal(["completion_endpoint_not_tool_capable"], diagnostics_result.error_codes, "diagnostics ErrorCodes")
+
+        endpoint = PartioEndpointConfig.model_validate(
+            {
+                "Id": "ep_tool",
+                "Model": "qwen3",
+                "Endpoint": "http://localhost:11434",
+                "ApiFormat": "OpenAI",
+                "SupportsToolCalling": True,
+                "ToolCallingApiFormat": "OpenAIChatCompletions",
+                "SupportsParallelToolCalls": True,
+                "SupportsStreamingToolCalls": True,
+            }
+        )
+        assert_true(endpoint.supports_tool_calling, "endpoint SupportsToolCalling")
+        assert_equal("OpenAIChatCompletions", endpoint.tool_calling_api_format, "endpoint ToolCallingApiFormat")
+
+        endpoint_payload = PartioEndpointRequest(
+            model="qwen3",
+            endpoint="http://localhost:11434",
+            api_format="OpenAI",
+            supports_tool_calling=True,
+            tool_calling_api_format="OpenAIChatCompletions",
+            supports_parallel_tool_calls=True,
+            supports_streaming_tool_calls=True,
+        ).model_dump(by_alias=True, exclude_none=True)
+        assert_true(endpoint_payload["supportsToolCalling"], "endpoint payload supportsToolCalling")
+        assert_equal("OpenAIChatCompletions", endpoint_payload["toolCallingApiFormat"], "endpoint payload toolCallingApiFormat")
+
+    def test_external_search_status_model_and_route() -> None:
+        status = ExternalSearchConfigurationStatus.model_validate(
+            {
+                "enabled": True,
+                "enabledProviders": 1,
+                "configuredProviders": 1,
+                "misconfiguredProviders": 0,
+            }
+        )
+        assert_true(status.enabled, "external-search status enabled")
+        assert_equal(1, status.configured_providers, "external-search configured providers")
+        payload = status.model_dump(by_alias=True)
+        assert_true("ConfiguredProviders" in payload, "external-search status uses server aliases")
+        assert_false("ApiKey" in payload, "external-search status must not expose secrets")
+
+        class Response:
+            def json(self) -> dict[str, Any]:
+                return {
+                    "Enabled": True,
+                    "EnabledProviders": 1,
+                    "ConfiguredProviders": 1,
+                    "MisconfiguredProviders": 0,
+                }
+
+        class ProbeClient(AssistantHubClient):
+            def __init__(self) -> None:
+                super().__init__("http://localhost:6600", api_key="test-key")
+                self.captured_method: Optional[str] = None
+                self.captured_path: Optional[str] = None
+
+            def _request(self, method: str, path: str, **kwargs: Any) -> Response:
+                self.captured_method = method
+                self.captured_path = path
+                return Response()
+
+        client = ProbeClient()
+        try:
+            result = client.get_external_search_status()
+            assert_equal("GET", client.captured_method, "external-search status method")
+            assert_equal("/v1.0/configuration/external-search/status", client.captured_path, "external-search status path")
+            assert_true(result.enabled, "external-search status client enabled")
+        finally:
+            client.close()
+
+    def test_assistant_tool_call_trace_routes() -> None:
+        class Response:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._payload = payload
+
+            def json(self) -> dict[str, Any]:
+                return self._payload
+
+        class ProbeClient(AssistantHubClient):
+            def __init__(self) -> None:
+                super().__init__("http://localhost:6600", api_key="test-key")
+                self.requests: list[dict[str, Any]] = []
+
+            def _request(self, method: str, path: str, **kwargs: Any) -> Response:
+                self.requests.append({"method": method, "path": path, "kwargs": kwargs})
+                if method == "GET" and path == "/v1.0/assistants/asst_local/tool-calls":
+                    return Response(
+                        {
+                            "Success": True,
+                            "MaxResults": 5,
+                            "TotalRecords": 1,
+                            "RecordsRemaining": 0,
+                            "EndOfResults": True,
+                            "Objects": [
+                                {
+                                    "Id": "atc_local",
+                                    "AssistantId": "asst_local",
+                                    "TraceId": "trace_local",
+                                    "ToolName": "collection_search",
+                                    "ArgumentsJson": "[redacted]",
+                                    "Success": True,
+                                }
+                            ],
+                        }
+                    )
+                if method == "GET" and path == "/v1.0/assistants/asst_local/tool-calls/atc_local":
+                    return Response(
+                        {
+                            "Id": "atc_local",
+                            "AssistantId": "asst_local",
+                            "ToolName": "collection_search",
+                            "Success": True,
+                        }
+                    )
+                if method == "DELETE" and path == "/v1.0/assistants/asst_local/tool-calls":
+                    return Response({"DeletedCount": 1})
+                if method == "DELETE" and path == "/v1.0/assistants/asst_local/tool-calls/atc_local":
+                    return Response({})
+                return Response({})
+
+        client = ProbeClient()
+        try:
+            listed = client.list_assistant_tool_calls(
+                "asst_local",
+                max_results=5,
+                trace_id="trace_local",
+                tool_name="collection_search",
+                success=True,
+            )
+            assert_equal(1, len(listed.objects), "tool-call list count")
+            assert_equal("atc_local", listed.objects[0].id, "tool-call list id")
+            assert_equal("collection_search", listed.objects[0].tool_name, "tool-call list tool")
+            assert_false("secret" in (listed.objects[0].arguments_json or "").lower(), "tool-call list arguments redacted")
+
+            record = client.get_assistant_tool_call("asst_local", "atc_local")
+            assert_equal("atc_local", record.id, "tool-call get id")
+
+            deleted = client.delete_assistant_tool_calls("asst_local", tool_name="collection_search")
+            assert_equal(1, deleted.deleted_count, "tool-call bulk delete count")
+
+            client.delete_assistant_tool_call("asst_local", "atc_local")
+
+            assert_equal("GET", client.requests[0]["method"], "tool-call list method")
+            assert_equal("/v1.0/assistants/asst_local/tool-calls", client.requests[0]["path"], "tool-call list path")
+            assert_equal("trace_local", client.requests[0]["kwargs"]["params"]["traceId"], "tool-call list trace query")
+            assert_equal("collection_search", client.requests[0]["kwargs"]["params"]["toolName"], "tool-call list tool query")
+            assert_equal(True, client.requests[0]["kwargs"]["params"]["success"], "tool-call list success query")
+            assert_equal("GET", client.requests[1]["method"], "tool-call get method")
+            assert_equal("/v1.0/assistants/asst_local/tool-calls/atc_local", client.requests[1]["path"], "tool-call get path")
+            assert_equal("DELETE", client.requests[2]["method"], "tool-call bulk delete method")
+            assert_equal("collection_search", client.requests[2]["kwargs"]["params"]["toolName"], "tool-call bulk delete query")
+            assert_equal("DELETE", client.requests[3]["method"], "tool-call delete method")
+            assert_equal("/v1.0/assistants/asst_local/tool-calls/atc_local", client.requests[3]["path"], "tool-call delete path")
+        finally:
+            client.close()
+
+    def test_async_assistant_tool_call_trace_routes() -> None:
+        class Response:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._payload = payload
+
+            def json(self) -> dict[str, Any]:
+                return self._payload
+
+        class ProbeClient(AsyncAssistantHubClient):
+            def __init__(self) -> None:
+                super().__init__("http://localhost:6600", api_key="test-key")
+                self.requests: list[dict[str, Any]] = []
+
+            async def _request(self, method: str, path: str, **kwargs: Any) -> Response:
+                self.requests.append({"method": method, "path": path, "kwargs": kwargs})
+                if method == "GET" and path == "/v1.0/assistants/asst_local/tool-calls":
+                    return Response(
+                        {
+                            "Success": True,
+                            "MaxResults": 5,
+                            "TotalRecords": 1,
+                            "RecordsRemaining": 0,
+                            "EndOfResults": True,
+                            "Objects": [
+                                {
+                                    "Id": "atc_local",
+                                    "AssistantId": "asst_local",
+                                    "TraceId": "trace_local",
+                                    "ToolName": "collection_search",
+                                    "ArgumentsJson": "[redacted]",
+                                    "Success": True,
+                                }
+                            ],
+                        }
+                    )
+                if method == "GET" and path == "/v1.0/assistants/asst_local/tool-calls/atc_local":
+                    return Response(
+                        {
+                            "Id": "atc_local",
+                            "AssistantId": "asst_local",
+                            "ToolName": "collection_search",
+                            "Success": True,
+                        }
+                    )
+                if method == "DELETE" and path == "/v1.0/assistants/asst_local/tool-calls":
+                    return Response({"DeletedCount": 1})
+                if method == "DELETE" and path == "/v1.0/assistants/asst_local/tool-calls/atc_local":
+                    return Response({})
+                return Response({})
+
+        async def run_probe() -> None:
+            client = ProbeClient()
+            try:
+                listed = await client.list_assistant_tool_calls(
+                    "asst_local",
+                    max_results=5,
+                    trace_id="trace_local",
+                    tool_name="collection_search",
+                    success=True,
+                )
+                assert_equal(1, len(listed.objects), "async tool-call list count")
+                assert_equal("atc_local", listed.objects[0].id, "async tool-call list id")
+
+                record = await client.get_assistant_tool_call("asst_local", "atc_local")
+                assert_equal("atc_local", record.id, "async tool-call get id")
+
+                deleted = await client.delete_assistant_tool_calls("asst_local", tool_name="collection_search")
+                assert_equal(1, deleted.deleted_count, "async tool-call bulk delete count")
+
+                await client.delete_assistant_tool_call("asst_local", "atc_local")
+
+                assert_equal("GET", client.requests[0]["method"], "async tool-call list method")
+                assert_equal("/v1.0/assistants/asst_local/tool-calls", client.requests[0]["path"], "async tool-call list path")
+                assert_equal("trace_local", client.requests[0]["kwargs"]["params"]["traceId"], "async tool-call list trace query")
+                assert_equal("collection_search", client.requests[0]["kwargs"]["params"]["toolName"], "async tool-call list tool query")
+                assert_equal(True, client.requests[0]["kwargs"]["params"]["success"], "async tool-call list success query")
+                assert_equal("GET", client.requests[1]["method"], "async tool-call get method")
+                assert_equal("/v1.0/assistants/asst_local/tool-calls/atc_local", client.requests[1]["path"], "async tool-call get path")
+                assert_equal("DELETE", client.requests[2]["method"], "async tool-call bulk delete method")
+                assert_equal("collection_search", client.requests[2]["kwargs"]["params"]["toolName"], "async tool-call bulk delete query")
+                assert_equal("DELETE", client.requests[3]["method"], "async tool-call delete method")
+                assert_equal("/v1.0/assistants/asst_local/tool-calls/atc_local", client.requests[3]["path"], "async tool-call delete path")
+            finally:
+                await client.close()
+
+        asyncio.run(run_probe())
+
+    def test_chat_history_attached_document_metadata() -> None:
+        history = ChatHistory.model_validate(
+            {
+                "Id": "chist_local",
+                "TenantId": "default",
+                "ThreadId": "thr_local",
+                "AssistantId": "asst_local",
+                "AttachedDocumentIdsJson": "[\"adoc_one\"]",
+                "AttachedDocumentsJson": "[{\"Id\":\"adoc_one\",\"Name\":\"Policy Handbook\"}]",
+                "CreatedUtc": "2026-01-01T00:00:00Z",
+                "LastUpdateUtc": "2026-01-01T00:00:00Z",
+            }
+        )
+
+        assert_equal("chist_local", history.id, "history ID")
+        assert_true("adoc_one" in history.attached_document_ids_json, "history attached document IDs JSON")
+        assert_true("Policy Handbook" in history.attached_documents_json, "history attached documents JSON")
+
+    runner.run_test("SDK contract: ChatCompletionRequest serializes attached_document_ids", test_request_attached_document_ids)
+    runner.run_test(
+        "SDK contract: ChatCompletionResponse parses attached document retrieval metadata",
+        test_response_retrieval_attached_document_metadata,
+    )
+    runner.run_test("SDK contract: AssistantToolPolicy settings round-trip", test_tool_policy_settings_round_trip)
+    runner.run_test("SDK contract: ExternalSearch status model and route", test_external_search_status_model_and_route)
+    runner.run_test("SDK contract: assistant tool-call trace routes", test_assistant_tool_call_trace_routes)
+    runner.run_test("SDK contract: async assistant tool-call trace routes", test_async_assistant_tool_call_trace_routes)
+    runner.run_test(
+        "SDK contract: ChatHistory parses attached document metadata",
+        test_chat_history_attached_document_metadata,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1034,15 +1664,27 @@ def main() -> int:
 
     base_url = os.environ.get("ASSISTANTHUB_URL", "http://localhost:6600")
     api_key = os.environ.get("ASSISTANTHUB_API_KEY", "default")
+    local_only = local_only_requested()
 
     print("  Base URL:  {}".format(base_url))
     print("  API Key:   {}".format(api_key))
+    print("  LocalOnly: {}".format(local_only))
     print()
 
     runner = TestRunner()
     total_start = time.perf_counter()
 
     try:
+        run_sdk_contract_tests(runner)
+
+        if local_only:
+            total_ms = (time.perf_counter() - total_start) * 1000.0
+            runner.print_summary(total_ms)
+            for r in runner.results:
+                if not r.passed:
+                    return 1
+            return 0
+
         with AssistantHubClient(base_url=base_url, api_key=api_key) as client:
             run_health_tests(runner, client)
             run_tenant_tests(runner, client)

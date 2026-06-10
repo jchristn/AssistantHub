@@ -45,6 +45,24 @@ namespace AssistantHub.Sdk.Models
         public int RerankOutputCount { get; set; }
 
         /// <summary>
+        /// Attached document identifiers used to constrain retrieval.
+        /// </summary>
+        [JsonPropertyName("attached_document_ids")]
+        public List<string> AttachedDocumentIds { get; set; }
+
+        /// <summary>
+        /// Safe metadata for attached documents used to constrain retrieval.
+        /// </summary>
+        [JsonPropertyName("attached_documents")]
+        public List<AssistantDocumentSelectionItem> AttachedDocuments { get; set; }
+
+        /// <summary>
+        /// Indicates whether retrieval was constrained by attached document identifiers.
+        /// </summary>
+        [JsonPropertyName("document_filter_applied")]
+        public bool DocumentFilterApplied { get; set; }
+
+        /// <summary>
         /// The retrieved context chunks.
         /// </summary>
         [JsonPropertyName("chunks")]

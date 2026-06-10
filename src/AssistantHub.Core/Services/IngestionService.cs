@@ -328,19 +328,18 @@ namespace AssistantHub.Core.Services
 
                 _Logging.Debug(_Header + "extracted " + extractedContent.Length + " characters from document " + documentId);
 
-                // Step 8: Update status to ProcessingChunks
-                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.ProcessingChunks, "Processing content.", token).ConfigureAwait(false);
-
-                // Step 9: Merge labels and tags from rule + document
+                // Step 8: Merge labels and tags from rule + document
                 List<string> mergedLabels = MergeLabels(rule, document);
                 Dictionary<string, string> mergedTags = MergeTags(rule, document);
 
-                // Step 9b: Index full extracted text stream into Verbex
+                // Step 9: Index full extracted text stream into Verbex
                 currentStep = "Verbex indexing";
+                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.StoringText, "Storing extracted text.", token).ConfigureAwait(false);
                 await IndexDocumentTextAsync(document, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
 
-                // Step 10: Call Partio processing service with rule config
+                // Step 10: Prepare Partio processing service with rule config
                 currentStep = "Chunking and embedding via Partio";
+                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.ProcessingChunks, "Processing content.", token).ConfigureAwait(false);
                 bool hasSummarization = false;
 
                 // Determine if summarization is enabled and has required fields

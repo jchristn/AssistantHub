@@ -29,5 +29,22 @@ namespace AssistantHub.Core.Services
         /// Message content.
         /// </summary>
         public string Content { get; set; } = null;
+
+        /// <summary>
+        /// Model-requested tool calls.
+        /// </summary>
+        [JsonPropertyName("tool_calls")]
+        public List<AssistantModelToolCall> ToolCalls { get; set; } = null;
+
+        /// <summary>
+        /// Tool call identifier for tool-role messages.
+        /// </summary>
+        [JsonPropertyName("tool_call_id")]
+        public string ToolCallId { get; set; } = null;
+
+        /// <summary>
+        /// Optional tool/function name.
+        /// </summary>
+        public string Name { get; set; } = null;
     }
 }

@@ -8,14 +8,23 @@ import PasswordInput from './PasswordInput';
 
 const INGESTION_STATUS_PERCENT = {
   uploading: 10, uploaded: 15, typedetecting: 25, typedetectionsuccess: 30,
-  processing: 40, processingchunks: 55, summarizing: 60,
-  storingembeddings: 80, completed: 100, indexed: 100, active: 100, failed: 100, error: 100,
+  processing: 40, storingtext: 50, processingchunks: 55, summarizing: 60,
+  storingembeddings: 80, completed: 100, indexed: 100, active: 100, typedetectionfailed: 100, failed: 100, error: 100,
+};
+
+const INGESTION_STATUS_LABEL = {
+  typedetecting: 'Detecting type',
+  typedetectionsuccess: 'Type detected',
+  typedetectionfailed: 'Failed',
+  storingtext: 'Storing text',
+  processingchunks: 'Chunking',
+  storingembeddings: 'Storing embeddings',
 };
 
 function isIngestionFinalStatus(s) {
   if (!s) return false;
   const low = s.toLowerCase();
-  return low === 'completed' || low === 'indexed' || low === 'active' || low === 'failed' || low === 'error';
+  return low === 'completed' || low === 'indexed' || low === 'active' || low === 'typedetectionfailed' || low === 'failed' || low === 'error';
 }
 
 const STEP_DEFS = [
@@ -129,14 +138,14 @@ function SetupWizard({ onClose }) {
         if (doc) {
           const status = doc.Status || '';
           const pct = INGESTION_STATUS_PERCENT[status.toLowerCase()] ?? 10;
-          setIngestionStatus(status);
+          setIngestionStatus(INGESTION_STATUS_LABEL[status.toLowerCase()] || status);
           setIngestionPercent(pct);
           if (isIngestionFinalStatus(status)) {
             stopPolling();
             setIngestionDone(true);
             setSaving(false);
             const low = status.toLowerCase();
-            if (low === 'failed' || low === 'error') {
+            if (low === 'typedetectionfailed' || low === 'failed' || low === 'error') {
               setIngestionError(doc.StatusMessage || doc.ErrorMessage || 'Processing failed');
             }
           }

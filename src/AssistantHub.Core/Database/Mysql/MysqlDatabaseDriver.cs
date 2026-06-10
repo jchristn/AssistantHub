@@ -61,6 +61,7 @@ namespace AssistantHub.Core.Database.Mysql
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
+            AssistantToolCall = new AssistantToolCallMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
         }
 
@@ -85,7 +86,8 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateCrawlOperationsTable,
                 TableQueries.CreateChatHistoryTable,
                 TableQueries.CreateRequestHistoryTable,
-                TableQueries.CreateChatHistoryPerformanceEventsTable
+                TableQueries.CreateChatHistoryPerformanceEventsTable,
+                TableQueries.CreateAssistantToolCallsTable
             };
 
             await ExecuteQueriesAsync(tableQueries, true, token).ConfigureAwait(false);
@@ -155,7 +157,18 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryPerformanceEventsTenantCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex,
-                TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex
+                TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex,
+                TableQueries.CreateAssistantToolCallsTenantIdIndex,
+                TableQueries.CreateAssistantToolCallsAssistantIdIndex,
+                TableQueries.CreateAssistantToolCallsThreadIdIndex,
+                TableQueries.CreateAssistantToolCallsChatHistoryIdIndex,
+                TableQueries.CreateAssistantToolCallsRequestHistoryIdIndex,
+                TableQueries.CreateAssistantToolCallsTraceIdIndex,
+                TableQueries.CreateAssistantToolCallsToolNameIndex,
+                TableQueries.CreateAssistantToolCallsSuccessIndex,
+                TableQueries.CreateAssistantToolCallsCreatedUtcIndex,
+                TableQueries.CreateAssistantToolCallsTenantAssistantCreatedIndex,
+                TableQueries.CreateAssistantToolCallsTenantAssistantToolCreatedIndex
             };
 
             foreach (string indexQuery in indexQueries)
@@ -275,6 +288,10 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("assistant_settings", "query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "load_models_on_chat_open", TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "tool_policy_json", TableQueries.AddAssistantSettingsToolPolicyJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "enable_document_attachments", TableQueries.AddAssistantSettingsEnableDocumentAttachmentsColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "document_attachment_max_count", TableQueries.AddAssistantSettingsDocumentAttachmentMaxCountColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "expose_document_source_urls", TableQueries.AddAssistantSettingsExposeDocumentSourceUrlsColumn, token).ConfigureAwait(false);
         }
 
         private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
@@ -291,9 +308,20 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("chat_history", "request_history_id", TableQueries.AddChatHistoryRequestHistoryIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history", "performance_schema_version", TableQueries.AddChatHistoryPerformanceSchemaVersionColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history", "performance_json", TableQueries.AddChatHistoryPerformanceJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "attached_document_ids_json", TableQueries.AddChatHistoryAttachedDocumentIdsJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "attached_documents_json", TableQueries.AddChatHistoryAttachedDocumentsJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "trace_id", TableQueries.AddRequestHistoryTraceIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "chat_history_id", TableQueries.AddRequestHistoryChatHistoryIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history_performance_events", "assistant_id", TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "turn_index", TableQueries.AddAssistantToolCallsTurnIndexColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "result_summary_json", TableQueries.AddAssistantToolCallsResultSummaryJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "input_bytes", TableQueries.AddAssistantToolCallsInputBytesColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "output_bytes", TableQueries.AddAssistantToolCallsOutputBytesColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "error_type", TableQueries.AddAssistantToolCallsErrorTypeColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "provider", TableQueries.AddAssistantToolCallsProviderColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "model", TableQueries.AddAssistantToolCallsModelColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "active", TableQueries.AddAssistantToolCallsActiveColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_tool_calls", "last_update_utc", TableQueries.AddAssistantToolCallsLastUpdateUtcColumn, token).ConfigureAwait(false);
             await ExecuteQueryAsync(TableQueries.BackfillChatHistoryPerformanceEventsAssistantId, true, token).ConfigureAwait(false);
         }
 

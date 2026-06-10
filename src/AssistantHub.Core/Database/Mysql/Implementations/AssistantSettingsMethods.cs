@@ -58,10 +58,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "(id, assistant_id, temperature, top_p, system_prompt, max_tokens, context_window, " +
                 "enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
                 "enable_reranking, reranker_top_k, reranker_score_threshold, rerank_prompt, " +
-                "enable_citations, citation_link_mode, collection_id, retrieval_top_k, retrieval_score_threshold, " +
+                "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, created_utc, last_update_utc) " +
+                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -80,6 +80,9 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(settings.RerankPrompt) + ", " +
                 (settings.EnableCitations ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(settings.CitationLinkMode) + ", " +
+                (settings.EnableDocumentAttachments ? 1 : 0) + ", " +
+                settings.DocumentAttachmentMaxCount + ", " +
+                (settings.ExposeDocumentSourceUrls ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 settings.RetrievalTopK + ", " +
                 _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +
@@ -107,6 +110,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(settings.SlackBotToken) + ", " +
                 _Driver.FormatNullableString(settings.SlackChannelId) + ", " +
                 _Driver.FormatNullableString(settings.SlackMessagePrefix) + ", " +
+                _Driver.FormatNullableString(settings.ToolPolicyJson) + ", " +
                 "'" + _Driver.FormatDateTime(settings.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "'" +
                 ")";
@@ -164,6 +168,9 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "rerank_prompt = " + _Driver.FormatNullableString(settings.RerankPrompt) + ", " +
                 "enable_citations = " + (settings.EnableCitations ? 1 : 0) + ", " +
                 "citation_link_mode = " + _Driver.FormatNullableString(settings.CitationLinkMode) + ", " +
+                "enable_document_attachments = " + (settings.EnableDocumentAttachments ? 1 : 0) + ", " +
+                "document_attachment_max_count = " + settings.DocumentAttachmentMaxCount + ", " +
+                "expose_document_source_urls = " + (settings.ExposeDocumentSourceUrls ? 1 : 0) + ", " +
                 "collection_id = " + _Driver.FormatNullableString(settings.CollectionId) + ", " +
                 "retrieval_top_k = " + settings.RetrievalTopK + ", " +
                 "retrieval_score_threshold = " + _Driver.FormatDouble(settings.RetrievalScoreThreshold) + ", " +
@@ -191,6 +198,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "slack_bot_token = " + _Driver.FormatNullableString(settings.SlackBotToken) + ", " +
                 "slack_channel_id = " + _Driver.FormatNullableString(settings.SlackChannelId) + ", " +
                 "slack_message_prefix = " + _Driver.FormatNullableString(settings.SlackMessagePrefix) + ", " +
+                "tool_policy_json = " + _Driver.FormatNullableString(settings.ToolPolicyJson) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(settings.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(settings.Id) + "'";
 

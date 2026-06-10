@@ -4,6 +4,7 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text.Json;
     using System.Text.Json.Serialization;
     using AssistantHub.Core.Helpers;
@@ -32,6 +33,7 @@ namespace AssistantHub.Core.Services
         /// <param name="retrievalGateStage">Measured retrieval gate stage.</param>
         /// <param name="queryRewriteStage">Measured query rewrite stage.</param>
         /// <param name="rerankStage">Measured rerank stage.</param>
+        /// <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
         /// <returns>Provider-agnostic performance telemetry.</returns>
         public static AssistantPerformanceTelemetry Build(
             ChatHistory history,
@@ -40,9 +42,13 @@ namespace AssistantHub.Core.Services
             int retrievalChunksReturned,
             AssistantPerformanceStage retrievalGateStage = null,
             AssistantPerformanceStage queryRewriteStage = null,
-            AssistantPerformanceStage rerankStage = null)
+            AssistantPerformanceStage rerankStage = null,
+            IEnumerable<ChatCompletionToolTrace> toolTraces = null)
         {
             if (history == null) throw new ArgumentNullException(nameof(history));
+
+            List<string> attachedDocumentIds = ParseJsonStringArray(history.AttachedDocumentIdsJson);
+            int attachedDocumentCount = attachedDocumentIds.Count;
 
             AssistantPerformanceTelemetry telemetry = new AssistantPerformanceTelemetry
             {
@@ -92,7 +98,11 @@ namespace AssistantHub.Core.Services
                 {
                     ["retrieval_query_count"] = retrievalQueryCount,
                     ["chunks_output"] = retrievalChunksReturned,
-                    ["metadata_filter"] = history.MetadataFilter
+                    ["metadata_filter"] = history.MetadataFilter,
+                    ["attached_document_ids"] = attachedDocumentIds.Count > 0 ? attachedDocumentIds : null,
+                    ["attached_document_count"] = attachedDocumentCount,
+                    ["document_filter_applied"] = attachedDocumentCount > 0,
+                    ["document_filter_mode"] = attachedDocumentCount == 0 ? "none" : attachedDocumentCount == 1 ? "single" : "multi-native"
                 });
 
             AddMeasuredOrLegacyStage(
@@ -111,6 +121,7 @@ namespace AssistantHub.Core.Services
 
             AddLegacyStage(telemetry, "endpoint_resolution", "network", 50, history.EndpointResolutionDurationMs, null, null);
             AddLegacyStage(telemetry, "context_compaction", "inference", 60, history.CompactionDurationMs, null, null);
+            AddToolStage(telemetry, toolTraces);
 
             AssistantPerformanceStage finalStage = finalInferenceStage != null
                 ? CloneStage(finalInferenceStage)
@@ -138,6 +149,129 @@ namespace AssistantHub.Core.Services
             telemetry.Stages.Add(finalStage);
 
             return telemetry;
+        }
+
+        private static void AddToolStage(
+            AssistantPerformanceTelemetry telemetry,
+            IEnumerable<ChatCompletionToolTrace> toolTraces)
+        {
+            List<ChatCompletionToolTrace> traces = toolTraces?
+                .Where(trace => trace != null)
+                .ToList() ?? new List<ChatCompletionToolTrace>();
+            if (traces.Count < 1) return;
+
+            int successCount = traces.Count(trace => trace.Success);
+            int deniedCount = traces.Count(trace => trace.Denied);
+            int errorCount = traces.Count(trace => !trace.Success && !trace.Denied);
+            int truncatedCount = traces.Count(trace => trace.Truncated);
+            double durationMs = Math.Round(traces.Sum(trace => Math.Max(0, trace.DurationMs)), 2);
+            int outputCharacters = traces.Sum(trace => Math.Max(0, trace.OutputCharacters));
+            List<ChatCompletionToolTrace> webSearchTraces = traces
+                .Where(trace => String.Equals(trace.ToolName, "web_search", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            int tavilyCreditsUsed = webSearchTraces.Sum(trace => trace.CreditsUsed ?? 0);
+            double tavilyProviderLatencyMs = Math.Round(webSearchTraces.Sum(trace => Math.Max(0, trace.ProviderLatencyMs ?? 0)), 2);
+
+            Dictionary<string, object> perTool = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            foreach (IGrouping<string, ChatCompletionToolTrace> group in traces
+                .GroupBy(trace => String.IsNullOrWhiteSpace(trace.ToolName) ? "unknown" : trace.ToolName.Trim(), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                List<ChatCompletionToolTrace> groupTraces = group.ToList();
+                Dictionary<string, object> toolMetrics = new Dictionary<string, object>
+                {
+                    ["count"] = groupTraces.Count,
+                    ["success_count"] = groupTraces.Count(trace => trace.Success),
+                    ["error_count"] = groupTraces.Count(trace => !trace.Success && !trace.Denied),
+                    ["denied_count"] = groupTraces.Count(trace => trace.Denied),
+                    ["truncated_count"] = groupTraces.Count(trace => trace.Truncated),
+                    ["duration_ms"] = Math.Round(groupTraces.Sum(trace => Math.Max(0, trace.DurationMs)), 2),
+                    ["output_characters"] = groupTraces.Sum(trace => Math.Max(0, trace.OutputCharacters)),
+                    ["result_count"] = groupTraces.Sum(trace => trace.ResultCount ?? 0),
+                    ["provider"] = ResolveToolProvider(group.Key)
+                };
+                int creditsUsed = groupTraces.Sum(trace => trace.CreditsUsed ?? 0);
+                double providerLatencyMs = Math.Round(groupTraces.Sum(trace => Math.Max(0, trace.ProviderLatencyMs ?? 0)), 2);
+                if (creditsUsed > 0)
+                    toolMetrics["credits_used"] = creditsUsed;
+                if (providerLatencyMs > 0)
+                    toolMetrics["provider_latency_ms"] = providerLatencyMs;
+
+                perTool[group.Key] = toolMetrics;
+            }
+
+            List<Dictionary<string, object>> dimensions = traces
+                .OrderBy(trace => trace.SequenceNumber)
+                .Select(trace =>
+                {
+                    Dictionary<string, object> dimension = new Dictionary<string, object>
+                    {
+                        ["tool_name"] = String.IsNullOrWhiteSpace(trace.ToolName) ? "unknown" : trace.ToolName.Trim(),
+                        ["provider"] = ResolveToolProvider(trace.ToolName),
+                        ["success"] = trace.Success,
+                        ["denied"] = trace.Denied,
+                        ["truncated"] = trace.Truncated,
+                        ["duration_ms"] = Math.Round(Math.Max(0, trace.DurationMs), 2),
+                        ["output_characters"] = Math.Max(0, trace.OutputCharacters)
+                    };
+                    if (trace.ResultCount.HasValue)
+                        dimension["result_count"] = trace.ResultCount.Value;
+                    if (trace.CreditsUsed.HasValue)
+                        dimension["credits_used"] = trace.CreditsUsed.Value;
+                    if (trace.ProviderLatencyMs.HasValue)
+                        dimension["provider_latency_ms"] = Math.Round(Math.Max(0, trace.ProviderLatencyMs.Value), 2);
+                    return dimension;
+                })
+                .ToList();
+
+            DateTime? startedUtc = traces
+                .Where(trace => trace.StartedUtc.HasValue)
+                .Select(trace => trace.StartedUtc.GetValueOrDefault())
+                .DefaultIfEmpty()
+                .Min();
+            if (startedUtc == default) startedUtc = null;
+
+            DateTime? finishedUtc = traces
+                .Where(trace => trace.FinishedUtc.HasValue)
+                .Select(trace => trace.FinishedUtc.GetValueOrDefault())
+                .DefaultIfEmpty()
+                .Max();
+            if (finishedUtc == default) finishedUtc = null;
+
+            telemetry.Stages.Add(new AssistantPerformanceStage
+            {
+                Name = "tools",
+                Kind = "tool",
+                Sequence = 65,
+                StartedUtc = startedUtc,
+                FinishedUtc = finishedUtc,
+                DurationMs = durationMs,
+                Success = errorCount == 0 && deniedCount == 0,
+                Metadata = NormalizeMetadata(new Dictionary<string, object>
+                {
+                    ["phase"] = "assistant_tools",
+                    ["tool_call_count"] = traces.Count,
+                    ["tool_call_success_count"] = successCount,
+                    ["tool_call_error_count"] = errorCount,
+                    ["tool_call_denied_count"] = deniedCount,
+                    ["tool_call_truncated_count"] = truncatedCount,
+                    ["tool_call_duration_ms"] = durationMs,
+                    ["tool_call_output_characters"] = outputCharacters,
+                    ["tool_call_tavily_request_count"] = webSearchTraces.Count,
+                    ["tool_call_tavily_failure_count"] = webSearchTraces.Count(trace => !trace.Success && !trace.Denied),
+                    ["tool_call_tavily_credits_used"] = tavilyCreditsUsed,
+                    ["tool_call_tavily_provider_latency_ms"] = tavilyProviderLatencyMs,
+                    ["tool_names"] = traces
+                        .Select(trace => trace.ToolName)
+                        .Where(name => !String.IsNullOrWhiteSpace(name))
+                        .Select(name => name.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                        .ToList(),
+                    ["per_tool"] = perTool,
+                    ["dimensions"] = dimensions
+                })
+            });
         }
 
         /// <summary>
@@ -366,6 +500,48 @@ namespace AssistantHub.Core.Services
         {
             if (metadata == null || !metadata.TryGetValue(key, out object value) || value == null) return null;
             return value.ToString();
+        }
+
+        private static string ResolveToolProvider(string toolName)
+        {
+            if (String.IsNullOrWhiteSpace(toolName)) return "AssistantHub";
+            if (String.Equals(toolName, "web_search", StringComparison.OrdinalIgnoreCase)) return "Tavily";
+            if (String.Equals(toolName, "verbex_full_text_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "index_enumerate_records", StringComparison.OrdinalIgnoreCase))
+                return "Verbex";
+            if (String.Equals(toolName, "s3_object_read", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "bucket_enumerate_objects", StringComparison.OrdinalIgnoreCase))
+                return "S3";
+            if (String.Equals(toolName, "collection_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "collection_read_chunks", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "collection_enumerate_documents", StringComparison.OrdinalIgnoreCase))
+                return "RecallDB";
+            return "AssistantHub";
+        }
+
+        private static List<string> ParseJsonStringArray(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return new List<string>();
+
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(json);
+                if (document.RootElement.ValueKind != JsonValueKind.Array) return new List<string>();
+
+                List<string> values = new List<string>();
+                foreach (JsonElement element in document.RootElement.EnumerateArray())
+                {
+                    if (element.ValueKind != JsonValueKind.String) continue;
+                    string value = element.GetString();
+                    if (!String.IsNullOrWhiteSpace(value)) values.Add(value);
+                }
+
+                return values;
+            }
+            catch (JsonException)
+            {
+                return new List<string>();
+            }
         }
 
         private static double RoundPositive(double value)

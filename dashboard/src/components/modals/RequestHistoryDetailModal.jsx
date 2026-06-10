@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
 import CopyButton from '../CopyButton';
 import CopyableId from '../CopyableId';
+import AssistantAttachedDocumentsSection from './AssistantAttachedDocumentsSection';
+import AssistantToolCallTraceSection from './AssistantToolCallTraceSection';
 import { ApiClient } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -284,6 +286,16 @@ function RequestHistoryDetailModal({ entry, onClose, onReplay }) {
             )}
           </section>
         )}
+
+        {linkedHistory && (
+          <AssistantAttachedDocumentsSection history={linkedHistory} />
+        )}
+
+        <AssistantToolCallTraceSection
+          assistantId={entry.AssistantId}
+          requestHistoryId={entry.Id}
+          traceId={entry.TraceId}
+        />
 
         <div className="request-history-detail-grid">
           <section className="request-history-detail-section">

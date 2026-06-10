@@ -37,6 +37,44 @@ print(response.choices[0].message.content)
 client.close()
 ```
 
+### Assistant Tool-Call Traces
+
+```python
+traces = client.list_assistant_tool_calls(
+    assistant_id="ast_123",
+    tool_name="collection_search",
+    trace_id="trace_abc123",
+)
+
+deleted = client.delete_assistant_tool_calls(
+    assistant_id="ast_123",
+    tool_name="collection_search",
+)
+print(deleted.deleted_count)
+```
+
+### Attached-Document Chat
+
+```python
+from assistanthub_sdk import AssistantHubClient, ChatCompletionMessage
+
+with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
+    selectable = client.list_assistant_documents(
+        assistant_id="ast_123",
+        query="guide",
+        content_type="application/pdf",
+    )
+    document_id = selectable.objects[0].id
+
+    response = client.send_message(
+        assistant_id="ast_123",
+        messages=[
+            ChatCompletionMessage(role="user", content="Summarize this document.")
+        ],
+        attached_document_ids=[document_id],
+    )
+```
+
 ### Using a Context Manager
 
 ```python
@@ -230,12 +268,16 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 
 - `list_assistants()` -- List all assistants (paginated)
 - `get_assistant(assistant_id)` -- Get a single assistant
+- `get_assistant_tools(assistant_id)` -- Get effective tool availability for an assistant
+- `validate_assistant_tool_policy(assistant_id, request)` -- Validate draft tool policy without saving it
+- `test_assistant_tool_policy(assistant_id, request)` -- Run admin dry-run tool diagnostics without executing tools
 - `create_assistant(assistant)` -- Create a new assistant
 - `update_assistant(assistant_id, assistant)` -- Update an assistant
 - `delete_assistant(assistant_id)` -- Delete an assistant
 
 ### Chat
 
+- `list_assistant_documents(assistant_id, query=..., content_type=...)` -- List safe public document metadata selectable in assistant chat
 - `send_message(assistant_id, messages, ...)` -- Send a chat message
 - `send_message_stream(assistant_id, messages, ...)` -- Stream a chat response
 - `search(assistant_id, query, ...)` -- RAG search via chat

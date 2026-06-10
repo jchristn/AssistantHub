@@ -88,7 +88,7 @@ namespace AssistantHub.Core.Helpers
                 // UI can still display them without duplicates, and flag this as
                 // auto-populated for diagnostics.
                 citations.ReferencedIndices = sources
-                    .GroupBy(s => s.DocumentId)
+                    .GroupBy(GetSourceGroupKey)
                     .Select(g => g.OrderByDescending(s => s.Score).First().Index)
                     .OrderBy(i => i)
                     .ToList();
@@ -96,6 +96,16 @@ namespace AssistantHub.Core.Helpers
             }
 
             return citations;
+        }
+
+        private static string GetSourceGroupKey(CitationSource source)
+        {
+            if (source == null) return "";
+            if (!string.IsNullOrWhiteSpace(source.DocumentId))
+                return "document:" + source.DocumentId;
+            if (!string.IsNullOrWhiteSpace(source.Url))
+                return "url:" + source.Url;
+            return "source:" + source.Index;
         }
 
         /// <summary>

@@ -24,6 +24,10 @@ namespace AssistantHub.Server.Handlers
     public class EmbeddingEndpointHandler : HandlerBase
     {
         private static readonly string _Header = "[EmbeddingEndpointHandler] ";
+        private static readonly JsonSerializerOptions _PartioJsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
         private readonly IEmbeddingEndpointService _EmbeddingEndpoints;
 
         /// <summary>
@@ -383,7 +387,7 @@ namespace AssistantHub.Server.Handlers
             if (String.IsNullOrEmpty(body))
                 return JsonSerializer.Serialize(new PartioEndpointRequest { TenantId = "default" });
 
-            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body);
+            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body, _PartioJsonOptions);
             if (request == null)
                 request = new PartioEndpointRequest();
 
@@ -400,7 +404,7 @@ namespace AssistantHub.Server.Handlers
         private string ConvertPartioEnvelopeToEnumerationResult(string partioJson)
         {
             PartioEnumerationEnvelope<PartioEndpointConfig> envelope =
-                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(partioJson);
+                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(partioJson, _PartioJsonOptions);
 
             EnumerationResult<PartioEndpointConfig> result = new EnumerationResult<PartioEndpointConfig>
             {

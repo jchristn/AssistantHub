@@ -49,5 +49,11 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("metadata_filter")]
         public ChatMetadataFilter MetadataFilter { get; set; } = null;
+
+        /// <summary>
+        /// Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
+        /// </summary>
+        [JsonPropertyName("attached_document_ids")]
+        public List<string> AttachedDocumentIds { get; set; } = null;
     }
 }

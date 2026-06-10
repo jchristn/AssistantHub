@@ -74,6 +74,53 @@ Run the NUnit adapter project:
 dotnet test src/Test.Nunit/Test.Nunit.csproj --no-build --verbosity normal
 ```
 
+## Attached Documents and Tool Policy
+
+The local model, service, and API suites cover the non-external parts of attached-document chat and the initial tool-call policy surface:
+
+- `model`: `attached_document_ids` request serialization, retrieval attachment metadata serialization, tool-result DTO serialization, and Tavily-compatible settings defaults
+- `service`: attached-document validation, RecallDB request body document filters, hybrid fallback filter preservation, multi-query filter invariants, tool registry resolution, tool executor errors, output limits, collection search, collection document enumeration, Verbex search, Tavily request shaping with mocked HTTP, and non-streaming tool-call chat orchestration with mocked endpoint/model/tool services
+- `api`: OpenAPI route/schema coverage, REST/Postman route parity, attached-document Postman examples, and safe public document selection schema checks
+
+Focused local runs:
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "model"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "service"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "api"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+```powershell
+$env:ASSISTANTHUB_TEST_SUITES = "integration"
+dotnet run --project src/Test.Automated/Test.Automated.csproj
+```
+
+SDK local contract runs do not require a live AssistantHub server:
+
+```powershell
+dotnet run --project sdk/csharp/Test.Sdk/Test.Sdk.csproj -- local-only=true
+node sdk/js/test_sdk.mjs --local-only
+python sdk/python/test_sdk.py --local-only
+```
+
+Frontend build validation:
+
+```powershell
+Set-Location dashboard
+npm.cmd run build
+```
+
+External validation is still required for browser layout checks, live Docker ingestion with two known documents, Swagger rendering at `http://localhost:8800/swagger`, real Tavily credentials, and any real S3 object-read or bucket-enumeration workflow.
+
 ## MCP-Focused Validation
 
 The MCP suite exercises:

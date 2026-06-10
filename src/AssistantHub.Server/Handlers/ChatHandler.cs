@@ -108,9 +108,30 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                List<string> attachedDocumentIds = NormalizeDocumentIds(chatReq.AttachedDocumentIds);
+
+                if (settings.Streaming && ShouldUseToolAwareStreaming(assistant, settings))
+                {
+                    await HandleToolAwareStreamingChatAsync(
+                        ctx,
+                        assistant,
+                        settings,
+                        chatReq,
+                        attachedDocumentIds,
+                        telemetryContext).ConfigureAwait(false);
+                    return;
+                }
+
                 if (!settings.Streaming)
                 {
-                    AssistantChatService chatService = new AssistantChatService(Database, Logging, Settings, Retrieval, Inference);
+                    AssistantChatService chatService = new AssistantChatService(
+                        Database,
+                        Logging,
+                        Settings,
+                        Retrieval,
+                        Inference,
+                        Storage,
+                        inferenceEndpoints: InferenceEndpoints);
                     AssistantChatExecutionResult result = await chatService.ExecuteNonStreamingAsync(
                         new AssistantChatExecutionRequest
                         {
@@ -127,12 +148,13 @@ namespace AssistantHub.Server.Handlers
                             TopP = chatReq.TopP,
                             MaxTokens = chatReq.MaxTokens,
                             MetadataFilter = chatReq.MetadataFilter,
+                            AttachedDocumentIds = attachedDocumentIds,
                             Origin = "web"
                         }).ConfigureAwait(false);
 
                     if (!result.Success)
                     {
-                        ctx.Response.StatusCode = 502;
+                        ctx.Response.StatusCode = result.StatusCode > 0 ? result.StatusCode : 502;
                         ctx.Response.ContentType = "application/json";
                         await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
                             Enums.ApiErrorEnum.InternalError, null,
@@ -147,6 +169,25 @@ namespace AssistantHub.Server.Handlers
                     await ctx.Response.Send(Serializer.SerializeJson(result.Response)).ConfigureAwait(false);
                     return;
                 }
+
+                List<AssistantDocumentSelectionItem> attachedDocuments = null;
+                AssistantDocumentAttachmentResolver attachmentResolver = new AssistantDocumentAttachmentResolver(Database);
+                AssistantDocumentAttachmentResolution attachmentResolution = await attachmentResolver.ResolveAsync(
+                    assistant, settings, attachedDocumentIds).ConfigureAwait(false);
+                if (!attachmentResolution.Success)
+                {
+                    ctx.Response.StatusCode = attachmentResolution.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                        Enums.ApiErrorEnum.BadRequest, null,
+                        attachmentResolution.ErrorMessage))).ConfigureAwait(false);
+                    return;
+                }
+
+                attachedDocumentIds = attachmentResolution.DocumentIds.Count > 0 ? attachmentResolution.DocumentIds : null;
+                attachedDocuments = attachmentResolution.Documents.Count > 0 ? attachmentResolution.Documents : null;
+                if (attachedDocumentIds != null && attachedDocumentIds.Count > 0)
+                    Logging.Info(_Header + "attached document filter active: count=" + attachedDocumentIds.Count);
 
                 // Build effective metadata filter by merging assistant defaults + request-level filter
                 ChatMetadataFilter effectiveMetadataFilter = null;
@@ -245,24 +286,11 @@ namespace AssistantHub.Server.Handlers
                         // Build recent context for the gate prompt (last 6 messages, truncated)
                         // Truncate each message to keep the gate prompt small — the gate only needs
                         // to understand what topics were discussed, not read full document content.
-                        const int maxCharsPerMessage = 200;
-                        int recentCount = Math.Min(chatReq.Messages.Count, 6);
-                        int startIndex = chatReq.Messages.Count - recentCount;
-                        StringBuilder recentMessages = new StringBuilder();
-                        for (int i = startIndex; i < chatReq.Messages.Count; i++)
-                        {
-                            if (chatReq.Messages[i] == chatReq.Messages.Last() &&
-                                String.Equals(chatReq.Messages[i].Role, "user", StringComparison.OrdinalIgnoreCase))
-                                continue; // Exclude the latest user message (it goes separately)
-                            string content = chatReq.Messages[i].Content ?? "";
-                            if (content.Length > maxCharsPerMessage)
-                                content = content.Substring(0, maxCharsPerMessage) + "...";
-                            recentMessages.AppendLine(chatReq.Messages[i].Role + ": " + content);
-                        }
-
-                        string gatePrompt = _RetrievalGatePrompt
-                            .Replace("{recentMessages}", recentMessages.ToString())
-                            .Replace("{lastUserMessage}", lastUserMessage);
+                        string gatePrompt = AssistantAttachmentPromptBuilder.BuildRetrievalGatePrompt(
+                            _RetrievalGatePrompt,
+                            chatReq.Messages,
+                            lastUserMessage,
+                            attachedDocuments);
 
                         string gateEndpointId = ResolveUtilityInferenceEndpointId(settings.RetrievalGateInferenceEndpointId, settings.InferenceEndpointId);
                         ResolvedEndpoint gateEndpoint = await ResolveCompletionEndpointOrFallbackAsync(gateEndpointId).ConfigureAwait(false);
@@ -320,6 +348,16 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                if (attachedDocumentIds != null
+                    && attachedDocumentIds.Count > 0
+                    && AssistantAttachmentPromptBuilder.MessageReferencesAttachedDocuments(lastUserMessage)
+                    && !shouldRetrieve)
+                {
+                    retrievalGateDecision = "RETRIEVE";
+                    shouldRetrieve = true;
+                    Logging.Info(_Header + "retrieval gate overridden to RETRIEVE because the latest message references attached documents");
+                }
+
                 // Query rewrite: generate alternate phrasings for improved retrieval recall
                 string queryRewriteResult = null;
                 double queryRewriteDurationMs = 0;
@@ -338,6 +376,7 @@ namespace AssistantHub.Server.Handlers
                         : _DefaultQueryRewritePrompt;
 
                     string rewritePrompt = rewritePromptTemplate.Replace("{prompt}", lastUserMessage);
+                    rewritePrompt = AssistantAttachmentPromptBuilder.AddQueryRewriteContext(rewritePrompt, attachedDocuments);
 
                     List<ChatCompletionMessage> rewriteMessages = new List<ChatCompletionMessage>
                     {
@@ -402,15 +441,13 @@ namespace AssistantHub.Server.Handlers
                         FullTextNormalization = settings.FullTextNormalization,
                         FullTextMinimumScore = settings.FullTextMinimumScore,
                         IncludeNeighbors = settings.RetrievalIncludeNeighbors,
-                        MetadataFilter = effectiveMetadataFilter
+                        MetadataFilter = effectiveMetadataFilter,
+                        DocumentIds = attachedDocumentIds
                     };
 
                     if (retrievalQueries.Count > 1)
                     {
-                        // Reciprocal Rank Fusion: fuse rankings from multiple query result lists
-                        const double rrfK = 60.0;
-                        Dictionary<string, double> rrfScores = new Dictionary<string, double>();
-                        Dictionary<string, RetrievalChunk> chunkMap = new Dictionary<string, RetrievalChunk>();
+                        List<IReadOnlyList<RetrievalChunk>> rankedResults = new List<IReadOnlyList<RetrievalChunk>>();
 
                         foreach (string query in retrievalQueries)
                         {
@@ -424,40 +461,12 @@ namespace AssistantHub.Server.Handlers
                                 settings.EmbeddingEndpointId,
                                 searchOptions).ConfigureAwait(false);
 
-                            if (retrieved != null)
-                            {
-                                for (int rank = 0; rank < retrieved.Count; rank++)
-                                {
-                                    string dedupeKey = (retrieved[rank].DocumentId ?? "") + ":" + retrieved[rank].Position;
-                                    double rrfContribution = 1.0 / (rrfK + rank + 1);
-
-                                    if (!rrfScores.ContainsKey(dedupeKey))
-                                    {
-                                        rrfScores[dedupeKey] = 0;
-                                        chunkMap[dedupeKey] = retrieved[rank];
-                                    }
-                                    else if (retrieved[rank].Score > chunkMap[dedupeKey].Score)
-                                    {
-                                        chunkMap[dedupeKey] = retrieved[rank];
-                                    }
-
-                                    rrfScores[dedupeKey] += rrfContribution;
-                                }
-                            }
+                            if (retrieved != null) rankedResults.Add(retrieved);
                         }
 
-                        // Assign FusionScore and sort by it
-                        foreach (KeyValuePair<string, RetrievalChunk> kvp in chunkMap)
-                        {
-                            kvp.Value.FusionScore = Math.Round(rrfScores[kvp.Key], 6);
-                        }
+                        retrievalChunks = RetrievalFusionHelper.FuseByReciprocalRank(rankedResults, settings.RetrievalTopK);
 
-                        retrievalChunks = chunkMap.Values
-                            .OrderByDescending(c => c.FusionScore)
-                            .Take(settings.RetrievalTopK)
-                            .ToList();
-
-                        Logging.Info(_Header + "RRF fusion: " + rrfScores.Count + " unique chunks from " + retrievalQueries.Count + " queries, kept top " + retrievalChunks.Count);
+                        Logging.Info(_Header + "RRF fusion: " + retrievalChunks.Count + " fused chunks from " + retrievalQueries.Count + " queries, kept top " + retrievalChunks.Count);
                     }
                     else
                     {
@@ -497,6 +506,10 @@ namespace AssistantHub.Server.Handlers
                     }
 
                     retrievalSw.Stop();
+                    int preFilterChunkCount = retrievalChunks.Count;
+                    retrievalChunks = AssistantAttachmentPromptBuilder.FilterChunksByAttachedDocuments(retrievalChunks, attachedDocumentIds);
+                    if (retrievalChunks.Count != preFilterChunkCount)
+                        Logging.Warn(_Header + "retrieval returned chunks outside attached document scope; filtered " + (preFilterChunkCount - retrievalChunks.Count) + " chunk(s)");
                     retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
                 }
 
@@ -789,7 +802,7 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         inferenceEndpointId, inferenceMaxConcurrentRequests,
                         assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
-                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, attachedDocumentIds, attachedDocuments, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
                         queryRewriteResult, queryRewriteDurationMs,
@@ -808,7 +821,7 @@ namespace AssistantHub.Server.Handlers
                         settings, inferenceProvider, inferenceEndpoint, inferenceApiKey,
                         inferenceEndpointId, inferenceMaxConcurrentRequests,
                         assistant.TenantId, threadId, assistantId, settings.CollectionId, userMessageUtc, lastUserMessage,
-                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, promptSentUtc, inferenceSw,
+                        retrievalStartUtc, retrievalDurationMs, retrievalContextText, retrievalChunks, attachedDocumentIds, attachedDocuments, promptSentUtc, inferenceSw,
                         promptTokenEstimate, endpointResolutionMs, compactionMs,
                         retrievalGateDecision, retrievalGateDurationMs, citationSources,
                         queryRewriteResult, queryRewriteDurationMs,
@@ -829,6 +842,173 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
+        }
+
+        private bool ShouldUseToolAwareStreaming(Assistant assistant, AssistantSettings settings)
+        {
+            if (assistant == null || settings == null) return false;
+
+            AssistantToolPolicy policy = settings.ToolPolicy ?? new AssistantToolPolicy();
+            policy.Normalize();
+            settings.ToolPolicy = policy;
+
+            if (!policy.EnableToolCalls
+                || String.Equals(policy.ToolChoiceMode, "None", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            List<AssistantToolDefinition> definitions = new AssistantToolRegistry(Settings).BuildDefinitions(assistant, settings);
+            return definitions.Any(definition =>
+                definition?.Function != null
+                && !String.IsNullOrWhiteSpace(definition.Function.Name));
+        }
+
+        private async Task HandleToolAwareStreamingChatAsync(
+            HttpContextBase ctx,
+            Assistant assistant,
+            AssistantSettings settings,
+            ChatCompletionRequest chatReq,
+            List<string> attachedDocumentIds,
+            TelemetryContext telemetryContext)
+        {
+            string completionId = IdGenerator.NewChatCompletionId();
+            long created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            string model = !String.IsNullOrWhiteSpace(chatReq.Model)
+                ? chatReq.Model
+                : Settings.Inference.DefaultModel;
+
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ServerSentEvents = true;
+
+            ChatCompletionResponse initialChunk = new ChatCompletionResponse
+            {
+                Id = completionId,
+                Object = "chat.completion.chunk",
+                Created = created,
+                Model = model,
+                Choices = new List<ChatCompletionChoice>
+                {
+                    new ChatCompletionChoice
+                    {
+                        Index = 0,
+                        Delta = new ChatCompletionMessage { Role = "assistant" }
+                    }
+                }
+            };
+            await WriteSseEvent(ctx, initialChunk).ConfigureAwait(false);
+
+            AssistantChatService chatService = new AssistantChatService(
+                Database,
+                Logging,
+                Settings,
+                Retrieval,
+                Inference,
+                Storage,
+                inferenceEndpoints: InferenceEndpoints);
+
+            AssistantChatExecutionResult result = await chatService.ExecuteNonStreamingAsync(
+                new AssistantChatExecutionRequest
+                {
+                    AssistantId = assistant.Id,
+                    Assistant = assistant,
+                    AssistantSettings = settings,
+                    Messages = chatReq.Messages,
+                    ThreadId = ctx.Request.Headers[Constants.ThreadIdHeader],
+                    TraceId = telemetryContext.TraceId,
+                    RequestHistoryId = telemetryContext.RequestHistoryId,
+                    ChatHistoryPersisted = chatHistoryId => SetChatHistoryId(ctx, chatHistoryId),
+                    Model = chatReq.Model,
+                    Temperature = chatReq.Temperature,
+                    TopP = chatReq.TopP,
+                    MaxTokens = chatReq.MaxTokens,
+                    MetadataFilter = chatReq.MetadataFilter,
+                    AttachedDocumentIds = attachedDocumentIds,
+                    Origin = "web",
+                    ToolProgress = async evt =>
+                    {
+                        if (evt == null) return;
+                        await WriteSseNamedEvent(ctx, evt.EventType, evt).ConfigureAwait(false);
+                    }
+                }).ConfigureAwait(false);
+
+            if (!result.Success)
+            {
+                ChatCompletionResponse errorChunk = new ChatCompletionResponse
+                {
+                    Id = completionId,
+                    Object = "chat.completion.chunk",
+                    Created = created,
+                    Model = model,
+                    Choices = new List<ChatCompletionChoice>
+                    {
+                        new ChatCompletionChoice
+                        {
+                            Index = 0,
+                            Delta = new ChatCompletionMessage
+                            {
+                                Content = "AssistantHub could not generate a response: " + (result.ErrorMessage ?? "Inference failed.")
+                            },
+                            FinishReason = "stop"
+                        }
+                    },
+                    Status = "Error"
+                };
+                await WriteSseEvent(ctx, errorChunk).ConfigureAwait(false);
+                await ctx.Response.SendEvent(new ServerSentEvent { Data = "[DONE]" }, true).ConfigureAwait(false);
+                return;
+            }
+
+            ChatCompletionResponse response = result.Response;
+            string content = result.CanonicalResponseText
+                ?? response?.Choices?.FirstOrDefault()?.Message?.Content
+                ?? "";
+
+            if (!String.IsNullOrEmpty(result.ChatHistoryId))
+                SetChatHistoryId(ctx, result.ChatHistoryId);
+
+            if (!String.IsNullOrEmpty(content))
+            {
+                ChatCompletionResponse deltaChunk = new ChatCompletionResponse
+                {
+                    Id = completionId,
+                    Object = "chat.completion.chunk",
+                    Created = created,
+                    Model = response?.Model ?? model,
+                    Choices = new List<ChatCompletionChoice>
+                    {
+                        new ChatCompletionChoice
+                        {
+                            Index = 0,
+                            Delta = new ChatCompletionMessage { Content = content }
+                        }
+                    }
+                };
+                await WriteSseEvent(ctx, deltaChunk).ConfigureAwait(false);
+            }
+
+            ChatCompletionResponse finishChunk = new ChatCompletionResponse
+            {
+                Id = completionId,
+                Object = "chat.completion.chunk",
+                Created = created,
+                Model = response?.Model ?? model,
+                Choices = new List<ChatCompletionChoice>
+                {
+                    new ChatCompletionChoice
+                    {
+                        Index = 0,
+                        Delta = new ChatCompletionMessage(),
+                        FinishReason = "stop"
+                    }
+                },
+                Usage = response?.Usage,
+                Retrieval = response?.Retrieval,
+                Citations = response?.Citations,
+                ToolCalls = response?.ToolCalls
+            };
+            await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
+            await ctx.Response.SendEvent(new ServerSentEvent { Data = "[DONE]" }, true).ConfigureAwait(false);
         }
 
     }

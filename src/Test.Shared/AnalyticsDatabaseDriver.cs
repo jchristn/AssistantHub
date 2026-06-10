@@ -141,6 +141,7 @@ namespace Test.Automated
             AddEventRow(table, "evt_1", "chist_1", "req_1", "trace_1", "retrieval", "retrieval", "", "", "", "", "", 100, true, null, null, null, null, null, 2, _StartUtc.AddMinutes(1));
             AddEventRow(table, "evt_2", "chist_1", "req_1", "trace_1", "final_inference", "inference", "cep_final", "local", "completion", "Ollama", "gemma3:4b", 900, true, 10, 100, 50, 700, 20, null, _StartUtc.AddMinutes(1).AddSeconds(10));
             AddEventRow(table, "evt_3", "chist_2", "req_2", "trace_2", "retrieval", "retrieval", "", "", "", "", "", 200, true, null, null, null, null, null, 3, _StartUtc.AddMinutes(6));
+            AddEventRow(table, "evt_tools_2", "chist_2", "req_2", "trace_2", "tools", "tool", "", "", "", "", "", 550, false, null, null, null, null, null, null, _StartUtc.AddMinutes(6).AddSeconds(2), BuildToolMetadataJson());
             AddEventRow(table, "evt_4", "chist_2", "req_2", "trace_2", "final_inference", "inference", "cep_final", "local", "completion", "Ollama", "gemma3:4b", 1700, false, 20, 200, 150, 1200, 30, null, _StartUtc.AddMinutes(6).AddSeconds(10));
             return table;
         }
@@ -188,7 +189,8 @@ namespace Test.Automated
             double? providerGenerationMs,
             double? tokensPerSecond,
             int? retrievalQueryCount,
-            DateTime createdUtc)
+            DateTime createdUtc,
+            string metadataJson = "")
         {
             AddRow(
                 table,
@@ -233,10 +235,28 @@ namespace Test.Automated
                 durationMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 tokensPerSecond?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                 "",
-                "",
+                metadataJson ?? "",
                 "",
                 "",
                 createdUtc.ToString("o"));
+        }
+
+        private static string BuildToolMetadataJson()
+        {
+            return "{" +
+                "\"phase\":\"assistant_tools\"," +
+                "\"tool_call_count\":2," +
+                "\"tool_call_success_count\":1," +
+                "\"tool_call_error_count\":1," +
+                "\"tool_call_denied_count\":0," +
+                "\"tool_call_truncated_count\":1," +
+                "\"tool_call_duration_ms\":550," +
+                "\"tool_names\":[\"collection_search\",\"web_search\"]," +
+                "\"per_tool\":{" +
+                "\"collection_search\":{\"count\":1,\"success_count\":1,\"error_count\":0,\"denied_count\":0,\"duration_ms\":150}," +
+                "\"web_search\":{\"count\":1,\"success_count\":0,\"error_count\":1,\"denied_count\":0,\"truncated_count\":1,\"duration_ms\":400}" +
+                "}" +
+                "}";
         }
     }
 }

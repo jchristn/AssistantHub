@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../Modal';
 import CopyableId from '../CopyableId';
 import Tooltip from '../Tooltip';
+import AssistantAttachedDocumentsSection from './AssistantAttachedDocumentsSection';
+import AssistantToolCallTraceSection from './AssistantToolCallTraceSection';
 import { ApiClient } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -443,6 +445,8 @@ function HistoryViewModal({ history, onClose }) {
         );
       })()}
 
+      <AssistantAttachedDocumentsSection history={history} />
+
       {/* === Performance Timing === */}
       <div className="history-section">
         <div className="history-section-header">
@@ -542,6 +546,12 @@ function HistoryViewModal({ history, onClose }) {
           <StageTable stages={displayStages} />
         </div>
       </div>
+
+      <AssistantToolCallTraceSection
+        assistantId={history.AssistantId}
+        chatHistoryId={history.Id}
+        traceId={history.TraceId}
+      />
 
       {/* === Messages === */}
       <div className="history-section">

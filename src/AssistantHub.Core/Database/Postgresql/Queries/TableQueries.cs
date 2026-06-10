@@ -80,6 +80,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  rerank_prompt TEXT, " +
             "  enable_citations INTEGER NOT NULL DEFAULT 0, " +
             "  citation_link_mode TEXT DEFAULT 'None', " +
+            "  enable_document_attachments BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  document_attachment_max_count INTEGER NOT NULL DEFAULT 10, " +
+            "  expose_document_source_urls BOOLEAN NOT NULL DEFAULT FALSE, " +
             "  collection_id TEXT, " +
             "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
             "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.3, " +
@@ -107,6 +110,7 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  slack_bot_token TEXT, " +
             "  slack_channel_id TEXT, " +
             "  slack_message_prefix TEXT, " +
+            "  tool_policy_json TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -122,6 +126,18 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsToolPolicyJsonColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS tool_policy_json TEXT";
+
+        internal static string AddAssistantSettingsEnableDocumentAttachmentsColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS enable_document_attachments BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsDocumentAttachmentMaxCountColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS document_attachment_max_count INTEGER NOT NULL DEFAULT 10";
+
+        internal static string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS expose_document_source_urls BOOLEAN NOT NULL DEFAULT FALSE";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +
@@ -283,6 +299,8 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  tokens_per_second_overall DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  tokens_per_second_generation DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  metadata_filter TEXT, " +
+            "  attached_document_ids_json TEXT, " +
+            "  attached_documents_json TEXT, " +
             "  origin TEXT, " +
             "  assistant_response TEXT, " +
             "  created_utc TEXT NOT NULL, " +
@@ -300,6 +318,12 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddChatHistoryPerformanceJsonColumn =
             "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS performance_json TEXT";
+
+        internal static string AddChatHistoryAttachedDocumentIdsJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS attached_document_ids_json TEXT";
+
+        internal static string AddChatHistoryAttachedDocumentsJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS attached_documents_json TEXT";
 
         internal static string CreateRequestHistoryTable =
             "CREATE TABLE IF NOT EXISTS request_history (" +
@@ -403,6 +427,69 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "SET assistant_id = h.assistant_id " +
             "FROM chat_history h " +
             "WHERE e.assistant_id IS NULL AND h.id = e.chat_history_id";
+
+        internal static string CreateAssistantToolCallsTable =
+            "CREATE TABLE IF NOT EXISTS assistant_tool_calls (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  assistant_id TEXT NOT NULL, " +
+            "  chat_history_id TEXT, " +
+            "  request_history_id TEXT, " +
+            "  trace_id TEXT, " +
+            "  thread_id TEXT, " +
+            "  origin TEXT, " +
+            "  turn_index INTEGER NOT NULL DEFAULT 0, " +
+            "  iteration INTEGER NOT NULL DEFAULT 0, " +
+            "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+            "  provider_tool_call_id TEXT, " +
+            "  tool_name TEXT NOT NULL, " +
+            "  arguments_json TEXT, " +
+            "  output_json TEXT, " +
+            "  result_summary_json TEXT, " +
+            "  success INTEGER NOT NULL DEFAULT 0, " +
+            "  denied INTEGER NOT NULL DEFAULT 0, " +
+            "  truncated INTEGER NOT NULL DEFAULT 0, " +
+            "  output_characters INTEGER NOT NULL DEFAULT 0, " +
+            "  input_bytes INTEGER NOT NULL DEFAULT 0, " +
+            "  output_bytes INTEGER NOT NULL DEFAULT 0, " +
+            "  duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  error_type TEXT, " +
+            "  error_message TEXT, " +
+            "  provider TEXT, " +
+            "  model TEXT, " +
+            "  active INTEGER NOT NULL DEFAULT 1, " +
+            "  started_utc TEXT NOT NULL, " +
+            "  finished_utc TEXT NOT NULL, " +
+            "  created_utc TEXT NOT NULL, " +
+            "  last_update_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string AddAssistantToolCallsTurnIndexColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS turn_index INTEGER NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsResultSummaryJsonColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS result_summary_json TEXT";
+
+        internal static string AddAssistantToolCallsInputBytesColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS input_bytes INTEGER NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsOutputBytesColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS output_bytes INTEGER NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsErrorTypeColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS error_type TEXT";
+
+        internal static string AddAssistantToolCallsProviderColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS provider TEXT";
+
+        internal static string AddAssistantToolCallsModelColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS model TEXT";
+
+        internal static string AddAssistantToolCallsActiveColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS active INTEGER NOT NULL DEFAULT 1";
+
+        internal static string AddAssistantToolCallsLastUpdateUtcColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS last_update_utc TEXT NOT NULL DEFAULT ''";
 
         #endregion
 
@@ -563,6 +650,39 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
             "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events (tenant_id, assistant_id, endpoint_id, created_utc)";
+
+        internal static string CreateAssistantToolCallsTenantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_tenant_id ON assistant_tool_calls (tenant_id)";
+
+        internal static string CreateAssistantToolCallsAssistantIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_assistant_id ON assistant_tool_calls (assistant_id)";
+
+        internal static string CreateAssistantToolCallsThreadIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_thread_id ON assistant_tool_calls (thread_id)";
+
+        internal static string CreateAssistantToolCallsChatHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_chat_history_id ON assistant_tool_calls (chat_history_id)";
+
+        internal static string CreateAssistantToolCallsRequestHistoryIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_request_history_id ON assistant_tool_calls (request_history_id)";
+
+        internal static string CreateAssistantToolCallsTraceIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_trace_id ON assistant_tool_calls (trace_id)";
+
+        internal static string CreateAssistantToolCallsToolNameIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_tool_name ON assistant_tool_calls (tool_name)";
+
+        internal static string CreateAssistantToolCallsSuccessIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_success ON assistant_tool_calls (success)";
+
+        internal static string CreateAssistantToolCallsCreatedUtcIndex =
+            "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_created_utc ON assistant_tool_calls (created_utc)";
+
+        internal static string CreateAssistantToolCallsTenantAssistantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_atc_tenant_assistant_created ON assistant_tool_calls (tenant_id, assistant_id, created_utc)";
+
+        internal static string CreateAssistantToolCallsTenantAssistantToolCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_atc_tenant_assistant_tool_created ON assistant_tool_calls (tenant_id, assistant_id, tool_name, created_utc)";
 
         internal static string CreateCrawlPlansTenantIdIndex =
             "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans (tenant_id)";

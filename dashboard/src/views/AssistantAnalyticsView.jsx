@@ -520,6 +520,28 @@ function EndpointTable({ result }) {
   );
 }
 
+function formatToolIssueSummary(row) {
+  const failures = row.ToolFailureCount || 0;
+  const denials = row.ToolDeniedCount || 0;
+  const truncated = row.ToolTruncatedCount || 0;
+  const parts = [];
+  if (failures) parts.push(`${formatNumber(failures)} failed`);
+  if (denials) parts.push(`${formatNumber(denials)} denied`);
+  if (truncated) parts.push(`${formatNumber(truncated)} truncated`);
+  return parts.length ? parts.join(', ') : formatDuration(row.ToolDurationMs);
+}
+
+function formatToolSummaryTitle(row) {
+  if (!row?.ToolCallCount) return 'No tool calls recorded for this request.';
+  const failingTools = Array.isArray(row.FailingToolNames) && row.FailingToolNames.length
+    ? ` Failing tools: ${row.FailingToolNames.join(', ')}.`
+    : '';
+  const slowest = row.SlowestToolName
+    ? ` Slowest: ${row.SlowestToolName} ${formatDuration(row.SlowestToolDurationMs)}.`
+    : '';
+  return `${formatNumber(row.ToolCallCount)} tool calls. ${formatToolIssueSummary(row)}.${slowest}${failingTools}`.trim();
+}
+
 function SlowestRequestsTable({ result, onOpenHistory, onOpenRequestHistory, canOpenRequestHistory }) {
   const rows = result?.Requests || [];
   if (!rows.length) return <div className="analytics-state">No slow request rows in this range.</div>;
@@ -533,6 +555,7 @@ function SlowestRequestsTable({ result, onOpenHistory, onOpenRequestHistory, can
             <th>Total</th>
             <th>Status</th>
             <th>Dominant stage</th>
+            <th>Tools</th>
             <th>Endpoint/model</th>
             <th>Request</th>
             <th></th>
@@ -547,6 +570,17 @@ function SlowestRequestsTable({ result, onOpenHistory, onOpenRequestHistory, can
               <td>
                 <strong>{row.DominantStage || '-'}</strong>
                 <span>{formatDuration(row.DominantStageDurationMs)}</span>
+              </td>
+              <td title={formatToolSummaryTitle(row)}>
+                {row.ToolCallCount ? (
+                  <>
+                    <strong>{formatNumber(row.ToolCallCount)} {row.ToolCallCount === 1 ? 'call' : 'calls'}</strong>
+                    <span>{formatToolIssueSummary(row)}</span>
+                    {row.SlowestToolName && <span>{row.SlowestToolName} {formatDuration(row.SlowestToolDurationMs)}</span>}
+                  </>
+                ) : (
+                  <span>-</span>
+                )}
               </td>
               <td title={`${row.EndpointName || row.EndpointId || ''} ${row.Model || ''}`.trim()}>
                 <strong>{row.EndpointName || row.EndpointId || row.Provider || '-'}</strong>

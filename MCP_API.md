@@ -157,6 +157,8 @@ Streaming status:
 
 - Eval SSE is not exposed through MCP in this release.
 - Public assistant chat/generate/compact/feedback/download flows are not exposed through MCP in this release.
+- Assistant public document listing is exposed as `assistant/documents/list` and mirrors `GET /v1.0/assistants/{assistantId}/documents`. Sending attached-document chat requests remains REST-only in this release; send `attached_document_ids` to `POST /v1.0/assistants/{assistantId}/chat`.
+- Model-directed runtime tools such as collection search, Verbex search, S3 object reads, and Tavily web search are not exposed as MCP tools for public chat users. Configure assistant tool policy through the REST API, SDKs, or dashboard. Admins can inspect redacted global Tavily readiness through `GET /v1.0/configuration/external-search/status` or the SDK status helpers. When enabled, REST assistant chat executes those tools server-side against explicit OpenAI-compatible or Ollama tool-capable completion endpoints; streaming REST chat can emit safe tool-progress SSE events, including heartbeat events for long-running tool calls, while MCP remains management-only for this release.
 - Use the REST API directly for these streaming or interaction-heavy routes.
 
 ## Tool Families
@@ -169,7 +171,7 @@ Streaming status:
 | Storage | `bucket/*`, `bucket/object/*` |
 | Collections | `collection/*`, `collection/record/*`, `collection/search` |
 | Indices | `index/*`, `index/record/*`, `index/search` |
-| Assistants | `assistant/*`, `assistant/settings/*` |
+| Assistants | `assistant/*`, `assistant/settings/*`, `assistant/tool-calls/*` |
 | Documents / Ingestion | `document/*`, `ingestionrule/*` |
 | Monitoring | `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*` |
 | Endpoint management | `embeddingendpoint/*`, `completionendpoint/*`, `model/*` |
@@ -245,9 +247,10 @@ Example NFS `planJson` payload:
 | `index records` list/get/create/batch-create/delete/batch-delete/HEAD/metadata | `index/record/list`, `index/record/get`, `index/record/create`, `index/record/create-batch`, `index/record/delete`, `index/record/batch-delete`, `index/record/exists`, `index/record/exists-batch`, `index/record/labels/update`, `index/record/tags/update`, `index/record/custom-metadata/update` | Mapped | AssistantHub uses `records`; Verbex upstream uses `documents` |
 | `index search` | `index/search` | Mapped | Marshals Verbex search requests through AssistantHub |
 | `assistants` CRUD + HEAD | `assistant/list`, `assistant/get`, `assistant/create`, `assistant/update`, `assistant/delete`, `assistant/exists` | Mapped | |
-| `assistant settings` get/update/slack verify | `assistant/settings/get`, `assistant/settings/update`, `assistant/settings/slack/verify` | Mapped | `includeSecrets` opt-in |
+| `assistant settings` get/update/slack verify + tool policy helpers | `assistant/settings/get`, `assistant/settings/update`, `assistant/settings/slack/verify`, `assistant/settings/tools/list`, `assistant/settings/tools/validate`, `assistant/settings/tools/test` | Mapped | `includeSecrets` opt-in; tool validation and dry-run diagnostics return redacted policy results and stable `ErrorCodes` by default |
 | `assistant analytics` overview/timeseries/stages/endpoints/slowest/feedback | `assistantanalytics/overview`, `assistantanalytics/timeseries`, `assistantanalytics/stages`, `assistantanalytics/endpoints`, `assistantanalytics/slowest`, `assistantanalytics/feedback` | Mapped | Uses `assistantId` plus optional `AssistantAnalyticsQuery` JSON |
-| `assistant public info + labels/tags` | `assistant/public/get`, `assistant/labels/distinct`, `assistant/tags/distinct` | Mapped | Public metadata only |
+| `assistant tool-call traces` list/get/delete/bulk delete | `assistant/tool-calls/list`, `assistant/tool-calls/get`, `assistant/tool-calls/delete`, `assistant/tool-calls/delete-bulk` | Mapped | Redacted trace records only; supports `EnumerationQuery` filters for trace, tool, success, denied, chat-history, request-history, and time fields |
+| `assistant public info + public documents + labels/tags` | `assistant/public/get`, `assistant/documents/list`, `assistant/labels/distinct`, `assistant/tags/distinct` | Mapped | Public metadata only; document list supports `queryJson`, text `query`, and `contentType` filters |
 | `documents` list/get/upload/delete/HEAD/log/download/bulk-delete/reindex | `document/list`, `document/get`, `document/upload`, `document/delete`, `document/exists`, `document/processing-log`, `document/download`, `document/bulk-delete`, `document/reindex`, `document/reindex-batch` | Mapped | Binary transfers use base64; reindex tools backfill Verbex |
 | `ingestion-rules` CRUD + HEAD | `ingestionrule/list`, `ingestionrule/get`, `ingestionrule/create`, `ingestionrule/update`, `ingestionrule/delete`, `ingestionrule/exists` | Mapped | |
 | `feedback` list/get/delete | `feedback/list`, `feedback/get`, `feedback/delete` | Mapped | |
@@ -267,7 +270,7 @@ Example NFS `planJson` payload:
 | `eval result` get + judge prompt | `eval/result/get`, `eval/judge-prompt/default` | Mapped | |
 | `eval stream` | None | Deferred | Use REST SSE endpoint |
 | `configuration` get/update | `configuration/get`, `configuration/update` | Mapped | `configuration/get` redacts by default |
-| Public assistant `chat/open`, `chat`, `generate`, `compact`, `feedback`, `documents/{id}/download` | None | Deferred | Use REST directly |
+| Public assistant `chat/open`, `chat`, `generate`, `compact`, `feedback`, `documents/{id}/download` | None | Deferred | Use REST directly; public document listing is mapped above |
 
 ## Example Tool Calls
 

@@ -90,6 +90,11 @@ namespace AssistantHub.Server.Services
         public ChatMetadataFilter MetadataFilter { get; set; } = null;
 
         /// <summary>
+        /// Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
+        /// </summary>
+        public List<string> AttachedDocumentIds { get; set; } = null;
+
+        /// <summary>
         /// Optional user message timestamp override.
         /// </summary>
         public DateTime? UserMessageUtc { get; set; } = null;
@@ -98,5 +103,10 @@ namespace AssistantHub.Server.Services
         /// Request origin label persisted to history.
         /// </summary>
         public string Origin { get; set; } = "api";
+
+        /// <summary>
+        /// Optional callback invoked with safe tool lifecycle progress events.
+        /// </summary>
+        public Func<AssistantToolProgressEvent, Task> ToolProgress { get; set; } = null;
     }
 }

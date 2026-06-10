@@ -63,6 +63,71 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
+                    Name = "assistant/settings/tools/list",
+                    Description = "Get effective server-side tool availability for an assistant.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            assistantId = new { type = "string", description = "Assistant identifier." }
+                        },
+                        required = new[] { "assistantId" }
+                    },
+                    Handler = args => AssistantHubMcpServerHelpers.Serialize(
+                        context,
+                        context.Sdk.GetAssistantToolsAsync(AssistantHubMcpServerHelpers.GetStringRequired(args, "assistantId")).GetAwaiter().GetResult())
+                },
+                new()
+                {
+                    Name = "assistant/settings/tools/validate",
+                    Description = "Validate a draft assistant tool policy without persisting it.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            assistantId = new { type = "string", description = "Assistant identifier." },
+                            requestJson = new { type = "string", description = "Optional AssistantToolPolicyValidationRequest serialized as JSON string." },
+                            includeSecrets = new { type = "boolean", description = "If true, include secret-bearing fields." }
+                        },
+                        required = new[] { "assistantId" }
+                    },
+                    Handler = args =>
+                    {
+                        string assistantId = AssistantHubMcpServerHelpers.GetStringRequired(args, "assistantId");
+                        AssistantToolPolicyValidationRequest request = AssistantHubMcpServerHelpers.DeserializeOptional<AssistantToolPolicyValidationRequest>(args, "requestJson")
+                            ?? new AssistantToolPolicyValidationRequest();
+                        bool includeSecrets = AssistantHubMcpServerHelpers.GetBoolOrDefault(args, "includeSecrets", false);
+                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.ValidateAssistantToolPolicyAsync(assistantId, request).GetAwaiter().GetResult(), includeSecrets);
+                    }
+                },
+                new()
+                {
+                    Name = "assistant/settings/tools/test",
+                    Description = "Run administrator dry-run diagnostics for an assistant tool policy without executing tools.",
+                    InputSchema = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            assistantId = new { type = "string", description = "Assistant identifier." },
+                            requestJson = new { type = "string", description = "Optional AssistantToolPolicyValidationRequest serialized as JSON string." },
+                            includeSecrets = new { type = "boolean", description = "If true, include secret-bearing fields." }
+                        },
+                        required = new[] { "assistantId" }
+                    },
+                    Handler = args =>
+                    {
+                        string assistantId = AssistantHubMcpServerHelpers.GetStringRequired(args, "assistantId");
+                        AssistantToolPolicyValidationRequest request = AssistantHubMcpServerHelpers.DeserializeOptional<AssistantToolPolicyValidationRequest>(args, "requestJson")
+                            ?? new AssistantToolPolicyValidationRequest();
+                        bool includeSecrets = AssistantHubMcpServerHelpers.GetBoolOrDefault(args, "includeSecrets", false);
+                        return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.TestAssistantToolPolicyAsync(assistantId, request).GetAwaiter().GetResult(), includeSecrets);
+                    }
+                },
+                new()
+                {
                     Name = "assistant/settings/slack/verify",
                     Description = "Verify Slack settings for an assistant without persisting them.",
                     InputSchema = new

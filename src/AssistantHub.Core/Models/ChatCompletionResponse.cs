@@ -59,10 +59,17 @@ namespace AssistantHub.Core.Models
 
         /// <summary>
         /// Citation metadata linking response claims to source documents.
-        /// Populated only when EnableCitations is true and RAG is active.
+        /// Populated when EnableCitations is true and RAG or tool-derived evidence contributes citation sources.
         /// </summary>
         [JsonPropertyName("citations")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ChatCompletionCitations Citations { get; set; } = null;
+
+        /// <summary>
+        /// Optional safe metadata for model-directed server-side tool calls.
+        /// </summary>
+        [JsonPropertyName("tool_calls")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<ChatCompletionToolTrace> ToolCalls { get; set; } = null;
     }
 }

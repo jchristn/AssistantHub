@@ -43,7 +43,7 @@ function Dashboard() {
   const [drawerAssistantId, setDrawerAssistantId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const api = new ApiClient(serverUrl, credential?.BearerToken);
-  const { records, dismissRecord } = useUploadQueue(api);
+  const { records, dismissRecord, clearFinishedRecords } = useUploadQueue(api);
 
   const isAdminOrTenantAdmin = isGlobalAdmin || isTenantAdmin;
 
@@ -111,7 +111,7 @@ function Dashboard() {
         </div>
       </div>
       <ChatDrawer assistantId={drawerAssistantId} isOpen={drawerOpen} onClose={closeChatDrawer} />
-      <UploadProgressPanel records={records} onDismiss={dismissRecord} />
+      <UploadProgressPanel records={records} onDismiss={dismissRecord} onClearFinished={clearFinishedRecords} />
       {showTour && <Tour onComplete={handleTourComplete} />}
       {showWizard && <SetupWizard onClose={() => setShowWizard(false)} />}
     </div>

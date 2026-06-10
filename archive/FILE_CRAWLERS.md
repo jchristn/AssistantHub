@@ -1,4 +1,4 @@
-# AssistantHub v0.15.0 File-Server Crawler Plan
+# AssistantHub v0.16.0 File-Server Crawler Plan
 
 AssistantHub already has a real crawler abstraction. `WebRepositoryCrawler` derives from `CrawlerBase`, and `CrawlerFactory.Create(...)` returns `CrawlerBase` for the selected repository type. The scheduler, connectivity endpoint, ad-hoc enumeration endpoint, delta calculation, retention, document creation, storage upload, and ingestion handoff already flow through that base layer.
 
@@ -224,7 +224,7 @@ The saved-plan connectivity and enumeration routes remain unchanged. A draft con
 ### Database and Migrations
 
 - [x] Confirm no table schema changes are required because `repository_type` is already a string column and settings are JSON.
-- [x] Confirm no migration is required for v0.15.0 because no crawl-plan table shape changes were needed.
+- [x] Confirm no migration is required for v0.16.0 because no crawl-plan table shape changes were needed.
 - [x] Confirm fresh table creation SQL defaults remain `Web`.
 - [x] Confirm all database drivers persist and read enum string values `CIFS` and `NFS`.
 
@@ -434,12 +434,12 @@ The Create Crawl Plan modal should only require changes in the General and Repos
 - [x] Update `MCP_API.md`.
 - [x] Update `TESTING.md` with file-server integration test instructions and current no-fixture status.
 - [x] Update SDK READMEs with CIFS and NFS examples.
-- [x] Keep this plan as the active implementation/progress checklist for v0.15.0.
+- [x] Keep this plan as the active implementation/progress checklist for v0.16.0.
 
 ## Docker and Factory Assets
 
-- [x] Bump active AssistantHub image tags in `docker/compose.yaml` to `v0.15.0`.
-- [x] Bump `docker/assistanthub-mcp/assistanthub-mcp.json` `SoftwareVersion` to `v0.15.0`.
+- [x] Bump active AssistantHub image tags in `docker/compose.yaml` to `v0.16.0`.
+- [x] Bump `docker/assistanthub-mcp/assistanthub-mcp.json` `SoftwareVersion` to `v0.16.0`.
 - [x] Confirm `docker/factory/` has no AssistantHub software-version field requiring a bump.
 - [x] Confirm Docker config still mounts `crawl-enumerations`.
 - [x] Document that CIFS/NFS crawlers connect over the network and do not require compose volume mounts for remote servers.
@@ -450,9 +450,9 @@ The Create Crawl Plan modal should only require changes in the General and Repos
 
 ## Version Work
 
-- [x] Update active product/package/runtime versions to `0.15.0`.
-- [x] Update active Docker image tags to `v0.15.0`.
-- [x] Update active REST/OpenAPI version examples to `0.15.0`.
+- [x] Update active product/package/runtime versions to `0.16.0`.
+- [x] Update active Docker image tags to `v0.16.0`.
+- [x] Update active REST/OpenAPI version examples to `0.16.0`.
 - [x] Leave historical migration, archive, and completed release-plan references intact unless they incorrectly describe the current release.
 - [x] Run a final version audit and document any remaining historical `0.14.0` references. Remaining active-tree hits are historical v0.14.0 release notes/backfill text, a completed search plan reference, and a React peer dependency constraint.
 
@@ -470,7 +470,7 @@ The Create Crawl Plan modal should only require changes in the General and Repos
 
 ## Acceptance Criteria
 
-The v0.15.0 file-server crawler work is complete when all of the following are true:
+The v0.16.0 file-server crawler work is complete when all of the following are true:
 
 - [x] Web crawler behavior is unchanged at the shared crawler architecture level.
 - [~] CIFS crawl plans can be created, edited, draft-connectivity tested, validated, enumerated, started, stopped, and deleted. Code paths are implemented; live local-Docker CIFS enumeration was validated with a host share, while broader CIFS server validation remains manual.
@@ -504,5 +504,5 @@ The v0.15.0 file-server crawler work is complete when all of the following are t
 ## Open Decisions
 
 - [!] Confirm whether CIFS anonymous access should be supported. Default implementation treats username/password as required unless the library behavior and product policy say otherwise.
-- [!] Confirm whether to add optional Samba/NFS integration fixtures for CI or keep integration validation manual for v0.15.0.
+- [!] Confirm whether to add optional Samba/NFS integration fixtures for CI or keep integration validation manual for v0.16.0.
 - [!] Confirm whether admin JSON views should redact repository passwords now or follow the current web crawler pattern until a broader credentials feature is introduced.

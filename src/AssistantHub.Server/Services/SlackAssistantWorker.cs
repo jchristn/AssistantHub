@@ -25,6 +25,7 @@ namespace AssistantHub.Server.Services
         private readonly AssistantHubSettings _Settings;
         private readonly RetrievalService _Retrieval;
         private readonly InferenceService _Inference;
+        private readonly IObjectStorageService _Storage;
         private readonly string _AssistantId;
         private readonly ConcurrentDictionary<string, string> _ThreadAliases = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
         private ISlackConnector _Connector;
@@ -41,7 +42,8 @@ namespace AssistantHub.Server.Services
             AssistantHubSettings settings,
             RetrievalService retrieval,
             InferenceService inference,
-            string assistantId)
+            string assistantId,
+            IObjectStorageService storage = null)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
@@ -49,6 +51,7 @@ namespace AssistantHub.Server.Services
             _Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
             _AssistantId = assistantId ?? throw new ArgumentNullException(nameof(assistantId));
+            _Storage = storage;
         }
 
         /// <summary>
@@ -132,8 +135,12 @@ namespace AssistantHub.Server.Services
                     return;
 
                 List<ChatCompletionMessage> messages = await BuildConversationMessagesAsync(conversationThreadId, cleanedUserMessage).ConfigureAwait(false);
+                bool emitSlackToolProgress = ShouldEmitSlackToolProgress(_AssistantSettings);
+                string responseThreadTimestamp = e.ThreadTimestamp;
+                if (emitSlackToolProgress && !isDirectMessage && String.IsNullOrWhiteSpace(responseThreadTimestamp))
+                    responseThreadTimestamp = e.Timestamp;
 
-                AssistantChatService chatService = new AssistantChatService(_Database, _Logging, _Settings, _Retrieval, _Inference);
+                AssistantChatService chatService = new AssistantChatService(_Database, _Logging, _Settings, _Retrieval, _Inference, _Storage);
                 AssistantChatExecutionResult result = await chatService.ExecuteNonStreamingAsync(
                     new AssistantChatExecutionRequest
                     {
@@ -143,13 +150,15 @@ namespace AssistantHub.Server.Services
                         Messages = messages,
                         ThreadId = conversationThreadId,
                         Origin = "slack",
-                        UserMessageUtc = DateTime.UtcNow
+                        UserMessageUtc = DateTime.UtcNow,
+                        ToolProgress = emitSlackToolProgress
+                            ? evt => SendSlackToolProgressAsync(e.ChannelId, responseThreadTimestamp, evt)
+                            : null
                     }).ConfigureAwait(false);
 
                 if (!result.Success || String.IsNullOrWhiteSpace(result.CanonicalResponseText))
                     return;
 
-                string responseThreadTimestamp = e.ThreadTimestamp;
                 foreach (string chunk in SlackAssistantUtilities.ChunkSlackMessage(SlackAssistantUtilities.ShapeSlackText(result.CanonicalResponseText)))
                 {
                     SlackSendMessageResult sendResult = await _Connector.SendMessageToChannelAsync(e.ChannelId, chunk, responseThreadTimestamp, CancellationToken.None).ConfigureAwait(false);
@@ -207,6 +216,20 @@ namespace AssistantHub.Server.Services
             return messages;
         }
 
+        private async Task SendSlackToolProgressAsync(string channelId, string threadTimestamp, AssistantToolProgressEvent evt)
+        {
+            if (_Connector == null) return;
+            if (String.IsNullOrWhiteSpace(channelId)) return;
+
+            string message = SlackAssistantUtilities.ShapeSlackToolProgressMessage(evt);
+            if (String.IsNullOrWhiteSpace(message)) return;
+
+            foreach (string chunk in SlackAssistantUtilities.ChunkSlackMessage(message))
+            {
+                await _Connector.SendMessageToChannelAsync(channelId, chunk, threadTimestamp, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+
         private async Task<bool> ThreadHasHistoryAsync(string threadId)
         {
             if (String.IsNullOrWhiteSpace(threadId)) return false;
@@ -252,6 +275,15 @@ namespace AssistantHub.Server.Services
         private static string BuildAliasKey(string channelId, string rootTimestamp)
         {
             return channelId.Trim() + ":" + rootTimestamp.Trim();
+        }
+
+        private static bool ShouldEmitSlackToolProgress(AssistantSettings settings)
+        {
+            AssistantToolPolicy policy = settings?.ToolPolicy;
+            if (policy == null) return false;
+
+            policy.Normalize();
+            return policy.EnableToolCalls && policy.EnableSlackToolProgressMessages;
         }
 
     }

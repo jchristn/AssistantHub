@@ -201,6 +201,18 @@ namespace AssistantHub.Sdk.Models
         public string MetadataFilter { get; set; }
 
         /// <summary>
+        /// JSON-serialized AssistantDocument.Id values attached to this chat turn.
+        /// </summary>
+        [JsonPropertyName("AttachedDocumentIdsJson")]
+        public string AttachedDocumentIdsJson { get; set; }
+
+        /// <summary>
+        /// JSON-serialized safe document metadata attached to this chat turn.
+        /// </summary>
+        [JsonPropertyName("AttachedDocumentsJson")]
+        public string AttachedDocumentsJson { get; set; }
+
+        /// <summary>
         /// Origin of the chat turn.
         /// </summary>
         [JsonPropertyName("Origin")]

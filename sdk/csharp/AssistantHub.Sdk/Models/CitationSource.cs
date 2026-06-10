@@ -15,10 +15,22 @@ namespace AssistantHub.Sdk.Models
         public int Index { get; set; }
 
         /// <summary>
+        /// Source category, for example document or web.
+        /// </summary>
+        [JsonPropertyName("source_type")]
+        public string SourceType { get; set; }
+
+        /// <summary>
         /// The document identifier.
         /// </summary>
         [JsonPropertyName("document_id")]
         public string DocumentId { get; set; }
+
+        /// <summary>
+        /// Source URL for web evidence or document metadata when available.
+        /// </summary>
+        [JsonPropertyName("url")]
+        public string Url { get; set; }
 
         /// <summary>
         /// Display name of the source document.

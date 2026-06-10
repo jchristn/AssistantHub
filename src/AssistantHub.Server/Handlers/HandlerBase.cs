@@ -2,6 +2,7 @@ namespace AssistantHub.Server.Handlers
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
     using Enums = AssistantHub.Core.Enums;
@@ -192,7 +193,11 @@ namespace AssistantHub.Server.Handlers
         protected bool ValidateTenantAccess(AuthContext auth, string tenantId)
         {
             if (auth == null) return false;
-            if (auth.IsGlobalAdmin) return true;
+            if (auth.IsGlobalAdmin)
+            {
+                AuditGlobalAdminBypass(auth, tenantId, "tenant_access_validation");
+                return true;
+            }
             return String.Equals(auth.TenantId, tenantId, StringComparison.Ordinal);
         }
 
@@ -206,8 +211,34 @@ namespace AssistantHub.Server.Handlers
         protected bool EnforceTenantOwnership(AuthContext auth, string recordTenantId)
         {
             if (auth == null) return false;
-            if (auth.IsGlobalAdmin) return true;
+            if (auth.IsGlobalAdmin)
+            {
+                AuditGlobalAdminBypass(auth, recordTenantId, "tenant_ownership_enforcement");
+                return true;
+            }
             return String.Equals(auth.TenantId, recordTenantId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Emit a metadata-only audit log when a global admin intentionally bypasses tenant ownership checks.
+        /// </summary>
+        /// <param name="auth">Auth context.</param>
+        /// <param name="targetTenantId">Target tenant identifier.</param>
+        /// <param name="reason">Stable bypass reason.</param>
+        protected void AuditGlobalAdminBypass(AuthContext auth, string targetTenantId, string reason)
+        {
+            if (auth == null || !auth.IsGlobalAdmin) return;
+
+            string actor = !String.IsNullOrWhiteSpace(auth.UserId)
+                ? auth.UserId
+                : (!String.IsNullOrWhiteSpace(auth.CredentialId)
+                    ? auth.CredentialId
+                    : (!String.IsNullOrWhiteSpace(auth.Email) ? auth.Email : "unknown"));
+
+            Logging.Info(
+                "[HandlerBase] global admin bypass audit: reason=" + reason +
+                " actor=" + actor +
+                " targetTenantId=" + (String.IsNullOrWhiteSpace(targetTenantId) ? "[none]" : targetTenantId));
         }
 
         /// <summary>
@@ -267,7 +298,57 @@ namespace AssistantHub.Server.Handlers
                 query.ThreadIdFilter = threadIdFilter;
             }
 
+            string requestHistoryIdFilter = ctx.Request.Query.Elements.Get("requestHistoryId");
+            if (!String.IsNullOrEmpty(requestHistoryIdFilter))
+            {
+                query.RequestHistoryIdFilter = requestHistoryIdFilter;
+            }
+
+            string chatHistoryIdFilter = ctx.Request.Query.Elements.Get("chatHistoryId");
+            if (!String.IsNullOrEmpty(chatHistoryIdFilter))
+            {
+                query.ChatHistoryIdFilter = chatHistoryIdFilter;
+            }
+
+            string traceIdFilter = ctx.Request.Query.Elements.Get("traceId");
+            if (!String.IsNullOrEmpty(traceIdFilter))
+            {
+                query.TraceIdFilter = traceIdFilter;
+            }
+
+            string toolNameFilter = ctx.Request.Query.Elements.Get("toolName");
+            if (!String.IsNullOrEmpty(toolNameFilter))
+            {
+                query.ToolNameFilter = toolNameFilter;
+            }
+
+            query.SuccessFilter = ParseOptionalBoolean(ctx.Request.Query.Elements.Get("success"));
+            query.DeniedFilter = ParseOptionalBoolean(ctx.Request.Query.Elements.Get("denied"));
+
+            string startUtc = ctx.Request.Query.Elements.Get("startUtc");
+            if (!String.IsNullOrEmpty(startUtc)
+                && DateTime.TryParse(startUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedStartUtc))
+            {
+                query.StartUtc = parsedStartUtc;
+            }
+
+            string endUtc = ctx.Request.Query.Elements.Get("endUtc");
+            if (!String.IsNullOrEmpty(endUtc)
+                && DateTime.TryParse(endUtc, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedEndUtc))
+            {
+                query.EndUtc = parsedEndUtc;
+            }
+
             return query;
+        }
+
+        private bool? ParseOptionalBoolean(string value)
+        {
+            if (String.IsNullOrEmpty(value)) return null;
+            if (Boolean.TryParse(value, out bool parsed)) return parsed;
+            if (String.Equals(value, "1", StringComparison.Ordinal)) return true;
+            if (String.Equals(value, "0", StringComparison.Ordinal)) return false;
+            return null;
         }
     }
 }

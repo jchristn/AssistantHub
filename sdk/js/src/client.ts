@@ -10,11 +10,17 @@ import type {
   Credential,
   Assistant,
   AssistantSettings,
+  AssistantToolDescriptor,
+  AssistantToolCallRecord,
+  AssistantToolPolicyValidationRequest,
+  AssistantToolPolicyValidationResult,
+  AssistantToolPolicyTestResult,
   AssistantPublicInfo,
   AssistantChatOpenResult,
   SlackVerificationRequest,
   SlackVerificationResponse,
   AssistantDocument,
+  AssistantDocumentSelectionItem,
   DocumentUploadRequest,
   DocumentReindexRequest,
   DocumentReindexResult,
@@ -72,6 +78,7 @@ import type {
   EvalRunRequest,
   EvalResult,
   AssistantHubSettings,
+  ExternalSearchConfigurationStatus,
 } from "./types.js";
 
 /** Error thrown when the API returns a non-success status code. */
@@ -406,6 +413,14 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/public`);
   }
 
+  /** List safe public document metadata selectable in assistant chat. */
+  async listAssistantDocuments(
+    assistantId: string,
+    query?: EnumerationQuery & { query?: string; contentType?: string }
+  ): Promise<EnumerationResult<AssistantDocumentSelectionItem>> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/documents${this._qs(query)}`);
+  }
+
   /** Notify the server that an assistant chat window was opened, loading configured endpoint models when enabled. */
   async openAssistantChat(assistantId: string): Promise<AssistantChatOpenResult> {
     return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/chat/open`);
@@ -418,6 +433,27 @@ export class AssistantHubClient {
   /** Get settings for an assistant. */
   async getAssistantSettings(assistantId: string): Promise<AssistantSettings> {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/settings`);
+  }
+
+  /** Get effective tool availability for an assistant. */
+  async getAssistantTools(assistantId: string): Promise<AssistantToolDescriptor[]> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/tools`);
+  }
+
+  /** Validate draft tool policy for an assistant without persisting it. */
+  async validateAssistantToolPolicy(
+    assistantId: string,
+    request: AssistantToolPolicyValidationRequest
+  ): Promise<AssistantToolPolicyValidationResult> {
+    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/settings/tools/validate`, request);
+  }
+
+  /** Run administrator dry-run diagnostics for an assistant tool policy without executing tools. */
+  async testAssistantToolPolicy(
+    assistantId: string,
+    request: AssistantToolPolicyValidationRequest
+  ): Promise<AssistantToolPolicyTestResult> {
+    return this._request("POST", `/v1.0/assistants/${encodeURIComponent(assistantId)}/settings/tools/test`, request);
   }
 
   /** Update settings for an assistant. */
@@ -458,6 +494,26 @@ export class AssistantHubClient {
   /** Get assistant feedback analytics. */
   async getAssistantAnalyticsFeedback(assistantId: string, query?: AssistantAnalyticsQuery): Promise<AssistantAnalyticsFeedbackResult> {
     return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/analytics/feedback${this._qs(query)}`);
+  }
+
+  /** List redacted tool-call traces for an assistant. */
+  async listAssistantToolCalls(assistantId: string, query?: EnumerationQuery): Promise<EnumerationResult<AssistantToolCallRecord>> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/tool-calls${this._qs(query)}`);
+  }
+
+  /** Get one redacted assistant tool-call trace. */
+  async getAssistantToolCall(assistantId: string, toolCallRecordId: string): Promise<AssistantToolCallRecord> {
+    return this._request("GET", `/v1.0/assistants/${encodeURIComponent(assistantId)}/tool-calls/${encodeURIComponent(toolCallRecordId)}`);
+  }
+
+  /** Delete assistant tool-call traces matching the supplied filters. */
+  async deleteAssistantToolCalls(assistantId: string, query?: EnumerationQuery): Promise<RequestHistoryDeleteResult> {
+    return this._request("DELETE", `/v1.0/assistants/${encodeURIComponent(assistantId)}/tool-calls${this._qs(query)}`);
+  }
+
+  /** Delete one assistant tool-call trace. */
+  async deleteAssistantToolCall(assistantId: string, toolCallRecordId: string): Promise<void> {
+    return this._request("DELETE", `/v1.0/assistants/${encodeURIComponent(assistantId)}/tool-calls/${encodeURIComponent(toolCallRecordId)}`);
   }
 
   // --------------------------------------------------------------------------
@@ -1281,6 +1337,11 @@ export class AssistantHubClient {
   /** Get server configuration (Global Admin). */
   async getConfiguration(): Promise<AssistantHubSettings> {
     return this._request("GET", "/v1.0/configuration");
+  }
+
+  /** Get redacted external-search configuration status (Global Admin). */
+  async getExternalSearchStatus(): Promise<ExternalSearchConfigurationStatus> {
+    return this._request("GET", "/v1.0/configuration/external-search/status");
   }
 
   /** Update server configuration (Global Admin). */

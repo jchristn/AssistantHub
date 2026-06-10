@@ -89,6 +89,10 @@ namespace AssistantHub.Server.Services
         private protected readonly AssistantHubSettings _Settings;
         private protected readonly RetrievalService _Retrieval;
         private protected readonly InferenceService _Inference;
+        private protected readonly IObjectStorageService _Storage;
+        private protected readonly IInvertedIndexService _InvertedIndex;
+        private protected readonly HttpClient _TavilyHttpClient;
+        private protected readonly IAssistantToolExecutor _ToolExecutor;
         private protected readonly IInferenceEndpointService _InferenceEndpoints;
 
         private protected ChatMetadataFilter BuildEffectiveMetadataFilter(AssistantSettings settings, ChatMetadataFilter requestFilter)
@@ -154,27 +158,28 @@ namespace AssistantHub.Server.Services
             return null;
         }
 
-        private protected string BuildRetrievalGatePrompt(List<ChatCompletionMessage> messages, string lastUserMessage)
+        private protected static List<string> NormalizeDocumentIds(IEnumerable<string> documentIds)
         {
-            const int maxCharsPerMessage = 200;
-            int recentCount = Math.Min(messages.Count, 6);
-            int startIndex = messages.Count - recentCount;
-            StringBuilder recentMessages = new StringBuilder();
+            if (documentIds == null) return null;
 
-            for (int i = startIndex; i < messages.Count; i++)
-            {
-                if (messages[i] == messages.Last() && String.Equals(messages[i].Role, "user", StringComparison.OrdinalIgnoreCase))
-                    continue;
+            List<string> normalized = documentIds
+                .Where(id => !String.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
 
-                string content = messages[i].Content ?? "";
-                if (content.Length > maxCharsPerMessage)
-                    content = content.Substring(0, maxCharsPerMessage) + "...";
-                recentMessages.AppendLine(messages[i].Role + ": " + content);
-            }
+            return normalized.Count > 0 ? normalized : null;
+        }
 
-            return _RetrievalGatePrompt
-                .Replace("{recentMessages}", recentMessages.ToString())
-                .Replace("{lastUserMessage}", lastUserMessage);
+        private protected static string SerializeNonEmptyJson<T>(ICollection<T> values)
+        {
+            if (values == null || values.Count < 1) return null;
+            return JsonSerializer.Serialize(values, _JsonOptions);
+        }
+
+        private protected string BuildRetrievalGatePrompt(List<ChatCompletionMessage> messages, string lastUserMessage, List<AssistantDocumentSelectionItem> attachedDocuments = null)
+        {
+            return AssistantAttachmentPromptBuilder.BuildRetrievalGatePrompt(_RetrievalGatePrompt, messages, lastUserMessage, attachedDocuments);
         }
 
         private protected static bool IsConversationSummaryMessage(ChatCompletionMessage message)
@@ -293,19 +298,40 @@ namespace AssistantHub.Server.Services
         /// <param name="settings">Application settings.</param>
         /// <param name="retrieval">Retrieval service.</param>
         /// <param name="inference">Inference service.</param>
+        /// <param name="storage">Optional object storage service for S3-backed tools.</param>
+        /// <param name="invertedIndex">Optional inverted index service for Verbex-backed tools.</param>
+        /// <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
+        /// <param name="toolExecutor">Optional tool executor override for tests.</param>
+        /// <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
         protected AssistantChatServiceBase(
             DatabaseDriverBase database,
             LoggingModule logging,
             AssistantHubSettings settings,
             RetrievalService retrieval,
-            InferenceService inference)
+            InferenceService inference,
+            IObjectStorageService storage = null,
+            IInvertedIndexService invertedIndex = null,
+            HttpClient tavilyHttpClient = null,
+            IAssistantToolExecutor toolExecutor = null,
+            IInferenceEndpointService inferenceEndpoints = null)
         {
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Retrieval = retrieval ?? throw new ArgumentNullException(nameof(retrieval));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
-            _InferenceEndpoints = new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
+            _Storage = storage;
+            _InvertedIndex = invertedIndex;
+            _TavilyHttpClient = tavilyHttpClient;
+            _ToolExecutor = toolExecutor ?? new AssistantToolExecutor(
+                _Database,
+                _Logging,
+                _Settings,
+                _Retrieval,
+                _Storage,
+                _InvertedIndex,
+                _TavilyHttpClient);
+            _InferenceEndpoints = inferenceEndpoints ?? new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
         }
 
         private protected async Task<ChatHistory> WriteChatHistoryAsync(
@@ -344,7 +370,10 @@ namespace AssistantHub.Server.Services
             AssistantPerformanceStage rerankTelemetry,
             int retrievalQueryCount,
             int retrievalChunksReturned,
-            CancellationToken token)
+            string attachedDocumentIdsJson,
+            string attachedDocumentsJson,
+            CancellationToken token,
+            List<ChatCompletionToolTrace> toolTraces = null)
         {
             try
             {
@@ -375,6 +404,8 @@ namespace AssistantHub.Server.Services
                     TimeToFirstTokenMs = timeToFirstTokenMs,
                     TimeToLastTokenMs = timeToLastTokenMs,
                     MetadataFilter = metadataFilterJson,
+                    AttachedDocumentIdsJson = attachedDocumentIdsJson,
+                    AttachedDocumentsJson = attachedDocumentsJson,
                     AssistantResponse = assistantResponse,
                     CompletionTokens = completionTokens,
                     Origin = origin,
@@ -397,7 +428,8 @@ namespace AssistantHub.Server.Services
                     retrievalChunksReturned,
                     retrievalGateTelemetry,
                     queryRewriteTelemetry,
-                    rerankTelemetry);
+                    rerankTelemetry,
+                    toolTraces);
                 history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
 
                 await _Database.ChatHistory.CreateAsync(history, token).ConfigureAwait(false);
@@ -446,6 +478,7 @@ namespace AssistantHub.Server.Services
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions);
+                    PartioEndpointToolMetadata.ReadTagsToToolFields(ep);
 
                     Enums.InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, Enums.InferenceProviderEnum.Ollama);
 
@@ -456,7 +489,11 @@ namespace AssistantHub.Server.Services
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
                         ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
                         Model = ep?.Model,
-                        MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1)
+                        MaxConcurrentRequests = Math.Max(1, ep?.MaxConcurrentRequests ?? 1),
+                        SupportsToolCalling = ep?.SupportsToolCalling == true,
+                        ToolCallingApiFormat = ep?.ToolCallingApiFormat,
+                        SupportsParallelToolCalls = ep?.SupportsParallelToolCalls == true,
+                        SupportsStreamingToolCalls = ep?.SupportsStreamingToolCalls == true
                     };
                 }
             }
@@ -476,7 +513,11 @@ namespace AssistantHub.Server.Services
                 Endpoint = _Settings.Inference.Endpoint,
                 ApiKey = _Settings.Inference.ApiKey,
                 Model = _Settings.Inference.DefaultModel,
-                MaxConcurrentRequests = 1
+                MaxConcurrentRequests = 1,
+                SupportsToolCalling = false,
+                ToolCallingApiFormat = null,
+                SupportsParallelToolCalls = false,
+                SupportsStreamingToolCalls = false
             };
         }
 
@@ -517,6 +558,45 @@ namespace AssistantHub.Server.Services
                 InferenceResult result = await _Inference.GenerateResponseAsync(
                     messages, model, maxTokens, temperature, topP,
                     provider, endpoint, apiKey, token).ConfigureAwait(false);
+
+                AttachEndpointTelemetry(result?.Telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
+                return result;
+            }
+        }
+
+        private protected async Task<InferenceResult> GenerateWithToolsAndCompletionEndpointLimitAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            Enums.InferenceProviderEnum provider,
+            string endpoint,
+            string apiKey,
+            string endpointId,
+            int maxConcurrentRequests,
+            IEnumerable<AssistantModelToolDefinition> tools,
+            string toolChoice,
+            CancellationToken token)
+        {
+            int max = Math.Max(1, maxConcurrentRequests);
+            Stopwatch waitSw = Stopwatch.StartNew();
+            using (IDisposable lease = await EndpointConcurrencyLimiter.AcquireAsync("completion", endpointId, max, token).ConfigureAwait(false))
+            {
+                waitSw.Stop();
+                if (waitSw.ElapsedMilliseconds > 0)
+                {
+                    _Logging.Info(
+                        _Header +
+                        "completion endpoint concurrency slot acquired: " +
+                        EndpointConcurrencyLimiter.BuildKey("completion", endpointId) +
+                        ", maxConcurrentRequests=" + max +
+                        ", waitedMs=" + waitSw.ElapsedMilliseconds);
+                }
+
+                InferenceResult result = await _Inference.GenerateResponseWithToolsAsync(
+                    messages, model, maxTokens, temperature, topP,
+                    provider, endpoint, apiKey, tools, toolChoice, token).ConfigureAwait(false);
 
                 AttachEndpointTelemetry(result?.Telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
                 return result;

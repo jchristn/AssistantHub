@@ -373,7 +373,8 @@ namespace AssistantHub.Server.Services
             string attachedDocumentIdsJson,
             string attachedDocumentsJson,
             CancellationToken token,
-            List<ChatCompletionToolTrace> toolTraces = null)
+            List<ChatCompletionToolTrace> toolTraces = null,
+            List<AssistantPerformanceStage> toolModelStages = null)
         {
             try
             {
@@ -429,7 +430,8 @@ namespace AssistantHub.Server.Services
                     retrievalGateTelemetry,
                     queryRewriteTelemetry,
                     rerankTelemetry,
-                    toolTraces);
+                    toolTraces,
+                    toolModelStages);
                 history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
 
                 await _Database.ChatHistory.CreateAsync(history, token).ConfigureAwait(false);

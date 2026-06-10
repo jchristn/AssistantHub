@@ -932,52 +932,170 @@ namespace AssistantHub.Server.Services
             string statusText = GetString(arguments, "status");
             string sourceUrlContains = GetString(arguments, "source_url_contains");
             ChatMetadataFilter requestMetadataFilter = BuildModelMetadataFilter(arguments);
+            int maxDocumentsToScan = Math.Max(maxResults, context.Policy.MaxDocumentsConsideredPerSearch);
+            if (!String.IsNullOrWhiteSpace(continuationToken) && !Int32.TryParse(continuationToken, out _))
+                throw new ArgumentException("collection_enumerate_documents requires continuation_token to be empty or an exact ContinuationToken value returned by a previous collection_enumerate_documents response.");
             if (!String.IsNullOrWhiteSpace(statusText) && !context.Policy.AllowNonCompletedDocumentMetadata)
                 throw new InvalidOperationException("status filtering requires AllowNonCompletedDocumentMetadata in assistant policy.");
             if (!String.IsNullOrWhiteSpace(sourceUrlContains) && !context.Policy.AllowDocumentSourceUrls)
                 throw new InvalidOperationException("source_url_contains requires AllowDocumentSourceUrls in assistant policy.");
 
-            EnumerationQuery query = new EnumerationQuery
-            {
-                MaxResults = maxResults,
-                ContinuationToken = continuationToken,
-                CollectionIdFilter = context.Settings.CollectionId
-            };
-
-            token.ThrowIfCancellationRequested();
-            EnumerationResult<AssistantDocument> documents = await _Database.AssistantDocument
-                .EnumerateAsync(context.Assistant.TenantId, query, token).ConfigureAwait(false);
-            token.ThrowIfCancellationRequested();
-
             DocumentStatusEnum? requestedStatus = TryParseDocumentStatus(statusText);
-            List<object> items = (documents.Objects ?? new List<AssistantDocument>())
-                .Where(doc => context.Policy.AllowNonCompletedDocumentMetadata
-                    ? (!requestedStatus.HasValue || doc.Status == requestedStatus.Value)
-                    : doc.Status == DocumentStatusEnum.Completed)
-                .Where(doc => AssistantDocumentPolicyFilter.MatchesAssistantMetadataFilters(doc, context.Settings))
-                .Where(doc => requestMetadataFilter == null || AssistantDocumentPolicyFilter.MatchesMetadataFilter(doc, requestMetadataFilter))
-                .Where(doc => String.IsNullOrWhiteSpace(queryText)
-                    || Contains(doc.Name, queryText)
-                    || Contains(doc.OriginalFilename, queryText)
-                    || Contains(doc.ContentType, queryText)
-                    || (context.Policy.AllowDocumentSourceUrls && Contains(doc.SourceUrl, queryText)))
-                .Where(doc => String.IsNullOrWhiteSpace(contentType)
-                    || Contains(doc.ContentType, contentType))
-                .Where(doc => String.IsNullOrWhiteSpace(sourceUrlContains)
-                    || Contains(doc.SourceUrl, sourceUrlContains))
-                .Select(doc => BuildDocumentEnumerationItem(doc, context.Policy))
-                .ToList();
+            List<object> items = new List<object>();
+            string scanToken = continuationToken;
+            int rawOffset = 0;
+            if (!String.IsNullOrWhiteSpace(continuationToken))
+                Int32.TryParse(continuationToken, out rawOffset);
+
+            int documentsScanned = 0;
+            long totalRecords = 0;
+            long recordsRemaining = 0;
+            bool endOfResults = true;
+            bool scanLimitReached = false;
+            string responseContinuationToken = null;
+
+            while (items.Count < maxResults)
+            {
+                int remainingScan = maxDocumentsToScan - documentsScanned;
+                if (remainingScan <= 0)
+                {
+                    scanLimitReached = true;
+                    endOfResults = false;
+                    responseContinuationToken = rawOffset.ToString();
+                    recordsRemaining = Math.Max(0, totalRecords - rawOffset);
+                    break;
+                }
+
+                EnumerationQuery query = new EnumerationQuery
+                {
+                    MaxResults = Math.Clamp(Math.Min(maxResults, remainingScan), 1, 1000),
+                    ContinuationToken = scanToken,
+                    CollectionIdFilter = context.Settings.CollectionId
+                };
+
+                token.ThrowIfCancellationRequested();
+                EnumerationResult<AssistantDocument> documents = await _Database.AssistantDocument
+                    .EnumerateAsync(context.Assistant.TenantId, query, token).ConfigureAwait(false);
+                token.ThrowIfCancellationRequested();
+
+                totalRecords = documents.TotalRecords;
+                List<AssistantDocument> pageDocuments = documents.Objects ?? new List<AssistantDocument>();
+                if (pageDocuments.Count == 0)
+                {
+                    endOfResults = documents.EndOfResults || String.IsNullOrWhiteSpace(documents.ContinuationToken);
+                    responseContinuationToken = endOfResults ? null : documents.ContinuationToken;
+                    recordsRemaining = documents.RecordsRemaining;
+                    break;
+                }
+
+                foreach (AssistantDocument doc in pageDocuments)
+                {
+                    documentsScanned++;
+                    rawOffset++;
+
+                    if (MatchesCollectionEnumerationFilters(
+                        doc,
+                        context,
+                        requestedStatus,
+                        requestMetadataFilter,
+                        queryText,
+                        contentType,
+                        sourceUrlContains))
+                    {
+                        items.Add(BuildDocumentEnumerationItem(doc, context.Policy));
+                        if (items.Count >= maxResults)
+                            break;
+                    }
+
+                    if (documentsScanned >= maxDocumentsToScan)
+                    {
+                        scanLimitReached = !documents.EndOfResults || rawOffset < totalRecords;
+                        break;
+                    }
+                }
+
+                if (items.Count >= maxResults || scanLimitReached)
+                {
+                    endOfResults = rawOffset >= totalRecords;
+                    responseContinuationToken = endOfResults ? null : rawOffset.ToString();
+                    recordsRemaining = Math.Max(0, totalRecords - rawOffset);
+                    break;
+                }
+
+                if (documents.EndOfResults || String.IsNullOrWhiteSpace(documents.ContinuationToken))
+                {
+                    endOfResults = true;
+                    responseContinuationToken = null;
+                    recordsRemaining = 0;
+                    break;
+                }
+
+                if (String.Equals(scanToken, documents.ContinuationToken, StringComparison.Ordinal))
+                {
+                    endOfResults = false;
+                    responseContinuationToken = documents.ContinuationToken;
+                    recordsRemaining = documents.RecordsRemaining;
+                    break;
+                }
+
+                scanToken = documents.ContinuationToken;
+            }
 
             return new
             {
                 Tool = "collection_enumerate_documents",
                 CollectionId = context.Settings.CollectionId,
-                documents.MaxResults,
-                documents.ContinuationToken,
-                documents.EndOfResults,
-                TotalRecords = items.Count,
+                MaxResults = maxResults,
+                ContinuationToken = responseContinuationToken,
+                EndOfResults = endOfResults,
+                TotalRecords = totalRecords,
+                RecordsRemaining = recordsRemaining,
+                PageRecords = items.Count,
+                MoreResultsAvailable = !endOfResults,
+                DocumentsScanned = documentsScanned,
+                MaxDocumentsScanned = maxDocumentsToScan,
+                ScanLimitReached = scanLimitReached,
                 Objects = items
             };
+        }
+
+        private static bool MatchesCollectionEnumerationFilters(
+            AssistantDocument doc,
+            AssistantToolExecutionContext context,
+            DocumentStatusEnum? requestedStatus,
+            ChatMetadataFilter requestMetadataFilter,
+            string queryText,
+            string contentType,
+            string sourceUrlContains)
+        {
+            if (doc == null || context == null) return false;
+
+            if (context.Policy.AllowNonCompletedDocumentMetadata)
+            {
+                if (requestedStatus.HasValue && doc.Status != requestedStatus.Value)
+                    return false;
+            }
+            else if (doc.Status != DocumentStatusEnum.Completed)
+            {
+                return false;
+            }
+
+            if (!AssistantDocumentPolicyFilter.MatchesAssistantMetadataFilters(doc, context.Settings))
+                return false;
+            if (requestMetadataFilter != null && !AssistantDocumentPolicyFilter.MatchesMetadataFilter(doc, requestMetadataFilter))
+                return false;
+            if (!String.IsNullOrWhiteSpace(queryText)
+                && !Contains(doc.Name, queryText)
+                && !Contains(doc.OriginalFilename, queryText)
+                && !Contains(doc.ContentType, queryText)
+                && !(context.Policy.AllowDocumentSourceUrls && Contains(doc.SourceUrl, queryText)))
+                return false;
+            if (!String.IsNullOrWhiteSpace(contentType) && !Contains(doc.ContentType, contentType))
+                return false;
+            if (!String.IsNullOrWhiteSpace(sourceUrlContains) && !Contains(doc.SourceUrl, sourceUrlContains))
+                return false;
+
+            return true;
         }
 
         private async Task<object> ExecuteBucketEnumerateObjectsAsync(

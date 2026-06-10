@@ -764,6 +764,21 @@ export class ApiClient {
     let citations = null;
     let sawToolEvent = false;
     const toolEvents = [];
+    const isGenericToolCompletionStatus = (value) => {
+      const normalized = String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      if (!normalized) return false;
+      return [
+        'searching collection',
+        'reading document chunks',
+        'searching index',
+        'reading source object',
+        'listing documents',
+        'listing index records',
+        'listing bucket objects',
+        'searching web',
+        'using assistant tool'
+      ].some(label => normalized === `${label} completed.` || normalized === `${label} completed`);
+    };
 
     const formatToolStatus = (eventType, payload, events) => {
       const name = payload?.display_label || payload?.tool_name || 'tool';
@@ -781,7 +796,7 @@ export class ApiClient {
         }
         return `Running tool: ${name}`;
       }
-      if (eventType.endsWith('.completed')) return `${name} completed`;
+      if (eventType.endsWith('.completed')) return null;
       if (eventType.endsWith('.failed')) return 'One tool failed; trying another source';
       if (eventType.endsWith('.denied')) return `${name} denied`;
       if (eventType.endsWith('.heartbeat')) return `Running tool: ${name} still running`;
@@ -818,7 +833,7 @@ export class ApiClient {
         sawToolEvent = true;
         toolEvents.push(toolEvent);
         status = formatToolStatus(effectiveEventType, toolEvent, toolEvents);
-        if (onDelta) onDelta({ toolEvent, status });
+        if (onDelta) onDelta({ toolEvent, status, clearToolStatus: status == null });
         return;
       }
 
@@ -834,8 +849,13 @@ export class ApiClient {
 
       // Surface status messages (e.g. "Compacting the conversation...")
       if (chunk.status) {
-        status = chunk.status;
-        if (onDelta) onDelta({ status: chunk.status });
+        if (isGenericToolCompletionStatus(chunk.status)) {
+          status = null;
+          if (onDelta) onDelta({ clearToolStatus: true });
+        } else {
+          status = chunk.status;
+          if (onDelta) onDelta({ status: chunk.status });
+        }
       }
 
       const delta = chunk.choices?.[0]?.delta;

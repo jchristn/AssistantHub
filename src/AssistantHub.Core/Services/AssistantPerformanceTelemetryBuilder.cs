@@ -34,6 +34,7 @@ namespace AssistantHub.Core.Services
         /// <param name="queryRewriteStage">Measured query rewrite stage.</param>
         /// <param name="rerankStage">Measured rerank stage.</param>
         /// <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
+        /// <param name="toolModelStages">Model-call stages that decided whether to request tools.</param>
         /// <returns>Provider-agnostic performance telemetry.</returns>
         public static AssistantPerformanceTelemetry Build(
             ChatHistory history,
@@ -43,7 +44,8 @@ namespace AssistantHub.Core.Services
             AssistantPerformanceStage retrievalGateStage = null,
             AssistantPerformanceStage queryRewriteStage = null,
             AssistantPerformanceStage rerankStage = null,
-            IEnumerable<ChatCompletionToolTrace> toolTraces = null)
+            IEnumerable<ChatCompletionToolTrace> toolTraces = null,
+            IEnumerable<AssistantPerformanceStage> toolModelStages = null)
         {
             if (history == null) throw new ArgumentNullException(nameof(history));
 
@@ -119,10 +121,6 @@ namespace AssistantHub.Core.Services
                 },
                 rerankStage);
 
-            AddLegacyStage(telemetry, "endpoint_resolution", "network", 50, history.EndpointResolutionDurationMs, null, null);
-            AddLegacyStage(telemetry, "context_compaction", "inference", 60, history.CompactionDurationMs, null, null);
-            AddToolStage(telemetry, toolTraces);
-
             AssistantPerformanceStage finalStage = finalInferenceStage != null
                 ? CloneStage(finalInferenceStage)
                 : new AssistantPerformanceStage();
@@ -146,9 +144,72 @@ namespace AssistantHub.Core.Services
             finalStage.Tokens.Input ??= history.PromptTokens > 0 ? history.PromptTokens : null;
             finalStage.Tokens.Output ??= history.CompletionTokens > 0 ? history.CompletionTokens : null;
             finalStage.Tokens.Total ??= (history.PromptTokens + history.CompletionTokens) > 0 ? history.PromptTokens + history.CompletionTokens : null;
+
+            AddLegacyStage(telemetry, "endpoint_resolution", "network", 50, history.EndpointResolutionDurationMs, null, null);
+            AddLegacyStage(telemetry, "context_compaction", "inference", 60, history.CompactionDurationMs, null, null);
+            AddToolModelStages(telemetry, toolModelStages);
+            AddToolStage(telemetry, toolTraces);
+            AddEstimatedToolModelStageIfMissing(telemetry, finalStage);
             telemetry.Stages.Add(finalStage);
 
             return telemetry;
+        }
+
+        /// <summary>
+        /// Add a legacy estimated tool-model timing stage when a telemetry payload has tool execution and final inference,
+        /// but predates explicit per-iteration model timing capture.
+        /// </summary>
+        /// <param name="telemetry">Telemetry payload to normalize.</param>
+        /// <returns>True if an estimated stage was added.</returns>
+        public static bool EnsureEstimatedToolModelStage(AssistantPerformanceTelemetry telemetry)
+        {
+            return AddEstimatedToolModelStageIfMissing(telemetry, null);
+        }
+
+        private static void AddToolModelStages(
+            AssistantPerformanceTelemetry telemetry,
+            IEnumerable<AssistantPerformanceStage> toolModelStages)
+        {
+            List<AssistantPerformanceStage> stages = toolModelStages?
+                .Where(stage => stage != null)
+                .ToList() ?? new List<AssistantPerformanceStage>();
+            if (stages.Count < 1) return;
+
+            int index = 0;
+            foreach (AssistantPerformanceStage measuredStage in stages)
+            {
+                index++;
+                AssistantPerformanceStage stage = CloneStage(measuredStage);
+                stage.Name = "tool_iteration_model";
+                stage.Kind = "inference";
+                stage.Sequence = 64;
+                stage.DurationMs = RoundPositive(stage.DurationMs);
+                stage.Success = stage.Success || String.IsNullOrEmpty(stage.ErrorMessage);
+
+                if (!stage.FinishedUtc.HasValue && stage.StartedUtc.HasValue && stage.DurationMs > 0)
+                    stage.FinishedUtc = stage.StartedUtc.Value.AddMilliseconds(stage.DurationMs);
+
+                stage.Metadata = MergeMetadata(
+                    stage.Metadata,
+                    new Dictionary<string, object>
+                    {
+                        ["phase"] = "assistant_tool_model",
+                        ["iteration"] = index,
+                        ["summary"] = "Checking whether tools are needed."
+                    });
+
+                bool hasMetadata = stage.Metadata != null && stage.Metadata.Count > 0;
+                bool hasMeaningfulDuration = stage.DurationMs > 0;
+                bool hasEndpointDetails =
+                    !String.IsNullOrWhiteSpace(stage.EndpointId)
+                    || !String.IsNullOrWhiteSpace(stage.EndpointName)
+                    || !String.IsNullOrWhiteSpace(stage.Provider)
+                    || !String.IsNullOrWhiteSpace(stage.Model);
+
+                if (!hasMeaningfulDuration && !hasMetadata && !hasEndpointDetails) continue;
+
+                telemetry.Stages.Add(stage);
+            }
         }
 
         private static void AddToolStage(
@@ -238,6 +299,10 @@ namespace AssistantHub.Core.Services
                 .Max();
             if (finishedUtc == default) finishedUtc = null;
 
+            double? spanDurationMs = null;
+            if (startedUtc.HasValue && finishedUtc.HasValue && finishedUtc.Value >= startedUtc.Value)
+                spanDurationMs = Math.Round((finishedUtc.Value - startedUtc.Value).TotalMilliseconds, 2);
+
             telemetry.Stages.Add(new AssistantPerformanceStage
             {
                 Name = "tools",
@@ -256,6 +321,7 @@ namespace AssistantHub.Core.Services
                     ["tool_call_denied_count"] = deniedCount,
                     ["tool_call_truncated_count"] = truncatedCount,
                     ["tool_call_duration_ms"] = durationMs,
+                    ["tool_call_span_duration_ms"] = spanDurationMs,
                     ["tool_call_output_characters"] = outputCharacters,
                     ["tool_call_tavily_request_count"] = webSearchTraces.Count,
                     ["tool_call_tavily_failure_count"] = webSearchTraces.Count(trace => !trace.Success && !trace.Denied),
@@ -305,6 +371,8 @@ namespace AssistantHub.Core.Services
         {
             List<ChatHistoryPerformanceEvent> events = new List<ChatHistoryPerformanceEvent>();
             if (telemetry == null || telemetry.Stages == null) return events;
+
+            EnsureEstimatedToolModelStage(telemetry);
 
             foreach (AssistantPerformanceStage stage in telemetry.Stages)
             {
@@ -363,6 +431,73 @@ namespace AssistantHub.Core.Services
             }
 
             return events;
+        }
+
+        private static bool AddEstimatedToolModelStageIfMissing(AssistantPerformanceTelemetry telemetry, AssistantPerformanceStage finalStage)
+        {
+            if (telemetry == null) return false;
+            telemetry.Stages ??= new List<AssistantPerformanceStage>();
+            if (telemetry.Stages.Any(stage => String.Equals(stage?.Name, "tool_iteration_model", StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+            AssistantPerformanceStage toolsStage = telemetry.Stages
+                .FirstOrDefault(stage => String.Equals(stage?.Name, "tools", StringComparison.OrdinalIgnoreCase));
+            if (toolsStage == null) return false;
+
+            AssistantPerformanceStage resolvedFinalStage = finalStage ?? telemetry.Stages
+                .FirstOrDefault(stage => String.Equals(stage?.Name, "final_inference", StringComparison.OrdinalIgnoreCase));
+            if (resolvedFinalStage == null) return false;
+
+            double wallTimeMs = RoundPositive(telemetry.WallTimeMs);
+            double finalDurationMs = RoundPositive(resolvedFinalStage.DurationMs);
+            double toolExecutionMs = GetMetadataDouble(toolsStage.Metadata, "tool_call_duration_ms") ?? RoundPositive(toolsStage.DurationMs);
+            if (wallTimeMs <= 0 || finalDurationMs <= 0) return false;
+
+            double estimatedMs = RoundPositive(wallTimeMs - finalDurationMs - toolExecutionMs);
+            if (estimatedMs <= 0) return false;
+
+            DateTime? finishedUtc = toolsStage.StartedUtc;
+            DateTime? startedUtc = finishedUtc.HasValue
+                ? finishedUtc.Value.AddMilliseconds(-estimatedMs)
+                : null;
+
+            int? toolCallCount = GetMetadataInt(toolsStage.Metadata, "tool_call_count");
+            AssistantPerformanceStage estimatedStage = new AssistantPerformanceStage
+            {
+                Name = "tool_iteration_model",
+                Kind = "inference",
+                Sequence = 64,
+                EndpointId = resolvedFinalStage.EndpointId,
+                EndpointName = resolvedFinalStage.EndpointName,
+                EndpointType = resolvedFinalStage.EndpointType,
+                Provider = resolvedFinalStage.Provider,
+                ApiFormat = resolvedFinalStage.ApiFormat,
+                Model = resolvedFinalStage.Model,
+                StartedUtc = startedUtc,
+                FinishedUtc = finishedUtc,
+                DurationMs = estimatedMs,
+                Success = true,
+                ClientTimings = new AssistantPerformanceClientTimings
+                {
+                    TotalMs = estimatedMs
+                },
+                Metadata = NormalizeMetadata(new Dictionary<string, object>
+                {
+                    ["phase"] = "assistant_tool_model_legacy_estimate",
+                    ["estimated"] = true,
+                    ["summary"] = "Estimated model time spent checking whether tools were needed.",
+                    ["source"] = "wall_time_minus_final_inference_minus_tool_execution",
+                    ["tool_call_count"] = toolCallCount
+                })
+            };
+
+            int insertIndex = telemetry.Stages.FindIndex(stage => String.Equals(stage?.Name, "tools", StringComparison.OrdinalIgnoreCase));
+            if (insertIndex >= 0)
+                telemetry.Stages.Insert(insertIndex, estimatedStage);
+            else
+                telemetry.Stages.Add(estimatedStage);
+
+            return true;
         }
 
         private static void AddLegacyStage(
@@ -493,6 +628,19 @@ namespace AssistantHub.Core.Services
             if (value is long longValue) return (int)longValue;
             if (value is JsonElement element && element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out int jsonValue)) return jsonValue;
             if (Int32.TryParse(value.ToString(), out int parsed)) return parsed;
+            return null;
+        }
+
+        private static double? GetMetadataDouble(Dictionary<string, object> metadata, string key)
+        {
+            if (metadata == null || !metadata.TryGetValue(key, out object value) || value == null) return null;
+            if (value is double doubleValue) return doubleValue;
+            if (value is float floatValue) return floatValue;
+            if (value is decimal decimalValue) return (double)decimalValue;
+            if (value is int intValue) return intValue;
+            if (value is long longValue) return longValue;
+            if (value is JsonElement element && element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out double jsonValue)) return jsonValue;
+            if (Double.TryParse(value.ToString(), out double parsed)) return parsed;
             return null;
         }
 

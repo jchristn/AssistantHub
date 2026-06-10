@@ -928,7 +928,9 @@ namespace AssistantHub.Server.Handlers
                     ToolProgress = async evt =>
                     {
                         if (evt == null) return;
-                        await WriteSseNamedEvent(ctx, evt.EventType, evt).ConfigureAwait(false);
+                        AssistantToolProgressEvent publicEvent = ShapePublicToolProgressEvent(evt);
+                        if (publicEvent == null) return;
+                        await WriteSseNamedEvent(ctx, publicEvent.EventType, publicEvent).ConfigureAwait(false);
                     }
                 }).ConfigureAwait(false);
 
@@ -1005,10 +1007,72 @@ namespace AssistantHub.Server.Handlers
                 Usage = response?.Usage,
                 Retrieval = response?.Retrieval,
                 Citations = response?.Citations,
-                ToolCalls = response?.ToolCalls
+                ToolCalls = ShapePublicToolTraces(response?.ToolCalls)
             };
             await WriteSseEvent(ctx, finishChunk).ConfigureAwait(false);
             await ctx.Response.SendEvent(new ServerSentEvent { Data = "[DONE]" }, true).ConfigureAwait(false);
+        }
+
+        private static AssistantToolProgressEvent ShapePublicToolProgressEvent(AssistantToolProgressEvent evt)
+        {
+            if (evt == null) return null;
+
+            bool successfulCompletion = String.Equals(evt.EventType, "assistant.tool_call.completed", StringComparison.OrdinalIgnoreCase)
+                && evt.Success == true
+                && evt.Denied != true;
+
+            return new AssistantToolProgressEvent
+            {
+                EventType = evt.EventType,
+                ToolCallId = evt.ToolCallId,
+                ToolName = evt.ToolName,
+                DisplayLabel = evt.DisplayLabel,
+                StatusCode = evt.StatusCode,
+                Iteration = evt.Iteration,
+                SequenceNumber = evt.SequenceNumber,
+                StartedUtc = evt.StartedUtc,
+                FinishedUtc = evt.FinishedUtc,
+                Truncated = evt.Truncated == true ? true : null,
+                Denied = evt.Denied == true ? true : null,
+                Success = evt.Success,
+                DurationMs = null,
+                ResultCount = null,
+                Summary = successfulCompletion ? null : evt.Summary
+            };
+        }
+
+        private static List<ChatCompletionToolTrace> ShapePublicToolTraces(List<ChatCompletionToolTrace> traces)
+        {
+            if (traces == null || traces.Count < 1) return null;
+
+            List<ChatCompletionToolTrace> ret = new List<ChatCompletionToolTrace>();
+            foreach (ChatCompletionToolTrace trace in traces)
+            {
+                if (trace == null) continue;
+
+                bool successfulCompletion = trace.Success && !trace.Denied;
+                ret.Add(new ChatCompletionToolTrace
+                {
+                    ToolCallId = trace.ToolCallId,
+                    ToolName = trace.ToolName,
+                    DisplayLabel = trace.DisplayLabel,
+                    Iteration = trace.Iteration,
+                    SequenceNumber = trace.SequenceNumber,
+                    Success = trace.Success,
+                    Denied = trace.Denied,
+                    Truncated = trace.Truncated,
+                    OutputCharacters = 0,
+                    ResultCount = null,
+                    CreditsUsed = null,
+                    ProviderLatencyMs = null,
+                    DurationMs = 0,
+                    Summary = successfulCompletion ? null : trace.Summary,
+                    StartedUtc = trace.StartedUtc,
+                    FinishedUtc = trace.FinishedUtc
+                });
+            }
+
+            return ret.Count > 0 ? ret : null;
         }
 
     }

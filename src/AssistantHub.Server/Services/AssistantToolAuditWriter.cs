@@ -52,12 +52,27 @@ namespace AssistantHub.Server.Services
         /// <returns>Redacted JSON payload.</returns>
         public static string RedactToolJson(string json)
         {
+            return RedactToolJson(json, false);
+        }
+
+        /// <summary>
+        /// Redact sensitive fields from model-visible tool JSON while preserving safe pagination cursors.
+        /// </summary>
+        /// <param name="json">JSON payload.</param>
+        /// <returns>Redacted JSON payload.</returns>
+        public static string RedactModelVisibleToolJson(string json)
+        {
+            return RedactToolJson(json, true);
+        }
+
+        private static string RedactToolJson(string json, bool preserveSafeContinuationTokens)
+        {
             if (String.IsNullOrWhiteSpace(json)) return "{}";
 
             try
             {
                 using JsonDocument document = JsonDocument.Parse(json);
-                object redacted = RedactJsonElement(document.RootElement);
+                object redacted = RedactJsonElement(document.RootElement, preserveSafeContinuationTokens);
                 return JsonSerializer.Serialize(redacted, _JsonOptions);
             }
             catch (JsonException)
@@ -80,7 +95,7 @@ namespace AssistantHub.Server.Services
             }, _JsonOptions);
         }
 
-        private static object RedactJsonElement(JsonElement element)
+        private static object RedactJsonElement(JsonElement element, bool preserveSafeContinuationTokens)
         {
             switch (element.ValueKind)
             {
@@ -88,16 +103,16 @@ namespace AssistantHub.Server.Services
                     Dictionary<string, object> obj = new Dictionary<string, object>(StringComparer.Ordinal);
                     foreach (JsonProperty property in element.EnumerateObject())
                     {
-                        obj[property.Name] = IsSensitiveToolField(property.Name)
+                        obj[property.Name] = IsSensitiveToolField(property.Name, preserveSafeContinuationTokens)
                             ? "[redacted]"
-                            : RedactJsonElement(property.Value);
+                            : RedactJsonElement(property.Value, preserveSafeContinuationTokens);
                     }
                     return obj;
 
                 case JsonValueKind.Array:
                     List<object> list = new List<object>();
                     foreach (JsonElement item in element.EnumerateArray())
-                        list.Add(RedactJsonElement(item));
+                        list.Add(RedactJsonElement(item, preserveSafeContinuationTokens));
                     return list;
 
                 case JsonValueKind.String:
@@ -115,10 +130,13 @@ namespace AssistantHub.Server.Services
             }
         }
 
-        private static bool IsSensitiveToolField(string name)
+        private static bool IsSensitiveToolField(string name, bool preserveSafeContinuationTokens)
         {
             if (String.IsNullOrWhiteSpace(name)) return false;
             string normalized = name.Replace("_", String.Empty, StringComparison.Ordinal).Replace("-", String.Empty, StringComparison.Ordinal).ToLowerInvariant();
+            if (preserveSafeContinuationTokens && IsSafeContinuationTokenField(normalized))
+                return false;
+
             return normalized.Contains("apikey", StringComparison.Ordinal)
                 || normalized.Contains("password", StringComparison.Ordinal)
                 || normalized.Contains("secret", StringComparison.Ordinal)
@@ -128,6 +146,12 @@ namespace AssistantHub.Server.Services
                 || normalized.Contains("accesskey", StringComparison.Ordinal)
                 || normalized.Contains("signedurl", StringComparison.Ordinal)
                 || normalized.Contains("connectionstring", StringComparison.Ordinal);
+        }
+
+        private static bool IsSafeContinuationTokenField(string normalizedName)
+        {
+            return String.Equals(normalizedName, "continuationtoken", StringComparison.Ordinal)
+                || String.Equals(normalizedName, "nextcontinuationtoken", StringComparison.Ordinal);
         }
     }
 }

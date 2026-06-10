@@ -12,10 +12,18 @@ function formatTps(tps) {
   return tps.toFixed(1) + ' tok/s';
 }
 
+function normalizeNumber(value) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return isFinite(number) ? number : null;
+}
+
 function formatMs(ms) {
-  if (!ms || ms <= 0) return 'N/A';
-  if (ms < 1000) return ms.toFixed(1) + ' ms';
-  return (ms / 1000).toFixed(2) + ' s';
+  const number = normalizeNumber(ms);
+  if (number == null) return 'N/A';
+  if (number <= 0) return '0 ms';
+  if (number < 1000) return number.toFixed(1) + ' ms';
+  return (number / 1000).toFixed(2) + ' s';
 }
 
 function formatTimestamp(utc) {
@@ -32,6 +40,8 @@ function formatNumber(value) {
 
 function formatStageLabel(name) {
   if (!name) return 'Unknown';
+  if (name === 'tool_iteration_model') return 'Tool Model Check';
+  if (name === 'tools') return 'Tool Execution';
   return String(name)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -114,20 +124,98 @@ function parsePerformanceTelemetry(history) {
 }
 
 function getStageDuration(stage) {
-  return Number(stage?.DurationMs || 0);
+  return normalizeNumber(stage?.DurationMs) ?? 0;
 }
 
 function getClientTiming(stage, key) {
-  return Number(stage?.ClientTimings?.[key] || 0);
+  return normalizeNumber(stage?.ClientTimings?.[key]);
 }
 
 function getProviderMetric(stage, key) {
-  return Number(stage?.ProviderMetrics?.[key] || 0);
+  return normalizeNumber(stage?.ProviderMetrics?.[key]);
 }
 
 function getStageMetadata(stage, key) {
   const metadata = stage?.Metadata || {};
   return Object.prototype.hasOwnProperty.call(metadata, key) ? metadata[key] : undefined;
+}
+
+function getMetadataNumber(stage, key) {
+  return normalizeNumber(getStageMetadata(stage, key));
+}
+
+function getStageSpanDuration(stage) {
+  const metadataSpan = getMetadataNumber(stage, 'tool_call_span_duration_ms');
+  if (metadataSpan != null) return metadataSpan;
+
+  const started = stage?.StartedUtc ? Date.parse(stage.StartedUtc) : null;
+  const finished = stage?.FinishedUtc ? Date.parse(stage.FinishedUtc) : null;
+  if (started == null || finished == null || !isFinite(started) || !isFinite(finished) || finished < started) return null;
+  return finished - started;
+}
+
+function findStage(stages, name) {
+  return (stages || []).find((stage) => stage?.Name === name) || null;
+}
+
+function sumStageDuration(stages, name) {
+  const matches = (stages || []).filter((stage) => stage?.Name === name);
+  if (matches.length < 1) return null;
+  return matches.reduce((sum, stage) => sum + getStageDuration(stage), 0);
+}
+
+function timingValue(primary, fallback) {
+  const primaryNumber = normalizeNumber(primary);
+  if (primaryNumber != null) return primaryNumber;
+  const fallbackNumber = normalizeNumber(fallback);
+  return fallbackNumber ?? 0;
+}
+
+function withEstimatedToolModelStage(stages, wallTimeMs) {
+  const source = Array.isArray(stages) ? stages : [];
+  if (source.some((stage) => stage?.Name === 'tool_iteration_model')) return source;
+
+  const toolsStage = findStage(source, 'tools');
+  const finalStage = findStage(source, 'final_inference');
+  const wall = normalizeNumber(wallTimeMs);
+  if (!toolsStage || !finalStage || wall == null) return source;
+
+  const toolExecutionMs = getMetadataNumber(toolsStage, 'tool_call_duration_ms')
+    ?? sumStageDuration(source, 'tools')
+    ?? getStageDuration(toolsStage);
+  const finalInferenceMs = getStageDuration(finalStage);
+  const estimatedMs = Math.round(Math.max(0, wall - finalInferenceMs - toolExecutionMs) * 100) / 100;
+  if (estimatedMs <= 0) return source;
+
+  const estimatedStage = {
+    Name: 'tool_iteration_model',
+    Kind: 'inference',
+    Sequence: 64,
+    EndpointId: finalStage.EndpointId,
+    EndpointName: finalStage.EndpointName,
+    EndpointType: finalStage.EndpointType,
+    Provider: finalStage.Provider,
+    ApiFormat: finalStage.ApiFormat,
+    Model: finalStage.Model,
+    DurationMs: estimatedMs,
+    Success: true,
+    ClientTimings: { TotalMs: estimatedMs },
+    Metadata: {
+      phase: 'assistant_tool_model_legacy_estimate',
+      estimated: true,
+      summary: 'Estimated model time spent checking whether tools were needed.',
+      source: 'wall_time_minus_final_inference_minus_tool_execution',
+      tool_call_count: getMetadataNumber(toolsStage, 'tool_call_count')
+    }
+  };
+
+  const insertIndex = source.findIndex((stage) => stage?.Name === 'tools');
+  if (insertIndex < 0) return [...source, estimatedStage];
+  return [
+    ...source.slice(0, insertIndex),
+    estimatedStage,
+    ...source.slice(insertIndex)
+  ];
 }
 
 function hasEndpointDetails(stage) {
@@ -209,7 +297,7 @@ function StageTable({ stages }) {
             const stageText = stageSummary(stage, stages);
             const endpointText = stage.EndpointId || stage.EndpointName || (noopReason ? 'Not run' : '-');
             const providerText = [stage.Provider, stage.Model].filter(Boolean).join(' / ');
-            const generationMs = getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs');
+            const generationMs = getClientTiming(stage, 'FirstTokenToLastTokenMs') ?? getProviderMetric(stage, 'GenerationMs');
             const tokenText = inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A';
             return (
               <tr key={`${stage.Name || 'stage'}-${idx}`}>
@@ -331,7 +419,9 @@ function HistoryViewModal({ history, onClose }) {
     }
   ]).filter((stage) => getStageDuration(stage) > 0 || Object.keys(stage.Metadata || {}).length > 0), [history]);
 
-  const displayStages = performanceStages.length > 0 ? performanceStages : legacyStages;
+  const displayStages = withEstimatedToolModelStage(
+    performanceStages.length > 0 ? performanceStages : legacyStages,
+    performanceTelemetry?.WallTimeMs ?? history.TimeToLastTokenMs);
   const finalInferenceStage = displayStages.find((stage) => stage.Name === 'final_inference')
     || displayStages.find((stage) => stage.Name === 'streaming_inference')
     || displayStages.find((stage) => stage.Kind === 'inference' && getStageDuration(stage) > 0);
@@ -349,6 +439,38 @@ function HistoryViewModal({ history, onClose }) {
     history.TimeToLastTokenMs > 0 && history.TimeToFirstTokenMs > 0
       ? Math.max(0, history.TimeToLastTokenMs - history.TimeToFirstTokenMs)
       : 0;
+
+  const retrievalGateMs = timingValue(sumStageDuration(displayStages, 'retrieval_gate'), history.RetrievalGateDurationMs);
+  const queryRewriteMs = timingValue(sumStageDuration(displayStages, 'query_rewrite'), history.QueryRewriteDurationMs);
+  const retrievalMs = timingValue(sumStageDuration(displayStages, 'retrieval'), history.RetrievalDurationMs);
+  const rerankMs = timingValue(sumStageDuration(displayStages, 'rerank'), history.RerankDurationMs);
+  const endpointResolutionMs = timingValue(sumStageDuration(displayStages, 'endpoint_resolution'), history.EndpointResolutionDurationMs);
+  const compactionMs = timingValue(sumStageDuration(displayStages, 'context_compaction'), history.CompactionDurationMs);
+  const toolExecutionStage = findStage(displayStages, 'tools');
+  const toolExecutionMs = timingValue(getMetadataNumber(toolExecutionStage, 'tool_call_duration_ms'), sumStageDuration(displayStages, 'tools'));
+  const recordedToolModelChecksMs = sumStageDuration(displayStages, 'tool_iteration_model');
+  const toolSpanMs = getStageSpanDuration(toolExecutionStage);
+  const inferenceWallMs = normalizeNumber(performanceTelemetry?.WallTimeMs) ?? normalizeNumber(history.TimeToLastTokenMs);
+  const finalInferenceMs = finalInferenceStage ? getStageDuration(finalInferenceStage) : null;
+  const legacyToolModelChecksFromWallMs = recordedToolModelChecksMs == null && toolExecutionStage && inferenceWallMs != null && finalInferenceMs != null
+    ? Math.max(0, inferenceWallMs - finalInferenceMs - toolExecutionMs)
+    : null;
+  const legacyToolModelChecksFromSpanMs = recordedToolModelChecksMs == null && toolSpanMs != null
+    ? Math.max(0, toolSpanMs - toolExecutionMs)
+    : null;
+  const legacyToolModelChecksMs = legacyToolModelChecksFromWallMs ?? legacyToolModelChecksFromSpanMs;
+  const toolModelChecksMs = recordedToolModelChecksMs ?? legacyToolModelChecksMs;
+  const totalTimingMs = Math.max(
+    totalPipelineMs,
+    totalPipelineMs + (recordedToolModelChecksMs == null && legacyToolModelChecksMs != null ? legacyToolModelChecksMs : 0));
+  const finalRequestToHeadersMs = timingValue(getClientTiming(finalInferenceStage, 'RequestToHeadersMs'), history.InferenceConnectionDurationMs);
+  const finalPromptProcessingMs = timingValue(
+    getClientTiming(finalInferenceStage, 'HeadersToFirstTokenMs') ?? getProviderMetric(finalInferenceStage, 'PromptEvalMs'),
+    promptProcessingMs);
+  const finalGenerationMs = timingValue(
+    getClientTiming(finalInferenceStage, 'FirstTokenToLastTokenMs') ?? getProviderMetric(finalInferenceStage, 'GenerationMs'),
+    tokenGenMs);
+  const hasToolTiming = toolModelChecksMs != null || toolExecutionMs > 0;
 
   // Use backend-stored TPS if available, otherwise compute from raw fields
   const overallTps = history.TokensPerSecondOverall > 0
@@ -461,64 +583,82 @@ function HistoryViewModal({ history, onClose }) {
           <TimingBar
             label="Retrieval Gate"
             tooltip={'LLM-based retrieval gate - classifies whether retrieval is needed or can be skipped' + (history.RetrievalGateDecision ? '. Decision: ' + history.RetrievalGateDecision : '')}
-            durationMs={history.RetrievalGateDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={retrievalGateMs}
+            totalMs={totalTimingMs}
             color="var(--timing-gate, #a9e34b)"
           />
           <TimingBar
             label="Query Rewrite"
             tooltip="LLM-based query rewrite - rewrites the user prompt into multiple semantically varied queries to improve retrieval recall"
-            durationMs={history.QueryRewriteDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={queryRewriteMs}
+            totalMs={totalTimingMs}
             color="var(--timing-rewrite, #74c0fc)"
           />
           <TimingBar
             label="Retrieval"
             tooltip="Time spent searching the document collection for relevant context"
-            durationMs={history.RetrievalDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={retrievalMs}
+            totalMs={totalTimingMs}
             color="var(--timing-retrieval, #4dabf7)"
           />
           <TimingBar
             label="Re-Ranking"
             tooltip="LLM-based re-ranking - scores each retrieved chunk for relevance and filters low-scoring chunks"
-            durationMs={history.RerankDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={rerankMs}
+            totalMs={totalTimingMs}
             color="var(--timing-rerank, #ffa94d)"
           />
           <TimingBar
             label="Endpoint Resolution"
             tooltip="HTTP request to Partio to resolve the configured inference endpoint details"
-            durationMs={history.EndpointResolutionDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={endpointResolutionMs}
+            totalMs={totalTimingMs}
             color="var(--timing-endpoint, #69db7c)"
           />
           <TimingBar
             label="Compaction"
             tooltip="Conversation history compaction when context window is exceeded (may involve an LLM call)"
-            durationMs={history.CompactionDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={compactionMs}
+            totalMs={totalTimingMs}
             color="var(--timing-compaction, #ffd43b)"
           />
+          {hasToolTiming && (
+            <>
+              <TimingBar
+                label="Tool Model Checks"
+                tooltip="Model round trips that decide whether to request tools and produce tool-call arguments"
+                durationMs={toolModelChecksMs}
+                totalMs={totalTimingMs}
+                color="var(--timing-tool-model, #845ef7)"
+              />
+              <TimingBar
+                label="Tool Execution"
+                tooltip="Actual server-side tool execution time, excluding model checks"
+                durationMs={toolExecutionMs}
+                totalMs={totalTimingMs}
+                color="var(--timing-tool, #20c997)"
+              />
+            </>
+          )}
           <TimingBar
             label="Request to Headers"
             tooltip="Time from HTTP request sent to response headers received - includes network latency and model loading"
-            durationMs={history.InferenceConnectionDurationMs}
-            totalMs={totalPipelineMs}
+            durationMs={finalRequestToHeadersMs}
+            totalMs={totalTimingMs}
             color="var(--timing-connection, #ff922b)"
           />
           <TimingBar
             label="Prompt Processing"
             tooltip="Estimated time the model spent processing the prompt before generating the first token (TTFT minus connection time)"
-            durationMs={promptProcessingMs}
-            totalMs={totalPipelineMs}
+            durationMs={finalPromptProcessingMs}
+            totalMs={totalTimingMs}
             color="var(--timing-prompt, #da77f2)"
           />
           <TimingBar
             label="Token Generation"
             tooltip="Time from the first token to the last token - the streaming generation phase"
-            durationMs={tokenGenMs}
-            totalMs={totalPipelineMs}
+            durationMs={finalGenerationMs}
+            totalMs={totalTimingMs}
             color="var(--timing-generation, #ff6b6b)"
           />
         </div>

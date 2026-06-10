@@ -12316,7 +12316,7 @@
             Builds, serializes, and projects provider-agnostic assistant performance telemetry.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatCompletionToolTrace})">
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatCompletionToolTrace},System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantPerformanceStage})">
             <summary>
             Build provider-agnostic performance telemetry for a chat history row.
             </summary>
@@ -12328,7 +12328,16 @@
             <param name="queryRewriteStage">Measured query rewrite stage.</param>
             <param name="rerankStage">Measured rerank stage.</param>
             <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
+            <param name="toolModelStages">Model-call stages that decided whether to request tools.</param>
             <returns>Provider-agnostic performance telemetry.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.EnsureEstimatedToolModelStage(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
+            <summary>
+            Add a legacy estimated tool-model timing stage when a telemetry payload has tool execution and final inference,
+            but predates explicit per-iteration model timing capture.
+            </summary>
+            <param name="telemetry">Telemetry payload to normalize.</param>
+            <returns>True if an estimated stage was added.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Serialize(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
             <summary>

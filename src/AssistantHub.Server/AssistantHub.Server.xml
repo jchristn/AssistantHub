@@ -2116,6 +2116,13 @@
             <param name="json">JSON payload.</param>
             <returns>Redacted JSON payload.</returns>
         </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolAuditWriter.RedactModelVisibleToolJson(System.String)">
+            <summary>
+            Redact sensitive fields from model-visible tool JSON while preserving safe pagination cursors.
+            </summary>
+            <param name="json">JSON payload.</param>
+            <returns>Redacted JSON payload.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantToolDefinition">
             <summary>
             OpenAI-compatible model-facing assistant tool definition.

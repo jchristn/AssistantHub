@@ -59,6 +59,10 @@ namespace Test.Shared
             if (!String.IsNullOrWhiteSpace(query?.BucketNameFilter))
                 documents = documents.Where(d => String.Equals(d.BucketName, query.BucketNameFilter, StringComparison.Ordinal));
 
+            documents = query?.Ordering == EnumerationOrderEnum.CreatedAscending
+                ? documents.OrderBy(d => d.CreatedUtc).ThenBy(d => d.Id, StringComparer.Ordinal)
+                : documents.OrderByDescending(d => d.CreatedUtc).ThenBy(d => d.Id, StringComparer.Ordinal);
+
             return Task.FromResult(MockDatabaseDriver.Paginate(documents.ToList(), query));
         }
 

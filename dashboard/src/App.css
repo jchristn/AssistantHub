@@ -2525,8 +2525,7 @@ body {
   white-space: normal;
 }
 
-.chat-drawer .chat-tool-trace-pill,
-.chat-drawer .chat-tool-trace-more {
+.chat-drawer .chat-tool-trace-table-wrap {
   max-width: 100%;
 }
 
@@ -3002,8 +3001,37 @@ body {
   min-width: 0;
 }
 
-.chat-tool-trace-header {
-  margin-bottom: 0.25rem;
+.chat-tool-trace-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+  padding: 0.25rem 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.chat-tool-trace-summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-tool-trace-caret {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+}
+
+.chat-tool-trace[open] .chat-tool-trace-caret {
+  transform: rotate(45deg);
+}
+
+.chat-tool-trace-title {
   color: var(--text-tertiary, #888);
   font-size: 0.7rem;
   font-weight: 700;
@@ -3011,32 +3039,57 @@ body {
   text-transform: uppercase;
 }
 
-.chat-tool-trace-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  min-width: 0;
+.chat-tool-trace-count {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  white-space: nowrap;
 }
 
-.chat-tool-trace-pill,
-.chat-tool-trace-more {
-  min-width: 0;
-  max-width: min(280px, 100%);
-  display: inline-grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.125rem 0.5rem;
-  align-items: center;
-  padding: 0.25rem 0.5rem;
+.chat-tool-trace-table-wrap {
+  width: min(640px, 100%);
+  max-width: 100%;
+  overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-secondary);
-  color: var(--text-primary);
+}
+
+.chat-tool-trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
   font-size: 0.72rem;
 }
 
+.chat-tool-trace-table th,
+.chat-tool-trace-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  text-align: left;
+  vertical-align: top;
+}
+
+.chat-tool-trace-table th {
+  color: var(--text-tertiary, #888);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chat-tool-trace-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.chat-tool-trace-table th:nth-child(1),
+.chat-tool-trace-table td:nth-child(1) {
+  width: 64%;
+}
+
 .chat-tool-trace-name,
-.chat-tool-trace-status,
-.chat-tool-trace-meta {
+.chat-tool-trace-details {
+  display: block;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3046,30 +3099,52 @@ body {
 .chat-tool-trace-name {
   font-family: var(--font-mono);
   font-weight: 700;
+  color: var(--text-primary);
 }
 
-.chat-tool-trace-status {
+.chat-tool-trace-details {
   color: var(--text-secondary);
 }
 
-.chat-tool-trace-meta {
-  grid-column: 1 / -1;
-  color: var(--text-secondary);
-  font-size: 0.68rem;
-}
+@media (max-width: 640px) {
+  .chat-tool-trace-table,
+  .chat-tool-trace-table thead,
+  .chat-tool-trace-table tbody,
+  .chat-tool-trace-table tr,
+  .chat-tool-trace-table th,
+  .chat-tool-trace-table td {
+    display: block;
+  }
 
-.chat-tool-trace-pill.completed {
-  border-color: rgba(40, 167, 69, 0.35);
-}
+  .chat-tool-trace-table thead {
+    display: none;
+  }
 
-.chat-tool-trace-pill.failed,
-.chat-tool-trace-pill.denied {
-  border-color: rgba(220, 53, 69, 0.35);
-}
+  .chat-tool-trace-table tr {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
 
-.chat-tool-trace-more {
-  display: inline-flex;
-  color: var(--text-secondary);
+  .chat-tool-trace-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .chat-tool-trace-table td {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    border-bottom: 0;
+    padding: 0.25rem 0.5rem;
+    white-space: normal;
+  }
+
+  .chat-tool-trace-table td::before {
+    content: attr(data-label);
+    color: var(--text-tertiary, #888);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
 }
 
 /* Dark theme variants */

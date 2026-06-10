@@ -544,6 +544,8 @@ Users should not stare at a blank assistant bubble while the model is searching 
 - [x] Add reconnect behavior for streaming interruptions: mark the current tool status as interrupted instead of leaving an endless spinner. Dashboard streaming marks tool-progress stream breaks with `assistant.tool_call.interrupted`/`tool_stream_interrupted` metadata and shows a safe interrupted response.
 - [x] Ensure the pending/status bubble is not persisted as a normal assistant answer in chat history. Tool status is browser state/SSE metadata only; persisted chat history contains the final assistant answer and separate tool-call trace rows.
 - [x] Persist tool trace records separately for admin review. Tool-enabled streaming chat now routes through the shared service, so redacted tool-call records persist through the same SQLite, PostgreSQL, MySQL, SQL Server, and mock implementations; live browser/provider validation remains external.
+- [x] Persist and render tool-decision model timing for admin diagnostics. Tool-loop model checks are captured as `tool_iteration_model` stages, legacy tool-enabled histories estimate the missing segment from tool-loop wall time minus final inference and server tool execution, startup backfill repairs missing normalized event rows, and both chat-history and request-history detail modals render `Tool Model Checks` for existing and new records.
+- [x] Persist diagnostic chat history when the model exhausts tool iterations and the final best-effort inference returns empty output or fails. The server now returns a safe diagnostic assistant answer, records provider failure metadata in telemetry, links tool-call traces to chat history, and has service-suite coverage for empty and failed post-limit final responses.
 - [x] Ensure Slack and future non-browser channels can either suppress feedback or receive channel-appropriate short status messages. Slack uses `EnableSlackToolProgressMessages` and posts short safe lifecycle messages shaped from server progress events, with service/static API coverage.
 
 ## Tool Prompt and Evidence Rules
@@ -554,6 +556,7 @@ Tool calling will only improve accuracy if the model is told how to use the tool
 - [x] Tell the model to use tools when available context is insufficient.
 - [x] Tell the model to prefer collection tools for assistant-assigned collection facts.
 - [x] Tell the model to use `collection_search` before `collection_read_chunks` unless the user named a known document/chunk.
+- [x] Tell the model to resolve exact document filenames once, avoid repeated enumeration of the same collection pages, use returned chunk positions or `suggested_next_calls` for reads, and answer from sufficient excerpts rather than continuing discovery loops.
 - [x] Tell the model to use `verbex_full_text_search` for exact phrases, identifiers, terms, and lexical matches.
 - [x] Tell the model to use `s3_object_read` for source object text only when chunk/index evidence is insufficient or the user asks about file contents directly.
 - [x] Tell the model to use `collection_enumerate_documents` to discover document names when the user refers to files ambiguously.

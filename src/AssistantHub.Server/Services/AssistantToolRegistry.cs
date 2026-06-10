@@ -106,7 +106,7 @@ namespace AssistantHub.Server.Services
             if (String.Equals(toolName, "collection_search", StringComparison.OrdinalIgnoreCase))
                 return Function(
                     "collection_search",
-                    "Search the assistant's assigned collection for relevant document chunks. Provide query or queries; the server applies tenant, collection, and policy limits.",
+                    "Search the assistant's assigned collection for relevant document chunks. Requires a non-empty query or non-empty queries array; the server applies tenant, collection, and policy limits.",
                     Object(
                         new Dictionary<string, AssistantToolJsonSchema>
                         {
@@ -134,30 +134,32 @@ namespace AssistantHub.Server.Services
             if (String.Equals(toolName, "collection_read_chunks", StringComparison.OrdinalIgnoreCase))
                 return Function(
                     "collection_read_chunks",
-                    "Read exact chunks from a completed assistant document by chunk position. Use this after collection_search when exact surrounding text is needed.",
+                    "Read exact chunks from a completed assistant document by chunk position. Requires document_id plus either a non-empty positions array or a non-empty ranges array. Use this after collection_search or document enumeration when exact surrounding text is needed.",
                     Object(
                         new Dictionary<string, AssistantToolJsonSchema>
                         {
                             ["document_id"] = StringField("Completed AssistantDocument.Id value in the assistant collection."),
-                            ["positions"] = ArrayField(IntegerField("Zero-based chunk position.", 0, 1000000), "Exact chunk positions to read."),
+                            ["positions"] = ArrayField(IntegerField("Zero-based chunk position.", 0, 1000000), "Exact chunk positions to read. Do not send an empty array unless ranges is non-empty."),
                             ["ranges"] = ArrayField(
                                 Object(
                                     new Dictionary<string, AssistantToolJsonSchema>
                                     {
                                         ["start_position"] = IntegerField("Zero-based first chunk position.", 0, 1000000),
-                                        ["count"] = IntegerField("Number of chunks to read from start_position.", 1, policy.MaxChunksPerRead)
+                                        ["count"] = IntegerField("Number of chunks to read from start_position.", 1, Math.Min(policy.MaxChunksPerRead, policy.MaxToolResultItems)),
+                                        ["start"] = IntegerField("Alias for start_position.", 0, 1000000),
+                                        ["length"] = IntegerField("Alias for count.", 1, Math.Min(policy.MaxChunksPerRead, policy.MaxToolResultItems))
                                     },
                                     new List<string> { "start_position", "count" }),
-                                "Chunk ranges to read. The server caps range count by assistant policy."),
+                                "Chunk ranges to read. Prefer start_position/count. Do not request an entire document with a huge count; read small ranges and continue only if needed."),
                             ["neighbor_window"] = IntegerField("Neighbor chunks to include around requested positions.", 0, policy.MaxNeighborWindow),
-                            ["max_chunks"] = IntegerField("Maximum chunks to return.", 1, policy.MaxChunksPerRead)
+                            ["max_chunks"] = IntegerField("Maximum chunks to return for this call.", 1, Math.Min(policy.MaxChunksPerRead, policy.MaxToolResultItems))
                         },
                         new List<string> { "document_id" }));
 
             if (String.Equals(toolName, "collection_enumerate_documents", StringComparison.OrdinalIgnoreCase))
                 return Function(
                     "collection_enumerate_documents",
-                    "List completed documents available in the assistant's assigned collection using safe metadata.",
+                    "List one page of completed documents available in the assistant's assigned collection using safe metadata. This is paginated; use ContinuationToken for more pages and do not treat one page as the full corpus unless EndOfResults is true.",
                     Object(
                         new Dictionary<string, AssistantToolJsonSchema>
                         {
@@ -169,7 +171,7 @@ namespace AssistantHub.Server.Services
                             ["excluded_labels"] = ArrayField(StringField("Excluded label."), "Optional excluded labels that further narrow assistant-visible documents."),
                             ["tags"] = ObjectMapField("Optional tag key/value pairs that further narrow assistant-visible documents."),
                             ["source_url_contains"] = StringField("Optional source URL substring filter. Accepted only when assistant policy allows source URLs."),
-                            ["max_results"] = IntegerField("Maximum documents to return.", 1, Math.Min(policy.MaxSearchResultsPerCall, policy.MaxToolResultItems)),
+                            ["max_results"] = IntegerField("Maximum documents to return for this page.", 1, Math.Min(policy.MaxSearchResultsPerCall, policy.MaxToolResultItems)),
                             ["continuation_token"] = StringField("Continuation token from a previous enumeration response.")
                         },
                         new List<string>()));

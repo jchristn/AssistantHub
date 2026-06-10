@@ -457,7 +457,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         if (delta.status === 'Compacting the conversation...') {
           compactionDetected = true;
         }
-        if (delta.toolEvent) {
+        if (delta.clearToolStatus) {
+          setToolStatus(null);
+        } else if (delta.toolEvent) {
           setToolStatus(delta.status || 'Running tool');
         }
         if (delta.content) {
@@ -579,23 +581,14 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     return null;
   };
 
-  const formatTraceDuration = (value) => {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric) || numeric <= 0) return null;
-    if (numeric < 1000) return `${Math.round(numeric)}ms`;
-    return `${(numeric / 1000).toFixed(numeric >= 10000 ? 1 : 2)}s`;
-  };
-
   const normalizeChatToolTraces = (result) => {
     const directTraces = result?.tool_calls || result?.ToolCalls;
     if (Array.isArray(directTraces) && directTraces.length > 0) {
       return directTraces.map((trace, index) => ({
         id: readTraceField(trace, 'tool_call_id', 'ToolCallId') || `${readTraceField(trace, 'tool_name', 'ToolName') || 'tool'}-${index}`,
         toolName: readTraceField(trace, 'display_label', 'DisplayLabel', 'tool_name', 'ToolName') || 'Tool',
-        status: readTraceField(trace, 'denied', 'Denied') ? 'Denied' : readTraceField(trace, 'success', 'Success') ? 'Completed' : 'Failed',
+        status: readTraceField(trace, 'denied', 'Denied') ? 'Denied' : readTraceField(trace, 'success', 'Success') ? 'Succeeded' : 'Failed',
         summary: readTraceField(trace, 'summary', 'Summary'),
-        duration: formatTraceDuration(readTraceField(trace, 'duration_ms', 'DurationMs')),
-        resultCount: readTraceField(trace, 'result_count', 'ResultCount'),
         truncated: !!readTraceField(trace, 'truncated', 'Truncated')
       }));
     }
@@ -615,7 +608,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     return sourceEvents.map((event, index) => {
       const eventType = String(readTraceField(event, 'event_type', 'EventType', 'type') || '').toLowerCase();
       let status = 'Running';
-      if (eventType.endsWith('.completed')) status = 'Completed';
+      if (eventType.endsWith('.completed')) status = 'Succeeded';
       else if (eventType.endsWith('.failed') || eventType.endsWith('.interrupted')) status = 'Failed';
       else if (eventType.endsWith('.denied')) status = 'Denied';
 
@@ -624,8 +617,6 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         toolName: readTraceField(event, 'display_label', 'DisplayLabel', 'tool_name', 'ToolName') || 'Tool',
         status,
         summary: readTraceField(event, 'summary', 'Summary', 'status', 'Status'),
-        duration: formatTraceDuration(readTraceField(event, 'duration_ms', 'DurationMs')),
-        resultCount: readTraceField(event, 'result_count', 'ResultCount'),
         truncated: !!readTraceField(event, 'truncated', 'Truncated')
       };
     });
@@ -633,31 +624,67 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
   const renderToolTraceSummary = (traces) => {
     if (!Array.isArray(traces) || traces.length === 0) return null;
-    const visible = traces.slice(0, 8);
-    const hidden = traces.length - visible.length;
+    const isGenericSummary = (trace, value) => {
+      if (!value) return true;
+      const normalized = value.trim().replace(/\s+/g, ' ').toLowerCase();
+      const label = String(trace.toolName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      return normalized === `${label} completed.`
+        || normalized === `${label} completed`
+        || normalized === `${label} running.`
+        || normalized === `${label} running`;
+    };
+    const noteLabel = (trace) => {
+      const notes = [];
+      if (trace.truncated) notes.push('Truncated');
+      if (trace.status === 'Denied') notes.push('Denied');
+      if (trace.status === 'Failed') notes.push('Failed');
+      if (trace.status === 'Denied' || trace.status === 'Failed') {
+        const summary = trace.summary || '';
+        if (summary && !isGenericSummary(trace, summary)) notes.push(summary);
+      }
+      return notes.join(' | ');
+    };
+    const visibleTraces = traces
+      .map(trace => ({ trace, note: noteLabel(trace) }))
+      .filter(item => item.note);
+    if (visibleTraces.length === 0) return null;
+
+    const callCountLabel = [
+      `${visibleTraces.length} issue${visibleTraces.length === 1 ? '' : 's'}`
+    ].join(' | ');
 
     return (
-      <div className="chat-tool-trace" aria-label="Tool activity">
-        <div className="chat-tool-trace-header">Tool activity</div>
-        <div className="chat-tool-trace-list">
-          {visible.map((trace, index) => {
-            const statusClass = String(trace.status || '').toLowerCase();
-            const meta = [
-              trace.resultCount != null ? `${trace.resultCount} result${Number(trace.resultCount) === 1 ? '' : 's'}` : '',
-              trace.duration || '',
-              trace.truncated ? 'truncated' : ''
-            ].filter(Boolean).join(' | ');
-            return (
-              <div key={trace.id || index} className={`chat-tool-trace-pill ${statusClass}`} title={trace.summary || trace.toolName}>
-                <span className="chat-tool-trace-name">{trace.toolName}</span>
-                <span className="chat-tool-trace-status">{trace.status}</span>
-                {meta && <span className="chat-tool-trace-meta">{meta}</span>}
-              </div>
-            );
-          })}
-          {hidden > 0 && <span className="chat-tool-trace-more">+{hidden} more</span>}
+      <details className="chat-tool-trace" aria-label="Tool activity">
+        <summary className="chat-tool-trace-summary">
+          <span className="chat-tool-trace-caret" aria-hidden="true" />
+          <span className="chat-tool-trace-title">Tool activity</span>
+          <span className="chat-tool-trace-count">{callCountLabel}</span>
+        </summary>
+        <div className="chat-tool-trace-table-wrap">
+          <table className="chat-tool-trace-table">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleTraces.map(({ trace, note }, index) => {
+                return (
+                  <tr key={trace.id || index}>
+                    <td data-label="Tool">
+                      <span className="chat-tool-trace-name" title={trace.toolName}>{trace.toolName}</span>
+                    </td>
+                    <td data-label="Notes">
+                      <span className="chat-tool-trace-details" title={note}>{note}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </div>
+      </details>
     );
   };
 

@@ -59,6 +59,15 @@ const defaultEmbedding = {
   L2Normalization: false
 };
 
+const getIndexId = (index) => index?.Identifier || index?.Id || index?.GUID || index?.IndexId || index?.Name || '';
+
+const getIndexLabel = (index) => {
+  const id = getIndexId(index);
+  const name = index?.Name;
+  if (name && id && name !== id) return `${name} (${id})`;
+  return name || id;
+};
+
 function IngestionRuleFormModal({ rule, initialData, buckets, collections, indices, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
   const isEdit = !!rule;
   const source = rule || initialData;
@@ -214,9 +223,16 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
     color: 'var(--text-primary)'
   };
 
-  const indexIds = Array.from(new Set((indices || [])
-    .map(index => index.Id || index.GUID || index.IndexId || index.Name)
-    .filter(Boolean)));
+  const indexOptions = Array.from(new Map((indices || [])
+    .map(index => {
+      const id = getIndexId(index);
+      return id ? [id, { id, label: getIndexLabel(index) }] : null;
+    })
+    .filter(Boolean)).values());
+
+  if (form.VerbexIndexId && !indexOptions.some(option => option.id === form.VerbexIndexId)) {
+    indexOptions.push({ id: form.VerbexIndexId, label: `${form.VerbexIndexId} (current)` });
+  }
 
   return (
     <Modal
@@ -299,18 +315,15 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
         {/* Verbex Index */}
         <div className="form-group">
           <label><Tooltip text="Target Verbex inverted index for searchable full document text. Leave blank to use the tenant default index">Verbex Index</Tooltip></label>
-          <input
-            type="text"
-            list="verbex-index-options"
+          <select
             value={form.VerbexIndexId}
             onChange={(e) => handleChange('VerbexIndexId', e.target.value)}
-            placeholder="default"
-          />
-          <datalist id="verbex-index-options">
-            {indexIds.map(indexId => (
-              <option key={indexId} value={indexId} />
+          >
+            <option value="">Default index</option>
+            {indexOptions.map(index => (
+              <option key={index.id} value={index.id}>{index.label}</option>
             ))}
-          </datalist>
+          </select>
         </div>
 
         {/* Labels */}

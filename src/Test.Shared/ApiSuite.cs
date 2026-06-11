@@ -543,6 +543,7 @@ namespace Test.Automated
                 string explorerSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "ApiExplorerView.jsx"));
                 string explorerUtilsSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "apiExplorerUtils.js"));
                 string crawlPlanModalSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "components", "modals", "CrawlPlanFormModal.jsx"));
+                string ingestionRuleModalSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "components", "modals", "IngestionRuleFormModal.jsx"));
                 string duplicateObjectSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "utils", "duplicateObject.js"));
                 string assistantsViewSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "AssistantsView.jsx"));
                 string collectionsViewSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "views", "CollectionsView.jsx"));
@@ -580,6 +581,9 @@ namespace Test.Automated
                 AssertHelper.StringContains(explorerUtilsSource, "assistant-chat-open", "API Explorer chat-open template");
                 AssertHelper.StringContains(explorerUtilsSource, "assistant-document-download", "API Explorer document download template");
                 AssertHelper.StringContains(crawlPlanModalSource, "Test Connectivity", "Create Crawl Plan modal connectivity button");
+                AssertHelper.StringContains(ingestionRuleModalSource, "<option value=\"\">Default index</option>", "Dashboard ingestion-rule Verbex index field is a dropdown");
+                AssertHelper.StringContains(ingestionRuleModalSource, "indexOptions.map", "Dashboard ingestion-rule Verbex index dropdown uses index lookup options");
+                AssertHelper.IsFalse(ingestionRuleModalSource.Contains("verbex-index-options"), "Dashboard ingestion-rule Verbex index must not use a free-form datalist");
                 AssertHelper.StringContains(duplicateObjectSource, "'Id'", "Dashboard duplicate helper strips row identifiers");
                 AssertHelper.StringContains(duplicateObjectSource, "appendCopySuffix", "Dashboard duplicate helper appends copy suffixes");
                 AssertHelper.StringContains(assistantsViewSource, "{ label: 'Duplicate'", "Dashboard assistants can be duplicated");

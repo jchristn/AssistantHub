@@ -10,12 +10,14 @@ import CrawlOperationsModal from '../components/modals/CrawlOperationsModal';
 import CrawlEnumerationModal from '../components/modals/CrawlEnumerationModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function CrawlersView() {
   const { serverUrl, credential } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(null); // null | 'create' | crawlPlan object
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [showOperations, setShowOperations] = useState(null);
   const [showEnumeration, setShowEnumeration] = useState(null);
@@ -129,6 +131,7 @@ function CrawlersView() {
         await api.createCrawlPlan(data);
       }
       setShowForm(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to save crawl plan' });
@@ -180,7 +183,11 @@ function CrawlersView() {
   const getRowActions = (row) => {
     const state = (row.State || '').toLowerCase();
     return [
-      { label: 'Edit', onClick: () => setShowForm(row) },
+      { label: 'Edit', onClick: () => { setInitialFormData(null); setShowForm(row); } },
+      { label: 'Duplicate', onClick: () => {
+        setInitialFormData(createDuplicateInitialData(row));
+        setShowForm('create');
+      } },
       { label: state === 'running' ? 'Stop' : 'Start', onClick: () => handleStartStop(row) },
       { label: 'View Operations', onClick: () => setShowOperations(row) },
       { label: 'View JSON', onClick: () => setShowJson(row) },
@@ -208,17 +215,18 @@ function CrawlersView() {
           <h1 className="content-title">Crawlers</h1>
           <p className="content-subtitle">Manage crawl plans for automated content ingestion from web and other sources.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm('create')}>Create Crawler</button>
+        <button className="btn btn-primary" onClick={() => { setInitialFormData(null); setShowForm('create'); }}>Create Crawler</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => setShowForm(row)} />
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setInitialFormData(null); setShowForm(row); }} />
       {showForm && (
         <CrawlPlanFormModal
           plan={showForm !== 'create' ? showForm : null}
+          initialData={showForm === 'create' ? initialFormData : null}
           ingestionRules={ingestionRules}
           buckets={buckets}
           onSave={handleSave}
           onTestConnectivity={handleTestDraftConnectivity}
-          onClose={() => setShowForm(null)}
+          onClose={() => { setShowForm(null); setInitialFormData(null); }}
         />
       )}
       {showJson && <JsonViewModal title="Crawl Plan JSON" data={showJson} onClose={() => setShowJson(null)} />}

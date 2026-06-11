@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 
-function CollectionFormModal({ collection, onSave, onClose }) {
+function CollectionFormModal({ collection, initialData, onSave, onClose }) {
   const isEdit = !!collection;
+  const source = collection || initialData;
   const [form, setForm] = useState({
-    Name: collection?.Name || '',
-    Description: collection?.Description || '',
-    Dimensionality: collection?.Dimensionality || 768,
-    Active: collection?.Active !== undefined ? collection.Active : true
+    Name: source?.Name || '',
+    Description: source?.Description || '',
+    Dimensionality: source?.Dimensionality || 768,
+    Active: source?.Active !== undefined ? source.Active : true
   });
   const [saving, setSaving] = useState(false);
 
@@ -50,17 +51,15 @@ function CollectionFormModal({ collection, onSave, onClose }) {
           <label><Tooltip text="Number of dimensions for embedding vectors. Must match the output size of your embedding model. Cannot be changed after creation">Dimensionality</Tooltip></label>
           <input type="number" value={form.Dimensionality} onChange={(e) => handleChange('Dimensionality', parseInt(e.target.value) || 1)} min="1" disabled={isEdit} />
         </div>
-        {isEdit && (
-          <div className="form-group">
-            <div className="form-toggle">
-              <label className="toggle-switch">
-                <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
-                <span className="toggle-slider"></span>
-              </label>
-              <span><Tooltip text="Whether this collection is active and available for queries">Active</Tooltip></span>
-            </div>
+        <div className="form-group">
+          <div className="form-toggle">
+            <label className="toggle-switch">
+              <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+              <span className="toggle-slider"></span>
+            </label>
+            <span><Tooltip text="Whether this collection is active and available for queries">Active</Tooltip></span>
           </div>
-        )}
+        </div>
       </form>
     </Modal>
   );

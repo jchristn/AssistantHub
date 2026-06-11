@@ -7,6 +7,7 @@ import CopyableId from '../components/CopyableId';
 import Modal from '../components/Modal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function EvaluationView() {
   const { serverUrl, credential } = useAuth();
@@ -70,6 +71,13 @@ function EvaluationView() {
 
   const getFactActions = (row) => [
     { label: 'Edit', onClick: () => setFactModal({ mode: 'edit', fact: row }) },
+    { label: 'Duplicate', onClick: () => setFactModal({
+      mode: 'create',
+      fact: createDuplicateInitialData(row, {
+        nameField: null,
+        includeFields: ['AssistantId', 'Category', 'Question', 'ExpectedFacts'],
+      }),
+    }) },
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];
 

@@ -9,6 +9,7 @@ import AssistantFormModal from '../components/modals/AssistantFormModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function AssistantsView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
@@ -16,6 +17,7 @@ function AssistantsView() {
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editAssistant, setEditAssistant] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -41,9 +43,18 @@ function AssistantsView() {
     return await api.getAssistants(params);
   }, [serverUrl, credential]);
 
+  const handleDuplicate = (row) => {
+    setEditAssistant(null);
+    setInitialFormData(createDuplicateInitialData(row, {
+      includeFields: ['Name', 'Description', 'Active'],
+    }));
+    setShowForm(true);
+  };
+
   const getRowActions = (row) => [
-    { label: 'Edit', onClick: () => { setEditAssistant(row); setShowForm(true); } },
+    { label: 'Edit', onClick: () => { setEditAssistant(row); setInitialFormData(null); setShowForm(true); } },
     { label: 'Settings', onClick: () => navigate(`/assistant-settings?assistantId=${row.Id}`) },
+    { label: 'Duplicate', onClick: () => handleDuplicate(row) },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];
@@ -57,6 +68,7 @@ function AssistantsView() {
       }
       setShowForm(false);
       setEditAssistant(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to save assistant' });
@@ -91,10 +103,10 @@ function AssistantsView() {
           <h1 className="content-title">Assistants</h1>
           <p className="content-subtitle">Create and manage AI-powered assistants, their settings, user feedback, and conversation history.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditAssistant(null); setShowForm(true); }}>Create Assistant</button>
+        <button className="btn btn-primary" onClick={() => { setEditAssistant(null); setInitialFormData(null); setShowForm(true); }}>Create Assistant</button>
       </div>
       <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => navigate(`/assistant-settings?assistantId=${row.Id}`)} />
-      {showForm && <AssistantFormModal assistant={editAssistant} onSave={handleSave} onClose={() => { setShowForm(false); setEditAssistant(null); }} />}
+      {showForm && <AssistantFormModal assistant={editAssistant} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditAssistant(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Assistant JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Assistant" message={`Are you sure you want to delete assistant "${deleteTarget.Name}"? This will also delete all associated documents and settings.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

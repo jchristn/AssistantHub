@@ -11,6 +11,7 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import { HealthHistogram, HealthDetailModal } from '../components/HealthHistogram';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function EmbeddingEndpointsView() {
   const { serverUrl, credential } = useAuth();
@@ -102,9 +103,8 @@ function EmbeddingEndpointsView() {
   }, [serverUrl, credential]);
 
   const handleDuplicate = (row) => {
-    const { Id, GUID, CreatedUtc, ...rest } = row;
     setEditEndpoint(null);
-    setInitialFormData({ ...rest, Name: (rest.Name ? rest.Name + ' (Copy)' : '') });
+    setInitialFormData(createDuplicateInitialData(row));
     setShowForm(true);
   };
 

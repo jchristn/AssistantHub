@@ -3,13 +3,15 @@ import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 import CopyableId from '../CopyableId';
 
-function CredentialFormModal({ credential, onSave, onClose }) {
+function CredentialFormModal({ credential, initialData, onSave, onClose }) {
   const isEdit = !!credential;
+  const source = credential || initialData;
   const [form, setForm] = useState({
-    Name: credential?.Name || 'Default credential',
-    UserId: credential?.UserId || '',
-    Active: credential?.Active !== undefined ? credential.Active : true,
-    IsProtected: credential?.IsProtected !== undefined ? credential.IsProtected : false
+    Name: source?.Name || 'Default credential',
+    UserId: source?.UserId || '',
+    TenantId: source?.TenantId || '',
+    Active: source?.Active !== undefined ? source.Active : true,
+    IsProtected: source?.IsProtected !== undefined ? source.IsProtected : false
   });
   const [saving, setSaving] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
@@ -23,6 +25,7 @@ function CredentialFormModal({ credential, onSave, onClose }) {
     setSaving(true);
     try {
       const data = { ...form };
+      if (!data.TenantId) delete data.TenantId;
       if (isEdit) data.Id = credential.Id;
       const result = await onSave(data);
       if (result && result.BearerToken && !isEdit) {

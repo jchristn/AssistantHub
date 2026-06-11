@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
 
-function AssistantFormModal({ assistant, onSave, onClose }) {
+function AssistantFormModal({ assistant, initialData, onSave, onClose }) {
   const isEdit = !!assistant;
+  const source = assistant || initialData;
   const [form, setForm] = useState({
-    Name: assistant?.Name || '',
-    Description: assistant?.Description || '',
-    Active: assistant?.Active !== undefined ? assistant.Active : true
+    Name: source?.Name || '',
+    Description: source?.Description || '',
+    Active: source?.Active !== undefined ? source.Active : true
   });
   const [saving, setSaving] = useState(false);
 
@@ -45,17 +46,15 @@ function AssistantFormModal({ assistant, onSave, onClose }) {
           <label><Tooltip text="Optional description of the assistant's purpose and capabilities">Description</Tooltip></label>
           <textarea value={form.Description} onChange={(e) => handleChange('Description', e.target.value)} rows={3} />
         </div>
-        {isEdit && (
-          <div className="form-group">
-            <div className="form-toggle">
-              <label className="toggle-switch">
-                <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
-                <span className="toggle-slider"></span>
-              </label>
-              <span><Tooltip text="Whether this assistant is active and available for use">Active</Tooltip></span>
-            </div>
+        <div className="form-group">
+          <div className="form-toggle">
+            <label className="toggle-switch">
+              <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+              <span className="toggle-slider"></span>
+            </label>
+            <span><Tooltip text="Whether this assistant is active and available for use">Active</Tooltip></span>
           </div>
-        )}
+        </div>
       </form>
     </Modal>
   );

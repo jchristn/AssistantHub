@@ -8,6 +8,7 @@ import CredentialFormModal from '../components/modals/CredentialFormModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function CredentialsView() {
   const location = useLocation();
@@ -15,6 +16,7 @@ function CredentialsView() {
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editCredential, setEditCredential] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -37,7 +39,14 @@ function CredentialsView() {
   }, [serverUrl, credential, tenantId]);
 
   const getRowActions = (row) => [
-    { label: 'Edit', onClick: () => { setEditCredential(row); setShowForm(true); } },
+    { label: 'Edit', onClick: () => { setEditCredential(row); setInitialFormData(null); setShowForm(true); } },
+    { label: 'Duplicate', onClick: () => {
+      setEditCredential(null);
+      setInitialFormData(createDuplicateInitialData(row, {
+        includeFields: ['Name', 'UserId', 'TenantId'],
+      }));
+      setShowForm(true);
+    } },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     ...(!row.IsProtected ? [{ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) }] : []),
   ];
@@ -53,6 +62,7 @@ function CredentialsView() {
       }
       setShowForm(false);
       setEditCredential(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
       return result;
     } catch (err) {
@@ -89,10 +99,10 @@ function CredentialsView() {
           <h1 className="content-title">Credentials</h1>
           <p className="content-subtitle">Manage bearer tokens used for API authentication.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditCredential(null); setShowForm(true); }}>Create Credential</button>
+        <button className="btn btn-primary" onClick={() => { setEditCredential(null); setInitialFormData(null); setShowForm(true); }}>Create Credential</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCredential(row); setShowForm(true); }} />
-      {showForm && <CredentialFormModal credential={editCredential} onSave={handleSave} onClose={() => { setShowForm(false); setEditCredential(null); }} />}
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} initialFilters={initialFilters} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCredential(row); setInitialFormData(null); setShowForm(true); }} />
+      {showForm && <CredentialFormModal credential={editCredential} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditCredential(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Credential JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Credential" message={`Are you sure you want to delete credential "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

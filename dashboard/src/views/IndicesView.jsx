@@ -23,15 +23,17 @@ import {
   tagsToInput,
   unwrapObjects,
 } from '../utils/artifactSearch.jsx';
+import { appendCopySuffix } from '../utils/duplicateObject';
 
 const DEFAULT_INDEX_ID = 'default';
+const DEFAULT_INDEX_FORM = { Identifier: '', Name: '', Description: '', Labels: '', Tags: '', CustomMetadata: '{}' };
 
 function IndicesView() {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ Identifier: '', Name: '', Description: '', Labels: '', Tags: '', CustomMetadata: '{}' });
+  const [form, setForm] = useState(DEFAULT_INDEX_FORM);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState({ Name: '', Description: '', Labels: '', Tags: '', CustomMetadata: '{}' });
   const [detailTarget, setDetailTarget] = useState(null);
@@ -73,7 +75,7 @@ function IndicesView() {
     try {
       await api.createIndex(buildIndexBody(form));
       setShowCreate(false);
-      setForm({ Identifier: '', Name: '', Description: '', Labels: '', Tags: '', CustomMetadata: '{}' });
+      setForm(DEFAULT_INDEX_FORM);
       setRefresh((value) => value + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to create index' });
@@ -89,6 +91,18 @@ function IndicesView() {
       Tags: tagsToInput(getTags(row)),
       CustomMetadata: formatJson(getCustomMetadata(row)),
     });
+  };
+
+  const openDuplicate = (row) => {
+    setForm({
+      Identifier: '',
+      Name: appendCopySuffix(row.Name || getIndexId(row)),
+      Description: row.Description || '',
+      Labels: getLabels(row).join(', '),
+      Tags: tagsToInput(getTags(row)),
+      CustomMetadata: formatJson(getCustomMetadata(row)),
+    });
+    setShowCreate(true);
   };
 
   const handleEdit = async (e) => {
@@ -134,6 +148,7 @@ function IndicesView() {
       { label: 'Search', onClick: () => navigate(`/indices/search?indexId=${encodeURIComponent(id)}`, { state: { indexId: id } }) },
       { label: 'Top Terms', onClick: () => loadTopTerms(row) },
       { label: 'Edit Metadata', onClick: () => openEdit(row) },
+      { label: 'Duplicate', onClick: () => openDuplicate(row) },
       { label: 'View JSON', onClick: () => setShowJson(row) },
     ];
     if (id && id !== DEFAULT_INDEX_ID) actions.push({ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) });
@@ -147,7 +162,7 @@ function IndicesView() {
           <h1 className="content-title">Indices</h1>
           <p className="content-subtitle">Manage Verbex inverted indices used for text search.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate((value) => !value)}>Create Index</button>
+        <button className="btn btn-primary" onClick={() => { setForm(DEFAULT_INDEX_FORM); setShowCreate((value) => !value); }}>Create Index</button>
       </div>
 
       {showCreate && (
@@ -182,7 +197,7 @@ function IndicesView() {
           </div>
           <div className="artifact-form-actions">
             <button className="btn btn-primary" type="submit">Save</button>
-            <button className="btn btn-secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</button>
+            <button className="btn btn-secondary" type="button" onClick={() => { setShowCreate(false); setForm(DEFAULT_INDEX_FORM); }}>Cancel</button>
           </div>
         </form>
       )}

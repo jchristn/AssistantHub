@@ -9,6 +9,7 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import { getCollectionId } from '../utils/artifactSearch.jsx';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function CollectionsView() {
   const { serverUrl, credential } = useAuth();
@@ -16,6 +17,7 @@ function CollectionsView() {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editCollection, setEditCollection] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -39,7 +41,14 @@ function CollectionsView() {
     return [
       { label: 'View Records', onClick: () => navigate(`/records?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
       { label: 'Search', onClick: () => navigate(`/collections/search?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
-      { label: 'Edit', onClick: () => { setEditCollection(row); setShowForm(true); } },
+      { label: 'Edit', onClick: () => { setEditCollection(row); setInitialFormData(null); setShowForm(true); } },
+      { label: 'Duplicate', onClick: () => {
+        setEditCollection(null);
+        setInitialFormData(createDuplicateInitialData(row, {
+          includeFields: ['Name', 'Description', 'Dimensionality', 'Active'],
+        }));
+        setShowForm(true);
+      } },
       { label: 'View JSON', onClick: () => setShowJson(row) },
       { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
     ];
@@ -54,6 +63,7 @@ function CollectionsView() {
       }
       setShowForm(false);
       setEditCollection(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to save collection' });
@@ -88,10 +98,10 @@ function CollectionsView() {
           <h1 className="content-title">Collections</h1>
           <p className="content-subtitle">Manage vector collections for document storage and retrieval.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditCollection(null); setShowForm(true); }}>Create Collection</button>
+        <button className="btn btn-primary" onClick={() => { setEditCollection(null); setInitialFormData(null); setShowForm(true); }}>Create Collection</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCollection(row); setShowForm(true); }} />
-      {showForm && <CollectionFormModal collection={editCollection} onSave={handleSave} onClose={() => { setShowForm(false); setEditCollection(null); }} />}
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditCollection(row); setInitialFormData(null); setShowForm(true); }} />
+      {showForm && <CollectionFormModal collection={editCollection} initialData={initialFormData} onSave={handleSave} onClose={() => { setShowForm(false); setEditCollection(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Collection JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Collection" message={`Are you sure you want to delete collection "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

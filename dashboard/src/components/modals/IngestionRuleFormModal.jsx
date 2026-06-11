@@ -59,25 +59,26 @@ const defaultEmbedding = {
   L2Normalization: false
 };
 
-function IngestionRuleFormModal({ rule, buckets, collections, indices, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
+function IngestionRuleFormModal({ rule, initialData, buckets, collections, indices, inferenceEndpoints, embeddingEndpoints, onSave, onClose }) {
   const isEdit = !!rule;
+  const source = rule || initialData;
 
   const [form, setForm] = useState({
-    Name: rule?.Name || '',
-    Description: rule?.Description || '',
-    Bucket: rule?.Bucket || '',
-    CollectionId: rule?.CollectionId || '',
-    CollectionName: rule?.CollectionName || '',
-    VerbexIndexId: rule?.VerbexIndexId || '',
-    Labels: rule?.Labels ? [...rule.Labels] : [],
-    Tags: rule?.Tags ? { ...rule.Tags } : {},
-    Summarization: rule?.Summarization ? { ...defaultSummarization, ...rule.Summarization } : { ...defaultSummarization },
-    Chunking: rule?.Chunking ? { ...defaultChunking, ...rule.Chunking } : { ...defaultChunking },
-    Embedding: rule?.Embedding ? { ...defaultEmbedding, ...rule.Embedding } : { ...defaultEmbedding }
+    Name: source?.Name || '',
+    Description: source?.Description || '',
+    Bucket: source?.Bucket || '',
+    CollectionId: source?.CollectionId || '',
+    CollectionName: source?.CollectionName || '',
+    VerbexIndexId: source?.VerbexIndexId || '',
+    Labels: source?.Labels ? [...source.Labels] : [],
+    Tags: source?.Tags ? { ...source.Tags } : {},
+    Summarization: source?.Summarization ? { ...defaultSummarization, ...source.Summarization } : { ...defaultSummarization },
+    Chunking: source?.Chunking ? { ...defaultChunking, ...source.Chunking } : { ...defaultChunking },
+    Embedding: source?.Embedding ? { ...defaultEmbedding, ...source.Embedding } : { ...defaultEmbedding }
   });
 
   const [saving, setSaving] = useState(false);
-  const [summarizationEnabled, setSummarizationEnabled] = useState(!!rule?.Summarization);
+  const [summarizationEnabled, setSummarizationEnabled] = useState(!!source?.Summarization);
   const [labelInput, setLabelInput] = useState('');
   const [tagKeyInput, setTagKeyInput] = useState('');
   const [tagValueInput, setTagValueInput] = useState('');

@@ -7,12 +7,14 @@ import IngestionRuleFormModal from '../components/modals/IngestionRuleFormModal'
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
+import { createDuplicateInitialData } from '../utils/duplicateObject';
 
 function IngestionRulesView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [showForm, setShowForm] = useState(false);
   const [editRule, setEditRule] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [alert, setAlert] = useState(null);
@@ -69,8 +71,15 @@ function IngestionRulesView() {
     return await api.getIngestionRules(params);
   }, [serverUrl, credential]);
 
+  const handleDuplicate = (row) => {
+    setEditRule(null);
+    setInitialFormData(createDuplicateInitialData(row));
+    setShowForm(true);
+  };
+
   const getRowActions = (row) => [
-    { label: 'Edit', onClick: () => { setEditRule(row); setShowForm(true); } },
+    { label: 'Edit', onClick: () => { setEditRule(row); setInitialFormData(null); setShowForm(true); } },
+    { label: 'Duplicate', onClick: () => handleDuplicate(row) },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];
@@ -84,6 +93,7 @@ function IngestionRulesView() {
       }
       setShowForm(false);
       setEditRule(null);
+      setInitialFormData(null);
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to save ingestion rule' });
@@ -118,10 +128,10 @@ function IngestionRulesView() {
           <h1 className="content-title">Ingestion Rules</h1>
           <p className="content-subtitle">Manage ingestion rules that define how documents are processed, chunked, and embedded.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditRule(null); setShowForm(true); }}>Create Ingestion Rule</button>
+        <button className="btn btn-primary" onClick={() => { setEditRule(null); setInitialFormData(null); setShowForm(true); }}>Create Ingestion Rule</button>
       </div>
-      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditRule(row); setShowForm(true); }} />
-      {showForm && <IngestionRuleFormModal rule={editRule} buckets={buckets} collections={collections} indices={indices} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); }} />}
+      <DataTable columns={columns} fetchData={fetchData} getRowActions={getRowActions} refreshTrigger={refresh} onBulkDelete={handleBulkDelete} onRowClick={(row) => { setEditRule(row); setInitialFormData(null); setShowForm(true); }} />
+      {showForm && <IngestionRuleFormModal rule={editRule} initialData={initialFormData} buckets={buckets} collections={collections} indices={indices} inferenceEndpoints={inferenceEndpoints} embeddingEndpoints={embeddingEndpoints} onSave={handleSave} onClose={() => { setShowForm(false); setEditRule(null); setInitialFormData(null); }} />}
       {showJson && <JsonViewModal title="Ingestion Rule JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Ingestion Rule" message={`Are you sure you want to delete ingestion rule "${deleteTarget.Name}"? This action cannot be undone.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

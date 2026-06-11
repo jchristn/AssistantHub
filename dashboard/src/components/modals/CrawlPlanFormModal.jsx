@@ -124,22 +124,23 @@ const isNonNegativeInteger = (value) => {
   return Number.isInteger(parsed) && parsed >= 0;
 };
 
-function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onTestConnectivity, onClose }) {
+function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave, onTestConnectivity, onClose }) {
   const isEdit = !!plan;
+  const source = plan || initialData;
 
-  const repoSettings = plan?.RepositorySettings;
-  const ingestionSettings = plan?.IngestionSettings;
-  const filterSettings = plan?.Filter;
-  const initialRepositoryType = plan?.RepositoryType || repoSettings?.RepositoryType || 'Web';
+  const repoSettings = source?.RepositorySettings;
+  const ingestionSettings = source?.IngestionSettings;
+  const filterSettings = source?.Filter;
+  const initialRepositoryType = source?.RepositoryType || repoSettings?.RepositoryType || 'Web';
 
   const [form, setForm] = useState({
-    Name: plan?.Name || '',
+    Name: source?.Name || '',
     RepositoryType: initialRepositoryType,
     IngestionRuleId: ingestionSettings?.IngestionRuleId || '',
     StoreInS3: ingestionSettings?.StoreInS3 ?? false,
     S3BucketName: ingestionSettings?.S3BucketName || '',
     Repository: normalizeRepositorySettings(repoSettings, initialRepositoryType),
-    Schedule: plan?.Schedule ? { ...defaultSchedule, ...plan.Schedule } : { ...defaultSchedule },
+    Schedule: source?.Schedule ? { ...defaultSchedule, ...source.Schedule } : { ...defaultSchedule },
     Filter: filterSettings ? {
       ObjectPrefix: filterSettings.ObjectPrefix || '',
       ObjectSuffix: filterSettings.ObjectSuffix || '',
@@ -148,12 +149,12 @@ function CrawlPlanFormModal({ plan, ingestionRules, buckets, onSave, onTestConne
       MaximumSize: filterSettings.MaximumSize ?? '',
     } : { ...defaultFilter },
     Processing: {
-      ProcessAdditions: plan?.ProcessAdditions ?? defaultProcessing.ProcessAdditions,
-      ProcessUpdates: plan?.ProcessUpdates ?? defaultProcessing.ProcessUpdates,
-      ProcessDeletions: plan?.ProcessDeletions ?? defaultProcessing.ProcessDeletions,
-      MaxDrainTasks: plan?.MaxDrainTasks ?? defaultProcessing.MaxDrainTasks,
+      ProcessAdditions: source?.ProcessAdditions ?? defaultProcessing.ProcessAdditions,
+      ProcessUpdates: source?.ProcessUpdates ?? defaultProcessing.ProcessUpdates,
+      ProcessDeletions: source?.ProcessDeletions ?? defaultProcessing.ProcessDeletions,
+      MaxDrainTasks: source?.MaxDrainTasks ?? defaultProcessing.MaxDrainTasks,
     },
-    RetentionDays: plan?.RetentionDays ?? 7,
+    RetentionDays: source?.RetentionDays ?? 7,
   });
 
   // Auto-select S3 bucket if there is exactly one

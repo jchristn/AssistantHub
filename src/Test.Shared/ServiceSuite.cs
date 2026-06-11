@@ -8910,6 +8910,35 @@ namespace Test.Automated
                     "Required Verbex ingestion failure");
             });
 
+            await ExecuteTestAsync("IngestionServiceBase.IndexDocumentTextAsync: retries Verbex pool exhaustion", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.InternalServerError, "The connection pool has been exhausted");
+                invertedIndex.Enqueue(HttpStatusCode.OK);
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+
+                VerbexSettings settings = new VerbexSettings
+                {
+                    RequireIngestion = true,
+                    IndexingRetryCount = 1,
+                    IndexingRetryDelayMs = 0
+                };
+
+                IngestionService service = CreateTestIngestionService(database, settings, invertedIndex);
+                AssistantDocument document = CreateVerbexTestDocument("adoc_pool_retry");
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                bool indexed = await InvokeIndexDocumentTextAsync(service, document, "retry content", CreateVerbexTestRule(), null, null).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(indexed, "Document should be indexed after transient pool failure");
+                AssertHelper.HasCount(invertedIndex.Calls, 4, "Verbex retry calls");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[3].Method, "retry create method");
+                AssistantDocument updated = await database.AssistantDocument.ReadAsync(document.Id).ConfigureAwait(false);
+                AssertHelper.AreEqual(document.Id, updated.VerbexRecordId, "Verbex metadata should be persisted after retry");
+            });
+
             await ExecuteTestAsync("IngestionServiceBase.DeleteIndexRecordInternalAsync: deletes Verbex record by default index", async () =>
             {
                 RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();

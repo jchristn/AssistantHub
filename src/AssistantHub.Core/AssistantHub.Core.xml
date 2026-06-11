@@ -15194,6 +15194,21 @@
             Maximum normalized content characters sent to Verbex for one record.  Zero means unlimited.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.MaxConcurrentIndexingRequests">
+            <summary>
+            Maximum concurrent document indexing requests sent to Verbex by this process.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.IndexingRetryCount">
+            <summary>
+            Number of retries for transient Verbex indexing failures.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.IndexingRetryDelayMs">
+            <summary>
+            Base delay in milliseconds before retrying a transient Verbex indexing failure.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.VerbexSettings.#ctor">
             <summary>
             Instantiate.

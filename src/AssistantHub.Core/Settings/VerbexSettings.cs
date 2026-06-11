@@ -61,6 +61,33 @@ namespace AssistantHub.Core.Settings
             set => _MaxContentCharacters = Math.Max(0, value);
         }
 
+        /// <summary>
+        /// Maximum concurrent document indexing requests sent to Verbex by this process.
+        /// </summary>
+        public int MaxConcurrentIndexingRequests
+        {
+            get => _MaxConcurrentIndexingRequests;
+            set => _MaxConcurrentIndexingRequests = Math.Clamp(value, 1, 64);
+        }
+
+        /// <summary>
+        /// Number of retries for transient Verbex indexing failures.
+        /// </summary>
+        public int IndexingRetryCount
+        {
+            get => _IndexingRetryCount;
+            set => _IndexingRetryCount = Math.Clamp(value, 0, 10);
+        }
+
+        /// <summary>
+        /// Base delay in milliseconds before retrying a transient Verbex indexing failure.
+        /// </summary>
+        public int IndexingRetryDelayMs
+        {
+            get => _IndexingRetryDelayMs;
+            set => _IndexingRetryDelayMs = Math.Clamp(value, 0, 60000);
+        }
+
         #endregion
 
         #region Private-Members
@@ -69,6 +96,9 @@ namespace AssistantHub.Core.Settings
         private string _DashboardUrl = "";
         private string _DefaultIndexId = "default";
         private int _MaxContentCharacters = 0;
+        private int _MaxConcurrentIndexingRequests = 2;
+        private int _IndexingRetryCount = 2;
+        private int _IndexingRetryDelayMs = 2000;
 
         #endregion
 

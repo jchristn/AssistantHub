@@ -11,6 +11,7 @@ import RecordFormModal from '../components/modals/RecordFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import { getCollectionId, unwrapObjects } from '../utils/artifactSearch.jsx';
+import { getStoredPageSize, setStoredPageSize } from '../utils/pageSizePreference';
 
 function RecordsView() {
   const { serverUrl, credential } = useAuth();
@@ -24,7 +25,7 @@ function RecordsView() {
   const [data, setData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(() => getStoredPageSize(25));
   const [loading, setLoading] = useState(false);
   const [showJson, setShowJson] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -161,7 +162,7 @@ function RecordsView() {
             maxResults={pageSize}
             currentPage={currentPage}
             onPageChange={(page) => setCurrentPage(page)}
-            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+            onPageSizeChange={(size) => { setPageSize(setStoredPageSize(size, 25)); setCurrentPage(1); }}
             onRefresh={handleRefresh}
             refreshState={refreshState}
           />

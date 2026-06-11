@@ -1,4 +1,5 @@
 import React from 'react';
+import { PAGE_SIZE_OPTIONS } from '../utils/pageSizePreference';
 
 function RefreshButton({ onClick, state }) {
   return (
@@ -31,10 +32,7 @@ function Pagination({ totalRecords, maxResults, currentPage, onPageChange, onPag
         {onRefresh && <RefreshButton onClick={onRefresh} state={refreshState || 'idle'} />}
         <span>{totalRecords} record{totalRecords !== 1 ? 's' : ''}</span>
         <select className="page-size-select" value={maxResults} onChange={(e) => onPageSizeChange(Number(e.target.value))}>
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
+          {PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}
         </select>
         <span>per page</span>
       </div>

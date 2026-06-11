@@ -34,6 +34,7 @@ namespace AssistantHub.Core.Services
         private protected IVectorStoreService _VectorStore = null;
         private protected VerbexSettings _VerbexSettings = null;
         private protected IInvertedIndexService _InvertedIndex = null;
+        private protected SemaphoreSlim _VerbexIndexingSemaphore = null;
         private protected LoggingModule _Logging = null;
         private protected ProcessingLogService _ProcessingLog = null;
         private protected HttpClient _HttpClient = null;
@@ -79,6 +80,7 @@ namespace AssistantHub.Core.Services
             _VectorStore = new RecallDbVectorStoreService(_RecallDbSettings, logging);
             _VerbexSettings = verbexSettings ?? throw new ArgumentNullException(nameof(verbexSettings));
             _InvertedIndex = new VerbexInvertedIndexService(_VerbexSettings, logging);
+            _VerbexIndexingSemaphore = new SemaphoreSlim(_VerbexSettings.MaxConcurrentIndexingRequests, _VerbexSettings.MaxConcurrentIndexingRequests);
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _ProcessingLog = processingLog;
             _HttpClient = new HttpClient();
@@ -500,7 +502,11 @@ namespace AssistantHub.Core.Services
 
                     if (headResp.StatusCode != System.Net.HttpStatusCode.NotFound)
                     {
-                        _Logging.Warn(_Header + "Verbex index " + indexId + " check returned HTTP " + (int)headResp.StatusCode);
+                        string responseBody = await headResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        string message = "Verbex index " + indexId + " check returned HTTP " + (int)headResp.StatusCode + ": " + responseBody;
+                        _Logging.Warn(_Header + message);
+                        if (IsTransientVerbexResponse((int)headResp.StatusCode, responseBody))
+                            throw new InvalidOperationException(message);
                         return false;
                     }
                 }
@@ -520,12 +526,18 @@ namespace AssistantHub.Core.Services
                         return true;
 
                     string responseBody = await createResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    _Logging.Warn(_Header + "Verbex index " + indexId + " create returned HTTP " + (int)createResp.StatusCode + ": " + responseBody);
+                    string message = "Verbex index " + indexId + " create returned HTTP " + (int)createResp.StatusCode + ": " + responseBody;
+                    _Logging.Warn(_Header + message);
+                    if (IsTransientVerbexResponse((int)createResp.StatusCode, responseBody))
+                        throw new InvalidOperationException(message);
                     return false;
                 }
             }
             catch (Exception e)
             {
+                if (IsTransientVerbexIndexingFailure(e))
+                    throw;
+
                 _Logging.Warn(_Header + "exception ensuring Verbex index " + indexId + ": " + e.Message);
                 return false;
             }
@@ -626,80 +638,14 @@ namespace AssistantHub.Core.Services
 
             try
             {
-                (string verbexTenantId, string indexId) = await ResolveVerbexScopeAsync(document.TenantId, rule?.VerbexIndexId, token).ConfigureAwait(false);
-
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing started - index: " + indexId + ", contentLength: " + content.Length + " chars").ConfigureAwait(false);
-
-                bool indexReady = await EnsureVerbexIndexExistsAsync(verbexTenantId, indexId, token).ConfigureAwait(false);
-                if (!indexReady)
-                    throw new InvalidOperationException("Verbex index is not available: " + indexId);
-
-                string recordName = ResolveVerbexRecordName(document);
-
-                Dictionary<string, object> metadata = new Dictionary<string, object>
+                await _VerbexIndexingSemaphore.WaitAsync(token).ConfigureAwait(false);
+                try
                 {
-                    { "AssistantHubDocumentId", document.Id },
-                    { "AssistantHubTenantId", document.TenantId },
-                    { "VerbexTenantId", verbexTenantId },
-                    { "VerbexIndexId", indexId },
-                    { "ObjectName", recordName },
-                    { "CollectionId", document.CollectionId },
-                    { "IngestionRuleId", document.IngestionRuleId },
-                    { "Bucket", document.BucketName },
-                    { "ObjectKey", document.S3Key },
-                    { "ContentType", document.ContentType },
-                    { "OriginalFileName", document.OriginalFilename },
-                    { "SourceUrl", document.SourceUrl }
-                };
-
-                Dictionary<string, object> record = new Dictionary<string, object>
+                    return await IndexDocumentTextWithRetriesAsync(document, content, rule, labels, tags, token).ConfigureAwait(false);
+                }
+                finally
                 {
-                    { "Id", document.Id },
-                    { "Name", recordName },
-                    { "Content", content },
-                    { "CustomMetadata", metadata }
-                };
-
-                if (labels != null && labels.Count > 0)
-                    record["Labels"] = labels;
-
-                if (tags != null && tags.Count > 0)
-                    record["Tags"] = tags;
-
-                string json = JsonSerializer.Serialize(record, _JsonOptions);
-                string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents";
-
-                using (HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
-                {
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
-                        if (_ProcessingLog != null)
-                            await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete - record: " + document.Id).ConfigureAwait(false);
-                        return true;
-                    }
-
-                    if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
-                    {
-                        await DeleteIndexRecordInternalAsync(document.TenantId, indexId, document.Id, token).ConfigureAwait(false);
-                        using (HttpResponseMessage retryResp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
-                        {
-                            if (retryResp.IsSuccessStatusCode)
-                            {
-                                await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
-                                if (_ProcessingLog != null)
-                                    await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete after replacing existing record - record: " + document.Id).ConfigureAwait(false);
-                                return true;
-                            }
-
-                            string retryBody = await retryResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                            throw new InvalidOperationException("Verbex indexing retry returned HTTP " + (int)retryResp.StatusCode + ": " + retryBody);
-                        }
-                    }
-
-                    string responseBody = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    throw new InvalidOperationException("Verbex indexing returned HTTP " + (int)resp.StatusCode + ": " + responseBody);
+                    _VerbexIndexingSemaphore.Release();
                 }
             }
             catch (Exception e)
@@ -713,6 +659,160 @@ namespace AssistantHub.Core.Services
 
                 return false;
             }
+        }
+
+        private protected async Task<bool> IndexDocumentTextWithRetriesAsync(
+            AssistantDocument document,
+            string content,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags,
+            CancellationToken token)
+        {
+            int maxAttempts = Math.Max(1, _VerbexSettings.IndexingRetryCount + 1);
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    return await IndexDocumentTextAttemptAsync(document, content, rule, labels, tags, token).ConfigureAwait(false);
+                }
+                catch (Exception e) when (attempt < maxAttempts && IsTransientVerbexIndexingFailure(e) && !token.IsCancellationRequested)
+                {
+                    int delayMs = GetVerbexIndexingRetryDelayMs(attempt);
+                    string retryMessage = "Verbex indexing retrying in " + delayMs + "ms after attempt " + attempt + " of " + maxAttempts + ": " + e.Message;
+                    _Logging.Warn(_Header + retryMessage);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(document.Id, "WARN", retryMessage).ConfigureAwait(false);
+
+                    if (delayMs > 0)
+                        await Task.Delay(delayMs, token).ConfigureAwait(false);
+                }
+            }
+
+            throw new InvalidOperationException("Verbex indexing failed without producing a result.");
+        }
+
+        private protected async Task<bool> IndexDocumentTextAttemptAsync(
+            AssistantDocument document,
+            string content,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags,
+            CancellationToken token)
+        {
+            (string verbexTenantId, string indexId) = await ResolveVerbexScopeAsync(document.TenantId, rule?.VerbexIndexId, token).ConfigureAwait(false);
+
+            if (_ProcessingLog != null)
+                await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing started - index: " + indexId + ", contentLength: " + content.Length + " chars").ConfigureAwait(false);
+
+            bool indexReady = await EnsureVerbexIndexExistsAsync(verbexTenantId, indexId, token).ConfigureAwait(false);
+            if (!indexReady)
+                throw new InvalidOperationException("Verbex index is not available: " + indexId);
+
+            string recordName = ResolveVerbexRecordName(document);
+
+            Dictionary<string, object> metadata = new Dictionary<string, object>
+            {
+                { "AssistantHubDocumentId", document.Id },
+                { "AssistantHubTenantId", document.TenantId },
+                { "VerbexTenantId", verbexTenantId },
+                { "VerbexIndexId", indexId },
+                { "ObjectName", recordName },
+                { "CollectionId", document.CollectionId },
+                { "IngestionRuleId", document.IngestionRuleId },
+                { "Bucket", document.BucketName },
+                { "ObjectKey", document.S3Key },
+                { "ContentType", document.ContentType },
+                { "OriginalFileName", document.OriginalFilename },
+                { "SourceUrl", document.SourceUrl }
+            };
+
+            Dictionary<string, object> record = new Dictionary<string, object>
+            {
+                { "Id", document.Id },
+                { "Name", recordName },
+                { "Content", content },
+                { "CustomMetadata", metadata }
+            };
+
+            if (labels != null && labels.Count > 0)
+                record["Labels"] = labels;
+
+            if (tags != null && tags.Count > 0)
+                record["Tags"] = tags;
+
+            string json = JsonSerializer.Serialize(record, _JsonOptions);
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents";
+
+            using (HttpResponseMessage resp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
+            {
+                if (resp.IsSuccessStatusCode)
+                {
+                    await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete - record: " + document.Id).ConfigureAwait(false);
+                    return true;
+                }
+
+                if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    await DeleteIndexRecordInternalAsync(document.TenantId, indexId, document.Id, token).ConfigureAwait(false);
+                    using (HttpResponseMessage retryResp = await _InvertedIndex.SendAsync(HttpMethod.Post, path, json).ConfigureAwait(false))
+                    {
+                        if (retryResp.IsSuccessStatusCode)
+                        {
+                            await PersistVerbexIndexMetadataAsync(document, verbexTenantId, indexId, token).ConfigureAwait(false);
+                            if (_ProcessingLog != null)
+                                await _ProcessingLog.LogAsync(document.Id, "INFO", "Verbex indexing complete after replacing existing record - record: " + document.Id).ConfigureAwait(false);
+                            return true;
+                        }
+
+                        string retryBody = await retryResp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                        throw new InvalidOperationException("Verbex indexing retry returned HTTP " + (int)retryResp.StatusCode + ": " + retryBody);
+                    }
+                }
+
+                string responseBody = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                throw new InvalidOperationException("Verbex indexing returned HTTP " + (int)resp.StatusCode + ": " + responseBody);
+            }
+        }
+
+        private protected int GetVerbexIndexingRetryDelayMs(int failedAttempt)
+        {
+            int baseDelayMs = _VerbexSettings.IndexingRetryDelayMs;
+            if (baseDelayMs <= 0) return 0;
+
+            int multiplier = 1 << Math.Min(Math.Max(0, failedAttempt - 1), 6);
+            return Math.Min(60000, baseDelayMs * multiplier);
+        }
+
+        private protected static bool IsTransientVerbexIndexingFailure(Exception exception)
+        {
+            if (exception == null) return false;
+            return IsTransientVerbexMessage(exception.ToString());
+        }
+
+        private protected static bool IsTransientVerbexResponse(int statusCode, string responseBody)
+        {
+            if (statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504)
+                return true;
+
+            return IsTransientVerbexMessage(responseBody);
+        }
+
+        private static bool IsTransientVerbexMessage(string message)
+        {
+            if (String.IsNullOrEmpty(message)) return false;
+
+            return message.Contains("connection pool has been exhausted", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("timeout", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("temporarily unavailable", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("HTTP 408", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("HTTP 429", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("HTTP 502", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("HTTP 503", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("HTTP 504", StringComparison.OrdinalIgnoreCase);
         }
 
         private protected static string ResolveVerbexRecordName(AssistantDocument document)

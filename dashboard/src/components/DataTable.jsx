@@ -3,6 +3,7 @@ import Pagination from './Pagination';
 import ActionMenu from './ActionMenu';
 import Tooltip from './Tooltip';
 import ConfirmModal from './ConfirmModal';
+import { getStoredPageSize, setStoredPageSize } from '../utils/pageSizePreference';
 
 const extractRows = (result) => {
   if (Array.isArray(result)) return result;
@@ -27,7 +28,7 @@ const extractRows = (result) => {
 function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialFilters, onBulkDelete, onRowClick }) {
   const [allData, setAllData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => getStoredPageSize(10));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [refreshState, setRefreshState] = useState('idle');
@@ -110,7 +111,10 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   };
 
   const handlePageChange = (page) => setCurrentPage(page);
-  const handlePageSizeChange = (size) => { setPageSize(size); setCurrentPage(1); };
+  const handlePageSizeChange = (size) => {
+    setPageSize(setStoredPageSize(size, 10));
+    setCurrentPage(1);
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));

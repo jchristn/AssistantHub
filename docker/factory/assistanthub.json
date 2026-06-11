@@ -62,7 +62,10 @@
     "DefaultIndexId": "default",
     "EnableIngestion": true,
     "RequireIngestion": true,
-    "MaxContentCharacters": 0
+    "MaxContentCharacters": 0,
+    "MaxConcurrentIndexingRequests": 2,
+    "IndexingRetryCount": 3,
+    "IndexingRetryDelayMs": 2000
   },
   "ExternalSearch": {
     "Enabled": false,

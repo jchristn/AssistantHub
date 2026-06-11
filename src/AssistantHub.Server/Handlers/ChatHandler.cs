@@ -149,6 +149,7 @@ namespace AssistantHub.Server.Handlers
                             MaxTokens = chatReq.MaxTokens,
                             MetadataFilter = chatReq.MetadataFilter,
                             AttachedDocumentIds = attachedDocumentIds,
+                            LocalAttachments = chatReq.LocalAttachments,
                             Origin = "web"
                         }).ConfigureAwait(false);
 
@@ -188,6 +189,36 @@ namespace AssistantHub.Server.Handlers
                 attachedDocuments = attachmentResolution.Documents.Count > 0 ? attachmentResolution.Documents : null;
                 if (attachedDocumentIds != null && attachedDocumentIds.Count > 0)
                     Logging.Info(_Header + "attached document filter active: count=" + attachedDocumentIds.Count);
+
+                int localAttachmentCount = ChatLocalAttachmentProcessor.Count(chatReq.LocalAttachments);
+                if (localAttachmentCount > 0 && (attachedDocumentIds?.Count ?? 0) + localAttachmentCount > settings.DocumentAttachmentMaxCount)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                        Enums.ApiErrorEnum.BadRequest, null,
+                        "Too many attachments. The assistant allows " + settings.DocumentAttachmentMaxCount + " attachment(s) per request."))).ConfigureAwait(false);
+                    return;
+                }
+
+                ChatLocalAttachmentResolution localAttachmentResolution = await ChatLocalAttachmentProcessor.ResolveAsync(
+                    settings,
+                    chatReq.LocalAttachments,
+                    Settings,
+                    Logging).ConfigureAwait(false);
+                if (!localAttachmentResolution.Success)
+                {
+                    ctx.Response.StatusCode = localAttachmentResolution.StatusCode;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                        Enums.ApiErrorEnum.BadRequest, null,
+                        localAttachmentResolution.ErrorMessage))).ConfigureAwait(false);
+                    return;
+                }
+
+                string localAttachmentContext = ChatLocalAttachmentProcessor.BuildPromptContext(localAttachmentResolution.Attachments);
+                if (localAttachmentResolution.Attachments.Count > 0)
+                    Logging.Info(_Header + "local chat attachments active: count=" + localAttachmentResolution.Attachments.Count);
 
                 // Build effective metadata filter by merging assistant defaults + request-level filter
                 ChatMetadataFilter effectiveMetadataFilter = null;
@@ -698,16 +729,16 @@ namespace AssistantHub.Server.Handlers
                 bool hasSystemMessage = messages.Any(m =>
                     String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
                     && !IsConversationSummaryMessage(m));
-                if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
+                if (!hasSystemMessage && (!String.IsNullOrEmpty(settings.SystemPrompt) || !String.IsNullOrEmpty(localAttachmentContext)))
                 {
-                    baseSystemPrompt = settings.SystemPrompt;
+                    baseSystemPrompt = ChatLocalAttachmentProcessor.AppendToSystemPrompt(settings.SystemPrompt, localAttachmentContext);
                     string fullSystemMessage = Inference.BuildSystemMessage(
-                        settings.SystemPrompt, contextChunks,
+                        baseSystemPrompt, contextChunks,
                         settings.EnableCitations, chunkLabels);
                     messages.Insert(0, new ChatCompletionMessage { Role = "system", Content = fullSystemMessage });
                     systemMessageIndex = 0;
                 }
-                else if (hasSystemMessage && contextChunks.Count > 0)
+                else if (hasSystemMessage && (contextChunks.Count > 0 || !String.IsNullOrEmpty(localAttachmentContext)))
                 {
                     // Append RAG context to existing system message
                     for (int i = 0; i < messages.Count; i++)
@@ -715,12 +746,12 @@ namespace AssistantHub.Server.Handlers
                         if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase)
                             && !IsConversationSummaryMessage(messages[i]))
                         {
-                            baseSystemPrompt = messages[i].Content;
+                            baseSystemPrompt = ChatLocalAttachmentProcessor.AppendToSystemPrompt(messages[i].Content, localAttachmentContext);
                             messages[i] = new ChatCompletionMessage
                             {
                                 Role = "system",
                                 Content = Inference.BuildSystemMessage(
-                                    messages[i].Content, contextChunks,
+                                    baseSystemPrompt, contextChunks,
                                     settings.EnableCitations, chunkLabels)
                             };
                             systemMessageIndex = i;
@@ -897,6 +928,8 @@ namespace AssistantHub.Server.Handlers
                 }
             };
             await WriteSseEvent(ctx, initialChunk).ConfigureAwait(false);
+            StringBuilder streamedContent = new StringBuilder();
+            StringBuilder streamedThinking = new StringBuilder();
 
             AssistantChatService chatService = new AssistantChatService(
                 Database,
@@ -924,6 +957,7 @@ namespace AssistantHub.Server.Handlers
                     MaxTokens = chatReq.MaxTokens,
                     MetadataFilter = chatReq.MetadataFilter,
                     AttachedDocumentIds = attachedDocumentIds,
+                    LocalAttachments = chatReq.LocalAttachments,
                     Origin = "web",
                     ToolProgress = async evt =>
                     {
@@ -931,6 +965,48 @@ namespace AssistantHub.Server.Handlers
                         AssistantToolProgressEvent publicEvent = ShapePublicToolProgressEvent(evt);
                         if (publicEvent == null) return;
                         await WriteSseNamedEvent(ctx, publicEvent.EventType, publicEvent).ConfigureAwait(false);
+                    },
+                    ResponseDelta = async delta =>
+                    {
+                        if (String.IsNullOrEmpty(delta)) return;
+                        streamedContent.Append(delta);
+                        ChatCompletionResponse deltaChunk = new ChatCompletionResponse
+                        {
+                            Id = completionId,
+                            Object = "chat.completion.chunk",
+                            Created = created,
+                            Model = model,
+                            Choices = new List<ChatCompletionChoice>
+                            {
+                                new ChatCompletionChoice
+                                {
+                                    Index = 0,
+                                    Delta = new ChatCompletionMessage { Content = delta }
+                                }
+                            }
+                        };
+                        await WriteSseEvent(ctx, deltaChunk).ConfigureAwait(false);
+                    },
+                    ThinkingDelta = async delta =>
+                    {
+                        if (String.IsNullOrEmpty(delta) || !settings.ExposeThinking) return;
+                        streamedThinking.Append(delta);
+                        ChatCompletionResponse thinkingChunk = new ChatCompletionResponse
+                        {
+                            Id = completionId,
+                            Object = "chat.completion.chunk",
+                            Created = created,
+                            Model = model,
+                            Choices = new List<ChatCompletionChoice>
+                            {
+                                new ChatCompletionChoice
+                                {
+                                    Index = 0,
+                                    Delta = new ChatCompletionMessage { Thinking = delta }
+                                }
+                            }
+                        };
+                        await WriteSseEvent(ctx, thinkingChunk).ConfigureAwait(false);
                     }
                 }).ConfigureAwait(false);
 
@@ -965,11 +1041,34 @@ namespace AssistantHub.Server.Handlers
             string content = result.CanonicalResponseText
                 ?? response?.Choices?.FirstOrDefault()?.Message?.Content
                 ?? "";
+            string thinking = settings.ExposeThinking
+                ? response?.Choices?.FirstOrDefault()?.Message?.Thinking
+                : null;
 
             if (!String.IsNullOrEmpty(result.ChatHistoryId))
                 SetChatHistoryId(ctx, result.ChatHistoryId);
 
-            if (!String.IsNullOrEmpty(content))
+            if (!String.IsNullOrEmpty(thinking) && streamedThinking.Length == 0)
+            {
+                ChatCompletionResponse thinkingChunk = new ChatCompletionResponse
+                {
+                    Id = completionId,
+                    Object = "chat.completion.chunk",
+                    Created = created,
+                    Model = response?.Model ?? model,
+                    Choices = new List<ChatCompletionChoice>
+                    {
+                        new ChatCompletionChoice
+                        {
+                            Index = 0,
+                            Delta = new ChatCompletionMessage { Thinking = thinking }
+                        }
+                    }
+                };
+                await WriteSseEvent(ctx, thinkingChunk).ConfigureAwait(false);
+            }
+
+            if (!String.IsNullOrEmpty(content) && streamedContent.Length == 0)
             {
                 ChatCompletionResponse deltaChunk = new ChatCompletionResponse
                 {
@@ -1017,10 +1116,6 @@ namespace AssistantHub.Server.Handlers
         {
             if (evt == null) return null;
 
-            bool successfulCompletion = String.Equals(evt.EventType, "assistant.tool_call.completed", StringComparison.OrdinalIgnoreCase)
-                && evt.Success == true
-                && evt.Denied != true;
-
             return new AssistantToolProgressEvent
             {
                 EventType = evt.EventType,
@@ -1035,9 +1130,9 @@ namespace AssistantHub.Server.Handlers
                 Truncated = evt.Truncated == true ? true : null,
                 Denied = evt.Denied == true ? true : null,
                 Success = evt.Success,
-                DurationMs = null,
-                ResultCount = null,
-                Summary = successfulCompletion ? null : evt.Summary
+                DurationMs = evt.DurationMs,
+                ResultCount = evt.ResultCount,
+                Summary = evt.Summary
             };
         }
 
@@ -1050,7 +1145,6 @@ namespace AssistantHub.Server.Handlers
             {
                 if (trace == null) continue;
 
-                bool successfulCompletion = trace.Success && !trace.Denied;
                 ret.Add(new ChatCompletionToolTrace
                 {
                     ToolCallId = trace.ToolCallId,
@@ -1062,11 +1156,11 @@ namespace AssistantHub.Server.Handlers
                     Denied = trace.Denied,
                     Truncated = trace.Truncated,
                     OutputCharacters = 0,
-                    ResultCount = null,
+                    ResultCount = trace.ResultCount,
                     CreditsUsed = null,
                     ProviderLatencyMs = null,
-                    DurationMs = 0,
-                    Summary = successfulCompletion ? null : trace.Summary,
+                    DurationMs = trace.DurationMs,
+                    Summary = trace.Summary,
                     StartedUtc = trace.StartedUtc,
                     FinishedUtc = trace.FinishedUtc
                 });

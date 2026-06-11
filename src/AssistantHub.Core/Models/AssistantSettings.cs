@@ -235,6 +235,12 @@ namespace AssistantHub.Core.Models
         public string InferenceEndpointId { get; set; } = null;
 
         /// <summary>
+        /// Completion endpoint identifier used only for model-directed tool routing.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string ToolRoutingInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
         /// Completion endpoint identifier used for retrieval gate decisions.
         /// When null or empty, the primary inference endpoint is used.
         /// </summary>
@@ -261,6 +267,11 @@ namespace AssistantHub.Core.Models
         /// Whether to load or warm configured endpoint models when a chat window is opened.
         /// </summary>
         public bool LoadModelsOnChatOpen { get; set; } = false;
+
+        /// <summary>
+        /// Whether provider thinking/reasoning text may be exposed in public assistant chat.
+        /// </summary>
+        public bool ExposeThinking { get; set; } = false;
 
         /// <summary>
         /// Title displayed as the heading on the chat window.
@@ -449,11 +460,13 @@ namespace AssistantHub.Core.Models
             obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
             obj.RetrievalIncludeNeighbors = DataTableHelper.GetIntValue(row, "retrieval_include_neighbors", 0);
             obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
+            obj.ToolRoutingInferenceEndpointId = DataTableHelper.GetStringValue(row, "tool_routing_inference_endpoint_id");
             obj.RetrievalGateInferenceEndpointId = DataTableHelper.GetStringValue(row, "retrieval_gate_inference_endpoint_id");
             obj.QueryRewriteInferenceEndpointId = DataTableHelper.GetStringValue(row, "query_rewrite_inference_endpoint_id");
             obj.RerankInferenceEndpointId = DataTableHelper.GetStringValue(row, "rerank_inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.LoadModelsOnChatOpen = DataTableHelper.GetBooleanValue(row, "load_models_on_chat_open", false);
+            obj.ExposeThinking = DataTableHelper.GetBooleanValue(row, "expose_thinking", false);
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");

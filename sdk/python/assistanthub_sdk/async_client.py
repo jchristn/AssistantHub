@@ -25,6 +25,7 @@ from .models import (
     AssistantToolPolicyValidationRequest,
     AssistantToolPolicyValidationResult,
     AssistantToolPolicyTestResult,
+    ChatLocalAttachment,
     ChatCompletionMessage,
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -638,6 +639,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
         attached_document_ids: Optional[list[str]] = None,
+        local_attachments: Optional[list[ChatLocalAttachment]] = None,
     ) -> ChatCompletionResponse:
         """Send a chat message and get a complete response.
 
@@ -650,6 +652,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             top_p: Optional top-p for generation.
             max_tokens: Optional max tokens for generation.
             attached_document_ids: Optional document IDs used to constrain retrieval.
+            local_attachments: Optional user-uploaded files for this chat turn.
 
         Returns:
             The chat completion response.
@@ -662,6 +665,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             top_p=top_p,
             max_tokens=max_tokens,
             attached_document_ids=attached_document_ids,
+            local_attachments=local_attachments,
         )
 
         headers: Optional[dict[str, str]] = None
@@ -687,6 +691,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
         attached_document_ids: Optional[list[str]] = None,
+        local_attachments: Optional[list[ChatLocalAttachment]] = None,
     ) -> AsyncIterator[str]:
         """Send a chat message and stream the response as SSE chunks.
 
@@ -699,6 +704,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             top_p: Optional top-p for generation.
             max_tokens: Optional max tokens for generation.
             attached_document_ids: Optional document IDs used to constrain retrieval.
+            local_attachments: Optional user-uploaded files for this chat turn.
 
         Yields:
             Raw SSE data strings as they arrive from the server.
@@ -711,6 +717,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             top_p=top_p,
             max_tokens=max_tokens,
             attached_document_ids=attached_document_ids,
+            local_attachments=local_attachments,
         )
 
         extra_headers: dict[str, str] = {}

@@ -311,7 +311,8 @@ namespace AssistantHub.Core.Services
                             content,
                             telemetry,
                             choice.FinishReason ?? "stop",
-                            NormalizeToolCalls(choice.Message?.ToolCalls));
+                            NormalizeToolCalls(choice.Message?.ToolCalls),
+                            ExtractOpenAIThinking(choice.Message));
                     }
 
                     _Logging.Warn(_Header + "OpenAI response contained no choices");
@@ -398,7 +399,8 @@ namespace AssistantHub.Core.Services
                             content,
                             telemetry,
                             chatResponse.DoneReason ?? "stop",
-                            NormalizeToolCalls(chatResponse.Message.ToolCalls));
+                            NormalizeToolCalls(chatResponse.Message.ToolCalls),
+                            chatResponse.Message.Thinking);
                     }
 
                     _Logging.Warn(_Header + "Ollama response contained no message");
@@ -475,7 +477,7 @@ namespace AssistantHub.Core.Services
 
                         _Logging.Debug(_Header + "OpenAI tool-capable response received (" + (content != null ? content.Length : 0) + " characters, " + toolCalls.Count + " tool call(s))");
                         FinishTelemetry(telemetry, telemetrySw, true);
-                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls);
+                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls, ExtractOpenAIThinking(choice.Message));
                     }
 
                     _Logging.Warn(_Header + "OpenAI tool-capable response contained no choices");
@@ -559,7 +561,7 @@ namespace AssistantHub.Core.Services
 
                         _Logging.Debug(_Header + "Ollama tool-capable response received (" + (content != null ? content.Length : 0) + " characters, " + toolCalls.Count + " tool call(s))");
                         FinishTelemetry(telemetry, telemetrySw, true);
-                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls);
+                        return InferenceResult.FromSuccess(content, telemetry, finishReason, toolCalls, chatResponse.Message.Thinking);
                     }
 
                     _Logging.Warn(_Header + "Ollama tool-capable response contained no message");
@@ -805,6 +807,14 @@ namespace AssistantHub.Core.Services
             {
                 return new Dictionary<string, object>();
             }
+        }
+
+        private protected static string ExtractOpenAIThinking(OpenAIMessage message)
+        {
+            if (message == null) return null;
+            if (!String.IsNullOrWhiteSpace(message.Thinking)) return message.Thinking;
+            if (!String.IsNullOrWhiteSpace(message.ReasoningContent)) return message.ReasoningContent;
+            return null;
         }
 
         private protected static List<AssistantModelToolDefinition> NormalizeToolDefinitions(IEnumerable<AssistantModelToolDefinition> tools)

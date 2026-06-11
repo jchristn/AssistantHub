@@ -20,6 +20,11 @@ namespace AssistantHub.Core.Models
         public string Content { get; set; } = null;
 
         /// <summary>
+        /// Optional provider thinking/reasoning text, when returned separately from visible content.
+        /// </summary>
+        public string Thinking { get; set; } = null;
+
+        /// <summary>
         /// Model-requested tool calls, if the provider finished with tool calls.
         /// </summary>
         public List<AssistantModelToolCall> ToolCalls { get; set; } = new List<AssistantModelToolCall>();
@@ -57,17 +62,20 @@ namespace AssistantHub.Core.Models
         /// <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
         /// <param name="finishReason">Provider finish reason.</param>
         /// <param name="toolCalls">Model-requested tool calls.</param>
+        /// <param name="thinking">Optional provider thinking/reasoning text.</param>
         /// <returns>InferenceResult.</returns>
         public static InferenceResult FromSuccess(
             string content,
             AssistantPerformanceStage telemetry = null,
             string finishReason = "stop",
-            List<AssistantModelToolCall> toolCalls = null)
+            List<AssistantModelToolCall> toolCalls = null,
+            string thinking = null)
         {
             return new InferenceResult
             {
                 Success = true,
                 Content = content,
+                Thinking = thinking,
                 Telemetry = telemetry,
                 FinishReason = finishReason,
                 ToolCalls = toolCalls ?? new List<AssistantModelToolCall>()

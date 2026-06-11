@@ -19,6 +19,7 @@ namespace AssistantHub.Server.Services
             "verbex_full_text_search",
             "index_enumerate_records",
             "s3_object_read",
+            "document_atom_extract",
             "bucket_enumerate_objects",
             "web_search"
         };
@@ -224,6 +225,21 @@ namespace AssistantHub.Server.Services
                             ["text_start"] = IntegerField("Zero-based character offset after UTF-8 decoding.", 0, Int32.MaxValue),
                             ["text_length"] = IntegerField("Maximum decoded text characters to return.", 0, policy.MaxToolOutputChars),
                             ["content_mode"] = StringField("Output mode. Use metadata_only for binary objects unless base64 output is explicitly needed and allowed.", new List<string> { "text", "base64", "metadata_only" })
+                        },
+                        new List<string>()));
+
+            if (String.Equals(toolName, "document_atom_extract", StringComparison.OrdinalIgnoreCase))
+                return Function(
+                    "document_atom_extract",
+                    "Extract text from a completed assistant document or a user-uploaded local attachment using the server-configured DocumentAtom service. Use document_id for assistant collection documents, or local_attachment_id for files uploaded in this chat turn.",
+                    Object(
+                        new Dictionary<string, AssistantToolJsonSchema>
+                        {
+                            ["document_id"] = StringField("Completed AssistantDocument.Id value in the assistant collection."),
+                            ["local_attachment_id"] = StringField("Per-turn local attachment ID, such as local_attachment_1."),
+                            ["document_type"] = StringField("Optional DocumentAtom document type override, such as pdf, docx, xlsx, text, html, json, markdown, or xml."),
+                            ["text_start"] = IntegerField("Zero-based character offset in extracted text.", 0, Int32.MaxValue),
+                            ["text_length"] = IntegerField("Maximum extracted text characters to return.", 1, Math.Min(policy.MaxAtomExtractionCharacters, policy.MaxToolOutputChars))
                         },
                         new List<string>()));
 

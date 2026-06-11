@@ -117,7 +117,20 @@ const response = await client.chatCompletion("asst_abc123", {
   Messages: [{ role: "user", content: "Summarize this document." }],
   attached_document_ids: [documentId],
 });
+
+const localResponse = await client.chatCompletion("asst_abc123", {
+  Messages: [{ role: "user", content: "Summarize this local file." }],
+  local_attachments: [
+    {
+      name: "notes.txt",
+      content_type: "text/plain",
+      base64_content: "VGhpcyBpcyBhIGxvY2FsIGZpbGUu",
+    },
+  ],
+});
 ```
+
+`local_attachments` require assistant document attachments to be enabled. They are processed for the chat request only and are not added to the assistant collection.
 
 ### Threads
 

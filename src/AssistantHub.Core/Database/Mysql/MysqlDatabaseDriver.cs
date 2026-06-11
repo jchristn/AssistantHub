@@ -285,9 +285,11 @@ namespace AssistantHub.Core.Database.Mysql
         private async Task EnsureAssistantSettingsEndpointColumnsAsync(CancellationToken token)
         {
             await EnsureColumnAsync("assistant_settings", "retrieval_gate_inference_endpoint_id", TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "tool_routing_inference_endpoint_id", TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "load_models_on_chat_open", TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "expose_thinking", TableQueries.AddAssistantSettingsExposeThinkingColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "tool_policy_json", TableQueries.AddAssistantSettingsToolPolicyJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "enable_document_attachments", TableQueries.AddAssistantSettingsEnableDocumentAttachmentsColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "document_attachment_max_count", TableQueries.AddAssistantSettingsDocumentAttachmentMaxCountColumn, token).ConfigureAwait(false);

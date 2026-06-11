@@ -58,6 +58,45 @@ namespace Test.Sdk.Tests
                 await Task.CompletedTask.ConfigureAwait(false);
             }, token).ConfigureAwait(false);
 
+            await runner.RunTestAsync("SDK contract: ChatCompletionRequest serializes local_attachments", async (CancellationToken ct) =>
+            {
+                using SerializationProbeClient probe = new SerializationProbeClient();
+
+                ChatCompletionRequest request = new ChatCompletionRequest
+                {
+                    Messages = new List<ChatCompletionMessage>
+                    {
+                        new ChatCompletionMessage { Role = "user", Content = "Summarize this local file." }
+                    },
+                    LocalAttachments = new List<ChatLocalAttachment>
+                    {
+                        new ChatLocalAttachment
+                        {
+                            Name = "notes.txt",
+                            ContentType = "text/plain",
+                            Base64Content = "SGVsbG8="
+                        }
+                    }
+                };
+
+                string json = probe.Serialize(request);
+                AssertHelper.StringContains(json, "\"local_attachments\"", "serialized request JSON");
+                AssertHelper.StringContains(json, "\"base64_content\"", "serialized request JSON");
+                AssertHelper.IsFalse(json.Contains("LocalAttachments"), "serialized request should not use CLR property names");
+
+                using JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement attachments = doc.RootElement.GetProperty("local_attachments");
+                AssertHelper.AreEqual(1, attachments.GetArrayLength(), "local_attachments count");
+                AssertHelper.AreEqual("notes.txt", attachments[0].GetProperty("name").GetString(), "local attachment name");
+
+                ChatCompletionRequest roundTrip = probe.Deserialize<ChatCompletionRequest>(json);
+                AssertHelper.IsNotNull(roundTrip.LocalAttachments, "round-trip local attachments");
+                AssertHelper.HasCount(roundTrip.LocalAttachments, 1, "round-trip local attachments");
+                AssertHelper.AreEqual("notes.txt", roundTrip.LocalAttachments[0].Name, "round-trip local attachment name");
+
+                await Task.CompletedTask.ConfigureAwait(false);
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("SDK contract: AssistantToolPolicy serializes with settings", async (CancellationToken ct) =>
             {
                 using SerializationProbeClient probe = new SerializationProbeClient();
@@ -65,10 +104,12 @@ namespace Test.Sdk.Tests
                 AssistantSettings settings = new AssistantSettings
                 {
                     AssistantId = "asst_local",
+                    ExposeThinking = true,
                     ToolPolicy = new AssistantToolPolicy
                     {
                         EnableToolCalls = true,
                         EnableCollectionSearchTool = true,
+                        EnableDocumentAtomExtractionTool = true,
                         EnableWebSearchTool = true,
                         ToolChoiceMode = "Required",
                         MaxToolIterations = 4,
@@ -78,6 +119,8 @@ namespace Test.Sdk.Tests
                         MaxSearchTopK = 7,
                         MaxDocumentsConsideredPerSearch = 25,
                         MaxResultsConsideredPerSearch = 50,
+                        MaxAtomExtractionBytes = 2097152,
+                        MaxAtomExtractionCharacters = 24000,
                         AllowedSearchModes = new List<string> { "FullText" },
                         ReturnFullSearchContent = true,
                         MaxWebResults = 3,
@@ -91,13 +134,16 @@ namespace Test.Sdk.Tests
 
                 string json = probe.Serialize(settings);
                 AssertHelper.StringContains(json, "\"ToolPolicy\"", "serialized settings JSON");
+                AssertHelper.StringContains(json, "\"ExposeThinking\"", "serialized settings JSON");
                 AssertHelper.StringContains(json, "\"EnableToolCalls\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"EnableCollectionSearchTool\"", "serialized policy JSON");
+                AssertHelper.StringContains(json, "\"EnableDocumentAtomExtractionTool\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"ToolChoiceMode\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"AllowedToolNames\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"AllowedSearchModes\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"MaxDocumentsConsideredPerSearch\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"MaxResultsConsideredPerSearch\"", "serialized policy JSON");
+                AssertHelper.StringContains(json, "\"MaxAtomExtractionBytes\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"ReturnFullSearchContent\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"TavilyEndpoint\"", "serialized policy JSON");
                 AssertHelper.StringContains(json, "\"AllowUngovernedWebAccess\"", "serialized policy JSON");
@@ -105,9 +151,11 @@ namespace Test.Sdk.Tests
                 AssertHelper.IsFalse(json.Contains("enableToolCalls"), "serialized policy should use server property names");
 
                 AssistantSettings roundTrip = probe.Deserialize<AssistantSettings>(json);
+                AssertHelper.IsTrue(roundTrip.ExposeThinking, "round-trip ExposeThinking");
                 AssertHelper.IsNotNull(roundTrip.ToolPolicy, "round-trip tool policy");
                 AssertHelper.IsTrue(roundTrip.ToolPolicy.EnableToolCalls, "round-trip EnableToolCalls");
                 AssertHelper.IsTrue(roundTrip.ToolPolicy.EnableCollectionSearchTool, "round-trip EnableCollectionSearchTool");
+                AssertHelper.IsTrue(roundTrip.ToolPolicy.EnableDocumentAtomExtractionTool, "round-trip EnableDocumentAtomExtractionTool");
                 AssertHelper.IsTrue(roundTrip.ToolPolicy.EnableWebSearchTool, "round-trip EnableWebSearchTool");
                 AssertHelper.AreEqual("Required", roundTrip.ToolPolicy.ToolChoiceMode, "round-trip ToolChoiceMode");
                 AssertHelper.AreEqual(4, roundTrip.ToolPolicy.MaxToolIterations, "round-trip MaxToolIterations");
@@ -115,6 +163,8 @@ namespace Test.Sdk.Tests
                 AssertHelper.AreEqual(7, roundTrip.ToolPolicy.MaxSearchTopK, "round-trip MaxSearchTopK");
                 AssertHelper.AreEqual(25, roundTrip.ToolPolicy.MaxDocumentsConsideredPerSearch, "round-trip MaxDocumentsConsideredPerSearch");
                 AssertHelper.AreEqual(50, roundTrip.ToolPolicy.MaxResultsConsideredPerSearch, "round-trip MaxResultsConsideredPerSearch");
+                AssertHelper.AreEqual(2097152, roundTrip.ToolPolicy.MaxAtomExtractionBytes, "round-trip MaxAtomExtractionBytes");
+                AssertHelper.AreEqual(24000, roundTrip.ToolPolicy.MaxAtomExtractionCharacters, "round-trip MaxAtomExtractionCharacters");
                 AssertHelper.IsTrue(roundTrip.ToolPolicy.ReturnFullSearchContent, "round-trip ReturnFullSearchContent");
                 AssertHelper.HasCount(roundTrip.ToolPolicy.AllowedToolNames, 1, "round-trip AllowedToolNames");
                 AssertHelper.HasCount(roundTrip.ToolPolicy.AllowedSearchModes, 1, "round-trip AllowedSearchModes");
@@ -153,6 +203,8 @@ namespace Test.Sdk.Tests
   ""Message"": ""Tool diagnostics found blocking issues."",
   ""AssistantId"": ""asst_local"",
   ""InferenceEndpointId"": ""cep_local"",
+  ""ToolRoutingInferenceEndpointId"": ""cep_router"",
+  ""EffectiveToolRoutingInferenceEndpointId"": ""cep_router"",
   ""EndpointResolved"": true,
   ""EndpointModel"": ""qwen3-tool"",
   ""EndpointApiFormat"": ""OpenAI"",
@@ -168,15 +220,17 @@ namespace Test.Sdk.Tests
   },
   ""Tools"": [],
   ""Warnings"": [],
-  ""Errors"": [""The selected completion endpoint does not explicitly support tool calling.""],
-  ""ErrorCodes"": [""completion_endpoint_not_tool_capable""]
+  ""Errors"": [""The effective tool-routing completion endpoint does not explicitly support tool calling.""],
+  ""ErrorCodes"": [""tool_routing_endpoint_not_tool_capable""]
 }";
                 AssistantToolPolicyTestResult diagnostics = probe.Deserialize<AssistantToolPolicyTestResult>(diagnosticsJson);
                 AssertHelper.IsFalse(diagnostics.Success, "diagnostics success");
+                AssertHelper.AreEqual("cep_router", diagnostics.ToolRoutingInferenceEndpointId, "diagnostics configured tool routing endpoint");
+                AssertHelper.AreEqual("cep_router", diagnostics.EffectiveToolRoutingInferenceEndpointId, "diagnostics effective tool routing endpoint");
                 AssertHelper.IsTrue(diagnostics.EndpointResolved, "diagnostics endpoint resolved");
                 AssertHelper.AreEqual("qwen3-tool", diagnostics.EndpointModel, "diagnostics endpoint model");
                 AssertHelper.HasCount(diagnostics.ErrorCodes, 1, "diagnostics ErrorCodes");
-                AssertHelper.AreEqual("completion_endpoint_not_tool_capable", diagnostics.ErrorCodes[0], "diagnostics ErrorCodes value");
+                AssertHelper.AreEqual("tool_routing_endpoint_not_tool_capable", diagnostics.ErrorCodes[0], "diagnostics ErrorCodes value");
 
                 await Task.CompletedTask.ConfigureAwait(false);
             }, token).ConfigureAwait(false);
@@ -326,7 +380,7 @@ namespace Test.Sdk.Tests
   ""choices"": [
     {
       ""index"": 0,
-      ""message"": { ""role"": ""assistant"", ""content"": ""done"" },
+      ""message"": { ""role"": ""assistant"", ""content"": ""done"", ""thinking"": ""hidden reasoning"" },
       ""finish_reason"": ""stop""
     }
   ],
@@ -351,6 +405,7 @@ namespace Test.Sdk.Tests
 }";
 
                 ChatCompletionResponse response = probe.Deserialize<ChatCompletionResponse>(json);
+                AssertHelper.AreEqual("hidden reasoning", response.Choices[0].Message.Thinking, "response message thinking");
                 AssertHelper.HasCount(response.ToolCalls, 1, "response tool trace count");
                 AssertHelper.AreEqual("collection_search", response.ToolCalls[0].ToolName, "tool trace name");
                 AssertHelper.AreEqual("Searching collection", response.ToolCalls[0].DisplayLabel, "tool trace label");

@@ -4,6 +4,7 @@ namespace Test.Automated
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Text.Json;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
@@ -35,6 +36,41 @@ namespace Test.Automated
             TestableHandler handler = new TestableHandler(db, logging, settings, authService, retrieval, inference);
 
             // --- ValidateTenantAccess tests ---
+
+            await ExecuteTestAsync("Assistant tool validation: DocumentAtom extraction counts as enabled tool", async () =>
+            {
+                AssistantSettingsHandler settingsHandler = new AssistantSettingsHandler(db, logging, settings, authService, null, null, retrieval, inference);
+                MethodInfo method = typeof(AssistantSettingsHandler).GetMethod("ValidateDraftToolPolicy", BindingFlags.Instance | BindingFlags.NonPublic);
+                AssertHelper.IsNotNull(method, "ValidateDraftToolPolicy method");
+
+                Assistant assistant = new Assistant
+                {
+                    Id = "asst_atom_validation",
+                    TenantId = "tenant_atom_validation",
+                    Active = true
+                };
+                AssistantSettings assistantSettings = new AssistantSettings
+                {
+                    AssistantId = assistant.Id,
+                    CollectionId = "col_atom_validation"
+                };
+                AssistantToolPolicyValidationRequest request = new AssistantToolPolicyValidationRequest
+                {
+                    ToolPolicy = new AssistantToolPolicy
+                    {
+                        EnableToolCalls = true,
+                        EnableDocumentAtomExtractionTool = true
+                    }
+                };
+
+                AssistantToolPolicyValidationResult result = (AssistantToolPolicyValidationResult)method.Invoke(
+                    settingsHandler,
+                    new object[] { assistant, assistantSettings, request });
+
+                AssertHelper.IsTrue(result.Success, "DocumentAtom-only policy validation success");
+                AssertHelper.DoesNotContain(result.ErrorCodes, "no_tool_enabled", "DocumentAtom-only policy no_tool_enabled");
+                AssertHelper.IsTrue(result.Tools.Any(tool => tool.ToolName == "document_atom_extract" && tool.Available), "DocumentAtom tool is available");
+            });
 
             await ExecuteTestAsync("Auth.ValidateTenantAccess: null auth returns false", async () =>
             {
@@ -416,6 +452,15 @@ namespace Test.Automated
                 AssertHelper.AreEqual(JsonValueKind.Array, toolPolicyExample.GetProperty("AllowedBucketPrefixes").ValueKind, "tool policy example includes AllowedBucketPrefixes");
                 AssertHelper.AreEqual(JsonValueKind.Array, toolPolicyExample.GetProperty("AllowedWebDomains").ValueKind, "tool policy example includes AllowedWebDomains");
 
+                JsonElement assistantSettingsSchema = schemas.GetProperty("AssistantSettings").GetProperty("properties");
+                AssertHelper.IsTrue(assistantSettingsSchema.TryGetProperty("ToolRoutingInferenceEndpointId", out _), "assistant settings schema includes ToolRoutingInferenceEndpointId");
+                AssertHelper.IsTrue(assistantSettingsSchema.TryGetProperty("ExposeThinking", out _), "assistant settings schema includes ExposeThinking");
+                JsonElement chatMessageSchema = schemas.GetProperty("ChatMessage").GetProperty("properties");
+                AssertHelper.IsTrue(chatMessageSchema.TryGetProperty("thinking", out _), "chat message schema includes thinking");
+                JsonElement toolPolicyTestSchema = schemas.GetProperty("AssistantToolPolicyTestResult").GetProperty("properties");
+                AssertHelper.IsTrue(toolPolicyTestSchema.TryGetProperty("ToolRoutingInferenceEndpointId", out _), "tool diagnostics schema includes ToolRoutingInferenceEndpointId");
+                AssertHelper.IsTrue(toolPolicyTestSchema.TryGetProperty("EffectiveToolRoutingInferenceEndpointId", out _), "tool diagnostics schema includes EffectiveToolRoutingInferenceEndpointId");
+
                 JsonElement externalSearchStatusSchema = schemas.GetProperty("ExternalSearchConfigurationStatus").GetProperty("properties");
                 AssertHelper.IsTrue(externalSearchStatusSchema.TryGetProperty("Enabled", out _), "external-search status Enabled");
                 AssertHelper.IsTrue(externalSearchStatusSchema.TryGetProperty("EnabledProviders", out _), "external-search status EnabledProviders");
@@ -538,16 +583,17 @@ namespace Test.Automated
                 AssertHelper.StringContains(dashboardApiSource, "Running tool:", "Dashboard running tool status copy");
                 AssertHelper.StringContains(dashboardApiSource, "still running", "Dashboard heartbeat tool status");
                 AssertHelper.StringContains(dashboardApiSource, "searches", "Dashboard coalesces repeated tool search status");
+                AssertHelper.StringContains(dashboardApiSource, "fullThinking", "Dashboard streaming parser accumulates thinking");
                 AssertHelper.StringContains(chatRequestSource, "attached_document_ids", "Chat request supports document attachments");
                 AssertHelper.IsFalse(chatRequestSource.Contains("ToolPolicy"), "Public chat request must not expose tool policy override fields");
                 AssertHelper.StringContains(chatResponseSource, "tool_calls", "Chat response supports safe tool trace metadata");
                 AssertHelper.StringContains(chatHandlerSource, "HandleToolAwareStreamingChatAsync", "Chat handler streams tool-aware chat through shared service");
                 AssertHelper.StringContains(chatHandlerSource, "ShapePublicToolProgressEvent", "Chat handler shapes public SSE tool progress");
                 AssertHelper.StringContains(chatHandlerSource, "ShapePublicToolTraces(response?.ToolCalls)", "Chat handler shapes public finish-chunk tool traces");
-                AssertHelper.StringContains(chatHandlerSource, "DurationMs = null", "Public SSE successful tool completion omits runtime");
-                AssertHelper.StringContains(chatHandlerSource, "ResultCount = null", "Public SSE successful tool completion omits result count");
-                AssertHelper.StringContains(chatHandlerSource, "DurationMs = 0", "Public finish-chunk tool traces omit runtime");
-                AssertHelper.StringContains(chatHandlerSource, "Summary = successfulCompletion ? null", "Public successful tool completion omits generic completion summary");
+                AssertHelper.StringContains(chatHandlerSource, "DurationMs = evt.DurationMs", "Public SSE tool progress includes safe runtime");
+                AssertHelper.StringContains(chatHandlerSource, "ResultCount = evt.ResultCount", "Public SSE tool progress includes safe result count");
+                AssertHelper.StringContains(chatHandlerSource, "DurationMs = trace.DurationMs", "Public finish-chunk tool traces include safe runtime");
+                AssertHelper.StringContains(chatHandlerSource, "Summary = evt.Summary", "Public SSE tool progress includes safe summary");
                 AssertHelper.StringContains(chatHandlerBaseSource, "WriteSseNamedEvent", "Chat handler can write named SSE events");
                 AssertHelper.StringContains(assistantChatServiceSource, "assistant.tool_call.started", "Assistant chat service emits tool started events");
                 AssertHelper.StringContains(assistantChatServiceSource, "assistant.tool_call.heartbeat", "Assistant chat service emits long-running tool heartbeat events");
@@ -570,18 +616,17 @@ namespace Test.Automated
                 AssertHelper.StringContains(chatPanelSource, "The assistant tool stream was interrupted", "Dashboard interrupted tool stream copy");
                 AssertHelper.StringContains(chatPanelSource, "<details className=\"chat-tool-trace\"", "Dashboard tool activity is collapsible");
                 AssertHelper.StringContains(chatPanelSource, "chat-tool-trace-table", "Dashboard tool activity renders tabular trace");
-                AssertHelper.StringContains(chatPanelSource, "visibleTraces.length === 0", "Dashboard chat hides all-success terminal tool traces");
-                AssertHelper.StringContains(chatPanelSource, "issue${visibleTraces.length === 1 ? '' : 's'}", "Dashboard chat summarizes only actionable tool issues");
-                AssertHelper.IsFalse(chatPanelSource.Contains("data-label=\"Results\"", StringComparison.Ordinal), "Dashboard chat tool trace table omits noisy result counts");
-                AssertHelper.IsFalse(chatPanelSource.Contains("data-label=\"Status\"", StringComparison.Ordinal), "Dashboard chat tool trace table omits noisy status column");
-                AssertHelper.IsFalse(chatPanelSource.Contains("title=\"Completed\"", StringComparison.Ordinal), "Dashboard chat tool trace table omits generic completed text");
-                AssertHelper.IsFalse(chatPanelSource.Contains("data-label=\"Runtime\"", StringComparison.Ordinal), "Dashboard chat tool trace table omits noisy runtime column");
-                AssertHelper.IsFalse(chatPanelSource.Contains("result_count", StringComparison.Ordinal), "Dashboard chat tool trace parser omits tool result-count fields");
-                AssertHelper.IsFalse(chatPanelSource.Contains("duration_ms", StringComparison.Ordinal), "Dashboard chat tool trace parser omits tool duration fields");
+                AssertHelper.StringContains(chatPanelSource, "data-label=\"Results\"", "Dashboard chat tool trace table includes result counts");
+                AssertHelper.StringContains(chatPanelSource, "data-label=\"Status\"", "Dashboard chat tool trace table includes status column");
+                AssertHelper.StringContains(chatPanelSource, "data-label=\"Runtime\"", "Dashboard chat tool trace table includes runtime column");
+                AssertHelper.StringContains(chatPanelSource, "result_count", "Dashboard chat tool trace parser reads result-count fields");
+                AssertHelper.StringContains(chatPanelSource, "duration_ms", "Dashboard chat tool trace parser reads duration fields");
+                AssertHelper.StringContains(chatPanelSource, "chat-thinking", "Dashboard assistant thinking is collapsible");
                 AssertHelper.StringContains(appCssSource, ".chat-pending-content-wrap", "Dashboard pending status column CSS");
                 AssertHelper.StringContains(appCssSource, "text-overflow: ellipsis", "Dashboard tool status truncates long labels");
                 AssertHelper.StringContains(appCssSource, "max-width: min(420px, 100%)", "Dashboard tool status constrained to message column");
                 AssertHelper.StringContains(appCssSource, ".chat-tool-trace-table", "Dashboard tool trace table CSS");
+                AssertHelper.StringContains(appCssSource, ".chat-thinking-content", "Dashboard thinking content wraps");
                 string assistantToolTraceSectionSource = File.ReadAllText(Path.Combine(root, "dashboard", "src", "components", "modals", "AssistantToolCallTraceSection.jsx"));
                 AssertHelper.StringContains(historyViewModalSource, "Tool Model Checks", "History details shows tool model-check timing bar");
                 AssertHelper.StringContains(historyViewModalSource, "tool_iteration_model", "History details reads persisted tool model-check stages");
@@ -611,6 +656,7 @@ namespace Test.Automated
                 AssertHelper.StringContains(assistantSettingsViewSource, "handleToolPolicyChange('DefaultIndexId', e.target.value)", "Assistant settings Default Index ID dropdown updates tool policy");
                 AssertHelper.StringContains(assistantSettingsViewSource, "handleToolPolicyChange('AllowedVerbexIndexIds', getMultiSelectValues(e))", "Assistant settings Allowed Index IDs multi-select updates tool policy");
                 AssertHelper.StringContains(assistantSettingsViewSource, "handleToolPolicyChange('AllowedBucketNames', getMultiSelectValues(e))", "Assistant settings Allowed Buckets multi-select updates tool policy");
+                AssertHelper.StringContains(assistantSettingsViewSource, "ExposeThinking", "Assistant settings exposes thinking toggle");
                 AssertAssistantSettingsTextboxTitles(assistantSettingsViewSource);
                 AssertHelper.StringContains(mcpAssistantRegistrationSource, "assistant/documents/list", "MCP assistant document list tool registration");
                 AssertHelper.StringContains(mcpAssistantRegistrationSource, "ListAssistantDocumentsAsync", "MCP assistant document list SDK call");

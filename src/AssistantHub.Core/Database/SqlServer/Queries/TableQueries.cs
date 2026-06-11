@@ -103,11 +103,13 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 fulltext_minimum_score FLOAT NULL,
                 retrieval_include_neighbors INT NOT NULL DEFAULT 0,
                 inference_endpoint_id NVARCHAR(MAX) NULL,
+                tool_routing_inference_endpoint_id NVARCHAR(MAX) NULL,
                 retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL,
                 query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
                 rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
                 load_models_on_chat_open BIT NOT NULL DEFAULT 0,
+                expose_thinking BIT NOT NULL DEFAULT 0,
                 title NVARCHAR(MAX) NULL,
                 logo_url NVARCHAR(MAX) NULL,
                 favicon_url NVARCHAR(MAX) NULL,
@@ -129,6 +131,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF COL_LENGTH('assistant_settings', 'retrieval_gate_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL;";
 
+        internal static readonly string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'tool_routing_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD tool_routing_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
         internal static readonly string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
             @"IF COL_LENGTH('assistant_settings', 'query_rewrite_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL;";
@@ -140,6 +146,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             @"IF COL_LENGTH('assistant_settings', 'load_models_on_chat_open') IS NULL
             ALTER TABLE assistant_settings ADD load_models_on_chat_open BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsExposeThinkingColumn =
+            @"IF COL_LENGTH('assistant_settings', 'expose_thinking') IS NULL
+            ALTER TABLE assistant_settings ADD expose_thinking BIT NOT NULL DEFAULT 0;";
 
         internal static readonly string AddAssistantSettingsToolPolicyJsonColumn =
             @"IF COL_LENGTH('assistant_settings', 'tool_policy_json') IS NULL

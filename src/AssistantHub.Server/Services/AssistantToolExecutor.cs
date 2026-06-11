@@ -117,6 +117,7 @@ namespace AssistantHub.Server.Services
                     "verbex_full_text_search" => await ExecuteVerbexFullTextSearchAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
                     "index_enumerate_records" => await ExecuteIndexEnumerateRecordsAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
                     "s3_object_read" => await ExecuteS3ObjectReadAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
+                    "document_atom_extract" => await ExecuteDocumentAtomExtractAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
                     "bucket_enumerate_objects" => await ExecuteBucketEnumerateObjectsAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
                     "web_search" => await ExecuteWebSearchAsync(context, arguments.RootElement, timeoutCts.Token).ConfigureAwait(false),
                     _ => throw new NotSupportedException("Tool execution is not implemented for " + result.ToolName + ".")
@@ -917,6 +918,156 @@ namespace AssistantHub.Server.Services
                 Content = text,
                 Base64 = base64,
                 CitationHandle = document != null ? document.Id + ":object:" + rangeStart : null
+            };
+        }
+
+        private async Task<object> ExecuteDocumentAtomExtractAsync(
+            AssistantToolExecutionContext context,
+            JsonElement arguments,
+            CancellationToken token)
+        {
+            AssistantToolPolicy policy = context.Policy;
+            string documentId = GetString(arguments, "document_id");
+            string localAttachmentId = GetString(arguments, "local_attachment_id");
+            if (String.IsNullOrWhiteSpace(documentId) == String.IsNullOrWhiteSpace(localAttachmentId))
+                throw new ArgumentException("document_atom_extract requires exactly one of document_id or local_attachment_id.");
+
+            AssistantDocument document = null;
+            ChatLocalAttachmentContext localAttachment = null;
+            string sourceType;
+            string name;
+            string contentType;
+            string documentType = NormalizeDocumentType(GetString(arguments, "document_type"));
+            byte[] sourceBytes;
+            int sizeBytes;
+
+            if (!String.IsNullOrWhiteSpace(documentId))
+            {
+                if (_Storage == null)
+                    throw new InvalidOperationException("S3 storage service is not configured.");
+
+                document = await _Database.AssistantDocument.ReadAsync(documentId, token).ConfigureAwait(false);
+                if (!IsAvailableCollectionDocument(document, context))
+                    throw new InvalidOperationException("Requested document_id is not available for this assistant: " + documentId + ".");
+                if (String.IsNullOrWhiteSpace(document.S3Key))
+                    throw new InvalidOperationException("Requested document does not reference an S3 object.");
+
+                string bucket = String.IsNullOrWhiteSpace(document.BucketName) ? _Settings.S3?.BucketName : document.BucketName.Trim();
+                string objectKey = document.S3Key.Trim();
+                ValidateS3ObjectSecretPathPolicy(objectKey);
+                ValidateS3BucketPolicy(policy, _Settings.S3?.BucketName, bucket, objectKey);
+
+                ObjectStorageItem metadata = null;
+                try
+                {
+                    metadata = await _Storage.GetObjectMetadataAsync(bucket, objectKey, token).ConfigureAwait(false);
+                }
+                catch (NotImplementedException)
+                {
+                    metadata = null;
+                }
+
+                contentType = !String.IsNullOrWhiteSpace(metadata?.ContentType)
+                    ? metadata.ContentType.Trim()
+                    : (String.IsNullOrWhiteSpace(document.ContentType) ? "application/octet-stream" : document.ContentType.Trim());
+                ValidateS3ObjectShapePolicy(policy, objectKey, contentType);
+
+                long sourceSize = metadata?.SizeBytes > 0 ? metadata.SizeBytes : document.SizeBytes;
+                if (sourceSize > policy.MaxAtomExtractionBytes)
+                    throw new InvalidOperationException("Requested document exceeds MaxAtomExtractionBytes for document_atom_extract.");
+
+                int bytesToRead = sourceSize > 0
+                    ? (int)sourceSize
+                    : policy.MaxAtomExtractionBytes + 1;
+                sourceBytes = await _Storage.DownloadRangeAsync(bucket, objectKey, 0, bytesToRead, token).ConfigureAwait(false) ?? Array.Empty<byte>();
+                if (sourceBytes.Length > policy.MaxAtomExtractionBytes)
+                    throw new InvalidOperationException("Requested document exceeds MaxAtomExtractionBytes for document_atom_extract.");
+
+                sourceType = "assistant_document";
+                name = document.Name ?? document.OriginalFilename ?? document.Id;
+                sizeBytes = sourceBytes.Length;
+            }
+            else
+            {
+                localAttachment = (context.LocalAttachments ?? new List<ChatLocalAttachmentContext>())
+                    .FirstOrDefault(item => String.Equals(item?.AttachmentId, localAttachmentId, StringComparison.OrdinalIgnoreCase));
+                if (localAttachment == null)
+                    throw new InvalidOperationException("Requested local_attachment_id is not available in this chat turn: " + localAttachmentId + ".");
+
+                sourceBytes = localAttachment.SourceBytes;
+                if ((sourceBytes == null || sourceBytes.Length == 0) && !String.IsNullOrWhiteSpace(localAttachment.Text))
+                    sourceBytes = Encoding.UTF8.GetBytes(localAttachment.Text);
+                if (sourceBytes == null || sourceBytes.Length == 0)
+                    throw new InvalidOperationException("Requested local attachment does not have source bytes available.");
+                if (sourceBytes.Length > policy.MaxAtomExtractionBytes)
+                    throw new InvalidOperationException("Requested local attachment exceeds MaxAtomExtractionBytes for document_atom_extract.");
+
+                sourceType = "local_attachment";
+                name = localAttachment.Name ?? localAttachment.AttachmentId;
+                contentType = String.IsNullOrWhiteSpace(localAttachment.ContentType) ? "application/octet-stream" : localAttachment.ContentType.Trim();
+                sizeBytes = sourceBytes.Length;
+                if (String.IsNullOrWhiteSpace(documentType))
+                    documentType = NormalizeDocumentType(localAttachment.DocumentType);
+            }
+
+            if (String.IsNullOrWhiteSpace(documentType))
+                documentType = ResolveDocumentType(name, contentType);
+
+            string extractedText;
+            bool usedDocumentAtom = false;
+            if (IsTextLike(name, contentType) && TryDecodeUtf8(sourceBytes, out string decodedText))
+            {
+                extractedText = decodedText;
+                if (String.IsNullOrWhiteSpace(documentType)) documentType = "text";
+            }
+            else
+            {
+                DocumentAtomAtomizationService atomization = new DocumentAtomAtomizationService(_Settings.DocumentAtom, _Logging);
+                if (String.IsNullOrWhiteSpace(documentType))
+                {
+                    TypeDetectResponse detected = await atomization.DetectDocumentTypeAsync(documentId ?? localAttachmentId, sourceBytes, name, token).ConfigureAwait(false);
+                    documentType = detected?.Type;
+                }
+
+                extractedText = await atomization.ExtractTextAsync(documentId ?? localAttachmentId, sourceBytes, documentType, name, token).ConfigureAwait(false);
+                usedDocumentAtom = true;
+            }
+
+            if (String.IsNullOrWhiteSpace(extractedText))
+                throw new InvalidOperationException("DocumentAtom extraction did not return readable text.");
+
+            string normalizedText = NormalizeExtractedText(extractedText);
+            int textStart = GetInt(arguments, "text_start", 0);
+            if (textStart < 0 || textStart > normalizedText.Length)
+                throw new ArgumentOutOfRangeException(nameof(textStart), "text_start is outside the extracted text.");
+
+            int maxLength = Math.Min(policy.MaxAtomExtractionCharacters, policy.MaxToolOutputChars);
+            int defaultTextLength = Math.Min(normalizedText.Length - textStart, maxLength);
+            int requestedTextLength = GetInt(arguments, "text_length", defaultTextLength);
+            if (requestedTextLength < 0)
+                throw new ArgumentOutOfRangeException(nameof(requestedTextLength), "text_length cannot be negative.");
+
+            int textLength = Math.Min(requestedTextLength, defaultTextLength);
+            string outputText = normalizedText.Substring(textStart, textLength);
+            bool truncated = textStart + textLength < normalizedText.Length || requestedTextLength > textLength;
+
+            return new
+            {
+                Tool = "document_atom_extract",
+                SourceType = sourceType,
+                DocumentId = document?.Id,
+                LocalAttachmentId = localAttachment?.AttachmentId,
+                DocumentName = document != null ? document.Name ?? document.OriginalFilename : localAttachment?.Name,
+                ContentType = contentType,
+                SizeBytes = sizeBytes,
+                DocumentType = documentType,
+                UsedDocumentAtom = usedDocumentAtom,
+                TextStart = textStart,
+                TextLength = outputText.Length,
+                TotalTextCharacters = normalizedText.Length,
+                Truncated = truncated,
+                Text = outputText,
+                CitationHandle = document != null ? document.Id + ":atom:" + textStart : null
             };
         }
 
@@ -2600,6 +2751,68 @@ namespace AssistantHub.Server.Services
             int cappedTextLength = Math.Min(requestedTextLength, defaultTextLength);
             truncated = textStart + cappedTextLength < text.Length || requestedTextLength > cappedTextLength;
             return text.Substring(textStart, cappedTextLength);
+        }
+
+        private static string NormalizeExtractedText(string text)
+        {
+            return (text ?? String.Empty)
+                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace("\r", "\n", StringComparison.Ordinal)
+                .Trim();
+        }
+
+        private static string NormalizeDocumentType(string documentType)
+        {
+            if (String.IsNullOrWhiteSpace(documentType)) return null;
+            string normalized = documentType.Trim().Trim('.').ToLowerInvariant();
+            if (String.Equals(normalized, "txt", StringComparison.Ordinal)) return "text";
+            if (String.Equals(normalized, "md", StringComparison.Ordinal)) return "markdown";
+            return normalized;
+        }
+
+        private static string ResolveDocumentType(string name, string contentType)
+        {
+            string extension = NormalizeDocumentType(System.IO.Path.GetExtension(name ?? String.Empty));
+            if (!String.IsNullOrWhiteSpace(extension)) return extension;
+
+            string type = (contentType ?? String.Empty).ToLowerInvariant();
+            if (type.Contains("pdf")) return "pdf";
+            if (type.Contains("word")) return "docx";
+            if (type.Contains("spreadsheet") || type.Contains("excel")) return "xlsx";
+            if (type.Contains("presentation") || type.Contains("powerpoint")) return "pptx";
+            if (type.Contains("html")) return "html";
+            if (type.Contains("json")) return "json";
+            if (type.Contains("xml")) return "xml";
+            if (type.Contains("markdown")) return "markdown";
+            if (type.Contains("csv")) return "csv";
+            if (type.StartsWith("text/", StringComparison.Ordinal)) return "text";
+            return null;
+        }
+
+        private static bool IsTextLike(string name, string contentType)
+        {
+            if (IsTextLikeContentType(contentType)) return true;
+
+            string extension = NormalizeDocumentType(System.IO.Path.GetExtension(name ?? String.Empty));
+            return extension == "text" || extension == "markdown" || extension == "json"
+                || extension == "csv" || extension == "tsv" || extension == "xml" || extension == "html"
+                || extension == "htm" || extension == "log";
+        }
+
+        private static bool TryDecodeUtf8(byte[] bytes, out string text)
+        {
+            text = null;
+            if (bytes == null || bytes.Length < 1) return false;
+
+            try
+            {
+                text = new UTF8Encoding(false, true).GetString(bytes);
+                return true;
+            }
+            catch (DecoderFallbackException)
+            {
+                return false;
+            }
         }
 
         private static string RedactObjectKey(string objectKey, AssistantToolPolicy policy)

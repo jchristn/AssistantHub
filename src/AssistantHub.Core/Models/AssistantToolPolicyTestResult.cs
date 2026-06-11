@@ -28,42 +28,52 @@ namespace AssistantHub.Core.Models
         public string InferenceEndpointId { get; set; } = null;
 
         /// <summary>
-        /// Whether the selected completion endpoint was resolved.
+        /// Configured tool-routing completion endpoint identifier, when it differs from the response endpoint.
+        /// </summary>
+        public string ToolRoutingInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Effective completion endpoint identifier used for tool-routing diagnostics.
+        /// </summary>
+        public string EffectiveToolRoutingInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Whether the effective tool-routing completion endpoint was resolved.
         /// </summary>
         public bool EndpointResolved { get; set; } = false;
 
         /// <summary>
-        /// Endpoint model name, if resolved.
+        /// Effective tool-routing endpoint model name, if resolved.
         /// </summary>
         public string EndpointModel { get; set; } = null;
 
         /// <summary>
-        /// Endpoint API format, if resolved.
+        /// Effective tool-routing endpoint API format, if resolved.
         /// </summary>
         public string EndpointApiFormat { get; set; } = null;
 
         /// <summary>
-        /// Whether the endpoint is active, if resolved.
+        /// Whether the effective tool-routing endpoint is active, if resolved.
         /// </summary>
         public bool EndpointActive { get; set; } = false;
 
         /// <summary>
-        /// Whether the endpoint explicitly supports model tool calls.
+        /// Whether the effective tool-routing endpoint explicitly supports model tool calls.
         /// </summary>
         public bool EndpointSupportsToolCalling { get; set; } = false;
 
         /// <summary>
-        /// Endpoint tool-call wire format, if configured.
+        /// Effective tool-routing endpoint tool-call wire format, if configured.
         /// </summary>
         public string EndpointToolCallingApiFormat { get; set; } = null;
 
         /// <summary>
-        /// Whether the endpoint supports multiple tool calls in one model response.
+        /// Whether the effective tool-routing endpoint supports multiple tool calls in one model response.
         /// </summary>
         public bool EndpointSupportsParallelToolCalls { get; set; } = false;
 
         /// <summary>
-        /// Whether the endpoint supports tool calls in streaming responses.
+        /// Whether the effective tool-routing endpoint supports tool calls in streaming responses.
         /// </summary>
         public bool EndpointSupportsStreamingToolCalls { get; set; } = false;
 

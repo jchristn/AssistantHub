@@ -3008,6 +3008,11 @@
             Add the retrieval gate inference endpoint ID column.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn">
+            <summary>
+            Add the tool-routing inference endpoint ID column.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn">
             <summary>
             Add the query rewrite inference endpoint ID column.
@@ -3021,6 +3026,11 @@
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn">
             <summary>
             Add the load-models-on-chat-open column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsExposeThinkingColumn">
+            <summary>
+            Add the expose-thinking column.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsToolPolicyJsonColumn">
@@ -6081,6 +6091,12 @@
             Completion endpoint identifier (references a managed Partio completion endpoint).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ToolRoutingInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used only for model-directed tool routing.
+            When null or empty, the primary inference endpoint is used.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalGateInferenceEndpointId">
             <summary>
             Completion endpoint identifier used for retrieval gate decisions.
@@ -6107,6 +6123,11 @@
         <member name="P:AssistantHub.Core.Models.AssistantSettings.LoadModelsOnChatOpen">
             <summary>
             Whether to load or warm configured endpoint models when a chat window is opened.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ExposeThinking">
+            <summary>
+            Whether provider thinking/reasoning text may be exposed in public assistant chat.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Title">
@@ -6645,6 +6666,11 @@
             Enable safe S3 object reads.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableDocumentAtomExtractionTool">
+            <summary>
+            Enable DocumentAtom extraction against assistant documents and per-turn local attachments.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableCollectionEnumerateDocumentsTool">
             <summary>
             Enable assistant collection document enumeration.
@@ -6798,6 +6824,16 @@
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxObjectReadBytes">
             <summary>
             Maximum bytes returned by one S3 object read call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxAtomExtractionBytes">
+            <summary>
+            Maximum source bytes accepted by one DocumentAtom extraction call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxAtomExtractionCharacters">
+            <summary>
+            Maximum extracted text characters returned by one DocumentAtom extraction call.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxObjectBytesPerTurn">
@@ -6955,44 +6991,54 @@
             Selected completion endpoint identifier.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.ToolRoutingInferenceEndpointId">
+            <summary>
+            Configured tool-routing completion endpoint identifier, when it differs from the response endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EffectiveToolRoutingInferenceEndpointId">
+            <summary>
+            Effective completion endpoint identifier used for tool-routing diagnostics.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointResolved">
             <summary>
-            Whether the selected completion endpoint was resolved.
+            Whether the effective tool-routing completion endpoint was resolved.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointModel">
             <summary>
-            Endpoint model name, if resolved.
+            Effective tool-routing endpoint model name, if resolved.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointApiFormat">
             <summary>
-            Endpoint API format, if resolved.
+            Effective tool-routing endpoint API format, if resolved.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointActive">
             <summary>
-            Whether the endpoint is active, if resolved.
+            Whether the effective tool-routing endpoint is active, if resolved.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsToolCalling">
             <summary>
-            Whether the endpoint explicitly supports model tool calls.
+            Whether the effective tool-routing endpoint explicitly supports model tool calls.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointToolCallingApiFormat">
             <summary>
-            Endpoint tool-call wire format, if configured.
+            Effective tool-routing endpoint tool-call wire format, if configured.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsParallelToolCalls">
             <summary>
-            Whether the endpoint supports multiple tool calls in one model response.
+            Whether the effective tool-routing endpoint supports multiple tool calls in one model response.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsStreamingToolCalls">
             <summary>
-            Whether the endpoint supports tool calls in streaming responses.
+            Whether the effective tool-routing endpoint supports tool calls in streaming responses.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Validation">
@@ -7352,6 +7398,11 @@
             Message content.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.Thinking">
+            <summary>
+            Optional provider thinking/reasoning text exposed only when the assistant permits it.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.ToolCalls">
             <summary>
             Model-requested tool calls on an assistant message.
@@ -7410,6 +7461,11 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.AttachedDocumentIds">
             <summary>
             Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.LocalAttachments">
+            <summary>
+            Optional user-uploaded files attached to this chat turn.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionResponse">
@@ -8155,6 +8211,31 @@
         <member name="M:AssistantHub.Core.Models.ChatHistoryPerformanceEvent.FromDataRow(System.Data.DataRow)">
             <summary>
             Build an event from a data row.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatLocalAttachment">
+            <summary>
+            User-supplied file attachment for a single chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Name">
+            <summary>
+            Display filename.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.ContentType">
+            <summary>
+            MIME content type, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Base64Content">
+            <summary>
+            Base64-encoded file bytes. May be a raw base64 string or data URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Text">
+            <summary>
+            Plain text content supplied directly by an SDK client.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatMetadataFilter">
@@ -9940,6 +10021,11 @@
             The generated response content, or null on failure.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.Thinking">
+            <summary>
+            Optional provider thinking/reasoning text, when returned separately from visible content.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.InferenceResult.ToolCalls">
             <summary>
             Model-requested tool calls, if the provider finished with tool calls.
@@ -9965,7 +10051,7 @@
             Instantiate.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String,AssistantHub.Core.Models.AssistantPerformanceStage,System.String,System.Collections.Generic.List{AssistantHub.Core.Models.AssistantModelToolCall})">
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String,AssistantHub.Core.Models.AssistantPerformanceStage,System.String,System.Collections.Generic.List{AssistantHub.Core.Models.AssistantModelToolCall},System.String)">
             <summary>
             Create a successful result.
             </summary>
@@ -9973,6 +10059,7 @@
             <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
             <param name="finishReason">Provider finish reason.</param>
             <param name="toolCalls">Model-requested tool calls.</param>
+            <param name="thinking">Optional provider thinking/reasoning text.</param>
             <returns>InferenceResult.</returns>
         </member>
         <member name="M:AssistantHub.Core.Models.InferenceResult.FromError(System.String,AssistantHub.Core.Models.AssistantPerformanceStage)">
@@ -10353,6 +10440,11 @@
             Message content.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.OllamaStreamMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.OpenAIStreamingChoice">
             <summary>
             Choice payload for an OpenAI streaming chat chunk.
@@ -10386,6 +10478,16 @@
         <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.Content">
             <summary>
             Delta content text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.Thinking">
+            <summary>
+            Delta provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.ReasoningContent">
+            <summary>
+            OpenAI-compatible reasoning delta used by some models.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEmbedResponse">
@@ -13269,7 +13371,7 @@
             <param name="token">Cancellation token.</param>
             <returns>Inference result containing assistant content and/or model-requested tool calls.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Action{AssistantHub.Core.Models.AssistantPerformanceStage},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Action{AssistantHub.Core.Models.AssistantPerformanceStage},System.Threading.CancellationToken,System.Func{System.String,System.Threading.Tasks.Task})">
             <summary>
             Generate a streaming response from a language model using a multi-message conversation.
             </summary>
@@ -13287,6 +13389,7 @@
             <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
             <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
             <param name="token">Cancellation token.</param>
+            <param name="onThinkingDelta">Optional callback invoked for provider thinking/reasoning deltas.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String},System.Boolean,System.Collections.Generic.List{System.String})">
             <summary>
@@ -13756,6 +13859,11 @@
             Message content.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.OllamaMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.OllamaMessage.ToolCalls">
             <summary>
             Model-requested tool calls.
@@ -13809,6 +13917,16 @@
         <member name="P:AssistantHub.Core.Services.OpenAIMessage.Content">
             <summary>
             Message content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.ReasoningContent">
+            <summary>
+            OpenAI-compatible reasoning content field used by some models.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.OpenAIMessage.ToolCalls">

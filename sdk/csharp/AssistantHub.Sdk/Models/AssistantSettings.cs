@@ -195,6 +195,12 @@ namespace AssistantHub.Sdk.Models
         public string InferenceEndpointId { get; set; }
 
         /// <summary>
+        /// Completion endpoint identifier used only for model tool-routing calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("ToolRoutingInferenceEndpointId")]
+        public string ToolRoutingInferenceEndpointId { get; set; }
+
+        /// <summary>
         /// Completion endpoint identifier used for retrieval gate calls. Falls back to InferenceEndpointId when unset.
         /// </summary>
         [JsonPropertyName("RetrievalGateInferenceEndpointId")]
@@ -223,6 +229,12 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("LoadModelsOnChatOpen")]
         public bool LoadModelsOnChatOpen { get; set; }
+
+        /// <summary>
+        /// Whether provider-returned thinking/reasoning text may be shown in assistant chat.
+        /// </summary>
+        [JsonPropertyName("ExposeThinking")]
+        public bool ExposeThinking { get; set; }
 
         /// <summary>
         /// Title displayed as the heading on the chat window.

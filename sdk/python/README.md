@@ -56,7 +56,7 @@ print(deleted.deleted_count)
 ### Attached-Document Chat
 
 ```python
-from assistanthub_sdk import AssistantHubClient, ChatCompletionMessage
+from assistanthub_sdk import AssistantHubClient, ChatCompletionMessage, ChatLocalAttachment
 
 with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as client:
     selectable = client.list_assistant_documents(
@@ -73,7 +73,23 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
         ],
         attached_document_ids=[document_id],
     )
+
+    local_response = client.send_message(
+        assistant_id="ast_123",
+        messages=[
+            ChatCompletionMessage(role="user", content="Summarize this local file.")
+        ],
+        local_attachments=[
+            ChatLocalAttachment(
+                name="notes.txt",
+                content_type="text/plain",
+                base64_content="VGhpcyBpcyBhIGxvY2FsIGZpbGUu",
+            )
+        ],
+    )
 ```
+
+`local_attachments` require assistant document attachments to be enabled. They are processed for the chat request only and are not added to the assistant collection.
 
 ### Using a Context Manager
 

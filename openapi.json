@@ -1233,7 +1233,7 @@
         "security": [],
         "requestBody": {
           "required": false,
-          "description": "OpenAI-compatible chat request. Optional attached_document_ids constrains RAG retrieval to selected assistant documents.",
+          "description": "OpenAI-compatible chat request. Optional attached_document_ids constrains RAG retrieval to selected assistant documents. Optional local_attachments sends user-uploaded files for this chat request only.",
           "content": {
             "application/json": {
               "schema": {
@@ -5351,7 +5351,47 @@
                 "content": {
                   "application/json": {
                     "schema": {
-                      "type": "object"
+                      "type": "object",
+                      "properties": {
+                        "Id": {
+                          "type": "string"
+                        },
+                        "Name": {
+                          "type": "string"
+                        },
+                        "Description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "Title": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "LogoUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "FaviconUrl": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "LoadModelsOnChatOpen": {
+                          "type": "boolean"
+                        },
+                        "ExposeThinking": {
+                          "type": "boolean",
+                          "description": "Whether public chat may display provider-returned thinking/reasoning text."
+                        },
+                        "EnableDocumentAttachments": {
+                          "type": "boolean"
+                        },
+                        "DocumentAttachmentMaxCount": {
+                          "type": "integer"
+                        },
+                        "ExposeDocumentSourceUrls": {
+                          "type": "boolean"
+                        }
+                      }
                     }
                   }
                 }
@@ -13440,6 +13480,11 @@
           "content": {
             "type": "string",
             "description": "Message content."
+          },
+          "thinking": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional provider thinking/reasoning text. AssistantHub only emits this on assistant responses when the assistant setting ExposeThinking is enabled; clients should not send it back in request messages."
           }
         }
       },
@@ -13520,6 +13565,37 @@
             "items": {
               "type": "string"
             }
+          },
+          "local_attachments": {
+            "type": "array",
+            "description": "Optional user-uploaded files for this chat request only. Files are decoded or text-extracted for model context and are not added to the assistant collection.",
+            "items": {
+              "$ref": "#/components/schemas/ChatLocalAttachment"
+            }
+          }
+        }
+      },
+      "ChatLocalAttachment": {
+        "type": "object",
+        "description": "User-supplied file attachment for a single chat request.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "content_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "base64_content": {
+            "type": "string",
+            "description": "Base64 file content. Data URLs are accepted.",
+            "nullable": true
+          },
+          "text": {
+            "type": "string",
+            "description": "Already extracted text content. Use this instead of base64_content when the client has already extracted text.",
+            "nullable": true
           }
         }
       },
@@ -13677,6 +13753,16 @@
         "additionalProperties": true,
         "description": "Assistant configuration settings. Includes model-directed server-side tool policy when configured.",
         "properties": {
+          "ToolRoutingInferenceEndpointId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional completion endpoint ID used only for model tool-routing checks. Null falls back to InferenceEndpointId."
+          },
+          "ExposeThinking": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, provider-returned thinking/reasoning text may be included in assistant chat responses as message.thinking. Default false."
+          },
           "ToolPolicyJson": {
             "type": "string",
             "nullable": true,
@@ -13771,6 +13857,11 @@
             "type": "boolean",
             "default": false
           },
+          "EnableDocumentAtomExtractionTool": {
+            "type": "boolean",
+            "default": false,
+            "description": "Expose document_atom_extract for completed assistant documents and per-turn local chat attachments."
+          },
           "EnableCollectionEnumerateDocumentsTool": {
             "type": "boolean",
             "default": false
@@ -13852,6 +13943,18 @@
             "minimum": 1,
             "maximum": 10485760
           },
+          "MaxAtomExtractionBytes": {
+            "type": "integer",
+            "default": 10485760,
+            "minimum": 1,
+            "maximum": 52428800
+          },
+          "MaxAtomExtractionCharacters": {
+            "type": "integer",
+            "default": 50000,
+            "minimum": 1024,
+            "maximum": 500000
+          },
           "AllowBucketWideObjectRead": {
             "type": "boolean",
             "default": false
@@ -13917,6 +14020,7 @@
           "EnableCollectionReadChunksTool": false,
           "EnableVerbexFullTextSearchTool": false,
           "EnableS3ObjectReadTool": false,
+          "EnableDocumentAtomExtractionTool": false,
           "EnableCollectionEnumerateDocumentsTool": false,
           "EnableIndexEnumerateRecordsTool": false,
           "EnableBucketEnumerateObjectsTool": false,
@@ -13926,6 +14030,8 @@
           "MaxSearchQueriesPerCall": 3,
           "MaxDocumentsConsideredPerSearch": 1000,
           "MaxResultsConsideredPerSearch": 1000,
+          "MaxAtomExtractionBytes": 10485760,
+          "MaxAtomExtractionCharacters": 50000,
           "ReturnFullSearchContent": false,
           "AllowBucketWideObjectRead": false,
           "AllowBinaryObjectOutput": false,
@@ -14156,6 +14262,14 @@
             "nullable": true
           },
           "InferenceEndpointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ToolRoutingInferenceEndpointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "EffectiveToolRoutingInferenceEndpointId": {
             "type": "string",
             "nullable": true
           },

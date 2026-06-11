@@ -6,10 +6,14 @@
 - **CIFS and NFS crawler support**: Added CIFS/SMB and NFS repository types, file-server repository settings mapped from View's `DataRepository`, shared Blobject-backed crawler infrastructure, and lazy file-byte retrieval through `CrawlerBase`.
 - **File-server crawler product coverage**: Added dashboard create/edit support, REST/OpenAPI/Postman examples, C#/TypeScript/Python SDK models and tests, and archived the implementation checklist at `archive/FILE_CRAWLERS.md` for v0.16.0.
 - **Attached-document chat**: Added public assistant document listing, dashboard document selection, `attached_document_ids` chat requests, retrieval metadata for applied document filters, SDK/OpenAPI/Postman/REST coverage, and server validation that attached documents are completed records in the assistant tenant and collection.
+- **Local chat file attachments**: Added dashboard file upload chips and `local_attachments` chat request support so users can attach files from their machines to a chat turn. The server decodes or text-extracts local files for prompt context without adding them to the assistant collection.
+- **DocumentAtom extraction tool**: Added disabled-by-default `document_atom_extract` assistant tool support so models can request bounded text extraction from a completed assistant document or a per-turn local chat attachment.
 - **Attached-document retrieval fallback**: Added `RecallDb.SupportsMultiDocumentFilter`; when disabled, AssistantHub logs a warning and loops over single-document RecallDB searches instead of sending a native `DocumentIds` filter.
 - **Tool-call policy foundation**: Added disabled-by-default assistant tool policy settings, policy validation, admin dry-run diagnostics, effective-tool endpoints, dashboard controls, SDK/OpenAPI/Postman/MCP coverage, and initial server executors for collection search, collection document enumeration, Verbex full-text search, and Tavily web search.
+- **Dedicated tool-routing endpoints**: Added optional `ToolRoutingInferenceEndpointId` assistant setting with dashboard selector, REST/Postman/SDK documentation, startup migrations, and provider scripts for SQLite, PostgreSQL, MySQL, and SQL Server. When configured, model tool-decision turns use the router endpoint while final answers use the response inference endpoint.
 - **Assistant tool-call traces**: Added redacted `AssistantToolCallRecord` persistence for non-streaming tool-call chat, provider data access, retention pruning, chat/request-history linkage, admin REST routes including filtered bulk deletion, OpenAPI/Postman coverage, dashboard API client methods, and C#/TypeScript/Python SDK methods.
 - **Streaming tool-call progress**: Added safe named SSE lifecycle and heartbeat events for tool-enabled streaming chat, optional safe `tool_calls` chat response metadata, dashboard stream parsing with interrupted-stream handling, OpenAPI/REST documentation, and SDK contract coverage.
+- **Assistant thinking exposure setting**: Added default-off `ExposeThinking` assistant setting, provider parsing for Ollama/OpenAI-compatible thinking fields, gated REST/SSE chat response support, dashboard rendering, migrations, SDK/OpenAPI/Postman/docs, and tests.
 - **Tool-call telemetry stage**: Added safe aggregate `tools` performance telemetry with call counts, duration totals, per-tool status counts, provider dimensions, truncation flags, and result counts when available.
 - **Tool-call analytics diagnostics**: Assistant analytics slowest-request rows and the dashboard now show safe aggregate tool-call counts, failures, denials, truncation counts, slowest tool duration, and failing tool names for admin triage.
 - **Structured tool-call errors**: Added stable model-visible, admin-trace, and tool-policy validation error codes for malformed arguments, policy denials, tool limits, provider configuration failures, provider HTTP errors, timeouts, cancellations, unavailable tool policies, and generic tool failures.
@@ -24,6 +28,9 @@
 ### Changed
 - **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, REST, and documentation metadata to `0.16.0`.
 - **Crawl-plan model**: Repository settings now deserialize polymorphically for Web, CIFS, and NFS while preserving legacy web settings that omit `RepositoryType`.
+
+### Fixed
+- **Tool-routing continuation**: If a dedicated tool router stops but the final response model asks for another server-side tool, AssistantHub now executes that tool under policy and continues the loop instead of returning a diagnostic no-text response.
 
 ## v0.14.0 - Search, MCP, and Verbex
 

@@ -33,13 +33,25 @@ namespace AssistantHub.Sdk.Models
         public string InferenceEndpointId { get; set; }
 
         /// <summary>
-        /// Whether the selected completion endpoint was resolved.
+        /// Configured tool-routing completion endpoint identifier, when it differs from the response endpoint.
+        /// </summary>
+        [JsonPropertyName("ToolRoutingInferenceEndpointId")]
+        public string ToolRoutingInferenceEndpointId { get; set; }
+
+        /// <summary>
+        /// Effective completion endpoint identifier used for tool-routing diagnostics.
+        /// </summary>
+        [JsonPropertyName("EffectiveToolRoutingInferenceEndpointId")]
+        public string EffectiveToolRoutingInferenceEndpointId { get; set; }
+
+        /// <summary>
+        /// Whether the effective tool-routing completion endpoint was resolved.
         /// </summary>
         [JsonPropertyName("EndpointResolved")]
         public bool EndpointResolved { get; set; }
 
         /// <summary>
-        /// Endpoint model name, if resolved.
+        /// Effective tool-routing endpoint model name, if resolved.
         /// </summary>
         [JsonPropertyName("EndpointModel")]
         public string EndpointModel { get; set; }

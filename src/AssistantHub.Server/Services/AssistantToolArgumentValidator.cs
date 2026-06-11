@@ -19,6 +19,7 @@ namespace AssistantHub.Server.Services
             ["verbex_full_text_search"] = Set("query", "index_id", "record_ids", "max_results", "use_and_logic", "required_terms", "excluded_terms"),
             ["index_enumerate_records"] = Set("index_id", "record_ids", "max_results", "continuation_token", "query", "record_id_prefix"),
             ["s3_object_read"] = Set("document_id", "bucket", "bucket_name", "object_key", "range_start", "range_length", "text_start", "text_length", "content_mode"),
+            ["document_atom_extract"] = Set("document_id", "local_attachment_id", "document_type", "text_start", "text_length"),
             ["bucket_enumerate_objects"] = Set("bucket", "bucket_name", "prefix", "suffix", "content_type", "max_results", "continuation_token"),
             ["web_search"] = Set("query", "max_results", "search_depth", "topic", "time_range", "start_date", "end_date", "include_answer", "safe_search", "country", "include_raw_content", "include_images", "include_image_descriptions", "include_domains", "exclude_domains")
         };
@@ -31,6 +32,7 @@ namespace AssistantHub.Server.Services
             ["verbex_full_text_search"] = typeof(VerbexFullTextSearchArguments),
             ["index_enumerate_records"] = typeof(IndexEnumerateRecordsArguments),
             ["s3_object_read"] = typeof(S3ObjectReadArguments),
+            ["document_atom_extract"] = typeof(DocumentAtomExtractArguments),
             ["bucket_enumerate_objects"] = typeof(BucketEnumerateObjectsArguments),
             ["web_search"] = typeof(WebSearchArguments)
         };
@@ -306,6 +308,24 @@ namespace AssistantHub.Server.Services
 
             [JsonPropertyName("content_mode")]
             public string ContentMode { get; set; }
+        }
+
+        private sealed class DocumentAtomExtractArguments
+        {
+            [JsonPropertyName("document_id")]
+            public string DocumentId { get; set; }
+
+            [JsonPropertyName("local_attachment_id")]
+            public string LocalAttachmentId { get; set; }
+
+            [JsonPropertyName("document_type")]
+            public string DocumentType { get; set; }
+
+            [JsonPropertyName("text_start")]
+            public int? TextStart { get; set; }
+
+            [JsonPropertyName("text_length")]
+            public int? TextLength { get; set; }
         }
 
         private sealed class BucketEnumerateObjectsArguments

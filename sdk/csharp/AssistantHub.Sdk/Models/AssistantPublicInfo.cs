@@ -50,6 +50,12 @@ namespace AssistantHub.Sdk.Models
         public bool LoadModelsOnChatOpen { get; set; }
 
         /// <summary>
+        /// Whether public chat may display provider-returned thinking/reasoning text.
+        /// </summary>
+        [JsonPropertyName("ExposeThinking")]
+        public bool ExposeThinking { get; set; }
+
+        /// <summary>
         /// Whether public chat document attachments are enabled.
         /// </summary>
         [JsonPropertyName("EnableDocumentAttachments")]

@@ -135,6 +135,12 @@ namespace AssistantHub.Sdk.Models
         public bool EnableS3ObjectReadTool { get; set; }
 
         /// <summary>
+        /// Enable DocumentAtom extraction against assistant documents and per-turn local attachments.
+        /// </summary>
+        [JsonPropertyName("EnableDocumentAtomExtractionTool")]
+        public bool EnableDocumentAtomExtractionTool { get; set; }
+
+        /// <summary>
         /// Enable assistant collection document enumeration.
         /// </summary>
         [JsonPropertyName("EnableCollectionEnumerateDocumentsTool")]
@@ -319,6 +325,18 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("MaxObjectReadBytes")]
         public int MaxObjectReadBytes { get; set; } = 131072;
+
+        /// <summary>
+        /// Maximum source bytes accepted by one DocumentAtom extraction call.
+        /// </summary>
+        [JsonPropertyName("MaxAtomExtractionBytes")]
+        public int MaxAtomExtractionBytes { get; set; } = 10485760;
+
+        /// <summary>
+        /// Maximum extracted text characters returned by one DocumentAtom extraction call.
+        /// </summary>
+        [JsonPropertyName("MaxAtomExtractionCharacters")]
+        public int MaxAtomExtractionCharacters { get; set; } = 50000;
 
         /// <summary>
         /// Maximum aggregate S3 object bytes per chat turn.

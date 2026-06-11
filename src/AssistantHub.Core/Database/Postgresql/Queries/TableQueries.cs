@@ -94,11 +94,13 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  fulltext_minimum_score DOUBLE PRECISION DEFAULT NULL, " +
             "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
             "  inference_endpoint_id TEXT, " +
+            "  tool_routing_inference_endpoint_id TEXT, " +
             "  retrieval_gate_inference_endpoint_id TEXT, " +
             "  query_rewrite_inference_endpoint_id TEXT, " +
             "  rerank_inference_endpoint_id TEXT, " +
             "  embedding_endpoint_id TEXT, " +
             "  load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  expose_thinking BOOLEAN NOT NULL DEFAULT FALSE, " +
             "  title TEXT, " +
             "  logo_url TEXT, " +
             "  favicon_url TEXT, " +
@@ -118,6 +120,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS retrieval_gate_inference_endpoint_id TEXT";
 
+        internal static string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS tool_routing_inference_endpoint_id TEXT";
+
         internal static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS query_rewrite_inference_endpoint_id TEXT";
 
@@ -126,6 +131,9 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsExposeThinkingColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS expose_thinking BOOLEAN NOT NULL DEFAULT FALSE";
 
         internal static string AddAssistantSettingsToolPolicyJsonColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS tool_policy_json TEXT";

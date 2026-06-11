@@ -25,6 +25,9 @@ namespace AssistantHub.Server.Services
     /// </summary>
     public class AssistantChatService : AssistantChatServiceBase
     {
+        private const int ToolLoopGuardMinimumEvidenceCharacters = 12000;
+        private const int ToolLoopGuardMaximumEvidenceCharacters = 24000;
+
         /// <summary>
         /// Instantiate the shared assistant chat execution service.
         /// </summary>
@@ -87,6 +90,17 @@ namespace AssistantHub.Server.Services
             string lastUserMessage = GetLastUserMessage(request.Messages);
             List<string> attachedDocumentIds = NormalizeDocumentIds(request.AttachedDocumentIds);
             List<AssistantDocumentSelectionItem> attachedDocuments = null;
+            int localAttachmentCount = ChatLocalAttachmentProcessor.Count(request.LocalAttachments);
+            int collectionAttachmentCount = attachedDocumentIds?.Count ?? 0;
+            if (localAttachmentCount > 0 && collectionAttachmentCount + localAttachmentCount > settings.DocumentAttachmentMaxCount)
+            {
+                return new AssistantChatExecutionResult
+                {
+                    Success = false,
+                    StatusCode = 400,
+                    ErrorMessage = "Too many attachments. The assistant allows " + settings.DocumentAttachmentMaxCount + " attachment(s) per request."
+                };
+            }
 
             AssistantDocumentAttachmentResolver attachmentResolver = new AssistantDocumentAttachmentResolver(_Database);
             AssistantDocumentAttachmentResolution attachmentResolution = await attachmentResolver.ResolveAsync(
@@ -105,6 +119,26 @@ namespace AssistantHub.Server.Services
             attachedDocuments = attachmentResolution.Documents.Count > 0 ? attachmentResolution.Documents : null;
             if (attachedDocumentIds != null && attachedDocumentIds.Count > 0)
                 _Logging.Info(_Header + "attached document filter active: count=" + attachedDocumentIds.Count);
+
+            ChatLocalAttachmentResolution localAttachmentResolution = await ChatLocalAttachmentProcessor.ResolveAsync(
+                settings,
+                request.LocalAttachments,
+                _Settings,
+                _Logging,
+                token).ConfigureAwait(false);
+            if (!localAttachmentResolution.Success)
+            {
+                return new AssistantChatExecutionResult
+                {
+                    Success = false,
+                    StatusCode = localAttachmentResolution.StatusCode,
+                    ErrorMessage = localAttachmentResolution.ErrorMessage
+                };
+            }
+
+            string localAttachmentContext = ChatLocalAttachmentProcessor.BuildPromptContext(localAttachmentResolution.Attachments);
+            if (localAttachmentResolution.Attachments.Count > 0)
+                _Logging.Info(_Header + "local chat attachments active: count=" + localAttachmentResolution.Attachments.Count);
 
             string retrievalGateDecision = null;
             double retrievalGateDurationMs = 0;
@@ -470,28 +504,28 @@ namespace AssistantHub.Server.Services
             bool hasSystemMessage = messages.Any(m =>
                 String.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase)
                 && !IsConversationSummaryMessage(m));
-            if (!hasSystemMessage && !String.IsNullOrEmpty(settings.SystemPrompt))
+            if (!hasSystemMessage && (!String.IsNullOrEmpty(settings.SystemPrompt) || !String.IsNullOrEmpty(localAttachmentContext)))
             {
-                baseSystemPrompt = settings.SystemPrompt;
+                baseSystemPrompt = ChatLocalAttachmentProcessor.AppendToSystemPrompt(settings.SystemPrompt, localAttachmentContext);
                 messages.Insert(0, new ChatCompletionMessage
                 {
                     Role = "system",
-                    Content = _Inference.BuildSystemMessage(settings.SystemPrompt, contextChunks, settings.EnableCitations, chunkLabels)
+                    Content = _Inference.BuildSystemMessage(baseSystemPrompt, contextChunks, settings.EnableCitations, chunkLabels)
                 });
                 systemMessageIndex = 0;
             }
-            else if (hasSystemMessage && contextChunks.Count > 0)
+            else if (hasSystemMessage && (contextChunks.Count > 0 || !String.IsNullOrEmpty(localAttachmentContext)))
             {
                 for (int i = 0; i < messages.Count; i++)
                 {
                     if (String.Equals(messages[i].Role, "system", StringComparison.OrdinalIgnoreCase)
                         && !IsConversationSummaryMessage(messages[i]))
                     {
-                        baseSystemPrompt = messages[i].Content;
+                        baseSystemPrompt = ChatLocalAttachmentProcessor.AppendToSystemPrompt(messages[i].Content, localAttachmentContext);
                         messages[i] = new ChatCompletionMessage
                         {
                             Role = "system",
-                            Content = _Inference.BuildSystemMessage(messages[i].Content, contextChunks, settings.EnableCitations, chunkLabels)
+                            Content = _Inference.BuildSystemMessage(baseSystemPrompt, contextChunks, settings.EnableCitations, chunkLabels)
                         };
                         systemMessageIndex = i;
                         break;
@@ -557,6 +591,8 @@ namespace AssistantHub.Server.Services
             int promptTokenEstimate = EstimateTokenCount(messages);
             DateTime promptSentUtc = DateTime.UtcNow;
             Stopwatch inferenceSw = Stopwatch.StartNew();
+            double timeToFirstTokenMs = 0;
+            bool firstResponseDeltaCaptured = false;
 
             AssistantToolPolicy toolPolicy = settings.ToolPolicy ?? new AssistantToolPolicy();
             toolPolicy.Normalize();
@@ -571,7 +607,42 @@ namespace AssistantHub.Server.Services
                 _Logging.Warn(_Header + "tool calls are enabled for assistant " + assistant.Id + " but no executable tools are available; using standard inference");
             }
 
-            if (toolCallsActive && !IsToolCallingEndpointSupported(resolvedEndpoint, inferenceProvider, out string toolCapabilityError))
+            ResolvedEndpoint? resolvedToolRoutingEndpoint = resolvedEndpoint;
+            Enums.InferenceProviderEnum toolRoutingProvider = inferenceProvider;
+            string toolRoutingEndpoint = inferenceEndpoint;
+            string toolRoutingApiKey = inferenceApiKey;
+            string toolRoutingEndpointId = inferenceEndpointId;
+            string toolRoutingModel = model;
+            int toolRoutingMaxConcurrentRequests = inferenceMaxConcurrentRequests;
+            bool useSeparateToolRoutingEndpoint = false;
+
+            if (toolCallsActive)
+            {
+                string configuredToolRoutingEndpointId = ResolveUtilityInferenceEndpointId(settings.ToolRoutingInferenceEndpointId, settings.InferenceEndpointId);
+                useSeparateToolRoutingEndpoint = !String.Equals(configuredToolRoutingEndpointId, settings.InferenceEndpointId, StringComparison.Ordinal);
+                if (useSeparateToolRoutingEndpoint)
+                {
+                    Stopwatch toolRoutingEndpointSw = Stopwatch.StartNew();
+                    resolvedToolRoutingEndpoint = await ResolveCompletionEndpointAsync(configuredToolRoutingEndpointId, token).ConfigureAwait(false);
+                    toolRoutingEndpointSw.Stop();
+                    endpointResolutionMs += Math.Round(toolRoutingEndpointSw.Elapsed.TotalMilliseconds, 2);
+                }
+
+                if (resolvedToolRoutingEndpoint != null)
+                {
+                    toolRoutingProvider = resolvedToolRoutingEndpoint.Value.Provider;
+                    toolRoutingEndpoint = resolvedToolRoutingEndpoint.Value.Endpoint;
+                    toolRoutingApiKey = resolvedToolRoutingEndpoint.Value.ApiKey;
+                    toolRoutingEndpointId = resolvedToolRoutingEndpoint.Value.EndpointId;
+                    toolRoutingMaxConcurrentRequests = resolvedToolRoutingEndpoint.Value.MaxConcurrentRequests;
+                    if (useSeparateToolRoutingEndpoint)
+                        toolRoutingModel = !String.IsNullOrEmpty(resolvedToolRoutingEndpoint.Value.Model) ? resolvedToolRoutingEndpoint.Value.Model : _Settings.Inference.DefaultModel;
+                    else if (!String.IsNullOrEmpty(resolvedToolRoutingEndpoint.Value.Model) && String.IsNullOrEmpty(request.Model))
+                        toolRoutingModel = resolvedToolRoutingEndpoint.Value.Model;
+                }
+            }
+
+            if (toolCallsActive && !IsToolCallingEndpointSupported(resolvedToolRoutingEndpoint, toolRoutingProvider, out string toolCapabilityError))
             {
                 return new AssistantChatExecutionResult
                 {
@@ -585,6 +656,38 @@ namespace AssistantHub.Server.Services
             List<ChatCompletionToolTrace> toolTraces = new List<ChatCompletionToolTrace>();
             List<AssistantPerformanceStage> toolModelStages = new List<AssistantPerformanceStage>();
             bool toolLimitReached = false;
+            string toolLoopStopReason = null;
+            ToolFinalStreamingCallbacks finalStreaming = null;
+            if (request.ResponseDelta != null || request.ThinkingDelta != null)
+            {
+                finalStreaming = new ToolFinalStreamingCallbacks
+                {
+                    OnDelta = async delta =>
+                    {
+                        if (!firstResponseDeltaCaptured)
+                        {
+                            timeToFirstTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                            firstResponseDeltaCaptured = true;
+                        }
+
+                        if (request.ResponseDelta != null)
+                            await request.ResponseDelta(delta).ConfigureAwait(false);
+                    },
+                    OnThinkingDelta = async delta =>
+                    {
+                        if (!settings.ExposeThinking) return;
+                        if (!firstResponseDeltaCaptured)
+                        {
+                            timeToFirstTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                            firstResponseDeltaCaptured = true;
+                        }
+
+                        if (request.ThinkingDelta != null)
+                            await request.ThinkingDelta(delta).ConfigureAwait(false);
+                    }
+                };
+            }
+
             if (toolCallsActive)
             {
                 messages = AddToolBehaviorInstructions(messages);
@@ -594,6 +697,13 @@ namespace AssistantHub.Server.Services
                     settings,
                     toolPolicy,
                     modelToolDefinitions,
+                    toolRoutingModel,
+                    toolRoutingProvider,
+                    toolRoutingEndpoint,
+                    toolRoutingApiKey,
+                    toolRoutingEndpointId,
+                    toolRoutingMaxConcurrentRequests,
+                    useSeparateToolRoutingEndpoint,
                     model,
                     maxTokens,
                     temperature,
@@ -608,7 +718,9 @@ namespace AssistantHub.Server.Services
                     request.RequestHistoryId,
                     request.Origin,
                     request.ToolProgress,
+                    localAttachmentResolution.Attachments,
                     settings.EnableCitations ? (citationSources?.Count ?? 0) : -1,
+                    finalStreaming,
                     token).ConfigureAwait(false);
 
                 inferenceResult = toolLoopResult.Result;
@@ -616,6 +728,7 @@ namespace AssistantHub.Server.Services
                 toolTraces = toolLoopResult.ToolTraces ?? new List<ChatCompletionToolTrace>();
                 toolModelStages = toolLoopResult.ToolModelStages ?? new List<AssistantPerformanceStage>();
                 toolLimitReached = toolLoopResult.ToolLimitReached;
+                toolLoopStopReason = toolLoopResult.ToolLoopStopReason;
                 if (settings.EnableCitations && toolLoopResult.CitationSources != null && toolLoopResult.CitationSources.Count > 0)
                 {
                     citationSources ??= new List<CitationSource>();
@@ -639,7 +752,7 @@ namespace AssistantHub.Server.Services
                 string finalInferenceError = inferenceResult?.ErrorMessage;
                 inferenceResult ??= new InferenceResult();
                 inferenceResult.Success = true;
-                inferenceResult.Content = BuildToolLimitFinalFailureResponse(toolTraces, finalInferenceError);
+                inferenceResult.Content = BuildToolLimitFinalFailureResponse(toolTraces, finalInferenceError, toolLoopStopReason);
                 inferenceResult.FinishReason = String.IsNullOrWhiteSpace(finalInferenceError)
                     ? "tool_limit_empty_final"
                     : "tool_limit_final_inference_failed";
@@ -655,11 +768,54 @@ namespace AssistantHub.Server.Services
                 inferenceResult.Telemetry.Metadata["provider_final_inference_failed"] = !String.IsNullOrWhiteSpace(finalInferenceError);
                 inferenceResult.Telemetry.Metadata["provider_final_error"] = String.IsNullOrWhiteSpace(finalInferenceError) ? null : finalInferenceError;
                 inferenceResult.Telemetry.Metadata["tool_call_count"] = toolTraces.Count;
+                if (!String.IsNullOrWhiteSpace(toolLoopStopReason))
+                    inferenceResult.Telemetry.Metadata["tool_loop_stop_reason"] = toolLoopStopReason;
                 _Logging.Warn(
                     _Header +
                     "tool-limit final inference did not produce content; returning persisted diagnostic response" +
                     ", assistantId=" + assistant.Id +
                     ", traceId=" + (request.TraceId ?? "") +
+                    (String.IsNullOrWhiteSpace(finalInferenceError) ? "" : ", error=" + finalInferenceError));
+            }
+
+            if (!toolLimitReached
+                && toolCallsActive
+                && (inferenceResult == null || !inferenceResult.Success || String.IsNullOrWhiteSpace(inferenceResult.Content)))
+            {
+                string finalInferenceError = inferenceResult?.ErrorMessage;
+                bool providerReturnedEmpty = String.IsNullOrWhiteSpace(finalInferenceError);
+                bool hadToolActivity = toolTraces.Count > 0;
+                bool toolRouterFailed = String.Equals(toolLoopStopReason, "tool_router_inference_failed", StringComparison.OrdinalIgnoreCase);
+                inferenceResult ??= new InferenceResult();
+                inferenceResult.Success = true;
+                inferenceResult.Content = BuildToolInferenceFailureResponse(toolTraces, finalInferenceError, toolLoopStopReason);
+                inferenceResult.FinishReason = toolRouterFailed
+                    ? "tool_router_inference_failure_fallback"
+                    : (providerReturnedEmpty
+                        ? "tool_inference_empty_final_fallback"
+                        : "tool_inference_failure_fallback");
+                inferenceResult.ErrorMessage = null;
+                inferenceResult.Telemetry = ClonePerformanceStage(inferenceResult.Telemetry);
+                inferenceResult.Telemetry.Metadata ??= new Dictionary<string, object>();
+                inferenceResult.Telemetry.Metadata["phase"] = "assistant_tool_fallback";
+                inferenceResult.Telemetry.Metadata["summary"] = BuildToolInferenceFailureSummary(toolRouterFailed, providerReturnedEmpty, hadToolActivity);
+                inferenceResult.Telemetry.Metadata["tool_routing_failure"] = toolRouterFailed;
+                inferenceResult.Telemetry.Metadata["tool_router_inference_failed"] = toolRouterFailed;
+                inferenceResult.Telemetry.Metadata["provider_failure_phase"] = toolRouterFailed ? "tool_router" : "final_response";
+                inferenceResult.Telemetry.Metadata["provider_empty_response"] = !toolRouterFailed && providerReturnedEmpty;
+                inferenceResult.Telemetry.Metadata["provider_final_inference_failed"] = !toolRouterFailed && !providerReturnedEmpty;
+                inferenceResult.Telemetry.Metadata["provider_final_error"] = (!toolRouterFailed && !providerReturnedEmpty) ? finalInferenceError : null;
+                inferenceResult.Telemetry.Metadata["tool_router_error"] = (toolRouterFailed && !providerReturnedEmpty) ? finalInferenceError : null;
+                inferenceResult.Telemetry.Metadata["tool_call_count"] = toolTraces.Count;
+                inferenceResult.Telemetry.Metadata["tool_model_check_count"] = toolModelStages.Count;
+                if (!String.IsNullOrWhiteSpace(toolLoopStopReason))
+                    inferenceResult.Telemetry.Metadata["tool_loop_stop_reason"] = toolLoopStopReason;
+                _Logging.Warn(
+                    _Header +
+                    "tool-enabled inference did not produce content; returning persisted diagnostic response" +
+                    ", assistantId=" + assistant.Id +
+                    ", traceId=" + (request.TraceId ?? "") +
+                    ", toolCalls=" + toolTraces.Count +
                     (String.IsNullOrWhiteSpace(finalInferenceError) ? "" : ", error=" + finalInferenceError));
             }
 
@@ -690,7 +846,12 @@ namespace AssistantHub.Server.Services
                     new ChatCompletionChoice
                     {
                         Index = 0,
-                        Message = new ChatCompletionMessage { Role = "assistant", Content = canonicalResponseText },
+                        Message = new ChatCompletionMessage
+                        {
+                            Role = "assistant",
+                            Content = canonicalResponseText,
+                            Thinking = settings.ExposeThinking ? inferenceResult.Thinking : null
+                        },
                         FinishReason = "stop"
                     }
                 },
@@ -739,7 +900,7 @@ namespace AssistantHub.Server.Services
                     endpointResolutionMs,
                     compactionMs,
                     0,
-                    timeToLastTokenMs,
+                    timeToFirstTokenMs > 0 ? timeToFirstTokenMs : timeToLastTokenMs,
                     timeToLastTokenMs,
                     canonicalResponseText,
                     completionTokens,
@@ -791,6 +952,13 @@ namespace AssistantHub.Server.Services
             AssistantSettings settings,
             AssistantToolPolicy policy,
             List<AssistantModelToolDefinition> tools,
+            string toolRoutingModel,
+            Enums.InferenceProviderEnum toolRoutingProvider,
+            string toolRoutingEndpoint,
+            string toolRoutingApiKey,
+            string toolRoutingEndpointId,
+            int toolRoutingMaxConcurrentRequests,
+            bool useSeparateToolRoutingEndpoint,
             string model,
             int maxTokens,
             double temperature,
@@ -805,7 +973,9 @@ namespace AssistantHub.Server.Services
             string requestHistoryId,
             string origin,
             Func<AssistantToolProgressEvent, Task> toolProgress,
+            List<ChatLocalAttachmentContext> localAttachments,
             int citationSourceOffset,
+            ToolFinalStreamingCallbacks finalStreaming,
             CancellationToken token)
         {
             List<ChatCompletionMessage> conversation = new List<ChatCompletionMessage>(messages ?? new List<ChatCompletionMessage>());
@@ -817,7 +987,8 @@ namespace AssistantHub.Server.Services
                 Assistant = assistant,
                 Settings = settings,
                 Policy = policy,
-                TraceId = traceId
+                TraceId = traceId,
+                LocalAttachments = localAttachments ?? new List<ChatLocalAttachmentContext>()
             };
 
             int executedToolCalls = 0;
@@ -841,30 +1012,74 @@ namespace AssistantHub.Server.Services
 
                 InferenceResult modelResult = await GenerateWithToolsAndCompletionEndpointLimitAsync(
                     conversation,
-                    model,
+                    toolRoutingModel,
                     maxTokens,
                     temperature,
                     topP,
-                    provider,
-                    endpoint,
-                    apiKey,
-                    endpointId,
-                    maxConcurrentRequests,
+                    toolRoutingProvider,
+                    toolRoutingEndpoint,
+                    toolRoutingApiKey,
+                    toolRoutingEndpointId,
+                    toolRoutingMaxConcurrentRequests,
                     tools,
                     ResolveProviderToolChoice(policy),
                     token).ConfigureAwait(false);
 
                 if (modelResult == null || !modelResult.Success)
-                    return new ToolLoopExecutionResult { Result = modelResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, CitationSources = toolCitationSources };
-
-                List<AssistantModelToolCall> toolCalls = NormalizeModelToolCalls(modelResult.ToolCalls);
-                if (toolCalls.Count == 0)
                 {
-                    AnnotateFinalToolModelStage(modelResult, iteration + 1);
-                    return new ToolLoopExecutionResult { Result = modelResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, CitationSources = toolCitationSources };
+                    CaptureFailedToolRouterStage(toolModelStages, modelResult, iteration + 1);
+                    return new ToolLoopExecutionResult
+                    {
+                        Result = modelResult,
+                        Messages = conversation,
+                        ToolTraces = toolTraces,
+                        ToolModelStages = toolModelStages,
+                        ToolLoopStopReason = "tool_router_inference_failed",
+                        CitationSources = toolCitationSources
+                    };
                 }
 
-                CaptureToolModelStage(toolModelStages, modelResult, iteration + 1, toolCalls);
+                List<AssistantModelToolCall> toolCalls = NormalizeModelToolCalls(modelResult.ToolCalls);
+                bool toolCallsFromFinalResponseModel = false;
+                if (toolCalls.Count == 0)
+                {
+                    if (!useSeparateToolRoutingEndpoint && finalStreaming == null)
+                    {
+                        AnnotateFinalToolModelStage(modelResult, iteration + 1);
+                        return new ToolLoopExecutionResult { Result = modelResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, CitationSources = toolCitationSources };
+                    }
+
+                    CaptureNoToolRouterStage(toolModelStages, modelResult, iteration + 1);
+                    InferenceResult finalResult = await GenerateFinalAfterToolRoutingAsync(
+                        conversation,
+                        model,
+                        maxTokens,
+                        temperature,
+                        topP,
+                        provider,
+                        endpoint,
+                        apiKey,
+                        endpointId,
+                        maxConcurrentRequests,
+                        finalStreaming,
+                        useSeparateToolRoutingEndpoint,
+                        token).ConfigureAwait(false);
+
+                    List<AssistantModelToolCall> finalToolCalls = NormalizeModelToolCalls(finalResult?.ToolCalls);
+                    if (finalToolCalls.Count == 0)
+                    {
+                        return new ToolLoopExecutionResult { Result = finalResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, CitationSources = toolCitationSources };
+                    }
+
+                    modelResult = finalResult;
+                    toolCalls = finalToolCalls;
+                    toolCallsFromFinalResponseModel = true;
+                }
+
+                if (toolCallsFromFinalResponseModel)
+                    CaptureFinalModelRequestedToolStage(toolModelStages, modelResult, iteration + 1, toolCalls);
+                else
+                    CaptureToolModelStage(toolModelStages, modelResult, iteration + 1, toolCalls);
 
                 conversation.Add(new ChatCompletionMessage
                 {
@@ -874,6 +1089,8 @@ namespace AssistantHub.Server.Services
                 });
 
                 bool turnLimitReached = false;
+                string toolCallProvider = toolCallsFromFinalResponseModel ? provider.ToString() : toolRoutingProvider.ToString();
+                string toolCallModel = toolCallsFromFinalResponseModel ? model : toolRoutingModel;
                 foreach (AssistantModelToolCall toolCall in toolCalls)
                 {
                     DateTime toolStartedUtc = DateTime.UtcNow;
@@ -911,8 +1128,8 @@ namespace AssistantHub.Server.Services
                             deniedResult,
                             toolStartedUtc,
                             DateTime.UtcNow,
-                            provider.ToString(),
-                            model,
+                            toolCallProvider,
+                            toolCallModel,
                             policy,
                             token).ConfigureAwait(false);
                         toolTraces.Add(BuildToolTrace(toolCall, toolName, iteration + 1, executedToolCalls + 1, deniedResult, toolStartedUtc, DateTime.UtcNow));
@@ -953,8 +1170,8 @@ namespace AssistantHub.Server.Services
                             deniedResult,
                             toolStartedUtc,
                             DateTime.UtcNow,
-                            provider.ToString(),
-                            model,
+                            toolCallProvider,
+                            toolCallModel,
                             policy,
                             token).ConfigureAwait(false);
                         toolTraces.Add(BuildToolTrace(toolCall, toolName, iteration + 1, executedToolCalls + 1, deniedResult, toolStartedUtc, DateTime.UtcNow));
@@ -996,8 +1213,8 @@ namespace AssistantHub.Server.Services
                             deniedResult,
                             toolStartedUtc,
                             DateTime.UtcNow,
-                            provider.ToString(),
-                            model,
+                            toolCallProvider,
+                            toolCallModel,
                             policy,
                             token).ConfigureAwait(false);
                         toolTraces.Add(BuildToolTrace(toolCall, toolName, iteration + 1, executedToolCalls, deniedResult, toolStartedUtc, DateTime.UtcNow));
@@ -1039,8 +1256,8 @@ namespace AssistantHub.Server.Services
                             deniedResult,
                             toolStartedUtc,
                             DateTime.UtcNow,
-                            provider.ToString(),
-                            model,
+                            toolCallProvider,
+                            toolCallModel,
                             policy,
                             token).ConfigureAwait(false);
                         toolTraces.Add(BuildToolTrace(toolCall, toolName, iteration + 1, executedToolCalls, deniedResult, toolStartedUtc, DateTime.UtcNow));
@@ -1198,8 +1415,8 @@ namespace AssistantHub.Server.Services
                         toolResult,
                         toolStartedUtc,
                         toolFinishedUtc,
-                        provider.ToString(),
-                        model,
+                        toolCallProvider,
+                        toolCallModel,
                         policy,
                         token).ConfigureAwait(false);
                     toolTraces.Add(BuildToolTrace(toolCall, toolName, iteration + 1, executedToolCalls, toolResult, toolStartedUtc, toolFinishedUtc));
@@ -1230,9 +1447,55 @@ namespace AssistantHub.Server.Services
                         apiKey,
                         endpointId,
                         maxConcurrentRequests,
-                        token).ConfigureAwait(false);
+                        token,
+                        finalStreaming,
+                        "tool_limit",
+                        "The server tool-call limit has been reached. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.").ConfigureAwait(false);
 
-                    return new ToolLoopExecutionResult { Result = limitedResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, ToolLimitReached = true, CitationSources = toolCitationSources };
+                    return new ToolLoopExecutionResult { Result = limitedResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, ToolLimitReached = true, ToolLoopStopReason = "tool_limit", CitationSources = toolCitationSources };
+                }
+
+                ToolLoopGuardDecision guardDecision = EvaluateToolLoopGuard(toolTraces, modelVisibleToolOutputCharacters, policy);
+                if (guardDecision.Stop)
+                {
+                    _Logging.Warn(
+                        _Header +
+                        "tool loop guard stopped additional tool calls: assistantId=" + assistant.Id +
+                        ", reason=" + guardDecision.Reason +
+                        ", toolCallCount=" + toolTraces.Count +
+                        ", modelVisibleToolOutputCharacters=" + modelVisibleToolOutputCharacters +
+                        ", traceId=" + (traceId ?? "") +
+                        ", origin=" + (origin ?? ""));
+                    await EmitToolProgressAsync(
+                        policy,
+                        toolProgress,
+                        new AssistantToolProgressEvent
+                        {
+                            EventType = "assistant.tool_iteration.stopped",
+                            DisplayLabel = "Answering from evidence",
+                            StatusCode = "tool_loop_guard_triggered",
+                            Iteration = iteration + 1,
+                            SequenceNumber = executedToolCalls,
+                            Summary = guardDecision.Summary
+                        }).ConfigureAwait(false);
+
+                    InferenceResult guardedResult = await GenerateBestEffortAfterToolLimitAsync(
+                        conversation,
+                        model,
+                        maxTokens,
+                        temperature,
+                        topP,
+                        provider,
+                        endpoint,
+                        apiKey,
+                        endpointId,
+                        maxConcurrentRequests,
+                        token,
+                        finalStreaming,
+                        guardDecision.Reason,
+                        guardDecision.Instruction).ConfigureAwait(false);
+
+                    return new ToolLoopExecutionResult { Result = guardedResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, ToolLimitReached = true, ToolLoopStopReason = guardDecision.Reason, CitationSources = toolCitationSources };
                 }
             }
 
@@ -1247,12 +1510,15 @@ namespace AssistantHub.Server.Services
                 apiKey,
                 endpointId,
                 maxConcurrentRequests,
-                token).ConfigureAwait(false);
+                token,
+                finalStreaming,
+                "tool_iteration_limit",
+                "The server tool-call limit has been reached. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.").ConfigureAwait(false);
 
-            return new ToolLoopExecutionResult { Result = iterationLimitedResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, ToolLimitReached = true, CitationSources = toolCitationSources };
+            return new ToolLoopExecutionResult { Result = iterationLimitedResult, Messages = conversation, ToolTraces = toolTraces, ToolModelStages = toolModelStages, ToolLimitReached = true, ToolLoopStopReason = "tool_iteration_limit", CitationSources = toolCitationSources };
         }
 
-        private static string BuildToolLimitFinalFailureResponse(List<ChatCompletionToolTrace> toolTraces, string finalInferenceError)
+        private static string BuildToolLimitFinalFailureResponse(List<ChatCompletionToolTrace> toolTraces, string finalInferenceError, string stopReason = null)
         {
             string suffix = toolTraces != null && toolTraces.Count > 0
                 ? " Tool activity was recorded for this turn so an administrator can inspect which tools ran and what evidence was available."
@@ -1260,10 +1526,89 @@ namespace AssistantHub.Server.Services
             string providerDetail = String.IsNullOrWhiteSpace(finalInferenceError)
                 ? "the final model call returned no text"
                 : "the final model call failed";
+            bool guardStopped = IsToolLoopGuardStopReason(stopReason);
+            string stopDetail = guardStopped
+                ? "the server stopped additional tool calls after detecting a repeated or excessive tool-routing loop"
+                : "the server tool-call limit was reached";
 
-            return "I could not complete the requested answer because the server tool-call limit was reached before the model produced a final response, and " + providerDetail + "." +
+            return "I could not complete the requested answer because " + stopDetail + " before the model produced a final response, and " + providerDetail + "." +
                 suffix +
-                " Try the request again, narrow the document target, or increase the assistant's maximum tool iterations if this happens repeatedly.";
+                " Try the request again, narrow the document target, or adjust the assistant's tool settings if this happens repeatedly.";
+        }
+
+        private static AssistantPerformanceStage ClonePerformanceStage(AssistantPerformanceStage stage)
+        {
+            if (stage == null) return new AssistantPerformanceStage();
+
+            return new AssistantPerformanceStage
+            {
+                Name = stage.Name,
+                Kind = stage.Kind,
+                Sequence = stage.Sequence,
+                EndpointId = stage.EndpointId,
+                EndpointName = stage.EndpointName,
+                EndpointType = stage.EndpointType,
+                Provider = stage.Provider,
+                ApiFormat = stage.ApiFormat,
+                Model = stage.Model,
+                StartedUtc = stage.StartedUtc,
+                FinishedUtc = stage.FinishedUtc,
+                DurationMs = stage.DurationMs,
+                Success = stage.Success,
+                HttpStatusCode = stage.HttpStatusCode,
+                ErrorType = stage.ErrorType,
+                ErrorMessage = stage.ErrorMessage,
+                ClientTimings = stage.ClientTimings,
+                Tokens = stage.Tokens,
+                ProviderMetrics = stage.ProviderMetrics,
+                Metadata = stage.Metadata != null ? new Dictionary<string, object>(stage.Metadata) : null,
+                ProviderRaw = stage.ProviderRaw != null ? new Dictionary<string, object>(stage.ProviderRaw) : null
+            };
+        }
+
+        private static string BuildToolInferenceFailureResponse(List<ChatCompletionToolTrace> toolTraces, string finalInferenceError, string stopReason = null)
+        {
+            bool hadToolActivity = toolTraces != null && toolTraces.Count > 0;
+            bool providerReturnedEmpty = String.IsNullOrWhiteSpace(finalInferenceError);
+            bool toolRouterFailed = String.Equals(stopReason, "tool_router_inference_failed", StringComparison.OrdinalIgnoreCase);
+            string suffix = hadToolActivity
+                ? " Tool activity was recorded for this turn so an administrator can inspect which tools ran and what evidence was available."
+                : " No tool evidence was available for this turn.";
+
+            if (toolRouterFailed)
+            {
+                string routerDetail = hadToolActivity
+                    ? "the tool-routing model failed while deciding whether more tools were needed after tool processing"
+                    : "the tool-routing model failed before tools could run";
+
+                return "I could not complete the requested answer because " + routerDetail + "." +
+                    suffix +
+                    " Try the request again, choose a different tool-routing endpoint, or disable assistant tool calls if this endpoint is unavailable.";
+            }
+
+            string detail = providerReturnedEmpty
+                ? "the final model call returned no text"
+                : "the final model call failed";
+
+            return "I could not complete the requested answer because " + detail + " after tool processing." +
+                suffix +
+                " Try the request again, narrow the document target, or choose a different final-response endpoint if this happens repeatedly.";
+        }
+
+        private static string BuildToolInferenceFailureSummary(bool toolRouterFailed, bool providerReturnedEmpty, bool hadToolActivity)
+        {
+            if (toolRouterFailed)
+            {
+                return hadToolActivity
+                    ? "Tool-routing provider failed while deciding whether more tools were needed after tool activity completed."
+                    : "Tool-routing provider failed before tools could run.";
+            }
+
+            return hadToolActivity
+                ? (providerReturnedEmpty
+                    ? "Provider returned empty content after tool activity completed."
+                    : "Provider failed after tool activity completed.")
+                : "Provider did not produce content before tool activity started.";
         }
 
         private static void CaptureToolModelStage(
@@ -1301,6 +1646,123 @@ namespace AssistantHub.Server.Services
             modelResult.Telemetry.Metadata["requested_tool_call_count"] = 0;
         }
 
+        private static void CaptureNoToolRouterStage(List<AssistantPerformanceStage> stages, InferenceResult modelResult, int iteration)
+        {
+            if (stages == null || modelResult?.Telemetry == null) return;
+
+            AssistantPerformanceStage stage = modelResult.Telemetry;
+            stage.Metadata ??= new Dictionary<string, object>();
+            stage.Metadata["phase"] = "assistant_tool_model";
+            stage.Metadata["iteration"] = iteration;
+            stage.Metadata["summary"] = "Tool-routing model found no further tool calls.";
+            stage.Metadata["requested_tool_call_count"] = 0;
+            stages.Add(stage);
+        }
+
+        private static void CaptureFinalModelRequestedToolStage(
+            List<AssistantPerformanceStage> stages,
+            InferenceResult modelResult,
+            int iteration,
+            List<AssistantModelToolCall> toolCalls)
+        {
+            if (stages == null || modelResult?.Telemetry == null) return;
+
+            AssistantPerformanceStage stage = modelResult.Telemetry;
+            stage.Metadata ??= new Dictionary<string, object>();
+            stage.Metadata["phase"] = "assistant_tool_final_model";
+            stage.Metadata["iteration"] = iteration;
+            stage.Metadata["summary"] = "Final response model requested additional tools after tool routing completed.";
+            stage.Metadata["requested_tool_call_count"] = toolCalls?.Count ?? 0;
+            stage.Metadata["final_model_requested_tools"] = true;
+            stage.Metadata["requested_tool_names"] = (toolCalls ?? new List<AssistantModelToolCall>())
+                .Select(call => AssistantToolRegistry.NormalizeToolName(call?.Function?.Name) ?? call?.Function?.Name?.Trim())
+                .Where(name => !String.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            stages.Add(stage);
+        }
+
+        private static void CaptureFailedToolRouterStage(List<AssistantPerformanceStage> stages, InferenceResult modelResult, int iteration)
+        {
+            if (stages == null || modelResult?.Telemetry == null) return;
+
+            AssistantPerformanceStage stage = modelResult.Telemetry;
+            stage.Metadata ??= new Dictionary<string, object>();
+            stage.Metadata["phase"] = "assistant_tool_model";
+            stage.Metadata["iteration"] = iteration;
+            stage.Metadata["summary"] = "Tool-routing model failed while checking whether tools are needed.";
+            stage.Metadata["requested_tool_call_count"] = 0;
+            stage.Metadata["tool_router_failed"] = true;
+            if (!String.IsNullOrWhiteSpace(modelResult.ErrorMessage))
+                stage.Metadata["tool_router_error"] = modelResult.ErrorMessage;
+            stages.Add(stage);
+        }
+
+        private async Task<InferenceResult> GenerateFinalAfterToolRoutingAsync(
+            List<ChatCompletionMessage> conversation,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            Enums.InferenceProviderEnum provider,
+            string endpoint,
+            string apiKey,
+            string endpointId,
+            int maxConcurrentRequests,
+            ToolFinalStreamingCallbacks finalStreaming,
+            bool separateToolRoutingEndpoint,
+            CancellationToken token)
+        {
+            conversation.Add(new ChatCompletionMessage
+            {
+                Role = "system",
+                Content = "Tool routing is complete. Produce the final answer now as visible assistant text. Do not request more tools. If the available tool evidence is paginated or partial, state that briefly. Keep broad file, object, and identifier lists opaque unless the user explicitly asked for a specific name or key."
+            });
+
+            InferenceResult result = finalStreaming != null
+                ? await GenerateStreamingWithCompletionEndpointLimitAsync(
+                    conversation,
+                    model,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    provider,
+                    endpoint,
+                    apiKey,
+                    endpointId,
+                    maxConcurrentRequests,
+                    finalStreaming.OnDelta,
+                    finalStreaming.OnThinkingDelta,
+                    token).ConfigureAwait(false)
+                : await GenerateWithCompletionEndpointLimitAsync(
+                    conversation,
+                    model,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    provider,
+                    endpoint,
+                    apiKey,
+                    endpointId,
+                    maxConcurrentRequests,
+                    token).ConfigureAwait(false);
+
+            AnnotateFinalAfterToolRoutingStage(result, separateToolRoutingEndpoint);
+            return result;
+        }
+
+        private static void AnnotateFinalAfterToolRoutingStage(InferenceResult result, bool separateToolRoutingEndpoint)
+        {
+            if (result?.Telemetry == null) return;
+
+            result.Telemetry.Metadata ??= new Dictionary<string, object>();
+            result.Telemetry.Metadata["phase"] = "assistant_tool_final_model";
+            result.Telemetry.Metadata["summary"] = "Final model response after the tool-routing endpoint found no further tool calls.";
+            result.Telemetry.Metadata["requested_tool_call_count"] = 0;
+            result.Telemetry.Metadata["separate_tool_routing_endpoint"] = separateToolRoutingEndpoint;
+        }
+
         private async Task<InferenceResult> GenerateBestEffortAfterToolLimitAsync(
             List<ChatCompletionMessage> conversation,
             string model,
@@ -1312,26 +1774,194 @@ namespace AssistantHub.Server.Services
             string apiKey,
             string endpointId,
             int maxConcurrentRequests,
-            CancellationToken token)
+            CancellationToken token,
+            ToolFinalStreamingCallbacks finalStreaming,
+            string stopReason = null,
+            string instruction = null)
         {
             conversation.Add(new ChatCompletionMessage
             {
                 Role = "system",
-                Content = "The server tool-call limit has been reached. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing."
+                Content = String.IsNullOrWhiteSpace(instruction)
+                    ? "The server tool-call limit has been reached. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing."
+                    : instruction
             });
 
-            return await GenerateWithCompletionEndpointLimitAsync(
-                conversation,
-                model,
-                maxTokens,
-                temperature,
-                topP,
-                provider,
-                endpoint,
-                apiKey,
-                endpointId,
-                maxConcurrentRequests,
-                token).ConfigureAwait(false);
+            InferenceResult result = finalStreaming != null
+                ? await GenerateStreamingWithCompletionEndpointLimitAsync(
+                    conversation,
+                    model,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    provider,
+                    endpoint,
+                    apiKey,
+                    endpointId,
+                    maxConcurrentRequests,
+                    finalStreaming.OnDelta,
+                    finalStreaming.OnThinkingDelta,
+                    token).ConfigureAwait(false)
+                : await GenerateWithCompletionEndpointLimitAsync(
+                    conversation,
+                    model,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    provider,
+                    endpoint,
+                    apiKey,
+                    endpointId,
+                    maxConcurrentRequests,
+                    token).ConfigureAwait(false);
+
+            AnnotateToolLoopStopFinalStage(result, stopReason);
+            return result;
+        }
+
+        private static void AnnotateToolLoopStopFinalStage(InferenceResult result, string stopReason)
+        {
+            if (result?.Telemetry == null) return;
+
+            result.Telemetry.Metadata ??= new Dictionary<string, object>();
+            result.Telemetry.Metadata["phase"] = "assistant_tool_final_model";
+            result.Telemetry.Metadata["summary"] = IsToolLoopGuardStopReason(stopReason)
+                ? "Final model response after the server stopped a repeated or excessive tool-routing loop."
+                : "Final model response after the server tool-call limit was reached.";
+            if (!String.IsNullOrWhiteSpace(stopReason))
+                result.Telemetry.Metadata["tool_loop_stop_reason"] = stopReason;
+            result.Telemetry.Metadata["requested_tool_call_count"] = 0;
+        }
+
+        private static ToolLoopGuardDecision EvaluateToolLoopGuard(
+            List<ChatCompletionToolTrace> toolTraces,
+            int modelVisibleToolOutputCharacters,
+            AssistantToolPolicy policy)
+        {
+            if (toolTraces == null || toolTraces.Count < 1)
+                return ToolLoopGuardDecision.Continue();
+
+            int successfulEvidenceCalls = toolTraces.Count(trace => trace.Success && !trace.Denied && IsEvidenceTool(trace.ToolName) && trace.OutputCharacters > 0);
+            int successfulDiscoveryCalls = toolTraces.Count(trace => trace.Success && !trace.Denied && IsDiscoveryTool(trace.ToolName));
+            int successfulReadCalls = toolTraces.Count(trace => trace.Success && !trace.Denied && IsReadTool(trace.ToolName));
+            int failedReadCalls = toolTraces.Count(trace => !trace.Success && !trace.Denied && IsReadTool(trace.ToolName));
+            int truncatedCalls = toolTraces.Count(trace => trace.Success && trace.Truncated);
+            int highEvidenceThreshold = ResolveToolLoopGuardHighEvidenceThreshold(policy);
+            int repeatedEvidenceThreshold = ResolveToolLoopGuardRepeatedEvidenceThreshold(policy);
+
+            if (successfulEvidenceCalls >= 1 && modelVisibleToolOutputCharacters >= highEvidenceThreshold)
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_high_evidence_guard",
+                    "Enough tool evidence has already been gathered; answering without more tool calls.",
+                    "The server has stopped additional tool calls because enough evidence has already been gathered for this turn. Do not request more tools. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.");
+            }
+
+            if (successfulEvidenceCalls >= 2
+                && modelVisibleToolOutputCharacters >= repeatedEvidenceThreshold
+                && (successfulDiscoveryCalls >= 2 || truncatedCalls > 0))
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_repeated_discovery_guard",
+                    "Repeated discovery calls already returned evidence; answering without more tool calls.",
+                    "The server has stopped additional tool calls because repeated discovery calls already returned evidence for this turn. Do not request more tools. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.");
+            }
+
+            int successfulEnumerationCalls = toolTraces.Count(trace => trace.Success && !trace.Denied && IsEnumerationTool(trace.ToolName));
+            if (successfulEnumerationCalls >= 2
+                && successfulEvidenceCalls == 0
+                && successfulReadCalls == 0
+                && modelVisibleToolOutputCharacters > 0)
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_repeated_enumeration_guard",
+                    "Repeated enumeration calls were detected; answering without more tool calls.",
+                    "The server has stopped additional tool calls because repeated enumeration calls were detected. Do not request more tools. Answer using the discovered document, index, or object scope already available in this conversation. Keep broad file, object, and identifier lists opaque unless the user requested a specific item. If the discovered scope is insufficient, say what is missing.");
+            }
+
+            if (successfulDiscoveryCalls >= 3 && modelVisibleToolOutputCharacters > 0)
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_discovery_cycle_guard",
+                    "Repeated discovery calls were detected; answering without more tool calls.",
+                    "The server has stopped additional tool calls because repeated discovery calls were detected. Do not request more tools. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.");
+            }
+
+            if (failedReadCalls > 0 && successfulEvidenceCalls >= 2)
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_read_error_after_evidence_guard",
+                    "A read call failed after evidence was gathered; answering without more tool calls.",
+                    "The server has stopped additional tool calls because a read call failed after evidence had already been gathered. Do not request more tools. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.");
+            }
+
+            if (successfulReadCalls >= 2
+                && successfulEvidenceCalls >= 3
+                && modelVisibleToolOutputCharacters >= repeatedEvidenceThreshold)
+            {
+                return ToolLoopGuardDecision.StopWith(
+                    "tool_loop_repeated_read_guard",
+                    "Multiple read calls already returned evidence; answering without more tool calls.",
+                    "The server has stopped additional tool calls because multiple read calls already returned evidence for this turn. Do not request more tools. Answer using the evidence already available in this conversation. If the evidence is insufficient, say what is missing.");
+            }
+
+            return ToolLoopGuardDecision.Continue();
+        }
+
+        private static int ResolveToolLoopGuardHighEvidenceThreshold(AssistantToolPolicy policy)
+        {
+            int perCall = Math.Max(1024, policy?.MaxToolOutputChars ?? ToolLoopGuardMinimumEvidenceCharacters);
+            int perTurn = Math.Max(perCall, policy?.MaxToolOutputCharactersPerTurn ?? ToolLoopGuardMaximumEvidenceCharacters);
+            int threshold = Math.Max(ToolLoopGuardMaximumEvidenceCharacters, perCall * 2);
+            return Math.Min(perTurn, threshold);
+        }
+
+        private static int ResolveToolLoopGuardRepeatedEvidenceThreshold(AssistantToolPolicy policy)
+        {
+            int highEvidenceThreshold = ResolveToolLoopGuardHighEvidenceThreshold(policy);
+            int perCall = Math.Max(1024, policy?.MaxToolOutputChars ?? ToolLoopGuardMinimumEvidenceCharacters);
+            int threshold = Math.Max(ToolLoopGuardMinimumEvidenceCharacters, perCall);
+            return Math.Min(highEvidenceThreshold, threshold);
+        }
+
+        private static bool IsEvidenceTool(string toolName)
+        {
+            return String.Equals(toolName, "collection_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "collection_read_chunks", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "verbex_full_text_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "s3_object_read", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "document_atom_extract", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "web_search", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsDiscoveryTool(string toolName)
+        {
+            return String.Equals(toolName, "collection_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "collection_enumerate_documents", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "verbex_full_text_search", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "index_enumerate_records", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "bucket_enumerate_objects", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "web_search", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsReadTool(string toolName)
+        {
+            return String.Equals(toolName, "collection_read_chunks", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "s3_object_read", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "document_atom_extract", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsEnumerationTool(string toolName)
+        {
+            return String.Equals(toolName, "collection_enumerate_documents", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "index_enumerate_records", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "bucket_enumerate_objects", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsToolLoopGuardStopReason(string stopReason)
+        {
+            return !String.IsNullOrWhiteSpace(stopReason)
+                && stopReason.StartsWith("tool_loop_", StringComparison.OrdinalIgnoreCase);
         }
 
         private List<AssistantModelToolDefinition> BuildModelToolDefinitions(
@@ -1369,6 +1999,7 @@ namespace AssistantHub.Server.Services
                     "When the user names an exact document file, resolve that document once, then search or read that document; do not repeatedly enumerate the same collection pages. " +
                     "When a search result includes suggested_next_calls or chunk positions, use those positions for collection_read_chunks; if the returned excerpts are sufficient, answer from them instead of calling more discovery tools. " +
                     "Use verbex_full_text_search for exact phrases, identifiers, terms, and lexical matches. Use s3_object_read for source object text only when chunk or index evidence is insufficient, or when the user asks about file contents directly. " +
+                    "Use document_atom_extract when the user asks to inspect or summarize a whole assistant document or a local file uploaded in this chat turn and chunk/search evidence is unavailable or insufficient; call it with document_id or local_attachment_id, not both. " +
                     "Use collection_enumerate_documents to discover document names when the user refers to files ambiguously. Enumeration tools are paginated; use the exact ContinuationToken returned by the previous response until EndOfResults is true, and do not treat one page as the complete corpus unless EndOfResults is true. " +
                     "Enumeration and listing tools are for discovery and routing; do not dump full file, object, record, bucket, key, or identifier inventories into the chat response. Keep broad inventory details opaque, summarize scope or counts when useful, and refer to specific documents by name or object key only when relevant to the user's request. " +
                     "Use web_search only for public, current, or external information, not private collection data. " +
@@ -1385,13 +2016,13 @@ namespace AssistantHub.Server.Services
         {
             if (endpoint == null)
             {
-                errorMessage = "Assistant tool calls require a resolved completion endpoint with explicit tool-call capability.";
+                errorMessage = "Assistant tool calls require a resolved effective tool-routing completion endpoint with explicit tool-call capability.";
                 return false;
             }
 
             if (!endpoint.Value.SupportsToolCalling)
             {
-                errorMessage = "Assistant tool calls are enabled, but the selected completion endpoint does not explicitly support tool calling.";
+                errorMessage = "Assistant tool calls are enabled, but the effective tool-routing completion endpoint does not explicitly support tool calling.";
                 return false;
             }
 
@@ -1405,7 +2036,7 @@ namespace AssistantHub.Server.Services
 
             if (!supported)
             {
-                errorMessage = "Assistant tool calls are enabled, but the selected completion endpoint tool-call format is not supported for provider " + provider + ".";
+                errorMessage = "Assistant tool calls are enabled, but the effective tool-routing completion endpoint tool-call format is not supported for provider " + provider + ".";
                 return false;
             }
 
@@ -1869,6 +2500,7 @@ namespace AssistantHub.Server.Services
         private static bool IsSensitiveToolAuditTool(string toolName)
         {
             return String.Equals(toolName, "s3_object_read", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(toolName, "document_atom_extract", StringComparison.OrdinalIgnoreCase)
                 || String.Equals(toolName, "bucket_enumerate_objects", StringComparison.OrdinalIgnoreCase)
                 || String.Equals(toolName, "web_search", StringComparison.OrdinalIgnoreCase)
                 || String.Equals(toolName, "verbex_full_text_search", StringComparison.OrdinalIgnoreCase)
@@ -1959,6 +2591,7 @@ namespace AssistantHub.Server.Services
             if (String.Equals(toolName, "collection_read_chunks", StringComparison.OrdinalIgnoreCase)) return "Reading document chunks";
             if (String.Equals(toolName, "verbex_full_text_search", StringComparison.OrdinalIgnoreCase)) return "Searching index";
             if (String.Equals(toolName, "s3_object_read", StringComparison.OrdinalIgnoreCase)) return "Reading source object";
+            if (String.Equals(toolName, "document_atom_extract", StringComparison.OrdinalIgnoreCase)) return "Extracting document text";
             if (String.Equals(toolName, "collection_enumerate_documents", StringComparison.OrdinalIgnoreCase)) return "Listing documents";
             if (String.Equals(toolName, "index_enumerate_records", StringComparison.OrdinalIgnoreCase)) return "Listing index records";
             if (String.Equals(toolName, "bucket_enumerate_objects", StringComparison.OrdinalIgnoreCase)) return "Listing bucket objects";
@@ -1975,6 +2608,7 @@ namespace AssistantHub.Server.Services
             if (String.Equals(eventType, "assistant.tool_call.denied", StringComparison.OrdinalIgnoreCase)) return "tool_denied";
             if (String.Equals(eventType, "assistant.tool_call.heartbeat", StringComparison.OrdinalIgnoreCase)) return "tool_running";
             if (String.Equals(eventType, "assistant.tool_iteration.started", StringComparison.OrdinalIgnoreCase)) return "tool_iteration_started";
+            if (String.Equals(eventType, "assistant.tool_iteration.stopped", StringComparison.OrdinalIgnoreCase)) return "tool_loop_guard_triggered";
             return "tool_progress";
         }
 
@@ -1996,7 +2630,7 @@ namespace AssistantHub.Server.Services
                     ? label + " failed."
                     : label + " failed: " + detail;
             }
-            if (completed) return null;
+            if (completed) return label + " completed.";
             return label + " running.";
         }
 
@@ -2181,7 +2815,43 @@ namespace AssistantHub.Server.Services
 
             public bool ToolLimitReached { get; set; } = false;
 
+            public string ToolLoopStopReason { get; set; } = null;
+
             public List<CitationSource> CitationSources { get; set; } = new List<CitationSource>();
+        }
+
+        private class ToolFinalStreamingCallbacks
+        {
+            public Func<string, Task> OnDelta { get; set; } = null;
+
+            public Func<string, Task> OnThinkingDelta { get; set; } = null;
+        }
+
+        private class ToolLoopGuardDecision
+        {
+            public bool Stop { get; set; } = false;
+
+            public string Reason { get; set; } = null;
+
+            public string Summary { get; set; } = null;
+
+            public string Instruction { get; set; } = null;
+
+            public static ToolLoopGuardDecision Continue()
+            {
+                return new ToolLoopGuardDecision();
+            }
+
+            public static ToolLoopGuardDecision StopWith(string reason, string summary, string instruction)
+            {
+                return new ToolLoopGuardDecision
+                {
+                    Stop = true,
+                    Reason = reason,
+                    Summary = summary,
+                    Instruction = instruction
+                };
+            }
         }
 
     }

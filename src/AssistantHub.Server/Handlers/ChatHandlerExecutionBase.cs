@@ -202,7 +202,12 @@ namespace AssistantHub.Server.Handlers
                         new ChatCompletionChoice
                         {
                             Index = 0,
-                            Message = new ChatCompletionMessage { Role = "assistant", Content = responseContent },
+                            Message = new ChatCompletionMessage
+                            {
+                                Role = "assistant",
+                                Content = responseContent,
+                                Thinking = settings.ExposeThinking ? inferenceResult.Thinking : null
+                            },
                             FinishReason = "stop"
                         }
                     },
@@ -509,6 +514,32 @@ namespace AssistantHub.Server.Handlers
                 onTelemetry: telemetry =>
                 {
                     finalInferenceTelemetry = telemetry;
+                },
+                onThinkingDelta: async (thinkingDelta) =>
+                {
+                    if (String.IsNullOrEmpty(thinkingDelta) || !settings.ExposeThinking) return;
+                    if (!firstTokenCaptured && inferenceSw != null)
+                    {
+                        timeToFirstTokenMs = Math.Round(inferenceSw.Elapsed.TotalMilliseconds, 2);
+                        firstTokenCaptured = true;
+                    }
+
+                    ChatCompletionResponse thinkingChunk = new ChatCompletionResponse
+                    {
+                        Id = completionId,
+                        Object = "chat.completion.chunk",
+                        Created = created,
+                        Model = model,
+                        Choices = new List<ChatCompletionChoice>
+                        {
+                            new ChatCompletionChoice
+                            {
+                                Index = 0,
+                                Delta = new ChatCompletionMessage { Thinking = thinkingDelta }
+                            }
+                        }
+                    };
+                    await WriteSseEvent(ctx, thinkingChunk).ConfigureAwait(false);
                 }).ConfigureAwait(false);
         }
 
@@ -966,7 +997,8 @@ namespace AssistantHub.Server.Handlers
             Func<string, Task> onComplete,
             Func<string, Task> onError,
             Action onConnectionEstablished = null,
-            Action<AssistantPerformanceStage> onTelemetry = null)
+            Action<AssistantPerformanceStage> onTelemetry = null,
+            Func<string, Task> onThinkingDelta = null)
         {
             int max = Math.Max(1, maxConcurrentRequests);
             Stopwatch waitSw = Stopwatch.StartNew();
@@ -991,7 +1023,8 @@ namespace AssistantHub.Server.Handlers
                     {
                         AttachEndpointTelemetry(telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
                         onTelemetry?.Invoke(telemetry);
-                    }).ConfigureAwait(false);
+                    },
+                    onThinkingDelta: onThinkingDelta).ConfigureAwait(false);
             }
         }
 

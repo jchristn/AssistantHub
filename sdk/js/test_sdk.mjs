@@ -152,7 +152,13 @@ async function sdkContractTests(runner) {
             object: "chat.completion",
             created: 0,
             model: "test-model",
-            choices: [],
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "done", thinking: "hidden reasoning" },
+                finish_reason: "stop",
+              },
+            ],
             usage: {
               prompt_tokens: 12,
               completion_tokens: 4,
@@ -231,6 +237,7 @@ async function sdkContractTests(runner) {
     assertFalse(Object.prototype.hasOwnProperty.call(result.retrieval.attached_documents[0], "S3Key"), "selection metadata should not expose S3Key");
     assertFalse(Object.prototype.hasOwnProperty.call(result.retrieval.attached_documents[0], "BucketName"), "selection metadata should not expose BucketName");
     assertEqual(16, result.usage.total_tokens, "response usage total_tokens");
+    assertEqual("hidden reasoning", result.choices[0].message.thinking, "response message thinking");
     assertEqual(5, result.usage.tool_definition_tokens, "response usage tool_definition_tokens");
     assertEqual(3, result.usage.prompt_tokens_details.cached_tokens, "response usage cached_tokens");
     assertEqual(7, result.usage.completion_tokens_details.reasoning_tokens, "response usage reasoning_tokens");
@@ -242,6 +249,52 @@ async function sdkContractTests(runner) {
     assertEqual(45.5, result.tool_calls[0].provider_latency_ms, "response tool_calls provider latency");
     assertFalse(Object.prototype.hasOwnProperty.call(result.tool_calls[0], "ArgumentsJson"), "response tool_calls should not expose raw arguments");
     assertFalse(Object.prototype.hasOwnProperty.call(result.tool_calls[0], "OutputJson"), "response tool_calls should not expose raw output");
+  });
+
+  await runner.runTest("SDK contract: chatCompletion sends local_attachments", async () => {
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (_url, init) => {
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            id: "chatcmpl_local_attachment",
+            object: "chat.completion",
+            created: 0,
+            model: "test-model",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "done" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    await client.chatCompletion("asst_local", {
+      Messages: [{ role: "user", content: "Summarize this local file." }],
+      local_attachments: [
+        {
+          name: "notes.txt",
+          content_type: "text/plain",
+          base64_content: "SGVsbG8=",
+        },
+      ],
+    });
+
+    assertNotNull(capturedInit, "captured fetch init");
+    const body = JSON.parse(capturedInit.body);
+    assertEqual(1, body.local_attachments.length, "request local_attachments count");
+    assertEqual("notes.txt", body.local_attachments[0].name, "request local attachment name");
+    assertEqual("SGVsbG8=", body.local_attachments[0].base64_content, "request local attachment base64");
+    assertFalse(Object.prototype.hasOwnProperty.call(body, "LocalAttachments"), "request should not use PascalCase local attachment key");
   });
 
   await runner.runTest("SDK contract: validateAssistantToolPolicy sends ToolPolicy", async () => {
@@ -262,6 +315,7 @@ async function sdkContractTests(runner) {
             ToolPolicy: {
               EnableToolCalls: true,
               EnableCollectionSearchTool: true,
+              EnableDocumentAtomExtractionTool: true,
               EnableWebSearchTool: true,
               ToolChoiceMode: "Required",
               MaxToolResultItems: 9,
@@ -269,6 +323,8 @@ async function sdkContractTests(runner) {
               MaxSearchTopK: 7,
               MaxDocumentsConsideredPerSearch: 25,
               MaxResultsConsideredPerSearch: 50,
+              MaxAtomExtractionBytes: 2097152,
+              MaxAtomExtractionCharacters: 24000,
               AllowedSearchModes: ["FullText"],
               ReturnFullSearchContent: true,
               MaxWebResults: 3,
@@ -290,6 +346,7 @@ async function sdkContractTests(runner) {
       ToolPolicy: {
         EnableToolCalls: true,
         EnableCollectionSearchTool: true,
+        EnableDocumentAtomExtractionTool: true,
         EnableWebSearchTool: true,
         ToolChoiceMode: "Required",
         MaxToolResultItems: 9,
@@ -297,6 +354,8 @@ async function sdkContractTests(runner) {
         MaxSearchTopK: 7,
         MaxDocumentsConsideredPerSearch: 25,
         MaxResultsConsideredPerSearch: 50,
+        MaxAtomExtractionBytes: 2097152,
+        MaxAtomExtractionCharacters: 24000,
         AllowedSearchModes: ["FullText"],
         ReturnFullSearchContent: true,
         MaxWebResults: 3,
@@ -315,12 +374,15 @@ async function sdkContractTests(runner) {
     assertNotNull(body.ToolPolicy, "request ToolPolicy");
     assertEqual(true, body.ToolPolicy.EnableToolCalls, "request EnableToolCalls");
     assertEqual(true, body.ToolPolicy.EnableCollectionSearchTool, "request EnableCollectionSearchTool");
+    assertEqual(true, body.ToolPolicy.EnableDocumentAtomExtractionTool, "request EnableDocumentAtomExtractionTool");
     assertEqual("Required", body.ToolPolicy.ToolChoiceMode, "request ToolChoiceMode");
     assertEqual(9, body.ToolPolicy.MaxToolResultItems, "request MaxToolResultItems");
     assertEqual("collection_search", body.ToolPolicy.AllowedToolNames[0], "request AllowedToolNames");
     assertEqual(7, body.ToolPolicy.MaxSearchTopK, "request MaxSearchTopK");
     assertEqual(25, body.ToolPolicy.MaxDocumentsConsideredPerSearch, "request MaxDocumentsConsideredPerSearch");
     assertEqual(50, body.ToolPolicy.MaxResultsConsideredPerSearch, "request MaxResultsConsideredPerSearch");
+    assertEqual(2097152, body.ToolPolicy.MaxAtomExtractionBytes, "request MaxAtomExtractionBytes");
+    assertEqual(24000, body.ToolPolicy.MaxAtomExtractionCharacters, "request MaxAtomExtractionCharacters");
     assertEqual("FullText", body.ToolPolicy.AllowedSearchModes[0], "request AllowedSearchModes");
     assertEqual(true, body.ToolPolicy.ReturnFullSearchContent, "request ReturnFullSearchContent");
     assertEqual(3, body.ToolPolicy.MaxWebResults, "request MaxWebResults");
@@ -333,11 +395,14 @@ async function sdkContractTests(runner) {
     assertEqual(false, result.Success, "validation result Success");
     assertNotNull(result.ToolPolicy, "validation result ToolPolicy");
     assertEqual(true, result.ToolPolicy.EnableCollectionSearchTool, "validation result EnableCollectionSearchTool");
+    assertEqual(true, result.ToolPolicy.EnableDocumentAtomExtractionTool, "validation result EnableDocumentAtomExtractionTool");
     assertEqual("Required", result.ToolPolicy.ToolChoiceMode, "validation result ToolChoiceMode");
     assertEqual("collection_search", result.ToolPolicy.AllowedToolNames[0], "validation result AllowedToolNames");
     assertEqual(7, result.ToolPolicy.MaxSearchTopK, "validation result MaxSearchTopK");
     assertEqual(25, result.ToolPolicy.MaxDocumentsConsideredPerSearch, "validation result MaxDocumentsConsideredPerSearch");
     assertEqual(50, result.ToolPolicy.MaxResultsConsideredPerSearch, "validation result MaxResultsConsideredPerSearch");
+    assertEqual(2097152, result.ToolPolicy.MaxAtomExtractionBytes, "validation result MaxAtomExtractionBytes");
+    assertEqual(24000, result.ToolPolicy.MaxAtomExtractionCharacters, "validation result MaxAtomExtractionCharacters");
     assertEqual("https://assistant.tavily.test/search", result.ToolPolicy.TavilyEndpoint, "validation result TavilyEndpoint");
     assertEqual("example.com", result.ToolPolicy.AllowedWebDomains[0], "validation result AllowedWebDomains");
     assertEqual("no_available_tools", result.ErrorCodes[0], "validation result ErrorCodes");
@@ -359,6 +424,8 @@ async function sdkContractTests(runner) {
             Message: "Tool diagnostics found blocking issues.",
             AssistantId: "asst_local",
             InferenceEndpointId: "cep_local",
+            ToolRoutingInferenceEndpointId: "cep_router",
+            EffectiveToolRoutingInferenceEndpointId: "cep_router",
             EndpointResolved: true,
             EndpointModel: "qwen3-tool",
             EndpointApiFormat: "OpenAI",
@@ -370,8 +437,8 @@ async function sdkContractTests(runner) {
             Validation: { Success: true, Errors: [], ErrorCodes: [] },
             Tools: [],
             Warnings: [],
-            Errors: ["The selected completion endpoint does not explicitly support tool calling."],
-            ErrorCodes: ["completion_endpoint_not_tool_capable"],
+            Errors: ["The effective tool-routing completion endpoint does not explicitly support tool calling."],
+            ErrorCodes: ["tool_routing_endpoint_not_tool_capable"],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } }
         );
@@ -388,9 +455,11 @@ async function sdkContractTests(runner) {
     const body = JSON.parse(capturedInit.body);
     assertEqual("{\"EnableToolCalls\":true}", body.ToolPolicyJson, "diagnostics request ToolPolicyJson");
     assertEqual(false, result.Success, "diagnostics result Success");
+    assertEqual("cep_router", result.ToolRoutingInferenceEndpointId, "diagnostics configured tool routing endpoint");
+    assertEqual("cep_router", result.EffectiveToolRoutingInferenceEndpointId, "diagnostics effective tool routing endpoint");
     assertEqual(true, result.EndpointResolved, "diagnostics endpoint resolved");
     assertEqual("qwen3-tool", result.EndpointModel, "diagnostics endpoint model");
-    assertEqual("completion_endpoint_not_tool_capable", result.ErrorCodes[0], "diagnostics result ErrorCodes");
+    assertEqual("tool_routing_endpoint_not_tool_capable", result.ErrorCodes[0], "diagnostics result ErrorCodes");
   });
 
   await runner.runTest("SDK contract: getExternalSearchStatus uses status route", async () => {

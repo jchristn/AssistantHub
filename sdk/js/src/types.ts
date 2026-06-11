@@ -306,11 +306,13 @@ export interface AssistantSettings {
   FullTextMinimumScore?: number | null;
   RetrievalIncludeNeighbors?: number;
   InferenceEndpointId?: string;
+  ToolRoutingInferenceEndpointId?: string;
   RetrievalGateInferenceEndpointId?: string;
   QueryRewriteInferenceEndpointId?: string;
   RerankInferenceEndpointId?: string;
   EmbeddingEndpointId?: string;
   LoadModelsOnChatOpen?: boolean;
+  ExposeThinking?: boolean;
   Title?: string;
   LogoUrl?: string;
   FaviconUrl?: string;
@@ -352,6 +354,7 @@ export interface AssistantToolPolicy {
   EnableCollectionReadChunksTool?: boolean;
   EnableVerbexFullTextSearchTool?: boolean;
   EnableS3ObjectReadTool?: boolean;
+  EnableDocumentAtomExtractionTool?: boolean;
   EnableCollectionEnumerateDocumentsTool?: boolean;
   EnableCollectionEnumerationTool?: boolean;
   EnableIndexEnumerateRecordsTool?: boolean;
@@ -383,6 +386,8 @@ export interface AssistantToolPolicy {
   RequireDocumentMapping?: boolean;
   ReturnVerbexRecordMetadata?: boolean;
   MaxObjectReadBytes?: number;
+  MaxAtomExtractionBytes?: number;
+  MaxAtomExtractionCharacters?: number;
   MaxObjectBytesPerTurn?: number;
   MaxBucketEnumerationResults?: number;
   AllowBucketWideObjectRead?: boolean;
@@ -479,6 +484,8 @@ export interface AssistantToolPolicyTestResult {
   Message?: string | null;
   AssistantId?: string | null;
   InferenceEndpointId?: string | null;
+  ToolRoutingInferenceEndpointId?: string | null;
+  EffectiveToolRoutingInferenceEndpointId?: string | null;
   EndpointResolved?: boolean;
   EndpointModel?: string | null;
   EndpointApiFormat?: string | null;
@@ -503,6 +510,7 @@ export interface AssistantPublicInfo {
   LogoUrl?: string;
   FaviconUrl?: string;
   LoadModelsOnChatOpen?: boolean;
+  ExposeThinking?: boolean;
   EnableDocumentAttachments?: boolean;
   DocumentAttachmentMaxCount?: number;
   ExposeDocumentSourceUrls?: boolean;
@@ -704,12 +712,23 @@ export interface ChatCompletionRequest {
   MetadataFilter?: ChatMetadataFilter;
   AttachedDocumentIds?: string[];
   attached_document_ids?: string[];
+  LocalAttachments?: ChatLocalAttachment[];
+  local_attachments?: ChatLocalAttachment[];
+}
+
+/** User-supplied file attachment for a single chat turn. */
+export interface ChatLocalAttachment {
+  name?: string;
+  content_type?: string;
+  base64_content?: string;
+  text?: string;
 }
 
 /** A single chat message. */
 export interface ChatCompletionMessage {
   role: string;
   content: string;
+  thinking?: string | null;
 }
 
 /** Chat completion response. */

@@ -28,6 +28,7 @@ from assistanthub_sdk.models import (
     CifsCrawlRepositorySettings,
     CrawlPlan,
     CrawlScheduleSettings,
+    ChatLocalAttachment,
     ChatCompletionMessage,
     ChatCompletionRequest,
     ChatCompletionRetrieval,
@@ -211,6 +212,29 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
             "round-trip attached document IDs",
         )
 
+    def test_request_local_attachments() -> None:
+        request = ChatCompletionRequest(
+            messages=[ChatCompletionMessage(role="user", content="Summarize this local file.")],
+            local_attachments=[
+                ChatLocalAttachment(
+                    name="notes.txt",
+                    content_type="text/plain",
+                    base64_content="SGVsbG8=",
+                )
+            ],
+        )
+
+        payload = request.model_dump(by_alias=True, exclude_none=True)
+        assert_true("local_attachments" in payload, "request should use local_attachments")
+        assert_false("LocalAttachments" in payload, "request should not use PascalCase local attachment key")
+        assert_equal(1, len(payload["local_attachments"]), "local attachment count")
+        assert_equal("notes.txt", payload["local_attachments"][0]["name"], "local attachment name")
+        assert_equal("SGVsbG8=", payload["local_attachments"][0]["base64_content"], "local attachment base64")
+
+        round_trip = ChatCompletionRequest.model_validate(payload)
+        assert_equal(1, len(round_trip.local_attachments or []), "round-trip local attachment count")
+        assert_equal("notes.txt", round_trip.local_attachments[0].name, "round-trip local attachment name")
+
     def test_response_retrieval_attached_document_metadata() -> None:
         response = ChatCompletionResponse.model_validate(
             {
@@ -218,7 +242,13 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
                 "object": "chat.completion",
                 "created": 0,
                 "model": "test-model",
-                "choices": [],
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "done", "thinking": "hidden reasoning"},
+                        "finish_reason": "stop",
+                    }
+                ],
                 "usage": {
                     "prompt_tokens": 12,
                     "completion_tokens": 4,
@@ -302,6 +332,7 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         )
 
         assert_not_none(response.retrieval, "ChatCompletionResponse retrieval")
+        assert_equal("hidden reasoning", response.choices[0].message.thinking, "response message thinking")
         retrieval = response.retrieval
         assert_equal("col_abc123", retrieval.collection_id, "retrieval collection ID")
         assert_equal(42.7, retrieval.duration_ms, "retrieval duration")
@@ -373,10 +404,18 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
     def test_tool_policy_settings_round_trip() -> None:
         settings = AssistantSettings.model_validate(
             {
+                "InferenceEndpointId": "cep_response",
+                "ToolRoutingInferenceEndpointId": "cep_router",
+                "RetrievalGateInferenceEndpointId": "cep_gate",
+                "QueryRewriteInferenceEndpointId": "cep_rewrite",
+                "RerankInferenceEndpointId": "cep_rerank",
+                "EmbeddingEndpointId": "eep_embed",
+                "ExposeThinking": True,
                 "ToolPolicyJson": "{}",
                 "ToolPolicy": {
                     "EnableToolCalls": True,
                     "EnableCollectionSearchTool": True,
+                    "EnableDocumentAtomExtractionTool": True,
                     "EnableWebSearchTool": True,
                     "ToolChoiceMode": "Required",
                     "MaxToolIterations": 4,
@@ -385,6 +424,8 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
                     "MaxSearchTopK": 7,
                     "MaxDocumentsConsideredPerSearch": 25,
                     "MaxResultsConsideredPerSearch": 50,
+                    "MaxAtomExtractionBytes": 2097152,
+                    "MaxAtomExtractionCharacters": 24000,
                     "AllowedSearchModes": ["FullText"],
                     "ReturnFullSearchContent": True,
                     "MaxWebResults": 3,
@@ -397,10 +438,18 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
             }
         )
 
+        assert_equal("cep_response", settings.inference_endpoint_id, "settings InferenceEndpointId")
+        assert_equal("cep_router", settings.tool_routing_inference_endpoint_id, "settings ToolRoutingInferenceEndpointId")
+        assert_equal("cep_gate", settings.retrieval_gate_inference_endpoint_id, "settings RetrievalGateInferenceEndpointId")
+        assert_equal("cep_rewrite", settings.query_rewrite_inference_endpoint_id, "settings QueryRewriteInferenceEndpointId")
+        assert_equal("cep_rerank", settings.rerank_inference_endpoint_id, "settings RerankInferenceEndpointId")
+        assert_equal(True, settings.expose_thinking, "settings ExposeThinking")
+        assert_equal("eep_embed", settings.embedding_endpoint_id, "settings EmbeddingEndpointId")
         assert_equal("{}", settings.tool_policy_json, "settings ToolPolicyJson")
         assert_not_none(settings.tool_policy, "settings ToolPolicy")
         assert_true(settings.tool_policy.enable_tool_calls, "settings EnableToolCalls")
         assert_true(settings.tool_policy.enable_collection_search_tool, "settings EnableCollectionSearchTool")
+        assert_true(settings.tool_policy.enable_document_atom_extraction_tool, "settings EnableDocumentAtomExtractionTool")
         assert_true(settings.tool_policy.enable_web_search_tool, "settings EnableWebSearchTool")
         assert_equal("Required", settings.tool_policy.tool_choice_mode, "settings ToolChoiceMode")
         assert_equal(4, settings.tool_policy.max_tool_iterations, "settings MaxToolIterations")
@@ -409,6 +458,8 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         assert_equal(7, settings.tool_policy.max_search_top_k, "settings MaxSearchTopK")
         assert_equal(25, settings.tool_policy.max_documents_considered_per_search, "settings MaxDocumentsConsideredPerSearch")
         assert_equal(50, settings.tool_policy.max_results_considered_per_search, "settings MaxResultsConsideredPerSearch")
+        assert_equal(2097152, settings.tool_policy.max_atom_extraction_bytes, "settings MaxAtomExtractionBytes")
+        assert_equal(24000, settings.tool_policy.max_atom_extraction_characters, "settings MaxAtomExtractionCharacters")
         assert_equal(["FullText"], settings.tool_policy.allowed_search_modes, "settings AllowedSearchModes")
         assert_true(settings.tool_policy.return_full_search_content, "settings ReturnFullSearchContent")
         assert_equal(3, settings.tool_policy.max_web_results, "settings MaxWebResults")
@@ -418,6 +469,7 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         assert_equal(["example.com"], settings.tool_policy.allowed_web_domains, "settings AllowedWebDomains")
 
         payload = settings.model_dump(by_alias=True, exclude_none=True)
+        assert_equal("cep_router", payload["toolRoutingInferenceEndpointId"], "settings payload toolRoutingInferenceEndpointId")
         assert_true("ToolPolicyJson" in payload, "settings payload ToolPolicyJson")
         assert_true("ToolPolicy" in payload, "settings payload ToolPolicy")
         assert_true("EnableToolCalls" in payload["ToolPolicy"], "settings payload EnableToolCalls")
@@ -484,6 +536,8 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
                 "Message": "Tool diagnostics found blocking issues.",
                 "AssistantId": "asst_local",
                 "InferenceEndpointId": "cep_local",
+                "ToolRoutingInferenceEndpointId": "cep_router",
+                "EffectiveToolRoutingInferenceEndpointId": "cep_router",
                 "EndpointResolved": True,
                 "EndpointModel": "qwen3-tool",
                 "EndpointApiFormat": "OpenAI",
@@ -495,14 +549,16 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
                 "Validation": {"Success": True, "Errors": [], "ErrorCodes": []},
                 "Tools": [],
                 "Warnings": [],
-                "Errors": ["The selected completion endpoint does not explicitly support tool calling."],
-                "ErrorCodes": ["completion_endpoint_not_tool_capable"],
+                "Errors": ["The effective tool-routing completion endpoint does not explicitly support tool calling."],
+                "ErrorCodes": ["tool_routing_endpoint_not_tool_capable"],
             }
         )
         assert_true(not diagnostics_result.success, "diagnostics result success")
+        assert_equal("cep_router", diagnostics_result.tool_routing_inference_endpoint_id, "diagnostics configured tool routing endpoint")
+        assert_equal("cep_router", diagnostics_result.effective_tool_routing_inference_endpoint_id, "diagnostics effective tool routing endpoint")
         assert_true(diagnostics_result.endpoint_resolved, "diagnostics endpoint resolved")
         assert_equal("qwen3-tool", diagnostics_result.endpoint_model, "diagnostics endpoint model")
-        assert_equal(["completion_endpoint_not_tool_capable"], diagnostics_result.error_codes, "diagnostics ErrorCodes")
+        assert_equal(["tool_routing_endpoint_not_tool_capable"], diagnostics_result.error_codes, "diagnostics ErrorCodes")
 
         endpoint = PartioEndpointConfig.model_validate(
             {
@@ -767,6 +823,7 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         assert_true("Policy Handbook" in history.attached_documents_json, "history attached documents JSON")
 
     runner.run_test("SDK contract: ChatCompletionRequest serializes attached_document_ids", test_request_attached_document_ids)
+    runner.run_test("SDK contract: ChatCompletionRequest serializes local_attachments", test_request_local_attachments)
     runner.run_test(
         "SDK contract: ChatCompletionResponse parses attached document retrieval metadata",
         test_response_retrieval_attached_document_metadata,

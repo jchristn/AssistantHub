@@ -1,0 +1,8 @@
+-- Migration script for AssistantHub v0.16.0
+-- Optional assistant tool-routing inference endpoint and thinking exposure setting
+--
+-- Use the provider-specific script that matches your backend:
+--   013_upgrade_to_v0.16.0.sqlite.sql
+--   013_upgrade_to_v0.16.0.postgresql.sql
+--   013_upgrade_to_v0.16.0.mysql.sql
+--   013_upgrade_to_v0.16.0.sqlserver.sql

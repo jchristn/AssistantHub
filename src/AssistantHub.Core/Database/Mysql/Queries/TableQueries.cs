@@ -98,11 +98,13 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
             "  `retrieval_include_neighbors` INT NOT NULL DEFAULT 0, " +
             "  `inference_endpoint_id` TEXT, " +
+            "  `tool_routing_inference_endpoint_id` TEXT, " +
             "  `retrieval_gate_inference_endpoint_id` TEXT, " +
             "  `query_rewrite_inference_endpoint_id` TEXT, " +
             "  `rerank_inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `expose_thinking` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
@@ -123,6 +125,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `retrieval_gate_inference_endpoint_id` TEXT";
 
+        internal static string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `tool_routing_inference_endpoint_id` TEXT";
+
         internal static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `query_rewrite_inference_endpoint_id` TEXT";
 
@@ -131,6 +136,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsExposeThinkingColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `expose_thinking` TINYINT(1) NOT NULL DEFAULT 0";
 
         internal static string AddAssistantSettingsToolPolicyJsonColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `tool_policy_json` TEXT";

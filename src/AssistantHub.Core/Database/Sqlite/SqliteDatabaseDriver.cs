@@ -205,6 +205,9 @@ namespace AssistantHub.Core.Database.Sqlite
             if (!HasColumn(columns, "retrieval_gate_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
 
+            if (!HasColumn(columns, "tool_routing_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
             if (!HasColumn(columns, "query_rewrite_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
 
@@ -213,6 +216,9 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "load_models_on_chat_open"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "expose_thinking"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsExposeThinkingColumn, true, token).ConfigureAwait(false);
 
             if (!HasColumn(columns, "tool_policy_json"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsToolPolicyJsonColumn, true, token).ConfigureAwait(false);

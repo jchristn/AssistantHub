@@ -544,29 +544,35 @@ namespace Test.Automated
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: default to null", async () =>
             {
                 AssistantSettings s = new AssistantSettings();
+                AssertHelper.IsNull(s.ToolRoutingInferenceEndpointId, "ToolRoutingInferenceEndpointId default");
                 AssertHelper.IsNull(s.RetrievalGateInferenceEndpointId, "RetrievalGateInferenceEndpointId default");
                 AssertHelper.IsNull(s.QueryRewriteInferenceEndpointId, "QueryRewriteInferenceEndpointId default");
                 AssertHelper.IsNull(s.RerankInferenceEndpointId, "RerankInferenceEndpointId default");
                 AssertHelper.AreEqual(false, s.LoadModelsOnChatOpen, "LoadModelsOnChatOpen default");
+                AssertHelper.AreEqual(false, s.ExposeThinking, "ExposeThinking default");
             });
 
             await ExecuteTestAsync("AssistantSettings utility endpoint IDs: JSON round-trip", async () =>
             {
                 AssistantSettings s = new AssistantSettings();
                 s.InferenceEndpointId = "ep_response";
+                s.ToolRoutingInferenceEndpointId = "ep_tools";
                 s.RetrievalGateInferenceEndpointId = "ep_gate";
                 s.QueryRewriteInferenceEndpointId = "ep_rewrite";
                 s.RerankInferenceEndpointId = "ep_rerank";
                 s.LoadModelsOnChatOpen = true;
+                s.ExposeThinking = true;
 
                 string json = JsonSerializer.Serialize(s, _jsonOptionsIgnoreNever);
                 AssistantSettings? d = JsonSerializer.Deserialize<AssistantSettings>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.AreEqual("ep_response", d.InferenceEndpointId, "round-trip InferenceEndpointId");
+                AssertHelper.AreEqual("ep_tools", d.ToolRoutingInferenceEndpointId, "round-trip ToolRoutingInferenceEndpointId");
                 AssertHelper.AreEqual("ep_gate", d.RetrievalGateInferenceEndpointId, "round-trip RetrievalGateInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rewrite", d.QueryRewriteInferenceEndpointId, "round-trip QueryRewriteInferenceEndpointId");
                 AssertHelper.AreEqual("ep_rerank", d.RerankInferenceEndpointId, "round-trip RerankInferenceEndpointId");
                 AssertHelper.AreEqual(true, d.LoadModelsOnChatOpen, "round-trip LoadModelsOnChatOpen");
+                AssertHelper.AreEqual(true, d.ExposeThinking, "round-trip ExposeThinking");
             });
 
             await ExecuteTestAsync("ChatHistory.RerankDurationMs: defaults to 0", async () =>
@@ -901,6 +907,22 @@ namespace Test.Automated
                 string serialized = JsonSerializer.Serialize(req, _jsonOptionsDefault);
                 AssertHelper.StringContains(serialized, "\"attached_document_ids\"", "serialized attachment key");
                 AssertHelper.StringContains(serialized, "adoc_two", "serialized attachment value");
+            });
+
+            await ExecuteTestAsync("ApiContract.ChatCompletionRequest: local_attachments round-trip", async () =>
+            {
+                string json = "{\"messages\":[{\"role\":\"user\",\"content\":\"Summarize this local file.\"}],\"local_attachments\":[{\"name\":\"notes.txt\",\"content_type\":\"text/plain\",\"base64_content\":\"SGVsbG8=\",\"text\":\"Hello\"}]}";
+                ChatCompletionRequest? req = JsonSerializer.Deserialize<ChatCompletionRequest>(json, _jsonOptionsDefault);
+                AssertHelper.IsNotNull(req, "deserialized request");
+                AssertHelper.HasCount(req.LocalAttachments, 1, "local attachments");
+                AssertHelper.AreEqual("notes.txt", req.LocalAttachments[0].Name, "local attachment name");
+                AssertHelper.AreEqual("text/plain", req.LocalAttachments[0].ContentType, "local attachment content type");
+                AssertHelper.AreEqual("SGVsbG8=", req.LocalAttachments[0].Base64Content, "local attachment base64");
+                AssertHelper.AreEqual("Hello", req.LocalAttachments[0].Text, "local attachment text");
+
+                string serialized = JsonSerializer.Serialize(req, _jsonOptionsDefault);
+                AssertHelper.StringContains(serialized, "\"local_attachments\"", "serialized local attachment key");
+                AssertHelper.StringContains(serialized, "\"base64_content\"", "serialized local attachment base64 key");
             });
 
             await ExecuteTestAsync("ApiContract.ChatCompletionRequest: empty attachment IDs stay empty", async () =>
@@ -1271,6 +1293,9 @@ namespace Test.Automated
                 AssertHelper.AreEqual(50, settings.ToolPolicy.MaxBucketEnumerationResults, "MaxBucketEnumerationResults default");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.DocumentBackedObjectsOnly, "DocumentBackedObjectsOnly default");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.RedactObjectKeys, "RedactObjectKeys default");
+                AssertHelper.AreEqual(false, settings.ToolPolicy.EnableDocumentAtomExtractionTool, "EnableDocumentAtomExtractionTool default");
+                AssertHelper.AreEqual(10485760, settings.ToolPolicy.MaxAtomExtractionBytes, "MaxAtomExtractionBytes default");
+                AssertHelper.AreEqual(50000, settings.ToolPolicy.MaxAtomExtractionCharacters, "MaxAtomExtractionCharacters default");
                 AssertHelper.AreEqual(5, settings.ToolPolicy.MaxWebResults, "MaxWebResults default");
                 AssertHelper.AreEqual("basic", settings.ToolPolicy.SearchDepth, "SearchDepth default");
                 AssertHelper.AreEqual(false, settings.ToolPolicy.AllowAdvancedSearchDepth, "AllowAdvancedSearchDepth default");
@@ -1288,11 +1313,12 @@ namespace Test.Automated
             {
                 AssistantSettings settings = new AssistantSettings
                 {
-                    ToolPolicyJson = "{\"EnableToolCalls\":true,\"EnableCollectionSearchTool\":true,\"EnableCollectionEnumerationTool\":true,\"EnableVerbexSearchTool\":true,\"EnableIndexEnumerationTool\":true,\"ToolChoiceMode\":\"Required\",\"AllowParallelToolCalls\":false,\"MaxParallelToolCalls\":8,\"AllowedSearchModes\":[\"FullText\",\"invalid\"],\"DefaultSearchMode\":\"Hybrid\",\"MaxSearchResultsPerCall\":500,\"MaxSearchTopK\":500,\"MaxDocumentsConsideredPerSearch\":20000,\"MaxResultsConsideredPerSearch\":20000,\"EnableServerGeneratedQueryVariants\":true,\"MaxReadRangesPerCall\":0,\"DefaultIndexId\":\" tenant-index \",\"AllowedObjectSuffixes\":[\" .pdf \",\".PDF\"],\"AllowedContentTypes\":[\" text/plain \"],\"AllowedToolNames\":[\" Collection_Search \"],\"SearchDepth\":\"advanced\",\"AllowAdvancedSearchDepth\":false,\"TavilyEndpoint\":\" https://assistant.tavily.test/search \",\"TavilyApiKey\":\" assistant-key \",\"AllowUngovernedWebAccess\":true}"
+                    ToolPolicyJson = "{\"EnableToolCalls\":true,\"EnableCollectionSearchTool\":true,\"EnableDocumentAtomExtractionTool\":true,\"EnableCollectionEnumerationTool\":true,\"EnableVerbexSearchTool\":true,\"EnableIndexEnumerationTool\":true,\"ToolChoiceMode\":\"Required\",\"AllowParallelToolCalls\":false,\"MaxParallelToolCalls\":8,\"AllowedSearchModes\":[\"FullText\",\"invalid\"],\"DefaultSearchMode\":\"Hybrid\",\"MaxSearchResultsPerCall\":500,\"MaxSearchTopK\":500,\"MaxDocumentsConsideredPerSearch\":20000,\"MaxResultsConsideredPerSearch\":20000,\"MaxAtomExtractionBytes\":999999999,\"MaxAtomExtractionCharacters\":999999999,\"EnableServerGeneratedQueryVariants\":true,\"MaxReadRangesPerCall\":0,\"DefaultIndexId\":\" tenant-index \",\"AllowedObjectSuffixes\":[\" .pdf \",\".PDF\"],\"AllowedContentTypes\":[\" text/plain \"],\"AllowedToolNames\":[\" Collection_Search \"],\"SearchDepth\":\"advanced\",\"AllowAdvancedSearchDepth\":false,\"TavilyEndpoint\":\" https://assistant.tavily.test/search \",\"TavilyApiKey\":\" assistant-key \",\"AllowUngovernedWebAccess\":true}"
                 };
 
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableToolCalls, "EnableToolCalls parsed");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableCollectionSearchTool, "EnableCollectionSearchTool parsed");
+                AssertHelper.AreEqual(true, settings.ToolPolicy.EnableDocumentAtomExtractionTool, "EnableDocumentAtomExtractionTool parsed");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableCollectionEnumerateDocumentsTool, "EnableCollectionEnumerateDocumentsTool alias parsed");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableVerbexFullTextSearchTool, "EnableVerbexFullTextSearchTool alias parsed");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableIndexEnumerateRecordsTool, "EnableIndexEnumerateRecordsTool alias parsed");
@@ -1305,6 +1331,8 @@ namespace Test.Automated
                 AssertHelper.AreEqual(100, settings.ToolPolicy.MaxSearchTopK, "MaxSearchTopK clamped");
                 AssertHelper.AreEqual(10000, settings.ToolPolicy.MaxDocumentsConsideredPerSearch, "MaxDocumentsConsideredPerSearch clamped");
                 AssertHelper.AreEqual(10000, settings.ToolPolicy.MaxResultsConsideredPerSearch, "MaxResultsConsideredPerSearch clamped");
+                AssertHelper.AreEqual(52428800, settings.ToolPolicy.MaxAtomExtractionBytes, "MaxAtomExtractionBytes clamped");
+                AssertHelper.AreEqual(500000, settings.ToolPolicy.MaxAtomExtractionCharacters, "MaxAtomExtractionCharacters clamped");
                 AssertHelper.AreEqual(true, settings.ToolPolicy.EnableServerGeneratedQueryVariants, "EnableServerGeneratedQueryVariants parsed");
                 AssertHelper.AreEqual(1, settings.ToolPolicy.MaxReadRangesPerCall, "MaxReadRangesPerCall clamped");
                 AssertHelper.AreEqual("tenant-index", settings.ToolPolicy.DefaultIndexId, "DefaultIndexId normalized");

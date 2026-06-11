@@ -9,5 +9,10 @@ namespace AssistantHub.Core.Models
         /// Message content.
         /// </summary>
         public string Content { get; set; } = null;
+
+        /// <summary>
+        /// Provider thinking/reasoning text when returned separately from content.
+        /// </summary>
+        public string Thinking { get; set; } = null;
     }
 }

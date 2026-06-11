@@ -142,6 +142,7 @@ class AssistantPublicInfo(BaseModel):
     logo_url: Optional[str] = Field(None, alias="LogoUrl")
     favicon_url: Optional[str] = Field(None, alias="FaviconUrl")
     load_models_on_chat_open: bool = Field(False, alias="LoadModelsOnChatOpen")
+    expose_thinking: bool = Field(False, alias="ExposeThinking")
     enable_document_attachments: bool = Field(False, alias="EnableDocumentAttachments")
     document_attachment_max_count: int = Field(10, alias="DocumentAttachmentMaxCount")
     expose_document_source_urls: bool = Field(False, alias="ExposeDocumentSourceUrls")
@@ -180,18 +181,42 @@ class AssistantSettings(BaseModel):
     full_text_normalization: int = Field(0, alias="fullTextNormalization")
     full_text_minimum_score: Optional[float] = Field(None, alias="fullTextMinimumScore")
     retrieval_include_neighbors: int = Field(0, alias="retrievalIncludeNeighbors")
-    inference_endpoint_id: Optional[str] = Field(None, alias="inferenceEndpointId")
+    inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="inferenceEndpointId",
+        validation_alias=AliasChoices("InferenceEndpointId", "inferenceEndpointId", "inference_endpoint_id"),
+    )
+    tool_routing_inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="toolRoutingInferenceEndpointId",
+        validation_alias=AliasChoices("ToolRoutingInferenceEndpointId", "toolRoutingInferenceEndpointId", "tool_routing_inference_endpoint_id"),
+    )
     retrieval_gate_inference_endpoint_id: Optional[str] = Field(
-        None, alias="retrievalGateInferenceEndpointId"
+        None,
+        alias="retrievalGateInferenceEndpointId",
+        validation_alias=AliasChoices("RetrievalGateInferenceEndpointId", "retrievalGateInferenceEndpointId", "retrieval_gate_inference_endpoint_id"),
     )
     query_rewrite_inference_endpoint_id: Optional[str] = Field(
-        None, alias="queryRewriteInferenceEndpointId"
+        None,
+        alias="queryRewriteInferenceEndpointId",
+        validation_alias=AliasChoices("QueryRewriteInferenceEndpointId", "queryRewriteInferenceEndpointId", "query_rewrite_inference_endpoint_id"),
     )
     rerank_inference_endpoint_id: Optional[str] = Field(
-        None, alias="rerankInferenceEndpointId"
+        None,
+        alias="rerankInferenceEndpointId",
+        validation_alias=AliasChoices("RerankInferenceEndpointId", "rerankInferenceEndpointId", "rerank_inference_endpoint_id"),
     )
-    embedding_endpoint_id: Optional[str] = Field(None, alias="embeddingEndpointId")
+    embedding_endpoint_id: Optional[str] = Field(
+        None,
+        alias="embeddingEndpointId",
+        validation_alias=AliasChoices("EmbeddingEndpointId", "embeddingEndpointId", "embedding_endpoint_id"),
+    )
     load_models_on_chat_open: bool = Field(False, alias="loadModelsOnChatOpen")
+    expose_thinking: bool = Field(
+        False,
+        alias="exposeThinking",
+        validation_alias=AliasChoices("ExposeThinking", "exposeThinking", "expose_thinking"),
+    )
     title: Optional[str] = None
     logo_url: Optional[str] = Field(None, alias="logoUrl")
     favicon_url: Optional[str] = Field(None, alias="faviconUrl")
@@ -244,6 +269,7 @@ class AssistantToolPolicy(BaseModel):
     enable_collection_read_chunks_tool: bool = Field(False, alias="EnableCollectionReadChunksTool", validation_alias=AliasChoices("EnableCollectionReadChunksTool", "enableCollectionReadChunksTool", "enable_collection_read_chunks_tool"))
     enable_verbex_full_text_search_tool: bool = Field(False, alias="EnableVerbexFullTextSearchTool", validation_alias=AliasChoices("EnableVerbexFullTextSearchTool", "enableVerbexFullTextSearchTool", "enable_verbex_full_text_search_tool"))
     enable_s3_object_read_tool: bool = Field(False, alias="EnableS3ObjectReadTool", validation_alias=AliasChoices("EnableS3ObjectReadTool", "enableS3ObjectReadTool", "enable_s3_object_read_tool"))
+    enable_document_atom_extraction_tool: bool = Field(False, alias="EnableDocumentAtomExtractionTool", validation_alias=AliasChoices("EnableDocumentAtomExtractionTool", "enableDocumentAtomExtractionTool", "enable_document_atom_extraction_tool"))
     enable_collection_enumerate_documents_tool: bool = Field(False, alias="EnableCollectionEnumerateDocumentsTool", validation_alias=AliasChoices("EnableCollectionEnumerateDocumentsTool", "enableCollectionEnumerateDocumentsTool", "enable_collection_enumerate_documents_tool"))
     enable_collection_enumeration_tool: bool = Field(False, alias="EnableCollectionEnumerationTool", validation_alias=AliasChoices("EnableCollectionEnumerationTool", "enableCollectionEnumerationTool", "enable_collection_enumeration_tool"))
     enable_index_enumerate_records_tool: bool = Field(False, alias="EnableIndexEnumerateRecordsTool", validation_alias=AliasChoices("EnableIndexEnumerateRecordsTool", "enableIndexEnumerateRecordsTool", "enable_index_enumerate_records_tool"))
@@ -275,6 +301,8 @@ class AssistantToolPolicy(BaseModel):
     require_document_mapping: bool = Field(True, alias="RequireDocumentMapping", validation_alias=AliasChoices("RequireDocumentMapping", "requireDocumentMapping", "require_document_mapping"))
     return_verbex_record_metadata: bool = Field(False, alias="ReturnVerbexRecordMetadata", validation_alias=AliasChoices("ReturnVerbexRecordMetadata", "returnVerbexRecordMetadata", "return_verbex_record_metadata"))
     max_object_read_bytes: int = Field(131072, alias="MaxObjectReadBytes", validation_alias=AliasChoices("MaxObjectReadBytes", "maxObjectReadBytes", "max_object_read_bytes"))
+    max_atom_extraction_bytes: int = Field(10485760, alias="MaxAtomExtractionBytes", validation_alias=AliasChoices("MaxAtomExtractionBytes", "maxAtomExtractionBytes", "max_atom_extraction_bytes"))
+    max_atom_extraction_characters: int = Field(50000, alias="MaxAtomExtractionCharacters", validation_alias=AliasChoices("MaxAtomExtractionCharacters", "maxAtomExtractionCharacters", "max_atom_extraction_characters"))
     max_object_bytes_per_turn: int = Field(524288, alias="MaxObjectBytesPerTurn", validation_alias=AliasChoices("MaxObjectBytesPerTurn", "maxObjectBytesPerTurn", "max_object_bytes_per_turn"))
     max_bucket_enumeration_results: int = Field(50, alias="MaxBucketEnumerationResults", validation_alias=AliasChoices("MaxBucketEnumerationResults", "maxBucketEnumerationResults", "max_bucket_enumeration_results"))
     allow_bucket_wide_object_read: bool = Field(False, alias="AllowBucketWideObjectRead", validation_alias=AliasChoices("AllowBucketWideObjectRead", "allowBucketWideObjectRead", "allow_bucket_wide_object_read"))
@@ -404,6 +432,16 @@ class AssistantToolPolicyTestResult(BaseModel):
         alias="InferenceEndpointId",
         validation_alias=AliasChoices("InferenceEndpointId", "inferenceEndpointId", "inference_endpoint_id"),
     )
+    tool_routing_inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="ToolRoutingInferenceEndpointId",
+        validation_alias=AliasChoices("ToolRoutingInferenceEndpointId", "toolRoutingInferenceEndpointId", "tool_routing_inference_endpoint_id"),
+    )
+    effective_tool_routing_inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="EffectiveToolRoutingInferenceEndpointId",
+        validation_alias=AliasChoices("EffectiveToolRoutingInferenceEndpointId", "effectiveToolRoutingInferenceEndpointId", "effective_tool_routing_inference_endpoint_id"),
+    )
     endpoint_resolved: bool = Field(False, alias="EndpointResolved")
     endpoint_model: Optional[str] = Field(None, alias="EndpointModel")
     endpoint_api_format: Optional[str] = Field(None, alias="EndpointApiFormat")
@@ -532,6 +570,7 @@ class ChatCompletionMessage(BaseModel):
 
     role: Optional[str] = None
     content: Optional[str] = None
+    thinking: Optional[str] = None
 
 
 class ChatMetadataFilter(BaseModel):
@@ -551,6 +590,15 @@ class ChatTagCondition(BaseModel):
     value: Optional[str] = None
 
 
+class ChatLocalAttachment(BaseModel):
+    """User-supplied file attachment for a single chat turn."""
+
+    name: Optional[str] = None
+    content_type: Optional[str] = Field(None, alias="content_type")
+    base64_content: Optional[str] = Field(None, alias="base64_content")
+    text: Optional[str] = None
+
+
 class ChatCompletionRequest(BaseModel):
     """OpenAI-compatible chat completion request."""
 
@@ -565,6 +613,9 @@ class ChatCompletionRequest(BaseModel):
     )
     attached_document_ids: Optional[list[str]] = Field(
         None, alias="attached_document_ids"
+    )
+    local_attachments: Optional[list[ChatLocalAttachment]] = Field(
+        None, alias="local_attachments"
     )
 
 

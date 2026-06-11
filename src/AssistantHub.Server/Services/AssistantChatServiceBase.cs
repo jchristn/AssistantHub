@@ -566,6 +566,99 @@ namespace AssistantHub.Server.Services
             }
         }
 
+        private protected async Task<InferenceResult> GenerateStreamingWithCompletionEndpointLimitAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            Enums.InferenceProviderEnum provider,
+            string endpoint,
+            string apiKey,
+            string endpointId,
+            int maxConcurrentRequests,
+            Func<string, Task> onDelta,
+            Func<string, Task> onThinkingDelta,
+            CancellationToken token)
+        {
+            int max = Math.Max(1, maxConcurrentRequests);
+            Stopwatch waitSw = Stopwatch.StartNew();
+            using (IDisposable lease = await EndpointConcurrencyLimiter.AcquireAsync("completion", endpointId, max, token).ConfigureAwait(false))
+            {
+                waitSw.Stop();
+                if (waitSw.ElapsedMilliseconds > 0)
+                {
+                    _Logging.Info(
+                        _Header +
+                        "completion endpoint concurrency slot acquired: " +
+                        EndpointConcurrencyLimiter.BuildKey("completion", endpointId) +
+                        ", maxConcurrentRequests=" + max +
+                        ", waitedMs=" + waitSw.ElapsedMilliseconds);
+                }
+
+                StringBuilder content = new StringBuilder();
+                StringBuilder thinking = new StringBuilder();
+                string completedContent = null;
+                string errorMessage = null;
+                AssistantPerformanceStage telemetry = null;
+
+                await _Inference.GenerateResponseStreamingAsync(
+                    messages,
+                    model,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    provider,
+                    endpoint,
+                    apiKey,
+                    async delta =>
+                    {
+                        if (!String.IsNullOrEmpty(delta))
+                        {
+                            content.Append(delta);
+                            if (onDelta != null)
+                                await onDelta(delta).ConfigureAwait(false);
+                        }
+                    },
+                    fullContent =>
+                    {
+                        completedContent = fullContent;
+                        return Task.CompletedTask;
+                    },
+                    error =>
+                    {
+                        errorMessage = error;
+                        return Task.CompletedTask;
+                    },
+                    null,
+                    stage =>
+                    {
+                        AttachEndpointTelemetry(stage, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
+                        telemetry = stage;
+                    },
+                    token,
+                    async delta =>
+                    {
+                        if (!String.IsNullOrEmpty(delta))
+                        {
+                            thinking.Append(delta);
+                            if (onThinkingDelta != null)
+                                await onThinkingDelta(delta).ConfigureAwait(false);
+                        }
+                    }).ConfigureAwait(false);
+
+                if (!String.IsNullOrWhiteSpace(errorMessage))
+                    return InferenceResult.FromError(errorMessage, telemetry);
+
+                return InferenceResult.FromSuccess(
+                    completedContent ?? content.ToString(),
+                    telemetry,
+                    "stop",
+                    null,
+                    thinking.Length > 0 ? thinking.ToString() : null);
+            }
+        }
+
         private protected async Task<InferenceResult> GenerateWithToolsAndCompletionEndpointLimitAsync(
             List<ChatCompletionMessage> messages,
             string model,

@@ -21,6 +21,13 @@ namespace AssistantHub.Core.Models
         public string Content { get; set; } = null;
 
         /// <summary>
+        /// Optional provider thinking/reasoning text exposed only when the assistant permits it.
+        /// </summary>
+        [JsonPropertyName("thinking")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Thinking { get; set; } = null;
+
+        /// <summary>
         /// Model-requested tool calls on an assistant message.
         /// </summary>
         [JsonPropertyName("tool_calls")]

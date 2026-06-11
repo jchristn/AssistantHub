@@ -46,6 +46,7 @@ export type {
   IngestionEmbeddingConfig,
   IngestionSummarizationConfig,
   ChatCompletionRequest,
+  ChatLocalAttachment,
   ChatCompletionMessage,
   ChatCompletionResponse,
   ChatCompletionChoice,

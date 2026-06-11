@@ -3236,7 +3236,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"ToolChoiceMode\\\":\\\"Auto\\\",\\\"EnableToolFeedbackEvents\\\":true,\\\"ExposeToolTraceToUser\\\":false,\\\"EnableCollectionSearchTool\\\":true,\\\"EnableCollectionReadChunksTool\\\":true,\\\"EnableCollectionEnumerateDocumentsTool\\\":true,\\\"AllowedSearchModes\\\":[\\\"Vector\\\",\\\"FullText\\\",\\\"Hybrid\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxSearchTopK\\\":10,\\\"MaxSearchQueriesPerCall\\\":3,\\\"MaxDocumentsConsideredPerSearch\\\":1000,\\\"MaxResultsConsideredPerSearch\\\":1000,\\\"ReturnFullSearchContent\\\":false,\\\"MaxReadRangesPerCall\\\":5,\\\"AllowModelDocumentIdFilter\\\":true}\"\n}"
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"ToolChoiceMode\\\":\\\"Auto\\\",\\\"EnableToolFeedbackEvents\\\":true,\\\"ExposeToolTraceToUser\\\":false,\\\"EnableCollectionSearchTool\\\":true,\\\"EnableCollectionReadChunksTool\\\":true,\\\"EnableCollectionEnumerateDocumentsTool\\\":true,\\\"EnableDocumentAtomExtractionTool\\\":true,\\\"AllowedSearchModes\\\":[\\\"Vector\\\",\\\"FullText\\\",\\\"Hybrid\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxSearchTopK\\\":10,\\\"MaxSearchQueriesPerCall\\\":3,\\\"MaxDocumentsConsideredPerSearch\\\":1000,\\\"MaxResultsConsideredPerSearch\\\":1000,\\\"ReturnFullSearchContent\\\":false,\\\"MaxReadRangesPerCall\\\":5,\\\"MaxAtomExtractionBytes\\\":10485760,\\\"MaxAtomExtractionCharacters\\\":50000,\\\"AllowModelDocumentIdFilter\\\":true}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -3271,7 +3271,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableVerbexFullTextSearchTool\\\":true,\\\"EnableIndexEnumerateRecordsTool\\\":true,\\\"AllowedVerbexIndexIds\\\":[\\\"{{indexId}}\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxVerbexResults\\\":10,\\\"RequireDocumentMapping\\\":true}\"\n}"
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableVerbexFullTextSearchTool\\\":true,\\\"EnableIndexEnumerateRecordsTool\\\":true,\\\"AllowedVerbexIndexIds\\\":[\\\"{{indexId}}\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxVerbexResults\\\":10,\\\"RequireDocumentMapping\\\":true}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -3306,7 +3306,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableS3ObjectReadTool\\\":true,\\\"EnableBucketEnumerateObjectsTool\\\":true,\\\"AllowedBucketPrefixes\\\":[\\\"documents/\\\"],\\\"AllowedObjectSuffixes\\\":[\\\".txt\\\",\\\".pdf\\\"],\\\"AllowedContentTypes\\\":[\\\"text/plain\\\",\\\"application/pdf\\\"],\\\"DocumentBackedObjectsOnly\\\":true,\\\"RedactObjectKeys\\\":true,\\\"MaxObjectReadBytes\\\":131072,\\\"MaxBucketEnumerationResults\\\":50,\\\"AllowBucketWideObjectRead\\\":false,\\\"AllowBinaryObjectOutput\\\":false}\"\n}"
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableS3ObjectReadTool\\\":true,\\\"EnableBucketEnumerateObjectsTool\\\":true,\\\"AllowedBucketPrefixes\\\":[\\\"documents/\\\"],\\\"AllowedObjectSuffixes\\\":[\\\".txt\\\",\\\".pdf\\\"],\\\"AllowedContentTypes\\\":[\\\"text/plain\\\",\\\"application/pdf\\\"],\\\"DocumentBackedObjectsOnly\\\":true,\\\"RedactObjectKeys\\\":true,\\\"MaxObjectReadBytes\\\":131072,\\\"MaxBucketEnumerationResults\\\":50,\\\"AllowBucketWideObjectRead\\\":false,\\\"AllowBinaryObjectOutput\\\":false}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -3341,7 +3341,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableWebSearchTool\\\":true,\\\"TavilyEndpoint\\\":null,\\\"TavilyApiKey\\\":null,\\\"AllowedProviders\\\":[\\\"Tavily\\\"],\\\"AllowedWebDomains\\\":[],\\\"BlockedWebDomains\\\":[],\\\"AllowRawWebContent\\\":false,\\\"AllowWebImages\\\":false,\\\"MaxSearchResultsPerCall\\\":5,\\\"MaxWebResults\\\":5,\\\"MaxWebSearchesPerTurn\\\":3,\\\"SearchDepth\\\":\\\"basic\\\",\\\"AllowAdvancedSearchDepth\\\":false,\\\"AllowNewsTopic\\\":true,\\\"RequireSafeSearch\\\":true}\"\n}"
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableWebSearchTool\\\":true,\\\"TavilyEndpoint\\\":null,\\\"TavilyApiKey\\\":null,\\\"AllowedProviders\\\":[\\\"Tavily\\\"],\\\"AllowedWebDomains\\\":[],\\\"BlockedWebDomains\\\":[],\\\"AllowRawWebContent\\\":false,\\\"AllowWebImages\\\":false,\\\"MaxSearchResultsPerCall\\\":5,\\\"MaxWebResults\\\":5,\\\"MaxWebSearchesPerTurn\\\":3,\\\"SearchDepth\\\":\\\"basic\\\",\\\"AllowAdvancedSearchDepth\\\":false,\\\"AllowNewsTopic\\\":true,\\\"RequireSafeSearch\\\":true}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -3376,7 +3376,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"RetrievalGateInferenceEndpointId\": null,\n\t\"QueryRewriteInferenceEndpointId\": null,\n\t\"RerankInferenceEndpointId\": null,\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":false,\\\"EnableCollectionSearchTool\\\":false,\\\"EnableWebSearchTool\\\":false}\",\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
+              "raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"RetrievalGateInferenceEndpointId\": null,\n\t\"QueryRewriteInferenceEndpointId\": null,\n\t\"RerankInferenceEndpointId\": null,\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":false,\\\"EnableCollectionSearchTool\\\":false,\\\"EnableWebSearchTool\\\":false}\",\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -5761,6 +5761,48 @@
           }
         },
         {
+          "name": "Chat (with local file attachment)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Thread-ID",
+                "value": "thread-guid-here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize this local file.\"\n\t\t}\n\t],\n\t\"local_attachments\": [\n\t\t{\n\t\t\t\"name\": \"notes.txt\",\n\t\t\t\"content_type\": \"text/plain\",\n\t\t\t\"base64_content\": \"VGhpcyBpcyBhIGxvY2FsIGZpbGUu\"\n\t\t}\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Chat request with a user-uploaded local file. Assistant document attachments must be enabled. The file is text-extracted for this request only and is not added to the assistant collection."
+          }
+        },
+        {
           "name": "Chat (attached documents disabled error)",
           "request": {
             "auth": {
@@ -5951,7 +5993,7 @@
                 }
               ]
             },
-            "description": "Chat request for an assistant whose ToolPolicyJson enables tool calls and at least one tool. The selected completion endpoint must explicitly set SupportsToolCalling=true with ToolCallingApiFormat OpenAIChatCompletions or OllamaChat; AssistantHub stores those values on the proxied Partio endpoint using reserved labels/tags. Otherwise the server returns an assistant configuration error before calling the model. If assistant Streaming is enabled, safe named SSE tool progress events may be emitted before the final answer chunks."
+            "description": "Chat request for an assistant whose ToolPolicyJson enables tool calls and at least one tool. The effective tool-routing completion endpoint (ToolRoutingInferenceEndpointId when set, otherwise InferenceEndpointId) must explicitly set SupportsToolCalling=true with ToolCallingApiFormat OpenAIChatCompletions or OllamaChat; AssistantHub stores those values on the proxied Partio endpoint using reserved labels/tags. Otherwise the server returns an assistant configuration error before calling the model. If assistant Streaming is enabled, safe named SSE tool progress events may be emitted before the final answer chunks."
           }
         },
         {

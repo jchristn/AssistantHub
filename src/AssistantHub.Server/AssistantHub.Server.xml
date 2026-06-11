@@ -1907,6 +1907,11 @@
             Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.LocalAttachments">
+            <summary>
+            Optional user-uploaded files attached to this chat turn.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.UserMessageUtc">
             <summary>
             Optional user message timestamp override.
@@ -1920,6 +1925,16 @@
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ToolProgress">
             <summary>
             Optional callback invoked with safe tool lifecycle progress events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ResponseDelta">
+            <summary>
+            Optional callback invoked with final assistant response content deltas.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ThinkingDelta">
+            <summary>
+            Optional callback invoked with final assistant thinking/reasoning deltas.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatExecutionResult">
@@ -2163,6 +2178,11 @@
             Optional trace identifier for audit correlation.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.LocalAttachments">
+            <summary>
+            Per-turn user-uploaded attachments available to tools.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantToolExecutor">
             <summary>
             Executes policy-approved, read-only server-side tools for assistant chat.
@@ -2322,6 +2342,90 @@
             </summary>
             <param name="toolName">Tool name.</param>
             <returns>Canonical tool name or null when unknown.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentProcessor">
+            <summary>
+            Processes per-turn user-uploaded chat attachments into model-visible context.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.ResolveAsync(AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.List{AssistantHub.Core.Models.ChatLocalAttachment},AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,System.Threading.CancellationToken)">
+            <summary>
+            Process local chat attachments.
+            </summary>
+            <param name="settings">Assistant settings.</param>
+            <param name="attachments">Request attachments.</param>
+            <param name="appSettings">Application settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Attachment resolution.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.Count(System.Collections.Generic.List{AssistantHub.Core.Models.ChatLocalAttachment})">
+            <summary>
+            Count non-empty local attachments.
+            </summary>
+            <param name="attachments">Attachments.</param>
+            <returns>Count.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.BuildPromptContext(System.Collections.Generic.IEnumerable{AssistantHub.Server.Services.ChatLocalAttachmentContext})">
+            <summary>
+            Build model-visible attachment context.
+            </summary>
+            <param name="attachments">Processed attachments.</param>
+            <returns>Prompt context.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.AppendToSystemPrompt(System.String,System.String)">
+            <summary>
+            Append attachment context to a system prompt.
+            </summary>
+            <param name="systemPrompt">Base system prompt.</param>
+            <param name="attachmentContext">Attachment context.</param>
+            <returns>Combined prompt.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentContext">
+            <summary>
+            Processed local chat attachment.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.AttachmentId">
+            <summary>Stable per-turn local attachment ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Name">
+            <summary>Filename.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.ContentType">
+            <summary>Content type.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.SizeBytes">
+            <summary>Original size in bytes when supplied as a file.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.SourceBytes">
+            <summary>Original attachment bytes for per-turn tool access.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.DocumentType">
+            <summary>Best-effort DocumentAtom document type.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Text">
+            <summary>Extracted or supplied text.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Truncated">
+            <summary>Whether text was truncated for prompt safety.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentResolution">
+            <summary>
+            Local chat attachment processing result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.Success">
+            <summary>Whether processing succeeded.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.StatusCode">
+            <summary>HTTP status code for failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.ErrorMessage">
+            <summary>Error message for failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.Attachments">
+            <summary>Processed attachments.</summary>
         </member>
         <member name="T:AssistantHub.Server.Services.CollectionToolService">
             <summary>

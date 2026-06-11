@@ -46,7 +46,7 @@ namespace Test.Automated
                 AssertHelper.IsEmpty(available, "available tools");
 
                 List<AssistantToolDescriptor> all = resolver.Resolve(assistant, settings, true);
-                AssertHelper.HasCount(all, 8, "all known tools");
+                AssertHelper.HasCount(all, 9, "all known tools");
                 AssertHelper.AllMatch(all, tool => !tool.EnabledByPolicy && !tool.Available, "disabled tool descriptors");
             });
 
@@ -229,6 +229,7 @@ namespace Test.Automated
                         EnableCollectionSearchTool = true,
                         EnableCollectionEnumerateDocumentsTool = true,
                         EnableCollectionReadChunksTool = true,
+                        EnableDocumentAtomExtractionTool = true,
                         EnableVerbexFullTextSearchTool = true,
                         EnableWebSearchTool = true,
                         MaxSearchResultsPerCall = 7,
@@ -241,10 +242,11 @@ namespace Test.Automated
                 List<AssistantToolDefinition> definitions = registry.BuildDefinitions(new Assistant(), settings);
                 List<string> names = definitions.Select(definition => definition.Function.Name).OrderBy(name => name).ToList();
 
-                AssertHelper.HasCount(definitions, 5, "tool definitions");
+                AssertHelper.HasCount(definitions, 6, "tool definitions");
                 AssertHelper.Contains(names, "collection_search", "tool definition names");
                 AssertHelper.Contains(names, "collection_read_chunks", "tool definition names");
                 AssertHelper.Contains(names, "collection_enumerate_documents", "tool definition names");
+                AssertHelper.Contains(names, "document_atom_extract", "tool definition names");
                 AssertHelper.Contains(names, "verbex_full_text_search", "tool definition names");
                 AssertHelper.Contains(names, "web_search", "tool definition names");
 
@@ -256,6 +258,8 @@ namespace Test.Automated
                 AssertHelper.StringContains(json, "\"top_k\"", "collection search top_k alias schema");
                 AssertHelper.StringContains(json, "\"score_threshold\"", "collection search score threshold schema");
                 AssertHelper.StringContains(json, "\"collection_read_chunks\"", "collection read chunks schema");
+                AssertHelper.StringContains(json, "\"local_attachment_id\"", "DocumentAtom local attachment schema");
+                AssertHelper.StringContains(json, "\"document_type\"", "DocumentAtom document type schema");
                 AssertHelper.IsFalse(json.Contains("include_raw_content"), "raw web content schema omitted");
                 AssertHelper.IsFalse(json.Contains("include_images"), "web image schema omitted");
             });
@@ -563,6 +567,81 @@ namespace Test.Automated
                 AssertHelper.ThrowsAsync<TaskCanceledException>(
                     async () => await client.SearchAsync(new TavilySearchQuery { Query = "timeout test" }).ConfigureAwait(false),
                     "Tavily timeout");
+            });
+
+            await ExecuteTestAsync("InferenceService.GenerateResponseAsync: parses provider thinking fields", async () =>
+            {
+                string openAiResponseJson =
+                    "{" +
+                    "\"choices\":[{" +
+                    "\"finish_reason\":\"stop\"," +
+                    "\"message\":{\"role\":\"assistant\",\"content\":\"Visible OpenAI answer.\",\"reasoning_content\":\"OpenAI hidden reasoning.\"}" +
+                    "}]" +
+                    "}";
+
+                MockHttpMessageHandler openAiHandler = new MockHttpMessageHandler()
+                    .When("chat/completions", HttpStatusCode.OK, openAiResponseJson);
+                using HttpClient openAiClient = openAiHandler.CreateClient();
+                InferenceService openAiInference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3"
+                    },
+                    CreateSilentLogging(),
+                    openAiClient);
+
+                InferenceResult openAiResult = await openAiInference.GenerateResponseAsync(
+                    new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "user", Content = "Answer." } },
+                    "qwen3",
+                    256,
+                    0.1,
+                    1.0,
+                    InferenceProviderEnum.OpenAI,
+                    "https://openai-compatible.test/v1",
+                    "openai-secret").ConfigureAwait(false);
+
+                AssertHelper.IsTrue(openAiResult.Success, "OpenAI thinking result success");
+                AssertHelper.AreEqual("Visible OpenAI answer.", openAiResult.Content, "OpenAI visible content");
+                AssertHelper.AreEqual("OpenAI hidden reasoning.", openAiResult.Thinking, "OpenAI reasoning_content parsed");
+
+                string ollamaResponseJson =
+                    "{" +
+                    "\"message\":{\"role\":\"assistant\",\"content\":\"Visible Ollama answer.\",\"thinking\":\"Ollama hidden reasoning.\"}," +
+                    "\"done_reason\":\"stop\"," +
+                    "\"prompt_eval_count\":4," +
+                    "\"eval_count\":3" +
+                    "}";
+
+                MockHttpMessageHandler ollamaHandler = new MockHttpMessageHandler()
+                    .When("/api/chat", HttpStatusCode.OK, ollamaResponseJson);
+                using HttpClient ollamaClient = ollamaHandler.CreateClient();
+                InferenceService ollamaInference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.Ollama,
+                        Endpoint = "http://ollama.test:11434",
+                        ApiKey = "ollama-secret",
+                        DefaultModel = "gemma3"
+                    },
+                    CreateSilentLogging(),
+                    ollamaClient);
+
+                InferenceResult ollamaResult = await ollamaInference.GenerateResponseAsync(
+                    new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "user", Content = "Answer." } },
+                    "gemma3",
+                    256,
+                    0.1,
+                    1.0,
+                    InferenceProviderEnum.Ollama,
+                    "http://ollama.test:11434",
+                    "ollama-secret").ConfigureAwait(false);
+
+                AssertHelper.IsTrue(ollamaResult.Success, "Ollama thinking result success");
+                AssertHelper.AreEqual("Visible Ollama answer.", ollamaResult.Content, "Ollama visible content");
+                AssertHelper.AreEqual("Ollama hidden reasoning.", ollamaResult.Thinking, "Ollama thinking parsed");
             });
 
             await ExecuteTestAsync("InferenceService.GenerateResponseWithToolsAsync: sends OpenAI-compatible tools and parses tool calls", async () =>
@@ -2319,6 +2398,116 @@ namespace Test.Automated
                 AssertHelper.HasCount(result.Response.Retrieval.AttachedDocumentIds, 1, "attached document metadata ids");
             });
 
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: local chat attachments are injected into model context", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+
+                AssistantSettings settings = CreateToolSettings(new AssistantToolPolicy());
+                settings.EnableRag = false;
+                settings.EnableDocumentAttachments = true;
+                settings.InferenceEndpointId = "cep_local_attach";
+
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(
+                                "{" +
+                                "\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"local attachment summary\"}}]," +
+                                "\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":3,\"total_tokens\":23}" +
+                                "}",
+                                Encoding.UTF8,
+                                "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_local_attach",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3",
+                        Active = true,
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Summarize the local attachment." }
+                        },
+                        LocalAttachments = new List<ChatLocalAttachment>
+                        {
+                            new ChatLocalAttachment
+                            {
+                                Name = "notes.txt",
+                                ContentType = "text/plain",
+                                Base64Content = Convert.ToBase64String(Encoding.UTF8.GetBytes("Uploaded local note about revenue."))
+                            }
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "local attachment chat success");
+                AssertHelper.AreEqual("local attachment summary", result.Response.Choices[0].Message.Content, "local attachment final answer");
+                AssertHelper.AreEqual(1, handler.Requests.Count, "local attachment model call count");
+                AssertHelper.StringContains(handler.Requests[0].Body, "User-uploaded files attached to this chat turn", "local attachment prompt heading");
+                AssertHelper.StringContains(handler.Requests[0].Body, "notes.txt", "local attachment prompt filename");
+                AssertHelper.StringContains(handler.Requests[0].Body, "Uploaded local note about revenue.", "local attachment prompt content");
+
+                settings.EnableDocumentAttachments = false;
+                AssistantChatExecutionResult disabledResult = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Summarize the local attachment." }
+                        },
+                        LocalAttachments = new List<ChatLocalAttachment>
+                        {
+                            new ChatLocalAttachment
+                            {
+                                Name = "notes.txt",
+                                ContentType = "text/plain",
+                                Base64Content = Convert.ToBase64String(Encoding.UTF8.GetBytes("Blocked local note."))
+                            }
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsFalse(disabledResult.Success, "disabled local attachment request should fail");
+                AssertHelper.AreEqual(400, disabledResult.StatusCode, "disabled local attachment status");
+                AssertHelper.StringContains(disabledResult.ErrorMessage, "Document attachments are disabled", "disabled local attachment error");
+                AssertHelper.AreEqual(1, handler.Requests.Count, "disabled local attachment should not call model");
+            });
+
             await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: filters attached documents before reranking", async () =>
             {
                 MockDatabaseDriver database = new MockDatabaseDriver();
@@ -3764,6 +3953,88 @@ namespace Test.Automated
                 AssertHelper.IsFalse(result.OutputJson.Contains("extra provider result should be trimmed", StringComparison.Ordinal), "extra Tavily result trimmed");
             });
 
+            await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: extracts text from local chat attachment", async () =>
+            {
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableDocumentAtomExtractionTool = true,
+                    MaxAtomExtractionCharacters = 10000,
+                    MaxToolOutputChars = 12000
+                };
+                AssistantToolExecutionContext context = CreateToolContext(policy);
+                context.LocalAttachments = new List<ChatLocalAttachmentContext>
+                {
+                    new ChatLocalAttachmentContext
+                    {
+                        AttachmentId = "local_attachment_1",
+                        Name = "notes.txt",
+                        ContentType = "text/plain",
+                        SizeBytes = 38,
+                        SourceBytes = Encoding.UTF8.GetBytes("First line.\nSecond line with revenue."),
+                        DocumentType = "text"
+                    }
+                };
+
+                AssistantToolExecutionResult result = await CreateToolExecutor(new MockDatabaseDriver()).ExecuteAsync(
+                    context,
+                    new AssistantToolExecutionRequest
+                    {
+                        ToolName = "document_atom_extract",
+                        ArgumentsJson = "{\"local_attachment_id\":\"local_attachment_1\",\"text_start\":0,\"text_length\":12}"
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "local atom extract success");
+                AssertHelper.StringContains(result.OutputJson, "\"Tool\":\"document_atom_extract\"", "local atom output tool");
+                AssertHelper.StringContains(result.OutputJson, "\"SourceType\":\"local_attachment\"", "local atom source type");
+                AssertHelper.StringContains(result.OutputJson, "\"LocalAttachmentId\":\"local_attachment_1\"", "local atom attachment id");
+                AssertHelper.StringContains(result.OutputJson, "\"Text\":\"First line.\\n\"", "local atom extracted text");
+                AssertHelper.StringContains(result.OutputJson, "\"Truncated\":true", "local atom truncated");
+            });
+
+            await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: extracts text from assistant document object", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                AssistantDocument document = CreateToolDocument("adoc_atom_text", "tenant_tool", "col_tool", "Atom Text", DocumentStatusEnum.Completed);
+                document.S3Key = "documents/private/atom.txt";
+                document.ContentType = "text/plain";
+                await database.AssistantDocument.CreateAsync(document).ConfigureAwait(false);
+
+                AssistantHubSettings serverSettings = CreateS3ServerSettings();
+                RecordingObjectStorageService storage = new RecordingObjectStorageService();
+                storage.Add("default", document.S3Key, Encoding.UTF8.GetBytes("Alpha document text for atom extraction."), "text/plain");
+
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableDocumentAtomExtractionTool = true,
+                    AllowedBucketPrefixes = new List<string> { "documents/private/" },
+                    AllowedContentTypes = new List<string> { "text/plain" },
+                    MaxAtomExtractionBytes = 1024,
+                    MaxAtomExtractionCharacters = 20
+                };
+
+                AssistantToolExecutionResult result = await CreateToolExecutor(database, settings: serverSettings, storage: storage).ExecuteAsync(
+                    CreateToolContext(policy),
+                    new AssistantToolExecutionRequest
+                    {
+                        ToolName = "document_atom_extract",
+                        ArgumentsJson = "{\"document_id\":\"adoc_atom_text\",\"text_start\":6,\"text_length\":13}"
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "document atom extract success");
+                AssertHelper.HasCount(storage.MetadataReads, 1, "document atom metadata reads");
+                AssertHelper.HasCount(storage.RangeDownloads, 1, "document atom range downloads");
+                AssertHelper.AreEqual("default", storage.RangeDownloads[0].BucketName, "document atom range bucket");
+                AssertHelper.AreEqual(document.S3Key, storage.RangeDownloads[0].Key, "document atom range key");
+                AssertHelper.AreEqual(0L, storage.RangeDownloads[0].Start, "document atom range start");
+                AssertHelper.StringContains(result.OutputJson, "\"SourceType\":\"assistant_document\"", "document atom source type");
+                AssertHelper.StringContains(result.OutputJson, "\"DocumentId\":\"adoc_atom_text\"", "document atom document id");
+                AssertHelper.StringContains(result.OutputJson, "\"UsedDocumentAtom\":false", "document atom direct text decode");
+                AssertHelper.StringContains(result.OutputJson, "\"Text\":\"document text\"", "document atom text");
+                AssertHelper.StringContains(result.OutputJson, "\"CitationHandle\":\"adoc_atom_text:atom:6\"", "document atom citation handle");
+            });
+
             await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: reads document-backed S3 object text within policy", async () =>
             {
                 MockDatabaseDriver database = new MockDatabaseDriver();
@@ -4349,12 +4620,12 @@ namespace Test.Automated
                 AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_iteration.started"), "tool iteration progress event");
                 AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_call.started" && evt.DisplayLabel == "Searching collection"), "tool started progress event");
                 AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_call.completed" && evt.StatusCode == "tool_completed"), "tool completed progress event");
-                AssertHelper.IsFalse(progressEvents.Any(evt => evt.EventType == "assistant.tool_call.completed" && !String.IsNullOrWhiteSpace(evt.Summary)), "completed tool progress events omit generic summary");
+                AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_call.completed" && evt.Summary == "Searching collection completed."), "completed tool progress events include safe summary");
                 AssertHelper.HasCount(result.ToolCalls, 1, "tool-loop result tool trace count");
                 AssertHelper.HasCount(result.Response.ToolCalls, 1, "tool-loop response tool trace count");
                 AssertHelper.AreEqual("Searching collection", result.Response.ToolCalls[0].DisplayLabel, "tool-loop response display label");
                 AssertHelper.AreEqual(2, result.Response.ToolCalls[0].ResultCount.Value, "tool-loop response result count");
-                AssertHelper.IsNull(result.Response.ToolCalls[0].Summary, "completed tool trace omits generic summary");
+                AssertHelper.AreEqual("Searching collection completed.", result.Response.ToolCalls[0].Summary, "completed tool trace includes safe summary");
                 AssertHelper.HasCount(toolExecutor.Requests, 1, "tool executor request count");
                 AssertHelper.AreEqual("collection_search", toolExecutor.Requests[0].ToolName, "executed tool name");
                 AssertHelper.StringContains(toolExecutor.Requests[0].ArgumentsJson, "\"query\":\"alpha\"", "executed tool arguments");
@@ -4415,6 +4686,463 @@ namespace Test.Automated
                 AssertHelper.IsNotNull(toolEvent, "tool telemetry event persisted");
                 AssertHelper.AreEqual("assistant_tools", toolEvent.Phase, "tool telemetry event phase");
                 AssertHelper.StringContains(toolEvent.MetadataJson, "\"tool_call_success_count\":1", "tool telemetry event success count");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: streams final response deltas after tool calls", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionSearchTool = true,
+                    MaxToolIterations = 3,
+                    MaxToolCallsPerTurn = 2
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_tool_stream";
+                settings.MaxTokens = 256;
+
+                int nonStreamingModelCallCount = 0;
+                int streamingModelCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        string requestBody = request.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        if (requestBody.Contains("\"stream\":true", StringComparison.Ordinal))
+                        {
+                            streamingModelCallCount++;
+                            string streamBody =
+                                "data: {\"choices\":[{\"delta\":{\"content\":\"final \"}}]}\n\n" +
+                                "data: {\"choices\":[{\"delta\":{\"content\":\"streamed\"}}]}\n\n" +
+                                "data: [DONE]\n\n";
+                            return new HttpResponseMessage(HttpStatusCode.OK)
+                            {
+                                Content = new StringContent(streamBody, Encoding.UTF8, "text/event-stream")
+                            };
+                        }
+
+                        nonStreamingModelCallCount++;
+                        string body = nonStreamingModelCallCount == 1
+                            ? "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"tool_calls\"," +
+                              "\"message\":{" +
+                              "\"role\":\"assistant\"," +
+                              "\"content\":null," +
+                              "\"tool_calls\":[{" +
+                              "\"id\":\"call_stream_search\"," +
+                              "\"type\":\"function\"," +
+                              "\"function\":{\"name\":\"collection_search\",\"arguments\":\"{\\\"query\\\":\\\"alpha\\\",\\\"max_results\\\":1}\"}" +
+                              "}]" +
+                              "}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":0,\"total_tokens\":12}" +
+                              "}"
+                            : "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"stop\"," +
+                              "\"message\":{\"role\":\"assistant\",\"content\":\"router completed\"}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":24,\"completion_tokens\":2,\"total_tokens\":26}" +
+                              "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(
+                    "{\"Success\":true,\"Message\":\"collection_search executed\",\"Results\":[{\"Id\":\"r1\"}]}");
+                List<string> responseDeltas = new List<string>();
+
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_tool_stream",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Find alpha." }
+                        },
+                        TraceId = "trace_tool_stream",
+                        RequestHistoryId = "req_tool_stream",
+                        ThreadId = "thr_tool_stream",
+                        Origin = "web",
+                        ResponseDelta = delta =>
+                        {
+                            responseDeltas.Add(delta);
+                            return Task.CompletedTask;
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "streamed tool-loop chat success");
+                AssertHelper.AreEqual("final streamed", result.Response.Choices[0].Message.Content, "streamed tool-loop final response");
+                AssertHelper.HasCount(responseDeltas, 2, "streamed final response delta count");
+                AssertHelper.AreEqual("final ", responseDeltas[0], "first streamed final delta");
+                AssertHelper.AreEqual("streamed", responseDeltas[1], "second streamed final delta");
+                AssertHelper.AreEqual(2, nonStreamingModelCallCount, "tool router non-streaming call count");
+                AssertHelper.AreEqual(1, streamingModelCallCount, "final streaming call count");
+                AssertHelper.AreEqual(3, handler.Requests.Count, "streamed tool-loop total model call count");
+                AssertHelper.StringContains(handler.Requests[2].Body, "\"stream\":true", "final request enables streaming");
+                AssertHelper.StringContains(handler.Requests[2].Body, "\"tool_call_id\":\"call_stream_search\"", "final streaming request preserves tool call id");
+                AssertHelper.StringContains(handler.Requests[2].Body, "collection_search executed", "final streaming request includes tool output");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: separate tool-routing endpoint only routes tools", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionSearchTool = true,
+                    MaxToolIterations = 3,
+                    MaxToolCallsPerTurn = 2
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_answer";
+                settings.ToolRoutingInferenceEndpointId = "cep_router";
+                settings.MaxTokens = 256;
+
+                int routerCallCount = 0;
+                int answerCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("router.test", request =>
+                    {
+                        routerCallCount++;
+                        string body = routerCallCount == 1
+                            ? "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"tool_calls\"," +
+                              "\"message\":{" +
+                              "\"role\":\"assistant\"," +
+                              "\"content\":null," +
+                              "\"tool_calls\":[{" +
+                              "\"id\":\"call_router_search\"," +
+                              "\"type\":\"function\"," +
+                              "\"function\":{\"name\":\"collection_search\",\"arguments\":\"{\\\"query\\\":\\\"alpha\\\",\\\"max_results\\\":1}\"}" +
+                              "}]" +
+                              "}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":0,\"total_tokens\":12}" +
+                              "}"
+                            : "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"stop\"," +
+                              "\"message\":{\"role\":\"assistant\",\"content\":\"router should not answer\"}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":16,\"completion_tokens\":2,\"total_tokens\":18}" +
+                              "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    })
+                    .When("answer.test", request =>
+                    {
+                        answerCallCount++;
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(
+                                "{" +
+                                "\"choices\":[{" +
+                                "\"finish_reason\":\"stop\"," +
+                                "\"message\":{\"role\":\"assistant\",\"content\":\"answer endpoint final\"}" +
+                                "}]," +
+                                "\"usage\":{\"prompt_tokens\":24,\"completion_tokens\":4,\"total_tokens\":28}" +
+                                "}",
+                                Encoding.UTF8,
+                                "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://unused-default.test/v1",
+                        ApiKey = "default-secret",
+                        DefaultModel = "default-model"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(
+                    "{\"Success\":true,\"Message\":\"collection_search executed\",\"Results\":[{\"Id\":\"r1\"}]}");
+
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new[]
+                    {
+                        new PartioEndpointConfig
+                        {
+                            Id = "cep_answer",
+                            Endpoint = "https://answer.test/v1",
+                            ApiFormat = "OpenAI",
+                            ApiKey = "answer-secret",
+                            Model = "answer-model",
+                            Active = true,
+                            SupportsToolCalling = false,
+                            MaxConcurrentRequests = 1
+                        },
+                        new PartioEndpointConfig
+                        {
+                            Id = "cep_router",
+                            Endpoint = "https://router.test/v1",
+                            ApiFormat = "OpenAI",
+                            ApiKey = "router-secret",
+                            Model = "router-model",
+                            Active = true,
+                            SupportsToolCalling = true,
+                            ToolCallingApiFormat = "OpenAIChatCompletions",
+                            MaxConcurrentRequests = 1
+                        }
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Find alpha." }
+                        },
+                        TraceId = "trace_tool_router",
+                        RequestHistoryId = "req_tool_router",
+                        ThreadId = "thr_tool_router",
+                        Origin = "web"
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "separate routing chat success");
+                AssertHelper.AreEqual("answer endpoint final", result.Response.Choices[0].Message.Content, "separate routing final response");
+                AssertHelper.AreEqual(2, routerCallCount, "router endpoint call count");
+                AssertHelper.AreEqual(1, answerCallCount, "answer endpoint call count");
+                AssertHelper.AreEqual(3, handler.Requests.Count, "total model call count");
+                AssertHelper.StringContains(handler.Requests[0].Url, "router.test", "first request uses router endpoint");
+                AssertHelper.StringContains(handler.Requests[0].Body, "\"model\":\"router-model\"", "first request uses router model");
+                AssertHelper.StringContains(handler.Requests[0].Body, "\"tools\":[", "first router request includes tools");
+                AssertHelper.StringContains(handler.Requests[1].Url, "router.test", "second request uses router endpoint");
+                AssertHelper.StringContains(handler.Requests[1].Body, "\"role\":\"tool\"", "second router request includes tool output");
+                AssertHelper.StringContains(handler.Requests[1].Body, "\"model\":\"router-model\"", "second request uses router model");
+                AssertHelper.StringContains(handler.Requests[2].Url, "answer.test", "final request uses answer endpoint");
+                AssertHelper.StringContains(handler.Requests[2].Body, "\"model\":\"answer-model\"", "final request uses answer model");
+                AssertHelper.StringContains(handler.Requests[2].Body, "Tool routing is complete. Produce the final answer now as visible assistant text.", "final request includes router handoff instruction");
+                AssertHelper.IsFalse(handler.Requests[2].Body.Contains("\"tools\"", StringComparison.Ordinal), "final request omits tool definitions");
+                AssertHelper.HasCount(toolExecutor.Requests, 1, "separate routing executed tool count");
+
+                List<AssistantToolCallRecord> records = await database.AssistantToolCall.ListByChatHistoryIdAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.HasCount(records, 1, "separate routing persisted tool-call count");
+                AssertHelper.AreEqual("router-model", records[0].Model, "tool-call record uses router model");
+
+                List<ChatHistoryPerformanceEvent> events = await database.ChatHistoryPerformanceEvent.ListByChatHistoryIdAsync(result.ChatHistoryId).ConfigureAwait(false);
+                List<ChatHistoryPerformanceEvent> routerEvents = events.Where(evt => evt.Stage == "tool_iteration_model").ToList();
+                AssertHelper.AreEqual(2, routerEvents.Count, "separate routing tool model event count");
+                AssertHelper.IsTrue(routerEvents.All(evt => evt.EndpointId == "cep_router"), "tool model events use router endpoint");
+                AssertHelper.IsTrue(routerEvents.All(evt => evt.Model == "router-model"), "tool model events use router model");
+                ChatHistoryPerformanceEvent finalEvent = events.Find(evt => evt.Stage == "final_inference");
+                AssertHelper.IsNotNull(finalEvent, "separate routing final inference event");
+                AssertHelper.AreEqual("assistant_tool_final_model", finalEvent.Phase, "separate routing final phase");
+                AssertHelper.AreEqual("cep_answer", finalEvent.EndpointId, "final inference uses answer endpoint");
+                AssertHelper.AreEqual("answer-model", finalEvent.Model, "final inference uses answer model");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: final response model tool calls continue loop after separate routing", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionEnumerateDocumentsTool = true,
+                    MaxToolIterations = 3,
+                    MaxToolCallsPerTurn = 3
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_answer";
+                settings.ToolRoutingInferenceEndpointId = "cep_router";
+                settings.MaxTokens = 256;
+
+                int routerCallCount = 0;
+                int answerCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("router.test", request =>
+                    {
+                        routerCallCount++;
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(
+                                "{" +
+                                "\"choices\":[{" +
+                                "\"finish_reason\":\"stop\"," +
+                                "\"message\":{\"role\":\"assistant\",\"content\":\"no router tools\"}" +
+                                "}]," +
+                                "\"usage\":{\"prompt_tokens\":16,\"completion_tokens\":2,\"total_tokens\":18}" +
+                                "}",
+                                Encoding.UTF8,
+                                "application/json")
+                        };
+                    })
+                    .When("answer.test", request =>
+                    {
+                        answerCallCount++;
+                        string body = answerCallCount == 1
+                            ? "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"tool_calls\"," +
+                              "\"message\":{" +
+                              "\"role\":\"assistant\"," +
+                              "\"content\":null," +
+                              "\"tool_calls\":[{" +
+                              "\"id\":\"call_answer_next_page\"," +
+                              "\"type\":\"function\"," +
+                              "\"function\":{\"name\":\"collection_enumerate_documents\",\"arguments\":\"{\\\"continuation_token\\\":\\\"10\\\",\\\"page_size\\\":10}\"}" +
+                              "}]" +
+                              "}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":32,\"completion_tokens\":0,\"total_tokens\":32}" +
+                              "}"
+                            : "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"stop\"," +
+                              "\"message\":{\"role\":\"assistant\",\"content\":\"continued after answer-model tool call\"}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":48,\"completion_tokens\":6,\"total_tokens\":54}" +
+                              "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://unused-default.test/v1",
+                        ApiKey = "default-secret",
+                        DefaultModel = "default-model"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(
+                    "{\"Success\":true,\"Tool\":\"collection_enumerate_documents\",\"Documents\":[{\"Id\":\"adoc_11\",\"Name\":\"11.pdf\"}],\"ContinuationToken\":\"20\",\"MoreResultsAvailable\":true}");
+
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new[]
+                    {
+                        new PartioEndpointConfig
+                        {
+                            Id = "cep_answer",
+                            Endpoint = "https://answer.test/v1",
+                            ApiFormat = "OpenAI",
+                            ApiKey = "answer-secret",
+                            Model = "answer-model",
+                            Active = true,
+                            SupportsToolCalling = false,
+                            MaxConcurrentRequests = 1
+                        },
+                        new PartioEndpointConfig
+                        {
+                            Id = "cep_router",
+                            Endpoint = "https://router.test/v1",
+                            ApiFormat = "OpenAI",
+                            ApiKey = "router-secret",
+                            Model = "router-model",
+                            Active = true,
+                            SupportsToolCalling = true,
+                            ToolCallingApiFormat = "OpenAIChatCompletions",
+                            MaxConcurrentRequests = 1
+                        }
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "What files do you have?" }
+                        },
+                        TraceId = "trace_answer_model_tool_call",
+                        RequestHistoryId = "req_answer_model_tool_call",
+                        ThreadId = "thr_answer_model_tool_call",
+                        Origin = "web"
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "answer-model tool continuation chat success");
+                AssertHelper.AreEqual("continued after answer-model tool call", result.Response.Choices[0].Message.Content, "answer-model tool continuation final response");
+                AssertHelper.AreEqual(2, routerCallCount, "router endpoint call count");
+                AssertHelper.AreEqual(2, answerCallCount, "answer endpoint call count");
+                AssertHelper.HasCount(toolExecutor.Requests, 1, "answer-model requested tool count");
+                AssertHelper.AreEqual("collection_enumerate_documents", toolExecutor.Requests[0].ToolName, "answer-model requested tool name");
+                AssertHelper.StringContains(toolExecutor.Requests[0].ArgumentsJson, "\"continuation_token\":\"10\"", "answer-model requested continuation token");
+
+                List<AssistantToolCallRecord> records = await database.AssistantToolCall.ListByChatHistoryIdAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.HasCount(records, 1, "answer-model tool persisted trace count");
+                AssertHelper.AreEqual("answer-model", records[0].Model, "answer-model tool trace model");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "answer-model tool continuation chat history persisted");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "\"final_model_requested_tools\":true", "answer-model requested tool telemetry persisted");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "\"requested_tool_names\":[\"collection_enumerate_documents\"]", "answer-model requested tool name telemetry persisted");
             });
 
             await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: citations include collection tool evidence", async () =>
@@ -5615,7 +6343,7 @@ namespace Test.Automated
                     "{" +
                     "\"choices\":[{" +
                     "\"finish_reason\":\"stop\"," +
-                    "\"message\":{\"role\":\"assistant\",\"content\":\"direct final answer\"}" +
+                    "\"message\":{\"role\":\"assistant\",\"content\":\"direct final answer\",\"reasoning_content\":\"default hidden reasoning\"}" +
                     "}]," +
                     "\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":3,\"total_tokens\":13}" +
                     "}";
@@ -5670,6 +6398,7 @@ namespace Test.Automated
 
                 AssertHelper.IsTrue(result.Success, "direct tool-capable chat success");
                 AssertHelper.AreEqual("direct final answer", result.Response.Choices[0].Message.Content, "direct final response");
+                AssertHelper.IsNull(result.Response.Choices[0].Message.Thinking, "direct final thinking suppressed by default");
                 AssertHelper.HasCount(toolExecutor.Requests, 0, "direct answer tool executions");
                 AssertHelper.AreEqual(1, handler.Requests.Count, "direct answer model calls");
                 AssertHelper.StringContains(handler.Requests[0].Body, "\"tools\":[", "direct answer request includes tools");
@@ -5687,13 +6416,14 @@ namespace Test.Automated
                 AssistantSettings settings = CreateToolSettings(policy);
                 settings.EnableRag = false;
                 settings.InferenceEndpointId = "cep_tool_none";
+                settings.ExposeThinking = true;
 
                 MockHttpMessageHandler handler = new MockHttpMessageHandler()
                     .When("chat/completions", HttpStatusCode.OK,
                         "{" +
                         "\"choices\":[{" +
                         "\"finish_reason\":\"stop\"," +
-                        "\"message\":{\"role\":\"assistant\",\"content\":\"plain final answer\"}" +
+                        "\"message\":{\"role\":\"assistant\",\"content\":\"plain final answer\",\"reasoning_content\":\"visible hidden reasoning\"}" +
                         "}]" +
                         "}");
 
@@ -5744,6 +6474,7 @@ namespace Test.Automated
 
                 AssertHelper.IsTrue(result.Success, "standard inference success");
                 AssertHelper.AreEqual("plain final answer", result.Response.Choices[0].Message.Content, "standard final response");
+                AssertHelper.AreEqual("visible hidden reasoning", result.Response.Choices[0].Message.Thinking, "standard thinking exposed when enabled");
                 AssertHelper.AreEqual(1, handler.Requests.Count, "model request count");
                 AssertHelper.IsFalse(handler.Requests[0].Body.Contains("\"tools\""), "tools omitted");
                 AssertHelper.IsFalse(handler.Requests[0].Body.Contains("\"tool_choice\""), "tool choice omitted");
@@ -5950,6 +6681,290 @@ namespace Test.Automated
                 AssertHelper.AreEqual(2, handler.Requests.Count, "iteration-limit model calls");
                 AssertHelper.StringContains(handler.Requests[1].Body, "server tool-call limit", "iteration-limit final prompt");
                 AssertHelper.IsFalse(handler.Requests[1].Body.Contains("\"tools\":[", StringComparison.Ordinal), "iteration-limit final request omits tools");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: loop guard stops repeated discovery calls after evidence", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionSearchTool = true,
+                    MaxToolIterations = 6,
+                    MaxToolCallsPerTurn = 12,
+                    MaxToolOutputChars = 12000,
+                    MaxToolOutputCharactersPerTurn = 50000,
+                    ExposeToolTraceToUser = true
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_tool_loop_guard";
+
+                int modelCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        modelCallCount++;
+                        string requestBody = request.Content == null
+                            ? ""
+                            : request.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        if (!requestBody.Contains("\"tools\":[", StringComparison.Ordinal))
+                        {
+                            return new HttpResponseMessage(HttpStatusCode.OK)
+                            {
+                                Content = new StringContent(
+                                    "{" +
+                                    "\"choices\":[{" +
+                                    "\"finish_reason\":\"stop\"," +
+                                    "\"message\":{\"role\":\"assistant\",\"content\":\"guarded answer from gathered evidence\"}" +
+                                    "}]," +
+                                    "\"usage\":{\"prompt_tokens\":40,\"completion_tokens\":6,\"total_tokens\":46}" +
+                                    "}",
+                                    Encoding.UTF8,
+                                    "application/json")
+                            };
+                        }
+
+                        string body =
+                            "{" +
+                            "\"choices\":[{" +
+                            "\"finish_reason\":\"tool_calls\"," +
+                            "\"message\":{" +
+                            "\"role\":\"assistant\"," +
+                            "\"content\":null," +
+                            "\"tool_calls\":[{" +
+                            "\"id\":\"call_guard_" + modelCallCount + "\"," +
+                            "\"type\":\"function\"," +
+                            "\"function\":{\"name\":\"collection_search\",\"arguments\":\"{\\\"query\\\":\\\"neurotoxin side effects " + modelCallCount + "\\\"}\"}" +
+                            "}]" +
+                            "}" +
+                            "}]," +
+                            "\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":0,\"total_tokens\":20}" +
+                            "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                string evidence = "{\"Success\":true,\"Results\":[{\"DocumentId\":\"adoc_alpha\",\"DocumentName\":\"Alpha.pdf\",\"Content\":\"" + new string('A', 7000) + "\"}]}";
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(evidence);
+                List<AssistantToolProgressEvent> progressEvents = new List<AssistantToolProgressEvent>();
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_tool_loop_guard",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        ThreadId = "thr_tool_loop_guard",
+                        RequestHistoryId = "req_tool_loop_guard",
+                        TraceId = "trace_tool_loop_guard",
+                        Origin = "web",
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Give me a comprehensive overview of neurotoxin side effects." }
+                        },
+                        ToolProgress = evt =>
+                        {
+                            progressEvents.Add(evt);
+                            return Task.CompletedTask;
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "tool-loop guard chat success");
+                AssertHelper.AreEqual("guarded answer from gathered evidence", result.Response.Choices[0].Message.Content, "tool-loop guard final response");
+                AssertHelper.HasCount(toolExecutor.Requests, 2, "tool-loop guard executed tool count");
+                AssertHelper.AreEqual(3, handler.Requests.Count, "tool-loop guard model calls");
+                AssertHelper.StringContains(handler.Requests[2].Body, "stopped additional tool calls", "tool-loop guard final prompt");
+                AssertHelper.IsFalse(handler.Requests[2].Body.Contains("\"tools\":[", StringComparison.Ordinal), "tool-loop guard final request omits tools");
+                AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_iteration.stopped" && evt.StatusCode == "tool_loop_guard_triggered"), "tool-loop guard progress event");
+                AssertHelper.HasCount(result.ToolCalls, 2, "tool-loop guard response trace count");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "tool-loop guard chat history persisted");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "tool_loop_repeated_discovery_guard", "tool-loop guard telemetry reason");
+
+                List<AssistantToolCallRecord> records = await database.AssistantToolCall.ListByChatHistoryIdAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.HasCount(records, 2, "tool-loop guard linked tool call count");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: loop guard stops repeated enumeration calls", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionEnumerateDocumentsTool = true,
+                    MaxToolIterations = 6,
+                    MaxToolCallsPerTurn = 12,
+                    MaxToolOutputChars = 12000,
+                    MaxToolOutputCharactersPerTurn = 50000,
+                    ExposeToolTraceToUser = true
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_tool_enumeration_guard";
+
+                int modelCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        modelCallCount++;
+                        string requestBody = request.Content == null
+                            ? ""
+                            : request.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        if (!requestBody.Contains("\"tools\":[", StringComparison.Ordinal))
+                        {
+                            return new HttpResponseMessage(HttpStatusCode.OK)
+                            {
+                                Content = new StringContent(
+                                    "{" +
+                                    "\"choices\":[{" +
+                                    "\"finish_reason\":\"stop\"," +
+                                    "\"message\":{\"role\":\"assistant\",\"content\":\"I can access a paginated document collection and can retrieve specific documents by name when needed.\"}" +
+                                    "}]," +
+                                    "\"usage\":{\"prompt_tokens\":44,\"completion_tokens\":14,\"total_tokens\":58}" +
+                                    "}",
+                                    Encoding.UTF8,
+                                    "application/json")
+                            };
+                        }
+
+                        string body =
+                            "{" +
+                            "\"choices\":[{" +
+                            "\"finish_reason\":\"tool_calls\"," +
+                            "\"message\":{" +
+                            "\"role\":\"assistant\"," +
+                            "\"content\":null," +
+                            "\"tool_calls\":[{" +
+                            "\"id\":\"call_enum_" + modelCallCount + "\"," +
+                            "\"type\":\"function\"," +
+                            "\"function\":{\"name\":\"collection_enumerate_documents\",\"arguments\":\"{\\\"max_results\\\":100,\\\"continuation_token\\\":\\\"page-" + modelCallCount + "\\\"}\"}" +
+                            "}]" +
+                            "}" +
+                            "}]," +
+                            "\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":0,\"total_tokens\":20}" +
+                            "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                string enumeration =
+                    "{" +
+                    "\"Success\":true," +
+                    "\"Message\":\"collection_enumerate_documents executed\"," +
+                    "\"Documents\":[" +
+                    "{\"DocumentId\":\"adoc_001\",\"Name\":\"1.pdf\"}," +
+                    "{\"DocumentId\":\"adoc_002\",\"Name\":\"2.pdf\"}," +
+                    "{\"DocumentId\":\"adoc_003\",\"Name\":\"3.pdf\"}" +
+                    "]," +
+                    "\"ContinuationToken\":\"next-page\"" +
+                    "}";
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(enumeration);
+                List<AssistantToolProgressEvent> progressEvents = new List<AssistantToolProgressEvent>();
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_tool_enumeration_guard",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        ThreadId = "thr_tool_enumeration_guard",
+                        RequestHistoryId = "req_tool_enumeration_guard",
+                        TraceId = "trace_tool_enumeration_guard",
+                        Origin = "web",
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "What files do you have access to?" }
+                        },
+                        ToolProgress = evt =>
+                        {
+                            progressEvents.Add(evt);
+                            return Task.CompletedTask;
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "enumeration guard chat success");
+                AssertHelper.StringContains(result.Response.Choices[0].Message.Content, "paginated document collection", "enumeration guard final response");
+                AssertHelper.HasCount(toolExecutor.Requests, 2, "enumeration guard executed tool count");
+                AssertHelper.AreEqual(3, handler.Requests.Count, "enumeration guard model calls");
+                AssertHelper.StringContains(handler.Requests[2].Body, "repeated enumeration calls were detected", "enumeration guard final prompt");
+                AssertHelper.IsFalse(handler.Requests[2].Body.Contains("\"tools\":[", StringComparison.Ordinal), "enumeration guard final request omits tools");
+                AssertHelper.IsTrue(progressEvents.Any(evt => evt.EventType == "assistant.tool_iteration.stopped" && evt.StatusCode == "tool_loop_guard_triggered"), "enumeration guard progress event");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "enumeration guard chat history persisted");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "tool_loop_repeated_enumeration_guard", "enumeration guard telemetry reason");
             });
 
             await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: empty post-limit response is persisted as diagnostic answer", async () =>
@@ -6185,6 +7200,318 @@ namespace Test.Automated
 
                 List<AssistantToolCallRecord> records = await database.AssistantToolCall.ListByChatHistoryIdAsync(result.ChatHistoryId).ConfigureAwait(false);
                 AssertHelper.HasCount(records, 1, "failed post-limit tool call linked to history");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: tool-router provider failure returns diagnostic", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionSearchTool = true,
+                    MaxToolIterations = 2,
+                    MaxToolCallsPerTurn = 2,
+                    ExposeToolTraceToUser = true
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_router_failed";
+
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .Default(HttpStatusCode.InternalServerError, "{\"error\":\"router failed to load\"}");
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor("{}");
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_router_failed",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        ThreadId = "thr_router_failed",
+                        RequestHistoryId = "req_router_failed",
+                        TraceId = "trace_router_failed",
+                        Origin = "web",
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Summarize 1.pdf for me." }
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "router failure returns diagnostic success");
+                AssertHelper.StringContains(result.Response.Choices[0].Message.Content, "tool-routing model failed before tools could run", "router failure diagnostic text");
+                AssertHelper.HasCount(toolExecutor.Requests, 0, "router failure did not execute tools");
+                AssertHelper.AreEqual(1, handler.Requests.Count, "router failure model call count");
+                AssertHelper.IsFalse(String.IsNullOrWhiteSpace(result.ChatHistoryId), "router failure chat history id");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "router failure chat history persisted");
+                AssertHelper.StringContains(persistedHistory.AssistantResponse, "tool-routing model failed before tools could run", "router failure history response");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "tool_router_failed", "router failure telemetry marker");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "assistant_tool_fallback", "router failure fallback telemetry marker");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: tool-router failure after tools returns router diagnostic", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionEnumerateDocumentsTool = true,
+                    MaxToolIterations = 3,
+                    MaxToolCallsPerTurn = 3,
+                    ExposeToolTraceToUser = true
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_router_failed_after_tool";
+
+                int modelCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        modelCallCount++;
+                        if (modelCallCount == 1)
+                        {
+                            string body =
+                                "{" +
+                                "\"choices\":[{" +
+                                "\"finish_reason\":\"tool_calls\"," +
+                                "\"message\":{" +
+                                "\"role\":\"assistant\"," +
+                                "\"content\":null," +
+                                "\"tool_calls\":[{" +
+                                "\"id\":\"call_router_after_tool\"," +
+                                "\"type\":\"function\"," +
+                                "\"function\":{\"name\":\"collection_enumerate_documents\",\"arguments\":\"{\\\"max_results\\\":100}\"}" +
+                                "}]" +
+                                "}" +
+                                "}]," +
+                                "\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":0,\"total_tokens\":10}" +
+                                "}";
+                            return new HttpResponseMessage(HttpStatusCode.OK)
+                            {
+                                Content = new StringContent(body, Encoding.UTF8, "application/json")
+                            };
+                        }
+
+                        return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                        {
+                            Content = new StringContent("{\"error\":\"router failed on continuation\"}", Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(
+                    "{\"Success\":true,\"Documents\":[{\"DocumentId\":\"adoc_001\",\"Name\":\"1.pdf\"}],\"ContinuationToken\":\"next\"}");
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_router_failed_after_tool",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        ThreadId = "thr_router_failed_after_tool",
+                        RequestHistoryId = "req_router_failed_after_tool",
+                        TraceId = "trace_router_failed_after_tool",
+                        Origin = "web",
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "What files do you have access to?" }
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "router failure after tool returns diagnostic success");
+                AssertHelper.StringContains(result.Response.Choices[0].Message.Content, "tool-routing model failed while deciding whether more tools were needed after tool processing", "router failure after tool diagnostic text");
+                AssertHelper.IsFalse(result.Response.Choices[0].Message.Content.Contains("final model call failed", StringComparison.Ordinal), "router failure after tool should not blame final model");
+                AssertHelper.HasCount(toolExecutor.Requests, 1, "router failure after tool executed one tool");
+                AssertHelper.AreEqual(2, handler.Requests.Count, "router failure after tool model call count");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "router failure after tool chat history persisted");
+                AssertHelper.StringContains(persistedHistory.AssistantResponse, "tool-routing model failed while deciding whether more tools were needed after tool processing", "router failure after tool history response");
+                AssertHelper.IsFalse(persistedHistory.AssistantResponse.Contains("final model call failed", StringComparison.Ordinal), "router failure after tool history should not blame final model");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "tool_router_inference_failed", "router failure after tool telemetry marker");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "\"provider_failure_phase\":\"tool_router\"", "router failure after tool telemetry phase");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: empty final answer after tools returns diagnostic", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableCollectionSearchTool = true,
+                    MaxToolIterations = 3,
+                    MaxToolCallsPerTurn = 2,
+                    ExposeToolTraceToUser = true
+                };
+                AssistantSettings settings = CreateToolSettings(policy);
+                settings.EnableRag = false;
+                settings.InferenceEndpointId = "cep_empty_after_tool";
+
+                int modelCallCount = 0;
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request =>
+                    {
+                        modelCallCount++;
+                        string body = modelCallCount == 1
+                            ? "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"tool_calls\"," +
+                              "\"message\":{" +
+                              "\"role\":\"assistant\"," +
+                              "\"content\":null," +
+                              "\"tool_calls\":[{" +
+                              "\"id\":\"call_empty_final\"," +
+                              "\"type\":\"function\"," +
+                              "\"function\":{\"name\":\"collection_search\",\"arguments\":\"{\\\"query\\\":\\\"1.pdf\\\"}\"}" +
+                              "}]" +
+                              "}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":0,\"total_tokens\":10}" +
+                              "}"
+                            : "{" +
+                              "\"choices\":[{" +
+                              "\"finish_reason\":\"stop\"," +
+                              "\"message\":{\"role\":\"assistant\",\"content\":\"\"}" +
+                              "}]," +
+                              "\"usage\":{\"prompt_tokens\":18,\"completion_tokens\":0,\"total_tokens\":18}" +
+                              "}";
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(body, Encoding.UTF8, "application/json")
+                        };
+                    });
+
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings
+                    {
+                        Provider = InferenceProviderEnum.OpenAI,
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiKey = "openai-secret",
+                        DefaultModel = "qwen3-tool"
+                    },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingAssistantToolExecutor toolExecutor = new RecordingAssistantToolExecutor(
+                    "{\"Success\":true,\"Results\":[{\"DocumentId\":\"doc1\"}],\"Message\":\"collection_search executed\"}");
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    CreateToolRetrievalService(),
+                    inference,
+                    toolExecutor: toolExecutor,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_empty_after_tool",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "openai-secret",
+                        Model = "qwen3-tool",
+                        Active = true,
+                        SupportsToolCalling = true,
+                        ToolCallingApiFormat = "OpenAIChatCompletions",
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        ThreadId = "thr_empty_after_tool",
+                        RequestHistoryId = "req_empty_after_tool",
+                        TraceId = "trace_empty_after_tool",
+                        Origin = "web",
+                        Messages = new List<ChatCompletionMessage>
+                        {
+                            new ChatCompletionMessage { Role = "user", Content = "Summarize 1.pdf for me." }
+                        }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "empty final returns diagnostic success");
+                AssertHelper.StringContains(result.Response.Choices[0].Message.Content, "final model call returned no text after tool processing", "empty final diagnostic text");
+                AssertHelper.HasCount(toolExecutor.Requests, 1, "empty final executed one tool");
+                AssertHelper.AreEqual(2, handler.Requests.Count, "empty final model call count");
+                AssertHelper.HasCount(result.Response.ToolCalls, 1, "empty final exposes safe tool trace");
+                AssertHelper.AreEqual(1, result.Response.ToolCalls[0].ResultCount.Value, "empty final tool result count");
+                AssertHelper.IsTrue(result.Response.ToolCalls[0].DurationMs > 0, "empty final tool runtime");
+
+                ChatHistory persistedHistory = await database.ChatHistory.ReadAsync(result.ChatHistoryId).ConfigureAwait(false);
+                AssertHelper.IsNotNull(persistedHistory, "empty final chat history persisted");
+                AssertHelper.StringContains(persistedHistory.AssistantResponse, "final model call returned no text after tool processing", "empty final history response");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "assistant_tool_fallback", "empty final fallback telemetry marker");
+                AssertHelper.StringContains(persistedHistory.PerformanceJson, "\"tool_call_count\":1", "empty final fallback tool count");
             });
 
             await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: requires explicit endpoint tool capability", async () =>
@@ -8244,13 +9571,22 @@ namespace Test.Automated
 
         private class RecordingInferenceEndpointService : IInferenceEndpointService
         {
-            private readonly PartioEndpointConfig _Endpoint;
+            private readonly Dictionary<string, PartioEndpointConfig> _Endpoints = new Dictionary<string, PartioEndpointConfig>(StringComparer.Ordinal);
 
             public List<RecordedHttpCall> Calls { get; } = new List<RecordedHttpCall>();
 
             public RecordingInferenceEndpointService(PartioEndpointConfig endpoint)
+                : this(endpoint == null ? Array.Empty<PartioEndpointConfig>() : new[] { endpoint })
             {
-                _Endpoint = endpoint;
+            }
+
+            public RecordingInferenceEndpointService(IEnumerable<PartioEndpointConfig> endpoints)
+            {
+                foreach (PartioEndpointConfig endpoint in endpoints ?? Array.Empty<PartioEndpointConfig>())
+                {
+                    if (!String.IsNullOrWhiteSpace(endpoint?.Id))
+                        _Endpoints[endpoint.Id] = endpoint;
+                }
             }
 
             public Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
@@ -8262,15 +9598,38 @@ namespace Test.Automated
                     Body = body
                 });
 
-                HttpResponseMessage response = new HttpResponseMessage(_Endpoint == null ? HttpStatusCode.NotFound : HttpStatusCode.OK)
+                PartioEndpointConfig endpoint = ResolveEndpoint(relativePathAndQuery);
+                HttpResponseMessage response = new HttpResponseMessage(endpoint == null ? HttpStatusCode.NotFound : HttpStatusCode.OK)
                 {
                     Content = new StringContent(
-                        _Endpoint == null ? "{}" : JsonSerializer.Serialize(_Endpoint),
+                        endpoint == null ? "{}" : JsonSerializer.Serialize(endpoint),
                         Encoding.UTF8,
                         "application/json")
                 };
 
                 return Task.FromResult(response);
+            }
+
+            private PartioEndpointConfig ResolveEndpoint(string relativePathAndQuery)
+            {
+                if (_Endpoints.Count == 1)
+                    return _Endpoints.Values.First();
+
+                string endpointId = ExtractEndpointId(relativePathAndQuery);
+                return !String.IsNullOrWhiteSpace(endpointId) && _Endpoints.TryGetValue(endpointId, out PartioEndpointConfig endpoint)
+                    ? endpoint
+                    : null;
+            }
+
+            private static string ExtractEndpointId(string relativePathAndQuery)
+            {
+                if (String.IsNullOrWhiteSpace(relativePathAndQuery)) return null;
+
+                string path = relativePathAndQuery.Split('?')[0].TrimEnd('/');
+                int slashIndex = path.LastIndexOf('/');
+                return slashIndex >= 0 && slashIndex < path.Length - 1
+                    ? path.Substring(slashIndex + 1)
+                    : path;
             }
         }
 

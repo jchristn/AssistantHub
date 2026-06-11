@@ -1,5 +1,6 @@
 namespace AssistantHub.Server.Services
 {
+    using System.Collections.Generic;
     using AssistantHub.Core.Models;
 
     /// <summary>
@@ -26,5 +27,10 @@ namespace AssistantHub.Server.Services
         /// Optional trace identifier for audit correlation.
         /// </summary>
         public string TraceId { get; set; } = null;
+
+        /// <summary>
+        /// Per-turn user-uploaded attachments available to tools.
+        /// </summary>
+        public List<ChatLocalAttachmentContext> LocalAttachments { get; set; } = new List<ChatLocalAttachmentContext>();
     }
 }

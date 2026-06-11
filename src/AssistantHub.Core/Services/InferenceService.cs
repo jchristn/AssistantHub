@@ -550,6 +550,7 @@ namespace AssistantHub.Core.Services
         /// <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
         /// <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
         /// <param name="token">Cancellation token.</param>
+        /// <param name="onThinkingDelta">Optional callback invoked for provider thinking/reasoning deltas.</param>
         public async Task GenerateResponseStreamingAsync(
             List<ChatCompletionMessage> messages,
             string model,
@@ -564,7 +565,8 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onError,
             Action onConnectionEstablished = null,
             Action<AssistantPerformanceStage> onTelemetry = null,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            Func<string, Task> onThinkingDelta = null)
         {
             if (messages == null || messages.Count == 0) throw new ArgumentNullException(nameof(messages));
             if (onDelta == null) throw new ArgumentNullException(nameof(onDelta));
@@ -584,22 +586,22 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.OpenAI:
                         await GenerateOpenAIStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, 
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            effectiveEndpoint, effectiveApiKey,
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Gemini:
                         await GenerateGeminiStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     default:

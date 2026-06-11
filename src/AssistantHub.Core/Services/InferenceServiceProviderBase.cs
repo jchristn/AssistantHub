@@ -48,15 +48,12 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onError,
             Action onConnectionEstablished,
             Action<AssistantPerformanceStage> onTelemetry,
-            CancellationToken token)
+            CancellationToken token,
+            Func<string, Task> onThinkingDelta = null)
         {
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.OpenAI, model, true);
 
-            List<object> msgObjects = new List<object>();
-            foreach (ChatCompletionMessage msg in messages)
-            {
-                msgObjects.Add(new { role = msg.Role, content = msg.Content });
-            }
+            List<object> msgObjects = BuildProviderMessages(messages);
 
             object requestBody = new
             {
@@ -137,8 +134,20 @@ namespace AssistantHub.Core.Services
                                 {
                                     OpenAIStreamingChunk chunk = JsonSerializer.Deserialize<OpenAIStreamingChunk>(data, _JsonOptions);
                                     ApplyUsage(telemetry, chunk?.Usage);
+                                    OpenAIStreamingDelta delta = chunk?.Choices != null && chunk.Choices.Count > 0
+                                        ? chunk.Choices[0].Delta
+                                        : null;
+                                    string deltaThinking = !String.IsNullOrEmpty(delta?.Thinking)
+                                        ? delta.Thinking
+                                        : delta?.ReasoningContent;
+                                    if (!String.IsNullOrEmpty(deltaThinking))
+                                    {
+                                        MarkFirstToken(telemetry, telemetrySw);
+                                        if (onThinkingDelta != null)
+                                            await onThinkingDelta(deltaThinking).ConfigureAwait(false);
+                                    }
                                     string deltaContent = chunk?.Choices != null && chunk.Choices.Count > 0
-                                        ? chunk.Choices[0].Delta?.Content
+                                        ? delta?.Content
                                         : null;
                                     if (!String.IsNullOrEmpty(deltaContent))
                                     {
@@ -174,7 +183,8 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onError,
             Action onConnectionEstablished,
             Action<AssistantPerformanceStage> onTelemetry,
-            CancellationToken token)
+            CancellationToken token,
+            Func<string, Task> onThinkingDelta = null)
         {
             string url = InferenceProviderHelper.GetCompletionUrl(endpoint, InferenceProviderEnum.Gemini, model, true);
             object requestBody = BuildGeminiRequestBody(messages, maxTokens, temperature, topP);
@@ -280,15 +290,12 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onError,
             Action onConnectionEstablished,
             Action<AssistantPerformanceStage> onTelemetry,
-            CancellationToken token)
+            CancellationToken token,
+            Func<string, Task> onThinkingDelta = null)
         {
             string url = endpoint.TrimEnd('/') + "/api/chat";
 
-            List<object> msgObjects = new List<object>();
-            foreach (ChatCompletionMessage msg in messages)
-            {
-                msgObjects.Add(new { role = msg.Role, content = msg.Content });
-            }
+            List<object> msgObjects = BuildOllamaProviderMessages(messages);
 
             object requestBody = new
             {
@@ -376,6 +383,13 @@ namespace AssistantHub.Core.Services
                                 }
 
                                 string deltaContent = streamLine?.Message?.Content;
+                                string deltaThinking = streamLine?.Message?.Thinking;
+                                if (!String.IsNullOrEmpty(deltaThinking))
+                                {
+                                    MarkFirstToken(telemetry, telemetrySw);
+                                    if (onThinkingDelta != null)
+                                        await onThinkingDelta(deltaThinking).ConfigureAwait(false);
+                                }
                                 if (!String.IsNullOrEmpty(deltaContent))
                                 {
                                     MarkFirstToken(telemetry, telemetrySw);

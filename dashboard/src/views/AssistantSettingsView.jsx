@@ -18,6 +18,7 @@ const DEFAULT_TOOL_POLICY = {
   EnableVerbexFullTextSearchTool: false,
   EnableIndexEnumerateRecordsTool: false,
   EnableS3ObjectReadTool: false,
+  EnableDocumentAtomExtractionTool: false,
   EnableBucketEnumerateObjectsTool: false,
   EnableWebSearchTool: false,
   DocumentBackedObjectsOnly: true,
@@ -28,6 +29,8 @@ const DEFAULT_TOOL_POLICY = {
   MaxToolCallsPerTurn: 12,
   MaxToolOutputChars: 12000,
   MaxToolOutputCharactersPerTurn: 50000,
+  MaxAtomExtractionBytes: 10485760,
+  MaxAtomExtractionCharacters: 50000,
   MaxSearchResultsPerCall: 10,
   MaxSearchTopK: 50,
   MaxSearchQueriesPerCall: 3,
@@ -361,16 +364,8 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
   }, [serverUrl, credential]);
 
   useEffect(() => {
-    const endpointId = settings?.InferenceEndpointId;
-    if (!endpointId || selectedEndpointDetailLoads.current.has(endpointId)) return;
-
-    const selected = (inferenceEndpoints || []).find(ep => getEndpointId(ep) === endpointId);
-    if (selected && endpointSupportsToolCalling(selected) && getEndpointToolCallingApiFormat(selected)) return;
-
     let cancelled = false;
-    selectedEndpointDetailLoads.current.add(endpointId);
-
-    const loadSelectedEndpointDetail = async () => {
+    const loadSelectedEndpointDetail = async (endpointId) => {
       try {
         const endpoint = await api.getCompletionEndpoint(endpointId);
         if (cancelled || !endpoint) return;
@@ -388,9 +383,19 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
       }
     };
 
-    loadSelectedEndpointDetail();
+    const endpointIds = [settings?.InferenceEndpointId, settings?.ToolRoutingInferenceEndpointId].filter(Boolean);
+    endpointIds.forEach(endpointId => {
+      if (selectedEndpointDetailLoads.current.has(endpointId)) return;
+
+      const selected = (inferenceEndpoints || []).find(ep => getEndpointId(ep) === endpointId);
+      if (selected && endpointSupportsToolCalling(selected) && getEndpointToolCallingApiFormat(selected)) return;
+
+      selectedEndpointDetailLoads.current.add(endpointId);
+      loadSelectedEndpointDetail(endpointId);
+    });
+
     return () => { cancelled = true; };
-  }, [settings?.InferenceEndpointId, inferenceEndpoints, serverUrl, credential]);
+  }, [settings?.InferenceEndpointId, settings?.ToolRoutingInferenceEndpointId, inferenceEndpoints, serverUrl, credential]);
 
   const loadExternalSearchStatus = useCallback(async () => {
     try {
@@ -458,11 +463,13 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         FullTextNormalization: result?.FullTextNormalization ?? 32,
         FullTextMinimumScore: result?.FullTextMinimumScore ?? '',
         InferenceEndpointId: result?.InferenceEndpointId || '',
+        ToolRoutingInferenceEndpointId: result?.ToolRoutingInferenceEndpointId || '',
         RetrievalGateInferenceEndpointId: result?.RetrievalGateInferenceEndpointId || '',
         QueryRewriteInferenceEndpointId: result?.QueryRewriteInferenceEndpointId || '',
         RerankInferenceEndpointId: result?.RerankInferenceEndpointId || '',
         EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         LoadModelsOnChatOpen: result?.LoadModelsOnChatOpen ?? false,
+        ExposeThinking: result?.ExposeThinking ?? false,
         Title: result?.Title || '',
         LogoUrl: result?.LogoUrl || '',
         FaviconUrl: result?.FaviconUrl || '',
@@ -584,6 +591,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
           ? null
           : parseFloat(settings.FullTextMinimumScore),
+        ToolRoutingInferenceEndpointId: settings.ToolRoutingInferenceEndpointId || null,
         RetrievalGateInferenceEndpointId: settings.RetrievalGateInferenceEndpointId || null,
         QueryRewriteInferenceEndpointId: settings.QueryRewriteInferenceEndpointId || null,
         RerankInferenceEndpointId: settings.RerankInferenceEndpointId || null,
@@ -651,8 +659,8 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
       const available = Array.isArray(result?.Tools) ? result.Tools.filter(tool => tool.Available ?? tool.available).length : 0;
       const total = Array.isArray(result?.Tools) ? result.Tools.length : 0;
       const endpoint = result?.EndpointResolved
-        ? `Endpoint: ${result.EndpointModel || 'configured model'} (${result.EndpointApiFormat || 'unknown format'}, tool calling ${result.EndpointSupportsToolCalling ? 'enabled' : 'disabled'})`
-        : 'Endpoint: unresolved';
+        ? `Tool routing endpoint: ${result.EndpointModel || result.EffectiveToolRoutingInferenceEndpointId || 'configured model'} (${result.EndpointApiFormat || 'unknown format'}, tool calling ${result.EndpointSupportsToolCalling ? 'enabled' : 'disabled'})`
+        : `Tool routing endpoint: ${result?.EffectiveToolRoutingInferenceEndpointId || 'unresolved'}`;
       const details = [
         result?.Message || (result?.Success ? 'Tool diagnostics passed.' : 'Tool diagnostics failed.'),
         endpoint,
@@ -767,10 +775,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
     bucket => getBucketName(bucket),
     selectedAllowedBucketNames
   );
-  const selectedInferenceEndpoint = inferenceEndpoints.find(ep => getEndpointId(ep) === settings?.InferenceEndpointId);
-  const selectedEndpointToolCapable = endpointSupportsToolCalling(selectedInferenceEndpoint);
-  const selectedEndpointToolFormat = getEndpointToolCallingApiFormat(selectedInferenceEndpoint);
-  const collectionToolsEnabled = !!(toolPolicy.EnableCollectionSearchTool || toolPolicy.EnableCollectionReadChunksTool || toolPolicy.EnableCollectionEnumerateDocumentsTool);
+  const selectedToolRoutingEndpointId = settings?.ToolRoutingInferenceEndpointId || settings?.InferenceEndpointId;
+  const selectedToolRoutingEndpoint = inferenceEndpoints.find(ep => getEndpointId(ep) === selectedToolRoutingEndpointId);
+  const selectedToolRoutingEndpointConfigured = !!settings?.ToolRoutingInferenceEndpointId;
+  const selectedEndpointToolCapable = endpointSupportsToolCalling(selectedToolRoutingEndpoint);
+  const selectedEndpointToolFormat = getEndpointToolCallingApiFormat(selectedToolRoutingEndpoint);
+  const collectionToolsEnabled = !!(toolPolicy.EnableCollectionSearchTool || toolPolicy.EnableCollectionReadChunksTool || toolPolicy.EnableCollectionEnumerateDocumentsTool || toolPolicy.EnableDocumentAtomExtractionTool);
   const verbexToolsEnabled = !!(toolPolicy.EnableVerbexFullTextSearchTool || toolPolicy.EnableVerbexSearchTool || toolPolicy.EnableIndexEnumerateRecordsTool || toolPolicy.EnableIndexEnumerationTool);
   const s3ToolsEnabled = !!(toolPolicy.EnableS3ObjectReadTool || toolPolicy.EnableBucketEnumerateObjectsTool);
   const unavailableEnabledTools = (toolDescriptors || [])
@@ -872,6 +882,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
               </div>
               <div className="form-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                 <div className="form-group">
+                  <label className="form-label"><Tooltip text="Completion endpoint used only for model tool-routing checks. Leave blank to use the response endpoint; when set, this endpoint must explicitly support tool calling.">Tool Routing Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.ToolRoutingInferenceEndpointId} onChange={(e) => handleChange('ToolRoutingInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
+                <div className="form-group">
                   <label className="form-label"><Tooltip text="Inference endpoint used to decide whether a follow-up message needs new retrieval. Leave blank to use the response endpoint.">Retrieval Gate Endpoint</Tooltip></label>
                   <select className="form-input" value={settings.RetrievalGateInferenceEndpointId} onChange={(e) => handleChange('RetrievalGateInferenceEndpointId', e.target.value)}>
                     {renderInferenceEndpointOptions('-- Use response endpoint --')}
@@ -894,6 +910,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                 <label>
                   <input type="checkbox" checked={settings.LoadModelsOnChatOpen} onChange={(e) => handleChange('LoadModelsOnChatOpen', e.target.checked)} />
                   <Tooltip text="Load or warm the configured endpoint models when a chat window is opened.">Load models on chat open</Tooltip>
+                </label>
+              </div>
+              <div className="form-group form-toggle">
+                <label>
+                  <input type="checkbox" checked={settings.ExposeThinking} onChange={(e) => handleChange('ExposeThinking', e.target.checked)} />
+                  <Tooltip text="Display provider-returned thinking or reasoning text in assistant chat when the model sends it separately from visible answer text. Leave disabled unless users should see that content.">Expose thinking in chat</Tooltip>
                 </label>
               </div>
             </div>
@@ -1169,14 +1191,19 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                   Public assistant chat can execute enabled read-only server tools. Keep scopes narrow and validate the effective tool list before launch.
                 </div>
               )}
-              {toolPolicy.EnableToolCalls && selectedInferenceEndpoint && !selectedEndpointToolCapable && (
+              {toolPolicy.EnableToolCalls && selectedToolRoutingEndpoint && !selectedEndpointToolCapable && (
                 <div className="tool-policy-warning danger">
-                  Selected completion endpoint is not marked tool-capable. Tool-call chat will fail until the endpoint advertises support.
+                  Effective tool-routing endpoint is not marked tool-capable. Tool-call chat will fail until the endpoint advertises support.
                 </div>
               )}
               {toolPolicy.EnableToolCalls && selectedEndpointToolCapable && !selectedEndpointToolFormat && (
                 <div className="tool-policy-warning danger">
-                  Selected completion endpoint is tool-capable but has no tool-call API format configured.
+                  Effective tool-routing endpoint is tool-capable but has no tool-call API format configured.
+                </div>
+              )}
+              {toolPolicy.EnableToolCalls && selectedToolRoutingEndpointConfigured && settings.ToolRoutingInferenceEndpointId && !selectedToolRoutingEndpoint && (
+                <div className="tool-policy-warning danger">
+                  Tool Routing Endpoint could not be loaded. Tool-call chat will fail if the endpoint cannot be resolved by the server.
                 </div>
               )}
               {collectionToolsEnabled && !settings.CollectionId && (
@@ -1254,6 +1281,10 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                     <Tooltip text="Expose collection_enumerate_documents for safe document discovery in the assistant collection.">List Documents</Tooltip>
                   </label>
                   <label className="form-toggle">
+                    <input type="checkbox" checked={!!toolPolicy.EnableDocumentAtomExtractionTool} onChange={(e) => handleToolPolicyChange('EnableDocumentAtomExtractionTool', e.target.checked)} />
+                    <Tooltip text="Expose document_atom_extract so the model can extract text from a completed assistant document or a local file uploaded in the current chat turn.">Atom Extract</Tooltip>
+                  </label>
+                  <label className="form-toggle">
                     <input type="checkbox" checked={!!toolPolicy.EnableServerGeneratedQueryVariants} onChange={(e) => handleToolPolicyChange('EnableServerGeneratedQueryVariants', e.target.checked)} />
                     <Tooltip text="Allow AssistantHub to add deterministic punctuation and quote-normalized query variants within Max Queries.">Server Query Variants</Tooltip>
                   </label>
@@ -1298,6 +1329,14 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                   <div className="form-group">
                     <label className="form-label"><Tooltip text="Maximum range entries accepted by one chunk read call.">Max Read Ranges</Tooltip></label>
                     <input className="form-input" type="number" title="Maximum range entries accepted by one chunk read call." min="1" max="50" value={toolPolicy.MaxReadRangesPerCall ?? 5} onChange={(e) => handleToolPolicyNumberChange('MaxReadRangesPerCall', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label"><Tooltip text="Maximum source bytes accepted by one document_atom_extract call.">Max Atom Bytes</Tooltip></label>
+                    <input className="form-input" type="number" title="Maximum source bytes accepted by one document_atom_extract call." min="1" max="52428800" value={toolPolicy.MaxAtomExtractionBytes ?? 10485760} onChange={(e) => handleToolPolicyNumberChange('MaxAtomExtractionBytes', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label"><Tooltip text="Maximum extracted text characters returned by one document_atom_extract call.">Max Atom Text</Tooltip></label>
+                    <input className="form-input" type="number" title="Maximum extracted text characters returned by one document_atom_extract call." min="1024" max="500000" value={toolPolicy.MaxAtomExtractionCharacters ?? 50000} onChange={(e) => handleToolPolicyNumberChange('MaxAtomExtractionCharacters', e.target.value)} />
                   </div>
                 </div>
               </div>

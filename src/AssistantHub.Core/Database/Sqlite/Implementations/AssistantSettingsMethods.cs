@@ -65,7 +65,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, eval_judge_prompt, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
+                "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, eval_judge_prompt, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -98,11 +98,13 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 settings.RetrievalIncludeNeighbors + ", " +
                 _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(settings.ToolRoutingInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.RetrievalGateInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
+                (settings.ExposeThinking ? 1 : 0) + ", " +
                 _Driver.FormatNullableString(settings.Title) + ", " +
                 _Driver.FormatNullableString(settings.LogoUrl) + ", " +
                 _Driver.FormatNullableString(settings.FaviconUrl) + ", " +
@@ -189,11 +191,13 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "fulltext_minimum_score = " + (settings.FullTextMinimumScore.HasValue ? _Driver.FormatDouble(settings.FullTextMinimumScore.Value) : "NULL") + ", " +
                 "retrieval_include_neighbors = " + settings.RetrievalIncludeNeighbors + ", " +
                 "inference_endpoint_id = " + _Driver.FormatNullableString(settings.InferenceEndpointId) + ", " +
+                "tool_routing_inference_endpoint_id = " + _Driver.FormatNullableString(settings.ToolRoutingInferenceEndpointId) + ", " +
                 "retrieval_gate_inference_endpoint_id = " + _Driver.FormatNullableString(settings.RetrievalGateInferenceEndpointId) + ", " +
                 "query_rewrite_inference_endpoint_id = " + _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 "rerank_inference_endpoint_id = " + _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 "load_models_on_chat_open = " + (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
+                "expose_thinking = " + (settings.ExposeThinking ? 1 : 0) + ", " +
                 "title = " + _Driver.FormatNullableString(settings.Title) + ", " +
                 "logo_url = " + _Driver.FormatNullableString(settings.LogoUrl) + ", " +
                 "favicon_url = " + _Driver.FormatNullableString(settings.FaviconUrl) + ", " +

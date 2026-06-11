@@ -251,6 +251,7 @@ export class ApiClient {
     const decoder = new TextDecoder();
     let buffer = '';
     let text = '';
+    let thinking = '';
     let usage = null;
     let citations = null;
     let status = null;
@@ -289,7 +290,9 @@ export class ApiClient {
       if (parsed?.status) status = parsed.status;
 
       const deltaContent = parsed?.choices?.[0]?.delta?.content ?? parsed?.choices?.[0]?.message?.content ?? '';
+      const deltaThinking = parsed?.choices?.[0]?.delta?.thinking ?? parsed?.choices?.[0]?.message?.thinking ?? '';
       if (deltaContent) text += deltaContent;
+      if (deltaThinking) thinking += deltaThinking;
 
       const effectiveType = parsed?.event_type || parsed?.type || eventType;
       const event = {
@@ -297,6 +300,7 @@ export class ApiClient {
         data,
         json: parsed,
         deltaContent,
+        deltaThinking,
       };
 
       if (events.length < 200) events.push(event);
@@ -334,6 +338,7 @@ export class ApiClient {
       contentType,
       bodyType: 'sse',
       text,
+      thinking,
       json: null,
       events,
       usage,
@@ -732,7 +737,7 @@ export class ApiClient {
   }
 
   // Chat (unauthenticated) - handles both JSON and SSE streaming responses
-  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal, metadataFilter = null, attachedDocumentIds = null) {
+  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal, metadataFilter = null, attachedDocumentIds = null, localAttachments = null) {
     const headers = { 'Content-Type': 'application/json' };
     if (threadId) headers['X-Thread-ID'] = threadId;
 
@@ -742,7 +747,8 @@ export class ApiClient {
       body: JSON.stringify({
         messages,
         ...(metadataFilter ? { metadata_filter: metadataFilter } : {}),
-        ...(attachedDocumentIds && attachedDocumentIds.length > 0 ? { attached_document_ids: attachedDocumentIds } : {})
+        ...(attachedDocumentIds && attachedDocumentIds.length > 0 ? { attached_document_ids: attachedDocumentIds } : {}),
+        ...(localAttachments && localAttachments.length > 0 ? { local_attachments: localAttachments } : {})
       }),
       signal
     });
@@ -758,6 +764,7 @@ export class ApiClient {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
+    let fullThinking = '';
     let buffer = '';
     let status = null;
     let usage = null;
@@ -796,7 +803,7 @@ export class ApiClient {
         }
         return `Running tool: ${name}`;
       }
-      if (eventType.endsWith('.completed')) return null;
+      if (eventType.endsWith('.completed')) return payload?.summary || `${name} completed`;
       if (eventType.endsWith('.failed')) return 'One tool failed; trying another source';
       if (eventType.endsWith('.denied')) return `${name} denied`;
       if (eventType.endsWith('.heartbeat')) return `Running tool: ${name} still running`;
@@ -859,6 +866,10 @@ export class ApiClient {
       }
 
       const delta = chunk.choices?.[0]?.delta;
+      if (delta?.thinking) {
+        fullThinking += delta.thinking;
+        if (onDelta) onDelta({ thinking: delta.thinking });
+      }
       if (delta?.content) {
         fullContent += delta.content;
         if (onDelta) onDelta({ content: delta.content });
@@ -904,7 +915,7 @@ export class ApiClient {
     return {
       choices: [{
         index: 0,
-        message: { role: 'assistant', content: fullContent },
+        message: { role: 'assistant', content: fullContent, thinking: fullThinking || null },
         finish_reason: 'stop'
       }],
       usage,

@@ -8,7 +8,7 @@
     "Name": "AssistantHub Model Context Protocol Server",
     "Hostname": "assistanthub-mcp-server",
     "InstanceType": "McpServer",
-    "LastStartUtc": "2026-06-10T05:03:17.2680561Z",
+    "LastStartUtc": "2026-06-11T21:48:56.2031715Z",
     "CreatedUtc": "2026-05-19T00:00:00Z"
   },
   "Logging": {

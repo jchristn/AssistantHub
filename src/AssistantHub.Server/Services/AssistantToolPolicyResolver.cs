@@ -52,6 +52,7 @@ namespace AssistantHub.Server.Services
             bool hasCollection = settings != null && !String.IsNullOrWhiteSpace(settings.CollectionId);
             bool hasVerbex = _Settings.Verbex != null && !String.IsNullOrWhiteSpace(_Settings.Verbex.Endpoint);
             bool hasS3 = _Settings.S3 != null && !String.IsNullOrWhiteSpace(_Settings.S3.BucketName);
+            bool hasDocumentAtom = _Settings.DocumentAtom != null && !String.IsNullOrWhiteSpace(_Settings.DocumentAtom.Endpoint);
             bool hasTavily = HasTavilyProvider(_Settings.ExternalSearch, policy);
 
             List<AssistantToolDescriptor> tools = new List<AssistantToolDescriptor>
@@ -62,6 +63,7 @@ namespace AssistantHub.Server.Services
                 Create("verbex_full_text_search", "Verbex Full-Text Search", "Verbex", toolCallsEnabled && policy.EnableVerbexFullTextSearchTool, hasVerbex, "Verbex endpoint is not configured."),
                 Create("index_enumerate_records", "Verbex Record Enumeration", "Verbex", toolCallsEnabled && policy.EnableIndexEnumerateRecordsTool, hasVerbex, "Verbex endpoint is not configured."),
                 Create("s3_object_read", "S3 Object Read", "S3", toolCallsEnabled && policy.EnableS3ObjectReadTool, hasS3, "S3 bucket is not configured."),
+                Create("document_atom_extract", "DocumentAtom Extraction", "Documents", toolCallsEnabled && policy.EnableDocumentAtomExtractionTool, hasDocumentAtom, "DocumentAtom endpoint is not configured."),
                 Create("bucket_enumerate_objects", "S3 Bucket Object Enumeration", "S3", toolCallsEnabled && policy.EnableBucketEnumerateObjectsTool, hasS3, "S3 bucket is not configured."),
                 Create("web_search", "Web Search", "Web", toolCallsEnabled && policy.EnableWebSearchTool, hasTavily, "Tavily web search is not configured globally or on the assistant.")
             };

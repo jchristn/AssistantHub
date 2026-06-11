@@ -173,7 +173,28 @@ ChatCompletionResponse response = await client.SendMessageAsync(
         },
         AttachedDocumentIds = new List<string> { documentId }
     });
+
+ChatCompletionResponse localResponse = await client.SendMessageAsync(
+    "asst_your-id",
+    new ChatCompletionRequest
+    {
+        Messages = new List<ChatCompletionMessage>
+        {
+            new ChatCompletionMessage { Role = "user", Content = "Summarize this local file." }
+        },
+        LocalAttachments = new List<ChatLocalAttachment>
+        {
+            new ChatLocalAttachment
+            {
+                Name = "notes.txt",
+                ContentType = "text/plain",
+                Base64Content = "VGhpcyBpcyBhIGxvY2FsIGZpbGUu"
+            }
+        }
+    });
 ```
+
+`LocalAttachments` require assistant document attachments to be enabled. They are processed for the chat request only and are not added to the assistant collection.
 
 ## Chat (Streaming)
 

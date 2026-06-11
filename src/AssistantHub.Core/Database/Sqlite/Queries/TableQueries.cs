@@ -89,11 +89,13 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  fulltext_minimum_score REAL DEFAULT NULL, " +
                 "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
                 "  inference_endpoint_id TEXT, " +
+                "  tool_routing_inference_endpoint_id TEXT, " +
                 "  retrieval_gate_inference_endpoint_id TEXT, " +
                 "  query_rewrite_inference_endpoint_id TEXT, " +
                 "  rerank_inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  load_models_on_chat_open INTEGER NOT NULL DEFAULT 0, " +
+                "  expose_thinking INTEGER NOT NULL DEFAULT 0, " +
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
                 "  favicon_url TEXT, " +
@@ -418,6 +420,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE assistant_settings ADD COLUMN retrieval_gate_inference_endpoint_id TEXT;";
 
         /// <summary>
+        /// Add the tool-routing inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN tool_routing_inference_endpoint_id TEXT;";
+
+        /// <summary>
         /// Add the query rewrite inference endpoint ID column.
         /// </summary>
         public static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
@@ -434,6 +442,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE assistant_settings ADD COLUMN load_models_on_chat_open INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the expose-thinking column.
+        /// </summary>
+        public static string AddAssistantSettingsExposeThinkingColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN expose_thinking INTEGER NOT NULL DEFAULT 0;";
 
         /// <summary>
         /// Add the assistant tool policy JSON column.

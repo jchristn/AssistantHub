@@ -2108,11 +2108,13 @@ Retrieve settings for an assistant.
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 0,
   "InferenceEndpointId": "ep_abc123...",
+  "ToolRoutingInferenceEndpointId": null,
   "RetrievalGateInferenceEndpointId": null,
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": "ep_def456...",
   "LoadModelsOnChatOpen": false,
+  "ExposeThinking": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2129,6 +2131,7 @@ Retrieve settings for an assistant.
   "ToolPolicy": {
     "EnableToolCalls": false,
     "EnableCollectionSearchTool": false,
+    "EnableDocumentAtomExtractionTool": false,
     "EnableWebSearchTool": false,
     "EnableSlackToolProgressMessages": true,
     "TavilyEndpoint": null,
@@ -2170,11 +2173,13 @@ Retrieve settings for an assistant.
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
 | `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
 | `InferenceEndpointId`      | string  | Managed completion endpoint ID for assistant responses. Required for assistant settings. |
+| `ToolRoutingInferenceEndpointId` | string? | Optional managed completion endpoint ID used only for model tool-routing checks. Null or empty falls back to `InferenceEndpointId`; when set, this endpoint must explicitly support tool calling. Final answers still use `InferenceEndpointId`. |
 | `RetrievalGateInferenceEndpointId` | string? | Optional managed completion endpoint ID for retrieval gate calls. Null or empty falls back to `InferenceEndpointId`. |
 | `QueryRewriteInferenceEndpointId` | string? | Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to `InferenceEndpointId`. |
 | `RerankInferenceEndpointId` | string? | Optional managed completion endpoint ID for re-ranking calls. Null or empty falls back to `InferenceEndpointId`. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `LoadModelsOnChatOpen`     | bool    | Load or warm configured completion and embedding endpoint models when a chat window opens. Default `false`. |
+| `ExposeThinking`           | bool    | Include provider-returned thinking/reasoning text in assistant chat responses as `message.thinking` or streaming `delta.thinking`. Default `false`. |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
@@ -2230,11 +2235,13 @@ Create or update settings for an assistant. If settings already exist, they are 
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 2,
   "InferenceEndpointId": "ep_abc123...",
+  "ToolRoutingInferenceEndpointId": null,
   "RetrievalGateInferenceEndpointId": null,
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": null,
   "LoadModelsOnChatOpen": true,
+  "ExposeThinking": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2253,7 +2260,7 @@ Create or update settings for an assistant. If settings already exist, they are 
 
 **Response (200 OK):** The created or updated `AssistantSettings` object.
 
-`InferenceEndpointId` is required. Assistant settings do not define a separate response model; the selected completion endpoint is the source of truth for provider and model selection. Retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`.
+`InferenceEndpointId` is required and remains the source of truth for final assistant responses. `ToolRoutingInferenceEndpointId`, retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`. A configured tool-routing endpoint is used only for tool-decision turns and must explicitly advertise tool-call support; final answers still use `InferenceEndpointId`.
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -2292,6 +2299,7 @@ Key first-release fields:
 | `EnableCollectionSearchTool` | `false` | Exposes `collection_search` for exhaustive or bounded search of the assistant collection. |
 | `EnableCollectionReadChunksTool` | `false` | Exposes `collection_read_chunks` for exact chunk reads by assistant document ID and position. |
 | `EnableCollectionEnumerateDocumentsTool` | `false` | Exposes `collection_enumerate_documents` for safe document listing in the assistant collection. `EnableCollectionEnumerationTool` is accepted as an alias. |
+| `EnableDocumentAtomExtractionTool` | `false` | Exposes `document_atom_extract` for bounded DocumentAtom text extraction from a completed assistant document (`document_id`) or a per-turn local upload (`local_attachment_id`). |
 | `AllowedSearchModes` | `["Vector","FullText","Hybrid"]` | Search modes the model may request for `collection_search`. |
 | `MaxSearchTopK` | `50` | Additional cap for collection search `top_k`/`max_results`. |
 | `MaxSearchQueriesPerCall` | `3` | Maximum query variants in one collection search call. |
@@ -2300,6 +2308,8 @@ Key first-release fields:
 | `EnableServerGeneratedQueryVariants` | `false` | Allows the server to add deterministic collection-search query variants, such as punctuation-normalized forms, after model-supplied queries and only within `MaxSearchQueriesPerCall`. |
 | `ReturnFullSearchContent` | `false` | When false, `collection_search` returns excerpts and `ContentOmitted=true`; enable only when search results may expose full chunk text directly instead of requiring `collection_read_chunks`. |
 | `MaxReadRangesPerCall` | `5` | Maximum chunk ranges in one `collection_read_chunks` call. |
+| `MaxAtomExtractionBytes` | `10485760` | Maximum source bytes accepted by one `document_atom_extract` call. |
+| `MaxAtomExtractionCharacters` | `50000` | Maximum extracted text characters returned by one `document_atom_extract` call before normal tool-output caps also apply. |
 | `AllowModelDocumentIdFilter` | `true` | Allows the model to narrow collection search to validated assistant document IDs. |
 | `EnableVerbexFullTextSearchTool` | `false` | Exposes `verbex_full_text_search`; `EnableVerbexSearchTool` is accepted as an alias. |
 | `EnableIndexEnumerateRecordsTool` | `false` | Exposes `index_enumerate_records`; `EnableIndexEnumerationTool` is accepted as an alias. |
@@ -2361,7 +2371,7 @@ Invalid policy JSON or a policy that cannot expose any executable tool returns `
 
 Admin workflow:
 
-1. Configure a managed completion endpoint with explicit tool-call capability (`SupportsToolCalling: true`) and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` or `OllamaChat`). AssistantHub stores those capability values on the Partio endpoint as reserved labels/tags.
+1. Configure the effective tool-routing completion endpoint with explicit tool-call capability (`SupportsToolCalling: true`) and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` or `OllamaChat`). Leave `ToolRoutingInferenceEndpointId` blank to use the response endpoint for tool routing, or set it to a dedicated completion endpoint. AssistantHub stores capability values on the Partio endpoint as reserved labels/tags.
 2. Save assistant settings with `EnableToolCalls: false` until the policy is ready.
 3. Enable only the needed tool switches in `ToolPolicyJson`, add any collection/search/S3/Verbex/Tavily limits, then call this validation route and the admin dry-run diagnostics route below.
 4. Call `GET /v1.0/assistants/{assistantId}/tools` to inspect the effective tools after server prerequisites and assistant policy are applied.
@@ -2374,7 +2384,7 @@ Admin workflow:
 
 ### POST /v1.0/assistants/{assistantId}/settings/tools/test
 
-Run administrator dry-run diagnostics for a draft assistant tool policy without saving it, calling the model, or executing tools. The route validates the supplied policy, resolves effective tool descriptors, and checks the selected completion endpoint metadata needed for tool calls. It never returns endpoint API keys or raw provider secrets.
+Run administrator dry-run diagnostics for a draft assistant tool policy without saving it, calling the model, or executing tools. The route validates the supplied policy, resolves effective tool descriptors, and checks the effective tool-routing completion endpoint metadata needed for tool calls. It never returns endpoint API keys or raw provider secrets.
 
 **Auth:** Required (global admin or tenant admin)
 
@@ -2388,6 +2398,8 @@ Run administrator dry-run diagnostics for a draft assistant tool policy without 
   "Message": "Tool diagnostics found blocking issues.",
   "AssistantId": "asst_abc123",
   "InferenceEndpointId": "cep_abc123",
+  "ToolRoutingInferenceEndpointId": "cep_router123",
+  "EffectiveToolRoutingInferenceEndpointId": "cep_router123",
   "EndpointResolved": true,
   "EndpointModel": "qwen3-tool",
   "EndpointApiFormat": "OpenAI",
@@ -2404,15 +2416,15 @@ Run administrator dry-run diagnostics for a draft assistant tool policy without 
   "Tools": [],
   "Warnings": [],
   "Errors": [
-    "The selected completion endpoint does not explicitly support tool calling."
+    "The effective tool-routing completion endpoint does not explicitly support tool calling."
   ],
   "ErrorCodes": [
-    "completion_endpoint_not_tool_capable"
+    "tool_routing_endpoint_not_tool_capable"
   ]
 }
 ```
 
-Current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `completion_endpoint_unresolved`, `completion_endpoint_inactive`, `completion_endpoint_not_tool_capable`, and `unsupported_tool_call_format`, plus any validation codes returned by the validation route.
+Current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `tool_routing_endpoint_missing`, `tool_routing_endpoint_unresolved`, `tool_routing_endpoint_inactive`, `tool_routing_endpoint_not_tool_capable`, and `unsupported_tool_call_format`, plus any validation codes returned by the validation route.
 
 **Error Responses:**
 - `400` -- Request body is malformed JSON.
@@ -3531,7 +3543,8 @@ Retrieve public information about an assistant. Returns basic details and appear
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
-  "LoadModelsOnChatOpen": true
+  "LoadModelsOnChatOpen": true,
+  "ExposeThinking": false
 }
 ```
 
@@ -3544,6 +3557,7 @@ Retrieve public information about an assistant. Returns basic details and appear
 | `LogoUrl`              | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
 | `FaviconUrl`           | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
 | `LoadModelsOnChatOpen` | bool   | Whether clients should call `POST /v1.0/assistants/{assistantId}/chat/open` when opening chat. |
+| `ExposeThinking`       | bool   | Whether public chat can display provider-returned thinking/reasoning text when the provider sends it separately from visible content. |
 
 **Error Responses:**
 - `404` -- Assistant not found or not active.
@@ -3725,6 +3739,13 @@ When the conversation history approaches the context window limit, older message
   "max_tokens": 4096,
   "stream": false,
   "attached_document_ids": ["adoc_abc123"],
+  "local_attachments": [
+    {
+      "name": "notes.txt",
+      "content_type": "text/plain",
+      "base64_content": "VGhpcyBpcyBhIGxvY2FsIGZpbGUu"
+    }
+  ],
   "metadata_filter": {
     "required_labels": ["finance", "quarterly-report"],
     "excluded_labels": ["draft"],
@@ -3747,6 +3768,7 @@ When the conversation history approaches the context window limit, older message
 | `max_tokens`      | int    | No       | Max tokens override.                                           |
 | `stream`          | bool   | No       | Ignored; streaming is controlled by the assistant `Streaming` setting. |
 | `attached_document_ids` | array | No | Optional `AssistantDocument.Id` values selected from `GET /v1.0/assistants/{assistantId}/documents`. When present, RAG retrieval is constrained to those completed documents in the assistant's configured collection. |
+| `local_attachments` | array | No | Optional user-uploaded files for this chat request. Each item can include `name`, `content_type`, and either `base64_content` or extracted `text`. These files are not added to the assistant collection. |
 | `metadata_filter` | object | No       | Metadata filter to restrict retrieval (see below). Merged with assistant-level defaults. |
 
 **Metadata Filter Object:**
@@ -3764,13 +3786,19 @@ When `metadata_filter` is omitted or null, no filtering is applied. If the assis
 
 When `attached_document_ids` is provided, the server validates every ID before retrieval. Each document must belong to the assistant tenant, belong to the assistant's configured collection, have `Completed` status, and fit within the assistant setting `DocumentAttachmentMaxCount`. Duplicate IDs and blank values are ignored during normalization. Document attachments must be enabled in assistant settings.
 
-When assistant `ToolPolicyJson` enables `EnableToolCalls` and at least one executable tool, chat sends the policy-filtered tool schemas to the selected completion endpoint. The endpoint must explicitly advertise `SupportsToolCalling: true` and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` for OpenAI-compatible chat-completions endpoints or `OllamaChat` for Ollama). AssistantHub reads that capability from the selected Partio endpoint's reserved labels/tags. If capability is missing, the server returns a configuration error before calling the model. If the model returns `tool_calls`, AssistantHub executes them server-side, appends `role: "tool"` outputs, and repeats until the model returns final assistant content or a server limit is reached. Recoverable tool failures are returned to the model as structured non-secret tool outputs.
+When `local_attachments` is provided, document attachments must also be enabled in assistant settings. The combined count of `attached_document_ids` and `local_attachments` must fit within `DocumentAttachmentMaxCount`. Local attachments are decoded and text-extracted server-side for model context only; they are not persisted as `AssistantDocument` records, uploaded to the assistant S3 bucket, indexed in RecallDB/Verbex, or returned in `retrieval.attached_documents`. Per-file uploads are limited to 10 MB, the total local upload payload is limited to 25 MB, and extracted text is bounded before it is injected into the prompt.
+
+When assistant `ToolPolicyJson` enables `EnableToolCalls` and at least one executable tool, chat sends the policy-filtered tool schemas to the effective tool-routing completion endpoint (`ToolRoutingInferenceEndpointId` when set, otherwise `InferenceEndpointId`). That endpoint must explicitly advertise `SupportsToolCalling: true` and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` for OpenAI-compatible chat-completions endpoints or `OllamaChat` for Ollama). AssistantHub reads capability from the effective Partio endpoint's reserved labels/tags. If capability is missing, the server returns a configuration error before calling the model. If the router model returns `tool_calls`, AssistantHub executes them server-side, appends `role: "tool"` outputs, and repeats. When a dedicated router endpoint returns no further tool calls, AssistantHub asks the response endpoint configured by `InferenceEndpointId` to produce the user-facing final answer. Recoverable tool failures are returned to the model as structured non-secret tool outputs.
+
+If `EnableDocumentAtomExtractionTool` is enabled, the model can call `document_atom_extract` with either a validated assistant `document_id` or a per-turn `local_attachment_id` such as `local_attachment_1`. Local attachment IDs are included in the model-visible attachment context for that request only.
 
 Model-visible tool errors include stable `ErrorCode` values so the model and clients do not need to parse English messages. Current codes are `invalid_arguments`, `unknown_tool`, `tool_unavailable`, `policy_denial`, `tool_call_limit`, `tool_output_limit`, `web_search_limit`, `provider_missing`, `provider_http_error`, `timeout`, `canceled`, and `tool_error`. Persisted admin traces store the same value in `ErrorType` and in the redacted output summary.
 
 `collection_search` tool output includes safe search metadata for model-directed follow-up calls: `SearchedQueries`, `SearchedModes`, `ExactPhraseQueries` when used, per-pass `SearchPasses`, visible `DocumentsConsidered` when the server can count assistant-visible collection documents, `MaxDocumentsConsidered`, `DocumentLimitApplied`, `ResultsConsidered`, `MaxResultsConsidered`, `ResultsConsideredLimitApplied`, `TotalResults`, `ExhaustiveComplete`, optional `ExhaustiveIncompleteReasons`, and safe `SuggestedNextCalls` for exact `collection_read_chunks` follow-up reads. Search results return excerpts by default; full chunk content appears only when `ReturnFullSearchContent` is explicitly enabled. Timed-out tool calls fail with `ErrorCode=timeout` rather than returning partial exhaustive output.
 
 When `Streaming` is enabled and tool calls are active, AssistantHub emits safe named SSE progress events while the shared server-side tool loop runs, including heartbeat events for long-running tool calls, then sends the final answer as standard `chat.completion.chunk` events. These events do not include raw tool arguments, raw tool outputs, S3 object keys, provider request IDs, secrets, or hidden policy details.
+
+When assistant `ExposeThinking` is enabled and the provider sends thinking/reasoning deltas separately from answer text, streaming chat may emit chunks with `choices[0].delta.thinking`. Browser clients should render this separately from visible answer content and should not send it back as conversation history.
 
 **Non-Streaming Response (200 OK):**
 
@@ -3785,7 +3813,8 @@ When `Streaming` is enabled and tool calls are active, AssistantHub emits safe n
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "To reset your password, navigate to Settings > Security and click 'Reset Password'..."
+        "content": "To reset your password, navigate to Settings > Security and click 'Reset Password'...",
+        "thinking": null
       },
       "finish_reason": "stop"
     }
@@ -3810,6 +3839,7 @@ The response may also include `retrieval` (when RAG is enabled) and `citations` 
 | `usage.completion_tokens` | int | Completion/output tokens reported by the provider. |
 | `usage.total_tokens` | int | Total tokens reported by the provider. |
 | `usage.completion_tokens_details.reasoning_tokens` | int | Optional provider-reported reasoning tokens, when available. |
+| `choices[].message.thinking` | string \| null | Optional provider thinking/reasoning text. Present only when the assistant setting `ExposeThinking` is enabled and the provider returns thinking separately from visible answer text. Clients should not include this field in future request messages. |
 | `usage.tool_definition_tokens` / `usage.tool_tokens` | int | Optional provider-reported tokens attributed to tool definitions, when available. |
 | `retrieval` | object \| null | Retrieval telemetry returned when RAG is active. |
 | `retrieval.collection_id` | string | Collection searched for this turn. |

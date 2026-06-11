@@ -92,6 +92,7 @@ namespace AssistantHub.Server.Handlers
                     LogoUrl = settings?.LogoUrl,
                     FaviconUrl = settings?.FaviconUrl,
                     LoadModelsOnChatOpen = settings?.LoadModelsOnChatOpen ?? false,
+                    ExposeThinking = settings?.ExposeThinking ?? false,
                     EnableDocumentAttachments = settings?.EnableDocumentAttachments ?? false,
                     DocumentAttachmentMaxCount = settings?.DocumentAttachmentMaxCount ?? 10,
                     ExposeDocumentSourceUrls = settings?.ExposeDocumentSourceUrls ?? false
@@ -246,6 +247,7 @@ namespace AssistantHub.Server.Handlers
 
                 HashSet<string> completionEndpointIds = new HashSet<string>(StringComparer.Ordinal);
                 AddEndpointId(completionEndpointIds, settings.InferenceEndpointId);
+                AddEndpointId(completionEndpointIds, settings.ToolRoutingInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.RetrievalGateInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.QueryRewriteInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.RerankInferenceEndpointId);

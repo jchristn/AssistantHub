@@ -69,7 +69,16 @@
       "Model": "gemma3:4b",
       "Endpoint": "http://ollama:11434",
       "ApiFormat": "Ollama",
-      "MaxConcurrentRequests": 2
+      "MaxConcurrentRequests": 2,
+      "Labels": [
+        "assistanthub:tool-calling"
+      ],
+      "Tags": {
+        "AssistantHub.SupportsToolCalling": "true",
+        "AssistantHub.ToolCallingApiFormat": "OllamaChat",
+        "AssistantHub.SupportsParallelToolCalls": "true",
+        "AssistantHub.SupportsStreamingToolCalls": "true"
+      }
     }
   ]
 }

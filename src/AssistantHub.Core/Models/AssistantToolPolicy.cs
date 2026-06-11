@@ -115,6 +115,11 @@ namespace AssistantHub.Core.Models
         public bool EnableS3ObjectReadTool { get; set; } = false;
 
         /// <summary>
+        /// Enable DocumentAtom extraction against assistant documents and per-turn local attachments.
+        /// </summary>
+        public bool EnableDocumentAtomExtractionTool { get; set; } = false;
+
+        /// <summary>
         /// Enable assistant collection document enumeration.
         /// </summary>
         public bool EnableCollectionEnumerateDocumentsTool { get; set; } = false;
@@ -268,6 +273,16 @@ namespace AssistantHub.Core.Models
         /// Maximum bytes returned by one S3 object read call.
         /// </summary>
         public int MaxObjectReadBytes { get; set; } = 131072;
+
+        /// <summary>
+        /// Maximum source bytes accepted by one DocumentAtom extraction call.
+        /// </summary>
+        public int MaxAtomExtractionBytes { get; set; } = 10485760;
+
+        /// <summary>
+        /// Maximum extracted text characters returned by one DocumentAtom extraction call.
+        /// </summary>
+        public int MaxAtomExtractionCharacters { get; set; } = 50000;
 
         /// <summary>
         /// Maximum aggregate object bytes returned in one chat turn.
@@ -425,6 +440,8 @@ namespace AssistantHub.Core.Models
             if (EnableIndexEnumerationTool) EnableIndexEnumerateRecordsTool = true;
             MaxVerbexResults = Math.Clamp(MaxVerbexResults, 1, 100);
             MaxObjectReadBytes = Math.Clamp(MaxObjectReadBytes, 1, 10485760);
+            MaxAtomExtractionBytes = Math.Clamp(MaxAtomExtractionBytes, 1, 52428800);
+            MaxAtomExtractionCharacters = Math.Clamp(MaxAtomExtractionCharacters, 1024, 500000);
             MaxObjectBytesPerTurn = Math.Clamp(MaxObjectBytesPerTurn, MaxObjectReadBytes, 10485760);
             MaxBucketEnumerationResults = Math.Clamp(MaxBucketEnumerationResults, 1, 1000);
             if (DocumentBackedObjectsOnly) AllowBucketWideObjectRead = false;

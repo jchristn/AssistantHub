@@ -57,6 +57,11 @@ function DataTable({ columns, fetchData, getRowActions, refreshTrigger, initialF
   useEffect(() => { loadData(); }, [loadData, refreshTrigger]);
 
   useEffect(() => {
+    setFilters(initialFilters || {});
+    setCurrentPage(1);
+  }, [initialFilters]);
+
+  useEffect(() => {
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
   }, []);
 

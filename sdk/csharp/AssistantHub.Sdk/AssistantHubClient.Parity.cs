@@ -95,6 +95,22 @@ namespace AssistantHub.Sdk
                 parameters["collectionId"] = query.CollectionIdFilter;
             if (!String.IsNullOrWhiteSpace(query.ThreadIdFilter))
                 parameters["threadId"] = query.ThreadIdFilter;
+            if (!String.IsNullOrWhiteSpace(query.RequestHistoryIdFilter))
+                parameters["requestHistoryId"] = query.RequestHistoryIdFilter;
+            if (!String.IsNullOrWhiteSpace(query.ChatHistoryIdFilter))
+                parameters["chatHistoryId"] = query.ChatHistoryIdFilter;
+            if (!String.IsNullOrWhiteSpace(query.TraceIdFilter))
+                parameters["traceId"] = query.TraceIdFilter;
+            if (!String.IsNullOrWhiteSpace(query.ToolNameFilter))
+                parameters["toolName"] = query.ToolNameFilter;
+            if (query.SuccessFilter.HasValue)
+                parameters["success"] = query.SuccessFilter.Value ? "true" : "false";
+            if (query.DeniedFilter.HasValue)
+                parameters["denied"] = query.DeniedFilter.Value ? "true" : "false";
+            if (query.StartUtc.HasValue)
+                parameters["startUtc"] = query.StartUtc.Value.ToString("O");
+            if (query.EndUtc.HasValue)
+                parameters["endUtc"] = query.EndUtc.Value.ToString("O");
 
             return AppendQueryString(path, parameters);
         }

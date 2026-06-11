@@ -1,5 +1,6 @@
 namespace AssistantHub.Core.Models
 {
+    using System.Collections.Generic;
     using System.Text.Json.Serialization;
     using AssistantHub.Core.Serialization;
 
@@ -52,6 +53,36 @@ namespace AssistantHub.Core.Models
         /// Maximum concurrent requests allowed for this endpoint.
         /// </summary>
         public int MaxConcurrentRequests { get; set; } = 2;
+
+        /// <summary>
+        /// Whether this endpoint explicitly supports model tool calls.
+        /// </summary>
+        public bool SupportsToolCalling { get; set; } = false;
+
+        /// <summary>
+        /// Tool-calling wire format, for example OpenAIChatCompletions.
+        /// </summary>
+        public string ToolCallingApiFormat { get; set; } = null;
+
+        /// <summary>
+        /// Whether this endpoint supports multiple tool calls in one assistant turn.
+        /// </summary>
+        public bool SupportsParallelToolCalls { get; set; } = false;
+
+        /// <summary>
+        /// Whether this endpoint supports tool calls while streaming responses.
+        /// </summary>
+        public bool SupportsStreamingToolCalls { get; set; } = false;
+
+        /// <summary>
+        /// Endpoint labels stored by Partio.
+        /// </summary>
+        public List<string> Labels { get; set; } = null;
+
+        /// <summary>
+        /// Endpoint tags stored by Partio.
+        /// </summary>
+        public Dictionary<string, string> Tags { get; set; } = null;
 
         /// <summary>
         /// Whether health checks are enabled.

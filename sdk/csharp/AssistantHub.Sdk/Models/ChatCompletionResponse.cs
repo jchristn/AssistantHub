@@ -61,5 +61,11 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("citations")]
         public ChatCompletionCitations Citations { get; set; }
+
+        /// <summary>
+        /// Optional safe metadata for model-directed server-side tool calls.
+        /// </summary>
+        [JsonPropertyName("tool_calls")]
+        public List<ChatCompletionToolTrace> ToolCalls { get; set; }
     }
 }

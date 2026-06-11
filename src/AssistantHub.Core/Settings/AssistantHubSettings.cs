@@ -106,6 +106,15 @@ namespace AssistantHub.Core.Settings
         }
 
         /// <summary>
+        /// External web-search provider settings.
+        /// </summary>
+        public ExternalSearchSettings ExternalSearch
+        {
+            get => _ExternalSearch;
+            set { if (value != null) _ExternalSearch = value; }
+        }
+
+        /// <summary>
         /// Logging settings.
         /// </summary>
         public LoggingSettings Logging
@@ -163,6 +172,7 @@ namespace AssistantHub.Core.Settings
         private InferenceSettings _Inference = new InferenceSettings();
         private RecallDbSettings _RecallDb = new RecallDbSettings();
         private VerbexSettings _Verbex = new VerbexSettings();
+        private ExternalSearchSettings _ExternalSearch = new ExternalSearchSettings();
         private LoggingSettings _Logging = new LoggingSettings();
         private ProcessingLogSettings _ProcessingLog = new ProcessingLogSettings();
         private ChatHistorySettings _ChatHistory = new ChatHistorySettings();

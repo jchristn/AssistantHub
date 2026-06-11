@@ -77,5 +77,45 @@ namespace AssistantHub.Core.Models
         /// Model.
         /// </summary>
         public string Model { get; set; } = null;
+
+        /// <summary>
+        /// Number of tool calls in the request.
+        /// </summary>
+        public int ToolCallCount { get; set; } = 0;
+
+        /// <summary>
+        /// Number of failed non-denied tool calls in the request.
+        /// </summary>
+        public int ToolFailureCount { get; set; } = 0;
+
+        /// <summary>
+        /// Number of policy-denied tool calls in the request.
+        /// </summary>
+        public int ToolDeniedCount { get; set; } = 0;
+
+        /// <summary>
+        /// Number of truncated tool outputs in the request.
+        /// </summary>
+        public int ToolTruncatedCount { get; set; } = 0;
+
+        /// <summary>
+        /// Aggregate tool duration.
+        /// </summary>
+        public double? ToolDurationMs { get; set; } = null;
+
+        /// <summary>
+        /// Slowest tool name, when known.
+        /// </summary>
+        public string SlowestToolName { get; set; } = null;
+
+        /// <summary>
+        /// Slowest tool aggregate duration, when known.
+        /// </summary>
+        public double? SlowestToolDurationMs { get; set; } = null;
+
+        /// <summary>
+        /// Tool names with at least one failure or denial.
+        /// </summary>
+        public List<string> FailingToolNames { get; set; } = new List<string>();
     }
 }

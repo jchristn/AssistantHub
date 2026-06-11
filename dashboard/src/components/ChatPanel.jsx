@@ -5,8 +5,17 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import MetadataFilterModal from './modals/MetadataFilterModal';
+import DocumentAttachmentModal from './modals/DocumentAttachmentModal';
 import CopyButton from './CopyButton';
 import { WAIT_MESSAGES } from './chatWaitMessages';
+
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value || '');
+  } catch {
+    return value || '';
+  }
+}
 
 function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme: themeProp, onClose }) {
   const [serverUrl] = useState(() => {
@@ -57,6 +66,10 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [availableLabels, setAvailableLabels] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
+  const [attachedDocuments, setAttachedDocuments] = useState([]);
+  const [localAttachments, setLocalAttachments] = useState([]);
+  const [showDocumentAttachmentModal, setShowDocumentAttachmentModal] = useState(false);
+  const localFileInputRef = useRef(null);
 
   // Use prop theme if provided, otherwise internal
   const theme = themeProp || internalTheme;
@@ -94,6 +107,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     setAssistant(null);
     setThreadId(localStorage.getItem(`ah_thread_${assistantId}`) || null);
     setMetadataFilter(null);
+    setAttachedDocuments([]);
+    setLocalAttachments([]);
+    setShowDocumentAttachmentModal(false);
   }, [assistantId]);
 
   // Fetch available labels and tags for filter modal
@@ -223,7 +239,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
   const getChatMessages = (sourceMessages) => {
     return sourceMessages
-      .filter(m => !m.isError && !m.isSystem)
+      .filter(m => !m.isError && !m.isSystem && !m.isToolProgress)
       .map(({ role, content }) => ({ role, content }));
   };
 
@@ -283,7 +299,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const generateChatTitle = async (conversationMessages) => {
     try {
       const titleMessages = [
-        ...conversationMessages.filter(m => !m.isError && !m.isSystem && !m.hidden).map(({ role, content }) => ({ role, content })),
+        ...conversationMessages.filter(m => !m.isError && !m.isSystem && !m.isToolProgress && !m.hidden).map(({ role, content }) => ({ role, content })),
         {
           role: 'user',
           content: 'Generate a short title (max 6 words) for this conversation. Reply with ONLY the title text, nothing else.'
@@ -308,6 +324,8 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     setFeedbackSent({});
     setError(null);
     setContextUsage(null);
+    setAttachedDocuments([]);
+    setLocalAttachments([]);
     cancelAutomaticCompaction();
     lastAutoCompactionSignatureRef.current = null;
   };
@@ -344,7 +362,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   };
 
   const handleContext = () => {
-    const chatMessages = messages.filter(m => !m.isError && !m.isSystem);
+    const chatMessages = messages.filter(m => !m.isError && !m.isSystem && !m.isToolProgress);
     const userCount = chatMessages.filter(m => m.role === 'user').length;
     const assistantCount = chatMessages.filter(m => m.role === 'assistant').length;
     const totalChars = chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
@@ -378,6 +396,128 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
   const handleHelp = () => {
     const helpText = `| Command | Description |\n|---------|-------------|\n| \`/clear\` | Clear all messages and reset the conversation |\n| \`/compact\` | Summarize and compact the conversation to save tokens |\n| \`/context\` | Display current context information |\n| \`/?\` or \`/help\` | Show this help message |`;
     setMessages(prev => [...prev, { role: 'system', content: helpText, isSystem: true }]);
+  };
+
+  const readTraceField = (trace, ...names) => {
+    for (const name of names) {
+      if (trace && trace[name] !== undefined && trace[name] !== null && trace[name] !== '') return trace[name];
+    }
+    return null;
+  };
+
+  const formatToolResultCount = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) return String(value);
+    return `${numberValue} result${numberValue === 1 ? '' : 's'}`;
+  };
+
+  const formatToolDuration = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) return String(value);
+    if (numberValue >= 1000) return `${(numberValue / 1000).toFixed(numberValue >= 10000 ? 0 : 1)}s`;
+    return `${Math.max(1, Math.round(numberValue))}ms`;
+  };
+
+  const buildToolProgressMessage = (event, statusText, runKey = 'current') => {
+    if (!event) return null;
+
+    const eventType = String(readTraceField(event, 'event_type', 'EventType', 'type') || '').toLowerCase();
+    if (!eventType.startsWith('assistant.tool_')) return null;
+
+    const label = readTraceField(event, 'display_label', 'DisplayLabel', 'tool_name', 'ToolName') || 'Assistant tool';
+    const toolName = readTraceField(event, 'tool_name', 'ToolName');
+    const toolCallId = readTraceField(event, 'tool_call_id', 'ToolCallId');
+    const iteration = readTraceField(event, 'iteration', 'Iteration');
+    const sequence = readTraceField(event, 'sequence_number', 'SequenceNumber');
+    const resultCount = formatToolResultCount(readTraceField(event, 'result_count', 'ResultCount'));
+    const duration = formatToolDuration(readTraceField(event, 'duration_ms', 'DurationMs'));
+    const summary = readTraceField(event, 'summary', 'Summary', 'status', 'Status') || statusText;
+    const truncated = !!readTraceField(event, 'truncated', 'Truncated');
+
+    const keyParts = [
+      toolCallId,
+      eventType.includes('iteration') ? `iteration-${iteration || 'current'}` : null,
+      !toolCallId && !eventType.includes('iteration') ? `${toolName || label}-${iteration || '0'}-${sequence || '0'}` : null
+    ].filter(Boolean);
+    const key = `tool-progress:${runKey}:${keyParts[0] || eventType}`;
+
+    let state = 'running';
+    let title = label;
+    let detail = summary || 'The assistant is using a server-side tool.';
+
+    if (eventType.endsWith('tool_iteration.started')) {
+      title = 'Checking tools';
+      detail = summary || 'The assistant is deciding whether this turn needs tool data.';
+    } else if (eventType.endsWith('tool_iteration.stopped')) {
+      state = 'succeeded';
+      title = 'Answering from gathered evidence';
+      detail = summary || 'The assistant has enough tool evidence and is preparing the answer.';
+    } else if (eventType.endsWith('.started')) {
+      title = `${label} started`;
+      detail = `Started server-side tool call${sequence ? ` ${sequence}` : ''}${iteration ? ` during pass ${iteration}` : ''}.`;
+    } else if (eventType.endsWith('.heartbeat')) {
+      title = `${label} still running`;
+      detail = duration ? `Still waiting after ${duration}.` : 'Still waiting for this tool to finish.';
+    } else if (eventType.endsWith('.completed')) {
+      state = 'succeeded';
+      title = `${label} completed`;
+      const parts = [];
+      if (resultCount) parts.push(resultCount);
+      if (duration) parts.push(duration);
+      if (truncated) parts.push('output was shortened');
+      detail = parts.length > 0
+        ? `Completed with ${parts.join(', ')}.`
+        : (summary || 'The tool finished successfully.');
+    } else if (eventType.endsWith('.failed')) {
+      state = 'failed';
+      title = `${label} failed`;
+      detail = summary || 'The tool failed; the assistant may try another source or answer from available context.';
+    } else if (eventType.endsWith('.denied')) {
+      state = 'denied';
+      title = `${label} denied`;
+      detail = summary || 'The tool request was blocked by assistant policy.';
+    } else if (eventType.endsWith('.interrupted')) {
+      state = 'failed';
+      title = 'Tool status interrupted';
+      detail = summary || 'Tool progress stopped before the final status was received.';
+    }
+
+    const meta = [];
+    if (toolName && toolName !== label) meta.push(toolName);
+    if (iteration) meta.push(`pass ${iteration}`);
+    if (sequence) meta.push(`call ${sequence}`);
+    if (resultCount) meta.push(resultCount);
+    if (duration) meta.push(duration);
+    if (truncated) meta.push('truncated');
+
+    return {
+      role: 'assistant',
+      isToolProgress: true,
+      toolProgressKey: key,
+      toolProgressState: state,
+      content: detail,
+      title,
+      detail,
+      meta
+    };
+  };
+
+  const upsertToolProgressMessage = (event, statusText, runKey) => {
+    const progress = buildToolProgressMessage(event, statusText, runKey);
+    if (!progress) return;
+
+    setMessages(prev => {
+      const updated = [...prev];
+      const index = updated.findIndex(msg => msg.isToolProgress && msg.toolProgressKey === progress.toolProgressKey);
+      if (index >= 0) {
+        updated[index] = { ...updated[index], ...progress };
+      } else {
+        updated.push(progress);
+      }
+      return updated;
+    });
   };
 
   const handleSend = async () => {
@@ -436,9 +576,28 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
       let streamingIndex = null;
       let compactionDetected = false;
+      const toolProgressRunKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const onDelta = (delta) => {
         if (delta.status === 'Compacting the conversation...') {
           compactionDetected = true;
+        }
+        if (delta.toolEvent) {
+          upsertToolProgressMessage(delta.toolEvent, delta.status, toolProgressRunKey);
+        }
+        if (delta.thinking) {
+          setMessages(prev => {
+            const updated = [...prev];
+            if (streamingIndex === null) {
+              streamingIndex = updated.length;
+              updated.push({ role: 'assistant', content: '', thinking: delta.thinking, userMessage, isStreaming: true });
+            } else {
+              updated[streamingIndex] = {
+                ...updated[streamingIndex],
+                thinking: (updated[streamingIndex].thinking || '') + delta.thinking
+              };
+            }
+            return updated;
+          });
         }
         if (delta.content) {
           setMessages(prev => {
@@ -457,25 +616,38 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         }
       };
 
-      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId, abortController.signal, metadataFilter);
+      const attachedDocumentIds = attachedDocuments.map(doc => doc.Id).filter(Boolean);
+      const localAttachmentPayload = localAttachments.map(file => ({
+        name: file.name,
+        content_type: file.content_type,
+        base64_content: file.base64_content
+      }));
+      const result = await ApiClient.chat(serverUrl, assistantId, chatMessages, onDelta, currentThreadId, abortController.signal, metadataFilter, attachedDocumentIds, localAttachmentPayload);
+      const toolTraces = normalizeChatToolTraces(result);
 
       if (streamingIndex !== null) {
+        const responseMessage = result.choices?.[0]?.message || {};
         setMessages(prev => {
           const updated = [...prev];
           updated[streamingIndex] = {
             ...updated[streamingIndex],
             isStreaming: false,
-            content: result.choices[0].message.content,
-            citations: result.citations || null
+            content: responseMessage.content || '',
+            thinking: responseMessage.thinking || responseMessage.Thinking || updated[streamingIndex].thinking || null,
+            citations: result.citations || null,
+            toolTraces
           };
           return updated;
         });
       } else if (result.choices && result.choices.length > 0) {
+        const responseMessage = result.choices[0].message || {};
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: result.choices[0].message.content,
+          content: responseMessage.content || '',
+          thinking: responseMessage.thinking || responseMessage.Thinking || null,
           userMessage: userMessage,
-          citations: result.citations || null
+          citations: result.citations || null,
+          toolTraces
         }]);
       } else if (result.Error) {
         setMessages(prev => [...prev, {
@@ -524,7 +696,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Failed to get response. Please try again.',
+          content: err.toolStreamInterrupted
+            ? 'The assistant tool stream was interrupted. Please try again.'
+            : 'Failed to get response. Please try again.',
           isError: true
         }]);
       }
@@ -538,6 +712,210 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+  };
+
+  const normalizeChatToolTraces = (result) => {
+    const directTraces = result?.tool_calls || result?.ToolCalls;
+    if (Array.isArray(directTraces) && directTraces.length > 0) {
+      return directTraces.map((trace, index) => ({
+        id: readTraceField(trace, 'tool_call_id', 'ToolCallId') || `${readTraceField(trace, 'tool_name', 'ToolName') || 'tool'}-${index}`,
+        toolName: readTraceField(trace, 'display_label', 'DisplayLabel', 'tool_name', 'ToolName') || 'Tool',
+        status: readTraceField(trace, 'denied', 'Denied') ? 'Denied' : readTraceField(trace, 'success', 'Success') ? 'Succeeded' : 'Failed',
+        summary: readTraceField(trace, 'summary', 'Summary'),
+        resultCount: readTraceField(trace, 'result_count', 'ResultCount'),
+        durationMs: readTraceField(trace, 'duration_ms', 'DurationMs'),
+        truncated: !!readTraceField(trace, 'truncated', 'Truncated')
+      }));
+    }
+
+    const events = result?.tool_events || result?.ToolEvents;
+    if (!Array.isArray(events) || events.length === 0) return [];
+
+    const terminalEvents = events.filter(event => {
+      const eventType = String(readTraceField(event, 'event_type', 'EventType', 'type') || '').toLowerCase();
+      return eventType.endsWith('.completed') || eventType.endsWith('.failed') || eventType.endsWith('.denied') || eventType.endsWith('.interrupted');
+    });
+    const sourceEvents = terminalEvents.length > 0 ? terminalEvents : events.filter(event => {
+      const eventType = String(readTraceField(event, 'event_type', 'EventType', 'type') || '').toLowerCase();
+      return !eventType.endsWith('.heartbeat');
+    });
+
+    return sourceEvents.map((event, index) => {
+      const eventType = String(readTraceField(event, 'event_type', 'EventType', 'type') || '').toLowerCase();
+      let status = 'Running';
+      if (eventType.endsWith('.completed')) status = 'Succeeded';
+      else if (eventType.endsWith('.failed') || eventType.endsWith('.interrupted')) status = 'Failed';
+      else if (eventType.endsWith('.denied')) status = 'Denied';
+
+      return {
+        id: readTraceField(event, 'tool_call_id', 'ToolCallId') || `${readTraceField(event, 'tool_name', 'ToolName') || 'tool'}-${index}`,
+        toolName: readTraceField(event, 'display_label', 'DisplayLabel', 'tool_name', 'ToolName') || 'Tool',
+        status,
+        summary: readTraceField(event, 'summary', 'Summary', 'status', 'Status'),
+        resultCount: readTraceField(event, 'result_count', 'ResultCount'),
+        durationMs: readTraceField(event, 'duration_ms', 'DurationMs'),
+        truncated: !!readTraceField(event, 'truncated', 'Truncated')
+      };
+    });
+  };
+
+  const renderToolTraceSummary = (traces) => {
+    if (!Array.isArray(traces) || traces.length === 0) return null;
+    const isGenericSummary = (trace, value) => {
+      if (!value) return true;
+      const normalized = value.trim().replace(/\s+/g, ' ').toLowerCase();
+      const label = String(trace.toolName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      return normalized === `${label} completed.`
+        || normalized === `${label} completed`
+        || normalized === `${label} running.`
+        || normalized === `${label} running`;
+    };
+    const formatResultCount = (value) => {
+      if (value === null || value === undefined || value === '') return '-';
+      const numberValue = Number(value);
+      if (!Number.isFinite(numberValue)) return String(value);
+      return `${numberValue} result${numberValue === 1 ? '' : 's'}`;
+    };
+    const formatDuration = (value) => {
+      if (value === null || value === undefined || value === '') return '-';
+      const numberValue = Number(value);
+      if (!Number.isFinite(numberValue)) return String(value);
+      if (numberValue >= 1000) return `${(numberValue / 1000).toFixed(numberValue >= 10000 ? 0 : 1)}s`;
+      return `${Math.round(numberValue)}ms`;
+    };
+    const detailsLabel = (trace) => {
+      const notes = [];
+      if (trace.truncated) notes.push('Truncated');
+      const summary = trace.summary || '';
+      if (summary && !isGenericSummary(trace, summary)) notes.push(summary);
+      return notes.join(' | ') || '-';
+    };
+
+    const failedCount = traces.filter(trace => trace.status === 'Denied' || trace.status === 'Failed').length;
+    const callCountLabel = failedCount > 0
+      ? `${traces.length} call${traces.length === 1 ? '' : 's'} | ${failedCount} issue${failedCount === 1 ? '' : 's'}`
+      : `${traces.length} call${traces.length === 1 ? '' : 's'}`;
+
+    return (
+      <details className="chat-tool-trace" aria-label="Tool activity">
+        <summary className="chat-tool-trace-summary">
+          <span className="chat-tool-trace-caret" aria-hidden="true" />
+          <span className="chat-tool-trace-title">Tool activity</span>
+          <span className="chat-tool-trace-count">{callCountLabel}</span>
+        </summary>
+        <div className="chat-tool-trace-table-wrap">
+          <table className="chat-tool-trace-table">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Status</th>
+                <th>Results</th>
+                <th>Runtime</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {traces.map((trace, index) => {
+                const details = detailsLabel(trace);
+                return (
+                  <tr key={trace.id || index}>
+                    <td data-label="Tool">
+                      <span className="chat-tool-trace-name" title={trace.toolName}>{trace.toolName}</span>
+                    </td>
+                    <td data-label="Status">
+                      <span className="chat-tool-trace-details" title={trace.status || 'Unknown'}>{trace.status || 'Unknown'}</span>
+                    </td>
+                    <td data-label="Results">
+                      <span className="chat-tool-trace-details" title={formatResultCount(trace.resultCount)}>{formatResultCount(trace.resultCount)}</span>
+                    </td>
+                    <td data-label="Runtime">
+                      <span className="chat-tool-trace-details" title={formatDuration(trace.durationMs)}>{formatDuration(trace.durationMs)}</span>
+                    </td>
+                    <td data-label="Details">
+                      <span className="chat-tool-trace-details" title={details}>{details}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    );
+  };
+
+  const getAttachedDocumentName = (doc) => doc?.Name || doc?.OriginalFilename || doc?.Id || 'Document';
+
+  const removeAttachedDocument = (documentId) => {
+    setAttachedDocuments(current => current.filter(doc => doc.Id !== documentId));
+  };
+
+  const formatAttachmentBytes = (bytes) => {
+    const value = Number(bytes || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || '');
+      const comma = value.indexOf(',');
+      resolve(comma >= 0 ? value.substring(comma + 1) : value);
+    };
+    reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+
+  const handleLocalFileChange = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (files.length < 1) return;
+
+    const maxCount = assistant?.DocumentAttachmentMaxCount || 10;
+    const remainingSlots = Math.max(0, maxCount - attachedDocuments.length - localAttachments.length);
+    if (remainingSlots < 1) {
+      setMessages(prev => [...prev, { role: 'system', content: `Attachment limit reached (${maxCount}).`, isSystem: true }]);
+      return;
+    }
+
+    const maxBytes = 10 * 1024 * 1024;
+    const accepted = [];
+    const rejected = [];
+    for (const file of files.slice(0, remainingSlots)) {
+      if (file.size > maxBytes) {
+        rejected.push(`${file.name} exceeds ${formatAttachmentBytes(maxBytes)}`);
+        continue;
+      }
+
+      try {
+        const base64 = await readFileAsBase64(file);
+        accepted.push({
+          id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+          name: file.name,
+          content_type: file.type || 'application/octet-stream',
+          size_bytes: file.size,
+          base64_content: base64
+        });
+      } catch (err) {
+        rejected.push(`${file.name} could not be read`);
+      }
+    }
+
+    if (accepted.length > 0) {
+      setLocalAttachments(current => [...current, ...accepted]);
+    }
+    if (files.length > remainingSlots) {
+      rejected.push(`${files.length - remainingSlots} file(s) skipped because the attachment limit was reached`);
+    }
+    if (rejected.length > 0) {
+      setMessages(prev => [...prev, { role: 'system', content: rejected.join('\n'), isSystem: true }]);
+    }
+  };
+
+  const removeLocalAttachment = (attachmentId) => {
+    setLocalAttachments(current => current.filter(file => file.id !== attachmentId));
   };
 
   const handleKeyDown = (e) => {
@@ -754,6 +1132,33 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
               );
             }
 
+            if (msg.isToolProgress) {
+              return (
+                <div key={idx} className={`chat-message-row assistant tool-progress ${msg.toolProgressState || 'running'}`}>
+                  <div className="chat-avatar assistant-avatar">
+                    <img
+                      src={logoSrc}
+                      alt=""
+                      onError={(e) => { e.target.src = '/logo-new.png'; }}
+                    />
+                  </div>
+                  <div className="chat-message-content-wrap">
+                    <div className={`chat-bubble assistant tool-progress ${msg.toolProgressState || 'running'}`} aria-live="polite">
+                      <div className="chat-tool-progress-title">{msg.title || 'Tool activity'}</div>
+                      <div className="chat-tool-progress-detail">{msg.detail || msg.content}</div>
+                      {Array.isArray(msg.meta) && msg.meta.length > 0 && (
+                        <div className="chat-tool-progress-meta">
+                          {msg.meta.map((item, metaIndex) => (
+                            <span key={`${item}-${metaIndex}`}>{item}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={idx} className={`chat-message-row ${msg.role}`}>
                 {msg.role === 'assistant' && (
@@ -769,6 +1174,12 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                   <div className={`chat-bubble ${msg.role}${msg.isError ? ' error' : ''}`}>
                     {msg.role === 'assistant' ? (
                       <div className="chat-markdown-content">
+                        {msg.thinking && (
+                          <details className="chat-thinking">
+                            <summary>Thinking</summary>
+                            <div className="chat-thinking-content">{msg.thinking}</div>
+                          </details>
+                        )}
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={markdownComponents}
@@ -784,7 +1195,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                     const filtered = msg.citations.sources
                       .filter(s => !msg.citations.referenced_indices?.length || msg.citations.referenced_indices.includes(s.index));
                     const grouped = Object.values(filtered.reduce((acc, source) => {
-                      const key = source.document_name;
+                      const key = source.url || source.document_name || source.document_id || String(source.index);
                       if (!acc[key]) {
                         acc[key] = { ...source, indices: [source.index] };
                       } else {
@@ -795,6 +1206,9 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                         if (source.download_url && !acc[key].download_url) {
                           acc[key].download_url = source.download_url;
                         }
+                        if (source.url && !acc[key].url) {
+                          acc[key].url = source.url;
+                        }
                       }
                       return acc;
                     }, {}));
@@ -802,22 +1216,27 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                       <div className="chat-citations">
                         <div className="chat-citations-label">Sources</div>
                         <div className="chat-citations-list">
-                          {grouped.map((source) => (
-                            source.download_url ? (
+                          {grouped.map((source) => {
+                            const href = source.download_url || source.url;
+                            const displayName = source.document_name || source.url || source.document_id || 'Source';
+                            const decodedName = safeDecode(displayName);
+                            const sourceTitle = source.url ? "Source URL: " + source.url : "Source document: " + decodedName;
+                            const scorePercent = Number.isFinite(source.score) ? Math.round(source.score * 100) + '%' : '';
+                            return href ? (
                               <a
                                 key={source.indices.join(',')}
                                 className="chat-citation-card chat-citation-clickable"
-                                href={source.download_url}
+                                href={href}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title={source.excerpt}
                               >
                                 <span className="chat-citation-index" title="Citation reference number">[{source.indices.join(', ')}]</span>
-                                <span className="chat-citation-name" title={"Source document: " + decodeURIComponent(source.document_name)}>
-                                  {decodeURIComponent(source.document_name)}
+                                <span className="chat-citation-name" title={sourceTitle}>
+                                  {decodedName}
                                 </span>
                                 <span className="chat-citation-score" title="Cosine similarity score — how closely this chunk matches your query by embedding distance">
-                                  {Math.round(source.score * 100)}%
+                                  {scorePercent}
                                 </span>
                                 {source.rerank_score != null && (
                                     <span className="chat-citation-relevance" title="LLM re-ranking relevance score (0–10) — how relevant an LLM judged this chunk to your query">{source.rerank_score.toFixed(1)}/10</span>
@@ -826,22 +1245,23 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                             ) : (
                               <div key={source.indices.join(',')} className="chat-citation-card" title={source.excerpt}>
                                 <span className="chat-citation-index" title="Citation reference number">[{source.indices.join(', ')}]</span>
-                                <span className="chat-citation-name" title={"Source document: " + decodeURIComponent(source.document_name)}>
-                                  {decodeURIComponent(source.document_name)}
+                                <span className="chat-citation-name" title={sourceTitle}>
+                                  {decodedName}
                                 </span>
                                 <span className="chat-citation-score" title="Cosine similarity score — how closely this chunk matches your query by embedding distance">
-                                  {Math.round(source.score * 100)}%
+                                  {scorePercent}
                                 </span>
                                 {source.rerank_score != null && (
                                     <span className="chat-citation-relevance" title="LLM re-ranking relevance score (0–10) — how relevant an LLM judged this chunk to your query">{source.rerank_score.toFixed(1)}/10</span>
                                 )}
                               </div>
-                            )
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   })()}
+                  {renderToolTraceSummary(msg.toolTraces)}
                   {msg.role === 'assistant' && !msg.isError && (
                     <div className="chat-message-actions">
                       <CopyButton
@@ -892,14 +1312,18 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                   onError={(e) => { e.target.src = '/logo-new.png'; }}
                 />
               </div>
-              <div className="chat-message-content-wrap">
+              <div className="chat-message-content-wrap chat-pending-content-wrap">
                 <div className="chat-bubble assistant">
                   <div className="chat-typing-indicator">
                     <span></span><span></span><span></span>
                   </div>
                 </div>
+                {waitMessage && (
+                  <span className="chat-wait-label" title={waitMessage}>
+                    {waitMessage}
+                  </span>
+                )}
               </div>
-              {waitMessage && <span className="chat-wait-label">{waitMessage}</span>}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -908,6 +1332,35 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
       {/* Input Area */}
       <div className="chat-input-area">
+        {(attachedDocuments.length > 0 || localAttachments.length > 0) && (
+          <div className="chat-attached-docs" aria-label="Attached documents and files">
+            {attachedDocuments.map(doc => (
+              <span key={doc.Id} className="chat-attached-doc-chip" title={getAttachedDocumentName(doc)}>
+                <span>{getAttachedDocumentName(doc)}</span>
+                <button type="button" onClick={() => removeAttachedDocument(doc.Id)} title="Remove document">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </span>
+            ))}
+            {localAttachments.map(file => (
+              <span key={file.id} className="chat-attached-doc-chip" title={`${file.name} (${formatAttachmentBytes(file.size_bytes)})`}>
+                <span>{file.name}</span>
+                <button type="button" onClick={() => removeLocalAttachment(file.id)} title="Remove file">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </span>
+            ))}
+            <button className="chat-attached-doc-clear" type="button" onClick={() => { setAttachedDocuments([]); setLocalAttachments([]); }} title="Clear attachments">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18"/><path d="M8 6v14"/><path d="M16 6v14"/><path d="M10 3h4"/><path d="M5 6l1 15h12l1-15"/>
+              </svg>
+            </button>
+          </div>
+        )}
         <div className="chat-input-container">
           <textarea
             ref={textareaRef}
@@ -918,6 +1371,40 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             placeholder="Message..."
             rows={1}
           />
+          {assistant?.EnableDocumentAttachments && (
+            <>
+              <input
+                ref={localFileInputRef}
+                type="file"
+                multiple
+                className="chat-local-file-input"
+                onChange={handleLocalFileChange}
+              />
+              <button
+                className={`chat-filter-btn${localAttachments.length > 0 ? ' active' : ''}`}
+                onClick={() => localFileInputRef.current?.click()}
+                title="Attach files from this device"
+                type="button"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <path d="M14 2v6h6"/>
+                  <path d="M12 18v-6"/>
+                  <path d="M9 15l3-3 3 3"/>
+                </svg>
+              </button>
+              <button
+                className={`chat-filter-btn${attachedDocuments.length > 0 ? ' active' : ''}`}
+                onClick={() => setShowDocumentAttachmentModal(true)}
+                title="Attach collection documents"
+                type="button"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+            </>
+          )}
           <button
             className={`chat-filter-btn${metadataFilter ? ' active' : ''}`}
             onClick={() => setShowFilterModal(true)}
@@ -959,6 +1446,14 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
         <div className="chat-status-bar">
           <span className="chat-status-disclaimer">AI assistants can make mistakes. Press ENTER to send, shift-ENTER for a new line.</span>
           <div className="chat-status-right">
+            {(attachedDocuments.length > 0 || localAttachments.length > 0) && (
+              <span className="chat-attachment-status" title="Attached collection documents constrain retrieval; local files are sent to this chat turn">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+                {attachedDocuments.length + localAttachments.length} attached
+              </span>
+            )}
             {contextUsage && contextUsage.context_window > 0 && (
               <span className="chat-context-usage" title={`Prompt: ${contextUsage.prompt_tokens?.toLocaleString() || 0} | Completion: ${contextUsage.completion_tokens?.toLocaleString() || 0}`}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -1022,6 +1517,16 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
           availableTags={availableTags}
           onApply={(f) => { setMetadataFilter(f); setShowFilterModal(false); }}
           onClose={() => setShowFilterModal(false)}
+        />
+      )}
+      {showDocumentAttachmentModal && (
+        <DocumentAttachmentModal
+          serverUrl={serverUrl}
+          assistantId={assistantId}
+          selectedDocuments={attachedDocuments}
+          maxCount={assistant?.DocumentAttachmentMaxCount || 10}
+          onApply={(docs) => { setAttachedDocuments(docs); setShowDocumentAttachmentModal(false); }}
+          onClose={() => setShowDocumentAttachmentModal(false)}
         />
       )}
     </div>

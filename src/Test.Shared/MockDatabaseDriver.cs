@@ -29,6 +29,7 @@ namespace Test.Shared
             IngestionRule = new MockIngestionRuleMethods();
             ChatHistory = new MockChatHistoryMethods();
             ChatHistoryPerformanceEvent = new MockChatHistoryPerformanceEventMethods();
+            AssistantToolCall = new MockAssistantToolCallMethods();
             RequestHistory = new MockRequestHistoryMethods();
             CrawlPlan = new MockCrawlPlanMethods();
             CrawlOperation = new MockCrawlOperationMethods();

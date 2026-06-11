@@ -24,6 +24,10 @@ namespace AssistantHub.Server.Handlers
     public class CompletionEndpointHandler : HandlerBase
     {
         private static readonly string _Header = "[CompletionEndpointHandler] ";
+        private static readonly JsonSerializerOptions _PartioJsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
         private readonly IInferenceEndpointService _InferenceEndpoints;
 
         /// <summary>
@@ -61,13 +65,16 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = InjectTenantId(ctx.Request.DataAsString);
+                string body = BuildPartioEndpointRequestBody(ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/completion", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
+                {
+                    respBody = ApplyToolMetadataToEndpointJson(respBody);
                     AssistantHubServer.HealthCheckService?.OnEndpointCreated(respBody);
+                }
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
@@ -146,6 +153,9 @@ namespace AssistantHub.Server.Handlers
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Get, "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
+                if (resp.IsSuccessStatusCode)
+                    respBody = ApplyToolMetadataToEndpointJson(respBody);
+
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(respBody).ConfigureAwait(false);
@@ -176,13 +186,18 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string body = InjectTenantId(ctx.Request.DataAsString);
+                string requestBody = ctx.Request.DataAsString;
+                PartioEndpointConfig existing = await ResolveExistingCompletionEndpointForUpdateAsync(endpointId, requestBody).ConfigureAwait(false);
+                string body = BuildPartioEndpointRequestBody(requestBody, existing);
 
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/completion/" + endpointId, body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
+                {
+                    respBody = ApplyToolMetadataToEndpointJson(respBody);
                     AssistantHubServer.HealthCheckService?.OnEndpointUpdated(respBody);
+                }
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
@@ -378,19 +393,30 @@ namespace AssistantHub.Server.Handlers
         /// Inject the default TenantId into a JSON request body if not already present.
         /// Partio requires a TenantId to scope endpoints to the correct tenant.
         /// </summary>
-        private string InjectTenantId(string body)
+        private string BuildPartioEndpointRequestBody(string body, PartioEndpointConfig existing = null)
         {
             if (String.IsNullOrEmpty(body))
-                return JsonSerializer.Serialize(new PartioEndpointRequest { TenantId = "default" });
+                body = "{}";
 
-            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body);
+            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body, _PartioJsonOptions);
             if (request == null)
                 request = new PartioEndpointRequest();
 
             if (String.IsNullOrEmpty(request.TenantId))
                 request.TenantId = "default";
 
-            return JsonSerializer.Serialize(request);
+            if (existing != null)
+            {
+                if (!PartioEndpointToolMetadata.JsonObjectContainsProperty(body, nameof(PartioEndpointRequest.Labels)))
+                    request.Labels = existing.Labels;
+                if (!PartioEndpointToolMetadata.JsonObjectContainsProperty(body, nameof(PartioEndpointRequest.Tags)))
+                    request.Tags = existing.Tags;
+            }
+
+            if (PartioEndpointToolMetadata.RequestContainsToolCapabilityFields(body))
+                PartioEndpointToolMetadata.WriteRequestToolFieldsToTags(request);
+
+            return PartioEndpointToolMetadata.SerializePartioRequest(request);
         }
 
         /// <summary>
@@ -400,7 +426,9 @@ namespace AssistantHub.Server.Handlers
         private string ConvertPartioEnvelopeToEnumerationResult(string partioJson)
         {
             PartioEnumerationEnvelope<PartioEndpointConfig> envelope =
-                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(partioJson);
+                JsonSerializer.Deserialize<PartioEnumerationEnvelope<PartioEndpointConfig>>(partioJson, _PartioJsonOptions);
+
+            PartioEndpointToolMetadata.ReadTagsToToolFields(envelope?.Data);
 
             EnumerationResult<PartioEndpointConfig> result = new EnumerationResult<PartioEndpointConfig>
             {
@@ -417,6 +445,50 @@ namespace AssistantHub.Server.Handlers
             };
 
             return Serializer.SerializeJson(result);
+        }
+
+        private async Task<PartioEndpointConfig> ResolveExistingCompletionEndpointForUpdateAsync(string endpointId, string requestBody)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId)) return null;
+            if (PartioEndpointToolMetadata.JsonObjectContainsProperty(requestBody, nameof(PartioEndpointRequest.Labels))
+                && PartioEndpointToolMetadata.JsonObjectContainsProperty(requestBody, nameof(PartioEndpointRequest.Tags)))
+                return null;
+
+            try
+            {
+                using HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false);
+
+                if (!resp.IsSuccessStatusCode)
+                    return null;
+
+                string body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                return JsonSerializer.Deserialize<PartioEndpointConfig>(body, _PartioJsonOptions);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "failed to read existing completion endpoint metadata for " + endpointId + ": " + e.Message);
+                return null;
+            }
+        }
+
+        private string ApplyToolMetadataToEndpointJson(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return json;
+
+            try
+            {
+                PartioEndpointConfig endpoint = JsonSerializer.Deserialize<PartioEndpointConfig>(json, _PartioJsonOptions);
+                if (endpoint == null) return json;
+
+                PartioEndpointToolMetadata.ReadTagsToToolFields(endpoint);
+                return Serializer.SerializeJson(endpoint);
+            }
+            catch
+            {
+                return json;
+            }
         }
 
         #endregion

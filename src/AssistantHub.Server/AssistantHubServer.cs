@@ -168,6 +168,8 @@ namespace AssistantHub.Server
             List<string> errors = new List<string>();
             if (settings.Verbex != null)
                 errors.AddRange(settings.Verbex.Validate());
+            if (settings.ExternalSearch != null)
+                errors.AddRange(ExternalSearchConfigurationHelper.Validate(settings.ExternalSearch));
 
             if (errors.Count < 1)
                 return true;
@@ -219,6 +221,25 @@ namespace AssistantHub.Server
             }
 
             _Logging.Info(_Header + "logging initialized");
+            LogExternalSearchStatus();
+        }
+
+        private static void LogExternalSearchStatus()
+        {
+            ExternalSearchConfigurationStatus status = ExternalSearchConfigurationHelper.GetStatus(_Settings.ExternalSearch);
+            if (!status.Enabled)
+            {
+                _Logging.Info(_Header + "external search disabled");
+                return;
+            }
+
+            if (status.ConfiguredProviders > 0)
+            {
+                _Logging.Info(_Header + "external search enabled with " + status.ConfiguredProviders + " configured provider(s)");
+                return;
+            }
+
+            _Logging.Warn(_Header + "external search enabled but misconfigured; no configured Tavily providers are available");
         }
 
         private static async Task InitializeDatabaseAsync()
@@ -458,7 +479,7 @@ namespace AssistantHub.Server
             _InvertedIndex = new VerbexInvertedIndexService(_Settings.Verbex, _Logging);
             _ExternalServiceHealth = new ExternalServiceHealthService(_Settings, _Logging);
             _RequestHistoryCapture = new RequestHistoryCaptureService(_Database, _Settings, _Logging);
-            _SlackConnectionManager = new SlackAssistantConnectionManager(_Database, _Logging, _Settings, _Retrieval, _Inference);
+            _SlackConnectionManager = new SlackAssistantConnectionManager(_Database, _Logging, _Settings, _Retrieval, _Inference, _Storage);
             _Logging.Info(_Header + "services initialized");
         }
 
@@ -537,7 +558,11 @@ namespace AssistantHub.Server
                     {
                         await Task.Delay(TimeSpan.FromMinutes(_Settings.RequestHistory.PurgeIntervalMinutes), _TokenSource.Token).ConfigureAwait(false);
                         if (_Settings.RequestHistory.Enabled)
+                        {
                             await _Database.RequestHistory.DeleteExpiredAsync(_Settings.RequestHistory.RetentionDays, _TokenSource.Token).ConfigureAwait(false);
+                            if (_Database.AssistantToolCall != null)
+                                await _Database.AssistantToolCall.DeleteExpiredAsync(_Settings.RequestHistory.RetentionDays, _TokenSource.Token).ConfigureAwait(false);
+                        }
                     }
                     catch (OperationCanceledException)
                     {
@@ -616,6 +641,7 @@ namespace AssistantHub.Server
             AssistantHandler assistantHandler = new AssistantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantAnalyticsHandler assistantAnalyticsHandler = new AssistantAnalyticsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            AssistantToolCallHandler assistantToolCallHandler = new AssistantToolCallHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
             IngestionRuleHandler ingestionRuleHandler = new IngestionRuleHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             EmbeddingEndpointHandler embeddingEndpointHandler = new EmbeddingEndpointHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _EmbeddingEndpointService);
@@ -645,6 +671,7 @@ namespace AssistantHub.Server
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/generate", chatHandler.PostGenerateAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/threads", chatHandler.PostCreateThreadAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/threads/{threadId}/history", chatHandler.GetThreadHistoryAsync);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents", chatHandler.GetAssistantDocumentsAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents/{documentId}/download", chatHandler.GetPublicDocumentDownloadAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/labels/distinct", chatHandler.GetAssistantDistinctLabelsAsync);
             _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tags/distinct", chatHandler.GetAssistantDistinctTagsAsync);
@@ -750,6 +777,9 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/slack/verify", assistantSettingsHandler.VerifySlackSettingsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/validate", assistantSettingsHandler.ValidateToolsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/test", assistantSettingsHandler.TestToolsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tools", assistantSettingsHandler.GetToolsAsync);
 
             // Authenticated routes - Assistant Analytics
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/overview", assistantAnalyticsHandler.GetOverviewAsync);
@@ -758,6 +788,12 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/endpoints", assistantAnalyticsHandler.GetEndpointsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/slowest", assistantAnalyticsHandler.GetSlowestAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/feedback", assistantAnalyticsHandler.GetFeedbackAsync);
+
+            // Authenticated routes - Assistant Tool Calls
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.GetAssistantToolCallsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.DeleteAssistantToolCallsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.GetAssistantToolCallAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.DeleteAssistantToolCallAsync);
 
             // Authenticated routes - Ingestion Rules
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync);
@@ -824,6 +860,7 @@ namespace AssistantHub.Server
 
             // Authenticated routes - Configuration (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration", configurationHandler.GetConfigurationAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration/external-search/status", configurationHandler.GetExternalSearchStatusAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/configuration", configurationHandler.PutConfigurationAsync);
 
             // Authenticated routes - Models

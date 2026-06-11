@@ -18,6 +18,10 @@ from .models import (
     AssistantChatOpenResult,
     AssistantPublicInfo,
     AssistantSettings,
+    AssistantToolDescriptor,
+    AssistantToolPolicyValidationRequest,
+    AssistantToolPolicyValidationResult,
+    AssistantToolPolicyTestResult,
     AuthenticateRequest,
     AuthenticateResult,
     BucketCreateRequest,
@@ -117,6 +121,34 @@ class AssistantHubClientParityMixin:
     def get_assistant_settings(self, assistant_id: str) -> AssistantSettings:
         response = self._request("GET", f"/v1.0/assistants/{assistant_id}/settings")
         return AssistantSettings.model_validate(response.json())
+
+    def get_assistant_tools(self, assistant_id: str) -> list[AssistantToolDescriptor]:
+        response = self._request("GET", f"/v1.0/assistants/{assistant_id}/tools")
+        return [AssistantToolDescriptor.model_validate(obj) for obj in (response.json() or [])]
+
+    def validate_assistant_tool_policy(
+        self,
+        assistant_id: str,
+        request: AssistantToolPolicyValidationRequest,
+    ) -> AssistantToolPolicyValidationResult:
+        response = self._request(
+            "POST",
+            f"/v1.0/assistants/{assistant_id}/settings/tools/validate",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+        return AssistantToolPolicyValidationResult.model_validate(response.json())
+
+    def test_assistant_tool_policy(
+        self,
+        assistant_id: str,
+        request: AssistantToolPolicyValidationRequest,
+    ) -> AssistantToolPolicyTestResult:
+        response = self._request(
+            "POST",
+            f"/v1.0/assistants/{assistant_id}/settings/tools/test",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+        return AssistantToolPolicyTestResult.model_validate(response.json())
 
     def update_assistant_settings(self, assistant_id: str, settings: AssistantSettings) -> AssistantSettings:
         response = self._request(

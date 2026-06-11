@@ -24,6 +24,7 @@ namespace AssistantHub.McpServer.Classes
             "AdminApiKeys",
             "ApiKey",
             "ApiKeyValue",
+            "TavilyApiKey",
             "AccessKey",
             "SecretKey",
             "SlackAppToken",
@@ -78,6 +79,10 @@ namespace AssistantHub.McpServer.Classes
                     {
                         obj[propertyName] = BuildRedactedNode(child);
                     }
+                    else if (String.Equals(propertyName, "ToolPolicyJson", StringComparison.OrdinalIgnoreCase))
+                    {
+                        obj[propertyName] = BuildRedactedJsonStringNode(child);
+                    }
                     else if (child != null)
                     {
                         RedactNode(child);
@@ -105,6 +110,29 @@ namespace AssistantHub.McpServer.Classes
             }
 
             return JsonValue.Create("[REDACTED]")!;
+        }
+
+        private static JsonNode? BuildRedactedJsonStringNode(JsonNode? original)
+        {
+            string? json = original?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(json))
+                return original;
+
+            JsonNode? parsed;
+            try
+            {
+                parsed = JsonNode.Parse(json);
+            }
+            catch
+            {
+                return original;
+            }
+
+            if (parsed == null)
+                return original;
+
+            RedactNode(parsed);
+            return JsonValue.Create(parsed.ToJsonString())!;
         }
     }
 }

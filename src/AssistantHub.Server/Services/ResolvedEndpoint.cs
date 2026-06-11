@@ -27,5 +27,9 @@ namespace AssistantHub.Server.Services
         public string ApiKey;
         public string Model;
         public int MaxConcurrentRequests;
+        public bool SupportsToolCalling;
+        public string ToolCallingApiFormat;
+        public bool SupportsParallelToolCalls;
+        public bool SupportsStreamingToolCalls;
     }
 }

@@ -89,6 +89,9 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 rerank_prompt NVARCHAR(MAX) NULL,
                 enable_citations BIT NOT NULL DEFAULT 0,
                 citation_link_mode NVARCHAR(32) NOT NULL DEFAULT 'None',
+                enable_document_attachments BIT NOT NULL DEFAULT 0,
+                document_attachment_max_count INT NOT NULL DEFAULT 10,
+                expose_document_source_urls BIT NOT NULL DEFAULT 0,
                 collection_id NVARCHAR(256) NULL,
                 retrieval_top_k INT NOT NULL DEFAULT 10,
                 retrieval_score_threshold FLOAT NOT NULL DEFAULT 0.3,
@@ -100,11 +103,13 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 fulltext_minimum_score FLOAT NULL,
                 retrieval_include_neighbors INT NOT NULL DEFAULT 0,
                 inference_endpoint_id NVARCHAR(MAX) NULL,
+                tool_routing_inference_endpoint_id NVARCHAR(MAX) NULL,
                 retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL,
                 query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
                 rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
                 load_models_on_chat_open BIT NOT NULL DEFAULT 0,
+                expose_thinking BIT NOT NULL DEFAULT 0,
                 title NVARCHAR(MAX) NULL,
                 logo_url NVARCHAR(MAX) NULL,
                 favicon_url NVARCHAR(MAX) NULL,
@@ -116,6 +121,7 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 slack_bot_token NVARCHAR(MAX) NULL,
                 slack_channel_id NVARCHAR(MAX) NULL,
                 slack_message_prefix NVARCHAR(MAX) NULL,
+                tool_policy_json NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_settings PRIMARY KEY (id)
@@ -124,6 +130,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
             @"IF COL_LENGTH('assistant_settings', 'retrieval_gate_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'tool_routing_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD tool_routing_inference_endpoint_id NVARCHAR(MAX) NULL;";
 
         internal static readonly string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
             @"IF COL_LENGTH('assistant_settings', 'query_rewrite_inference_endpoint_id') IS NULL
@@ -136,6 +146,26 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             @"IF COL_LENGTH('assistant_settings', 'load_models_on_chat_open') IS NULL
             ALTER TABLE assistant_settings ADD load_models_on_chat_open BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsExposeThinkingColumn =
+            @"IF COL_LENGTH('assistant_settings', 'expose_thinking') IS NULL
+            ALTER TABLE assistant_settings ADD expose_thinking BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsToolPolicyJsonColumn =
+            @"IF COL_LENGTH('assistant_settings', 'tool_policy_json') IS NULL
+            ALTER TABLE assistant_settings ADD tool_policy_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsEnableDocumentAttachmentsColumn =
+            @"IF COL_LENGTH('assistant_settings', 'enable_document_attachments') IS NULL
+            ALTER TABLE assistant_settings ADD enable_document_attachments BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsDocumentAttachmentMaxCountColumn =
+            @"IF COL_LENGTH('assistant_settings', 'document_attachment_max_count') IS NULL
+            ALTER TABLE assistant_settings ADD document_attachment_max_count INT NOT NULL DEFAULT 10;";
+
+        internal static readonly string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
+            @"IF COL_LENGTH('assistant_settings', 'expose_document_source_urls') IS NULL
+            ALTER TABLE assistant_settings ADD expose_document_source_urls BIT NOT NULL DEFAULT 0;";
 
         internal static readonly string CreateAssistantDocumentsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')
@@ -312,6 +342,8 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 tokens_per_second_overall FLOAT NOT NULL DEFAULT 0,
                 tokens_per_second_generation FLOAT NOT NULL DEFAULT 0,
                 metadata_filter NVARCHAR(MAX) NULL,
+                attached_document_ids_json NVARCHAR(MAX) NULL,
+                attached_documents_json NVARCHAR(MAX) NULL,
                 origin NVARCHAR(64) NULL,
                 assistant_response NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,
@@ -334,6 +366,14 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddChatHistoryPerformanceJsonColumn =
             @"IF COL_LENGTH('chat_history', 'performance_json') IS NULL
             ALTER TABLE chat_history ADD performance_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddChatHistoryAttachedDocumentIdsJsonColumn =
+            @"IF COL_LENGTH('chat_history', 'attached_document_ids_json') IS NULL
+            ALTER TABLE chat_history ADD attached_document_ids_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddChatHistoryAttachedDocumentsJsonColumn =
+            @"IF COL_LENGTH('chat_history', 'attached_documents_json') IS NULL
+            ALTER TABLE chat_history ADD attached_documents_json NVARCHAR(MAX) NULL;";
 
         internal static readonly string CreateRequestHistoryTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'request_history')
@@ -445,6 +485,80 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             FROM chat_history_performance_events e
             INNER JOIN chat_history h ON h.id = e.chat_history_id
             WHERE e.assistant_id IS NULL;";
+
+        internal static readonly string CreateAssistantToolCallsTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_tool_calls')
+            CREATE TABLE assistant_tool_calls (
+                id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
+                assistant_id NVARCHAR(256) NOT NULL,
+                chat_history_id NVARCHAR(256) NULL,
+                request_history_id NVARCHAR(256) NULL,
+                trace_id NVARCHAR(256) NULL,
+                thread_id NVARCHAR(256) NULL,
+                origin NVARCHAR(128) NULL,
+                turn_index INT NOT NULL DEFAULT 0,
+                iteration INT NOT NULL DEFAULT 0,
+                sequence_number INT NOT NULL DEFAULT 0,
+                provider_tool_call_id NVARCHAR(256) NULL,
+                tool_name NVARCHAR(256) NOT NULL,
+                arguments_json NVARCHAR(MAX) NULL,
+                output_json NVARCHAR(MAX) NULL,
+                result_summary_json NVARCHAR(MAX) NULL,
+                success BIT NOT NULL DEFAULT 0,
+                denied BIT NOT NULL DEFAULT 0,
+                truncated BIT NOT NULL DEFAULT 0,
+                output_characters INT NOT NULL DEFAULT 0,
+                input_bytes INT NOT NULL DEFAULT 0,
+                output_bytes INT NOT NULL DEFAULT 0,
+                duration_ms FLOAT NOT NULL DEFAULT 0,
+                error_type NVARCHAR(MAX) NULL,
+                error_message NVARCHAR(MAX) NULL,
+                provider NVARCHAR(128) NULL,
+                model NVARCHAR(450) NULL,
+                active BIT NOT NULL DEFAULT 1,
+                started_utc NVARCHAR(64) NOT NULL,
+                finished_utc NVARCHAR(64) NOT NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                last_update_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_assistant_tool_calls PRIMARY KEY (id)
+            );";
+
+        internal static readonly string AddAssistantToolCallsTurnIndexColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'turn_index') IS NULL
+            ALTER TABLE assistant_tool_calls ADD turn_index INT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantToolCallsResultSummaryJsonColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'result_summary_json') IS NULL
+            ALTER TABLE assistant_tool_calls ADD result_summary_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantToolCallsInputBytesColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'input_bytes') IS NULL
+            ALTER TABLE assistant_tool_calls ADD input_bytes INT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantToolCallsOutputBytesColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'output_bytes') IS NULL
+            ALTER TABLE assistant_tool_calls ADD output_bytes INT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantToolCallsErrorTypeColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'error_type') IS NULL
+            ALTER TABLE assistant_tool_calls ADD error_type NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantToolCallsProviderColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'provider') IS NULL
+            ALTER TABLE assistant_tool_calls ADD provider NVARCHAR(128) NULL;";
+
+        internal static readonly string AddAssistantToolCallsModelColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'model') IS NULL
+            ALTER TABLE assistant_tool_calls ADD model NVARCHAR(450) NULL;";
+
+        internal static readonly string AddAssistantToolCallsActiveColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'active') IS NULL
+            ALTER TABLE assistant_tool_calls ADD active BIT NOT NULL DEFAULT 1;";
+
+        internal static readonly string AddAssistantToolCallsLastUpdateUtcColumn =
+            @"IF COL_LENGTH('assistant_tool_calls', 'last_update_utc') IS NULL
+            ALTER TABLE assistant_tool_calls ADD last_update_utc NVARCHAR(64) NOT NULL DEFAULT '';";
 
         #endregion
 
@@ -657,6 +771,50 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_chpe_tenant_assistant_endpoint_created')
             CREATE INDEX idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events (tenant_id, assistant_id, endpoint_id, created_utc);";
+
+        internal static readonly string CreateAssistantToolCallsTenantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_tenant_id')
+            CREATE INDEX idx_assistant_tool_calls_tenant_id ON assistant_tool_calls (tenant_id);";
+
+        internal static readonly string CreateAssistantToolCallsAssistantIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_assistant_id')
+            CREATE INDEX idx_assistant_tool_calls_assistant_id ON assistant_tool_calls (assistant_id);";
+
+        internal static readonly string CreateAssistantToolCallsThreadIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_thread_id')
+            CREATE INDEX idx_assistant_tool_calls_thread_id ON assistant_tool_calls (thread_id);";
+
+        internal static readonly string CreateAssistantToolCallsChatHistoryIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_chat_history_id')
+            CREATE INDEX idx_assistant_tool_calls_chat_history_id ON assistant_tool_calls (chat_history_id);";
+
+        internal static readonly string CreateAssistantToolCallsRequestHistoryIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_request_history_id')
+            CREATE INDEX idx_assistant_tool_calls_request_history_id ON assistant_tool_calls (request_history_id);";
+
+        internal static readonly string CreateAssistantToolCallsTraceIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_trace_id')
+            CREATE INDEX idx_assistant_tool_calls_trace_id ON assistant_tool_calls (trace_id);";
+
+        internal static readonly string CreateAssistantToolCallsToolNameIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_tool_name')
+            CREATE INDEX idx_assistant_tool_calls_tool_name ON assistant_tool_calls (tool_name);";
+
+        internal static readonly string CreateAssistantToolCallsSuccessIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_success')
+            CREATE INDEX idx_assistant_tool_calls_success ON assistant_tool_calls (success);";
+
+        internal static readonly string CreateAssistantToolCallsCreatedUtcIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_assistant_tool_calls_created_utc')
+            CREATE INDEX idx_assistant_tool_calls_created_utc ON assistant_tool_calls (created_utc);";
+
+        internal static readonly string CreateAssistantToolCallsTenantAssistantCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_atc_tenant_assistant_created')
+            CREATE INDEX idx_atc_tenant_assistant_created ON assistant_tool_calls (tenant_id, assistant_id, created_utc);";
+
+        internal static readonly string CreateAssistantToolCallsTenantAssistantToolCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_atc_tenant_assistant_tool_created')
+            CREATE INDEX idx_atc_tenant_assistant_tool_created ON assistant_tool_calls (tenant_id, assistant_id, tool_name, created_utc);";
 
         internal static readonly string CreateCrawlPlansTenantIdIndex =
             @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_crawl_plans_tenant_id')

@@ -48,6 +48,8 @@ export interface AssistantTokenUsageTelemetry {
   Input?: number | null;
   Output?: number | null;
   Total?: number | null;
+  Reasoning?: number | null;
+  ToolDefinitions?: number | null;
   PromptEvalCount?: number | null;
   EvalCount?: number | null;
 }

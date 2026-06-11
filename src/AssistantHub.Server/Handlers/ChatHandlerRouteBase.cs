@@ -91,12 +91,101 @@ namespace AssistantHub.Server.Handlers
                     Title = settings?.Title,
                     LogoUrl = settings?.LogoUrl,
                     FaviconUrl = settings?.FaviconUrl,
-                    LoadModelsOnChatOpen = settings?.LoadModelsOnChatOpen ?? false
+                    LoadModelsOnChatOpen = settings?.LoadModelsOnChatOpen ?? false,
+                    ExposeThinking = settings?.ExposeThinking ?? false,
+                    EnableDocumentAttachments = settings?.EnableDocumentAttachments ?? false,
+                    DocumentAttachmentMaxCount = settings?.DocumentAttachmentMaxCount ?? 10,
+                    ExposeDocumentSourceUrls = settings?.ExposeDocumentSourceUrls ?? false
                 })).ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetAssistantPublicAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/assistants/{assistantId}/documents - List selectable public chat documents.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task GetAssistantDocumentsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                string assistantId = ctx.Request.Url.Parameters["assistantId"];
+                if (String.IsNullOrEmpty(assistantId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                Assistant assistant = await Database.Assistant.ReadAsync(assistantId).ConfigureAwait(false);
+                if (assistant == null || !assistant.Active)
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);
+                if (settings == null || !settings.EnableDocumentAttachments)
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed, null, "Document attachments are not enabled for this assistant."))).ConfigureAwait(false);
+                    return;
+                }
+
+                if (String.IsNullOrEmpty(settings.CollectionId))
+                {
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new EnumerationResult<AssistantDocumentSelectionItem>())).ConfigureAwait(false);
+                    return;
+                }
+
+                EnumerationQuery query = BuildEnumerationQuery(ctx);
+                query.CollectionIdFilter = settings.CollectionId;
+
+                string queryText = ctx.Request.Query.Elements.Get("query");
+                List<string> contentTypeFilters = ParseContentTypeFilters(
+                    ctx.Request.Query.Elements.Get("contentType") ?? ctx.Request.Query.Elements.Get("content_type"));
+
+                EnumerationResult<AssistantDocument> documents = await Database.AssistantDocument.EnumerateAsync(assistant.TenantId, query).ConfigureAwait(false);
+                List<AssistantDocumentSelectionItem> items = documents.Objects
+                    .Where(doc => doc.Status == Enums.DocumentStatusEnum.Completed)
+                    .Where(doc => AssistantDocumentPolicyFilter.MatchesAssistantMetadataFilters(doc, settings))
+                    .Where(doc => MatchesDocumentQuery(doc, queryText, settings.ExposeDocumentSourceUrls))
+                    .Where(doc => MatchesContentTypeFilter(doc, contentTypeFilters))
+                    .Select(doc => AssistantDocumentSelectionItem.FromDocument(doc, settings.ExposeDocumentSourceUrls))
+                    .ToList();
+
+                EnumerationResult<AssistantDocumentSelectionItem> result = new EnumerationResult<AssistantDocumentSelectionItem>
+                {
+                    MaxResults = documents.MaxResults,
+                    TotalRecords = items.Count,
+                    RecordsRemaining = documents.EndOfResults ? 0 : documents.RecordsRemaining,
+                    ContinuationToken = documents.ContinuationToken,
+                    EndOfResults = documents.EndOfResults,
+                    Objects = items,
+                    TotalMs = documents.TotalMs
+                };
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(result)).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetAssistantDocumentsAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
@@ -158,6 +247,7 @@ namespace AssistantHub.Server.Handlers
 
                 HashSet<string> completionEndpointIds = new HashSet<string>(StringComparer.Ordinal);
                 AddEndpointId(completionEndpointIds, settings.InferenceEndpointId);
+                AddEndpointId(completionEndpointIds, settings.ToolRoutingInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.RetrievalGateInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.QueryRewriteInferenceEndpointId);
                 AddEndpointId(completionEndpointIds, settings.RerankInferenceEndpointId);
@@ -907,6 +997,64 @@ namespace AssistantHub.Server.Handlers
             string trimmed = endpointId?.Trim();
             if (!String.IsNullOrEmpty(trimmed))
                 endpointIds.Add(trimmed);
+        }
+
+        private static bool MatchesDocumentQuery(AssistantDocument document, string queryText, bool includeSourceUrl)
+        {
+            if (document == null) return false;
+
+            string needle = queryText?.Trim();
+            if (String.IsNullOrEmpty(needle)) return true;
+            needle = needle.ToLowerInvariant();
+
+            List<string> values = new List<string>
+            {
+                document.Id,
+                document.Name,
+                document.OriginalFilename,
+                document.ContentType
+            };
+
+            if (includeSourceUrl)
+                values.Add(document.SourceUrl);
+
+            return values.Any(value =>
+                !String.IsNullOrEmpty(value)
+                && value.ToLowerInvariant().Contains(needle));
+        }
+
+        private static List<string> ParseContentTypeFilters(string contentType)
+        {
+            if (String.IsNullOrWhiteSpace(contentType)) return new List<string>();
+
+            return contentType
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(value => !String.IsNullOrWhiteSpace(value))
+                .Select(value => value.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(20)
+                .ToList();
+        }
+
+        private static bool MatchesContentTypeFilter(AssistantDocument document, List<string> filters)
+        {
+            if (document == null) return false;
+            if (filters == null || filters.Count == 0) return true;
+
+            string contentType = document.ContentType?.Trim();
+            if (String.IsNullOrEmpty(contentType)) return false;
+
+            foreach (string filter in filters)
+            {
+                if (String.Equals(contentType, filter, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (filter.EndsWith("/*", StringComparison.Ordinal)
+                    && contentType.StartsWith(filter.Substring(0, filter.Length - 1), StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
 

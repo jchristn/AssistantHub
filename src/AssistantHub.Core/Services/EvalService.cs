@@ -318,6 +318,7 @@ namespace AssistantHub.Core.Services
 
                     string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     PartioEndpointConfig ep = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions);
+                    PartioEndpointToolMetadata.ReadTagsToToolFields(ep);
 
                     InferenceProviderEnum provider = InferenceProviderHelper.FromApiFormat(ep?.ApiFormat, InferenceProviderEnum.Ollama);
 
@@ -326,7 +327,11 @@ namespace AssistantHub.Core.Services
                         Provider = provider,
                         Endpoint = ep?.Endpoint ?? _Settings.Inference.Endpoint,
                         ApiKey = ep?.ApiKey ?? _Settings.Inference.ApiKey,
-                        Model = ep?.Model
+                        Model = ep?.Model,
+                        SupportsToolCalling = ep?.SupportsToolCalling == true,
+                        ToolCallingApiFormat = ep?.ToolCallingApiFormat,
+                        SupportsParallelToolCalls = ep?.SupportsParallelToolCalls == true,
+                        SupportsStreamingToolCalls = ep?.SupportsStreamingToolCalls == true
                     };
                 }
             }

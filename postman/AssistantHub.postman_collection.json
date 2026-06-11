@@ -67,8 +67,38 @@
       "type": "string"
     },
     {
+      "key": "toolCallRecordId",
+      "value": "atc_abc123",
+      "type": "string"
+    },
+    {
       "key": "assistantId",
       "value": "asst_abc123",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "adoc_abc123",
+      "type": "string"
+    },
+    {
+      "key": "documentId2",
+      "value": "adoc_def456",
+      "type": "string"
+    },
+    {
+      "key": "documentId3",
+      "value": "adoc_ghi789",
+      "type": "string"
+    },
+    {
+      "key": "otherCollectionDocumentId",
+      "value": "adoc_other_collection",
+      "type": "string"
+    },
+    {
+      "key": "tavilyApiKey",
+      "value": "",
       "type": "string"
     },
     {
@@ -2468,7 +2498,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Name\": \"OpenAI Completion Endpoint\",\n\t\"Model\": \"gpt-4o\",\n\t\"Endpoint\": \"https://api.openai.com\",\n\t\"ApiFormat\": \"OpenAI\",\n\t\"ApiKey\": \"sk-...\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://api.openai.com/v1/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
+              "raw": "{\n\t\"Name\": \"OpenAI-Compatible Completion Endpoint\",\n\t\"Model\": \"qwen3\",\n\t\"Endpoint\": \"https://api.openai.com/v1\",\n\t\"ApiFormat\": \"OpenAI\",\n\t\"ApiKey\": \"sk-...\",\n\t\"Active\": true,\n\t\"Labels\": [\"production\", \"inference\"],\n\t\"Tags\": {\n\t\t\"owner\": \"assistant-team\"\n\t},\n\t\"SupportsToolCalling\": true,\n\t\"ToolCallingApiFormat\": \"OpenAIChatCompletions\",\n\t\"SupportsParallelToolCalls\": false,\n\t\"SupportsStreamingToolCalls\": false,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"https://api.openai.com/v1/models\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -2495,7 +2525,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Name\": \"Ollama Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
+              "raw": "{\n\t\"Name\": \"Ollama Completion Endpoint\",\n\t\"Model\": \"llama3\",\n\t\"Endpoint\": \"http://localhost:11434\",\n\t\"ApiFormat\": \"Ollama\",\n\t\"Active\": true,\n\t\"Labels\": [\"local\", \"inference\"],\n\t\"Tags\": {\n\t\t\"owner\": \"assistant-team\"\n\t},\n\t\"SupportsToolCalling\": true,\n\t\"ToolCallingApiFormat\": \"OllamaChat\",\n\t\"SupportsParallelToolCalls\": false,\n\t\"SupportsStreamingToolCalls\": false,\n\t\"HealthCheckEnabled\": true,\n\t\"HealthCheckUrl\": \"http://localhost:11434/api/tags\",\n\t\"HealthCheckMethod\": \"GET\",\n\t\"HealthCheckIntervalMs\": 30000,\n\t\"HealthCheckTimeoutMs\": 10000,\n\t\"HealthCheckExpectedStatusCode\": 200,\n\t\"HealthyThreshold\": 2,\n\t\"UnhealthyThreshold\": 2,\n\t\"HealthCheckUseAuth\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/endpoints/completion",
@@ -3098,6 +3128,243 @@
           }
         },
         {
+          "name": "Get Assistant Tools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tools",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "tools"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Validate Assistant Tool Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableCollectionSearchTool\\\":true,\\\"EnableWebSearchTool\\\":false}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings/tools/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings",
+                "tools",
+                "validate"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test Assistant Tool Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableCollectionSearchTool\\\":true,\\\"EnableWebSearchTool\\\":false}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings/tools/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings",
+                "tools",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Tool Policy - Enable Collection Tools",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"ToolChoiceMode\\\":\\\"Auto\\\",\\\"EnableToolFeedbackEvents\\\":true,\\\"ExposeToolTraceToUser\\\":false,\\\"EnableCollectionSearchTool\\\":true,\\\"EnableCollectionReadChunksTool\\\":true,\\\"EnableCollectionEnumerateDocumentsTool\\\":true,\\\"EnableDocumentAtomExtractionTool\\\":true,\\\"AllowedSearchModes\\\":[\\\"Vector\\\",\\\"FullText\\\",\\\"Hybrid\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxSearchTopK\\\":10,\\\"MaxSearchQueriesPerCall\\\":3,\\\"MaxDocumentsConsideredPerSearch\\\":1000,\\\"MaxResultsConsideredPerSearch\\\":1000,\\\"ReturnFullSearchContent\\\":false,\\\"MaxReadRangesPerCall\\\":5,\\\"MaxAtomExtractionBytes\\\":10485760,\\\"MaxAtomExtractionCharacters\\\":50000,\\\"AllowModelDocumentIdFilter\\\":true}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Example settings update that enables collection search and document enumeration tools. Include the rest of the assistant settings required by your deployment when applying this request."
+          }
+        },
+        {
+          "name": "Update Tool Policy - Enable Verbex Search",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableVerbexFullTextSearchTool\\\":true,\\\"EnableIndexEnumerateRecordsTool\\\":true,\\\"AllowedVerbexIndexIds\\\":[\\\"{{indexId}}\\\"],\\\"MaxSearchResultsPerCall\\\":10,\\\"MaxVerbexResults\\\":10,\\\"RequireDocumentMapping\\\":true}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Example settings update that enables the Verbex full-text search tool for an allowed index."
+          }
+        },
+        {
+          "name": "Update Tool Policy - Enable S3 Object Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableS3ObjectReadTool\\\":true,\\\"EnableBucketEnumerateObjectsTool\\\":true,\\\"AllowedBucketPrefixes\\\":[\\\"documents/\\\"],\\\"AllowedObjectSuffixes\\\":[\\\".txt\\\",\\\".pdf\\\"],\\\"AllowedContentTypes\\\":[\\\"text/plain\\\",\\\"application/pdf\\\"],\\\"DocumentBackedObjectsOnly\\\":true,\\\"RedactObjectKeys\\\":true,\\\"MaxObjectReadBytes\\\":131072,\\\"MaxBucketEnumerationResults\\\":50,\\\"AllowBucketWideObjectRead\\\":false,\\\"AllowBinaryObjectOutput\\\":false}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Example settings update for document-backed S3 object reads. The backend tool implementation must be present before this becomes model-visible."
+          }
+        },
+        {
+          "name": "Update Tool Policy - Enable Tavily Web Search",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":true,\\\"EnableWebSearchTool\\\":true,\\\"TavilyEndpoint\\\":null,\\\"TavilyApiKey\\\":null,\\\"AllowedProviders\\\":[\\\"Tavily\\\"],\\\"AllowedWebDomains\\\":[],\\\"BlockedWebDomains\\\":[],\\\"AllowRawWebContent\\\":false,\\\"AllowWebImages\\\":false,\\\"MaxSearchResultsPerCall\\\":5,\\\"MaxWebResults\\\":5,\\\"MaxWebSearchesPerTurn\\\":3,\\\"SearchDepth\\\":\\\"basic\\\",\\\"AllowAdvancedSearchDepth\\\":false,\\\"AllowNewsTopic\\\":true,\\\"RequireSafeSearch\\\":true}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "settings"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Example settings update that enables Tavily-backed web search. Leave TavilyEndpoint/TavilyApiKey null to use system-wide Tavily settings, or provide assistant-level overrides."
+          }
+        },
+        {
           "name": "Update Assistant Settings",
           "request": {
             "method": "PUT",
@@ -3109,7 +3376,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"RetrievalGateInferenceEndpointId\": null,\n\t\"QueryRewriteInferenceEndpointId\": null,\n\t\"RerankInferenceEndpointId\": null,\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
+              "raw": "{\n\t\"Temperature\": 0.7,\n\t\"MaxTokens\": 4096,\n\t\"TopP\": 0.9,\n\t\"SystemPrompt\": \"You are a helpful assistant.\",\n\t\"InferenceEndpointId\": \"endpoint-guid-here\",\n\t\"ToolRoutingInferenceEndpointId\": null,\n\t\"ExposeThinking\": false,\n\t\"RetrievalGateInferenceEndpointId\": null,\n\t\"QueryRewriteInferenceEndpointId\": null,\n\t\"RerankInferenceEndpointId\": null,\n\t\"EmbeddingEndpointId\": \"embedding-endpoint-guid-here\",\n\t\"EnableCitations\": true,\n\t\"CitationLinkMode\": \"Public\",\n\t\"RetrievalIncludeNeighbors\": 2,\n\t\"EnableQueryRewrite\": false,\n\t\"QueryRewritePrompt\": null,\n\t\"EnableReranking\": false,\n\t\"RerankerTopK\": 5,\n\t\"RerankerScoreThreshold\": 3.0,\n\t\"RerankPrompt\": null,\n\t\"ToolPolicyJson\": \"{\\\"EnableToolCalls\\\":false,\\\"EnableCollectionSearchTool\\\":false,\\\"EnableWebSearchTool\\\":false}\",\n\t\"EnableSlack\": true,\n\t\"SlackAppToken\": \"{{slackAppToken}}\",\n\t\"SlackBotToken\": \"{{slackBotToken}}\",\n\t\"SlackChannelId\": \"{{slackChannelId}}\",\n\t\"SlackMessagePrefix\": \"{{slackMessagePrefix}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/settings",
@@ -3485,6 +3752,180 @@
                 {
                   "key": "assistantId",
                   "value": "{{assistantId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assistant Tool Calls",
+      "item": [
+        {
+          "name": "List Assistant Tool Calls",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tool-calls?maxResults=100&toolName=collection_search&traceId={{traceId}}&requestHistoryId={{requestHistoryId}}&success=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "tool-calls"
+              ],
+              "query": [
+                {
+                  "key": "maxResults",
+                  "value": "100"
+                },
+                {
+                  "key": "toolName",
+                  "value": "collection_search",
+                  "disabled": true
+                },
+                {
+                  "key": "traceId",
+                  "value": "{{traceId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "requestHistoryId",
+                  "value": "{{requestHistoryId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "success",
+                  "value": "true",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "{{assistantId}}"
+                }
+              ]
+            },
+            "description": "Enumerate redacted model tool-call traces for an assistant. Optional filters include toolName, traceId, requestHistoryId, chatHistoryId, threadId, success, denied, startUtc, and endUtc."
+          }
+        },
+        {
+          "name": "Delete Assistant Tool Calls By Filter",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tool-calls?maxResults=100&toolName=collection_search&traceId={{traceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "tool-calls"
+              ],
+              "query": [
+                {
+                  "key": "maxResults",
+                  "value": "100"
+                },
+                {
+                  "key": "toolName",
+                  "value": "collection_search",
+                  "disabled": true
+                },
+                {
+                  "key": "traceId",
+                  "value": "{{traceId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "requestHistoryId",
+                  "value": "{{requestHistoryId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "success",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "denied",
+                  "value": "true",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "{{assistantId}}"
+                }
+              ]
+            },
+            "description": "Delete redacted model tool-call trace records matching the supplied filters. Returns a DeletedCount payload."
+          }
+        },
+        {
+          "name": "Get Assistant Tool Call",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tool-calls/:toolCallRecordId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "tool-calls",
+                ":toolCallRecordId"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "{{assistantId}}"
+                },
+                {
+                  "key": "toolCallRecordId",
+                  "value": "{{toolCallRecordId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Assistant Tool Call",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/tool-calls/:toolCallRecordId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "tool-calls",
+                ":toolCallRecordId"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "{{assistantId}}"
+                },
+                {
+                  "key": "toolCallRecordId",
+                  "value": "{{toolCallRecordId}}"
                 }
               ]
             }
@@ -4164,6 +4605,26 @@
           }
         },
         {
+          "name": "Get ExternalSearch Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/configuration/external-search/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "configuration",
+                "external-search",
+                "status"
+              ]
+            },
+            "description": "Returns safe global Tavily readiness counts. No provider names, endpoints, or API keys are returned."
+          }
+        },
+        {
           "name": "Update Configuration",
           "request": {
             "method": "PUT",
@@ -4175,7 +4636,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"Webserver\": {\n\t\t\"Port\": 8800\n\t},\n\t\"Logging\": {\n\t\t\"MinimumLevel\": \"Information\"\n\t}\n}",
+              "raw": "{\n\t\"ExternalSearch\": {\n\t\t\"Enabled\": false,\n\t\t\"AllowFallback\": true,\n\t\t\"MaxResults\": 10,\n\t\t\"TimeoutMs\": 30000,\n\t\t\"SafeSearch\": true,\n\t\t\"AllowRawContent\": false,\n\t\t\"IncludeDomains\": [],\n\t\t\"ExcludeDomains\": [],\n\t\t\"Providers\": [\n\t\t\t{\n\t\t\t\t\"Name\": \"default\",\n\t\t\t\t\"ProviderType\": \"Tavily\",\n\t\t\t\t\"Endpoint\": \"https://api.tavily.com/search\",\n\t\t\t\t\"ApiKey\": \"{{tavilyApiKey}}\",\n\t\t\t\t\"Enabled\": false,\n\t\t\t\t\"IsDefault\": true,\n\t\t\t\t\"TimeoutMs\": 30000\n\t\t\t}\n\t\t]\n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4192,7 +4653,7 @@
                 "configuration"
               ]
             },
-            "description": "Accepts a full or partial AssistantHubSettings object. Supported sections: Webserver, Database, S3, DocumentAtom, Chunking, Inference, RecallDb, Logging."
+            "description": "Fetch the current configuration first, merge the fields you want to change, then submit a full AssistantHubSettings object. Configuration responses redact ExternalSearch provider API keys as [REDACTED]; submitting that marker preserves the existing key for the matching provider."
           }
         }
       ]
@@ -5065,6 +5526,44 @@
           }
         },
         {
+          "name": "List Assistant Documents",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/documents?maxResults=100&contentType=application/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "maxResults",
+                  "value": "100"
+                },
+                {
+                  "key": "contentType",
+                  "value": "application/pdf"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Create Thread",
           "request": {
             "auth": {
@@ -5217,6 +5716,284 @@
               ]
             },
             "description": "Chat with metadata filter to restrict RAG retrieval to documents matching specified labels and/or tags."
+          }
+        },
+        {
+          "name": "Chat (with attached document)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Thread-ID",
+                "value": "thread-guid-here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Give me a summary of this document.\"\n\t\t}\n\t],\n\t\"attached_document_ids\": [\n\t\t\"{{documentId}}\"\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Chat request that constrains RAG retrieval to selected AssistantDocument.Id values."
+          }
+        },
+        {
+          "name": "Chat (with local file attachment)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Thread-ID",
+                "value": "thread-guid-here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize this local file.\"\n\t\t}\n\t],\n\t\"local_attachments\": [\n\t\t{\n\t\t\t\"name\": \"notes.txt\",\n\t\t\t\"content_type\": \"text/plain\",\n\t\t\t\"base64_content\": \"VGhpcyBpcyBhIGxvY2FsIGZpbGUu\"\n\t\t}\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Chat request with a user-uploaded local file. Assistant document attachments must be enabled. The file is text-extracted for this request only and is not added to the assistant collection."
+          }
+        },
+        {
+          "name": "Chat (attached documents disabled error)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize this attached document.\"\n\t\t}\n\t],\n\t\"attached_document_ids\": [\n\t\t\"{{documentId}}\"\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-with-attachments-disabled"
+                }
+              ]
+            },
+            "description": "Expected 400 when attached_document_ids is supplied but assistant settings have EnableDocumentAttachments=false."
+          }
+        },
+        {
+          "name": "Chat (invalid attached document ID error)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize this attached document.\"\n\t\t}\n\t],\n\t\"attached_document_ids\": [\n\t\t\"adoc_missing_or_invalid\"\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Expected 400 when an attached document ID is missing, malformed, inaccessible, or not completed."
+          }
+        },
+        {
+          "name": "Chat (cross-collection attached document error)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize this attached document.\"\n\t\t}\n\t],\n\t\"attached_document_ids\": [\n\t\t\"{{otherCollectionDocumentId}}\"\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Expected 400 when an attached document belongs to another collection or tenant."
+          }
+        },
+        {
+          "name": "Chat (too many attached documents error)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Summarize these documents.\"\n\t\t}\n\t],\n\t\"attached_document_ids\": [\n\t\t\"{{documentId}}\",\n\t\t\"{{documentId2}}\",\n\t\t\"{{documentId3}}\"\n\t]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Expected 400 when attached_document_ids exceeds assistant settings DocumentAttachmentMaxCount."
+          }
+        },
+        {
+          "name": "Chat (tool calls enabled)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Thread-ID",
+                "value": "thread-guid-here"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"messages\": [\n\t\t{\n\t\t\t\"role\": \"user\",\n\t\t\t\"content\": \"Search the assistant collection and answer with the most relevant source details.\"\n\t\t}\n\t],\n\t\"model\": null,\n\t\"temperature\": 0.2,\n\t\"max_tokens\": 1024\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "chat"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            },
+            "description": "Chat request for an assistant whose ToolPolicyJson enables tool calls and at least one tool. The effective tool-routing completion endpoint (ToolRoutingInferenceEndpointId when set, otherwise InferenceEndpointId) must explicitly set SupportsToolCalling=true with ToolCallingApiFormat OpenAIChatCompletions or OllamaChat; AssistantHub stores those values on the proxied Partio endpoint using reserved labels/tags. Otherwise the server returns an assistant configuration error before calling the model. If assistant Streaming is enabled, safe named SSE tool progress events may be emitted before the final answer chunks."
           }
         },
         {

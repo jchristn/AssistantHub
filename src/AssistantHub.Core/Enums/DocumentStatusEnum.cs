@@ -52,6 +52,12 @@ namespace AssistantHub.Core.Enums
         Processing,
 
         /// <summary>
+        /// Storing extracted text.
+        /// </summary>
+        [EnumMember(Value = "StoringText")]
+        StoringText,
+
+        /// <summary>
         /// Processing chunks.
         /// </summary>
         [EnumMember(Value = "ProcessingChunks")]

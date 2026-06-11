@@ -60,6 +60,11 @@ namespace AssistantHub.Core.Database
         public IChatHistoryPerformanceEventMethods ChatHistoryPerformanceEvent { get; protected set; }
 
         /// <summary>
+        /// Assistant tool-call trace methods.
+        /// </summary>
+        public IAssistantToolCallMethods AssistantToolCall { get; protected set; }
+
+        /// <summary>
         /// Request history methods.
         /// </summary>
         public IRequestHistoryMethods RequestHistory { get; protected set; }

@@ -48,6 +48,40 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// List safe public document metadata selectable in assistant chat.
+        /// </summary>
+        public async Task<EnumerationResult<AssistantDocumentSelectionItem>> ListAssistantDocumentsAsync(
+            string assistantId,
+            EnumerationQuery query = null,
+            string searchQuery = null,
+            CancellationToken cancellationToken = default)
+        {
+            return await ListAssistantDocumentsAsync(assistantId, query, searchQuery, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// List safe public document metadata selectable in assistant chat.
+        /// </summary>
+        public async Task<EnumerationResult<AssistantDocumentSelectionItem>> ListAssistantDocumentsAsync(
+            string assistantId,
+            EnumerationQuery query,
+            string searchQuery,
+            string contentType,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+
+            string path = AppendEnumerationQuery("/v1.0/assistants/" + UrlEncode(assistantId) + "/documents", query);
+            if (!String.IsNullOrWhiteSpace(searchQuery))
+                path += (path.Contains("?") ? "&" : "?") + "query=" + UrlEncode(searchQuery);
+            if (!String.IsNullOrWhiteSpace(contentType))
+                path += (path.Contains("?") ? "&" : "?") + "contentType=" + UrlEncode(contentType);
+
+            return await SendAsync<EnumerationResult<AssistantDocumentSelectionItem>>(HttpMethod.Get, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Notify the server that an assistant chat window was opened, loading configured endpoint models when enabled.
         /// </summary>
         public async Task<AssistantChatOpenResult> OpenAssistantChatAsync(string assistantId, CancellationToken cancellationToken = default)
@@ -67,6 +101,49 @@ namespace AssistantHub.Sdk
                 throw new ArgumentNullException(nameof(assistantId));
 
             return await SendAsync<AssistantSettings>(HttpMethod.Get, "/v1.0/assistants/" + UrlEncode(assistantId) + "/settings", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Retrieve effective tool availability for an assistant.
+        /// </summary>
+        public async Task<List<AssistantToolDescriptor>> GetAssistantToolsAsync(string assistantId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+
+            return await SendAsync<List<AssistantToolDescriptor>>(HttpMethod.Get, "/v1.0/assistants/" + UrlEncode(assistantId) + "/tools", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Validate draft tool policy for an assistant without persisting it.
+        /// </summary>
+        public async Task<AssistantToolPolicyValidationResult> ValidateAssistantToolPolicyAsync(
+            string assistantId,
+            AssistantToolPolicyValidationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<AssistantToolPolicyValidationResult>(HttpMethod.Post, "/v1.0/assistants/" + UrlEncode(assistantId) + "/settings/tools/validate", request, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Run administrator dry-run diagnostics for an assistant tool policy without executing tools.
+        /// </summary>
+        public async Task<AssistantToolPolicyTestResult> TestAssistantToolPolicyAsync(
+            string assistantId,
+            AssistantToolPolicyValidationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<AssistantToolPolicyTestResult>(HttpMethod.Post, "/v1.0/assistants/" + UrlEncode(assistantId) + "/settings/tools/test", request, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -165,6 +242,56 @@ namespace AssistantHub.Sdk
 
             string path = AppendAssistantAnalyticsQuery("/v1.0/assistants/" + UrlEncode(assistantId) + "/analytics/feedback", query);
             return await SendAsync<AssistantAnalyticsFeedbackResult>(HttpMethod.Get, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Enumerate redacted tool-call traces for an assistant.
+        /// </summary>
+        public async Task<EnumerationResult<AssistantToolCallRecord>> ListAssistantToolCallsAsync(string assistantId, EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+
+            string path = AppendEnumerationQuery("/v1.0/assistants/" + UrlEncode(assistantId) + "/tool-calls", query);
+            return await SendAsync<EnumerationResult<AssistantToolCallRecord>>(HttpMethod.Get, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Retrieve one redacted assistant tool-call trace.
+        /// </summary>
+        public async Task<AssistantToolCallRecord> GetAssistantToolCallAsync(string assistantId, string toolCallRecordId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (String.IsNullOrWhiteSpace(toolCallRecordId))
+                throw new ArgumentNullException(nameof(toolCallRecordId));
+
+            return await SendAsync<AssistantToolCallRecord>(HttpMethod.Get, "/v1.0/assistants/" + UrlEncode(assistantId) + "/tool-calls/" + UrlEncode(toolCallRecordId), cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete assistant tool-call traces matching the supplied filters.
+        /// </summary>
+        public async Task<RequestHistoryDeleteResult> DeleteAssistantToolCallsAsync(string assistantId, EnumerationQuery query = null, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+
+            string path = AppendEnumerationQuery("/v1.0/assistants/" + UrlEncode(assistantId) + "/tool-calls", query);
+            return await SendAsync<RequestHistoryDeleteResult>(HttpMethod.Delete, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Delete one assistant tool-call trace.
+        /// </summary>
+        public async Task DeleteAssistantToolCallAsync(string assistantId, string toolCallRecordId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(assistantId))
+                throw new ArgumentNullException(nameof(assistantId));
+            if (String.IsNullOrWhiteSpace(toolCallRecordId))
+                throw new ArgumentNullException(nameof(toolCallRecordId));
+
+            await SendAsync(HttpMethod.Delete, "/v1.0/assistants/" + UrlEncode(assistantId) + "/tool-calls/" + UrlEncode(toolCallRecordId), cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -251,6 +251,7 @@ export class ApiClient {
     const decoder = new TextDecoder();
     let buffer = '';
     let text = '';
+    let thinking = '';
     let usage = null;
     let citations = null;
     let status = null;
@@ -262,8 +263,10 @@ export class ApiClient {
       const normalized = rawEvent.replace(/\r\n/g, '\n');
       const lines = normalized.split('\n');
       const dataLines = [];
+      let eventType = 'message';
 
       for (const line of lines) {
+        if (line.startsWith('event:')) eventType = line.substring(6).trim() || 'message';
         if (line.startsWith('data:')) dataLines.push(line.substring(5).trimStart());
       }
 
@@ -287,13 +290,17 @@ export class ApiClient {
       if (parsed?.status) status = parsed.status;
 
       const deltaContent = parsed?.choices?.[0]?.delta?.content ?? parsed?.choices?.[0]?.message?.content ?? '';
+      const deltaThinking = parsed?.choices?.[0]?.delta?.thinking ?? parsed?.choices?.[0]?.message?.thinking ?? '';
       if (deltaContent) text += deltaContent;
+      if (deltaThinking) thinking += deltaThinking;
 
+      const effectiveType = parsed?.event_type || parsed?.type || eventType;
       const event = {
-        type: 'message',
+        type: effectiveType,
         data,
         json: parsed,
         deltaContent,
+        deltaThinking,
       };
 
       if (events.length < 200) events.push(event);
@@ -331,6 +338,7 @@ export class ApiClient {
       contentType,
       bodyType: 'sse',
       text,
+      thinking,
       json: null,
       events,
       usage,
@@ -505,6 +513,9 @@ export class ApiClient {
 
   // Assistant Settings
   getAssistantSettings(assistantId) { return this.request('GET', `/v1.0/assistants/${assistantId}/settings`); }
+  getAssistantTools(assistantId) { return this.request('GET', `/v1.0/assistants/${assistantId}/tools`); }
+  validateAssistantToolPolicy(assistantId, request) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/tools/validate`, request); }
+  testAssistantToolPolicy(assistantId, request) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/tools/test`, request); }
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
   verifyAssistantSlackSettings(assistantId, settings) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/slack/verify`, settings); }
 
@@ -515,6 +526,12 @@ export class ApiClient {
   getAssistantAnalyticsEndpoints(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/endpoints` + this.buildQuery(params)); }
   getAssistantAnalyticsSlowest(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/slowest` + this.buildQuery(params)); }
   getAssistantAnalyticsFeedback(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/analytics/feedback` + this.buildQuery(params)); }
+
+  // Assistant Tool Calls
+  getAssistantToolCalls(assistantId, params) { return this.request('GET', `/v1.0/assistants/${assistantId}/tool-calls` + this.buildQuery(params)); }
+  getAssistantToolCall(assistantId, toolCallRecordId) { return this.request('GET', `/v1.0/assistants/${assistantId}/tool-calls/${toolCallRecordId}`); }
+  deleteAssistantToolCalls(assistantId, params) { return this.request('DELETE', `/v1.0/assistants/${assistantId}/tool-calls` + this.buildQuery(params)); }
+  deleteAssistantToolCall(assistantId, toolCallRecordId) { return this.request('DELETE', `/v1.0/assistants/${assistantId}/tool-calls/${toolCallRecordId}`); }
 
   // Embedding Endpoints
   createEmbeddingEndpoint(endpoint) { return this.request('PUT', '/v1.0/endpoints/embedding', endpoint); }
@@ -669,6 +686,7 @@ export class ApiClient {
 
   // Configuration
   getConfiguration() { return this.request('GET', '/v1.0/configuration'); }
+  getExternalSearchStatus() { return this.request('GET', '/v1.0/configuration/external-search/status'); }
   updateConfiguration(settings) { return this.request('PUT', '/v1.0/configuration', settings); }
 
   // Thread creation (unauthenticated)
@@ -697,8 +715,29 @@ export class ApiClient {
     return response.json();
   }
 
+  // Public assistant document selection list (unauthenticated)
+  static async getAssistantDocuments(serverUrl, assistantId, options = {}) {
+    const params = new URLSearchParams();
+    if (options.maxResults) params.set('maxResults', String(options.maxResults));
+      if (options.continuationToken) params.set('continuationToken', options.continuationToken);
+      if (options.ordering) params.set('ordering', options.ordering);
+      if (options.query) params.set('query', options.query);
+      if (options.contentType) params.set('contentType', options.contentType);
+      const query = params.toString();
+    const response = await fetch(`${serverUrl}/v1.0/assistants/${assistantId}/documents${query ? '?' + query : ''}`);
+    if (!response.ok) {
+      let message = `Document listing failed with status ${response.status}`;
+      try {
+        const body = await response.json();
+        message = body.Description || body.Message || message;
+      } catch {}
+      throw new Error(message);
+    }
+    return response.json();
+  }
+
   // Chat (unauthenticated) - handles both JSON and SSE streaming responses
-  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal, metadataFilter = null) {
+  static async chat(serverUrl, assistantId, messages, onDelta, threadId, signal, metadataFilter = null, attachedDocumentIds = null, localAttachments = null) {
     const headers = { 'Content-Type': 'application/json' };
     if (threadId) headers['X-Thread-ID'] = threadId;
 
@@ -707,7 +746,9 @@ export class ApiClient {
       headers,
       body: JSON.stringify({
         messages,
-        ...(metadataFilter ? { metadata_filter: metadataFilter } : {})
+        ...(metadataFilter ? { metadata_filter: metadataFilter } : {}),
+        ...(attachedDocumentIds && attachedDocumentIds.length > 0 ? { attached_document_ids: attachedDocumentIds } : {}),
+        ...(localAttachments && localAttachments.length > 0 ? { local_attachments: localAttachments } : {})
       }),
       signal
     });
@@ -723,77 +764,164 @@ export class ApiClient {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
+    let fullThinking = '';
     let buffer = '';
     let status = null;
     let usage = null;
     let citations = null;
+    let sawToolEvent = false;
+    const toolEvents = [];
+    const isGenericToolCompletionStatus = (value) => {
+      const normalized = String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+      if (!normalized) return false;
+      return [
+        'searching collection',
+        'reading document chunks',
+        'searching index',
+        'reading source object',
+        'listing documents',
+        'listing index records',
+        'listing bucket objects',
+        'searching web',
+        'using assistant tool'
+      ].some(label => normalized === `${label} completed.` || normalized === `${label} completed`);
+    };
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    const formatToolStatus = (eventType, payload, events) => {
+      const name = payload?.display_label || payload?.tool_name || 'tool';
+      if (eventType.endsWith('tool_iteration.started')) {
+        return payload?.summary || 'Checking whether tools are needed.';
+      }
+      if (eventType.endsWith('.started')) {
+        const count = (events || []).filter(evt =>
+          (evt.event_type || '').endsWith('.started') &&
+          ((evt.display_label || evt.tool_name || 'tool') === name)
+        ).length;
+        if (count > 1) {
+          const noun = name.toLowerCase().includes('search') ? 'searches' : 'calls';
+          return `Running tool: ${name} (${count} ${noun})`;
+        }
+        return `Running tool: ${name}`;
+      }
+      if (eventType.endsWith('.completed')) return payload?.summary || `${name} completed`;
+      if (eventType.endsWith('.failed')) return 'One tool failed; trying another source';
+      if (eventType.endsWith('.denied')) return `${name} denied`;
+      if (eventType.endsWith('.heartbeat')) return `Running tool: ${name} still running`;
+      return payload?.summary || `Running tool: ${name}`;
+    };
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete line in buffer
+    const flushEvent = (rawEvent) => {
+      if (!rawEvent) return;
+
+      const normalized = rawEvent.replace(/\r\n/g, '\n');
+      const lines = normalized.split('\n');
+      let eventType = 'message';
+      const dataLines = [];
 
       for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.substring(6);
-        if (data === '[DONE]') continue;
+        if (line.startsWith('event:')) eventType = line.substring(6).trim() || 'message';
+        if (line.startsWith('data:')) dataLines.push(line.substring(5).trimStart());
+      }
 
-        try {
-          const chunk = JSON.parse(data);
+      if (dataLines.length < 1) return;
+      const data = dataLines.join('\n');
+      if (data === '[DONE]') return;
 
-          // Capture usage data when present
-          if (chunk.usage) {
-            usage = chunk.usage;
-          }
+      let chunk = null;
+      try {
+        chunk = JSON.parse(data);
+      } catch (e) {
+        return;
+      }
 
-          // Capture citations from finish chunk
-          if (chunk.citations) {
-            citations = chunk.citations;
-          }
+      const effectiveEventType = chunk.event_type || chunk.type || eventType;
+      if (typeof effectiveEventType === 'string' && effectiveEventType.startsWith('assistant.tool_')) {
+        const toolEvent = { ...chunk, event_type: effectiveEventType };
+        sawToolEvent = true;
+        toolEvents.push(toolEvent);
+        status = formatToolStatus(effectiveEventType, toolEvent, toolEvents);
+        if (onDelta) onDelta({ toolEvent, status, clearToolStatus: status == null });
+        return;
+      }
 
-          // Surface status messages (e.g. "Compacting the conversation...")
-          if (chunk.status) {
-            status = chunk.status;
-            if (onDelta) onDelta({ status: chunk.status });
-          }
+      // Capture usage data when present
+      if (chunk.usage) {
+        usage = chunk.usage;
+      }
 
-          const delta = chunk.choices?.[0]?.delta;
-          if (delta?.content) {
-            fullContent += delta.content;
-            if (onDelta) onDelta({ content: delta.content });
-          }
-        } catch (e) {
-          // skip unparseable lines
+      // Capture citations from finish chunk
+      if (chunk.citations) {
+        citations = chunk.citations;
+      }
+
+      // Surface status messages (e.g. "Compacting the conversation...")
+      if (chunk.status) {
+        if (isGenericToolCompletionStatus(chunk.status)) {
+          status = null;
+          if (onDelta) onDelta({ clearToolStatus: true });
+        } else {
+          status = chunk.status;
+          if (onDelta) onDelta({ status: chunk.status });
         }
       }
+
+      const delta = chunk.choices?.[0]?.delta;
+      if (delta?.thinking) {
+        fullThinking += delta.thinking;
+        if (onDelta) onDelta({ thinking: delta.thinking });
+      }
+      if (delta?.content) {
+        fullContent += delta.content;
+        if (onDelta) onDelta({ content: delta.content });
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let separatorIndex = buffer.indexOf('\n\n');
+        while (separatorIndex >= 0) {
+          const rawEvent = buffer.substring(0, separatorIndex);
+          buffer = buffer.substring(separatorIndex + 2);
+          flushEvent(rawEvent);
+          separatorIndex = buffer.indexOf('\n\n');
+        }
+      }
+    } catch (err) {
+      if (sawToolEvent && err?.name !== 'AbortError') {
+        const interruptedEvent = {
+          event_type: 'assistant.tool_call.interrupted',
+          status_code: 'tool_stream_interrupted',
+          display_label: 'Tool status',
+          summary: 'Tool progress stream interrupted.'
+        };
+        toolEvents.push(interruptedEvent);
+        status = 'Tool status interrupted';
+        if (onDelta) onDelta({ toolEvent: interruptedEvent, status });
+        err.toolStreamInterrupted = true;
+      }
+      throw err;
     }
 
     // Process any remaining data left in the buffer after stream ends
     if (buffer.trim()) {
-      const remaining = buffer.trim();
-      if (remaining.startsWith('data: ') && remaining.substring(6) !== '[DONE]') {
-        try {
-          const chunk = JSON.parse(remaining.substring(6));
-          if (chunk.usage) usage = chunk.usage;
-          if (chunk.citations) citations = chunk.citations;
-        } catch (e) {
-          // skip unparseable remainder
-        }
-      }
+      flushEvent(buffer.trim());
     }
 
     // Return in the same shape as a non-streaming response
     return {
       choices: [{
         index: 0,
-        message: { role: 'assistant', content: fullContent },
+        message: { role: 'assistant', content: fullContent, thinking: fullThinking || null },
         finish_reason: 'stop'
       }],
       usage,
-      citations
+      citations,
+      status,
+      tool_events: toolEvents
     };
   }
 

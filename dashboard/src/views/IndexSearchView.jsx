@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import CopyableId from '../components/CopyableId';
@@ -115,6 +115,7 @@ function IndexSearchView() {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedIndex = searchParams.get('indexId') || location.state?.indexId || '';
   const [indices, setIndices] = useState([]);
@@ -214,6 +215,12 @@ function IndexSearchView() {
     setElapsedMs(null);
     setError('');
     setSearched(false);
+  };
+
+  const openDocumentInIngestion = (documentId) => {
+    if (!documentId) return;
+    setDetailTarget(null);
+    navigate(`/documents?documentId=${encodeURIComponent(documentId)}`);
   };
 
   const resultTiming = responseJson?.ElapsedMs ?? responseJson?.Data?.ElapsedMs ?? responseJson?.DurationMs ?? elapsedMs;
@@ -382,7 +389,21 @@ function IndexSearchView() {
                     </div>
                     <div className="artifact-field">
                       <div className="artifact-field-label">Document ID</div>
-                      <div className="artifact-field-value">{assistantHubDocumentId ? <CopyableId id={assistantHubDocumentId} /> : ''}</div>
+                      <div className="artifact-field-value artifact-linked-id">
+                        {assistantHubDocumentId ? (
+                          <>
+                            <CopyableId id={assistantHubDocumentId} />
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openDocumentInIngestion(assistantHubDocumentId)}
+                              title="Open this document in Ingestion > Documents"
+                            >
+                              View in Documents
+                            </button>
+                          </>
+                        ) : ''}
+                      </div>
                     </div>
                     <div className="artifact-field">
                       <div className="artifact-field-label">Score</div>

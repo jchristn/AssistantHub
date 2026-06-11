@@ -7,6 +7,8 @@ namespace Test.Automated
     using System.Text;
     using System.Text.Json;
     using System.Threading.Tasks;
+    using AssistantHub.Core.Enums;
+    using AssistantHub.Core.Models;
     using Test.Shared;
 
     public class IntegrationSuite : SuiteBase
@@ -74,6 +76,492 @@ namespace Test.Automated
                     AssertHelper.StringContains(openApiBody, "\"/v1.0/tenants\"", "Runtime OpenAPI protected tenant route");
                     AssertHelper.StringContains(openApiBody, "\"BearerAuth\"", "Runtime OpenAPI protected route auth marker");
                     AssertHelper.IsTrue(securitySchemes.TryGetProperty("BearerAuth", out bearerAuth), "OpenAPI BearerAuth scheme");
+                });
+
+                await ExecuteTestAsync("PublicAssistantDocuments.Disabled_Returns403", async () =>
+                {
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Disabled Attachments Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantSettings.CreateAsync(new AssistantSettings
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = "col_disabled",
+                        EnableDocumentAttachments = false
+                    }).ConfigureAwait(false);
+
+                    using HttpClient noAuthClient = new HttpClient();
+                    noAuthClient.BaseAddress = new Uri(server.BaseUrl);
+
+                    HttpResponseMessage resp = await noAuthClient.GetAsync($"/v1.0/assistants/{assistant.Id}/documents");
+                    AssertHelper.AreEqual((int)HttpStatusCode.Forbidden, (int)resp.StatusCode, "disabled attachments route should return 403");
+                });
+
+                await ExecuteTestAsync("PublicAssistantDocuments.List_ReturnsSafeCompletedCollectionDocuments", async () =>
+                {
+                    const string collectionId = "col_public_docs";
+
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Public Documents Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantSettings.CreateAsync(new AssistantSettings
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = collectionId,
+                        EnableDocumentAttachments = true,
+                        ExposeDocumentSourceUrls = false
+                    }).ConfigureAwait(false);
+
+                    AssistantDocument included = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId,
+                        Name = "Guide",
+                        OriginalFilename = "guide.pdf",
+                        ContentType = "application/pdf",
+                        SizeBytes = 1234,
+                        BucketName = "secret-bucket",
+                        S3Key = "private/guide.pdf",
+                        CollectionId = collectionId,
+                        Status = DocumentStatusEnum.Completed,
+                        SourceUrl = "https://source.example/guide.pdf"
+                    }).ConfigureAwait(false);
+
+                    AssistantDocument pending = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId,
+                        Name = "Pending Guide",
+                        OriginalFilename = "pending-guide.pdf",
+                        ContentType = "application/pdf",
+                        BucketName = "secret-bucket",
+                        S3Key = "private/pending.pdf",
+                        CollectionId = collectionId,
+                        Status = DocumentStatusEnum.Pending
+                    }).ConfigureAwait(false);
+
+                    AssistantDocument textDocument = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId,
+                        Name = "Notes",
+                        OriginalFilename = "notes.txt",
+                        ContentType = "text/plain",
+                        BucketName = "secret-bucket",
+                        S3Key = "private/notes.txt",
+                        CollectionId = collectionId,
+                        Status = DocumentStatusEnum.Completed
+                    }).ConfigureAwait(false);
+
+                    AssistantDocument otherCollection = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId,
+                        Name = "Other Guide",
+                        OriginalFilename = "other-guide.pdf",
+                        ContentType = "application/pdf",
+                        BucketName = "secret-bucket",
+                        S3Key = "private/other.pdf",
+                        CollectionId = "col_other",
+                        Status = DocumentStatusEnum.Completed
+                    }).ConfigureAwait(false);
+
+                    using HttpClient noAuthClient = new HttpClient();
+                    noAuthClient.BaseAddress = new Uri(server.BaseUrl);
+
+                    HttpResponseMessage resp = await noAuthClient.GetAsync($"/v1.0/assistants/{assistant.Id}/documents?maxResults=100&query=guide");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)resp.StatusCode, "public documents route should return 200");
+
+                    string body = await resp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(body, included.Id, "completed document included");
+                    AssertHelper.StringContains(body, "guide.pdf", "completed document filename included");
+                    AssertHelper.IsFalse(body.Contains(pending.Id), "pending document excluded");
+                    AssertHelper.IsFalse(body.Contains(otherCollection.Id), "other collection document excluded");
+                    AssertHelper.IsFalse(body.Contains("S3Key"), "S3 key field hidden");
+                    AssertHelper.IsFalse(body.Contains("BucketName"), "bucket field hidden");
+                    AssertHelper.IsFalse(body.Contains("private/guide.pdf"), "S3 object path hidden");
+                    AssertHelper.IsFalse(body.Contains("source.example"), "source URL value hidden when disabled");
+
+                    using JsonDocument document = JsonDocument.Parse(body);
+                    JsonElement objects = document.RootElement.GetProperty("Objects");
+                    AssertHelper.AreEqual(1, objects.GetArrayLength(), "one selectable document");
+
+                    HttpResponseMessage textResp = await noAuthClient.GetAsync($"/v1.0/assistants/{assistant.Id}/documents?maxResults=100&contentType=text/*");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)textResp.StatusCode, "public documents content-type filter should return 200");
+                    string textBody = await textResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(textBody, textDocument.Id, "text document included by content type filter");
+                    AssertHelper.IsFalse(textBody.Contains(included.Id), "PDF document excluded by content type filter");
+                });
+
+                await ExecuteTestAsync("AssistantToolCalls.CrudFiltersAndDeletes_RoundTripThroughHttp", async () =>
+                {
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Tool Trace Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    Assistant otherAssistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Other Tool Trace Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    DateTime now = DateTime.UtcNow;
+                    AssistantToolCallRecord target = await server.Database.AssistantToolCall.CreateAsync(new AssistantToolCallRecord
+                    {
+                        TenantId = server.DefaultTenantId,
+                        AssistantId = assistant.Id,
+                        ChatHistoryId = "chathist_tool_trace_target",
+                        RequestHistoryId = "req_tool_trace_target",
+                        TraceId = "trace_tool_trace_target",
+                        ThreadId = "thread_tool_trace_target",
+                        Origin = "web",
+                        Iteration = 1,
+                        SequenceNumber = 1,
+                        ProviderToolCallId = "call_tool_trace_target",
+                        ToolName = "collection_search",
+                        ArgumentsJson = "{\"query\":\"alpha\",\"api_key\":\"[redacted]\"}",
+                        OutputJson = "{\"success\":true,\"result_count\":2}",
+                        Success = true,
+                        Denied = false,
+                        Truncated = false,
+                        OutputCharacters = 36,
+                        DurationMs = 12.5,
+                        StartedUtc = now.AddMilliseconds(-20),
+                        FinishedUtc = now,
+                        CreatedUtc = now
+                    }).ConfigureAwait(false);
+
+                    AssistantToolCallRecord filteredOutByTool = await server.Database.AssistantToolCall.CreateAsync(new AssistantToolCallRecord
+                    {
+                        TenantId = server.DefaultTenantId,
+                        AssistantId = assistant.Id,
+                        ChatHistoryId = "chathist_tool_trace_other_tool",
+                        RequestHistoryId = "req_tool_trace_other_tool",
+                        TraceId = "trace_tool_trace_other_tool",
+                        ThreadId = "thread_tool_trace_other_tool",
+                        ToolName = "s3_object_read",
+                        ArgumentsJson = "{\"bucket\":\"docs\"}",
+                        OutputJson = "{\"success\":true}",
+                        Success = true,
+                        CreatedUtc = now.AddSeconds(-1)
+                    }).ConfigureAwait(false);
+
+                    AssistantToolCallRecord filteredOutByAssistant = await server.Database.AssistantToolCall.CreateAsync(new AssistantToolCallRecord
+                    {
+                        TenantId = server.DefaultTenantId,
+                        AssistantId = otherAssistant.Id,
+                        ChatHistoryId = "chathist_tool_trace_other_assistant",
+                        RequestHistoryId = "req_tool_trace_other_assistant",
+                        TraceId = "trace_tool_trace_target",
+                        ThreadId = "thread_tool_trace_target",
+                        ToolName = "collection_search",
+                        ArgumentsJson = "{\"query\":\"alpha\"}",
+                        OutputJson = "{\"success\":true}",
+                        Success = true,
+                        CreatedUtc = now.AddSeconds(-2)
+                    }).ConfigureAwait(false);
+
+                    HttpResponseMessage listResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls?maxResults=10&traceId=trace_tool_trace_target&toolName=collection_search&success=true");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)listResp.StatusCode, "list assistant tool calls should return 200");
+
+                    string listBody = await listResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(listBody, target.Id, "target trace listed");
+                    AssertHelper.StringContains(listBody, "collection_search", "target tool listed");
+                    AssertHelper.StringContains(listBody, "[redacted]", "redacted argument retained");
+                    AssertHelper.IsFalse(listBody.Contains("secret-key"), "raw secret not present in list response");
+                    AssertHelper.IsFalse(listBody.Contains(filteredOutByTool.Id), "different tool filtered out");
+                    AssertHelper.IsFalse(listBody.Contains(filteredOutByAssistant.Id), "different assistant filtered out");
+
+                    using (JsonDocument listDocument = JsonDocument.Parse(listBody))
+                    {
+                        JsonElement objects = listDocument.RootElement.GetProperty("Objects");
+                        AssertHelper.AreEqual(1, objects.GetArrayLength(), "filtered tool-call list count");
+                        AssertHelper.AreEqual(target.Id, objects[0].GetProperty("Id").GetString(), "filtered tool-call object id");
+                    }
+
+                    HttpResponseMessage paginatedResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls?maxResults=1");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)paginatedResp.StatusCode, "paginated assistant tool calls should return 200");
+                    string paginatedBody = await paginatedResp.Content.ReadAsStringAsync();
+                    using (JsonDocument paginatedDocument = JsonDocument.Parse(paginatedBody))
+                    {
+                        AssertHelper.AreEqual(1, paginatedDocument.RootElement.GetProperty("MaxResults").GetInt32(), "paginated tool-call max results");
+                        AssertHelper.AreEqual(1, paginatedDocument.RootElement.GetProperty("Objects").GetArrayLength(), "paginated tool-call object count");
+                        AssertHelper.IsTrue(paginatedDocument.RootElement.GetProperty("TotalRecords").GetInt64() >= 2, "paginated tool-call total records");
+                    }
+
+                    HttpResponseMessage getResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{target.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)getResp.StatusCode, "get assistant tool call should return 200");
+
+                    string getBody = await getResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(getBody, target.Id, "target trace read by id");
+                    AssertHelper.StringContains(getBody, "req_tool_trace_target", "request history id read by id");
+                    AssertHelper.StringContains(getBody, "trace_tool_trace_target", "trace id read by id");
+                    AssertHelper.StringContains(getBody, "[redacted]", "redacted argument read by id");
+
+                    UserMaster nonAdminUser = await server.Database.User.CreateAsync(new UserMaster
+                    {
+                        TenantId = server.DefaultTenantId,
+                        FirstName = "Trace",
+                        LastName = "Reader",
+                        Email = "trace-reader@test.local",
+                        Active = true,
+                        IsAdmin = false,
+                        IsTenantAdmin = false
+                    }).ConfigureAwait(false);
+
+                    Credential nonAdminCredential = await server.Database.Credential.CreateAsync(new Credential
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = nonAdminUser.Id,
+                        Active = true,
+                        BearerToken = "test-non-admin-tool-trace"
+                    }).ConfigureAwait(false);
+
+                    using (HttpClient nonAdminClient = new HttpClient())
+                    {
+                        nonAdminClient.BaseAddress = new Uri(server.BaseUrl);
+                        nonAdminClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + nonAdminCredential.BearerToken);
+                        HttpResponseMessage nonAdminListResp = await nonAdminClient.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls");
+                        AssertHelper.AreEqual((int)HttpStatusCode.Forbidden, (int)nonAdminListResp.StatusCode, "non-admin tool-call list should return 403");
+                    }
+
+                    HttpResponseMessage crossAssistantGetResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{filteredOutByAssistant.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.NotFound, (int)crossAssistantGetResp.StatusCode, "get other assistant tool call through target assistant route should return 404");
+
+                    HttpResponseMessage crossAssistantDeleteResp = await server.Client.DeleteAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{filteredOutByAssistant.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.NotFound, (int)crossAssistantDeleteResp.StatusCode, "delete other assistant tool call through target assistant route should return 404");
+
+                    HttpResponseMessage deleteResp = await server.Client.DeleteAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{target.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.NoContent, (int)deleteResp.StatusCode, "delete assistant tool call should return 204");
+
+                    HttpResponseMessage getAfterDeleteResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{target.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.NotFound, (int)getAfterDeleteResp.StatusCode, "deleted assistant tool call should return 404");
+
+                    HttpResponseMessage bulkDeleteResp = await server.Client.DeleteAsync($"/v1.0/assistants/{assistant.Id}/tool-calls?toolName=s3_object_read");
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)bulkDeleteResp.StatusCode, "bulk delete assistant tool calls should return 200");
+
+                    string bulkDeleteBody = await bulkDeleteResp.Content.ReadAsStringAsync();
+                    AssertHelper.StringContains(bulkDeleteBody, "DeletedCount", "bulk delete response count field");
+                    AssertHelper.StringContains(bulkDeleteBody, "1", "bulk delete response deleted count");
+
+                    HttpResponseMessage getBulkDeletedResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tool-calls/{filteredOutByTool.Id}");
+                    AssertHelper.AreEqual((int)HttpStatusCode.NotFound, (int)getBulkDeletedResp.StatusCode, "bulk-deleted assistant tool call should return 404");
+
+                    AssistantToolCallRecord expired = await server.Database.AssistantToolCall.CreateAsync(new AssistantToolCallRecord
+                    {
+                        TenantId = server.DefaultTenantId,
+                        AssistantId = assistant.Id,
+                        ToolName = "collection_search",
+                        ArgumentsJson = "{\"query\":\"expired\"}",
+                        OutputJson = "{\"success\":true}",
+                        Success = true,
+                        CreatedUtc = now.AddDays(-10)
+                    }).ConfigureAwait(false);
+
+                    AssistantToolCallRecord retained = await server.Database.AssistantToolCall.CreateAsync(new AssistantToolCallRecord
+                    {
+                        TenantId = server.DefaultTenantId,
+                        AssistantId = assistant.Id,
+                        ToolName = "collection_search",
+                        ArgumentsJson = "{\"query\":\"retained\"}",
+                        OutputJson = "{\"success\":true}",
+                        Success = true,
+                        CreatedUtc = now
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantToolCall.DeleteExpiredAsync(7).ConfigureAwait(false);
+                    AssertHelper.IsNull(await server.Database.AssistantToolCall.ReadAsync(expired.Id).ConfigureAwait(false), "expired tool-call record pruned");
+                    AssertHelper.IsNotNull(await server.Database.AssistantToolCall.ReadAsync(retained.Id).ConfigureAwait(false), "retained tool-call record remains");
+                });
+
+                await ExecuteTestAsync("AssistantToolPolicy.AdminCanUpdateAndListEffectiveTools", async () =>
+                {
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Tool Policy Admin Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantSettings.CreateAsync(new AssistantSettings
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = "col_tool_policy_admin"
+                    }).ConfigureAwait(false);
+
+                    string settingsJson = JsonSerializer.Serialize(new
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = "col_tool_policy_admin",
+                        InferenceEndpointId = "endpoint_tool_policy_admin",
+                        ToolPolicyJson = "{\"EnableToolCalls\":true,\"EnableCollectionEnumerateDocumentsTool\":true,\"MaxSearchResultsPerCall\":4}"
+                    });
+
+                    HttpResponseMessage updateResp = await server.Client.PutAsync(
+                        $"/v1.0/assistants/{assistant.Id}/settings",
+                        new StringContent(settingsJson, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)updateResp.StatusCode, "admin tool policy update");
+
+                    string updateBody = await updateResp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    using (JsonDocument updateDocument = JsonDocument.Parse(updateBody))
+                    {
+                        JsonElement policy = updateDocument.RootElement.GetProperty("ToolPolicy");
+                        AssertHelper.AreEqual(true, policy.GetProperty("EnableToolCalls").GetBoolean(), "updated settings tool policy");
+                        AssertHelper.AreEqual(true, policy.GetProperty("EnableCollectionEnumerateDocumentsTool").GetBoolean(), "updated settings collection enumerate policy");
+                        AssertHelper.AreEqual(4, policy.GetProperty("MaxSearchResultsPerCall").GetInt32(), "updated settings max search results");
+                    }
+
+                    HttpResponseMessage toolsResp = await server.Client.GetAsync($"/v1.0/assistants/{assistant.Id}/tools").ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)toolsResp.StatusCode, "effective tools route");
+                    string toolsBody = await toolsResp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    AssertHelper.StringContains(toolsBody, "collection_enumerate_documents", "effective tool listed");
+                    using (JsonDocument toolsDocument = JsonDocument.Parse(toolsBody))
+                    {
+                        JsonElement descriptor = default;
+                        foreach (JsonElement item in toolsDocument.RootElement.EnumerateArray())
+                        {
+                            if (item.GetProperty("ToolName").GetString() == "collection_enumerate_documents")
+                            {
+                                descriptor = item;
+                                break;
+                            }
+                        }
+
+                        AssertHelper.AreEqual(JsonValueKind.Object, descriptor.ValueKind, "collection enumerate descriptor found");
+                        AssertHelper.AreEqual(true, descriptor.GetProperty("Available").GetBoolean(), "effective tool available");
+                    }
+                });
+
+                await ExecuteTestAsync("AssistantToolPolicy.ValidateReturnsStableErrorCodes", async () =>
+                {
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Tool Policy Validation Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantSettings.CreateAsync(new AssistantSettings
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = null
+                    }).ConfigureAwait(false);
+
+                    string invalidJsonPayload = JsonSerializer.Serialize(new
+                    {
+                        ToolPolicyJson = "{not-json"
+                    });
+                    HttpResponseMessage invalidJsonResp = await server.Client.PostAsync(
+                        $"/v1.0/assistants/{assistant.Id}/settings/tools/validate",
+                        new StringContent(invalidJsonPayload, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)invalidJsonResp.StatusCode, "invalid policy JSON validation status");
+                    string invalidJsonBody = await invalidJsonResp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    using (JsonDocument invalidJsonDocument = JsonDocument.Parse(invalidJsonBody))
+                    {
+                        AssertHelper.IsFalse(invalidJsonDocument.RootElement.GetProperty("Success").GetBoolean(), "invalid policy JSON success");
+                        AssertHelper.StringContains(invalidJsonBody, "invalid_tool_policy_json", "invalid policy JSON error code");
+                    }
+
+                    string noAvailablePayload = JsonSerializer.Serialize(new
+                    {
+                        ToolPolicyJson = "{\"EnableToolCalls\":true,\"EnableWebSearchTool\":true}"
+                    });
+                    HttpResponseMessage noAvailableResp = await server.Client.PostAsync(
+                        $"/v1.0/assistants/{assistant.Id}/settings/tools/validate",
+                        new StringContent(noAvailablePayload, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)noAvailableResp.StatusCode, "no available tools validation status");
+                    string noAvailableBody = await noAvailableResp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    using (JsonDocument noAvailableDocument = JsonDocument.Parse(noAvailableBody))
+                    {
+                        AssertHelper.IsFalse(noAvailableDocument.RootElement.GetProperty("Success").GetBoolean(), "no available tools success");
+                        AssertHelper.StringContains(noAvailableBody, "no_available_tools", "no available tools error code");
+                    }
+
+                    HttpResponseMessage diagnosticsResp = await server.Client.PostAsync(
+                        $"/v1.0/assistants/{assistant.Id}/settings/tools/test",
+                        new StringContent(noAvailablePayload, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.OK, (int)diagnosticsResp.StatusCode, "tool diagnostics status");
+                    string diagnosticsBody = await diagnosticsResp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    using (JsonDocument diagnosticsDocument = JsonDocument.Parse(diagnosticsBody))
+                    {
+                        AssertHelper.IsFalse(diagnosticsDocument.RootElement.GetProperty("Success").GetBoolean(), "tool diagnostics success");
+                        AssertHelper.StringContains(diagnosticsBody, "completion_endpoint_missing", "tool diagnostics endpoint missing code");
+                        AssertHelper.StringContains(diagnosticsBody, "no_available_tools", "tool diagnostics validation code");
+                    }
+                });
+
+                await ExecuteTestAsync("AssistantToolPolicy.NonOwnerCannotUpdateAndToolsRequireAuth", async () =>
+                {
+                    Assistant assistant = await server.Database.Assistant.CreateAsync(new Assistant
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = server.DefaultUserId,
+                        Name = "Tool Policy Owner Assistant",
+                        Active = true
+                    }).ConfigureAwait(false);
+
+                    await server.Database.AssistantSettings.CreateAsync(new AssistantSettings
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = "col_tool_policy_owner"
+                    }).ConfigureAwait(false);
+
+                    UserMaster regularUser = new UserMaster
+                    {
+                        TenantId = server.DefaultTenantId,
+                        FirstName = "Regular",
+                        LastName = "User",
+                        Email = "regular-tool-policy@test.local",
+                        Active = true,
+                        IsAdmin = false,
+                        IsTenantAdmin = false
+                    };
+                    regularUser.SetPassword("testpassword123");
+                    regularUser = await server.Database.User.CreateAsync(regularUser).ConfigureAwait(false);
+
+                    Credential credential = await server.Database.Credential.CreateAsync(new Credential
+                    {
+                        TenantId = server.DefaultTenantId,
+                        UserId = regularUser.Id,
+                        Active = true,
+                        BearerToken = "test-regular-tool-policy-" + Guid.NewGuid().ToString("N").Substring(0, 8)
+                    }).ConfigureAwait(false);
+
+                    using HttpClient regularClient = new HttpClient();
+                    regularClient.BaseAddress = new Uri(server.BaseUrl);
+                    regularClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + credential.BearerToken);
+
+                    string settingsJson = JsonSerializer.Serialize(new
+                    {
+                        AssistantId = assistant.Id,
+                        CollectionId = "col_tool_policy_owner",
+                        InferenceEndpointId = "endpoint_tool_policy_owner",
+                        ToolPolicyJson = "{\"EnableToolCalls\":true,\"EnableCollectionSearchTool\":true}"
+                    });
+
+                    HttpResponseMessage deniedUpdate = await regularClient.PutAsync(
+                        $"/v1.0/assistants/{assistant.Id}/settings",
+                        new StringContent(settingsJson, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.Forbidden, (int)deniedUpdate.StatusCode, "non-owner tool policy update denied");
+
+                    using HttpClient noAuthClient = new HttpClient();
+                    noAuthClient.BaseAddress = new Uri(server.BaseUrl);
+                    HttpResponseMessage unauthTools = await noAuthClient.GetAsync($"/v1.0/assistants/{assistant.Id}/tools").ConfigureAwait(false);
+                    AssertHelper.AreEqual((int)HttpStatusCode.Unauthorized, (int)unauthTools.StatusCode, "effective tools require auth");
                 });
 
                 await ExecuteTestAsync("Server.InvalidToken_Returns401", async () =>
@@ -598,7 +1086,10 @@ namespace Test.Automated
                         { "LoadModelsOnChatOpen", true },
                         { "EnableReranking", true },
                         { "RerankerTopK", 3 },
-                        { "RerankerScoreThreshold", 5.0 }
+                        { "RerankerScoreThreshold", 5.0 },
+                        { "EnableDocumentAttachments", true },
+                        { "DocumentAttachmentMaxCount", 7 },
+                        { "ExposeDocumentSourceUrls", true }
                     };
                     string json = JsonSerializer.Serialize(payload);
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -619,6 +1110,10 @@ namespace Test.Automated
                     string body = await resp.Content.ReadAsStringAsync();
                     AssertHelper.IsTrue(body.Contains("ep_test_inference"), "response should contain inference endpoint id");
                     AssertHelper.IsTrue(body.Contains("LoadModelsOnChatOpen"), "response should contain LoadModelsOnChatOpen");
+                    using JsonDocument settingsDocument = JsonDocument.Parse(body);
+                    AssertHelper.AreEqual(true, settingsDocument.RootElement.GetProperty("EnableDocumentAttachments").GetBoolean(), "response EnableDocumentAttachments");
+                    AssertHelper.AreEqual(7, settingsDocument.RootElement.GetProperty("DocumentAttachmentMaxCount").GetInt32(), "response DocumentAttachmentMaxCount");
+                    AssertHelper.AreEqual(true, settingsDocument.RootElement.GetProperty("ExposeDocumentSourceUrls").GetBoolean(), "response ExposeDocumentSourceUrls");
                 });
 
                 await ExecuteTestAsync("CRUD.Settings.Cleanup", async () =>

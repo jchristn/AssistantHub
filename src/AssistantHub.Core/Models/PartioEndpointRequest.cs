@@ -50,6 +50,26 @@ namespace AssistantHub.Core.Models
         public int? MaxConcurrentRequests { get; set; } = null;
 
         /// <summary>
+        /// Whether this endpoint explicitly supports model tool calls.
+        /// </summary>
+        public bool SupportsToolCalling { get; set; } = false;
+
+        /// <summary>
+        /// Tool-calling wire format, for example OpenAIChatCompletions.
+        /// </summary>
+        public string ToolCallingApiFormat { get; set; } = null;
+
+        /// <summary>
+        /// Whether this endpoint supports multiple tool calls in one assistant turn.
+        /// </summary>
+        public bool SupportsParallelToolCalls { get; set; } = false;
+
+        /// <summary>
+        /// Whether this endpoint supports tool calls while streaming responses.
+        /// </summary>
+        public bool SupportsStreamingToolCalls { get; set; } = false;
+
+        /// <summary>
         /// Whether request history is enabled.
         /// </summary>
         public bool EnableRequestHistory { get; set; } = false;

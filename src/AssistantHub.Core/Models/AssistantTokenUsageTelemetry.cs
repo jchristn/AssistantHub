@@ -25,6 +25,16 @@ namespace AssistantHub.Core.Models
         public int? Total { get; set; } = null;
 
         /// <summary>
+        /// Reasoning token count, when reported by the provider.
+        /// </summary>
+        public int? Reasoning { get; set; } = null;
+
+        /// <summary>
+        /// Tool-definition token count, when reported by the provider.
+        /// </summary>
+        public int? ToolDefinitions { get; set; } = null;
+
+        /// <summary>
         /// Provider prompt-evaluation token count, when reported.
         /// </summary>
         public int? PromptEvalCount { get; set; } = null;

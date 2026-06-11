@@ -173,8 +173,9 @@ const normalizeLabelRows = (value) => {
 const normalizeTagRows = (value) => {
   const rows = Array.isArray(value)
     ? value.map((item) => ({
-      key: String(item?.key ?? ''),
-      value: String(item?.value ?? ''),
+      key: String(item?.key ?? item?.Key ?? ''),
+      value: String(item?.value ?? item?.Value ?? ''),
+      condition: String(item?.condition ?? item?.Condition ?? 'Equals'),
     }))
     : [];
   return rows.length > 0 ? rows : [{ key: '', value: '' }];
@@ -268,6 +269,24 @@ export function TagBadges({ tags }) {
   );
 }
 
+function AddIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function DeleteIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 export function LabelConstraintInput({
   value,
   onChange,
@@ -288,11 +307,11 @@ export function LabelConstraintInput({
           <div key={index} className="artifact-label-constraint-row">
             <input title={inputTitle} value={item} onChange={(e) => updateRow(index, e.target.value)} />
             {isLast ? (
-              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}>+</button>
+              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}><AddIcon /></button>
             ) : (
               <span className="artifact-constraint-spacer" aria-hidden="true" />
             )}
-            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}>&times;</button>
+            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}><DeleteIcon /></button>
           </div>
         );
       })}
@@ -324,11 +343,11 @@ export function TagConstraintInput({
             <input title={keyTitle} value={item.key} onChange={(e) => updateRow(index, 'key', e.target.value)} placeholder="Key" />
             <input title={valueTitle} value={item.value} onChange={(e) => updateRow(index, 'value', e.target.value)} placeholder="Value" />
             {isLast ? (
-              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}>+</button>
+              <button type="button" className="artifact-constraint-icon" title={addTitle} aria-label={addTitle} onClick={addRow}><AddIcon /></button>
             ) : (
               <span className="artifact-constraint-spacer" aria-hidden="true" />
             )}
-            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}>&times;</button>
+            <button type="button" className="artifact-constraint-icon danger" title={deleteTitle} aria-label={deleteTitle} onClick={() => deleteRow(index)}><DeleteIcon /></button>
           </div>
         );
       })}

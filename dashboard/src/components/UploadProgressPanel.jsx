@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function UploadProgressPanel({ records, onDismiss }) {
+function UploadProgressPanel({ records, onDismiss, onClearFinished }) {
   const [collapsed, setCollapsed] = useState(false);
 
   if (!records || records.length === 0) return null;
@@ -22,6 +22,7 @@ function UploadProgressPanel({ records, onDismiss }) {
   const activeCount = records.filter((r) => !isComplete(r) && !isError(r)).length;
   const completedCount = records.filter((r) => isComplete(r)).length;
   const failedCount = records.filter((r) => isError(r)).length;
+  const clearableCount = completedCount + failedCount;
 
   let summary = `${records.length} file${records.length !== 1 ? 's' : ''}`;
   const parts = [];
@@ -34,16 +35,37 @@ function UploadProgressPanel({ records, onDismiss }) {
     <div className={`upload-progress-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="upload-progress-header" onClick={() => setCollapsed(!collapsed)}>
         <span className="upload-progress-title">Ingestion Progress - {summary}</span>
-        <button className="upload-progress-toggle" aria-label={collapsed ? 'Expand' : 'Collapse'}>
-          {collapsed ? '\u25B2' : '\u25BC'}
-        </button>
+        <span className="upload-progress-header-actions">
+          <button
+            className="upload-progress-clear"
+            type="button"
+            aria-label="Clear completed, failed, and error records"
+            title="Clear completed, failed, and error records"
+            disabled={clearableCount === 0}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (clearableCount > 0) onClearFinished?.();
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M6 7l1 14h10l1-14" />
+              <path d="M9 7V4h6v3" />
+            </svg>
+          </button>
+          <button className="upload-progress-toggle" type="button" aria-label={collapsed ? 'Expand' : 'Collapse'}>
+            {collapsed ? '\u25B2' : '\u25BC'}
+          </button>
+        </span>
       </div>
       {!collapsed && (
         <div className="upload-progress-body">
           <div className="upload-progress-table-header">
             <span className="upload-progress-col-name">File</span>
             <span className="upload-progress-col-step">Step</span>
-            <span className="upload-progress-col-progress">Progress</span>
+            <span className="upload-progress-col-progress">Status</span>
             <span className="upload-progress-col-action"></span>
           </div>
           <div className="upload-progress-list">
@@ -54,13 +76,9 @@ function UploadProgressPanel({ records, onDismiss }) {
                   {r.stepLabel || r.status || ''}
                 </span>
                 <span className="upload-progress-col-progress">
-                  <div className="upload-progress-bar-track">
-                    <div
-                      className={`upload-progress-bar-fill ${isError(r) ? 'error' : isComplete(r) ? 'complete' : ''}`}
-                      style={{ width: `${r.percentage}%` }}
-                    />
-                  </div>
-                  <span className="upload-progress-percent">{r.percentage}%</span>
+                  <span className={`upload-progress-step-count ${isError(r) ? 'error' : isComplete(r) ? 'complete' : ''}`}>
+                    {r.stepCount ?? 0}/{r.stepTotal ?? 9}
+                  </span>
                 </span>
                 <span className="upload-progress-col-action">
                   {isDismissible(r) && (

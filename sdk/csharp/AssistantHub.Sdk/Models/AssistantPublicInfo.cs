@@ -48,5 +48,29 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("LoadModelsOnChatOpen")]
         public bool LoadModelsOnChatOpen { get; set; }
+
+        /// <summary>
+        /// Whether public chat may display provider-returned thinking/reasoning text.
+        /// </summary>
+        [JsonPropertyName("ExposeThinking")]
+        public bool ExposeThinking { get; set; }
+
+        /// <summary>
+        /// Whether public chat document attachments are enabled.
+        /// </summary>
+        [JsonPropertyName("EnableDocumentAttachments")]
+        public bool EnableDocumentAttachments { get; set; }
+
+        /// <summary>
+        /// Maximum public chat document attachments per request.
+        /// </summary>
+        [JsonPropertyName("DocumentAttachmentMaxCount")]
+        public int DocumentAttachmentMaxCount { get; set; }
+
+        /// <summary>
+        /// Whether public document selection may include source URLs.
+        /// </summary>
+        [JsonPropertyName("ExposeDocumentSourceUrls")]
+        public bool ExposeDocumentSourceUrls { get; set; }
     }
 }

@@ -17,7 +17,7 @@ namespace AssistantHub.Core
         /// <summary>
         /// Product version.
         /// </summary>
-        public static string ProductVersion = "0.15.0";
+        public static string ProductVersion = "0.16.0";
 
         /// <summary>
         /// Logo.
@@ -121,6 +121,11 @@ namespace AssistantHub.Core
         /// Chat history performance event identifier prefix.
         /// </summary>
         public static string ChatHistoryPerformanceEventIdentifierPrefix = "chpe_";
+
+        /// <summary>
+        /// Assistant tool-call record identifier prefix.
+        /// </summary>
+        public static string AssistantToolCallRecordIdentifierPrefix = "atc_";
 
         /// <summary>
         /// Tenant identifier prefix.

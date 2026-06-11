@@ -95,9 +95,6 @@ namespace AssistantHub.Core.Services
         {
             if (history == null || String.IsNullOrWhiteSpace(history.PerformanceJson)) return 0;
 
-            List<ChatHistoryPerformanceEvent> existing = await _Database.ChatHistoryPerformanceEvent.ListByChatHistoryIdAsync(history.Id, token).ConfigureAwait(false);
-            if (existing.Count > 0) return 0;
-
             AssistantPerformanceTelemetry telemetry;
             try
             {
@@ -112,9 +109,31 @@ namespace AssistantHub.Core.Services
             if (telemetry == null || telemetry.Stages == null || telemetry.Stages.Count < 1) return 0;
 
             HydrateTelemetryIdentifiers(telemetry, history);
+            AssistantPerformanceTelemetryBuilder.EnsureEstimatedToolModelStage(telemetry);
 
             List<ChatHistoryPerformanceEvent> events = AssistantPerformanceTelemetryBuilder.ToEvents(telemetry, history.TenantId);
             if (events.Count < 1) return 0;
+
+            List<ChatHistoryPerformanceEvent> existing = await _Database.ChatHistoryPerformanceEvent.ListByChatHistoryIdAsync(history.Id, token).ConfigureAwait(false);
+            if (existing.Count > 0)
+            {
+                bool hasToolModelEvent = existing.Exists(evt => String.Equals(evt.Stage, "tool_iteration_model", StringComparison.OrdinalIgnoreCase));
+                if (hasToolModelEvent) return 0;
+
+                List<ChatHistoryPerformanceEvent> missingToolModelEvents = events.FindAll(evt => String.Equals(evt.Stage, "tool_iteration_model", StringComparison.OrdinalIgnoreCase));
+                if (missingToolModelEvents.Count < 1) return 0;
+
+                try
+                {
+                    await _Database.ChatHistoryPerformanceEvent.CreateManyAsync(missingToolModelEvents, token).ConfigureAwait(false);
+                    return missingToolModelEvents.Count;
+                }
+                catch (Exception e)
+                {
+                    _Logging?.Warn(_Header + "failed to backfill " + missingToolModelEvents.Count + " tool-model performance event row(s) for chat history " + history.Id + ": " + e.Message);
+                    return 0;
+                }
+            }
 
             try
             {

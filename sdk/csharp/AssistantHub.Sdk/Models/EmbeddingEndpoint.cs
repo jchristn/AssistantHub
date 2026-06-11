@@ -62,6 +62,30 @@ namespace AssistantHub.Sdk.Models
         public int MaxConcurrentRequests { get; set; }
 
         /// <summary>
+        /// Whether this endpoint explicitly supports model tool calls.
+        /// </summary>
+        [JsonPropertyName("SupportsToolCalling")]
+        public bool SupportsToolCalling { get; set; }
+
+        /// <summary>
+        /// Tool-calling wire format, for example OpenAIChatCompletions.
+        /// </summary>
+        [JsonPropertyName("ToolCallingApiFormat")]
+        public string ToolCallingApiFormat { get; set; }
+
+        /// <summary>
+        /// Whether this endpoint supports multiple tool calls in one assistant turn.
+        /// </summary>
+        [JsonPropertyName("SupportsParallelToolCalls")]
+        public bool SupportsParallelToolCalls { get; set; }
+
+        /// <summary>
+        /// Whether this endpoint supports tool calls while streaming responses.
+        /// </summary>
+        [JsonPropertyName("SupportsStreamingToolCalls")]
+        public bool SupportsStreamingToolCalls { get; set; }
+
+        /// <summary>
         /// Whether health checks are enabled.
         /// </summary>
         [JsonPropertyName("HealthCheckEnabled")]

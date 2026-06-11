@@ -111,6 +111,24 @@ namespace AssistantHub.Sdk.Models
         public string CitationLinkMode { get; set; }
 
         /// <summary>
+        /// Whether public assistant chat users may attach completed documents from the assistant collection.
+        /// </summary>
+        [JsonPropertyName("EnableDocumentAttachments")]
+        public bool EnableDocumentAttachments { get; set; }
+
+        /// <summary>
+        /// Maximum number of documents that may be attached to one chat request.
+        /// </summary>
+        [JsonPropertyName("DocumentAttachmentMaxCount")]
+        public int DocumentAttachmentMaxCount { get; set; }
+
+        /// <summary>
+        /// Whether public document-selection responses may include source URLs.
+        /// </summary>
+        [JsonPropertyName("ExposeDocumentSourceUrls")]
+        public bool ExposeDocumentSourceUrls { get; set; }
+
+        /// <summary>
         /// Collection identifier for document retrieval.
         /// </summary>
         [JsonPropertyName("CollectionId")]
@@ -177,6 +195,12 @@ namespace AssistantHub.Sdk.Models
         public string InferenceEndpointId { get; set; }
 
         /// <summary>
+        /// Completion endpoint identifier used only for model tool-routing calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("ToolRoutingInferenceEndpointId")]
+        public string ToolRoutingInferenceEndpointId { get; set; }
+
+        /// <summary>
         /// Completion endpoint identifier used for retrieval gate calls. Falls back to InferenceEndpointId when unset.
         /// </summary>
         [JsonPropertyName("RetrievalGateInferenceEndpointId")]
@@ -205,6 +229,12 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("LoadModelsOnChatOpen")]
         public bool LoadModelsOnChatOpen { get; set; }
+
+        /// <summary>
+        /// Whether provider-returned thinking/reasoning text may be shown in assistant chat.
+        /// </summary>
+        [JsonPropertyName("ExposeThinking")]
+        public bool ExposeThinking { get; set; }
 
         /// <summary>
         /// Title displayed as the heading on the chat window.
@@ -277,6 +307,18 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("SlackMessagePrefix")]
         public string SlackMessagePrefix { get; set; }
+
+        /// <summary>
+        /// JSON-serialized AssistantToolPolicy controlling model-directed server-side tools.
+        /// </summary>
+        [JsonPropertyName("ToolPolicyJson")]
+        public string ToolPolicyJson { get; set; }
+
+        /// <summary>
+        /// Parsed AssistantToolPolicy controlling model-directed server-side tools.
+        /// </summary>
+        [JsonPropertyName("ToolPolicy")]
+        public AssistantToolPolicy ToolPolicy { get; set; }
 
         /// <summary>
         /// Timestamp when the record was created in UTC.

@@ -18,5 +18,11 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("content")]
         public string Content { get; set; }
+
+        /// <summary>
+        /// Optional provider thinking/reasoning text when the assistant setting permits exposure.
+        /// </summary>
+        [JsonPropertyName("thinking")]
+        public string Thinking { get; set; }
     }
 }

@@ -20,5 +20,9 @@ namespace AssistantHub.Core.Services
         public string Endpoint;
         public string ApiKey;
         public string Model;
+        public bool SupportsToolCalling;
+        public string ToolCallingApiFormat;
+        public bool SupportsParallelToolCalls;
+        public bool SupportsStreamingToolCalls;
     }
 }

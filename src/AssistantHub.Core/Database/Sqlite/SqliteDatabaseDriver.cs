@@ -57,6 +57,7 @@ namespace AssistantHub.Core.Database.Sqlite
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
+            AssistantToolCall = new AssistantToolCallMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
@@ -204,6 +205,9 @@ namespace AssistantHub.Core.Database.Sqlite
             if (!HasColumn(columns, "retrieval_gate_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
 
+            if (!HasColumn(columns, "tool_routing_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
             if (!HasColumn(columns, "query_rewrite_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
 
@@ -212,6 +216,21 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "load_models_on_chat_open"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "expose_thinking"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsExposeThinkingColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "tool_policy_json"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsToolPolicyJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "enable_document_attachments"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsEnableDocumentAttachmentsColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "document_attachment_max_count"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsDocumentAttachmentMaxCountColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "expose_document_source_urls"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsExposeDocumentSourceUrlsColumn, true, token).ConfigureAwait(false);
         }
 
         private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
@@ -249,6 +268,12 @@ namespace AssistantHub.Core.Database.Sqlite
             if (!HasColumn(chatHistoryColumns, "performance_json"))
                 await ExecuteQueryAsync(TableQueries.AddChatHistoryPerformanceJsonColumn, true, token).ConfigureAwait(false);
 
+            if (!HasColumn(chatHistoryColumns, "attached_document_ids_json"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryAttachedDocumentIdsJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "attached_documents_json"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryAttachedDocumentsJsonColumn, true, token).ConfigureAwait(false);
+
             DataTable requestHistoryColumns = await ExecuteQueryAsync("PRAGMA table_info(request_history);", false, token).ConfigureAwait(false);
 
             if (!HasColumn(requestHistoryColumns, "trace_id"))
@@ -263,6 +288,35 @@ namespace AssistantHub.Core.Database.Sqlite
                 await ExecuteQueryAsync(TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn, true, token).ConfigureAwait(false);
 
             await ExecuteQueryAsync(TableQueries.BackfillChatHistoryPerformanceEventsAssistantId, true, token).ConfigureAwait(false);
+
+            DataTable toolCallColumns = await ExecuteQueryAsync("PRAGMA table_info(assistant_tool_calls);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "turn_index"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsTurnIndexColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "result_summary_json"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsResultSummaryJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "input_bytes"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsInputBytesColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "output_bytes"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsOutputBytesColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "error_type"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsErrorTypeColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "provider"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsProviderColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "model"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsModelColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "active"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsActiveColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(toolCallColumns, "last_update_utc"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantToolCallsLastUpdateUtcColumn, true, token).ConfigureAwait(false);
         }
 
         private static bool HasColumn(DataTable columns, string columnName)

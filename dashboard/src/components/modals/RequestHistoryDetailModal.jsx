@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
 import CopyButton from '../CopyButton';
 import CopyableId from '../CopyableId';
+import AssistantAttachedDocumentsSection from './AssistantAttachedDocumentsSection';
+import AssistantToolCallTraceSection from './AssistantToolCallTraceSection';
 import { ApiClient } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,10 +13,18 @@ function formatJsonBlock(value) {
   return JSON.stringify(value, null, 2);
 }
 
+function normalizeNumber(value) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return isFinite(number) ? number : null;
+}
+
 function formatMs(ms) {
-  if (!ms || ms <= 0) return 'N/A';
-  if (ms < 1000) return ms.toFixed(1) + ' ms';
-  return (ms / 1000).toFixed(2) + ' s';
+  const number = normalizeNumber(ms);
+  if (number == null) return 'N/A';
+  if (number <= 0) return '0 ms';
+  if (number < 1000) return number.toFixed(1) + ' ms';
+  return (number / 1000).toFixed(2) + ' s';
 }
 
 function formatNumber(value) {
@@ -26,6 +36,8 @@ function formatNumber(value) {
 
 function formatStageLabel(name) {
   if (!name) return 'Unknown';
+  if (name === 'tool_iteration_model') return 'Tool Model Check';
+  if (name === 'tools') return 'Tool Execution';
   return String(name)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -42,11 +54,11 @@ function parsePerformanceTelemetry(history) {
 }
 
 function getClientTiming(stage, key) {
-  return Number(stage?.ClientTimings?.[key] || 0);
+  return normalizeNumber(stage?.ClientTimings?.[key]);
 }
 
 function getProviderMetric(stage, key) {
-  return Number(stage?.ProviderMetrics?.[key] || 0);
+  return normalizeNumber(stage?.ProviderMetrics?.[key]);
 }
 
 function getStageMetadata(stage, key) {
@@ -54,12 +66,94 @@ function getStageMetadata(stage, key) {
   return Object.prototype.hasOwnProperty.call(metadata, key) ? metadata[key] : undefined;
 }
 
+function getStageDuration(stage) {
+  return normalizeNumber(stage?.DurationMs) ?? 0;
+}
+
+function getMetadataNumber(stage, key) {
+  return normalizeNumber(getStageMetadata(stage, key));
+}
+
+function getStageSpanDuration(stage) {
+  const metadataSpan = getMetadataNumber(stage, 'tool_call_span_duration_ms');
+  if (metadataSpan != null) return metadataSpan;
+
+  const started = stage?.StartedUtc ? Date.parse(stage.StartedUtc) : null;
+  const finished = stage?.FinishedUtc ? Date.parse(stage.FinishedUtc) : null;
+  if (started == null || finished == null || !isFinite(started) || !isFinite(finished) || finished < started) return null;
+  return finished - started;
+}
+
+function findStage(stages, name) {
+  return (stages || []).find((stage) => stage?.Name === name) || null;
+}
+
+function sumStageDuration(stages, name) {
+  const matches = (stages || []).filter((stage) => stage?.Name === name);
+  if (matches.length < 1) return null;
+  return matches.reduce((sum, stage) => sum + getStageDuration(stage), 0);
+}
+
+function timingValue(primary, fallback) {
+  const primaryNumber = normalizeNumber(primary);
+  if (primaryNumber != null) return primaryNumber;
+  const fallbackNumber = normalizeNumber(fallback);
+  return fallbackNumber ?? 0;
+}
+
+function withEstimatedToolModelStage(stages, wallTimeMs) {
+  const source = Array.isArray(stages) ? stages : [];
+  if (source.some((stage) => stage?.Name === 'tool_iteration_model')) return source;
+
+  const toolsStage = findStage(source, 'tools');
+  const finalStage = findStage(source, 'final_inference');
+  const wall = normalizeNumber(wallTimeMs);
+  if (!toolsStage || !finalStage || wall == null) return source;
+
+  const toolExecutionMs = getMetadataNumber(toolsStage, 'tool_call_duration_ms')
+    ?? sumStageDuration(source, 'tools')
+    ?? getStageDuration(toolsStage);
+  const finalInferenceMs = getStageDuration(finalStage);
+  const estimatedMs = Math.round(Math.max(0, wall - finalInferenceMs - toolExecutionMs) * 100) / 100;
+  if (estimatedMs <= 0) return source;
+
+  const estimatedStage = {
+    Name: 'tool_iteration_model',
+    Kind: 'inference',
+    Sequence: 64,
+    EndpointId: finalStage.EndpointId,
+    EndpointName: finalStage.EndpointName,
+    EndpointType: finalStage.EndpointType,
+    Provider: finalStage.Provider,
+    ApiFormat: finalStage.ApiFormat,
+    Model: finalStage.Model,
+    DurationMs: estimatedMs,
+    Success: true,
+    ClientTimings: { TotalMs: estimatedMs },
+    Metadata: {
+      phase: 'assistant_tool_model_legacy_estimate',
+      estimated: true,
+      summary: 'Estimated model time spent checking whether tools were needed.',
+      source: 'wall_time_minus_final_inference_minus_tool_execution',
+      tool_call_count: getMetadataNumber(toolsStage, 'tool_call_count')
+    }
+  };
+
+  const insertIndex = source.findIndex((stage) => stage?.Name === 'tools');
+  if (insertIndex < 0) return [...source, estimatedStage];
+  return [
+    ...source.slice(0, insertIndex),
+    estimatedStage,
+    ...source.slice(insertIndex)
+  ];
+}
+
 function hasEndpointDetails(stage) {
   return Boolean(stage?.EndpointId || stage?.EndpointName || stage?.Provider || stage?.Model);
 }
 
 function getStageNoopReason(stage, stages) {
-  if (!stage || Number(stage.DurationMs || 0) > 0 || hasEndpointDetails(stage)) return null;
+  if (!stage || getStageDuration(stage) > 0 || hasEndpointDetails(stage)) return null;
 
   const gateStage = stages?.find((candidate) => candidate?.Name === 'retrieval_gate');
   const gateDecision = String(getStageMetadata(gateStage, 'decision') || '').toUpperCase();
@@ -110,6 +204,7 @@ function RequestPerformanceTable({ stages }) {
             const outputTokens = tokens.Output ?? tokens.EvalCount;
             const noopReason = getStageNoopReason(stage, stages);
             const endpointText = stage.EndpointId || stage.EndpointName || (noopReason ? 'Not run' : '-');
+            const generationMs = getClientTiming(stage, 'FirstTokenToLastTokenMs') ?? getProviderMetric(stage, 'GenerationMs');
             return (
               <tr key={`${stage.Name || 'stage'}-${idx}`}>
                 <td>
@@ -127,11 +222,11 @@ function RequestPerformanceTable({ stages }) {
                     <div className="history-stage-kind">{[stage.Provider, stage.Model].filter(Boolean).join(' / ')}</div>
                   )}
                 </td>
-                <td>{formatMs(Number(stage.DurationMs || 0))}</td>
+                <td>{formatMs(getStageDuration(stage))}</td>
                 <td>{formatMs(getClientTiming(stage, 'EndpointLimiterWaitMs'))}</td>
                 <td>{formatMs(getClientTiming(stage, 'RequestToHeadersMs'))}</td>
                 <td>{formatMs(getClientTiming(stage, 'HeadersToFirstTokenMs'))}</td>
-                <td>{formatMs(getClientTiming(stage, 'FirstTokenToLastTokenMs') || getProviderMetric(stage, 'GenerationMs'))}</td>
+                <td>{formatMs(generationMs)}</td>
                 <td>{formatMs(getProviderMetric(stage, 'LoadMs'))}</td>
                 <td>{formatMs(getProviderMetric(stage, 'PromptEvalMs'))}</td>
                 <td>{inputTokens || outputTokens ? `${formatNumber(inputTokens)} / ${formatNumber(outputTokens)}` : 'N/A'}</td>
@@ -151,9 +246,29 @@ function RequestHistoryDetailModal({ entry, onClose, onReplay }) {
   const [historyError, setHistoryError] = useState(null);
 
   const performanceTelemetry = useMemo(() => parsePerformanceTelemetry(linkedHistory), [linkedHistory]);
-  const performanceStages = performanceTelemetry?.Stages || [];
+  const performanceStages = withEstimatedToolModelStage(
+    performanceTelemetry?.Stages || [],
+    performanceTelemetry?.WallTimeMs ?? linkedHistory?.TimeToLastTokenMs);
   const finalInferenceStage = performanceStages.find((stage) => stage.Name === 'final_inference')
-    || performanceStages.find((stage) => stage.Kind === 'inference' && Number(stage.DurationMs || 0) > 0);
+    || performanceStages.find((stage) => stage.Kind === 'inference' && getStageDuration(stage) > 0);
+  const toolExecutionStage = findStage(performanceStages, 'tools');
+  const toolExecutionMs = timingValue(getMetadataNumber(toolExecutionStage, 'tool_call_duration_ms'), sumStageDuration(performanceStages, 'tools'));
+  const recordedToolModelChecksMs = sumStageDuration(performanceStages, 'tool_iteration_model');
+  const toolSpanMs = getStageSpanDuration(toolExecutionStage);
+  const inferenceWallMs = normalizeNumber(performanceTelemetry?.WallTimeMs) ?? normalizeNumber(linkedHistory?.TimeToLastTokenMs);
+  const finalInferenceMs = finalInferenceStage ? getStageDuration(finalInferenceStage) : null;
+  const legacyToolModelChecksFromWallMs = recordedToolModelChecksMs == null && toolExecutionStage && inferenceWallMs != null && finalInferenceMs != null
+    ? Math.max(0, inferenceWallMs - finalInferenceMs - toolExecutionMs)
+    : null;
+  const legacyToolModelChecksFromSpanMs = recordedToolModelChecksMs == null && toolSpanMs != null
+    ? Math.max(0, toolSpanMs - toolExecutionMs)
+    : null;
+  const toolModelChecksMs = recordedToolModelChecksMs ?? legacyToolModelChecksFromWallMs ?? legacyToolModelChecksFromSpanMs;
+  const hasToolTiming = toolModelChecksMs != null || toolExecutionMs > 0;
+  const finalPromptProcessingMs = getClientTiming(finalInferenceStage, 'HeadersToFirstTokenMs')
+    ?? getProviderMetric(finalInferenceStage, 'PromptEvalMs');
+  const finalGenerationMs = getClientTiming(finalInferenceStage, 'FirstTokenToLastTokenMs')
+    ?? getProviderMetric(finalInferenceStage, 'GenerationMs');
 
   useEffect(() => {
     if (!entry?.ChatHistoryId) {
@@ -265,17 +380,29 @@ function RequestHistoryDetailModal({ entry, onClose, onReplay }) {
                     <span className="stat-card-value">{formatMs(getClientTiming(finalInferenceStage, 'RequestToHeadersMs'))}</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-card-label">First Token Wait</span>
-                    <span className="stat-card-value">{formatMs(getClientTiming(finalInferenceStage, 'HeadersToFirstTokenMs'))}</span>
+                    <span className="stat-card-label">Prompt Processing</span>
+                    <span className="stat-card-value">{formatMs(finalPromptProcessingMs)}</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-card-label">Generation</span>
-                    <span className="stat-card-value">{formatMs(getClientTiming(finalInferenceStage, 'FirstTokenToLastTokenMs') || getProviderMetric(finalInferenceStage, 'GenerationMs'))}</span>
+                    <span className="stat-card-value">{formatMs(finalGenerationMs)}</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-card-label">Provider Load</span>
                     <span className="stat-card-value">{formatMs(getProviderMetric(finalInferenceStage, 'LoadMs'))}</span>
                   </div>
+                  {hasToolTiming && (
+                    <>
+                      <div className="stat-card">
+                        <span className="stat-card-label">Tool Model Checks</span>
+                        <span className="stat-card-value">{formatMs(toolModelChecksMs)}</span>
+                      </div>
+                      <div className="stat-card">
+                        <span className="stat-card-label">Tool Execution</span>
+                        <span className="stat-card-value">{formatMs(toolExecutionMs)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <RequestPerformanceTable stages={performanceStages} />
               </>
@@ -284,6 +411,16 @@ function RequestHistoryDetailModal({ entry, onClose, onReplay }) {
             )}
           </section>
         )}
+
+        {linkedHistory && (
+          <AssistantAttachedDocumentsSection history={linkedHistory} />
+        )}
+
+        <AssistantToolCallTraceSection
+          assistantId={entry.AssistantId}
+          requestHistoryId={entry.Id}
+          traceId={entry.TraceId}
+        />
 
         <div className="request-history-detail-grid">
           <section className="request-history-detail-section">

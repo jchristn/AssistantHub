@@ -53,6 +53,46 @@ namespace AssistantHub.Core.Models
         /// </summary>
         public string ThreadIdFilter { get; set; } = null;
 
+        /// <summary>
+        /// Filter by request-history identifier.
+        /// </summary>
+        public string RequestHistoryIdFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by chat-history identifier.
+        /// </summary>
+        public string ChatHistoryIdFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by trace identifier.
+        /// </summary>
+        public string TraceIdFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by tool name.
+        /// </summary>
+        public string ToolNameFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by success flag.
+        /// </summary>
+        public bool? SuccessFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by denied flag.
+        /// </summary>
+        public bool? DeniedFilter { get; set; } = null;
+
+        /// <summary>
+        /// Filter by created UTC lower bound.
+        /// </summary>
+        public DateTime? StartUtc { get; set; } = null;
+
+        /// <summary>
+        /// Filter by created UTC upper bound.
+        /// </summary>
+        public DateTime? EndUtc { get; set; } = null;
+
         #endregion
 
         #region Private-Members

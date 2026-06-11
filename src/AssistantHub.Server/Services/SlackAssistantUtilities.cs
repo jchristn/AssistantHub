@@ -5,6 +5,7 @@ namespace AssistantHub.Server.Services
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
+    using AssistantHub.Core.Models;
 
     /// <summary>
     /// Utility methods used by Slack assistant workers.
@@ -109,6 +110,53 @@ namespace AssistantHub.Server.Services
                 chunks.Add(remaining);
 
             return chunks;
+        }
+
+        /// <summary>
+        /// Shape a safe tool-progress lifecycle event for Slack delivery.
+        /// </summary>
+        /// <param name="evt">Safe tool-progress event.</param>
+        /// <returns>Slack-safe short status text, or null when the event should not be posted.</returns>
+        public static string ShapeSlackToolProgressMessage(AssistantToolProgressEvent evt)
+        {
+            if (evt == null) return null;
+
+            string label = !String.IsNullOrWhiteSpace(evt.DisplayLabel)
+                ? evt.DisplayLabel.Trim()
+                : BuildFallbackToolLabel(evt.ToolName);
+
+            if (String.IsNullOrWhiteSpace(label))
+                label = "assistant tool";
+
+            bool started = String.Equals(evt.EventType, "assistant.tool_call.started", StringComparison.OrdinalIgnoreCase);
+            bool completed = String.Equals(evt.EventType, "assistant.tool_call.completed", StringComparison.OrdinalIgnoreCase);
+            bool failed = String.Equals(evt.EventType, "assistant.tool_call.failed", StringComparison.OrdinalIgnoreCase);
+            bool denied = String.Equals(evt.EventType, "assistant.tool_call.denied", StringComparison.OrdinalIgnoreCase);
+
+            if (started) return "Tool running: " + label + ".";
+
+            if (completed)
+            {
+                string countSuffix = evt.ResultCount.HasValue
+                    ? " (" + evt.ResultCount.Value.ToString() + " " + (evt.ResultCount.Value == 1 ? "result" : "results") + ")"
+                    : "";
+                return "Tool completed: " + label + countSuffix + ".";
+            }
+
+            if (failed) return "Tool failed: " + label + ". The assistant will continue if it can.";
+            if (denied) return "Tool denied: " + label + ".";
+
+            return null;
+        }
+
+        private static string BuildFallbackToolLabel(string toolName)
+        {
+            if (String.IsNullOrWhiteSpace(toolName)) return null;
+
+            string normalized = toolName.Trim();
+            normalized = normalized.Replace("_", " ").Replace("-", " ");
+            normalized = Regex.Replace(normalized, @"\s+", " ");
+            return normalized;
         }
     }
 }

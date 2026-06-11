@@ -35,6 +35,11 @@ namespace AssistantHub.Server.Services
         public string ErrorMessage { get; set; } = null;
 
         /// <summary>
+        /// HTTP status code to use when execution fails through an HTTP route.
+        /// </summary>
+        public int StatusCode { get; set; } = 502;
+
+        /// <summary>
         /// Assistant record used for execution.
         /// </summary>
         public Assistant Assistant { get; set; } = null;
@@ -58,5 +63,10 @@ namespace AssistantHub.Server.Services
         /// Persisted chat-history identifier when history was written.
         /// </summary>
         public string ChatHistoryId { get; set; } = null;
+
+        /// <summary>
+        /// Safe tool-call trace metadata produced during execution.
+        /// </summary>
+        public List<ChatCompletionToolTrace> ToolCalls { get; set; } = new List<ChatCompletionToolTrace>();
     }
 }

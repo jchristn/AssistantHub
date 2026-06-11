@@ -15,10 +15,24 @@ namespace AssistantHub.Core.Models
         public int Index { get; set; } = 0;
 
         /// <summary>
+        /// Source category, for example document or web.
+        /// </summary>
+        [JsonPropertyName("source_type")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string SourceType { get; set; } = null;
+
+        /// <summary>
         /// The document identifier (maps to AssistantDocument.Id).
         /// </summary>
         [JsonPropertyName("document_id")]
         public string DocumentId { get; set; } = null;
+
+        /// <summary>
+        /// Source URL for web evidence or document metadata when available.
+        /// </summary>
+        [JsonPropertyName("url")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Url { get; set; } = null;
 
         /// <summary>
         /// Display name of the source document.

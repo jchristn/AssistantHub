@@ -56,6 +56,18 @@ namespace AssistantHub.Core.Services
         {
         }
 
+        /// <summary>
+        /// Instantiate with a caller-supplied HTTP client.
+        /// </summary>
+        /// <param name="settings">Inference settings.</param>
+        /// <param name="logging">Logging module.</param>
+        /// <param name="httpClient">HTTP client.</param>
+        public InferenceService(InferenceSettings settings, LoggingModule logging, HttpClient httpClient)
+            : base(settings, logging)
+        {
+            if (httpClient != null) _HttpClient = httpClient;
+        }
+
         #endregion
 
         #region Public-Methods
@@ -433,6 +445,95 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Generate a non-streaming response from a tool-capable model.
+        /// </summary>
+        /// <param name="request">Provider-neutral tool-capable inference request.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Inference result containing assistant content and/or model-requested tool calls.</returns>
+        public async Task<InferenceResult> GenerateResponseWithToolsAsync(
+            ToolCapableInferenceRequest request,
+            CancellationToken token = default)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (request.Messages == null || request.Messages.Count == 0) throw new ArgumentNullException(nameof(request.Messages));
+
+            return await GenerateResponseWithToolsAsync(
+                request.Messages,
+                request.Model,
+                request.MaxTokens,
+                request.Temperature,
+                request.TopP,
+                request.Provider,
+                request.Endpoint,
+                request.ApiKey,
+                request.Tools,
+                request.ToolChoice,
+                token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Generate a non-streaming response from a tool-capable model.
+        /// </summary>
+        /// <param name="messages">List of chat completion messages.</param>
+        /// <param name="model">Model name or identifier.</param>
+        /// <param name="maxTokens">Maximum number of tokens to generate.</param>
+        /// <param name="temperature">Sampling temperature.</param>
+        /// <param name="topP">Top-p nucleus sampling.</param>
+        /// <param name="provider">Inference provider type.</param>
+        /// <param name="endpoint">Inference provider endpoint URL.</param>
+        /// <param name="apiKey">Inference provider API key.</param>
+        /// <param name="tools">Tool definitions exposed to the model.</param>
+        /// <param name="toolChoice">Tool choice mode.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Inference result containing assistant content and/or model-requested tool calls.</returns>
+        public async Task<InferenceResult> GenerateResponseWithToolsAsync(
+            List<ChatCompletionMessage> messages,
+            string model,
+            int maxTokens,
+            double temperature,
+            double topP,
+            InferenceProviderEnum provider,
+            string endpoint,
+            string apiKey,
+            IEnumerable<AssistantModelToolDefinition> tools,
+            string toolChoice = "auto",
+            CancellationToken token = default)
+        {
+            if (messages == null || messages.Count == 0) throw new ArgumentNullException(nameof(messages));
+
+            string effectiveModel = !String.IsNullOrEmpty(model) ? model : _Settings.DefaultModel;
+            string effectiveEndpoint = !String.IsNullOrEmpty(endpoint) ? endpoint : _Settings.Endpoint;
+            string effectiveApiKey = !String.IsNullOrEmpty(apiKey) ? apiKey : _Settings.ApiKey;
+
+            _Logging.Debug(_Header + "generating tool-capable response using provider " + provider.ToString() + " model " + effectiveModel);
+
+            try
+            {
+                switch (provider)
+                {
+                    case InferenceProviderEnum.OpenAI:
+                        return await GenerateOpenAIResponseWithToolsFromMessagesAsync(
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint, effectiveApiKey, tools, toolChoice, token).ConfigureAwait(false);
+
+                    case InferenceProviderEnum.Ollama:
+                        return await GenerateOllamaResponseWithToolsFromMessagesAsync(
+                            messages, effectiveModel, maxTokens, temperature, topP,
+                            effectiveEndpoint, effectiveApiKey, tools, token).ConfigureAwait(false);
+
+                    default:
+                        _Logging.Warn(_Header + "tool calling is not supported for inference provider: " + provider.ToString());
+                        return InferenceResult.FromError("Tool calling is not supported for inference provider: " + provider.ToString());
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception during tool-capable inference: " + e.Message);
+                return InferenceResult.FromError("Inference exception: " + e.Message);
+            }
+        }
+
+        /// <summary>
         /// Generate a streaming response from a language model using a multi-message conversation.
         /// </summary>
         /// <param name="messages">List of chat completion messages.</param>
@@ -449,6 +550,7 @@ namespace AssistantHub.Core.Services
         /// <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
         /// <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
         /// <param name="token">Cancellation token.</param>
+        /// <param name="onThinkingDelta">Optional callback invoked for provider thinking/reasoning deltas.</param>
         public async Task GenerateResponseStreamingAsync(
             List<ChatCompletionMessage> messages,
             string model,
@@ -463,7 +565,8 @@ namespace AssistantHub.Core.Services
             Func<string, Task> onError,
             Action onConnectionEstablished = null,
             Action<AssistantPerformanceStage> onTelemetry = null,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            Func<string, Task> onThinkingDelta = null)
         {
             if (messages == null || messages.Count == 0) throw new ArgumentNullException(nameof(messages));
             if (onDelta == null) throw new ArgumentNullException(nameof(onDelta));
@@ -483,22 +586,22 @@ namespace AssistantHub.Core.Services
                     case InferenceProviderEnum.OpenAI:
                         await GenerateOpenAIStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, 
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            effectiveEndpoint, effectiveApiKey,
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Ollama:
                         await GenerateOllamaStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     case InferenceProviderEnum.Gemini:
                         await GenerateGeminiStreamingAsync(
                             messages, effectiveModel, maxTokens, temperature, topP,
                             effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token).ConfigureAwait(false);
+                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
                         break;
 
                     default:

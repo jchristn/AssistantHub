@@ -77,5 +77,45 @@ namespace AssistantHub.Sdk.Models
         /// Model used by the dominant stage.
         /// </summary>
         public string Model { get; set; }
+
+        /// <summary>
+        /// Number of tool calls in the request.
+        /// </summary>
+        public int ToolCallCount { get; set; }
+
+        /// <summary>
+        /// Number of failed non-denied tool calls.
+        /// </summary>
+        public int ToolFailureCount { get; set; }
+
+        /// <summary>
+        /// Number of policy-denied tool calls.
+        /// </summary>
+        public int ToolDeniedCount { get; set; }
+
+        /// <summary>
+        /// Number of truncated tool outputs.
+        /// </summary>
+        public int ToolTruncatedCount { get; set; }
+
+        /// <summary>
+        /// Aggregate tool duration in milliseconds.
+        /// </summary>
+        public double? ToolDurationMs { get; set; }
+
+        /// <summary>
+        /// Slowest tool name.
+        /// </summary>
+        public string SlowestToolName { get; set; }
+
+        /// <summary>
+        /// Slowest tool duration in milliseconds.
+        /// </summary>
+        public double? SlowestToolDurationMs { get; set; }
+
+        /// <summary>
+        /// Tool names with at least one failure or denial.
+        /// </summary>
+        public List<string> FailingToolNames { get; set; } = new List<string>();
     }
 }

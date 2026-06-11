@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -92,6 +93,7 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
 
             if (searchOptions == null) searchOptions = new RetrievalSearchOptions();
+            searchOptions.HybridFallbackRan = false;
 
             List<RetrievalChunk> results = new List<RetrievalChunk>();
 
@@ -116,28 +118,14 @@ namespace AssistantHub.Core.Services
                     _Logging.Debug(_Header + "FullText mode: skipping embedding step");
                 }
 
-                // Step 2: Build search request body based on search mode
-                object searchBody = BuildSearchBody(query, queryEmbeddings, topK, searchOptions);
-
-                // Step 3: Execute search against RecallDB
-                List<SearchResult> searchResults = await ExecuteSearchAsync(tenantId, collectionId, searchBody, token).ConfigureAwait(false);
-
-                // Step 3.5: Hybrid fallback to vector-only if 0 results
-                if (searchOptions.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)
-                    && (searchResults == null || searchResults.Count == 0)
-                    && queryEmbeddings != null)
-                {
-                    _Logging.Info(_Header + "hybrid search returned 0 results, falling back to vector-only");
-                    Dictionary<string, object> vectorOnlyBody = new Dictionary<string, object>
-                    {
-                        ["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = queryEmbeddings },
-                        ["MaxResults"] = topK
-                    };
-                    if (searchOptions.IncludeNeighbors > 0) vectorOnlyBody["IncludeNeighbors"] = searchOptions.IncludeNeighbors;
-                    if (searchOptions.MetadataFilter != null && !searchOptions.MetadataFilter.IsEmpty)
-                        AddMetadataFilters(vectorOnlyBody, searchOptions.MetadataFilter);
-                    searchResults = await ExecuteSearchAsync(tenantId, collectionId, vectorOnlyBody, token).ConfigureAwait(false);
-                }
+                List<SearchResult> searchResults = await ExecuteSearchWithDocumentFilterAsync(
+                    tenantId,
+                    collectionId,
+                    query,
+                    queryEmbeddings,
+                    topK,
+                    searchOptions,
+                    token).ConfigureAwait(false);
 
                 if (searchResults == null || searchResults.Count == 0)
                 {
@@ -180,6 +168,54 @@ namespace AssistantHub.Core.Services
             }
 
             return results;
+        }
+
+        /// <summary>
+        /// Read a single stored RecallDB collection record by its server-known record identifier.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="collectionId">Collection identifier.</param>
+        /// <param name="recordId">RecallDB record identifier.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Retrieval chunk when found, otherwise null.</returns>
+        public async Task<RetrievalChunk> ReadCollectionRecordAsync(
+            string tenantId,
+            string collectionId,
+            string recordId,
+            CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrEmpty(collectionId)) throw new ArgumentNullException(nameof(collectionId));
+            if (String.IsNullOrEmpty(recordId)) throw new ArgumentNullException(nameof(recordId));
+
+            string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/documents/" + Uri.EscapeDataString(recordId);
+
+            try
+            {
+                using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Get, path, null, token).ConfigureAwait(false))
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _Logging.Warn(_Header + "RecallDB record read returned " + (int)response.StatusCode + " for record " + recordId + ": " + responseBody);
+                        return null;
+                    }
+
+                    using JsonDocument document = JsonDocument.Parse(responseBody);
+                    JsonElement record = GetObjectOrSelf(document.RootElement, "Document", "Record", "Data");
+                    return new RetrievalChunk
+                    {
+                        DocumentId = GetStringAny(record, "DocumentId", "AssistantHubDocumentId"),
+                        Content = GetStringAny(record, "Content", "Text"),
+                        Position = GetIntAny(record, "Position", "ChunkIndex")
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "exception reading RecallDB record " + recordId + ": " + e.Message);
+                return null;
+            }
         }
 
         #endregion
@@ -227,6 +263,7 @@ namespace AssistantHub.Core.Services
 
             body["MaxResults"] = topK;
             if (includeNeighbors.HasValue) body["IncludeNeighbors"] = includeNeighbors.Value;
+            AddDocumentFilters(body, options.DocumentIds);
 
             // Add metadata filters when present
             if (options.MetadataFilter != null && !options.MetadataFilter.IsEmpty)
@@ -235,6 +272,179 @@ namespace AssistantHub.Core.Services
             }
 
             return body;
+        }
+
+        private async Task<List<SearchResult>> ExecuteSearchWithDocumentFilterAsync(
+            string tenantId,
+            string collectionId,
+            string query,
+            List<double> embeddings,
+            int topK,
+            RetrievalSearchOptions options,
+            CancellationToken token)
+        {
+            List<string> documentIds = NormalizeDocumentIds(options.DocumentIds);
+            if (documentIds != null && documentIds.Count > 1 && !_RecallDbSettings.SupportsMultiDocumentFilter)
+            {
+                _Logging.Warn(_Header + "RecallDB native multi-document filtering is disabled or unavailable; using single-document fallback loop for " + documentIds.Count + " document filters.");
+                return await ExecuteSingleDocumentFallbackSearchAsync(tenantId, collectionId, query, embeddings, topK, options, documentIds, token).ConfigureAwait(false);
+            }
+
+            return await ExecuteNativeSearchAsync(tenantId, collectionId, query, embeddings, topK, options, token).ConfigureAwait(false);
+        }
+
+        private async Task<List<SearchResult>> ExecuteNativeSearchAsync(
+            string tenantId,
+            string collectionId,
+            string query,
+            List<double> embeddings,
+            int topK,
+            RetrievalSearchOptions options,
+            CancellationToken token)
+        {
+            object searchBody = BuildSearchBody(query, embeddings, topK, options);
+            List<SearchResult> searchResults = await ExecuteSearchAsync(tenantId, collectionId, searchBody, token).ConfigureAwait(false);
+
+            if (ShouldRunHybridFallback(searchResults, embeddings, options))
+            {
+                _Logging.Info(_Header + "hybrid search returned 0 results, falling back to vector-only");
+                options.HybridFallbackRan = true;
+                Dictionary<string, object> vectorOnlyBody = BuildVectorOnlySearchBody(embeddings, topK, options);
+                searchResults = await ExecuteSearchAsync(tenantId, collectionId, vectorOnlyBody, token).ConfigureAwait(false);
+            }
+
+            return searchResults;
+        }
+
+        private async Task<List<SearchResult>> ExecuteSingleDocumentFallbackSearchAsync(
+            string tenantId,
+            string collectionId,
+            string query,
+            List<double> embeddings,
+            int topK,
+            RetrievalSearchOptions options,
+            List<string> documentIds,
+            CancellationToken token)
+        {
+            Dictionary<string, (SearchResult Result, int Order)> merged = new Dictionary<string, (SearchResult Result, int Order)>(StringComparer.Ordinal);
+            int order = 0;
+
+            foreach (string documentId in documentIds)
+            {
+                token.ThrowIfCancellationRequested();
+
+                RetrievalSearchOptions perDocumentOptions = CloneSearchOptionsForDocument(options, documentId);
+                List<SearchResult> results = await ExecuteNativeSearchAsync(tenantId, collectionId, query, embeddings, topK, perDocumentOptions, token).ConfigureAwait(false);
+                if (perDocumentOptions.HybridFallbackRan) options.HybridFallbackRan = true;
+
+                if (results == null || results.Count < 1) continue;
+                foreach (SearchResult result in results)
+                {
+                    if (result == null) continue;
+                    string key = BuildSearchResultDedupeKey(result, order);
+                    if (merged.TryGetValue(key, out (SearchResult Result, int Order) existing))
+                    {
+                        if ((result.Score > existing.Result.Score)
+                            || (Math.Abs(result.Score - existing.Result.Score) < 0.0000001 && result.TextScore.GetValueOrDefault() > existing.Result.TextScore.GetValueOrDefault()))
+                        {
+                            merged[key] = (result, existing.Order);
+                        }
+                    }
+                    else
+                    {
+                        merged[key] = (result, order++);
+                    }
+                }
+            }
+
+            return merged.Values
+                .OrderByDescending(item => item.Result.Score)
+                .ThenBy(item => item.Order)
+                .Take(topK)
+                .Select(item => item.Result)
+                .ToList();
+        }
+
+        private static RetrievalSearchOptions CloneSearchOptionsForDocument(RetrievalSearchOptions options, string documentId)
+        {
+            return new RetrievalSearchOptions
+            {
+                SearchMode = options.SearchMode,
+                TextWeight = options.TextWeight,
+                FullTextSearchType = options.FullTextSearchType,
+                FullTextLanguage = options.FullTextLanguage,
+                FullTextNormalization = options.FullTextNormalization,
+                FullTextMinimumScore = options.FullTextMinimumScore,
+                IncludeNeighbors = options.IncludeNeighbors,
+                MetadataFilter = options.MetadataFilter,
+                DocumentIds = new List<string> { documentId }
+            };
+        }
+
+        private static bool ShouldRunHybridFallback(List<SearchResult> searchResults, List<double> embeddings, RetrievalSearchOptions options)
+        {
+            return options.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)
+                && (searchResults == null || searchResults.Count == 0)
+                && embeddings != null;
+        }
+
+        private Dictionary<string, object> BuildVectorOnlySearchBody(List<double> embeddings, int topK, RetrievalSearchOptions options)
+        {
+            Dictionary<string, object> vectorOnlyBody = new Dictionary<string, object>
+            {
+                ["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings },
+                ["MaxResults"] = topK
+            };
+            if (options.IncludeNeighbors > 0) vectorOnlyBody["IncludeNeighbors"] = options.IncludeNeighbors;
+            AddDocumentFilters(vectorOnlyBody, options.DocumentIds);
+            if (options.MetadataFilter != null && !options.MetadataFilter.IsEmpty)
+                AddMetadataFilters(vectorOnlyBody, options.MetadataFilter);
+
+            return vectorOnlyBody;
+        }
+
+        private static string BuildSearchResultDedupeKey(SearchResult result, int fallbackOrder)
+        {
+            string documentId = result.DocumentId?.Trim();
+            if (!String.IsNullOrWhiteSpace(documentId) && result.Position.HasValue)
+                return documentId + "|" + result.Position.Value;
+            if (!String.IsNullOrWhiteSpace(documentId) && !String.IsNullOrWhiteSpace(result.Content))
+                return documentId + "|" + result.Content;
+            return "row|" + fallbackOrder;
+        }
+
+        /// <summary>
+        /// Add DocumentId or DocumentIds to the search body after removing empty and duplicate identifiers.
+        /// </summary>
+        private void AddDocumentFilters(Dictionary<string, object> body, IEnumerable<string> documentIds)
+        {
+            List<string> normalized = NormalizeDocumentIds(documentIds);
+            if (normalized == null || normalized.Count < 1) return;
+
+            if (normalized.Count == 1)
+            {
+                body["DocumentId"] = normalized[0];
+            }
+            else
+            {
+                body["DocumentIds"] = normalized;
+            }
+        }
+
+        /// <summary>
+        /// Normalize document identifiers for retrieval requests.
+        /// </summary>
+        private static List<string> NormalizeDocumentIds(IEnumerable<string> documentIds)
+        {
+            if (documentIds == null) return null;
+
+            List<string> normalized = documentIds
+                .Where(id => !String.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            return normalized.Count > 0 ? normalized : null;
         }
 
         /// <summary>
@@ -272,6 +482,10 @@ namespace AssistantHub.Core.Services
         {
             string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/search";
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            string traceId = Guid.NewGuid().ToString("N");
+            Stopwatch sw = Stopwatch.StartNew();
+
+            _Logging.Debug(_Header + "RecallDB search request trace " + traceId + " path " + path + " body " + BuildRedactedSearchBodyLog(json));
 
             using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Post, path, json, token).ConfigureAwait(false))
             {
@@ -279,13 +493,163 @@ namespace AssistantHub.Core.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    _Logging.Debug(_Header + "RecallDB search response trace " + traceId + " status " + (int)response.StatusCode + " resultCount 0 durationMs " + sw.ElapsedMilliseconds);
                     _Logging.Warn(_Header + "RecallDB search returned " + (int)response.StatusCode + ": " + responseBody);
                     return null;
                 }
 
                 SearchResponse searchResult = JsonSerializer.Deserialize<SearchResponse>(responseBody, _JsonOptions);
+                int resultCount = searchResult?.Documents != null ? searchResult.Documents.Count : 0;
+                _Logging.Debug(_Header + "RecallDB search response trace " + traceId + " status " + (int)response.StatusCode + " resultCount " + resultCount + " durationMs " + sw.ElapsedMilliseconds);
                 return searchResult?.Documents;
             }
+        }
+
+        private static string BuildRedactedSearchBodyLog(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return "{}";
+
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(json);
+                JsonElement root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) return "{\"body\":\"[redacted]\"}";
+
+                Dictionary<string, object> summary = new Dictionary<string, object>();
+
+                if (TryGetPropertyIgnoreCase(root, "Vector", out JsonElement vector) && vector.ValueKind == JsonValueKind.Object)
+                {
+                    Dictionary<string, object> vectorSummary = new Dictionary<string, object>();
+                    string vectorSearchType = GetStringAny(vector, "SearchType");
+                    if (!String.IsNullOrWhiteSpace(vectorSearchType)) vectorSummary["SearchType"] = vectorSearchType;
+                    if (TryGetPropertyIgnoreCase(vector, "Embeddings", out JsonElement embeddings) && embeddings.ValueKind == JsonValueKind.Array)
+                        vectorSummary["EmbeddingDimensions"] = embeddings.GetArrayLength();
+                    summary["Vector"] = vectorSummary;
+                }
+
+                if (TryGetPropertyIgnoreCase(root, "FullText", out JsonElement fullText) && fullText.ValueKind == JsonValueKind.Object)
+                {
+                    Dictionary<string, object> fullTextSummary = new Dictionary<string, object>
+                    {
+                        ["HasQuery"] = TryGetPropertyIgnoreCase(fullText, "Query", out JsonElement queryElement)
+                            && queryElement.ValueKind == JsonValueKind.String
+                            && !String.IsNullOrEmpty(queryElement.GetString())
+                    };
+
+                    if (TryGetPropertyIgnoreCase(fullText, "Query", out queryElement) && queryElement.ValueKind == JsonValueKind.String)
+                        fullTextSummary["QueryLength"] = queryElement.GetString()?.Length ?? 0;
+
+                    string fullTextSearchType = GetStringAny(fullText, "SearchType");
+                    if (!String.IsNullOrWhiteSpace(fullTextSearchType)) fullTextSummary["SearchType"] = fullTextSearchType;
+
+                    string language = GetStringAny(fullText, "Language");
+                    if (!String.IsNullOrWhiteSpace(language)) fullTextSummary["Language"] = language;
+
+                    if (TryGetPropertyIgnoreCase(fullText, "Normalization", out JsonElement normalization) && normalization.ValueKind == JsonValueKind.Number)
+                        fullTextSummary["Normalization"] = normalization.GetRawText();
+                    if (TryGetPropertyIgnoreCase(fullText, "TextWeight", out JsonElement textWeight) && textWeight.ValueKind == JsonValueKind.Number)
+                        fullTextSummary["TextWeight"] = textWeight.GetRawText();
+                    if (TryGetPropertyIgnoreCase(fullText, "MinimumScore", out JsonElement minimumScore) && minimumScore.ValueKind == JsonValueKind.Number)
+                        fullTextSummary["MinimumScore"] = minimumScore.GetRawText();
+
+                    summary["FullText"] = fullTextSummary;
+                }
+
+                if (TryGetPropertyIgnoreCase(root, "MaxResults", out JsonElement maxResults) && maxResults.ValueKind == JsonValueKind.Number)
+                    summary["MaxResults"] = maxResults.GetRawText();
+                if (TryGetPropertyIgnoreCase(root, "IncludeNeighbors", out JsonElement includeNeighbors) && includeNeighbors.ValueKind == JsonValueKind.Number)
+                    summary["IncludeNeighbors"] = includeNeighbors.GetRawText();
+
+                if (TryGetPropertyIgnoreCase(root, "DocumentId", out JsonElement documentId) && documentId.ValueKind == JsonValueKind.String && !String.IsNullOrWhiteSpace(documentId.GetString()))
+                    summary["DocumentIdCount"] = 1;
+                if (TryGetPropertyIgnoreCase(root, "DocumentIds", out JsonElement documentIds) && documentIds.ValueKind == JsonValueKind.Array)
+                    summary["DocumentIdCount"] = documentIds.GetArrayLength();
+
+                if (TryGetPropertyIgnoreCase(root, "LabelFilter", out JsonElement labelFilter) && labelFilter.ValueKind == JsonValueKind.Object)
+                    summary["LabelFilter"] = SummarizeRequiredExcludedFilter(labelFilter);
+                if (TryGetPropertyIgnoreCase(root, "TagFilter", out JsonElement tagFilter) && tagFilter.ValueKind == JsonValueKind.Object)
+                    summary["TagFilter"] = SummarizeRequiredExcludedFilter(tagFilter);
+
+                return JsonSerializer.Serialize(summary);
+            }
+            catch (JsonException)
+            {
+                return "{\"body\":\"[redacted-unparseable]\"}";
+            }
+        }
+
+        private static Dictionary<string, int> SummarizeRequiredExcludedFilter(JsonElement filter)
+        {
+            Dictionary<string, int> summary = new Dictionary<string, int>();
+
+            if (TryGetPropertyIgnoreCase(filter, "Required", out JsonElement required) && required.ValueKind == JsonValueKind.Array)
+                summary["RequiredCount"] = required.GetArrayLength();
+            if (TryGetPropertyIgnoreCase(filter, "Excluded", out JsonElement excluded) && excluded.ValueKind == JsonValueKind.Array)
+                summary["ExcludedCount"] = excluded.GetArrayLength();
+
+            return summary;
+        }
+
+        private static JsonElement GetObjectOrSelf(JsonElement element, params string[] names)
+        {
+            if (element.ValueKind != JsonValueKind.Object) return element;
+
+            foreach (string name in names)
+            {
+                if (TryGetPropertyIgnoreCase(element, name, out JsonElement value) && value.ValueKind == JsonValueKind.Object)
+                    return value;
+            }
+
+            return element;
+        }
+
+        private static string GetStringAny(JsonElement element, params string[] names)
+        {
+            if (element.ValueKind != JsonValueKind.Object) return null;
+
+            foreach (string name in names)
+            {
+                if (TryGetPropertyIgnoreCase(element, name, out JsonElement value))
+                {
+                    if (value.ValueKind == JsonValueKind.String) return value.GetString()?.Trim();
+                    if (value.ValueKind == JsonValueKind.Number) return value.GetRawText();
+                }
+            }
+
+            return null;
+        }
+
+        private static int? GetIntAny(JsonElement element, params string[] names)
+        {
+            if (element.ValueKind != JsonValueKind.Object) return null;
+
+            foreach (string name in names)
+            {
+                if (TryGetPropertyIgnoreCase(element, name, out JsonElement value))
+                {
+                    if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int numeric)) return numeric;
+                    if (value.ValueKind == JsonValueKind.String && Int32.TryParse(value.GetString(), out numeric)) return numeric;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryGetPropertyIgnoreCase(JsonElement element, string name, out JsonElement value)
+        {
+            value = default;
+            if (element.ValueKind != JsonValueKind.Object) return false;
+
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                if (String.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

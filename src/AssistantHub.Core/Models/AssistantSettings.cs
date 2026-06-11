@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Models
 {
     using System;
     using System.Data;
+    using System.Text.Json;
     using AssistantHub.Core.Helpers;
 
     /// <summary>
@@ -142,6 +143,25 @@ namespace AssistantHub.Core.Models
         public string CitationLinkMode { get; set; } = "None";
 
         /// <summary>
+        /// Whether public assistant chat users may attach completed documents from the assistant collection.
+        /// </summary>
+        public bool EnableDocumentAttachments { get; set; } = false;
+
+        /// <summary>
+        /// Maximum number of documents that may be attached to one chat request.
+        /// </summary>
+        public int DocumentAttachmentMaxCount
+        {
+            get => _DocumentAttachmentMaxCount;
+            set => _DocumentAttachmentMaxCount = (value >= 1 && value <= 100) ? value : throw new ArgumentOutOfRangeException(nameof(DocumentAttachmentMaxCount));
+        }
+
+        /// <summary>
+        /// Whether public document-selection responses may include source URLs.
+        /// </summary>
+        public bool ExposeDocumentSourceUrls { get; set; } = false;
+
+        /// <summary>
         /// Collection identifier for document retrieval.
         /// </summary>
         public string CollectionId { get; set; } = null;
@@ -215,6 +235,12 @@ namespace AssistantHub.Core.Models
         public string InferenceEndpointId { get; set; } = null;
 
         /// <summary>
+        /// Completion endpoint identifier used only for model-directed tool routing.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string ToolRoutingInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
         /// Completion endpoint identifier used for retrieval gate decisions.
         /// When null or empty, the primary inference endpoint is used.
         /// </summary>
@@ -241,6 +267,11 @@ namespace AssistantHub.Core.Models
         /// Whether to load or warm configured endpoint models when a chat window is opened.
         /// </summary>
         public bool LoadModelsOnChatOpen { get; set; } = false;
+
+        /// <summary>
+        /// Whether provider thinking/reasoning text may be exposed in public assistant chat.
+        /// </summary>
+        public bool ExposeThinking { get; set; } = false;
 
         /// <summary>
         /// Title displayed as the heading on the chat window.
@@ -305,6 +336,47 @@ namespace AssistantHub.Core.Models
         public string SlackMessagePrefix { get; set; } = null;
 
         /// <summary>
+        /// JSON-serialized AssistantToolPolicy controlling model-directed server-side tools.
+        /// </summary>
+        public string ToolPolicyJson
+        {
+            get => _ToolPolicyJson;
+            set
+            {
+                _ToolPolicyJson = String.IsNullOrWhiteSpace(value) ? null : value.Trim();
+                _ToolPolicy = null;
+            }
+        }
+
+        /// <summary>
+        /// Parsed AssistantToolPolicy controlling model-directed server-side tools.
+        /// </summary>
+        public AssistantToolPolicy ToolPolicy
+        {
+            get
+            {
+                if (_ToolPolicy != null) return _ToolPolicy;
+
+                AssistantToolPolicy policy = ParseToolPolicyJson(_ToolPolicyJson) ?? new AssistantToolPolicy();
+                policy.Normalize();
+                _ToolPolicy = policy;
+                return _ToolPolicy;
+            }
+            set
+            {
+                _ToolPolicy = value;
+                if (_ToolPolicy == null)
+                {
+                    _ToolPolicyJson = null;
+                    return;
+                }
+
+                _ToolPolicy.Normalize();
+                _ToolPolicyJson = JsonSerializer.Serialize(_ToolPolicy, _ToolPolicyJsonOptions);
+            }
+        }
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -329,6 +401,13 @@ namespace AssistantHub.Core.Models
         private int _RerankerTopK = 5;
         private double _RerankerScoreThreshold = 3.0;
         private int _RetrievalIncludeNeighbors = 0;
+        private int _DocumentAttachmentMaxCount = 10;
+        private string _ToolPolicyJson = null;
+        private AssistantToolPolicy _ToolPolicy = null;
+        private static readonly JsonSerializerOptions _ToolPolicyJsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         #endregion
 
@@ -367,6 +446,9 @@ namespace AssistantHub.Core.Models
             obj.RerankPrompt = DataTableHelper.GetStringValue(row, "rerank_prompt");
             obj.EnableCitations = DataTableHelper.GetBooleanValue(row, "enable_citations", false);
             obj.CitationLinkMode = DataTableHelper.GetStringValue(row, "citation_link_mode") ?? "None";
+            obj.EnableDocumentAttachments = DataTableHelper.GetBooleanValue(row, "enable_document_attachments", false);
+            obj.DocumentAttachmentMaxCount = DataTableHelper.GetIntValue(row, "document_attachment_max_count", 10);
+            obj.ExposeDocumentSourceUrls = DataTableHelper.GetBooleanValue(row, "expose_document_source_urls", false);
             obj.CollectionId = DataTableHelper.GetStringValue(row, "collection_id");
             obj.RetrievalTopK = DataTableHelper.GetIntValue(row, "retrieval_top_k", 10);
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
@@ -378,11 +460,13 @@ namespace AssistantHub.Core.Models
             obj.FullTextMinimumScore = DataTableHelper.GetNullableDoubleValue(row, "fulltext_minimum_score");
             obj.RetrievalIncludeNeighbors = DataTableHelper.GetIntValue(row, "retrieval_include_neighbors", 0);
             obj.InferenceEndpointId = DataTableHelper.GetStringValue(row, "inference_endpoint_id");
+            obj.ToolRoutingInferenceEndpointId = DataTableHelper.GetStringValue(row, "tool_routing_inference_endpoint_id");
             obj.RetrievalGateInferenceEndpointId = DataTableHelper.GetStringValue(row, "retrieval_gate_inference_endpoint_id");
             obj.QueryRewriteInferenceEndpointId = DataTableHelper.GetStringValue(row, "query_rewrite_inference_endpoint_id");
             obj.RerankInferenceEndpointId = DataTableHelper.GetStringValue(row, "rerank_inference_endpoint_id");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.LoadModelsOnChatOpen = DataTableHelper.GetBooleanValue(row, "load_models_on_chat_open", false);
+            obj.ExposeThinking = DataTableHelper.GetBooleanValue(row, "expose_thinking", false);
             obj.Title = DataTableHelper.GetStringValue(row, "title");
             obj.LogoUrl = DataTableHelper.GetStringValue(row, "logo_url");
             obj.FaviconUrl = DataTableHelper.GetStringValue(row, "favicon_url");
@@ -395,9 +479,24 @@ namespace AssistantHub.Core.Models
             obj.SlackBotToken = DataTableHelper.GetStringValue(row, "slack_bot_token");
             obj.SlackChannelId = DataTableHelper.GetStringValue(row, "slack_channel_id");
             obj.SlackMessagePrefix = DataTableHelper.GetStringValue(row, "slack_message_prefix");
+            obj.ToolPolicyJson = DataTableHelper.GetStringValue(row, "tool_policy_json");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;
+        }
+
+        private static AssistantToolPolicy ParseToolPolicyJson(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<AssistantToolPolicy>(json, _ToolPolicyJsonOptions);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         #endregion

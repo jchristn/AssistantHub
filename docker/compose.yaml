@@ -3,7 +3,7 @@ services:
   # --- Infrastructure ---
 
   ollama:
-    image: ollama/ollama:0.30.4
+    image: ollama/ollama:latest
     container_name: ollama
     ports:
       - "11434:11434"
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   ollama-init:
-    image: ollama/ollama:0.30.4
+    image: ollama/ollama:latest
     container_name: ollama-init
     entrypoint:
       - bash
@@ -280,10 +280,12 @@ services:
   # --- AssistantHub ---
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.15.0
+    image: jchristn77/assistanthub-server:v0.16.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
+    environment:
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -313,7 +315,7 @@ services:
     restart: unless-stopped
 
   assistanthub-mcp-server:
-    image: jchristn77/assistanthub-mcp:v0.15.0
+    image: jchristn77/assistanthub-mcp:v0.16.0
     container_name: assistanthub-mcp-server
     ports:
       - "8820:8820"
@@ -330,7 +332,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.15.0
+    image: jchristn77/assistanthub-dashboard:v0.16.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

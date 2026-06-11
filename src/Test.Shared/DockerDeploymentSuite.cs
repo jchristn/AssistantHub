@@ -72,6 +72,16 @@ namespace Test.Automated
                 AssertHelper.IsFalse(File.Exists(Path.Combine(factoryDirectory, "partio.db")), "Partio factory SQLite DB removed");
             });
 
+            await ExecuteTestAsync("Docker deployment: dashboard entrypoint is not browser-cached", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string dashboardNginx = File.ReadAllText(Path.Combine(root, "dashboard", "nginx.conf"));
+                string composeNginx = File.ReadAllText(Path.Combine(root, "docker", "dashboard-nginx.conf"));
+
+                AssertDashboardNoCacheHeaders(dashboardNginx, "dashboard nginx");
+                AssertDashboardNoCacheHeaders(composeNginx, "compose dashboard nginx");
+            });
+
             await ExecuteTestAsync("PostgreSQL assistant settings: boolean columns use PostgreSQL literals", async () =>
             {
                 string root = GetRepositoryRoot();
@@ -123,6 +133,13 @@ namespace Test.Automated
             AssertHelper.AreEqual(expectedUsername, database.GetProperty("Username").GetString(), relativePath + " database username");
             AssertHelper.AreEqual(expectedPassword, database.GetProperty("Password").GetString(), relativePath + " database password");
             AssertHelper.IsFalse(String.Equals("postgres", database.GetProperty("Username").GetString(), StringComparison.OrdinalIgnoreCase), relativePath + " should not use the superuser");
+        }
+
+        private static void AssertDashboardNoCacheHeaders(string nginx, string name)
+        {
+            AssertHelper.StringContains(nginx, "location = /index.html", name + " index cache policy route");
+            AssertHelper.StringContains(nginx, "location = /config.js", name + " runtime config cache policy route");
+            AssertHelper.StringContains(nginx, "no-store, no-cache", name + " no-cache header");
         }
 
         private static string GetRepositoryRoot()

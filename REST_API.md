@@ -30,6 +30,7 @@ AssistantHub also ships a standalone MCP server that maps the management surface
 - [Completion Endpoints (Admin Only)](#completion-endpoints-admin-only)
 - [Assistants](#assistants)
 - [Assistant Settings](#assistant-settings)
+- [Assistant Tool Calls (Admin Or Tenant Admin)](#assistant-tool-calls-admin-or-tenant-admin)
 - [Documents](#documents)
 - [Feedback (Authenticated)](#feedback-authenticated)
 - [History (Authenticated)](#history-authenticated)
@@ -50,6 +51,7 @@ AssistantHub also ships a standalone MCP server that maps the management surface
 - [Crawl Operations](#crawl-operations)
 - [Eval (Authenticated)](#eval-authenticated)
 - [Configuration (Admin Only)](#configuration-admin-only)
+- [Configuration: ExternalSearch Settings](#configuration-externalsearch-settings)
 - [Configuration: ChatHistory Settings](#configuration-chathistory-settings)
 
 ---
@@ -212,7 +214,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.15.0",
+  "Version": "0.16.0",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```
@@ -1721,7 +1723,7 @@ Load or warm the configured embedding endpoint model through AssistantHub's Part
 
 ## Completion Endpoints (Admin Only)
 
-Manage completion (inference) endpoints on the Partio service. These endpoints define which LLM and API to use for summarization during document ingestion. All routes are proxied to Partio.
+Manage completion (inference) endpoints on the Partio service. These endpoints define which LLM and API to use for assistant responses and summarization during document ingestion. All routes are proxied to Partio.
 
 ### PUT /v1.0/endpoints/completion
 
@@ -1733,14 +1735,22 @@ Create a new completion endpoint.
 
 ```json
 {
-  "Name": "Gemini Summarizer",
-  "Model": "gemini-2.5-flash",
-  "Endpoint": "https://generativelanguage.googleapis.com",
-  "ApiFormat": "Gemini",
-  "ApiKey": "AIza...",
+  "Name": "OpenAI-Compatible Tool Endpoint",
+  "Model": "qwen3",
+  "Endpoint": "http://localhost:11434/v1",
+  "ApiFormat": "OpenAI",
+  "ApiKey": "optional-key",
   "Active": true,
+  "Labels": ["production"],
+  "Tags": {
+    "owner": "assistant-team"
+  },
+  "SupportsToolCalling": true,
+  "ToolCallingApiFormat": "OpenAIChatCompletions",
+  "SupportsParallelToolCalls": false,
+  "SupportsStreamingToolCalls": false,
   "HealthCheckEnabled": true,
-  "HealthCheckUrl": "https://generativelanguage.googleapis.com/v1beta/models",
+  "HealthCheckUrl": "http://localhost:11434/v1/models",
   "HealthCheckMethod": "GET",
   "HealthCheckIntervalMs": 30000,
   "HealthCheckTimeoutMs": 10000,
@@ -1752,6 +1762,8 @@ Create a new completion endpoint.
 ```
 
 **Response:** The created endpoint object (proxied from Partio).
+
+Tool-calling capability is disabled unless `SupportsToolCalling` is explicitly set on the managed completion endpoint and the assistant policy separately enables tool calls. AssistantHub persists these capability fields in Partio endpoint metadata using the reserved label `assistanthub:tool-calling` and reserved tags `AssistantHub.SupportsToolCalling`, `AssistantHub.ToolCallingApiFormat`, `AssistantHub.SupportsParallelToolCalls`, and `AssistantHub.SupportsStreamingToolCalls`. Other caller-supplied labels and tags are preserved. First-release provider support targets native Ollama endpoints with `ToolCallingApiFormat: "OllamaChat"` and OpenAI-compatible chat-completions endpoints with `ToolCallingApiFormat: "OpenAIChatCompletions"`.
 
 **Error Responses:**
 - `403` -- Not an admin user.
@@ -2096,11 +2108,13 @@ Retrieve settings for an assistant.
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 0,
   "InferenceEndpointId": "ep_abc123...",
+  "ToolRoutingInferenceEndpointId": null,
   "RetrievalGateInferenceEndpointId": null,
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": "ep_def456...",
   "LoadModelsOnChatOpen": false,
+  "ExposeThinking": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2113,6 +2127,17 @@ Retrieve settings for an assistant.
   "SlackBotToken": "xoxb-***",
   "SlackChannelId": "C12345678",
   "SlackMessagePrefix": "Hey bot,",
+  "ToolPolicyJson": "{\"EnableToolCalls\":false}",
+  "ToolPolicy": {
+    "EnableToolCalls": false,
+    "EnableCollectionSearchTool": false,
+    "EnableDocumentAtomExtractionTool": false,
+    "EnableWebSearchTool": false,
+    "EnableSlackToolProgressMessages": true,
+    "TavilyEndpoint": null,
+    "TavilyApiKey": null,
+    "AllowUngovernedWebAccess": false
+  },
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
@@ -2148,11 +2173,13 @@ Retrieve settings for an assistant.
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
 | `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
 | `InferenceEndpointId`      | string  | Managed completion endpoint ID for assistant responses. Required for assistant settings. |
+| `ToolRoutingInferenceEndpointId` | string? | Optional managed completion endpoint ID used only for model tool-routing checks. Null or empty falls back to `InferenceEndpointId`; when set, this endpoint must explicitly support tool calling. Final answers still use `InferenceEndpointId`. |
 | `RetrievalGateInferenceEndpointId` | string? | Optional managed completion endpoint ID for retrieval gate calls. Null or empty falls back to `InferenceEndpointId`. |
 | `QueryRewriteInferenceEndpointId` | string? | Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to `InferenceEndpointId`. |
 | `RerankInferenceEndpointId` | string? | Optional managed completion endpoint ID for re-ranking calls. Null or empty falls back to `InferenceEndpointId`. |
 | `EmbeddingEndpointId`      | string  | Managed embedding endpoint ID for RAG retrieval (overrides global setting). |
 | `LoadModelsOnChatOpen`     | bool    | Load or warm configured completion and embedding endpoint models when a chat window opens. Default `false`. |
+| `ExposeThinking`           | bool    | Include provider-returned thinking/reasoning text in assistant chat responses as `message.thinking` or streaming `delta.thinking`. Default `false`. |
 | `Title`                    | string  | Title displayed as the heading on the chat window. Null uses assistant name.|
 | `LogoUrl`                  | string  | URL for the logo image in the chat window (max 192x192). Null uses default.|
 | `FaviconUrl`               | string  | URL for the browser tab favicon. Null uses default AssistantHub favicon.    |
@@ -2165,6 +2192,8 @@ Retrieve settings for an assistant.
 | `SlackBotToken`            | string  | Slack bot token for API access. Must start with `xoxb-` when present.       |
 | `SlackChannelId`           | string  | Slack channel ID used for configured channel traffic. Direct messages are also supported. |
 | `SlackMessagePrefix`       | string  | Start-of-message indicator for configured channels. `@bot` mention also triggers the assistant. |
+| `ToolPolicyJson`           | string? | JSON-serialized `AssistantToolPolicy`. Null or empty keeps model-directed server-side tool calls disabled by default. |
+| `ToolPolicy`               | object? | Parsed and normalized assistant tool policy returned by the server for admin inspection. |
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
@@ -2206,11 +2235,13 @@ Create or update settings for an assistant. If settings already exist, they are 
   "FullTextMinimumScore": null,
   "RetrievalIncludeNeighbors": 2,
   "InferenceEndpointId": "ep_abc123...",
+  "ToolRoutingInferenceEndpointId": null,
   "RetrievalGateInferenceEndpointId": null,
   "QueryRewriteInferenceEndpointId": null,
   "RerankInferenceEndpointId": null,
   "EmbeddingEndpointId": null,
   "LoadModelsOnChatOpen": true,
+  "ExposeThinking": false,
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
@@ -2222,17 +2253,218 @@ Create or update settings for an assistant. If settings already exist, they are 
   "SlackAppToken": "xapp-***",
   "SlackBotToken": "xoxb-***",
   "SlackChannelId": "C12345678",
-  "SlackMessagePrefix": "Hey bot,"
+  "SlackMessagePrefix": "Hey bot,",
+  "ToolPolicyJson": "{\"EnableToolCalls\":false,\"EnableCollectionSearchTool\":false,\"EnableWebSearchTool\":false,\"EnableSlackToolProgressMessages\":true}"
 }
 ```
 
 **Response (200 OK):** The created or updated `AssistantSettings` object.
 
-`InferenceEndpointId` is required. Assistant settings do not define a separate response model; the selected completion endpoint is the source of truth for provider and model selection. Retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`.
+`InferenceEndpointId` is required and remains the source of truth for final assistant responses. `ToolRoutingInferenceEndpointId`, retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`. A configured tool-routing endpoint is used only for tool-decision turns and must explicitly advertise tool-call support; final answers still use `InferenceEndpointId`.
 
 **Error Responses:**
 - `403` -- Not the owner and not an admin.
 - `404` -- Assistant not found.
+
+### POST /v1.0/assistants/{assistantId}/settings/tools/validate
+
+Validate a draft assistant tool policy without saving it.
+
+**Auth:** Required (owner or admin)
+
+**Request Body:**
+
+```json
+{
+  "ToolPolicyJson": "{\"EnableToolCalls\":true,\"EnableCollectionSearchTool\":true,\"EnableWebSearchTool\":false}"
+}
+```
+
+Callers may provide either `ToolPolicyJson` or a parsed `ToolPolicy` object.
+
+Key first-release fields:
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `EnableToolCalls` | `false` | Assistant-level master switch. Tool calls are never exposed unless this is true. |
+| `ToolChoiceMode` | `Auto` | Provider tool-choice mode: `Auto`, `Required`, `None`, or `AllowedOnly`. `None` preserves standard non-tool inference even if tool policies are otherwise enabled. |
+| `AllowedToolNames` | `[]` | Optional final allow-list of model-visible tool names after the per-tool switches and server prerequisites are evaluated. |
+| `MaxToolIterations` | `6` | Maximum tool-call loop iterations in one chat turn. |
+| `MaxToolCallsPerTurn` | `12` | Maximum individual tool calls in one chat turn. |
+| `ToolCallTimeoutMs` | `30000` | Per-tool timeout. |
+| `MaxToolOutputChars` | `12000` | Maximum characters returned to the model from one tool call. |
+| `MaxToolResultItems` | `20` | Maximum result items returned by supported enumeration tools. |
+| `EnableToolFeedbackEvents` | `true` | Allows streaming chat clients to receive safe lifecycle SSE events such as `assistant.tool_call.started`, without raw arguments or outputs. |
+| `ExposeToolTraceToUser` | `false` | Includes safe `tool_calls` response metadata for public chat responses. Raw arguments, raw outputs, S3 object keys, provider IDs, and hidden policy details are not included. |
+| `EnableCollectionSearchTool` | `false` | Exposes `collection_search` for exhaustive or bounded search of the assistant collection. |
+| `EnableCollectionReadChunksTool` | `false` | Exposes `collection_read_chunks` for exact chunk reads by assistant document ID and position. |
+| `EnableCollectionEnumerateDocumentsTool` | `false` | Exposes `collection_enumerate_documents` for safe document listing in the assistant collection. `EnableCollectionEnumerationTool` is accepted as an alias. |
+| `EnableDocumentAtomExtractionTool` | `false` | Exposes `document_atom_extract` for bounded DocumentAtom text extraction from a completed assistant document (`document_id`) or a per-turn local upload (`local_attachment_id`). |
+| `AllowedSearchModes` | `["Vector","FullText","Hybrid"]` | Search modes the model may request for `collection_search`. |
+| `MaxSearchTopK` | `50` | Additional cap for collection search `top_k`/`max_results`. |
+| `MaxSearchQueriesPerCall` | `3` | Maximum query variants in one collection search call. |
+| `MaxDocumentsConsideredPerSearch` | `1000` | Maximum assistant-visible documents a collection search may consider. When a collection-wide search exceeds this cap, AssistantHub narrows the search to the first capped document IDs and marks exhaustive output incomplete with `document_limit`. |
+| `MaxResultsConsideredPerSearch` | `1000` | Maximum raw retrieval results `collection_search` may consider across all passes. Exhaustive output is marked incomplete with `results_considered_limit` when this cap stops further passes. |
+| `EnableServerGeneratedQueryVariants` | `false` | Allows the server to add deterministic collection-search query variants, such as punctuation-normalized forms, after model-supplied queries and only within `MaxSearchQueriesPerCall`. |
+| `ReturnFullSearchContent` | `false` | When false, `collection_search` returns excerpts and `ContentOmitted=true`; enable only when search results may expose full chunk text directly instead of requiring `collection_read_chunks`. |
+| `MaxReadRangesPerCall` | `5` | Maximum chunk ranges in one `collection_read_chunks` call. |
+| `MaxAtomExtractionBytes` | `10485760` | Maximum source bytes accepted by one `document_atom_extract` call. |
+| `MaxAtomExtractionCharacters` | `50000` | Maximum extracted text characters returned by one `document_atom_extract` call before normal tool-output caps also apply. |
+| `AllowModelDocumentIdFilter` | `true` | Allows the model to narrow collection search to validated assistant document IDs. |
+| `EnableVerbexFullTextSearchTool` | `false` | Exposes `verbex_full_text_search`; `EnableVerbexSearchTool` is accepted as an alias. |
+| `EnableIndexEnumerateRecordsTool` | `false` | Exposes `index_enumerate_records`; `EnableIndexEnumerationTool` is accepted as an alias. |
+| `AllowedVerbexIndexIds` | `[]` | Optional allowed Verbex index IDs. Empty means only the assistant tenant default/mapped index is allowed. |
+| `DefaultIndexId` | `null` | Optional assistant-level default Verbex index override. |
+| `MaxVerbexResults` | `20` | Additional cap for Verbex search and record enumeration. |
+| `EnableS3ObjectReadTool` | `false` | Exposes `s3_object_read` for bounded document-backed reads. Bucket-wide `object_key` reads require `AllowBucketWideObjectRead=true`, `DocumentBackedObjectsOnly=false`, and an allowed prefix. |
+| `EnableBucketEnumerateObjectsTool` | `false` | Exposes `bucket_enumerate_objects` for explicitly allowed bucket/prefix enumeration. |
+| `AllowedBucketNames` | `[]` | Optional non-default S3 buckets the assistant may access. |
+| `AllowedBucketPrefixes` | `[]` | Required allow-list for S3 object reads/enumeration beyond document-backed defaults. |
+| `AllowedObjectSuffixes` | `[]` | Optional S3 object suffix allow-list, such as `.txt` or `.pdf`. |
+| `AllowedContentTypes` | `[]` | Optional content-type allow-list for S3 reads/enumeration. |
+| `MaxObjectReadBytes` | `131072` | Per-call byte cap for `s3_object_read`. |
+| `MaxObjectBytesPerTurn` | `524288` | Aggregate model-visible S3 object byte cap per assistant chat turn. Exceeding the cap returns a structured `object_byte_limit` tool error instead of source text. |
+| `MaxBucketEnumerationResults` | `50` | Additional cap for `bucket_enumerate_objects`. |
+| `DocumentBackedObjectsOnly` | `true` | Keeps bucket-wide object-key reads disabled by default. |
+| `RedactObjectKeys` | `true` | Redacts S3 object keys in model-visible tool output. |
+| `EnableWebSearchTool` | `false` | Exposes Tavily-backed `web_search` when tool calls are enabled and Tavily is configured. |
+| `TavilyEndpoint` | `null` | Optional assistant-level Tavily endpoint override. Blank/null uses the system-wide Tavily endpoint. |
+| `TavilyApiKey` | `null` | Optional assistant-level Tavily API key override. Blank/null uses the system-wide Tavily API key. Treat as secret. |
+| `AllowedProviders` | `[]` | Optional provider allow-list. Empty uses the configured Tavily provider; non-empty must include `Tavily` or the configured provider type. |
+| `MaxWebResults` | `5` | Assistant-level result cap for Tavily web search, max `20`. |
+| `SearchDepth` | `basic` | Default Tavily search depth. `advanced` is downgraded unless `AllowAdvancedSearchDepth` is true. |
+| `AllowNewsTopic` | `true` | Allows Tavily `news` topic. When false, model requests are downgraded to `general`. |
+| `RequireSafeSearch` | `true` | Forces safe-search behavior on Tavily requests. |
+| `MaxWebSearchesPerTurn` | `3` | Maximum `web_search` tool calls allowed in one assistant chat turn. |
+| `EnableSlackToolProgressMessages` | `true` | Emits Slack tool lifecycle messages when Slack is enabled and the tool runtime sends progress events. |
+| `AllowUngovernedWebAccess` | `false` | Reserved explicit opt-in for future arbitrary URL retrieval tools. Tavily search does not enable arbitrary URL fetching. |
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "Message": "Tool policy is valid.",
+  "ToolPolicyJson": "{\"EnableToolCalls\":true,\"MaxToolIterations\":6}",
+  "ToolPolicy": {
+    "EnableToolCalls": true,
+    "EnableCollectionSearchTool": true,
+    "EnableWebSearchTool": false,
+    "EnableSlackToolProgressMessages": true
+  },
+  "Tools": [
+    {
+      "ToolName": "collection_search",
+      "DisplayName": "Collection Search",
+      "Category": "Collection",
+      "EnabledByPolicy": true,
+      "Available": true,
+      "UnavailableReason": null
+    }
+  ],
+  "Errors": [],
+  "ErrorCodes": []
+}
+```
+
+Invalid policy JSON or a policy that cannot expose any executable tool returns `200 OK` with `Success` set to `false`, one or more human-readable entries in `Errors`, and matching stable entries in `ErrorCodes`. Current validation codes are `invalid_tool_policy_json`, `unknown_allowed_tool`, `no_tool_enabled`, and `no_available_tools`. Malformed request JSON returns `400 Bad Request`.
+
+Admin workflow:
+
+1. Configure the effective tool-routing completion endpoint with explicit tool-call capability (`SupportsToolCalling: true`) and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` or `OllamaChat`). Leave `ToolRoutingInferenceEndpointId` blank to use the response endpoint for tool routing, or set it to a dedicated completion endpoint. AssistantHub stores capability values on the Partio endpoint as reserved labels/tags.
+2. Save assistant settings with `EnableToolCalls: false` until the policy is ready.
+3. Enable only the needed tool switches in `ToolPolicyJson`, add any collection/search/S3/Verbex/Tavily limits, then call this validation route and the admin dry-run diagnostics route below.
+4. Call `GET /v1.0/assistants/{assistantId}/tools` to inspect the effective tools after server prerequisites and assistant policy are applied.
+5. Use non-streaming chat for the first validation pass, then inspect `/v1.0/assistants/{assistantId}/tool-calls` and linked request-history details for redacted traces.
+
+**Error Responses:**
+- `400` -- Request body is malformed JSON.
+- `403` -- Not the owner and not an admin.
+- `404` -- Assistant or settings not found.
+
+### POST /v1.0/assistants/{assistantId}/settings/tools/test
+
+Run administrator dry-run diagnostics for a draft assistant tool policy without saving it, calling the model, or executing tools. The route validates the supplied policy, resolves effective tool descriptors, and checks the effective tool-routing completion endpoint metadata needed for tool calls. It never returns endpoint API keys or raw provider secrets.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Request Body:** Same as `POST /v1.0/assistants/{assistantId}/settings/tools/validate`.
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": false,
+  "Message": "Tool diagnostics found blocking issues.",
+  "AssistantId": "asst_abc123",
+  "InferenceEndpointId": "cep_abc123",
+  "ToolRoutingInferenceEndpointId": "cep_router123",
+  "EffectiveToolRoutingInferenceEndpointId": "cep_router123",
+  "EndpointResolved": true,
+  "EndpointModel": "qwen3-tool",
+  "EndpointApiFormat": "OpenAI",
+  "EndpointActive": true,
+  "EndpointSupportsToolCalling": false,
+  "EndpointToolCallingApiFormat": null,
+  "EndpointSupportsParallelToolCalls": false,
+  "EndpointSupportsStreamingToolCalls": false,
+  "Validation": {
+    "Success": true,
+    "Errors": [],
+    "ErrorCodes": []
+  },
+  "Tools": [],
+  "Warnings": [],
+  "Errors": [
+    "The effective tool-routing completion endpoint does not explicitly support tool calling."
+  ],
+  "ErrorCodes": [
+    "tool_routing_endpoint_not_tool_capable"
+  ]
+}
+```
+
+Current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `tool_routing_endpoint_missing`, `tool_routing_endpoint_unresolved`, `tool_routing_endpoint_inactive`, `tool_routing_endpoint_not_tool_capable`, and `unsupported_tool_call_format`, plus any validation codes returned by the validation route.
+
+**Error Responses:**
+- `400` -- Request body is malformed JSON.
+- `403` -- Not an admin.
+- `404` -- Assistant or settings not found.
+
+### GET /v1.0/assistants/{assistantId}/tools
+
+Return the effective server-side tool availability for an assistant.
+
+**Auth:** Required (owner or admin)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "ToolName": "collection_search",
+    "DisplayName": "Collection Search",
+    "Category": "Collection",
+    "EnabledByPolicy": false,
+    "Available": false,
+    "UnavailableReason": "Disabled by assistant tool policy."
+  },
+  {
+    "ToolName": "web_search",
+    "DisplayName": "Web Search",
+    "Category": "Web",
+    "EnabledByPolicy": true,
+    "Available": false,
+    "UnavailableReason": "Tavily web search is not configured globally or on the assistant."
+  }
+]
+```
+
+The route returns all known model-callable tools, including tools disabled by policy and tools enabled by policy but unavailable because server prerequisites are missing. Reasons are non-secret and safe for administrator diagnostics.
+
+**Error Responses:**
+- `403` -- Not the owner and not an admin.
+- `404` -- Assistant or settings not found.
 
 ### POST /v1.0/assistants/{assistantId}/settings/slack/verify
 
@@ -2284,6 +2516,133 @@ Notes:
 - `400` -- Invalid verification payload.
 - `403` -- Not the owner and not an admin.
 - `404` -- Assistant not found.
+
+---
+
+## Assistant Tool Calls (Admin Or Tenant Admin)
+
+Assistant tool-call traces record model-directed server-side tool calls with redacted arguments and redacted output summaries. These routes are intended for administrator diagnostics and request-history drill-downs.
+
+Tool-call trace retention follows `RequestHistory.RetentionDays`. The same background cleanup loop that prunes request history also prunes `AssistantToolCallRecord` rows older than that retention window.
+
+### GET /v1.0/assistants/{assistantId}/tool-calls
+
+Enumerate redacted tool-call traces for an assistant.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Query Parameters:** See [Pagination](#pagination), plus:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `toolName` | string | Filter by tool name, for example `collection_search`. |
+| `traceId` | string | Filter by trace identifier. |
+| `requestHistoryId` | string | Filter by linked request-history ID. |
+| `chatHistoryId` | string | Filter by linked chat-history ID. |
+| `threadId` | string | Filter by assistant thread ID. |
+| `success` | bool | Filter by successful or failed tool calls. |
+| `denied` | bool | Filter by policy-denied tool calls. |
+| `startUtc` | string | Created-at lower bound in UTC/RFC3339 form. |
+| `endUtc` | string | Created-at upper bound in UTC/RFC3339 form. |
+
+**Response (200 OK):** Paginated envelope containing `AssistantToolCallRecord` objects.
+
+```json
+{
+  "Success": true,
+  "MaxResults": 100,
+  "TotalRecords": 1,
+  "RecordsRemaining": 0,
+  "ContinuationToken": null,
+  "EndOfResults": true,
+  "Objects": [
+    {
+      "Id": "atc_abc123",
+      "TenantId": "default",
+      "AssistantId": "asst_abc123",
+      "ChatHistoryId": "chist_abc123",
+      "RequestHistoryId": "req_abc123",
+      "TraceId": "trace_abc123",
+      "ThreadId": "thr_abc123",
+      "Origin": "web",
+      "TurnIndex": 0,
+      "Iteration": 1,
+      "SequenceNumber": 1,
+      "ProviderToolCallId": "call_abc123",
+      "ToolName": "collection_search",
+      "ArgumentsJson": "{\"query\":\"alpha\",\"api_key\":\"[redacted]\"}",
+      "OutputJson": "{\"success\":true,\"output_characters\":512,\"truncated\":false}",
+      "ResultSummaryJson": "{\"Success\":true,\"Tool\":\"collection_search\",\"Denied\":false,\"Truncated\":false,\"OutputCharacters\":512,\"DurationMs\":42.5,\"ErrorCode\":null,\"Error\":null}",
+      "Success": true,
+      "Denied": false,
+      "Truncated": false,
+      "OutputCharacters": 512,
+      "InputBytes": 42,
+      "OutputBytes": 58,
+      "DurationMs": 42.5,
+      "ErrorType": null,
+      "ErrorMessage": null,
+      "Provider": "OpenAI",
+      "Model": "qwen3-tool",
+      "Active": true,
+      "StartedUtc": "2026-06-08T12:00:00Z",
+      "FinishedUtc": "2026-06-08T12:00:00Z",
+      "CreatedUtc": "2026-06-08T12:00:00Z",
+      "LastUpdateUtc": "2026-06-08T12:00:00Z"
+    }
+  ]
+}
+```
+
+For failed tool calls, `ErrorType` contains the stable tool error code, such as `invalid_arguments`, `policy_denial`, `provider_missing`, `provider_http_error`, `timeout`, `canceled`, or `tool_error`. The `ArgumentsJson`, `OutputJson`, and `ResultSummaryJson` fields remain redacted summaries and must not contain raw secrets, raw S3 keys, hidden policy details, or unbounded provider payloads.
+
+**Error Responses:**
+- `403` -- Not an admin.
+- `404` -- Assistant not found.
+
+### DELETE /v1.0/assistants/{assistantId}/tool-calls
+
+Delete redacted tool-call traces for an assistant that match the supplied filters.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Query Parameters:** Same filters as `GET /v1.0/assistants/{assistantId}/tool-calls`.
+
+**Response (200 OK):**
+
+```json
+{
+  "DeletedCount": 12
+}
+```
+
+**Error Responses:**
+- `403` -- Not an admin.
+- `404` -- Assistant not found.
+
+### GET /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}
+
+Return one redacted assistant tool-call trace.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Response (200 OK):** An `AssistantToolCallRecord`.
+
+**Error Responses:**
+- `403` -- Not an admin.
+- `404` -- Assistant or tool-call trace not found.
+
+### DELETE /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}
+
+Delete one assistant tool-call trace.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Response:** `204 No Content`
+
+**Error Responses:**
+- `403` -- Not an admin.
+- `404` -- Assistant or tool-call trace not found.
 
 ---
 
@@ -2361,6 +2720,7 @@ Upload a new document using an ingestion rule.
 | `TypeDetectionSuccess`  | Document type detected successfully.              |
 | `TypeDetectionFailed`   | Failed to detect document type.                   |
 | `Processing`            | Extracting text content from the document.        |
+| `StoringText`           | Writing extracted text to Verbex.                 |
 | `ProcessingChunks`      | Splitting extracted text into chunks.             |
 | `Summarizing`           | Summarizing document content via LLM.             |
 | `StoringEmbeddings`     | Computing and storing vector embeddings.          |
@@ -2607,7 +2967,7 @@ Delete a feedback record.
 
 Authenticated users can view and manage chat history for their assistants. Admin users can see all history. History entries are created automatically when the `X-Thread-ID` header is provided on chat requests.
 
-In v0.12.0, assistant history records also include provider-agnostic performance telemetry. `TraceId` links the chat history row to request history and logs. `RequestHistoryId` links directly to the captured HTTP request. `PerformanceJson` stores a versioned `AssistantPerformanceTelemetry` payload with per-stage timings, endpoint limiter wait time, request-to-headers timing, time to first token, generation timing, token counts, and provider-native metrics when available.
+In v0.12.0, assistant history records also include provider-agnostic performance telemetry. `TraceId` links the chat history row to request history and logs. `RequestHistoryId` links directly to the captured HTTP request. `PerformanceJson` stores a versioned `AssistantPerformanceTelemetry` payload with per-stage timings, endpoint limiter wait time, request-to-headers timing, time to first token, generation timing, token counts, and provider-native metrics when available. Tool-enabled turns also include a safe aggregate `tools` stage with tool counts, duration totals, per-tool counts, result counts when known, truncation status, and provider dimensions.
 
 ### GET /v1.0/history
 
@@ -2661,6 +3021,8 @@ Retrieve a single chat history record by ID.
   "TimeToFirstTokenMs": 120.50,
   "TimeToLastTokenMs": 890.75,
   "MetadataFilter": null,
+  "AttachedDocumentIdsJson": "[\"adoc_abc123\"]",
+  "AttachedDocumentsJson": "[{\"Id\":\"adoc_abc123\",\"Name\":\"Password reset guide\",\"OriginalFilename\":\"password-reset.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":24576}]",
   "Origin": null,
   "AssistantResponse": "To reset your password, navigate to Settings > Security...",
   "CreatedUtc": "2025-01-01T12:00:00Z",
@@ -2704,6 +3066,8 @@ Retrieve a single chat history record by ID.
 | `TimeToFirstTokenMs`   | double   | Time to first token from the model in milliseconds.          |
 | `TimeToLastTokenMs`    | double   | Time to last token from the model in milliseconds.           |
 | `MetadataFilter`       | string   | JSON-serialized metadata filter applied during retrieval (null if none). |
+| `AttachedDocumentIdsJson` | string | JSON-serialized `AssistantDocument.Id` values attached to the chat turn. Null when no document filter was applied. |
+| `AttachedDocumentsJson` | string  | JSON-serialized safe document display metadata attached to the chat turn. Does not include bucket names, S3 keys, or document content. |
 | `Origin`               | string   | Origin of the chat request (e.g. `web`, `slack`, `api`). Null if not set. |
 | `AssistantResponse`    | string   | The assistant's full response text.                          |
 
@@ -2754,12 +3118,45 @@ Retrieve a single chat history record by ID.
         "TokensPerSecond": 112.9,
         "RequestId": null
       }
+    },
+    {
+      "Name": "tools",
+      "Kind": "tool",
+      "Sequence": 65,
+      "DurationMs": 42.7,
+      "Success": true,
+      "Metadata": {
+        "phase": "assistant_tools",
+        "tool_call_count": 1,
+        "tool_call_success_count": 1,
+        "tool_call_error_count": 0,
+        "tool_call_denied_count": 0,
+        "tool_call_truncated_count": 0,
+        "tool_call_duration_ms": 42.7,
+        "tool_call_tavily_request_count": 0,
+        "tool_call_tavily_failure_count": 0,
+        "tool_call_tavily_credits_used": 0,
+        "tool_call_tavily_provider_latency_ms": 0,
+        "tool_names": ["collection_search"],
+        "per_tool": {
+          "collection_search": {
+            "count": 1,
+            "success_count": 1,
+            "error_count": 0,
+            "denied_count": 0,
+            "truncated_count": 0,
+            "duration_ms": 42.7,
+            "result_count": 3,
+            "provider": "RecallDB"
+          }
+        }
+      }
     }
   ]
 }
 ```
 
-Known stage names include `retrieval_gate`, `query_rewrite`, `retrieval`, `rerank`, `endpoint_resolution`, `context_compaction`, and `final_inference`. Provider-specific fields that are not available are returned as null or omitted; they are not coerced to zero.
+Known stage names include `retrieval_gate`, `query_rewrite`, `retrieval`, `rerank`, `endpoint_resolution`, `context_compaction`, `tools`, and `final_inference`. Provider-specific fields that are not available are returned as null or omitted; they are not coerced to zero.
 
 **Error Responses:**
 - `404` -- History entry not found.
@@ -2861,7 +3258,7 @@ Each summary includes endpoint metadata, call/failure counts, duration percentil
 
 Returns the slowest request-history rows in the selected range, optionally filtered by `stage`, `endpointId`, `endpointType`, `model`, and `limit` (default `25`, max `250`).
 
-Rows include `RequestHistoryId`, `ChatHistoryId`, `TraceId`, `CreatedUtc`, `StatusCode`, `Success`, `DurationMs`, `RequestPath`, and dominant-stage endpoint/model metadata.
+Rows include `RequestHistoryId`, `ChatHistoryId`, `TraceId`, `CreatedUtc`, `StatusCode`, `Success`, `DurationMs`, `RequestPath`, dominant-stage endpoint/model metadata, and safe aggregate tool-call diagnostics when present: `ToolCallCount`, `ToolFailureCount`, `ToolDeniedCount`, `ToolTruncatedCount`, `ToolDurationMs`, `SlowestToolName`, `SlowestToolDurationMs`, and `FailingToolNames`.
 
 ### GET /v1.0/assistants/{assistantId}/analytics/feedback
 
@@ -3146,7 +3543,8 @@ Retrieve public information about an assistant. Returns basic details and appear
   "Title": "My Support Bot",
   "LogoUrl": "https://example.com/logo.png",
   "FaviconUrl": "https://example.com/favicon.ico",
-  "LoadModelsOnChatOpen": true
+  "LoadModelsOnChatOpen": true,
+  "ExposeThinking": false
 }
 ```
 
@@ -3159,8 +3557,56 @@ Retrieve public information about an assistant. Returns basic details and appear
 | `LogoUrl`              | string | URL for the chat logo image, max 192x192 (null uses default AssistantHub logo).  |
 | `FaviconUrl`           | string | URL for the browser tab favicon (null uses default AssistantHub favicon).         |
 | `LoadModelsOnChatOpen` | bool   | Whether clients should call `POST /v1.0/assistants/{assistantId}/chat/open` when opening chat. |
+| `ExposeThinking`       | bool   | Whether public chat can display provider-returned thinking/reasoning text when the provider sends it separately from visible content. |
 
 **Error Responses:**
+- `404` -- Assistant not found or not active.
+
+### GET /v1.0/assistants/{assistantId}/documents
+
+List completed documents from the assistant's configured collection that can be selected by public chat clients when document attachments are enabled.
+
+**Auth:** None
+
+**Query Parameters:**
+
+| Parameter           | Type   | Required | Description                                      |
+|---------------------|--------|----------|--------------------------------------------------|
+| `maxResults`        | int    | No       | Maximum number of documents to return.           |
+| `continuationToken` | string | No       | Continuation token from a previous page.         |
+| `query`             | string | No       | Case-insensitive name or filename search filter. |
+| `contentType`       | string | No       | MIME content type filter, such as `application/pdf` or `text/*`. Multiple comma-separated values are allowed. |
+
+**Response (200 OK):**
+
+```json
+{
+  "Success": true,
+  "TimestampUtc": "2026-06-01T00:00:00Z",
+  "MaxResults": 100,
+  "ContinuationToken": null,
+  "EndOfResults": true,
+  "TotalRecords": 1,
+  "RecordsRemaining": 0,
+  "Objects": [
+    {
+      "Id": "adoc_abc123...",
+      "Name": "Guide",
+      "OriginalFilename": "guide.pdf",
+      "ContentType": "application/pdf",
+      "SizeBytes": 123456,
+      "SourceUrl": null,
+      "CreatedUtc": "2026-06-01T00:00:00Z",
+      "LastUpdateUtc": "2026-06-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+`SourceUrl` is only populated when the assistant setting `ExposeDocumentSourceUrls` is enabled.
+
+**Error Responses:**
+- `403` -- Document attachments are disabled for the assistant.
 - `404` -- Assistant not found or not active.
 
 ### POST /v1.0/assistants/{assistantId}/chat/open
@@ -3292,6 +3738,14 @@ When the conversation history approaches the context window limit, older message
   "top_p": 1.0,
   "max_tokens": 4096,
   "stream": false,
+  "attached_document_ids": ["adoc_abc123"],
+  "local_attachments": [
+    {
+      "name": "notes.txt",
+      "content_type": "text/plain",
+      "base64_content": "VGhpcyBpcyBhIGxvY2FsIGZpbGUu"
+    }
+  ],
   "metadata_filter": {
     "required_labels": ["finance", "quarterly-report"],
     "excluded_labels": ["draft"],
@@ -3313,6 +3767,8 @@ When the conversation history approaches the context window limit, older message
 | `top_p`           | double | No       | Top-p override (0.0-1.0).                                      |
 | `max_tokens`      | int    | No       | Max tokens override.                                           |
 | `stream`          | bool   | No       | Ignored; streaming is controlled by the assistant `Streaming` setting. |
+| `attached_document_ids` | array | No | Optional `AssistantDocument.Id` values selected from `GET /v1.0/assistants/{assistantId}/documents`. When present, RAG retrieval is constrained to those completed documents in the assistant's configured collection. |
+| `local_attachments` | array | No | Optional user-uploaded files for this chat request. Each item can include `name`, `content_type`, and either `base64_content` or extracted `text`. These files are not added to the assistant collection. |
 | `metadata_filter` | object | No       | Metadata filter to restrict retrieval (see below). Merged with assistant-level defaults. |
 
 **Metadata Filter Object:**
@@ -3328,6 +3784,22 @@ When the conversation history approaches the context window limit, older message
 
 When `metadata_filter` is omitted or null, no filtering is applied. If the assistant also has default filters configured, they are merged with request-level filters (unions of required/excluded lists).
 
+When `attached_document_ids` is provided, the server validates every ID before retrieval. Each document must belong to the assistant tenant, belong to the assistant's configured collection, have `Completed` status, and fit within the assistant setting `DocumentAttachmentMaxCount`. Duplicate IDs and blank values are ignored during normalization. Document attachments must be enabled in assistant settings.
+
+When `local_attachments` is provided, document attachments must also be enabled in assistant settings. The combined count of `attached_document_ids` and `local_attachments` must fit within `DocumentAttachmentMaxCount`. Local attachments are decoded and text-extracted server-side for model context only; they are not persisted as `AssistantDocument` records, uploaded to the assistant S3 bucket, indexed in RecallDB/Verbex, or returned in `retrieval.attached_documents`. Per-file uploads are limited to 10 MB, the total local upload payload is limited to 25 MB, and extracted text is bounded before it is injected into the prompt.
+
+When assistant `ToolPolicyJson` enables `EnableToolCalls` and at least one executable tool, chat sends the policy-filtered tool schemas to the effective tool-routing completion endpoint (`ToolRoutingInferenceEndpointId` when set, otherwise `InferenceEndpointId`). That endpoint must explicitly advertise `SupportsToolCalling: true` and a supported `ToolCallingApiFormat` (`OpenAIChatCompletions` for OpenAI-compatible chat-completions endpoints or `OllamaChat` for Ollama). AssistantHub reads capability from the effective Partio endpoint's reserved labels/tags. If capability is missing, the server returns a configuration error before calling the model. If the router model returns `tool_calls`, AssistantHub executes them server-side, appends `role: "tool"` outputs, and repeats. When a dedicated router endpoint returns no further tool calls, AssistantHub asks the response endpoint configured by `InferenceEndpointId` to produce the user-facing final answer. Recoverable tool failures are returned to the model as structured non-secret tool outputs.
+
+If `EnableDocumentAtomExtractionTool` is enabled, the model can call `document_atom_extract` with either a validated assistant `document_id` or a per-turn `local_attachment_id` such as `local_attachment_1`. Local attachment IDs are included in the model-visible attachment context for that request only.
+
+Model-visible tool errors include stable `ErrorCode` values so the model and clients do not need to parse English messages. Current codes are `invalid_arguments`, `unknown_tool`, `tool_unavailable`, `policy_denial`, `tool_call_limit`, `tool_output_limit`, `web_search_limit`, `provider_missing`, `provider_http_error`, `timeout`, `canceled`, and `tool_error`. Persisted admin traces store the same value in `ErrorType` and in the redacted output summary.
+
+`collection_search` tool output includes safe search metadata for model-directed follow-up calls: `SearchedQueries`, `SearchedModes`, `ExactPhraseQueries` when used, per-pass `SearchPasses`, visible `DocumentsConsidered` when the server can count assistant-visible collection documents, `MaxDocumentsConsidered`, `DocumentLimitApplied`, `ResultsConsidered`, `MaxResultsConsidered`, `ResultsConsideredLimitApplied`, `TotalResults`, `ExhaustiveComplete`, optional `ExhaustiveIncompleteReasons`, and safe `SuggestedNextCalls` for exact `collection_read_chunks` follow-up reads. Search results return excerpts by default; full chunk content appears only when `ReturnFullSearchContent` is explicitly enabled. Timed-out tool calls fail with `ErrorCode=timeout` rather than returning partial exhaustive output.
+
+When `Streaming` is enabled and tool calls are active, AssistantHub emits safe named SSE progress events while the shared server-side tool loop runs, including heartbeat events for long-running tool calls, then sends the final answer as standard `chat.completion.chunk` events. These events do not include raw tool arguments, raw tool outputs, S3 object keys, provider request IDs, secrets, or hidden policy details.
+
+When assistant `ExposeThinking` is enabled and the provider sends thinking/reasoning deltas separately from answer text, streaming chat may emit chunks with `choices[0].delta.thinking`. Browser clients should render this separately from visible answer content and should not send it back as conversation history.
+
 **Non-Streaming Response (200 OK):**
 
 ```json
@@ -3341,7 +3813,8 @@ When `metadata_filter` is omitted or null, no filtering is applied. If the assis
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "To reset your password, navigate to Settings > Security and click 'Reset Password'..."
+        "content": "To reset your password, navigate to Settings > Security and click 'Reset Password'...",
+        "thinking": null
       },
       "finish_reason": "stop"
     }
@@ -3349,7 +3822,11 @@ When `metadata_filter` is omitted or null, no filtering is applied. If the assis
   "usage": {
     "prompt_tokens": 50,
     "completion_tokens": 30,
-    "total_tokens": 80
+    "total_tokens": 80,
+    "completion_tokens_details": {
+      "reasoning_tokens": 8
+    },
+    "tool_definition_tokens": 12
   }
 }
 ```
@@ -3358,9 +3835,58 @@ The response may also include `retrieval` (when RAG is enabled) and `citations` 
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `citations` | object \| null | Citation metadata (only when `EnableCitations` is true and RAG is active) |
-| `citations.sources` | array | Source documents provided as context, each with `index`, `document_id`, `document_name`, `content_type`, `score`, `excerpt`, `download_url` |
+| `usage.prompt_tokens` | int | Prompt/input tokens reported by the provider. |
+| `usage.completion_tokens` | int | Completion/output tokens reported by the provider. |
+| `usage.total_tokens` | int | Total tokens reported by the provider. |
+| `usage.completion_tokens_details.reasoning_tokens` | int | Optional provider-reported reasoning tokens, when available. |
+| `choices[].message.thinking` | string \| null | Optional provider thinking/reasoning text. Present only when the assistant setting `ExposeThinking` is enabled and the provider returns thinking separately from visible answer text. Clients should not include this field in future request messages. |
+| `usage.tool_definition_tokens` / `usage.tool_tokens` | int | Optional provider-reported tokens attributed to tool definitions, when available. |
+| `retrieval` | object \| null | Retrieval telemetry returned when RAG is active. |
+| `retrieval.collection_id` | string | Collection searched for this turn. |
+| `retrieval.duration_ms` | number | Retrieval duration in milliseconds. |
+| `retrieval.chunks_returned` | int | Number of context chunks returned after filtering. |
+| `retrieval.attached_document_ids` | array | Normalized document IDs used to constrain retrieval. Omitted when no document attachment filter is applied. |
+| `retrieval.attached_documents` | array | Safe public metadata for selected documents. Uses the same item shape returned by `GET /v1.0/assistants/{assistantId}/documents`. |
+| `retrieval.document_filter_applied` | bool | Present and `true` when retrieval was constrained by `attached_document_ids`. |
+| `retrieval.chunks` | array | Retrieved context chunks with source identification. |
+| `citations` | object \| null | Citation metadata when `EnableCitations` is true and RAG or model-directed tools provide citation-capable evidence. |
+| `citations.sources` | array | Source evidence provided to the model, each with `index`, optional `source_type`, `document_id`, `url`, `document_name`, `content_type`, `score`, `excerpt`, and `download_url`. |
 | `citations.referenced_indices` | array of int | 1-based indices from `sources` that the model actually cited in its response |
+| `tool_calls` | array \| null | Optional safe tool trace metadata included only when assistant policy `ExposeToolTraceToUser` is true. |
+| `tool_calls[].tool_name` | string | Stable model-facing tool name. |
+| `tool_calls[].display_label` | string | Safe user-facing status label, such as `Searching collection`. |
+| `tool_calls[].success` / `denied` / `truncated` | bool | High-level lifecycle flags. |
+| `tool_calls[].result_count` | int \| null | Safe result-item count when the tool output shape exposes one. |
+| `tool_calls[].credits_used` | int \| null | Provider usage credits when available, currently populated for Tavily `web_search`. |
+| `tool_calls[].provider_latency_ms` | number \| null | Provider-reported latency in milliseconds when available, currently populated for Tavily `web_search`. |
+| `tool_calls[].duration_ms` | number | Tool duration in milliseconds. |
+| `tool_calls[].summary` | string | Short safe completion summary. |
+
+**Example retrieval fragment with attached documents:**
+
+```json
+{
+  "retrieval": {
+    "collection_id": "col_abc123",
+    "duration_ms": 42.7,
+    "chunks_returned": 3,
+    "attached_document_ids": ["adoc_abc123"],
+    "attached_documents": [
+      {
+        "Id": "adoc_abc123",
+        "Name": "Q3 Earnings Report",
+        "OriginalFilename": "q3-earnings.pdf",
+        "ContentType": "application/pdf",
+        "SizeBytes": 123456,
+        "SourceUrl": null,
+        "CreatedUtc": "2026-06-01T00:00:00Z",
+        "LastUpdateUtc": "2026-06-01T00:00:00Z"
+      }
+    ],
+    "document_filter_applied": true
+  }
+}
+```
 
 **Streaming Response (200 OK, `Content-Type: text/event-stream`):**
 
@@ -3379,16 +3905,35 @@ data: [DONE]
 ```
 
 The final chunk (with `finish_reason: "stop"`) includes `usage`, `retrieval` (if RAG enabled),
-and `citations` (if citations enabled) fields.
+`citations` (if citations enabled), and `tool_calls` (if assistant policy exposes safe user-visible traces) fields.
+
+Tool-enabled streaming chat may also include named progress events before the final answer:
+
+```
+event: assistant.tool_iteration.started
+data: {"event_type":"assistant.tool_iteration.started","display_label":"Using assistant tools","status_code":"tool_iteration_started","iteration":1,"summary":"Checking whether tools are needed."}
+
+event: assistant.tool_call.started
+data: {"event_type":"assistant.tool_call.started","tool_call_id":"call_search","tool_name":"collection_search","display_label":"Searching collection","status_code":"tool_started","iteration":1,"sequence_number":1,"started_utc":"2026-06-09T18:00:00Z","summary":"Searching collection running."}
+
+event: assistant.tool_call.heartbeat
+data: {"event_type":"assistant.tool_call.heartbeat","tool_call_id":"call_search","tool_name":"collection_search","display_label":"Searching collection","status_code":"tool_running","iteration":1,"sequence_number":1,"started_utc":"2026-06-09T18:00:00Z","duration_ms":5001.2,"summary":"Searching collection running."}
+
+event: assistant.tool_call.completed
+data: {"event_type":"assistant.tool_call.completed","tool_call_id":"call_search","tool_name":"collection_search","display_label":"Searching collection","status_code":"tool_completed","iteration":1,"sequence_number":1,"duration_ms":42.7,"result_count":3,"truncated":false,"success":true,"summary":"Searching collection completed."}
+```
+
+Possible tool lifecycle event names are `assistant.tool_iteration.started`, `assistant.tool_call.started`, `assistant.tool_call.heartbeat`, `assistant.tool_call.completed`, `assistant.tool_call.failed`, and `assistant.tool_call.denied`. Browser clients should treat these as transient UI status only. If the SSE connection drops after tool progress begins, clients should mark the in-flight status as interrupted rather than leaving an endless pending indicator.
 
 #### Citations
 
-When `EnableCitations` is `true` (and RAG is active), the system:
+When `EnableCitations` is `true` and RAG or model-directed tools provide citation-capable evidence, the system:
 
 1. Labels each retrieved context chunk with a bracket index `[1]`, `[2]`, etc. and its source document name
-2. Instructs the model to cite sources using bracket notation
-3. After inference, scans the response for bracket references and validates them against the source manifest
-4. Returns a `citations` object with the full source manifest and the validated referenced indices
+2. Adds `CitationIndex` and `CitationReference` fields to model-visible tool results that expose `CitationHandle` values or web result URLs
+3. Instructs the model to cite sources using bracket notation
+4. After inference, scans the response for bracket references and validates them against the source manifest
+5. Returns a `citations` object with the full source manifest and the validated referenced indices
 
 **Example response fragment:**
 ```json
@@ -3397,6 +3942,7 @@ When `EnableCitations` is `true` (and RAG is active), the system:
     "sources": [
       {
         "index": 1,
+        "source_type": "document",
         "document_id": "adoc_abc123",
         "document_name": "Q3 Earnings Report.pdf",
         "content_type": "application/pdf",
@@ -3410,14 +3956,33 @@ When `EnableCitations` is `true` (and RAG is active), the system:
 }
 ```
 
+Web-search tool evidence uses `source_type: "web"` and includes `url`:
+```json
+{
+  "index": 2,
+  "source_type": "web",
+  "url": "https://docs.example.com/tool-calls",
+  "document_name": "AssistantHub docs",
+  "score": 0.91,
+  "excerpt": "Public web evidence excerpt..."
+}
+```
+
 **Notes:**
 - `referenced_indices` only contains indices that appear as `[N]` in the response text AND exist in the source manifest
 - Invalid references (e.g., `[99]` when only 3 sources exist) are silently dropped
-- `sources` always contains all retrieved chunks, not just the ones that were cited
+- `sources` contains all RAG and tool-derived citation sources provided to the model, not just the ones that were cited
 - `download_url` is populated based on `CitationLinkMode`: `null` for `None`, `/v1.0/documents/{id}/download` (authenticated) for `Authenticated`, or `/v1.0/assistants/{assistantId}/documents/{id}/download` (unauthenticated, server-proxied) for `Public`
+
+**Security Notes:**
+- `attached_document_ids` narrows retrieval scope only; it does not grant direct object storage access.
+- The server does not return S3 bucket names, S3 keys, storage paths, or signed URLs in attachment metadata.
+- `SourceUrl` in attached-document metadata is returned only when the assistant setting `ExposeDocumentSourceUrls` is enabled.
+- Invalid, cross-tenant, cross-collection, missing, or non-completed document IDs fail the request before retrieval runs.
 
 **Error Responses:**
 - `400` -- At least one message is required.
+- `400` -- Document attachments are disabled, too many documents were attached, the assistant has no collection configured, or at least one attached document is missing, inaccessible, in another collection, in another tenant, or not completed.
 - `404` -- Assistant not found or not active.
 - `500` -- Assistant settings not configured.
 - `502` -- Inference failed.
@@ -3473,7 +4038,11 @@ Lightweight inference-only endpoint. Sends messages directly to the configured L
   "usage": {
     "prompt_tokens": 50,
     "completion_tokens": 5,
-    "total_tokens": 55
+    "total_tokens": 55,
+    "completion_tokens_details": {
+      "reasoning_tokens": 2
+    },
+    "tool_definition_tokens": 6
   }
 }
 ```
@@ -4207,7 +4776,26 @@ Retrieve the current server configuration.
 
 **Auth:** Required (admin only)
 
-**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `Verbex`, `ProcessingLog`, `ChatHistory`, and `Logging`.
+**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `Verbex`, `ExternalSearch`, `ProcessingLog`, `ChatHistory`, `RequestHistory`, `Crawl`, and `Logging`. `ExternalSearch.Providers[].ApiKey` is redacted in responses.
+
+`RecallDb.SupportsMultiDocumentFilter` defaults to `true`. Set it to `false` only when the backing RecallDB deployment cannot accept native `DocumentIds` search filters; AssistantHub then loops over single-document `DocumentId` searches for attached-document retrieval and logs a fallback warning.
+
+### GET /v1.0/configuration/external-search/status
+
+Retrieve a safe external-search configuration status summary for admin UI and diagnostics. The response does not include provider names, endpoints, or API keys.
+
+**Auth:** Required (admin only)
+
+**Response (200 OK):**
+
+```json
+{
+  "Enabled": true,
+  "EnabledProviders": 1,
+  "ConfiguredProviders": 1,
+  "MisconfiguredProviders": 0
+}
+```
 
 ### PUT /v1.0/configuration
 
@@ -4215,9 +4803,9 @@ Update the server configuration. The updated settings are saved to disk.
 
 **Auth:** Required (admin only)
 
-**Request Body:** A full or partial `AssistantHubSettings` object. See the [Configuration](#configuration) section in the README for the complete schema.
+**Request Body:** A full `AssistantHubSettings` object. See the [Configuration](#configuration) section in the README for the complete schema. If a previously returned `ExternalSearch.Providers[].ApiKey` value is submitted as `[REDACTED]`, the existing configured provider key is preserved.
 
-**Response (200 OK):** The updated `AssistantHubSettings` object.
+**Response (200 OK):** The updated `AssistantHubSettings` object with `ExternalSearch.Providers[].ApiKey` redacted.
 
 **Error Responses:**
 - `400` -- Invalid request body.
@@ -4250,6 +4838,54 @@ Verbex inverted-index search is configured under the `Verbex` section:
 | `EnableIngestion` | bool | `true` | When true, extracted document text is indexed into Verbex after DocumentAtom extraction. |
 | `RequireIngestion` | bool | `true` | When true, document ingestion fails if Verbex indexing fails. When false, failures are logged and ingestion continues. |
 | `MaxContentCharacters` | int | `0` | Optional maximum normalized text characters sent to Verbex per document record. `0` means unlimited. |
+
+### ExternalSearch Settings
+
+External web search is disabled by default and configured under the `ExternalSearch` section. Tavily is the first supported provider for the model-visible `web_search` tool. The assistant must enable both `EnableToolCalls` and `EnableWebSearchTool`. If the assistant does not provide both `TavilyEndpoint` and `TavilyApiKey`, AssistantHub uses the enabled system-wide Tavily provider. If neither assistant-level nor system-wide Tavily configuration is complete, `web_search` is unavailable and the server logs a warning when execution is attempted. Administrators can check safe global readiness with `GET /v1.0/configuration/external-search/status`.
+
+```json
+{
+  "ExternalSearch": {
+    "Enabled": false,
+    "AllowFallback": true,
+    "MaxResults": 10,
+    "TimeoutMs": 30000,
+    "SafeSearch": true,
+    "AllowRawContent": false,
+    "IncludeDomains": [],
+    "ExcludeDomains": [],
+    "Providers": [
+      {
+        "Name": "default",
+        "ProviderType": "Tavily",
+        "Endpoint": "https://api.tavily.com/search",
+        "ApiKey": "${TAVILY_API_KEY}",
+        "Enabled": false,
+        "IsDefault": true,
+        "TimeoutMs": 30000
+      }
+    ]
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `Enabled` | bool | `false` | Global switch for external search providers. |
+| `AllowFallback` | bool | `true` | Allows later providers to be tried if the default provider fails. |
+| `MaxResults` | int | `10` | Global maximum result count any assistant may request. |
+| `TimeoutMs` | int | `30000` | Global default provider timeout in milliseconds when a provider does not specify one. |
+| `SafeSearch` | bool | `true` | Sends safe-search filtering to Tavily requests. |
+| `AllowRawContent` | bool | `false` | Allows raw provider page content only when the assistant policy also allows raw web content. |
+| `IncludeDomains` | array | `[]` | Global web-search domain allowlist. Empty means no global allowlist. |
+| `ExcludeDomains` | array | `[]` | Global web-search domain denylist. |
+| `Providers[].Name` | string | `default` | Provider name used for diagnostics and future provider selection. |
+| `Providers[].ProviderType` | string | `Tavily` | Provider implementation type. Only `Tavily` is currently implemented. |
+| `Providers[].Endpoint` | string | `https://api.tavily.com/search` | Tavily search endpoint. |
+| `Providers[].ApiKey` | string | null | Provider API key or environment-variable placeholder such as `${TAVILY_API_KEY}`. Treat this as a secret. Configuration responses redact this field as `[REDACTED]`. |
+| `Providers[].Enabled` | bool | `false` | Enables this provider when global external search is enabled. |
+| `Providers[].IsDefault` | bool | `true` | Marks the provider as the default Tavily provider. |
+| `Providers[].TimeoutMs` | int | `30000` | Provider HTTP timeout in milliseconds. |
 
 ---
 

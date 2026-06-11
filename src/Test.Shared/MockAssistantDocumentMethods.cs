@@ -50,7 +50,21 @@ namespace Test.Shared
             => Task.FromResult(Store.ContainsKey(id));
 
         public Task<EnumerationResult<AssistantDocument>> EnumerateAsync(string tenantId, EnumerationQuery query, CancellationToken token = default)
-            => Task.FromResult(MockDatabaseDriver.Paginate(Store.Values.Where(d => d.TenantId == tenantId).ToList(), query));
+        {
+            IEnumerable<AssistantDocument> documents = Store.Values.Where(d => d.TenantId == tenantId);
+
+            if (!String.IsNullOrWhiteSpace(query?.CollectionIdFilter))
+                documents = documents.Where(d => String.Equals(d.CollectionId, query.CollectionIdFilter, StringComparison.Ordinal));
+
+            if (!String.IsNullOrWhiteSpace(query?.BucketNameFilter))
+                documents = documents.Where(d => String.Equals(d.BucketName, query.BucketNameFilter, StringComparison.Ordinal));
+
+            documents = query?.Ordering == EnumerationOrderEnum.CreatedAscending
+                ? documents.OrderBy(d => d.CreatedUtc).ThenBy(d => d.Id, StringComparer.Ordinal)
+                : documents.OrderByDescending(d => d.CreatedUtc).ThenBy(d => d.Id, StringComparer.Ordinal);
+
+            return Task.FromResult(MockDatabaseDriver.Paginate(documents.ToList(), query));
+        }
 
         public Task UpdateChunkRecordIdsAsync(string id, string chunkRecordIdsJson, CancellationToken token = default)
         {

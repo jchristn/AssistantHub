@@ -20,29 +20,100 @@ function isAbsoluteUrl(url) {
   }
 }
 
+function getDefaultToolCallingApiFormat(apiFormat) {
+  return apiFormat === 'Ollama' ? 'OllamaChat' : 'OpenAIChatCompletions';
+}
+
+const TOOL_CALLING_LABEL = 'assistanthub:tool-calling';
+const TOOL_TAG_SUPPORTS = 'AssistantHub.SupportsToolCalling';
+const TOOL_TAG_FORMAT = 'AssistantHub.ToolCallingApiFormat';
+const TOOL_TAG_PARALLEL = 'AssistantHub.SupportsParallelToolCalls';
+const TOOL_TAG_STREAMING = 'AssistantHub.SupportsStreamingToolCalls';
+
+function getSourceField(source, ...keys) {
+  if (!source) return undefined;
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null) return source[key];
+  }
+  return undefined;
+}
+
+function coerceBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === 'yes' || normalized === '1') return true;
+    if (normalized === 'false' || normalized === 'no' || normalized === '0' || normalized === '') return false;
+  }
+  return !!value;
+}
+
+function getSourceBoolean(source, ...keys) {
+  return coerceBoolean(getSourceField(source, ...keys));
+}
+
+function getSourceText(source, ...keys) {
+  const value = getSourceField(source, ...keys);
+  return value === undefined || value === null ? '' : String(value);
+}
+
+function getSourceLabels(source) {
+  const value = getSourceField(source, 'Labels', 'labels');
+  return Array.isArray(value) ? value.filter(label => typeof label === 'string' && label.trim()).map(label => label.trim()) : [];
+}
+
+function getSourceTags(source) {
+  const value = getSourceField(source, 'Tags', 'tags');
+  return value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : {};
+}
+
+function getTagValue(tags, key) {
+  if (!tags || !key) return undefined;
+  const match = Object.keys(tags).find(candidate => candidate.toLowerCase() === key.toLowerCase());
+  return match ? tags[match] : undefined;
+}
+
+function getSourceToolBoolean(source, keys, tagKey, labels) {
+  const direct = getSourceField(source, ...keys);
+  if (direct !== undefined && direct !== null) return coerceBoolean(direct);
+  const tagValue = getTagValue(getSourceTags(source), tagKey);
+  if (tagValue !== undefined && tagValue !== null) return coerceBoolean(tagValue);
+  return Array.isArray(labels) && labels.some(label => label.toLowerCase() === TOOL_CALLING_LABEL.toLowerCase());
+}
+
 function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) {
   const isEdit = !!endpoint;
   const source = endpoint || initialData;
-  const initialApiFormat = source?.ApiFormat || 'Ollama';
-  const initialDefaults = getApiFormatDefaults(initialApiFormat, source?.Endpoint || getDefaultEndpoint(initialApiFormat));
+  const initialApiFormat = getSourceText(source, 'ApiFormat', 'apiFormat') || 'Ollama';
+  const initialEndpoint = getSourceText(source, 'Endpoint', 'endpoint');
+  const initialLabels = getSourceLabels(source);
+  const initialTags = getSourceTags(source);
+  const initialDefaults = getApiFormatDefaults(initialApiFormat, initialEndpoint || getDefaultEndpoint(initialApiFormat));
 
   const [form, setForm] = useState({
-    Name: source?.Name || '',
-    Model: source?.Model || getDefaultModel(initialApiFormat, 'inference'),
-    Endpoint: source?.Endpoint || initialDefaults.Endpoint,
+    Name: getSourceText(source, 'Name', 'name'),
+    Model: getSourceText(source, 'Model', 'model') || getDefaultModel(initialApiFormat, 'inference'),
+    Endpoint: initialEndpoint || initialDefaults.Endpoint,
     ApiFormat: initialApiFormat,
-    ApiKey: source?.ApiKey || '',
-    Active: source?.Active !== undefined ? source.Active : true,
-    MaxConcurrentRequests: source?.MaxConcurrentRequests !== undefined ? source.MaxConcurrentRequests : 2,
-    HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
-    HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
-    HealthCheckMethod: source?.HealthCheckMethod || initialDefaults.HealthCheckMethod,
-    HealthCheckIntervalMs: source?.HealthCheckIntervalMs !== undefined ? source.HealthCheckIntervalMs : initialDefaults.HealthCheckIntervalMs,
-    HealthCheckTimeoutMs: source?.HealthCheckTimeoutMs !== undefined ? source.HealthCheckTimeoutMs : initialDefaults.HealthCheckTimeoutMs,
-    HealthCheckExpectedStatusCode: source?.HealthCheckExpectedStatusCode !== undefined ? source.HealthCheckExpectedStatusCode : initialDefaults.HealthCheckExpectedStatusCode,
-    HealthyThreshold: source?.HealthyThreshold !== undefined ? source.HealthyThreshold : initialDefaults.HealthyThreshold,
-    UnhealthyThreshold: source?.UnhealthyThreshold !== undefined ? source.UnhealthyThreshold : initialDefaults.UnhealthyThreshold,
-    HealthCheckUseAuth: source?.HealthCheckUseAuth !== undefined ? source.HealthCheckUseAuth : initialDefaults.HealthCheckUseAuth
+    ApiKey: getSourceText(source, 'ApiKey', 'apiKey'),
+    Active: getSourceField(source, 'Active', 'active') !== undefined ? getSourceBoolean(source, 'Active', 'active') : true,
+    MaxConcurrentRequests: getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') !== undefined ? getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') : 2,
+    SupportsToolCalling: getSourceToolBoolean(source, ['SupportsToolCalling', 'supportsToolCalling'], TOOL_TAG_SUPPORTS, initialLabels),
+    ToolCallingApiFormat: getSourceText(source, 'ToolCallingApiFormat', 'toolCallingApiFormat') || getTagValue(initialTags, TOOL_TAG_FORMAT) || getDefaultToolCallingApiFormat(initialApiFormat),
+    SupportsParallelToolCalls: getSourceToolBoolean(source, ['SupportsParallelToolCalls', 'supportsParallelToolCalls'], TOOL_TAG_PARALLEL, []),
+    SupportsStreamingToolCalls: getSourceToolBoolean(source, ['SupportsStreamingToolCalls', 'supportsStreamingToolCalls'], TOOL_TAG_STREAMING, []),
+    Labels: initialLabels,
+    Tags: initialTags,
+    HealthCheckEnabled: getSourceField(source, 'HealthCheckEnabled', 'healthCheckEnabled') !== undefined ? getSourceBoolean(source, 'HealthCheckEnabled', 'healthCheckEnabled') : initialDefaults.HealthCheckEnabled,
+    HealthCheckUrl: getSourceText(source, 'HealthCheckUrl', 'healthCheckUrl') || initialDefaults.HealthCheckUrl,
+    HealthCheckMethod: getSourceText(source, 'HealthCheckMethod', 'healthCheckMethod') || initialDefaults.HealthCheckMethod,
+    HealthCheckIntervalMs: getSourceField(source, 'HealthCheckIntervalMs', 'healthCheckIntervalMs') !== undefined ? getSourceField(source, 'HealthCheckIntervalMs', 'healthCheckIntervalMs') : initialDefaults.HealthCheckIntervalMs,
+    HealthCheckTimeoutMs: getSourceField(source, 'HealthCheckTimeoutMs', 'healthCheckTimeoutMs') !== undefined ? getSourceField(source, 'HealthCheckTimeoutMs', 'healthCheckTimeoutMs') : initialDefaults.HealthCheckTimeoutMs,
+    HealthCheckExpectedStatusCode: getSourceField(source, 'HealthCheckExpectedStatusCode', 'healthCheckExpectedStatusCode') !== undefined ? getSourceField(source, 'HealthCheckExpectedStatusCode', 'healthCheckExpectedStatusCode') : initialDefaults.HealthCheckExpectedStatusCode,
+    HealthyThreshold: getSourceField(source, 'HealthyThreshold', 'healthyThreshold') !== undefined ? getSourceField(source, 'HealthyThreshold', 'healthyThreshold') : initialDefaults.HealthyThreshold,
+    UnhealthyThreshold: getSourceField(source, 'UnhealthyThreshold', 'unhealthyThreshold') !== undefined ? getSourceField(source, 'UnhealthyThreshold', 'unhealthyThreshold') : initialDefaults.UnhealthyThreshold,
+    HealthCheckUseAuth: getSourceField(source, 'HealthCheckUseAuth', 'healthCheckUseAuth') !== undefined ? getSourceBoolean(source, 'HealthCheckUseAuth', 'healthCheckUseAuth') : initialDefaults.HealthCheckUseAuth
   });
 
   const [saving, setSaving] = useState(false);
@@ -57,10 +128,15 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         const newDefaults = getApiFormatDefaults(value, nextEndpoint);
         const oldDefaultModel = getDefaultModel(prev.ApiFormat, 'inference');
         const newDefaultModel = getDefaultModel(value, 'inference');
+        const oldDefaultToolFormat = getDefaultToolCallingApiFormat(prev.ApiFormat);
+        const newDefaultToolFormat = getDefaultToolCallingApiFormat(value);
 
         updated.Endpoint = nextEndpoint;
         if (!prev.Model || prev.Model === oldDefaultModel) {
           updated.Model = newDefaultModel;
+        }
+        if (!prev.ToolCallingApiFormat || prev.ToolCallingApiFormat === oldDefaultToolFormat) {
+          updated.ToolCallingApiFormat = newDefaultToolFormat;
         }
 
         if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefaults.HealthCheckUrl) {
@@ -96,6 +172,12 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiKey: form.ApiKey,
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
+        SupportsToolCalling: form.SupportsToolCalling,
+        ToolCallingApiFormat: form.SupportsToolCalling ? form.ToolCallingApiFormat : null,
+        SupportsParallelToolCalls: form.SupportsToolCalling && form.SupportsParallelToolCalls,
+        SupportsStreamingToolCalls: form.SupportsToolCalling && form.SupportsStreamingToolCalls,
+        Labels: form.Labels,
+        Tags: form.Tags,
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
         HealthCheckMethod: form.HealthCheckMethod,
@@ -214,6 +296,63 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             min="1"
           />
         </div>
+
+        <div className="form-group">
+          <div className="form-toggle">
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={form.SupportsToolCalling}
+                onChange={(e) => handleChange('SupportsToolCalling', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+            <span><Tooltip text="Mark this endpoint as explicitly supporting model tool calls. Tool calls stay disabled for assistants unless this endpoint and the assistant policy both allow them.">Supports Tool Calling</Tooltip></span>
+          </div>
+        </div>
+
+        {form.SupportsToolCalling && (
+          <>
+            <div className="form-group">
+              <label><Tooltip text="Wire format used for tool definitions and model tool calls. Use Ollama Chat for native Ollama endpoints and OpenAI Chat Completions for OpenAI-compatible endpoints.">Tool Calling Format</Tooltip></label>
+              <select
+                value={form.ToolCallingApiFormat}
+                onChange={(e) => handleChange('ToolCallingApiFormat', e.target.value)}
+              >
+                <option value="OllamaChat">Ollama Chat</option>
+                <option value="OpenAIChatCompletions">OpenAI Chat Completions</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={form.SupportsParallelToolCalls}
+                    onChange={(e) => handleChange('SupportsParallelToolCalls', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Endpoint can return multiple tool calls in a single assistant response. Leave disabled unless the endpoint is known to support it.">Parallel Tool Calls</Tooltip></span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="form-toggle">
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={form.SupportsStreamingToolCalls}
+                    onChange={(e) => handleChange('SupportsStreamingToolCalls', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+                <span><Tooltip text="Endpoint can stream responses that include tool-call deltas. Leave disabled unless the endpoint is known to support it.">Streaming Tool Calls</Tooltip></span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Health Check */}
         <div className="form-group">

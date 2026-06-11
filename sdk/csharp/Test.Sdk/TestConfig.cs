@@ -23,6 +23,11 @@ namespace Test.Sdk
         public string TenantId { get; set; } = "default";
 
         /// <summary>
+        /// Run only local SDK contract tests that do not require a server.
+        /// </summary>
+        public bool LocalOnly { get; set; } = false;
+
+        /// <summary>
         /// Loads configuration from environment variables and command line arguments.
         /// Command line arguments take precedence over environment variables.
         /// </summary>
@@ -50,6 +55,12 @@ namespace Test.Sdk
                 config.TenantId = envTenantId;
             }
 
+            string envLocalOnly = Environment.GetEnvironmentVariable("ASSISTANTHUB_SDK_LOCAL_ONLY");
+            if (!string.IsNullOrWhiteSpace(envLocalOnly))
+            {
+                config.LocalOnly = IsTruthy(envLocalOnly);
+            }
+
             if (args != null)
             {
                 foreach (string arg in args)
@@ -71,11 +82,27 @@ namespace Test.Sdk
                         case "tenantid":
                             config.TenantId = value;
                             break;
+                        case "local":
+                        case "localonly":
+                        case "local-only":
+                            config.LocalOnly = IsTruthy(value);
+                            break;
                     }
                 }
             }
 
             return config;
+        }
+
+        private static bool IsTruthy(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            value = value.Trim();
+            return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "y", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

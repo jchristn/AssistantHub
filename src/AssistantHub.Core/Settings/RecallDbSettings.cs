@@ -32,6 +32,12 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _DashboardUrl = value; }
         }
 
+        /// <summary>
+        /// Indicates whether RecallDB accepts a native multi-document DocumentIds search filter.
+        /// When false, AssistantHub loops over single DocumentId searches and merges results server-side.
+        /// </summary>
+        public bool SupportsMultiDocumentFilter { get; set; } = true;
+
         #endregion
 
         #region Private-Members

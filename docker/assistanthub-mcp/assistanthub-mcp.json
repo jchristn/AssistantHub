@@ -2,13 +2,13 @@
   "CreatedUtc": "2026-05-19T00:00:00Z",
   "CreatedBy": "Setup",
   "DeploymentType": "Private",
-  "SoftwareVersion": "v0.15.0",
+  "SoftwareVersion": "v0.16.0",
   "Node": {
     "Guid": "00000000-0000-0000-0000-000000000001",
     "Name": "AssistantHub Model Context Protocol Server",
     "Hostname": "assistanthub-mcp-server",
     "InstanceType": "McpServer",
-    "LastStartUtc": "2026-06-07T06:08:44.7354773Z",
+    "LastStartUtc": "2026-06-11T21:48:56.2031715Z",
     "CreatedUtc": "2026-05-19T00:00:00Z"
   },
   "Logging": {

@@ -126,7 +126,7 @@ namespace AssistantHub.Server.Services
                     : new JsonArray(),
                 ["responses"] = String.Equals(normalizedPath, "/swagger", StringComparison.OrdinalIgnoreCase)
                     ? BuildSwaggerResponses()
-                    : BuildGenericResponses(method)
+                    : BuildGenericResponses(method, normalizedPath)
             };
 
             if (MethodUsuallyHasJsonBody(normalizedMethod))
@@ -170,11 +170,34 @@ namespace AssistantHub.Server.Services
             return responses;
         }
 
-        private JsonObject BuildGenericResponses(string method)
+        private JsonObject BuildGenericResponses(string method, string path)
         {
             string normalizedMethod = method?.ToUpperInvariant() ?? "GET";
             JsonObject responses = new JsonObject();
-            if (normalizedMethod == "DELETE")
+            if (normalizedMethod == "DELETE" && String.Equals(path, "/v1.0/assistants/{assistantId}/tool-calls", StringComparison.OrdinalIgnoreCase))
+                responses["200"] = new JsonObject
+                {
+                    ["description"] = "Deleted matching assistant tool-call traces.",
+                    ["content"] = new JsonObject
+                    {
+                        ["application/json"] = new JsonObject
+                        {
+                            ["schema"] = new JsonObject
+                            {
+                                ["type"] = "object",
+                                ["properties"] = new JsonObject
+                                {
+                                    ["DeletedCount"] = new JsonObject
+                                    {
+                                        ["type"] = "integer",
+                                        ["description"] = "Number of deleted trace records."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+            else if (normalizedMethod == "DELETE")
                 responses["204"] = new JsonObject { ["description"] = "Deleted or completed with no response body." };
             else if (normalizedMethod == "HEAD")
                 responses["200"] = new JsonObject { ["description"] = "Resource exists." };
@@ -307,6 +330,12 @@ namespace AssistantHub.Server.Services
                 || String.Equals(path, "/v1.0/documents/reindex", StringComparison.OrdinalIgnoreCase))
                 AddDocumentEnumerationQueryParameters(parameters);
 
+            if (String.Equals(path, "/v1.0/assistants/{assistantId}/documents", StringComparison.OrdinalIgnoreCase))
+                AddAssistantDocumentEnumerationQueryParameters(parameters);
+
+            if (String.Equals(path, "/v1.0/assistants/{assistantId}/tool-calls", StringComparison.OrdinalIgnoreCase))
+                AddAssistantToolCallQueryParameters(parameters);
+
             return parameters;
         }
 
@@ -316,6 +345,30 @@ namespace AssistantHub.Server.Services
             AddQueryParameter(parameters, "continuationToken", "string", "Continuation token for the next page.");
             AddQueryParameter(parameters, "bucketName", "string", "Optional bucket-name filter.");
             AddQueryParameter(parameters, "collectionId", "string", "Optional collection identifier filter.");
+        }
+
+        private void AddAssistantDocumentEnumerationQueryParameters(JsonArray parameters)
+        {
+            AddQueryParameter(parameters, "maxResults", "integer", "Maximum number of selectable documents to return.");
+            AddQueryParameter(parameters, "continuationToken", "string", "Continuation token from a previous page.");
+            AddQueryParameter(parameters, "query", "string", "Optional case-insensitive name or filename filter.");
+            AddQueryParameter(parameters, "contentType", "string", "Optional MIME content type filter, such as application/pdf or text/*.");
+        }
+
+        private void AddAssistantToolCallQueryParameters(JsonArray parameters)
+        {
+            AddQueryParameter(parameters, "maxResults", "integer", "Maximum number of trace records to return.");
+            AddQueryParameter(parameters, "continuationToken", "string", "Continuation token from a previous page.");
+            AddQueryParameter(parameters, "ordering", "string", "CreatedAscending or CreatedDescending.");
+            AddQueryParameter(parameters, "toolName", "string", "Filter by tool name.");
+            AddQueryParameter(parameters, "traceId", "string", "Filter by trace identifier.");
+            AddQueryParameter(parameters, "requestHistoryId", "string", "Filter by request-history identifier.");
+            AddQueryParameter(parameters, "chatHistoryId", "string", "Filter by chat-history identifier.");
+            AddQueryParameter(parameters, "threadId", "string", "Filter by assistant thread identifier.");
+            AddQueryParameter(parameters, "success", "boolean", "Filter by success flag.");
+            AddQueryParameter(parameters, "denied", "boolean", "Filter by denial flag.");
+            AddQueryParameter(parameters, "startUtc", "string", "Filter to records created at or after this UTC timestamp.");
+            AddQueryParameter(parameters, "endUtc", "string", "Filter to records created at or before this UTC timestamp.");
         }
 
         private void AddAnalyticsQueryParameters(JsonArray parameters, string path)
@@ -384,6 +437,7 @@ namespace AssistantHub.Server.Services
                 BuildTag("Assistants", "Assistant management routes."),
                 BuildTag("Assistant Settings", "Assistant settings routes."),
                 BuildTag("Assistant Analytics", "Assistant performance analytics routes."),
+                BuildTag("Assistant Tool Calls", "Assistant tool-call trace routes."),
                 BuildTag("Assistant Public APIs", "Public assistant API routes."),
                 BuildTag("Ingestion Rules", "Ingestion rule routes."),
                 BuildTag("Documents", "Document routes."),
@@ -437,10 +491,12 @@ namespace AssistantHub.Server.Services
                     || path.Contains("/threads", StringComparison.OrdinalIgnoreCase)
                     || path.Contains("/labels/", StringComparison.OrdinalIgnoreCase)
                     || path.Contains("/tags/", StringComparison.OrdinalIgnoreCase)
+                    || path.EndsWith("/documents", StringComparison.OrdinalIgnoreCase)
                     || path.Contains("/documents/", StringComparison.OrdinalIgnoreCase)))
                 return "Assistant Public APIs";
             if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/settings", StringComparison.OrdinalIgnoreCase)) return "Assistant Settings";
             if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/analytics", StringComparison.OrdinalIgnoreCase)) return "Assistant Analytics";
+            if (path.StartsWith("/v1.0/assistants/", StringComparison.OrdinalIgnoreCase) && path.Contains("/tool-calls", StringComparison.OrdinalIgnoreCase)) return "Assistant Tool Calls";
             if (path.StartsWith("/v1.0/assistants", StringComparison.OrdinalIgnoreCase)) return "Assistants";
             if (path.StartsWith("/v1.0/ingestion-rules", StringComparison.OrdinalIgnoreCase)) return "Ingestion Rules";
             if (path.StartsWith("/v1.0/documents", StringComparison.OrdinalIgnoreCase)) return "Documents";
@@ -457,6 +513,18 @@ namespace AssistantHub.Server.Services
 
         private string BuildSummary(string method, string path)
         {
+            if (String.Equals(path, "/v1.0/configuration/external-search/status", StringComparison.OrdinalIgnoreCase))
+                return "Get external-search configuration status";
+            if (String.Equals(path, "/v1.0/assistants/{assistantId}/documents", StringComparison.OrdinalIgnoreCase))
+                return "List public assistant documents";
+            if (String.Equals(path, "/v1.0/assistants/{assistantId}/tool-calls", StringComparison.OrdinalIgnoreCase))
+            {
+                if (String.Equals(method, "DELETE", StringComparison.OrdinalIgnoreCase))
+                    return "Delete assistant tool-call traces";
+
+                return "List assistant tool-call traces";
+            }
+
             return method.ToUpperInvariant() + " " + path;
         }
 

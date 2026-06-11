@@ -53,6 +53,7 @@ class DocumentStatus(str, Enum):
     TYPE_DETECTION_SUCCESS = "TypeDetectionSuccess"
     TYPE_DETECTION_FAILED = "TypeDetectionFailed"
     PROCESSING = "Processing"
+    STORING_TEXT = "StoringText"
     PROCESSING_CHUNKS = "ProcessingChunks"
     SUMMARIZING = "Summarizing"
     STORING_EMBEDDINGS = "StoringEmbeddings"

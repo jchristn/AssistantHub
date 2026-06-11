@@ -84,6 +84,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `rerank_prompt` TEXT, " +
             "  `enable_citations` TINYINT NOT NULL DEFAULT 0, " +
             "  `citation_link_mode` VARCHAR(32) DEFAULT 'None', " +
+            "  `enable_document_attachments` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `document_attachment_max_count` INT NOT NULL DEFAULT 10, " +
+            "  `expose_document_source_urls` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `collection_id` VARCHAR(256), " +
             "  `retrieval_top_k` INT NOT NULL DEFAULT 10, " +
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
@@ -95,11 +98,13 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `fulltext_minimum_score` DOUBLE DEFAULT NULL, " +
             "  `retrieval_include_neighbors` INT NOT NULL DEFAULT 0, " +
             "  `inference_endpoint_id` TEXT, " +
+            "  `tool_routing_inference_endpoint_id` TEXT, " +
             "  `retrieval_gate_inference_endpoint_id` TEXT, " +
             "  `query_rewrite_inference_endpoint_id` TEXT, " +
             "  `rerank_inference_endpoint_id` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `expose_thinking` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `title` TEXT, " +
             "  `logo_url` TEXT, " +
             "  `favicon_url` TEXT, " +
@@ -111,6 +116,7 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `slack_bot_token` TEXT, " +
             "  `slack_channel_id` TEXT, " +
             "  `slack_message_prefix` TEXT, " +
+            "  `tool_policy_json` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -118,6 +124,9 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantSettingsRetrievalGateInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `retrieval_gate_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `tool_routing_inference_endpoint_id` TEXT";
 
         internal static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `query_rewrite_inference_endpoint_id` TEXT";
@@ -127,6 +136,21 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsExposeThinkingColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `expose_thinking` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsToolPolicyJsonColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `tool_policy_json` TEXT";
+
+        internal static string AddAssistantSettingsEnableDocumentAttachmentsColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `enable_document_attachments` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsDocumentAttachmentMaxCountColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `document_attachment_max_count` INT NOT NULL DEFAULT 10";
+
+        internal static string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `expose_document_source_urls` TINYINT(1) NOT NULL DEFAULT 0";
 
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +
@@ -293,6 +317,8 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `tokens_per_second_overall` DOUBLE NOT NULL DEFAULT 0, " +
             "  `tokens_per_second_generation` DOUBLE NOT NULL DEFAULT 0, " +
             "  `metadata_filter` TEXT, " +
+            "  `attached_document_ids_json` LONGTEXT, " +
+            "  `attached_documents_json` LONGTEXT, " +
             "  `origin` VARCHAR(64), " +
             "  `assistant_response` LONGTEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
@@ -311,6 +337,12 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddChatHistoryPerformanceJsonColumn =
             "ALTER TABLE `chat_history` ADD COLUMN `performance_json` LONGTEXT";
+
+        internal static string AddChatHistoryAttachedDocumentIdsJsonColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `attached_document_ids_json` LONGTEXT";
+
+        internal static string AddChatHistoryAttachedDocumentsJsonColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `attached_documents_json` LONGTEXT";
 
         internal static string CreateRequestHistoryTable =
             "CREATE TABLE IF NOT EXISTS `request_history` (" +
@@ -416,6 +448,70 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "JOIN `chat_history` h ON h.`id` = e.`chat_history_id` " +
             "SET e.`assistant_id` = h.`assistant_id` " +
             "WHERE e.`assistant_id` IS NULL";
+
+        internal static string CreateAssistantToolCallsTable =
+            "CREATE TABLE IF NOT EXISTS `assistant_tool_calls` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
+            "  `assistant_id` VARCHAR(256) NOT NULL, " +
+            "  `chat_history_id` VARCHAR(256), " +
+            "  `request_history_id` VARCHAR(256), " +
+            "  `trace_id` VARCHAR(256), " +
+            "  `thread_id` VARCHAR(256), " +
+            "  `origin` VARCHAR(128), " +
+            "  `turn_index` INT NOT NULL DEFAULT 0, " +
+            "  `iteration` INT NOT NULL DEFAULT 0, " +
+            "  `sequence_number` INT NOT NULL DEFAULT 0, " +
+            "  `provider_tool_call_id` VARCHAR(256), " +
+            "  `tool_name` VARCHAR(256) NOT NULL, " +
+            "  `arguments_json` LONGTEXT, " +
+            "  `output_json` LONGTEXT, " +
+            "  `result_summary_json` LONGTEXT, " +
+            "  `success` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `denied` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `truncated` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `output_characters` INT NOT NULL DEFAULT 0, " +
+            "  `input_bytes` INT NOT NULL DEFAULT 0, " +
+            "  `output_bytes` INT NOT NULL DEFAULT 0, " +
+            "  `duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `error_type` LONGTEXT, " +
+            "  `error_message` LONGTEXT, " +
+            "  `provider` VARCHAR(128), " +
+            "  `model` VARCHAR(450), " +
+            "  `active` TINYINT(1) NOT NULL DEFAULT 1, " +
+            "  `started_utc` TEXT NOT NULL, " +
+            "  `finished_utc` TEXT NOT NULL, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  `last_update_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
+        internal static string AddAssistantToolCallsTurnIndexColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `turn_index` INT NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsResultSummaryJsonColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `result_summary_json` LONGTEXT";
+
+        internal static string AddAssistantToolCallsInputBytesColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `input_bytes` INT NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsOutputBytesColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `output_bytes` INT NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantToolCallsErrorTypeColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `error_type` LONGTEXT";
+
+        internal static string AddAssistantToolCallsProviderColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `provider` VARCHAR(128)";
+
+        internal static string AddAssistantToolCallsModelColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `model` VARCHAR(450)";
+
+        internal static string AddAssistantToolCallsActiveColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `active` TINYINT(1) NOT NULL DEFAULT 1";
+
+        internal static string AddAssistantToolCallsLastUpdateUtcColumn =
+            "ALTER TABLE `assistant_tool_calls` ADD COLUMN `last_update_utc` TEXT";
 
         #endregion
 
@@ -609,6 +705,39 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex =
             "CREATE INDEX idx_chpe_tenant_assistant_endpoint_created ON `chat_history_performance_events` (`tenant_id`, `assistant_id`, `endpoint_id`, `created_utc`(191))";
+
+        internal static string CreateAssistantToolCallsTenantIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_tenant_id ON `assistant_tool_calls` (`tenant_id`)";
+
+        internal static string CreateAssistantToolCallsAssistantIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_assistant_id ON `assistant_tool_calls` (`assistant_id`)";
+
+        internal static string CreateAssistantToolCallsThreadIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_thread_id ON `assistant_tool_calls` (`thread_id`)";
+
+        internal static string CreateAssistantToolCallsChatHistoryIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_chat_history_id ON `assistant_tool_calls` (`chat_history_id`)";
+
+        internal static string CreateAssistantToolCallsRequestHistoryIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_request_history_id ON `assistant_tool_calls` (`request_history_id`)";
+
+        internal static string CreateAssistantToolCallsTraceIdIndex =
+            "CREATE INDEX idx_assistant_tool_calls_trace_id ON `assistant_tool_calls` (`trace_id`)";
+
+        internal static string CreateAssistantToolCallsToolNameIndex =
+            "CREATE INDEX idx_assistant_tool_calls_tool_name ON `assistant_tool_calls` (`tool_name`)";
+
+        internal static string CreateAssistantToolCallsSuccessIndex =
+            "CREATE INDEX idx_assistant_tool_calls_success ON `assistant_tool_calls` (`success`)";
+
+        internal static string CreateAssistantToolCallsCreatedUtcIndex =
+            "CREATE INDEX idx_assistant_tool_calls_created_utc ON `assistant_tool_calls` (`created_utc`(191))";
+
+        internal static string CreateAssistantToolCallsTenantAssistantCreatedIndex =
+            "CREATE INDEX idx_atc_tenant_assistant_created ON `assistant_tool_calls` (`tenant_id`, `assistant_id`, `created_utc`(191))";
+
+        internal static string CreateAssistantToolCallsTenantAssistantToolCreatedIndex =
+            "CREATE INDEX idx_atc_tenant_assistant_tool_created ON `assistant_tool_calls` (`tenant_id`, `assistant_id`, `tool_name`, `created_utc`(191))";
 
         #endregion
     }

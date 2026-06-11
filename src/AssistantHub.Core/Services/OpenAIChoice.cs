@@ -24,5 +24,11 @@ namespace AssistantHub.Core.Services
         /// Message in the choice.
         /// </summary>
         public OpenAIMessage Message { get; set; } = null;
+
+        /// <summary>
+        /// Provider finish reason.
+        /// </summary>
+        [JsonPropertyName("finish_reason")]
+        public string FinishReason { get; set; } = null;
     }
 }

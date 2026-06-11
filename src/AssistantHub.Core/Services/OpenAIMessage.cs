@@ -29,5 +29,33 @@ namespace AssistantHub.Core.Services
         /// Message content.
         /// </summary>
         public string Content { get; set; } = null;
+
+        /// <summary>
+        /// Provider thinking/reasoning text when returned separately from content.
+        /// </summary>
+        public string Thinking { get; set; } = null;
+
+        /// <summary>
+        /// OpenAI-compatible reasoning content field used by some models.
+        /// </summary>
+        [JsonPropertyName("reasoning_content")]
+        public string ReasoningContent { get; set; } = null;
+
+        /// <summary>
+        /// Model-requested tool calls.
+        /// </summary>
+        [JsonPropertyName("tool_calls")]
+        public List<AssistantModelToolCall> ToolCalls { get; set; } = null;
+
+        /// <summary>
+        /// Tool call identifier for tool-role messages.
+        /// </summary>
+        [JsonPropertyName("tool_call_id")]
+        public string ToolCallId { get; set; } = null;
+
+        /// <summary>
+        /// Optional tool/function name.
+        /// </summary>
+        public string Name { get; set; } = null;
     }
 }

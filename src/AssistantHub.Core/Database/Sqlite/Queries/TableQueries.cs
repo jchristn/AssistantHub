@@ -75,6 +75,9 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  rerank_prompt TEXT, " +
                 "  enable_citations INTEGER NOT NULL DEFAULT 0, " +
                 "  citation_link_mode TEXT DEFAULT 'None', " +
+                "  enable_document_attachments INTEGER NOT NULL DEFAULT 0, " +
+                "  document_attachment_max_count INTEGER NOT NULL DEFAULT 10, " +
+                "  expose_document_source_urls INTEGER NOT NULL DEFAULT 0, " +
                 "  collection_id TEXT, " +
                 "  retrieval_top_k INTEGER NOT NULL DEFAULT 10, " +
                 "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +
@@ -86,11 +89,13 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  fulltext_minimum_score REAL DEFAULT NULL, " +
                 "  retrieval_include_neighbors INTEGER NOT NULL DEFAULT 0, " +
                 "  inference_endpoint_id TEXT, " +
+                "  tool_routing_inference_endpoint_id TEXT, " +
                 "  retrieval_gate_inference_endpoint_id TEXT, " +
                 "  query_rewrite_inference_endpoint_id TEXT, " +
                 "  rerank_inference_endpoint_id TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  load_models_on_chat_open INTEGER NOT NULL DEFAULT 0, " +
+                "  expose_thinking INTEGER NOT NULL DEFAULT 0, " +
                 "  title TEXT, " +
                 "  logo_url TEXT, " +
                 "  favicon_url TEXT, " +
@@ -103,6 +108,7 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  slack_bot_token TEXT, " +
                 "  slack_channel_id TEXT, " +
                 "  slack_message_prefix TEXT, " +
+                "  tool_policy_json TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -243,6 +249,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  tokens_per_second_overall REAL NOT NULL DEFAULT 0, " +
                 "  tokens_per_second_generation REAL NOT NULL DEFAULT 0, " +
                 "  metadata_filter TEXT, " +
+                "  attached_document_ids_json TEXT, " +
+                "  attached_documents_json TEXT, " +
                 "  origin TEXT, " +
                 "  assistant_response TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
@@ -332,6 +340,40 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  provider_raw_json TEXT, " +
                 "  created_utc TEXT NOT NULL" +
                 "); " +
+                "CREATE TABLE IF NOT EXISTS assistant_tool_calls (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  assistant_id TEXT NOT NULL, " +
+                "  chat_history_id TEXT, " +
+                "  request_history_id TEXT, " +
+                "  trace_id TEXT, " +
+                "  thread_id TEXT, " +
+                "  origin TEXT, " +
+                "  turn_index INTEGER NOT NULL DEFAULT 0, " +
+                "  iteration INTEGER NOT NULL DEFAULT 0, " +
+                "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+                "  provider_tool_call_id TEXT, " +
+                "  tool_name TEXT NOT NULL, " +
+                "  arguments_json TEXT, " +
+                "  output_json TEXT, " +
+                "  result_summary_json TEXT, " +
+                "  success INTEGER NOT NULL DEFAULT 0, " +
+                "  denied INTEGER NOT NULL DEFAULT 0, " +
+                "  truncated INTEGER NOT NULL DEFAULT 0, " +
+                "  output_characters INTEGER NOT NULL DEFAULT 0, " +
+                "  input_bytes INTEGER NOT NULL DEFAULT 0, " +
+                "  output_bytes INTEGER NOT NULL DEFAULT 0, " +
+                "  duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  error_type TEXT, " +
+                "  error_message TEXT, " +
+                "  provider TEXT, " +
+                "  model TEXT, " +
+                "  active INTEGER NOT NULL DEFAULT 1, " +
+                "  started_utc TEXT NOT NULL, " +
+                "  finished_utc TEXT NOT NULL, " +
+                "  created_utc TEXT NOT NULL, " +
+                "  last_update_utc TEXT NOT NULL" +
+                "); " +
                 "CREATE TABLE IF NOT EXISTS eval_facts (" +
                 "  id TEXT PRIMARY KEY, " +
                 "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
@@ -378,6 +420,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE assistant_settings ADD COLUMN retrieval_gate_inference_endpoint_id TEXT;";
 
         /// <summary>
+        /// Add the tool-routing inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsToolRoutingInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN tool_routing_inference_endpoint_id TEXT;";
+
+        /// <summary>
         /// Add the query rewrite inference endpoint ID column.
         /// </summary>
         public static string AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn =
@@ -394,6 +442,36 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE assistant_settings ADD COLUMN load_models_on_chat_open INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the expose-thinking column.
+        /// </summary>
+        public static string AddAssistantSettingsExposeThinkingColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN expose_thinking INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the assistant tool policy JSON column.
+        /// </summary>
+        public static string AddAssistantSettingsToolPolicyJsonColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN tool_policy_json TEXT;";
+
+        /// <summary>
+        /// Add the document-attachments enablement column.
+        /// </summary>
+        public static string AddAssistantSettingsEnableDocumentAttachmentsColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN enable_document_attachments INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the document-attachment maximum-count column.
+        /// </summary>
+        public static string AddAssistantSettingsDocumentAttachmentMaxCountColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN document_attachment_max_count INTEGER NOT NULL DEFAULT 10;";
+
+        /// <summary>
+        /// Add the document source URL exposure column.
+        /// </summary>
+        public static string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN expose_document_source_urls INTEGER NOT NULL DEFAULT 0;";
 
         /// <summary>
         /// Add the Verbex tenant ID column to assistant documents.
@@ -444,6 +522,18 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE chat_history ADD COLUMN performance_json TEXT;";
 
         /// <summary>
+        /// Add the attached-document IDs JSON column to chat history.
+        /// </summary>
+        public static string AddChatHistoryAttachedDocumentIdsJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN attached_document_ids_json TEXT;";
+
+        /// <summary>
+        /// Add the attached-documents JSON column to chat history.
+        /// </summary>
+        public static string AddChatHistoryAttachedDocumentsJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN attached_documents_json TEXT;";
+
+        /// <summary>
         /// Add the trace ID column to request history.
         /// </summary>
         public static string AddRequestHistoryTraceIdColumn =
@@ -460,6 +550,60 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddChatHistoryPerformanceEventsAssistantIdColumn =
             "ALTER TABLE chat_history_performance_events ADD COLUMN assistant_id TEXT;";
+
+        /// <summary>
+        /// Add the tool-call turn-index column.
+        /// </summary>
+        public static string AddAssistantToolCallsTurnIndexColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN turn_index INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the tool-call result-summary JSON column.
+        /// </summary>
+        public static string AddAssistantToolCallsResultSummaryJsonColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN result_summary_json TEXT;";
+
+        /// <summary>
+        /// Add the tool-call redacted input byte-count column.
+        /// </summary>
+        public static string AddAssistantToolCallsInputBytesColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN input_bytes INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the tool-call redacted output byte-count column.
+        /// </summary>
+        public static string AddAssistantToolCallsOutputBytesColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN output_bytes INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the tool-call stable error-type column.
+        /// </summary>
+        public static string AddAssistantToolCallsErrorTypeColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN error_type TEXT;";
+
+        /// <summary>
+        /// Add the tool-call provider column.
+        /// </summary>
+        public static string AddAssistantToolCallsProviderColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN provider TEXT;";
+
+        /// <summary>
+        /// Add the tool-call model column.
+        /// </summary>
+        public static string AddAssistantToolCallsModelColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN model TEXT;";
+
+        /// <summary>
+        /// Add the tool-call active flag column.
+        /// </summary>
+        public static string AddAssistantToolCallsActiveColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN active INTEGER NOT NULL DEFAULT 1;";
+
+        /// <summary>
+        /// Add the tool-call last-update timestamp column.
+        /// </summary>
+        public static string AddAssistantToolCallsLastUpdateUtcColumn =
+            "ALTER TABLE assistant_tool_calls ADD COLUMN last_update_utc TEXT NOT NULL DEFAULT '';";
 
         /// <summary>
         /// Backfill assistant IDs onto chat history performance events.
@@ -529,6 +673,17 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_created ON chat_history_performance_events(tenant_id, assistant_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_stage_created ON chat_history_performance_events(tenant_id, assistant_id, stage, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events(tenant_id, assistant_id, endpoint_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_tenant_id ON assistant_tool_calls(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_assistant_id ON assistant_tool_calls(assistant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_thread_id ON assistant_tool_calls(thread_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_chat_history_id ON assistant_tool_calls(chat_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_request_history_id ON assistant_tool_calls(request_history_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_trace_id ON assistant_tool_calls(trace_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_tool_name ON assistant_tool_calls(tool_name); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_success ON assistant_tool_calls(success); " +
+                "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_created_utc ON assistant_tool_calls(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_atc_tenant_assistant_created ON assistant_tool_calls(tenant_id, assistant_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_atc_tenant_assistant_tool_created ON assistant_tool_calls(tenant_id, assistant_id, tool_name, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_tenant_id ON crawl_plans(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_plans_state ON crawl_plans(state); " +
                 "CREATE INDEX IF NOT EXISTS idx_crawl_operations_tenant_id ON crawl_operations(tenant_id); " +

@@ -146,6 +146,14 @@ export interface AssistantAnalyticsSlowRequest {
   EndpointName?: string | null;
   Provider?: string | null;
   Model?: string | null;
+  ToolCallCount?: number;
+  ToolFailureCount?: number;
+  ToolDeniedCount?: number;
+  ToolTruncatedCount?: number;
+  ToolDurationMs?: number | null;
+  SlowestToolName?: string | null;
+  SlowestToolDurationMs?: number | null;
+  FailingToolNames?: string[];
 }
 
 /** Assistant analytics slowest result. */

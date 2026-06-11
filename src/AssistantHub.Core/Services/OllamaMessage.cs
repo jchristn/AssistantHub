@@ -29,5 +29,16 @@ namespace AssistantHub.Core.Services
         /// Message content.
         /// </summary>
         public string Content { get; set; } = null;
+
+        /// <summary>
+        /// Provider thinking/reasoning text when returned separately from content.
+        /// </summary>
+        public string Thinking { get; set; } = null;
+
+        /// <summary>
+        /// Model-requested tool calls.
+        /// </summary>
+        [JsonPropertyName("tool_calls")]
+        public List<AssistantModelToolCall> ToolCalls { get; set; } = null;
     }
 }

@@ -11,6 +11,13 @@ from ._parity_sync_mixin import AssistantHubClientParityMixin
 from .models import (
     Assistant,
     AssistantDocument,
+    AssistantDocumentSelectionItem,
+    AssistantToolDescriptor,
+    AssistantToolCallRecord,
+    AssistantToolPolicyValidationRequest,
+    AssistantToolPolicyValidationResult,
+    AssistantToolPolicyTestResult,
+    ChatLocalAttachment,
     ChatCompletionMessage,
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -25,6 +32,7 @@ from .models import (
     EvalResult,
     EvalRun,
     EvalRunRequest,
+    ExternalSearchConfigurationStatus,
     InferenceModel,
     IngestionRule,
     PartioEndpointConfig,
@@ -109,6 +117,192 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
         """
         response = self._request("GET", f"/v1.0/assistants/{assistant_id}")
         return Assistant.model_validate(response.json())
+
+    def list_assistant_documents(
+        self,
+        assistant_id: str,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+        query: Optional[str] = None,
+        content_type: Optional[str] = None,
+    ) -> EnumerationResult[AssistantDocumentSelectionItem]:
+        """List safe public document metadata selectable in assistant chat."""
+
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        if query:
+            params["query"] = query
+        if content_type:
+            params["contentType"] = content_type
+
+        response = self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/documents",
+            params=params,
+        )
+        data = response.json()
+        raw_objects = data.get("Objects") or data.get("objects") or []
+        objects = [
+            AssistantDocumentSelectionItem.model_validate(obj)
+            for obj in raw_objects
+        ]
+        result = EnumerationResult[AssistantDocumentSelectionItem].model_validate(data)
+        result.objects = objects
+        return result
+
+    def get_assistant_tools(self, assistant_id: str) -> list[AssistantToolDescriptor]:
+        """Get effective tool availability for an assistant."""
+
+        response = self._request("GET", f"/v1.0/assistants/{assistant_id}/tools")
+        data = response.json() or []
+        return [AssistantToolDescriptor.model_validate(obj) for obj in data]
+
+    def validate_assistant_tool_policy(
+        self,
+        assistant_id: str,
+        request: AssistantToolPolicyValidationRequest,
+    ) -> AssistantToolPolicyValidationResult:
+        """Validate draft tool policy for an assistant without persisting it."""
+
+        response = self._request(
+            "POST",
+            f"/v1.0/assistants/{assistant_id}/settings/tools/validate",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+        return AssistantToolPolicyValidationResult.model_validate(response.json())
+
+    def test_assistant_tool_policy(
+        self,
+        assistant_id: str,
+        request: AssistantToolPolicyValidationRequest,
+    ) -> AssistantToolPolicyTestResult:
+        """Run administrator dry-run diagnostics for an assistant tool policy without executing tools."""
+
+        response = self._request(
+            "POST",
+            f"/v1.0/assistants/{assistant_id}/settings/tools/test",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+        return AssistantToolPolicyTestResult.model_validate(response.json())
+
+    def list_assistant_tool_calls(
+        self,
+        assistant_id: str,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+        tool_name: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        request_history_id: Optional[str] = None,
+        chat_history_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        success: Optional[bool] = None,
+        denied: Optional[bool] = None,
+        start_utc: Optional[str] = None,
+        end_utc: Optional[str] = None,
+    ) -> EnumerationResult[AssistantToolCallRecord]:
+        """List redacted model tool-call traces for an assistant."""
+
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        if tool_name:
+            params["toolName"] = tool_name
+        if trace_id:
+            params["traceId"] = trace_id
+        if request_history_id:
+            params["requestHistoryId"] = request_history_id
+        if chat_history_id:
+            params["chatHistoryId"] = chat_history_id
+        if thread_id:
+            params["threadId"] = thread_id
+        if success is not None:
+            params["success"] = success
+        if denied is not None:
+            params["denied"] = denied
+        if start_utc:
+            params["startUtc"] = start_utc
+        if end_utc:
+            params["endUtc"] = end_utc
+
+        response = self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/tool-calls",
+            params=params,
+        )
+        data = response.json()
+        raw_objects = data.get("Objects") or data.get("objects") or []
+        objects = [AssistantToolCallRecord.model_validate(obj) for obj in raw_objects]
+        result = EnumerationResult[AssistantToolCallRecord].model_validate(data)
+        result.objects = objects
+        return result
+
+    def get_assistant_tool_call(
+        self, assistant_id: str, tool_call_record_id: str
+    ) -> AssistantToolCallRecord:
+        """Get one redacted assistant tool-call trace."""
+
+        response = self._request(
+            "GET",
+            f"/v1.0/assistants/{assistant_id}/tool-calls/{tool_call_record_id}",
+        )
+        return AssistantToolCallRecord.model_validate(response.json())
+
+    def delete_assistant_tool_calls(
+        self,
+        assistant_id: str,
+        max_results: int = 100,
+        continuation_token: Optional[str] = None,
+        tool_name: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        request_history_id: Optional[str] = None,
+        chat_history_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        success: Optional[bool] = None,
+        denied: Optional[bool] = None,
+        start_utc: Optional[str] = None,
+        end_utc: Optional[str] = None,
+    ) -> RequestHistoryDeleteResult:
+        """Delete assistant tool-call traces matching the supplied filters."""
+
+        params: dict[str, Any] = {"maxResults": max_results}
+        if continuation_token is not None:
+            params["continuationToken"] = continuation_token
+        if tool_name:
+            params["toolName"] = tool_name
+        if trace_id:
+            params["traceId"] = trace_id
+        if request_history_id:
+            params["requestHistoryId"] = request_history_id
+        if chat_history_id:
+            params["chatHistoryId"] = chat_history_id
+        if thread_id:
+            params["threadId"] = thread_id
+        if success is not None:
+            params["success"] = success
+        if denied is not None:
+            params["denied"] = denied
+        if start_utc:
+            params["startUtc"] = start_utc
+        if end_utc:
+            params["endUtc"] = end_utc
+
+        response = self._request(
+            "DELETE",
+            f"/v1.0/assistants/{assistant_id}/tool-calls",
+            params=params,
+        )
+        return RequestHistoryDeleteResult.model_validate(response.json())
+
+    def delete_assistant_tool_call(
+        self, assistant_id: str, tool_call_record_id: str
+    ) -> None:
+        """Delete one assistant tool-call trace."""
+
+        self._request(
+            "DELETE",
+            f"/v1.0/assistants/{assistant_id}/tool-calls/{tool_call_record_id}",
+        )
 
     def create_assistant(self, assistant: Assistant) -> Assistant:
         """Create a new assistant.
@@ -330,6 +524,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        attached_document_ids: Optional[list[str]] = None,
+        local_attachments: Optional[list[ChatLocalAttachment]] = None,
     ) -> ChatCompletionResponse:
         """Send a chat message and get a complete response.
 
@@ -341,6 +537,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
             temperature: Optional temperature for generation.
             top_p: Optional top-p for generation.
             max_tokens: Optional max tokens for generation.
+            attached_document_ids: Optional document IDs used to constrain retrieval.
+            local_attachments: Optional user-uploaded files for this chat turn.
 
         Returns:
             The chat completion response.
@@ -352,6 +550,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
+            attached_document_ids=attached_document_ids,
+            local_attachments=local_attachments,
         )
 
         headers: Optional[dict[str, str]] = None
@@ -376,6 +576,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        attached_document_ids: Optional[list[str]] = None,
+        local_attachments: Optional[list[ChatLocalAttachment]] = None,
     ) -> Iterator[str]:
         """Send a chat message and stream the response as SSE chunks.
 
@@ -387,6 +589,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
             temperature: Optional temperature for generation.
             top_p: Optional top-p for generation.
             max_tokens: Optional max tokens for generation.
+            attached_document_ids: Optional document IDs used to constrain retrieval.
+            local_attachments: Optional user-uploaded files for this chat turn.
 
         Yields:
             Raw SSE data strings as they arrive from the server.
@@ -398,6 +602,8 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
+            attached_document_ids=attached_document_ids,
+            local_attachments=local_attachments,
         )
 
         extra_headers: dict[str, str] = {}
@@ -1587,6 +1793,14 @@ class AssistantHubClient(AssistantHubClientParityMixin, BaseClient):
         """
         response = self._request("GET", "/v1.0/configuration")
         return response.json()
+
+    def get_external_search_status(self) -> ExternalSearchConfigurationStatus:
+        """Get redacted external-search configuration status.
+
+        Requires global admin privileges.
+        """
+        response = self._request("GET", "/v1.0/configuration/external-search/status")
+        return ExternalSearchConfigurationStatus.model_validate(response.json())
 
     def update_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """Update the server configuration.

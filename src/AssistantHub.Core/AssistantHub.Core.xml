@@ -104,6 +104,11 @@
             Chat history performance event identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.AssistantToolCallRecordIdentifierPrefix">
+            <summary>
+            Assistant tool-call record identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.TenantIdentifierPrefix">
             <summary>
             Tenant identifier prefix.
@@ -307,6 +312,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistoryPerformanceEvent">
             <summary>
             Chat history performance event methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantToolCall">
+            <summary>
+            Assistant tool-call trace methods.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.RequestHistory">
@@ -681,6 +691,56 @@
             <param name="assistantId">Assistant identifier.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods">
+            <summary>
+            Assistant tool-call trace database methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.CreateAsync(AssistantHub.Core.Models.AssistantToolCallRecord,System.Threading.CancellationToken)">
+            <summary>
+            Create a tool-call record.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantToolCallRecord},System.Threading.CancellationToken)">
+            <summary>
+            Create multiple tool-call records.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a tool-call record by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate tool-call records.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            List tool-call records for a chat history row.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.AttachChatHistoryIdByTraceIdAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Attach a persisted chat history ID to records with the matching trace ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a tool-call record by ID.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.DeleteByFilterAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete tool-call records matching the supplied scoped filter.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantToolCallMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete expired tool-call records.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IChatHistoryMethods">
             <summary>
@@ -1475,6 +1535,46 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods">
+            <summary>
+            MySQL assistant tool-call trace methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.CreateAsync(AssistantHub.Core.Models.AssistantToolCallRecord,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantToolCallRecord},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.AttachChatHistoryIdByTraceIdAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.DeleteByFilterAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantToolCallMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.ChatHistoryMethods">
             <summary>
             MySQL chat history methods implementation.
@@ -1944,6 +2044,46 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods">
+            <summary>
+            PostgreSQL assistant tool-call trace methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.CreateAsync(AssistantHub.Core.Models.AssistantToolCallRecord,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantToolCallRecord},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.AttachChatHistoryIdByTraceIdAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.DeleteByFilterAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantToolCallMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.ChatHistoryMethods">
@@ -2423,6 +2563,43 @@
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods">
+            <summary>
+            SQLite assistant tool-call trace methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.CreateAsync(AssistantHub.Core.Models.AssistantToolCallRecord,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantToolCallRecord},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.AttachChatHistoryIdByTraceIdAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.DeleteByFilterAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantToolCallMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.ChatHistoryMethods">
             <summary>
             SQLite chat history methods implementation.
@@ -2831,6 +3008,11 @@
             Add the retrieval gate inference endpoint ID column.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn">
+            <summary>
+            Add the tool-routing inference endpoint ID column.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn">
             <summary>
             Add the query rewrite inference endpoint ID column.
@@ -2839,6 +3021,36 @@
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn">
             <summary>
             Add the rerank inference endpoint ID column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn">
+            <summary>
+            Add the load-models-on-chat-open column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsExposeThinkingColumn">
+            <summary>
+            Add the expose-thinking column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsToolPolicyJsonColumn">
+            <summary>
+            Add the assistant tool policy JSON column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsEnableDocumentAttachmentsColumn">
+            <summary>
+            Add the document-attachments enablement column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsDocumentAttachmentMaxCountColumn">
+            <summary>
+            Add the document-attachment maximum-count column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsExposeDocumentSourceUrlsColumn">
+            <summary>
+            Add the document source URL exposure column.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexTenantIdColumn">
@@ -2881,6 +3093,16 @@
             Add the performance JSON column to chat history.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryAttachedDocumentIdsJsonColumn">
+            <summary>
+            Add the attached-document IDs JSON column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryAttachedDocumentsJsonColumn">
+            <summary>
+            Add the attached-documents JSON column to chat history.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddRequestHistoryTraceIdColumn">
             <summary>
             Add the trace ID column to request history.
@@ -2894,6 +3116,51 @@
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn">
             <summary>
             Add the assistant ID column to chat history performance events.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsTurnIndexColumn">
+            <summary>
+            Add the tool-call turn-index column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsResultSummaryJsonColumn">
+            <summary>
+            Add the tool-call result-summary JSON column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsInputBytesColumn">
+            <summary>
+            Add the tool-call redacted input byte-count column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsOutputBytesColumn">
+            <summary>
+            Add the tool-call redacted output byte-count column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsErrorTypeColumn">
+            <summary>
+            Add the tool-call stable error-type column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsProviderColumn">
+            <summary>
+            Add the tool-call provider column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsModelColumn">
+            <summary>
+            Add the tool-call model column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsActiveColumn">
+            <summary>
+            Add the tool-call active flag column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantToolCallsLastUpdateUtcColumn">
+            <summary>
+            Add the tool-call last-update timestamp column.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.BackfillChatHistoryPerformanceEventsAssistantId">
@@ -3085,6 +3352,46 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantSettingsMethods.DeleteByAssistantIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods">
+            <summary>
+            SQL Server assistant tool-call trace methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.CreateAsync(AssistantHub.Core.Models.AssistantToolCallRecord,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantToolCallRecord},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.ReadAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.EnumerateAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.ListByChatHistoryIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.AttachChatHistoryIdByTraceIdAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.DeleteByFilterAsync(System.String,AssistantHub.Core.Models.EnumerationQuery,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantToolCallMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.ChatHistoryMethods">
@@ -3585,6 +3892,11 @@
             Processing.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.StoringText">
+            <summary>
+            Storing extracted text.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Enums.DocumentStatusEnum.ProcessingChunks">
             <summary>
             Processing chunks.
@@ -3685,6 +3997,26 @@
             Gemini.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Enums.NfsVersionEnum">
+            <summary>
+            NFS protocol version enumeration.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.NfsVersionEnum.V2">
+            <summary>
+            NFS version 2.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.NfsVersionEnum.V3">
+            <summary>
+            NFS version 3.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.NfsVersionEnum.V4">
+            <summary>
+            NFS version 4.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Enums.RepositoryTypeEnum">
             <summary>
             Repository type enumeration.
@@ -3693,6 +4025,16 @@
         <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.Web">
             <summary>
             Web.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.CIFS">
+            <summary>
+            Common Internet File System file server.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.NFS">
+            <summary>
+            Network File System file server.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Enums.ScheduleIntervalEnum">
@@ -4004,6 +4346,12 @@
             Generate a chat history performance event identifier.
             </summary>
             <returns>Chat history performance event identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantToolCallRecordId">
+            <summary>
+            Generate an assistant tool-call record identifier.
+            </summary>
+            <returns>Assistant tool-call record identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewCrawlPlanId">
             <summary>
@@ -4852,6 +5200,46 @@
             Model.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ToolCallCount">
+            <summary>
+            Number of tool calls in the request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ToolFailureCount">
+            <summary>
+            Number of failed non-denied tool calls in the request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ToolDeniedCount">
+            <summary>
+            Number of policy-denied tool calls in the request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ToolTruncatedCount">
+            <summary>
+            Number of truncated tool outputs in the request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.ToolDurationMs">
+            <summary>
+            Aggregate tool duration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.SlowestToolName">
+            <summary>
+            Slowest tool name, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.SlowestToolDurationMs">
+            <summary>
+            Slowest tool aggregate duration, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantAnalyticsSlowRequest.FailingToolNames">
+            <summary>
+            Tool names with at least one failure or denial.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantAnalyticsStageBucket">
             <summary>
             Stage summary bucket.
@@ -5089,6 +5477,59 @@
             <param name="row">Data row.</param>
             <returns>AssistantDocument instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.AssistantDocumentSelectionItem">
+            <summary>
+            Safe public metadata for documents that may be selected in assistant chat.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.Id">
+            <summary>
+            Assistant document identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.Name">
+            <summary>
+            Display name for the document.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.OriginalFilename">
+            <summary>
+            Original filename as uploaded or crawled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.ContentType">
+            <summary>
+            MIME content type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.SizeBytes">
+            <summary>
+            Size in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.SourceUrl">
+            <summary>
+            Source URL when explicitly allowed by assistant settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.CreatedUtc">
+            <summary>
+            Creation timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocumentSelectionItem.LastUpdateUtc">
+            <summary>
+            Last update timestamp.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantDocumentSelectionItem.FromDocument(AssistantHub.Core.Models.AssistantDocument,System.Boolean)">
+            <summary>
+            Create safe selection metadata from a document.
+            </summary>
+            <param name="document">Document.</param>
+            <param name="includeSourceUrl">Include source URL.</param>
+            <returns>Safe selection item.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantFeedback">
             <summary>
             Assistant feedback record.
@@ -5155,6 +5596,96 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>AssistantFeedback instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantModelToolCall">
+            <summary>
+            Provider-neutral representation of a model-requested tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolCall.Id">
+            <summary>
+            Provider-supplied tool call identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolCall.Type">
+            <summary>
+            Tool call type. OpenAI-compatible providers use "function".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolCall.Function">
+            <summary>
+            Function payload.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantModelToolDefinition">
+            <summary>
+            Provider-neutral tool definition using the OpenAI-compatible function shape.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolDefinition.Type">
+            <summary>
+            Tool type. OpenAI-compatible providers use "function".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolDefinition.Function">
+            <summary>
+            Function definition.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantModelToolFunctionCall">
+            <summary>
+            Function payload for a model-requested tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolFunctionCall.Name">
+            <summary>
+            Function/tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolFunctionCall.Arguments">
+            <summary>
+            JSON-serialized function/tool arguments.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantModelToolFunctionDefinition">
+            <summary>
+            Function definition exposed to a tool-capable model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolFunctionDefinition.Name">
+            <summary>
+            Function/tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolFunctionDefinition.Description">
+            <summary>
+            Human-readable function/tool description.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolFunctionDefinition.Parameters">
+            <summary>
+            JSON Schema object describing function/tool parameters.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantModelToolOutput">
+            <summary>
+            Provider-neutral representation of a server-side tool output sent back to a model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolOutput.ToolCallId">
+            <summary>
+            Tool call identifier this output answers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolOutput.Name">
+            <summary>
+            Tool/function name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantModelToolOutput.Content">
+            <summary>
+            JSON-serialized tool output content.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.AssistantPerformanceClientTimings">
             <summary>
@@ -5484,6 +6015,21 @@
             "Public" (unauthenticated server-proxied download).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableDocumentAttachments">
+            <summary>
+            Whether public assistant chat users may attach completed documents from the assistant collection.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.DocumentAttachmentMaxCount">
+            <summary>
+            Maximum number of documents that may be attached to one chat request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ExposeDocumentSourceUrls">
+            <summary>
+            Whether public document-selection responses may include source URLs.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CollectionId">
             <summary>
             Collection identifier for document retrieval.
@@ -5545,6 +6091,12 @@
             Completion endpoint identifier (references a managed Partio completion endpoint).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ToolRoutingInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used only for model-directed tool routing.
+            When null or empty, the primary inference endpoint is used.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalGateInferenceEndpointId">
             <summary>
             Completion endpoint identifier used for retrieval gate decisions.
@@ -5566,6 +6118,16 @@
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingEndpointId">
             <summary>
             Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.LoadModelsOnChatOpen">
+            <summary>
+            Whether to load or warm configured endpoint models when a chat window is opened.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ExposeThinking">
+            <summary>
+            Whether provider thinking/reasoning text may be exposed in public assistant chat.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.Title">
@@ -5630,6 +6192,16 @@
             Start-of-message indicator required for configured channel traffic.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ToolPolicyJson">
+            <summary>
+            JSON-serialized AssistantToolPolicy controlling model-directed server-side tools.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ToolPolicy">
+            <summary>
+            Parsed AssistantToolPolicy controlling model-directed server-side tools.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.CreatedUtc">
             <summary>
             Timestamp when the record was created in UTC.
@@ -5672,6 +6244,16 @@
             Total token count, when reported or estimated.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.Reasoning">
+            <summary>
+            Reasoning token count, when reported by the provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.ToolDefinitions">
+            <summary>
+            Tool-definition token count, when reported by the provider.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.PromptEvalCount">
             <summary>
             Provider prompt-evaluation token count, when reported.
@@ -5680,6 +6262,943 @@
         <member name="P:AssistantHub.Core.Models.AssistantTokenUsageTelemetry.EvalCount">
             <summary>
             Provider generation token count, when reported.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolCallRecord">
+            <summary>
+            Redacted persistent trace for one model-directed assistant tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Id">
+            <summary>
+            Record identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ChatHistoryId">
+            <summary>
+            Chat history identifier, populated after chat history is persisted when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.RequestHistoryId">
+            <summary>
+            Request history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.TraceId">
+            <summary>
+            Trace identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ThreadId">
+            <summary>
+            Thread identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Origin">
+            <summary>
+            Request origin, such as web or slack.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.TurnIndex">
+            <summary>
+            Zero-based chat turn index when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Iteration">
+            <summary>
+            One-based tool-loop iteration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.SequenceNumber">
+            <summary>
+            One-based sequence number within the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ProviderToolCallId">
+            <summary>
+            Provider-supplied tool call identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ToolName">
+            <summary>
+            Tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ArgumentsJson">
+            <summary>
+            Redacted JSON arguments.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.OutputJson">
+            <summary>
+            Redacted JSON output summary or truncated model-visible output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ResultSummaryJson">
+            <summary>
+            Redacted compact result summary JSON.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Success">
+            <summary>
+            Whether the tool succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Denied">
+            <summary>
+            Whether the tool was denied before execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Truncated">
+            <summary>
+            Whether the tool output was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.OutputCharacters">
+            <summary>
+            Tool output characters before truncation wrapping.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.InputBytes">
+            <summary>
+            Redacted input byte count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.OutputBytes">
+            <summary>
+            Redacted output byte count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.DurationMs">
+            <summary>
+            Duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ErrorType">
+            <summary>
+            Stable error type when the tool failed or was denied.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.ErrorMessage">
+            <summary>
+            Safe error message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Provider">
+            <summary>
+            Provider used for the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Model">
+            <summary>
+            Model used for the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.Active">
+            <summary>
+            Whether the trace record is active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.StartedUtc">
+            <summary>
+            UTC timestamp when the tool call started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.FinishedUtc">
+            <summary>
+            UTC timestamp when the tool call finished.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.CreatedUtc">
+            <summary>
+            UTC timestamp when the row was created.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolCallRecord.LastUpdateUtc">
+            <summary>
+            UTC timestamp when the row was last updated.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantToolCallRecord.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Build a record from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>Record.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolDescriptor">
+            <summary>
+            Effective server-side tool availability for an assistant.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.ToolName">
+            <summary>
+            Stable model-facing tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.DisplayName">
+            <summary>
+            Human-readable display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.Category">
+            <summary>
+            Tool category.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.EnabledByPolicy">
+            <summary>
+            Whether the assistant policy enables this tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.Available">
+            <summary>
+            Whether the tool is available after server prerequisites are checked.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolDescriptor.UnavailableReason">
+            <summary>
+            Non-secret reason why the tool is unavailable.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolExecutionRequest">
+            <summary>
+            Request to execute a server-side assistant tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionRequest.ToolName">
+            <summary>
+            Stable model-facing tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionRequest.ArgumentsJson">
+            <summary>
+            JSON-serialized tool arguments.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolExecutionResult">
+            <summary>
+            Result of executing a server-side assistant tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.ToolName">
+            <summary>
+            Stable model-facing tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.Success">
+            <summary>
+            Whether the tool call succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.Denied">
+            <summary>
+            Whether execution was denied before calling an external service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.Truncated">
+            <summary>
+            Whether the serialized output was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.OutputCharacters">
+            <summary>
+            Output character count before truncation wrapping.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.DurationMs">
+            <summary>
+            Tool execution duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.OutputJson">
+            <summary>
+            JSON-serialized output for the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.ErrorMessage">
+            <summary>
+            Safe human-readable error message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.ErrorCode">
+            <summary>
+            Stable machine-readable error code.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.CreditsUsed">
+            <summary>
+            Provider usage credits when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.ProviderLatencyMs">
+            <summary>
+            Provider-reported latency in milliseconds when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.ObjectBytesReturned">
+            <summary>
+            Object bytes returned by storage-backed tools when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolExecutionResult.CreatedUtc">
+            <summary>
+            UTC creation timestamp.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolPolicy">
+            <summary>
+            Administrator-controlled policy for server-side tools exposed to a model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableToolCalls">
+            <summary>
+            Master switch for model-directed server-side tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxToolIterations">
+            <summary>
+            Maximum tool-call loop iterations allowed for one chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxToolCallsPerTurn">
+            <summary>
+            Maximum individual tool calls allowed for one chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ToolChoiceMode">
+            <summary>
+            Model tool-choice behavior requested from compatible endpoints.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxParallelToolCalls">
+            <summary>
+            Maximum parallel tool calls allowed in one model response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowParallelToolCalls">
+            <summary>
+            Allow parallel tool calls. First release defaults to sequential execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ToolCallTimeoutMs">
+            <summary>
+            Per-tool timeout in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxToolOutputChars">
+            <summary>
+            Maximum characters returned to the model from a single tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxToolOutputCharactersPerTurn">
+            <summary>
+            Maximum aggregate tool-output characters returned to the model in one chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxToolResultItems">
+            <summary>
+            Maximum model-visible result items returned by tools when a tool supports item limits.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ExposeToolTraceToUser">
+            <summary>
+            Expose safe tool traces to non-admin users.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.PersistToolArguments">
+            <summary>
+            Persist redacted tool arguments for administrator diagnostics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.PersistToolOutputs">
+            <summary>
+            Persist full tool outputs. First release stores metadata/summaries by default.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.RequireCitationsForToolEvidence">
+            <summary>
+            Require citations for tool-derived evidence where the tool can provide them.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedToolNames">
+            <summary>
+            Optional final allow-list of model-visible tool names.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableToolFeedbackEvents">
+            <summary>
+            Whether streaming chat clients may receive safe tool-progress events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableSlackToolProgressMessages">
+            <summary>
+            Whether Slack channels receive safe tool-progress lifecycle messages.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableCollectionSearchTool">
+            <summary>
+            Enable exhaustive or bounded collection search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableCollectionReadChunksTool">
+            <summary>
+            Enable exact collection chunk reads by document ID and position.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableVerbexFullTextSearchTool">
+            <summary>
+            Enable Verbex full-text search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableS3ObjectReadTool">
+            <summary>
+            Enable safe S3 object reads.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableDocumentAtomExtractionTool">
+            <summary>
+            Enable DocumentAtom extraction against assistant documents and per-turn local attachments.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableCollectionEnumerateDocumentsTool">
+            <summary>
+            Enable assistant collection document enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableCollectionEnumerationTool">
+            <summary>
+            Alias for enabling assistant collection document enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableIndexEnumerateRecordsTool">
+            <summary>
+            Enable Verbex index record enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableBucketEnumerateObjectsTool">
+            <summary>
+            Enable S3 bucket object enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableWebSearchTool">
+            <summary>
+            Enable Tavily-backed web search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.TavilyEndpoint">
+            <summary>
+            Assistant-level Tavily endpoint override. Empty uses the system-level provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.TavilyApiKey">
+            <summary>
+            Assistant-level Tavily API key override. Empty uses the system-level provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxSearchResultsPerCall">
+            <summary>
+            Maximum search results a model may request in one tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxSearchTopK">
+            <summary>
+            Maximum search top-k allowed for collection search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxSearchQueriesPerCall">
+            <summary>
+            Maximum search queries a model may submit in one collection search call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxDocumentsConsideredPerSearch">
+            <summary>
+            Maximum assistant-visible documents a collection search may consider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxResultsConsideredPerSearch">
+            <summary>
+            Maximum raw retrieval results a collection search may consider across all search passes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableServerGeneratedQueryVariants">
+            <summary>
+            Allow the server to add deterministic query variants for collection search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxChunksPerRead">
+            <summary>
+            Maximum exact collection chunks returned by one read call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxReadRangesPerCall">
+            <summary>
+            Maximum chunk ranges accepted in one collection read request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxNeighborWindow">
+            <summary>
+            Maximum neighbor window for chunk reads and retrieval searches.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedSearchModes">
+            <summary>
+            Search modes that collection search may use.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.DefaultSearchMode">
+            <summary>
+            Optional default search mode override for collection search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowModelDocumentIdFilter">
+            <summary>
+            Allow the model to narrow collection searches by assistant document ID.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ReturnLabels">
+            <summary>
+            Return document labels in model-visible tool output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ReturnTags">
+            <summary>
+            Return document tags in model-visible tool output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ReturnFullSearchContent">
+            <summary>
+            Return full collection search chunk content. Defaults to excerpts only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowNonCompletedDocumentMetadata">
+            <summary>
+            Permit non-completed document metadata to be visible in enumeration tools.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableVerbexSearchTool">
+            <summary>
+            Alias for enabling Verbex full-text search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.EnableIndexEnumerationTool">
+            <summary>
+            Alias for enabling Verbex index enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.DefaultIndexId">
+            <summary>
+            Optional default Verbex index identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxVerbexResults">
+            <summary>
+            Maximum Verbex search/enumeration results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowRawIndexRecords">
+            <summary>
+            Permit raw Verbex record details in model-visible responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.RequireDocumentMapping">
+            <summary>
+            Require Verbex records to map back to assistant documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.ReturnVerbexRecordMetadata">
+            <summary>
+            Return Verbex record metadata in model-visible responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxObjectReadBytes">
+            <summary>
+            Maximum bytes returned by one S3 object read call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxAtomExtractionBytes">
+            <summary>
+            Maximum source bytes accepted by one DocumentAtom extraction call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxAtomExtractionCharacters">
+            <summary>
+            Maximum extracted text characters returned by one DocumentAtom extraction call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxObjectBytesPerTurn">
+            <summary>
+            Maximum aggregate object bytes returned in one chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxBucketEnumerationResults">
+            <summary>
+            Maximum S3 bucket enumeration results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowBucketWideObjectRead">
+            <summary>
+            Permit object reads outside document-backed objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.DocumentBackedObjectsOnly">
+            <summary>
+            Restrict object reads to document-backed objects.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.RedactObjectKeys">
+            <summary>
+            Redact S3 object keys in model-visible output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowBinaryObjectOutput">
+            <summary>
+            Permit base64 output for binary object reads.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowRawWebContent">
+            <summary>
+            Permit raw web content in Tavily responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowWebImages">
+            <summary>
+            Permit image URLs in Tavily responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowUngovernedWebAccess">
+            <summary>
+            Permit direct ungoverned URL retrieval tools when implemented.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowDocumentSourceUrls">
+            <summary>
+            Permit source URLs in model-visible document enumeration output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowDocumentMetadataDetails">
+            <summary>
+            Permit labels and tags in model-visible enumeration/search output.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedVerbexIndexIds">
+            <summary>
+            Allowed Verbex index IDs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedBucketNames">
+            <summary>
+            Allowed S3 bucket names for non-default bucket access.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedBucketPrefixes">
+            <summary>
+            Allowed S3 object key prefixes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedObjectSuffixes">
+            <summary>
+            Allowed S3 object suffixes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedContentTypes">
+            <summary>
+            Allowed S3/document content types.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedWebDomains">
+            <summary>
+            Allowed web-search domains.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.BlockedWebDomains">
+            <summary>
+            Blocked web-search domains.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowedProviders">
+            <summary>
+            Allowed web-search providers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxWebResults">
+            <summary>
+            Maximum web-search results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.SearchDepth">
+            <summary>
+            Default Tavily search depth.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowAdvancedSearchDepth">
+            <summary>
+            Permit Tavily advanced search depth.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.AllowNewsTopic">
+            <summary>
+            Permit Tavily news topic.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.RequireSafeSearch">
+            <summary>
+            Require safe-search behavior.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicy.MaxWebSearchesPerTurn">
+            <summary>
+            Maximum web-search calls per turn.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AssistantToolPolicy.Normalize">
+            <summary>
+            Normalize limits and collection properties to safe server-enforced ranges.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolPolicyTestResult">
+            <summary>
+            Result of an administrator dry-run diagnostic for assistant tool policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Success">
+            <summary>
+            Whether the dry-run diagnostics found no blocking issues.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Message">
+            <summary>
+            Human-readable diagnostic summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.InferenceEndpointId">
+            <summary>
+            Selected completion endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.ToolRoutingInferenceEndpointId">
+            <summary>
+            Configured tool-routing completion endpoint identifier, when it differs from the response endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EffectiveToolRoutingInferenceEndpointId">
+            <summary>
+            Effective completion endpoint identifier used for tool-routing diagnostics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointResolved">
+            <summary>
+            Whether the effective tool-routing completion endpoint was resolved.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointModel">
+            <summary>
+            Effective tool-routing endpoint model name, if resolved.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointApiFormat">
+            <summary>
+            Effective tool-routing endpoint API format, if resolved.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointActive">
+            <summary>
+            Whether the effective tool-routing endpoint is active, if resolved.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsToolCalling">
+            <summary>
+            Whether the effective tool-routing endpoint explicitly supports model tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointToolCallingApiFormat">
+            <summary>
+            Effective tool-routing endpoint tool-call wire format, if configured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsParallelToolCalls">
+            <summary>
+            Whether the effective tool-routing endpoint supports multiple tool calls in one model response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.EndpointSupportsStreamingToolCalls">
+            <summary>
+            Whether the effective tool-routing endpoint supports tool calls in streaming responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Validation">
+            <summary>
+            Validation result for the supplied draft policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Tools">
+            <summary>
+            Effective tool descriptors for the supplied draft policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Warnings">
+            <summary>
+            Non-blocking diagnostic warnings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.Errors">
+            <summary>
+            Blocking diagnostic errors.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyTestResult.ErrorCodes">
+            <summary>
+            Stable machine-readable diagnostic error codes.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolPolicyValidationRequest">
+            <summary>
+            Request to validate an assistant tool policy without persisting it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationRequest.ToolPolicyJson">
+            <summary>
+            JSON-serialized AssistantToolPolicy to validate.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationRequest.ToolPolicy">
+            <summary>
+            Parsed policy to validate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolPolicyValidationResult">
+            <summary>
+            Result of validating an assistant tool policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.Success">
+            <summary>
+            Whether validation succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.Message">
+            <summary>
+            Human-readable validation message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.ToolPolicyJson">
+            <summary>
+            Normalized JSON-serialized AssistantToolPolicy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.ToolPolicy">
+            <summary>
+            Normalized parsed AssistantToolPolicy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.Tools">
+            <summary>
+            Effective tools if the policy were applied.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.Errors">
+            <summary>
+            Validation errors.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolPolicyValidationResult.ErrorCodes">
+            <summary>
+            Stable machine-readable validation error codes.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantToolProgressEvent">
+            <summary>
+            Safe user-visible lifecycle event for a model-directed assistant tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.EventType">
+            <summary>
+            Stable event type, such as assistant.tool_call.started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.ToolCallId">
+            <summary>
+            Provider or server-assigned tool-call identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.ToolName">
+            <summary>
+            Stable model-facing tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.DisplayLabel">
+            <summary>
+            Short public display label for the tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.StatusCode">
+            <summary>
+            Stable status code for clients that localize labels.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.Iteration">
+            <summary>
+            One-based model/tool loop iteration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.SequenceNumber">
+            <summary>
+            One-based tool call sequence within the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.StartedUtc">
+            <summary>
+            UTC timestamp when the tool call started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.FinishedUtc">
+            <summary>
+            UTC timestamp when the tool call finished.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.DurationMs">
+            <summary>
+            Duration in milliseconds when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.ResultCount">
+            <summary>
+            Result count when the tool reports one.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.Truncated">
+            <summary>
+            Whether the output was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.Denied">
+            <summary>
+            Whether the tool was denied by policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.Success">
+            <summary>
+            Whether the tool succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantToolProgressEvent.Summary">
+            <summary>
+            Short safe status summary.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.AuthContext">
@@ -5879,6 +7398,26 @@
             Message content.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.Thinking">
+            <summary>
+            Optional provider thinking/reasoning text exposed only when the assistant permits it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.ToolCalls">
+            <summary>
+            Model-requested tool calls on an assistant message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.ToolCallId">
+            <summary>
+            Tool call identifier answered by a tool-role message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionMessage.Name">
+            <summary>
+            Optional tool/function name for tool-role messages.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionRequest">
             <summary>
             OpenAI-compatible chat completion request.
@@ -5917,6 +7456,16 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.MetadataFilter">
             <summary>
             Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.AttachedDocumentIds">
+            <summary>
+            Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRequest.LocalAttachments">
+            <summary>
+            Optional user-uploaded files attached to this chat turn.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionResponse">
@@ -5967,7 +7516,12 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.Citations">
             <summary>
             Citation metadata linking response claims to source documents.
-            Populated only when EnableCitations is true and RAG is active.
+            Populated when EnableCitations is true and RAG or tool-derived evidence contributes citation sources.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionResponse.ToolCalls">
+            <summary>
+            Optional safe metadata for model-directed server-side tool calls.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionRetrieval">
@@ -6005,9 +7559,109 @@
             Number of chunks that survived re-ranking.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AttachedDocumentIds">
+            <summary>
+            Attached document identifiers used to constrain retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AttachedDocuments">
+            <summary>
+            Safe metadata for attached documents used to constrain retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.DocumentFilterApplied">
+            <summary>
+            Indicates whether retrieval was constrained by attached document identifiers.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
             <summary>
             The retrieved context chunks with source identification.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionToolTrace">
+            <summary>
+            Safe chat-completion extension metadata for a model-directed assistant tool call.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.ToolCallId">
+            <summary>
+            Provider or server-assigned tool-call identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.ToolName">
+            <summary>
+            Stable model-facing tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.DisplayLabel">
+            <summary>
+            Short public display label for the tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.Iteration">
+            <summary>
+            One-based model/tool loop iteration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.SequenceNumber">
+            <summary>
+            One-based tool call sequence within the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.Success">
+            <summary>
+            Whether the tool succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.Denied">
+            <summary>
+            Whether the tool was denied by policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.Truncated">
+            <summary>
+            Whether output was truncated.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.OutputCharacters">
+            <summary>
+            Output character count before final wrapping.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.ResultCount">
+            <summary>
+            Safe count of result items returned by the tool, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.CreditsUsed">
+            <summary>
+            Provider usage credits when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.ProviderLatencyMs">
+            <summary>
+            Provider-reported latency in milliseconds when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.DurationMs">
+            <summary>
+            Duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.Summary">
+            <summary>
+            Short safe status summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.StartedUtc">
+            <summary>
+            UTC timestamp when the tool call started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionToolTrace.FinishedUtc">
+            <summary>
+            UTC timestamp when the tool call finished.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionUsage">
@@ -6033,6 +7687,81 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.ContextWindow">
             <summary>
             Total context window size in tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.ReasoningTokens">
+            <summary>
+            Reasoning tokens reported directly by the provider, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.ToolDefinitionTokens">
+            <summary>
+            Tokens attributed to tool definitions, when reported by a compatible provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.ToolTokens">
+            <summary>
+            Alternate provider field for tokens attributed to tool definitions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.PromptTokensDetails">
+            <summary>
+            Provider-specific prompt token details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionUsage.CompletionTokensDetails">
+            <summary>
+            Provider-specific completion token details.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionPromptTokensDetails">
+            <summary>
+            Provider-specific prompt token details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionPromptTokensDetails.CachedTokens">
+            <summary>
+            Cached prompt tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionPromptTokensDetails.AudioTokens">
+            <summary>
+            Audio prompt tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionPromptTokensDetails.ToolDefinitionTokens">
+            <summary>
+            Tokens attributed to tool definitions, when reported in prompt details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionPromptTokensDetails.ToolTokens">
+            <summary>
+            Alternate provider field for tokens attributed to tool definitions.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ChatCompletionCompletionTokensDetails">
+            <summary>
+            Provider-specific completion token details.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCompletionTokensDetails.ReasoningTokens">
+            <summary>
+            Reasoning tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCompletionTokensDetails.AudioTokens">
+            <summary>
+            Audio completion tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCompletionTokensDetails.AcceptedPredictionTokens">
+            <summary>
+            Accepted prediction tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionCompletionTokensDetails.RejectedPredictionTokens">
+            <summary>
+            Rejected prediction tokens.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.ChatHistory">
@@ -6203,6 +7932,18 @@
             <summary>
             JSON-serialized effective ChatMetadataFilter that was applied during retrieval.
             Null when no filters were active.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AttachedDocumentIdsJson">
+            <summary>
+            JSON-serialized AssistantDocument.Id values attached to this chat turn.
+            Null when no document attachment filter was applied.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AttachedDocumentsJson">
+            <summary>
+            JSON-serialized safe document metadata attached to this chat turn.
+            Null when no document attachment filter was applied.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.Origin">
@@ -6472,6 +8213,31 @@
             Build an event from a data row.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.ChatLocalAttachment">
+            <summary>
+            User-supplied file attachment for a single chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Name">
+            <summary>
+            Display filename.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.ContentType">
+            <summary>
+            MIME content type, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Base64Content">
+            <summary>
+            Base64-encoded file bytes. May be a raw base64 string or data URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatLocalAttachment.Text">
+            <summary>
+            Plain text content supplied directly by an SDK client.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatMetadataFilter">
             <summary>
             Metadata filter for controlling which documents are included during RAG retrieval.
@@ -6591,6 +8357,45 @@
             Value to compare against.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.CifsCrawlRepositorySettings">
+            <summary>
+            CIFS crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsHostname">
+            <summary>
+            CIFS hostname or IP address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsUsername">
+            <summary>
+            CIFS username.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsPassword">
+            <summary>
+            CIFS password.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsShareName">
+            <summary>
+            CIFS share name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.IncludeSubdirectories">
+            <summary>
+            Include files in subdirectories while crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CifsCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CifsCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.CitationSource">
             <summary>
             A single source document in the citation manifest.
@@ -6601,9 +8406,19 @@
             1-based index matching the bracket notation [N] used in the response text.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.SourceType">
+            <summary>
+            Source category, for example document or web.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.CitationSource.DocumentId">
             <summary>
             The document identifier (maps to AssistantDocument.Id).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Url">
+            <summary>
+            Source URL for web evidence or document metadata when available.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.CitationSource.DocumentName">
@@ -6701,6 +8516,26 @@
         <member name="P:AssistantHub.Core.Models.CompletionCallDetail.TimestampUtc">
             <summary>
             UTC timestamp when the call was initiated.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.CrawlConnectivityResult">
+            <summary>
+            Crawl repository connectivity test result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlConnectivityResult.Success">
+            <summary>
+            True when the repository was reachable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CrawlConnectivityResult.Message">
+            <summary>
+            Human-readable connectivity status.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlConnectivityResult.#ctor">
+            <summary>
+            Instantiate.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CrawlFilterSettings">
@@ -7046,6 +8881,17 @@
             <param name="row">Data row.</param>
             <returns>CrawlPlan instance or null.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Models.CrawlPlan.NormalizeRepositorySettings">
+            <summary>
+            Normalize repository settings using the selected repository type.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlPlan.ValidateRepositorySettings">
+            <summary>
+            Validate repository settings.
+            </summary>
+            <returns>Validation errors.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.CrawlRepositorySettings">
             <summary>
             Base class for crawl repository settings.
@@ -7060,6 +8906,12 @@
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.CrawlRepositorySettings.Validate">
+            <summary>
+            Validate repository settings.
+            </summary>
+            <returns>Validation errors.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.CrawlRepositorySettingsConverter">
             <summary>
@@ -7652,6 +9504,46 @@
             Filter by thread identifier.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.RequestHistoryIdFilter">
+            <summary>
+            Filter by request-history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.ChatHistoryIdFilter">
+            <summary>
+            Filter by chat-history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.TraceIdFilter">
+            <summary>
+            Filter by trace identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.ToolNameFilter">
+            <summary>
+            Filter by tool name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.SuccessFilter">
+            <summary>
+            Filter by success flag.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.DeniedFilter">
+            <summary>
+            Filter by denied flag.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.StartUtc">
+            <summary>
+            Filter by created UTC lower bound.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EnumerationQuery.EndUtc">
+            <summary>
+            Filter by created UTC upper bound.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.EnumerationQuery.#ctor">
             <summary>
             Instantiate.
@@ -8129,6 +10021,21 @@
             The generated response content, or null on failure.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.Thinking">
+            <summary>
+            Optional provider thinking/reasoning text, when returned separately from visible content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.ToolCalls">
+            <summary>
+            Model-requested tool calls, if the provider finished with tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.InferenceResult.FinishReason">
+            <summary>
+            Provider finish reason, such as stop, length, tool_calls, or error.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.InferenceResult.ErrorMessage">
             <summary>
             Error message describing what went wrong, or null on success.
@@ -8144,12 +10051,15 @@
             Instantiate.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String,AssistantHub.Core.Models.AssistantPerformanceStage)">
+        <member name="M:AssistantHub.Core.Models.InferenceResult.FromSuccess(System.String,AssistantHub.Core.Models.AssistantPerformanceStage,System.String,System.Collections.Generic.List{AssistantHub.Core.Models.AssistantModelToolCall},System.String)">
             <summary>
             Create a successful result.
             </summary>
             <param name="content">Generated response content.</param>
             <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
+            <param name="finishReason">Provider finish reason.</param>
+            <param name="toolCalls">Model-requested tool calls.</param>
+            <param name="thinking">Optional provider thinking/reasoning text.</param>
             <returns>InferenceResult.</returns>
         </member>
         <member name="M:AssistantHub.Core.Models.InferenceResult.FromError(System.String,AssistantHub.Core.Models.AssistantPerformanceStage)">
@@ -8417,6 +10327,64 @@
             <param name="config">Configuration to validate.</param>
             <returns>List of validation error messages (empty if valid).</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.JsonStringOrRawJsonConverter">
+            <summary>
+            Reads either a JSON string or a raw JSON value into a string.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.JsonStringOrRawJsonConverter.Read(System.Text.Json.Utf8JsonReader@,System.Type,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Models.JsonStringOrRawJsonConverter.Write(System.Text.Json.Utf8JsonWriter,System.String,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Models.NfsCrawlRepositorySettings">
+            <summary>
+            NFS crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsHostname">
+            <summary>
+            NFS hostname or IP address.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsUserId">
+            <summary>
+            NFS user identifier.
+            Minimum: 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsGroupId">
+            <summary>
+            NFS group identifier.
+            Minimum: 0.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsShareName">
+            <summary>
+            NFS share name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsVersion">
+            <summary>
+            NFS protocol version.
+            Default: V3.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.IncludeSubdirectories">
+            <summary>
+            Include files in subdirectories while crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.NfsCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.NfsCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.OllamaChatStreamLine">
             <summary>
             Single JSON line from an Ollama streaming chat response.
@@ -8472,6 +10440,11 @@
             Message content.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.OllamaStreamMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.OpenAIStreamingChoice">
             <summary>
             Choice payload for an OpenAI streaming chat chunk.
@@ -8505,6 +10478,16 @@
         <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.Content">
             <summary>
             Delta content text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.Thinking">
+            <summary>
+            Delta provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.OpenAIStreamingDelta.ReasoningContent">
+            <summary>
+            OpenAI-compatible reasoning delta used by some models.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEmbedResponse">
@@ -8565,6 +10548,36 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaxConcurrentRequests">
             <summary>
             Maximum concurrent requests allowed for this endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.SupportsToolCalling">
+            <summary>
+            Whether this endpoint explicitly supports model tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.ToolCallingApiFormat">
+            <summary>
+            Tool-calling wire format, for example OpenAIChatCompletions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.SupportsParallelToolCalls">
+            <summary>
+            Whether this endpoint supports multiple tool calls in one assistant turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.SupportsStreamingToolCalls">
+            <summary>
+            Whether this endpoint supports tool calls while streaming responses.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Labels">
+            <summary>
+            Endpoint labels stored by Partio.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.Tags">
+            <summary>
+            Endpoint tags stored by Partio.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.HealthCheckEnabled">
@@ -8657,6 +10670,26 @@
             Maximum concurrent requests allowed for this endpoint.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.SupportsToolCalling">
+            <summary>
+            Whether this endpoint explicitly supports model tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.ToolCallingApiFormat">
+            <summary>
+            Tool-calling wire format, for example OpenAIChatCompletions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.SupportsParallelToolCalls">
+            <summary>
+            Whether this endpoint supports multiple tool calls in one assistant turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.SupportsStreamingToolCalls">
+            <summary>
+            Whether this endpoint supports tool calls while streaming responses.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.EnableRequestHistory">
             <summary>
             Whether request history is enabled.
@@ -8715,6 +10748,66 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.HealthCheckUseAuth">
             <summary>
             Whether auth is used on health checks.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEndpointToolMetadata">
+            <summary>
+            Maps AssistantHub tool-call capability fields to Partio endpoint labels and tags.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointToolMetadata.ToolCallingLabel">
+            <summary>
+            Label indicating that AssistantHub tool-call metadata is present.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointToolMetadata.SupportsToolCallingTag">
+            <summary>
+            Tag key for whether the endpoint supports tool calls.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointToolMetadata.ToolCallingApiFormatTag">
+            <summary>
+            Tag key for the tool-calling wire format.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointToolMetadata.SupportsParallelToolCallsTag">
+            <summary>
+            Tag key for parallel tool-call support.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointToolMetadata.SupportsStreamingToolCallsTag">
+            <summary>
+            Tag key for streaming tool-call support.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.RequestContainsToolCapabilityFields(System.String)">
+            <summary>
+            Return true when a raw endpoint request includes AssistantHub tool-call fields.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.JsonObjectContainsProperty(System.String,System.String)">
+            <summary>
+            Return true when a raw endpoint request includes a property.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.WriteRequestToolFieldsToTags(AssistantHub.Core.Models.PartioEndpointRequest)">
+            <summary>
+            Write AssistantHub tool-call request fields into Partio endpoint labels/tags.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.ReadTagsToToolFields(AssistantHub.Core.Models.PartioEndpointConfig)">
+            <summary>
+            Read AssistantHub tool-call fields from Partio endpoint labels/tags.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.ReadTagsToToolFields(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.PartioEndpointConfig})">
+            <summary>
+            Read AssistantHub tool-call fields from Partio endpoint labels/tags.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointToolMetadata.SerializePartioRequest(AssistantHub.Core.Models.PartioEndpointRequest)">
+            <summary>
+            Serialize an endpoint request for Partio, removing AssistantHub-only top-level tool fields.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEnumerationEnvelope`1">
@@ -9250,6 +11343,56 @@
             Optional metadata filter to restrict retrieval to documents matching specified labels and/or tags.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.DocumentIds">
+            <summary>
+            Optional AssistantDocument.Id values used to restrict retrieval to specific documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.HybridFallbackRan">
+            <summary>
+            Set by RetrievalService when a hybrid search falls back to vector-only retrieval.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.SearchProviderOptions">
+            <summary>
+            Provider-neutral search provider options.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.Name">
+            <summary>
+            Provider display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.ProviderType">
+            <summary>
+            Provider implementation type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.Endpoint">
+            <summary>
+            Provider endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.ApiKey">
+            <summary>
+            Provider API key or environment-variable placeholder.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.Enabled">
+            <summary>
+            Whether provider is enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.IsDefault">
+            <summary>
+            Whether provider is the default.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.SearchProviderOptions.TimeoutMs">
+            <summary>
+            Timeout in milliseconds.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.SlackVerificationCheck">
             <summary>
             Individual verification result.
@@ -9325,6 +11468,251 @@
             Socket Mode connectivity result.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.TavilyAutoParameters">
+            <summary>
+            Provider-selected Tavily search parameters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilyAutoParameters.Topic">
+            <summary>
+            Provider-selected topic.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilyAutoParameters.SearchDepth">
+            <summary>
+            Provider-selected search depth.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.TavilySearchImage">
+            <summary>
+            Image metadata returned by Tavily search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchImage.Url">
+            <summary>
+            Image URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchImage.Description">
+            <summary>
+            Optional image description.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.TavilySearchQuery">
+            <summary>
+            Tavily search query.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.Query">
+            <summary>
+            Query text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.SearchDepth">
+            <summary>
+            Tavily search depth, such as basic or advanced.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.Topic">
+            <summary>
+            Tavily topic, such as general or news.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.MaxResults">
+            <summary>
+            Maximum result count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.ChunksPerSource">
+            <summary>
+            Chunks per source.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.TimeRange">
+            <summary>
+            Optional relative time range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.StartDate">
+            <summary>
+            Optional start date formatted as yyyy-MM-dd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.EndDate">
+            <summary>
+            Optional end date formatted as yyyy-MM-dd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeAnswerMode">
+            <summary>
+            Include-answer mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeRawContentMode">
+            <summary>
+            Include-raw-content mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeImages">
+            <summary>
+            Whether to request images.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeImageDescriptions">
+            <summary>
+            Whether to request image descriptions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeFavicon">
+            <summary>
+            Whether to request favicons.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.Country">
+            <summary>
+            Optional country hint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.AutoParameters">
+            <summary>
+            Whether to allow Tavily auto-parameter selection.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.ExactMatch">
+            <summary>
+            Whether to require exact matching where supported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeUsage">
+            <summary>
+            Whether to request usage metadata.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.SafeSearch">
+            <summary>
+            Whether to request safe-search filtering.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.IncludeDomains">
+            <summary>
+            Domains to include.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchQuery.ExcludeDomains">
+            <summary>
+            Domains to exclude.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.TavilySearchQuery.Validate">
+            <summary>
+            Validate and normalize query fields.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.TavilySearchResponse">
+            <summary>
+            Normalized Tavily search response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.ProviderName">
+            <summary>
+            Provider name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.Query">
+            <summary>
+            Query echoed by the provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.Answer">
+            <summary>
+            Optional provider-generated answer.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.RequestId">
+            <summary>
+            Provider request identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.LatencySeconds">
+            <summary>
+            Provider latency in seconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.Results">
+            <summary>
+            Search results.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.Images">
+            <summary>
+            Top-level images.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.AutoParameters">
+            <summary>
+            Provider-selected parameters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResponse.Usage">
+            <summary>
+            Usage metadata.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.TavilySearchResult">
+            <summary>
+            Normalized Tavily search result item.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.Title">
+            <summary>
+            Result title.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.Url">
+            <summary>
+            Result URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.Content">
+            <summary>
+            Result snippet or summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.Score">
+            <summary>
+            Provider score.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.RawContent">
+            <summary>
+            Raw page content when requested and permitted.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.FaviconUrl">
+            <summary>
+            Favicon URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.PublishedAt">
+            <summary>
+            Published timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilySearchResult.Images">
+            <summary>
+            Result images.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.TavilyUsage">
+            <summary>
+            Tavily usage metadata.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.TavilyUsage.CreditsUsed">
+            <summary>
+            Credits used by the request.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.TenantMetadata">
             <summary>
             Tenant metadata record.
@@ -9381,6 +11769,91 @@
             </summary>
             <param name="row">Data row.</param>
             <returns>TenantMetadata instance or null.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ToolCapableInferenceRequest">
+            <summary>
+            Provider-neutral non-streaming inference request that may expose tools to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Messages">
+            <summary>
+            Chat messages.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Model">
+            <summary>
+            Model identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.MaxTokens">
+            <summary>
+            Maximum completion tokens.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Temperature">
+            <summary>
+            Sampling temperature.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.TopP">
+            <summary>
+            Top-p sampling value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Provider">
+            <summary>
+            Inference provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Endpoint">
+            <summary>
+            Provider endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.ApiKey">
+            <summary>
+            Provider API key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.Tools">
+            <summary>
+            Tool definitions to expose to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceRequest.ToolChoice">
+            <summary>
+            Tool choice mode. OpenAI-compatible providers commonly support "auto", "none", or "required".
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.ToolCapableInferenceResponse">
+            <summary>
+            Provider-neutral non-streaming inference response that may contain tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceResponse.Success">
+            <summary>
+            Whether inference succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceResponse.Content">
+            <summary>
+            Final assistant content, if returned.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceResponse.ToolCalls">
+            <summary>
+            Model-requested tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceResponse.FinishReason">
+            <summary>
+            Provider finish reason.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ToolCapableInferenceResponse.ErrorMessage">
+            <summary>
+            Error message, if inference failed.
+            </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.UserMaster">
             <summary>
@@ -9591,6 +12064,259 @@
             Instantiate.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Models.WebCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchProviderAttempt">
+            <summary>
+            One provider attempt in a web search request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.ProviderName">
+            <summary>
+            Provider name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.ProviderType">
+            <summary>
+            Provider type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.Success">
+            <summary>
+            Whether the attempt succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.DurationMs">
+            <summary>
+            Duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.ErrorMessage">
+            <summary>
+            Provider error message when failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderAttempt.CreditsUsed">
+            <summary>
+            Provider usage credits when available.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchProviderRegistration">
+            <summary>
+            Registered web search provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderRegistration.Name">
+            <summary>
+            Provider name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderRegistration.ProviderType">
+            <summary>
+            Provider type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchProviderRegistration.Options">
+            <summary>
+            Provider options.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchRequest">
+            <summary>
+            Provider-agnostic web search request.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.Query">
+            <summary>
+            Query text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.MaxResults">
+            <summary>
+            Maximum result count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.SearchDepth">
+            <summary>
+            Search depth, such as basic or advanced.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.Topic">
+            <summary>
+            Search topic, such as general or news.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.TimeRange">
+            <summary>
+            Optional relative time range.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.StartDate">
+            <summary>
+            Optional start date formatted yyyy-MM-dd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.EndDate">
+            <summary>
+            Optional end date formatted yyyy-MM-dd.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.IncludeAnswerMode">
+            <summary>
+            Include-answer mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.IncludeRawContentMode">
+            <summary>
+            Include-raw-content mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.IncludeImages">
+            <summary>
+            Whether to request images.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.IncludeImageDescriptions">
+            <summary>
+            Whether to request image descriptions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.Country">
+            <summary>
+            Optional country hint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.SafeSearch">
+            <summary>
+            Whether to request safe-search filtering.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.IncludeDomains">
+            <summary>
+            Domains to include.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchRequest.ExcludeDomains">
+            <summary>
+            Domains to exclude.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.WebSearchRequest.Normalize">
+            <summary>
+            Validate and normalize request fields.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchResponse">
+            <summary>
+            Provider-agnostic web search response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.ProviderName">
+            <summary>
+            Provider name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.Query">
+            <summary>
+            Query echoed by the provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.Answer">
+            <summary>
+            Optional answer summary.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.RequestId">
+            <summary>
+            Provider request identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.LatencySeconds">
+            <summary>
+            Provider latency in seconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.Results">
+            <summary>
+            Result items.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.Images">
+            <summary>
+            Top-level images.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.CreditsUsed">
+            <summary>
+            Provider usage credits when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResponse.Attempts">
+            <summary>
+            Provider attempts.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchResultItem">
+            <summary>
+            Provider-agnostic web search result item.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.Title">
+            <summary>
+            Result title.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.Url">
+            <summary>
+            Result URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.Content">
+            <summary>
+            Snippet or result content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.Score">
+            <summary>
+            Provider score.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.RawContent">
+            <summary>
+            Optional raw content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.FaviconUrl">
+            <summary>
+            Optional favicon URL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.PublishedAt">
+            <summary>
+            Optional publication timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchResultItem.Images">
+            <summary>
+            Result images.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.WebSearchServiceOptions">
+            <summary>
+            Options for provider-agnostic web search execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchServiceOptions.Providers">
+            <summary>
+            Registered providers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebSearchServiceOptions.MaxProviderAttempts">
+            <summary>
+            Maximum number of provider attempts.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Serialization.PartioHealthCheckMethodConverter">
             <summary>
             Converts Partio health check method values from either string or numeric enum form.
@@ -9692,7 +12418,7 @@
             Builds, serializes, and projects provider-agnostic assistant performance telemetry.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage)">
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatCompletionToolTrace},System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantPerformanceStage})">
             <summary>
             Build provider-agnostic performance telemetry for a chat history row.
             </summary>
@@ -9703,7 +12429,17 @@
             <param name="retrievalGateStage">Measured retrieval gate stage.</param>
             <param name="queryRewriteStage">Measured query rewrite stage.</param>
             <param name="rerankStage">Measured rerank stage.</param>
+            <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
+            <param name="toolModelStages">Model-call stages that decided whether to request tools.</param>
             <returns>Provider-agnostic performance telemetry.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.EnsureEstimatedToolModelStage(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
+            <summary>
+            Add a legacy estimated tool-model timing stage when a telemetry payload has tool execution and final inference,
+            but predates explicit per-iteration model timing capture.
+            </summary>
+            <param name="telemetry">Telemetry payload to normalize.</param>
+            <returns>True if an estimated stage was added.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Serialize(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
             <summary>
@@ -9790,6 +12526,25 @@
             <summary>
             A single chunk result from Partio v0.4.0.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.CifsRepositoryCrawler">
+            <summary>
+            CIFS repository crawler.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CifsRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
         </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.CrawledObject">
             <summary>
@@ -10070,6 +12825,13 @@
             <param name="token">Cancellation token.</param>
             <returns>List of crawled objects.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.GetConnectivityStatusAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get detailed connectivity status for the repository.
+            </summary>
+            <param name="token">Cancellation token.</param>
+            <returns>Connectivity result.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.StartAsync">
             <summary>
             Start the crawl operation.
@@ -10102,6 +12864,14 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.RetrieveDataAsync(AssistantHub.Core.Services.Crawlers.CrawledObject,System.Threading.CancellationToken)">
+            <summary>
+            Retrieve data for a crawled object.
+            </summary>
+            <param name="obj">Crawled object.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Object bytes.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.DeleteEnumerationFile(System.String)">
             <summary>
             Delete an enumeration file from disk.
@@ -10128,6 +12898,98 @@
             <param name="enumerationDirectory">Enumeration directory.</param>
             <param name="token">Cancellation token.</param>
             <returns>Crawler instance.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase">
+            <summary>
+            Base class for Blobject-backed file-server repository crawlers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken,Blobject.Core.BlobClientBase,System.Boolean,System.Boolean)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+            <param name="blob">Blobject client.</param>
+            <param name="includeSubdirectories">Include files in subdirectories.</param>
+            <param name="enableNetworkDiagnostics">Enable DNS and TCP port diagnostics.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken,System.Func{Blobject.Core.BlobClientBase},System.Boolean,System.Boolean)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+            <param name="blobFactory">Factory for creating the Blobject client.</param>
+            <param name="includeSubdirectories">Include files in subdirectories.</param>
+            <param name="enableNetworkDiagnostics">Enable DNS and TCP port diagnostics.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.ResolveEffectiveHostname(System.String)">
+            <summary>
+            Resolve the effective file-server hostname used from inside containerized deployments.
+            </summary>
+            <param name="hostname">Configured hostname.</param>
+            <returns>Effective hostname.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.ResolveEffectiveHostname(System.String,System.Boolean,System.Boolean)">
+            <summary>
+            Resolve the effective file-server hostname using supplied container context.
+            </summary>
+            <param name="hostname">Configured hostname.</param>
+            <param name="runningInContainer">True if AssistantHub is running inside a container.</param>
+            <param name="hostDockerInternalAvailable">True if host.docker.internal is resolvable.</param>
+            <returns>Effective hostname.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.EnumerateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.ValidateConnectivityAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.GetConnectivityStatusAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.EnumerateContentsAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RetrieveDataAsync(AssistantHub.Core.Services.Crawlers.CrawledObject,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.Dispose(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.NfsRepositoryCrawler">
+            <summary>
+            NFS repository crawler.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.NfsRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
         </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler">
             <summary>
@@ -10163,6 +13025,9 @@
             </summary>
             <param name="filename">Filename.</param>
             <returns>Always false.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.RetrieveDataAsync(AssistantHub.Core.Services.Crawlers.CrawledObject,System.Threading.CancellationToken)">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Services.DocumentAtomAtomizationService">
             <summary>
@@ -10246,6 +13111,81 @@
             <param name="judgePromptOverride">Optional judge prompt override for this run.</param>
             <param name="token">Cancellation token.</param>
             <returns>The created EvalRun.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ExternalSearchConfigurationHelper">
+            <summary>
+            Normalization, validation, and provider resolution helpers for external search settings.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.RedactedSecret">
+            <summary>
+            Redacted secret marker accepted by configuration update flows.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.Normalize(AssistantHub.Core.Settings.ExternalSearchSettings)">
+            <summary>
+            Normalize external-search settings in place.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.Validate(AssistantHub.Core.Settings.ExternalSearchSettings)">
+            <summary>
+            Validate external-search settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.ResolveConfiguredValue(System.String,System.Boolean)">
+            <summary>
+            Resolve a configured value that may contain an environment-variable reference.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.IsConfiguredTavilyProvider(AssistantHub.Core.Settings.ExternalSearchProviderSettings)">
+            <summary>
+            Determine whether a provider is an enabled, fully configured Tavily provider.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.IsConfiguredTavilyProvider(AssistantHub.Core.Settings.ExternalSearchProviderSettings,System.String@)">
+            <summary>
+            Determine whether a provider is an enabled, fully configured Tavily provider.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.ResolveAssistantTavilyProvider(System.String,System.String,System.Int32)">
+            <summary>
+            Resolve an assistant-level Tavily override into a provider.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.ResolveDefaultTavilyProvider(AssistantHub.Core.Settings.ExternalSearchSettings)">
+            <summary>
+            Resolve the default configured Tavily provider from system settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ExternalSearchConfigurationHelper.GetStatus(AssistantHub.Core.Settings.ExternalSearchSettings)">
+            <summary>
+            Build a safe summary of external-search configuration status.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ExternalSearchConfigurationStatus">
+            <summary>
+            Safe status summary for external-search configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ExternalSearchConfigurationStatus.Enabled">
+            <summary>
+            Whether external search is globally enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ExternalSearchConfigurationStatus.EnabledProviders">
+            <summary>
+            Enabled provider count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ExternalSearchConfigurationStatus.ConfiguredProviders">
+            <summary>
+            Fully configured provider count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ExternalSearchConfigurationStatus.MisconfiguredProviders">
+            <summary>
+            Enabled but incomplete provider count.
+            </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.GeminiModelEntry.Name">
             <summary>
@@ -10338,6 +13278,14 @@
             <param name="settings">Inference settings.</param>
             <param name="logging">Logging module.</param>
         </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.#ctor(AssistantHub.Core.Settings.InferenceSettings,SyslogLogging.LoggingModule,System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate with a caller-supplied HTTP client.
+            </summary>
+            <param name="settings">Inference settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="httpClient">HTTP client.</param>
+        </member>
         <member name="M:AssistantHub.Core.Services.InferenceService.ListModelsAsync">
             <summary>
             List models available on the configured inference provider.
@@ -10398,7 +13346,32 @@
             <param name="token">Cancellation token.</param>
             <returns>Inference result containing the response or error details.</returns>
         </member>
-        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Action{AssistantHub.Core.Models.AssistantPerformanceStage},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseWithToolsAsync(AssistantHub.Core.Models.ToolCapableInferenceRequest,System.Threading.CancellationToken)">
+            <summary>
+            Generate a non-streaming response from a tool-capable model.
+            </summary>
+            <param name="request">Provider-neutral tool-capable inference request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Inference result containing assistant content and/or model-requested tool calls.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseWithToolsAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantModelToolDefinition},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Generate a non-streaming response from a tool-capable model.
+            </summary>
+            <param name="messages">List of chat completion messages.</param>
+            <param name="model">Model name or identifier.</param>
+            <param name="maxTokens">Maximum number of tokens to generate.</param>
+            <param name="temperature">Sampling temperature.</param>
+            <param name="topP">Top-p nucleus sampling.</param>
+            <param name="provider">Inference provider type.</param>
+            <param name="endpoint">Inference provider endpoint URL.</param>
+            <param name="apiKey">Inference provider API key.</param>
+            <param name="tools">Tool definitions exposed to the model.</param>
+            <param name="toolChoice">Tool choice mode.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Inference result containing assistant content and/or model-requested tool calls.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.InferenceService.GenerateResponseStreamingAsync(System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Int32,System.Double,System.Double,AssistantHub.Core.Enums.InferenceProviderEnum,System.String,System.String,System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Func{System.String,System.Threading.Tasks.Task},System.Action,System.Action{AssistantHub.Core.Models.AssistantPerformanceStage},System.Threading.CancellationToken,System.Func{System.String,System.Threading.Tasks.Task})">
             <summary>
             Generate a streaming response from a language model using a multi-message conversation.
             </summary>
@@ -10416,6 +13389,7 @@
             <param name="onConnectionEstablished">Callback invoked on connection establishment.</param>
             <param name="onTelemetry">Callback invoked with provider-agnostic inference telemetry.</param>
             <param name="token">Cancellation token.</param>
+            <param name="onThinkingDelta">Optional callback invoked for provider thinking/reasoning deltas.</param>
         </member>
         <member name="M:AssistantHub.Core.Services.InferenceService.BuildSystemMessage(System.String,System.Collections.Generic.List{System.String},System.Boolean,System.Collections.Generic.List{System.String})">
             <summary>
@@ -10742,6 +13716,16 @@
             Download a file from a specific bucket.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.DownloadRangeAsync(System.String,System.String,System.Int64,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Download a byte range from a specific bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.GetObjectMetadataAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read safe object metadata from a specific bucket.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IObjectStorageService.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Delete a file from the default bucket.
@@ -10755,6 +13739,11 @@
         <member name="M:AssistantHub.Core.Services.IObjectStorageService.ExistsAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Check whether a file exists in the default bucket.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.ListObjectsAsync(System.String,System.String,System.Int32,System.String,System.Threading.CancellationToken)">
+            <summary>
+            List objects from a specific bucket and optional prefix.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IVectorStoreService">
@@ -10772,9 +13761,92 @@
             <param name="token">Cancellation token.</param>
             <returns>HTTP response from the backing service.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.IWebSearchService">
+            <summary>
+            Provider-agnostic web search service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IWebSearchService.SearchAsync(AssistantHub.Core.Models.WebSearchRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a web search through the configured provider.
+            </summary>
+            <param name="request">Search request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Search response.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ObjectStorageItem">
+            <summary>
+            Safe metadata for an object listed from S3-compatible storage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageItem.Key">
+            <summary>
+            Object key.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageItem.SizeBytes">
+            <summary>
+            Object size in bytes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageItem.ContentType">
+            <summary>
+            Content type when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageItem.ETag">
+            <summary>
+            Object ETag when safe to expose.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageItem.LastModifiedUtc">
+            <summary>
+            Last modified UTC timestamp when available.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.ObjectStorageListResult">
+            <summary>
+            Result of listing objects from S3-compatible storage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.BucketName">
+            <summary>
+            Bucket that was listed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.Prefix">
+            <summary>
+            Prefix used for listing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.MaxResults">
+            <summary>
+            Maximum requested object count.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.ContinuationToken">
+            <summary>
+            Continuation token for the next page.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.EndOfResults">
+            <summary>
+            Whether the object listing is complete.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.ObjectStorageListResult.Objects">
+            <summary>
+            Listed objects.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.OllamaChatResponse.Message">
             <summary>
             Response message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OllamaChatResponse.DoneReason">
+            <summary>
+            Provider finish reason.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.OllamaMessage.Role">
@@ -10785,6 +13857,16 @@
         <member name="P:AssistantHub.Core.Services.OllamaMessage.Content">
             <summary>
             Message content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OllamaMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OllamaMessage.ToolCalls">
+            <summary>
+            Model-requested tool calls.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.OllamaModelEntry.Name">
@@ -10822,6 +13904,11 @@
             Message in the choice.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIChoice.FinishReason">
+            <summary>
+            Provider finish reason.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.OpenAIMessage.Role">
             <summary>
             Message role.
@@ -10830,6 +13917,31 @@
         <member name="P:AssistantHub.Core.Services.OpenAIMessage.Content">
             <summary>
             Message content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.Thinking">
+            <summary>
+            Provider thinking/reasoning text when returned separately from content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.ReasoningContent">
+            <summary>
+            OpenAI-compatible reasoning content field used by some models.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.ToolCalls">
+            <summary>
+            Model-requested tool calls.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.ToolCallId">
+            <summary>
+            Tool call identifier for tool-role messages.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.OpenAIMessage.Name">
+            <summary>
+            Optional tool/function name.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.OpenAIModelEntry.Id">
@@ -10982,6 +14094,20 @@
         <member name="M:AssistantHub.Core.Services.RecallDbVectorStoreService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalFusionHelper">
+            <summary>
+            Shared retrieval result fusion helpers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalFusionHelper.FuseByReciprocalRank(System.Collections.Generic.IEnumerable{System.Collections.Generic.IReadOnlyList{AssistantHub.Core.Models.RetrievalChunk}},System.Int32,System.Double)">
+            <summary>
+            Fuse multiple ranked retrieval result lists using Reciprocal Rank Fusion.
+            </summary>
+            <param name="rankedResults">Ranked result lists in query order.</param>
+            <param name="maxResults">Maximum fused results to return.</param>
+            <param name="rrfK">RRF K constant. Defaults to 60.</param>
+            <returns>Fused, deduplicated chunks ordered by descending fusion score.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService">
             <summary>
             Retrieval service for querying embedded document chunks.
@@ -11011,9 +14137,29 @@
             <param name="searchOptions">Search mode and full-text options.</param>
             <returns>List of retrieval chunks with source identification and scoring.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ReadCollectionRecordAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read a single stored RecallDB collection record by its server-known record identifier.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="collectionId">Collection identifier.</param>
+            <param name="recordId">RecallDB record identifier.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Retrieval chunk when found, otherwise null.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.BuildSearchBody(System.String,System.Collections.Generic.List{System.Double},System.Int32,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Build the RecallDB search request body based on search mode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.AddDocumentFilters(System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Add DocumentId or DocumentIds to the search body after removing empty and duplicate identifiers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.NormalizeDocumentIds(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Normalize document identifiers for retrieval requests.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.AddMetadataFilters(System.Collections.Generic.Dictionary{System.String,System.Object},AssistantHub.Core.Models.ChatMetadataFilter)">
@@ -11136,6 +14282,26 @@
             <param name="token">Cancellation token.</param>
             <returns>File data as byte array.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.DownloadRangeAsync(System.String,System.String,System.Int64,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Download a byte range from a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
+            <param name="key">Object key.</param>
+            <param name="start">Zero-based byte offset.</param>
+            <param name="length">Maximum bytes to read.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Requested object bytes.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.GetObjectMetadataAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read safe object metadata from a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Object metadata.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.StorageService.DeleteAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Delete a file from S3-compatible storage (default bucket).
@@ -11161,12 +14327,60 @@
             <param name="token">Cancellation token.</param>
             <returns>True if the object exists.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.ListObjectsAsync(System.String,System.String,System.Int32,System.String,System.Threading.CancellationToken)">
+            <summary>
+            List objects in a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
+            <param name="prefix">Optional object key prefix.</param>
+            <param name="maxResults">Maximum results.</param>
+            <param name="continuationToken">Continuation token.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Object listing.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.StorageService.GetClientForBucket(System.String)">
             <summary>
             Get or create an S3 client for a specific bucket.
             </summary>
             <param name="bucketName">Bucket name.</param>
             <returns>S3 blob client for the bucket.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.TavilySearchClient">
+            <summary>
+            Client for Tavily search.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.TavilySearchClient.DefaultEndpoint">
+            <summary>
+            Default Tavily search endpoint.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TavilySearchClient.#ctor(AssistantHub.Core.Settings.ExternalSearchProviderSettings,System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="provider">Provider settings.</param>
+            <param name="httpClient">Optional externally-owned HTTP client.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TavilySearchClient.SearchAsync(AssistantHub.Core.Models.TavilySearchQuery,System.Threading.CancellationToken)">
+            <summary>
+            Search Tavily.
+            </summary>
+            <param name="query">Search query.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Search response.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TavilySearchClient.Dispose">
+            <summary>
+            Dispose owned HTTP resources.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.TavilySearchClient.ResolveSecret(System.String)">
+            <summary>
+            Resolve an API key or environment-variable reference.
+            </summary>
+            <param name="value">Raw configured value.</param>
+            <returns>Resolved secret value.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.TenantProvisioningResult">
             <summary>
@@ -11277,6 +14491,21 @@
         <member name="M:AssistantHub.Core.Services.VerbexInvertedIndexService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Services.WebSearchService">
+            <summary>
+            Provider-agnostic web search service.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.WebSearchService.#ctor(AssistantHub.Core.Settings.ExternalSearchProviderSettings,System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="provider">Provider settings.</param>
+            <param name="httpClient">Optional externally-owned HTTP client.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.WebSearchService.SearchAsync(AssistantHub.Core.Models.WebSearchRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Settings.AssistantHubSettings">
             <summary>
             AssistantHub settings.
@@ -11335,6 +14564,11 @@
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Verbex">
             <summary>
             Verbex service settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.ExternalSearch">
+            <summary>
+            External web-search provider settings.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Logging">
@@ -11564,6 +14798,96 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Settings.ExternalSearchProviderSettings">
+            <summary>
+            External search provider configuration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.Name">
+            <summary>
+            Provider display/configuration name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.ProviderType">
+            <summary>
+            Provider type, for example Tavily.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.Endpoint">
+            <summary>
+            Provider endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.ApiKey">
+            <summary>
+            Provider API key or environment-variable reference.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.Enabled">
+            <summary>
+            Whether this provider is enabled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.IsDefault">
+            <summary>
+            Whether this provider is the default external search provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchProviderSettings.TimeoutMs">
+            <summary>
+            HTTP timeout in milliseconds.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.ExternalSearchSettings">
+            <summary>
+            Global external web-search settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.Enabled">
+            <summary>
+            Whether external web search is enabled globally.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.AllowFallback">
+            <summary>
+            Whether a later provider may be tried when the default provider fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.MaxResults">
+            <summary>
+            Maximum results any assistant may request from a web-search provider.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.TimeoutMs">
+            <summary>
+            Default provider timeout in milliseconds when the provider does not specify one.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.SafeSearch">
+            <summary>
+            Whether web searches should request provider safe-search filtering.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.AllowRawContent">
+            <summary>
+            Whether assistants may request raw provider page content when also permitted by assistant policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.IncludeDomains">
+            <summary>
+            Global web-search domain allowlist. Empty allows provider-default public web search.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.ExcludeDomains">
+            <summary>
+            Global web-search domain denylist.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ExternalSearchSettings.Providers">
+            <summary>
+            Search provider configurations.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Settings.InferenceSettings">
             <summary>
             Inference service settings.
@@ -11687,6 +15011,12 @@
         <member name="P:AssistantHub.Core.Settings.RecallDbSettings.DashboardUrl">
             <summary>
             Browser URL for the RecallDb dashboard.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.SupportsMultiDocumentFilter">
+            <summary>
+            Indicates whether RecallDB accepts a native multi-document DocumentIds search filter.
+            When false, AssistantHub loops over single DocumentId searches and merges results server-side.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.RecallDbSettings.#ctor">

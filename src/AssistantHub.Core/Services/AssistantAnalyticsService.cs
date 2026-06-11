@@ -5,6 +5,7 @@ namespace AssistantHub.Core.Services
     using System.Data;
     using System.Globalization;
     using System.Linq;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Database;
@@ -426,6 +427,7 @@ namespace AssistantHub.Core.Services
                     .FirstOrDefault();
 
                 double durationMs = ResolveRequestDurationMs(request.DurationMs, requestEvents);
+                ToolAnalyticsSummary toolSummary = BuildToolAnalyticsSummary(requestEvents);
 
                 slowRequests.Add(new AssistantAnalyticsSlowRequest
                 {
@@ -442,7 +444,15 @@ namespace AssistantHub.Core.Services
                     EndpointId = dominant?.EndpointId,
                     EndpointName = dominant?.EndpointName,
                     Provider = dominant?.Provider,
-                    Model = dominant?.Model
+                    Model = dominant?.Model,
+                    ToolCallCount = toolSummary.ToolCallCount,
+                    ToolFailureCount = toolSummary.ToolFailureCount,
+                    ToolDeniedCount = toolSummary.ToolDeniedCount,
+                    ToolTruncatedCount = toolSummary.ToolTruncatedCount,
+                    ToolDurationMs = toolSummary.ToolDurationMs,
+                    SlowestToolName = toolSummary.SlowestToolName,
+                    SlowestToolDurationMs = toolSummary.SlowestToolDurationMs,
+                    FailingToolNames = toolSummary.FailingToolNames
                 });
             }
 
@@ -832,6 +842,157 @@ namespace AssistantHub.Core.Services
             return Math.Max(0, requestDurationMs);
         }
 
+        private static ToolAnalyticsSummary BuildToolAnalyticsSummary(List<ChatHistoryPerformanceEvent> events)
+        {
+            ToolAnalyticsSummary ret = new ToolAnalyticsSummary();
+            List<ChatHistoryPerformanceEvent> toolEvents = events?
+                .Where(evt => evt != null
+                    && (String.Equals(evt.Stage, "tools", StringComparison.OrdinalIgnoreCase)
+                        || String.Equals(evt.Kind, "tool", StringComparison.OrdinalIgnoreCase)))
+                .ToList() ?? new List<ChatHistoryPerformanceEvent>();
+            if (toolEvents.Count < 1) return ret;
+
+            foreach (ChatHistoryPerformanceEvent evt in toolEvents)
+            {
+                if (!TryMergeToolMetadata(ret, evt.MetadataJson))
+                    MergeToolEventFallback(ret, evt);
+            }
+
+            if (!ret.ToolDurationMs.HasValue)
+            {
+                double duration = toolEvents.Sum(evt => Math.Max(0, evt.DurationMs));
+                if (duration > 0) ret.ToolDurationMs = Math.Round(duration, 2);
+            }
+
+            if (ret.ToolCallCount < 1)
+                ret.ToolCallCount = toolEvents.Count;
+
+            ret.FailingToolNames = ret.FailingToolNames
+                .Where(name => !String.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return ret;
+        }
+
+        private static bool TryMergeToolMetadata(ToolAnalyticsSummary summary, string metadataJson)
+        {
+            if (summary == null || String.IsNullOrWhiteSpace(metadataJson)) return false;
+
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(metadataJson);
+                JsonElement root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) return false;
+
+                int callCount = GetJsonInt(root, "tool_call_count") ?? 0;
+                int successCount = GetJsonInt(root, "tool_call_success_count") ?? 0;
+                int failureCount = GetJsonInt(root, "tool_call_error_count") ?? 0;
+                int deniedCount = GetJsonInt(root, "tool_call_denied_count") ?? 0;
+                int truncatedCount = GetJsonInt(root, "tool_call_truncated_count") ?? 0;
+                double durationMs = GetJsonDouble(root, "tool_call_duration_ms") ?? 0;
+
+                summary.ToolCallCount += callCount;
+                summary.ToolFailureCount += failureCount;
+                summary.ToolDeniedCount += deniedCount;
+                summary.ToolTruncatedCount += truncatedCount;
+                if (durationMs > 0)
+                    summary.ToolDurationMs = Math.Round((summary.ToolDurationMs ?? 0) + durationMs, 2);
+
+                if (TryGetJsonProperty(root, "per_tool", out JsonElement perTool) && perTool.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (JsonProperty property in perTool.EnumerateObject())
+                    {
+                        if (property.Value.ValueKind != JsonValueKind.Object) continue;
+                        string toolName = property.Name;
+                        int toolFailures = GetJsonInt(property.Value, "error_count") ?? 0;
+                        int toolDenials = GetJsonInt(property.Value, "denied_count") ?? 0;
+                        double toolDuration = GetJsonDouble(property.Value, "duration_ms") ?? 0;
+
+                        if ((toolFailures + toolDenials) > 0 && !String.IsNullOrWhiteSpace(toolName))
+                            summary.FailingToolNames.Add(toolName.Trim());
+
+                        if (toolDuration > 0 && (!summary.SlowestToolDurationMs.HasValue || toolDuration > summary.SlowestToolDurationMs.Value))
+                        {
+                            summary.SlowestToolName = toolName;
+                            summary.SlowestToolDurationMs = Math.Round(toolDuration, 2);
+                        }
+                    }
+                }
+                else if ((failureCount + deniedCount) > 0 && TryGetJsonProperty(root, "tool_names", out JsonElement toolNames) && toolNames.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement toolName in toolNames.EnumerateArray())
+                    {
+                        if (toolName.ValueKind == JsonValueKind.String && !String.IsNullOrWhiteSpace(toolName.GetString()))
+                            summary.FailingToolNames.Add(toolName.GetString().Trim());
+                    }
+                }
+
+                return callCount > 0 || successCount > 0 || failureCount > 0 || deniedCount > 0 || truncatedCount > 0 || durationMs > 0;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static void MergeToolEventFallback(ToolAnalyticsSummary summary, ChatHistoryPerformanceEvent evt)
+        {
+            if (summary == null || evt == null) return;
+
+            summary.ToolCallCount++;
+            if (!evt.Success) summary.ToolFailureCount++;
+            double durationMs = Math.Max(0, evt.DurationMs);
+            if (durationMs > 0)
+            {
+                summary.ToolDurationMs = Math.Round((summary.ToolDurationMs ?? 0) + durationMs, 2);
+                if (!summary.SlowestToolDurationMs.HasValue || durationMs > summary.SlowestToolDurationMs.Value)
+                {
+                    summary.SlowestToolName = String.IsNullOrWhiteSpace(evt.Stage) ? "tools" : evt.Stage;
+                    summary.SlowestToolDurationMs = Math.Round(durationMs, 2);
+                }
+            }
+
+            if (!evt.Success)
+                summary.FailingToolNames.Add(String.IsNullOrWhiteSpace(evt.Stage) ? "tools" : evt.Stage);
+        }
+
+        private static bool TryGetJsonProperty(JsonElement element, string name, out JsonElement value)
+        {
+            value = default;
+            if (element.ValueKind != JsonValueKind.Object || String.IsNullOrWhiteSpace(name)) return false;
+
+            if (element.TryGetProperty(name, out value)) return true;
+            foreach (JsonProperty property in element.EnumerateObject())
+            {
+                if (String.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int? GetJsonInt(JsonElement element, string name)
+        {
+            if (!TryGetJsonProperty(element, name, out JsonElement value)) return null;
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int integer)) return integer;
+            if (value.ValueKind == JsonValueKind.String && Int32.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out integer)) return integer;
+            return null;
+        }
+
+        private static double? GetJsonDouble(JsonElement element, string name)
+        {
+            if (!TryGetJsonProperty(element, name, out JsonElement value)) return null;
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out double number)) return number;
+            if (value.ValueKind == JsonValueKind.String && Double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out number)) return number;
+            return null;
+        }
+
         private static string BuildEventIdentity(ChatHistoryPerformanceEvent evt)
         {
             if (!String.IsNullOrEmpty(evt.Id)) return evt.Id;
@@ -907,6 +1068,18 @@ namespace AssistantHub.Core.Services
         {
             return String.Equals(rating, "ThumbsDown", StringComparison.OrdinalIgnoreCase)
                 || String.Equals(rating, "Negative", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private sealed class ToolAnalyticsSummary
+        {
+            public int ToolCallCount { get; set; }
+            public int ToolFailureCount { get; set; }
+            public int ToolDeniedCount { get; set; }
+            public int ToolTruncatedCount { get; set; }
+            public double? ToolDurationMs { get; set; }
+            public string SlowestToolName { get; set; }
+            public double? SlowestToolDurationMs { get; set; }
+            public List<string> FailingToolNames { get; set; } = new List<string>();
         }
     }
 }

@@ -1,5 +1,7 @@
 namespace AssistantHub.Core.Models
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Result from an inference request, carrying either a response or error details.
     /// </summary>
@@ -16,6 +18,21 @@ namespace AssistantHub.Core.Models
         /// The generated response content, or null on failure.
         /// </summary>
         public string Content { get; set; } = null;
+
+        /// <summary>
+        /// Optional provider thinking/reasoning text, when returned separately from visible content.
+        /// </summary>
+        public string Thinking { get; set; } = null;
+
+        /// <summary>
+        /// Model-requested tool calls, if the provider finished with tool calls.
+        /// </summary>
+        public List<AssistantModelToolCall> ToolCalls { get; set; } = new List<AssistantModelToolCall>();
+
+        /// <summary>
+        /// Provider finish reason, such as stop, length, tool_calls, or error.
+        /// </summary>
+        public string FinishReason { get; set; } = null;
 
         /// <summary>
         /// Error message describing what went wrong, or null on success.
@@ -43,14 +60,25 @@ namespace AssistantHub.Core.Models
         /// </summary>
         /// <param name="content">Generated response content.</param>
         /// <param name="telemetry">Provider-agnostic telemetry captured for the inference call.</param>
+        /// <param name="finishReason">Provider finish reason.</param>
+        /// <param name="toolCalls">Model-requested tool calls.</param>
+        /// <param name="thinking">Optional provider thinking/reasoning text.</param>
         /// <returns>InferenceResult.</returns>
-        public static InferenceResult FromSuccess(string content, AssistantPerformanceStage telemetry = null)
+        public static InferenceResult FromSuccess(
+            string content,
+            AssistantPerformanceStage telemetry = null,
+            string finishReason = "stop",
+            List<AssistantModelToolCall> toolCalls = null,
+            string thinking = null)
         {
             return new InferenceResult
             {
                 Success = true,
                 Content = content,
-                Telemetry = telemetry
+                Thinking = thinking,
+                Telemetry = telemetry,
+                FinishReason = finishReason,
+                ToolCalls = toolCalls ?? new List<AssistantModelToolCall>()
             };
         }
 
@@ -66,7 +94,8 @@ namespace AssistantHub.Core.Models
             {
                 Success = false,
                 ErrorMessage = errorMessage,
-                Telemetry = telemetry
+                Telemetry = telemetry,
+                FinishReason = "error"
             };
         }
 

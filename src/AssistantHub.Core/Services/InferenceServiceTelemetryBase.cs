@@ -153,6 +153,22 @@ namespace AssistantHub.Core.Services
             telemetry.Tokens.Input = usage.PromptTokens > 0 ? usage.PromptTokens : telemetry.Tokens.Input;
             telemetry.Tokens.Output = usage.CompletionTokens > 0 ? usage.CompletionTokens : telemetry.Tokens.Output;
             telemetry.Tokens.Total = usage.TotalTokens > 0 ? usage.TotalTokens : telemetry.Tokens.Total;
+
+            int reasoningTokens = usage.ReasoningTokens > 0
+                ? usage.ReasoningTokens
+                : (usage.CompletionTokensDetails?.ReasoningTokens ?? 0);
+            if (reasoningTokens > 0)
+                telemetry.Tokens.Reasoning = reasoningTokens;
+
+            int toolDefinitionTokens = usage.ToolDefinitionTokens > 0
+                ? usage.ToolDefinitionTokens
+                : (usage.ToolTokens > 0
+                    ? usage.ToolTokens
+                    : Math.Max(
+                        usage.PromptTokensDetails?.ToolDefinitionTokens ?? 0,
+                        usage.PromptTokensDetails?.ToolTokens ?? 0));
+            if (toolDefinitionTokens > 0)
+                telemetry.Tokens.ToolDefinitions = toolDefinitionTokens;
         }
 
         private protected void ApplyGeminiUsage(AssistantPerformanceStage telemetry, GeminiUsageMetadata usage)

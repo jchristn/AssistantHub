@@ -118,6 +118,493 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function truthy(value) {
+  if (typeof value !== "string") return false;
+  return ["1", "true", "yes", "y"].includes(value.trim().toLowerCase());
+}
+
+function localOnlyRequested() {
+  if (truthy(process.env.ASSISTANTHUB_SDK_LOCAL_ONLY)) return true;
+  return process.argv.slice(2).some((arg) => {
+    const normalized = String(arg).trim().toLowerCase();
+    return normalized === "--local-only" || normalized === "local-only" || normalized === "localonly=true" || normalized === "local=true";
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Local SDK contract tests
+// ---------------------------------------------------------------------------
+
+async function sdkContractTests(runner) {
+  await runner.runTest("SDK contract: chatCompletion sends attached_document_ids", async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        capturedUrl = String(url);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            id: "chatcmpl_local",
+            object: "chat.completion",
+            created: 0,
+            model: "test-model",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "done", thinking: "hidden reasoning" },
+                finish_reason: "stop",
+              },
+            ],
+            usage: {
+              prompt_tokens: 12,
+              completion_tokens: 4,
+              total_tokens: 16,
+              tool_definition_tokens: 5,
+              prompt_tokens_details: {
+                cached_tokens: 3,
+                tool_tokens: 5,
+              },
+              completion_tokens_details: {
+                reasoning_tokens: 7,
+              },
+            },
+            tool_calls: [
+              {
+                tool_call_id: "call_search",
+                tool_name: "collection_search",
+                display_label: "Searching collection",
+                iteration: 1,
+                sequence_number: 1,
+                success: true,
+                denied: false,
+                truncated: false,
+                output_characters: 128,
+                result_count: 3,
+                credits_used: 2,
+                provider_latency_ms: 45.5,
+                duration_ms: 12.5,
+                summary: "Searching collection completed.",
+              },
+            ],
+            retrieval: {
+              collection_id: "col_abc123",
+              duration_ms: 42.7,
+              chunks_returned: 3,
+              attached_document_ids: ["adoc_one"],
+              attached_documents: [
+                {
+                  Id: "adoc_one",
+                  Name: "Policy Handbook",
+                  OriginalFilename: "policy.pdf",
+                  ContentType: "application/pdf",
+                  SizeBytes: 12345,
+                  CreatedUtc: "2026-01-01T00:00:00Z",
+                  LastUpdateUtc: "2026-01-02T00:00:00Z",
+                },
+              ],
+              document_filter_applied: true,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const result = await client.chatCompletion("asst_local", {
+      Messages: [{ role: "user", content: "Summarize this document." }],
+      attached_document_ids: ["adoc_one"],
+    });
+
+    assertEqual("http://localhost:6600/v1.0/assistants/asst_local/chat", capturedUrl, "chatCompletion URL");
+    assertNotNull(capturedInit, "captured fetch init");
+    assertEqual("POST", capturedInit.method, "chatCompletion method");
+
+    const body = JSON.parse(capturedInit.body);
+    assertEqual(1, body.attached_document_ids.length, "request attached_document_ids count");
+    assertEqual("adoc_one", body.attached_document_ids[0], "request attached_document_ids first item");
+    assertFalse(Object.prototype.hasOwnProperty.call(body, "AttachedDocumentIds"), "request should not use PascalCase attachment key");
+    assertEqual(false, body.Stream, "chatCompletion forces non-streaming body");
+
+    assertNotNull(result.retrieval, "response retrieval");
+    assertEqual(1, result.retrieval.attached_document_ids.length, "response attached_document_ids count");
+    assertEqual("adoc_one", result.retrieval.attached_document_ids[0], "response attached_document_ids first item");
+    assertEqual(true, result.retrieval.document_filter_applied, "response document_filter_applied");
+    assertEqual("adoc_one", result.retrieval.attached_documents[0].Id, "response attached document ID");
+    assertFalse(Object.prototype.hasOwnProperty.call(result.retrieval.attached_documents[0], "S3Key"), "selection metadata should not expose S3Key");
+    assertFalse(Object.prototype.hasOwnProperty.call(result.retrieval.attached_documents[0], "BucketName"), "selection metadata should not expose BucketName");
+    assertEqual(16, result.usage.total_tokens, "response usage total_tokens");
+    assertEqual("hidden reasoning", result.choices[0].message.thinking, "response message thinking");
+    assertEqual(5, result.usage.tool_definition_tokens, "response usage tool_definition_tokens");
+    assertEqual(3, result.usage.prompt_tokens_details.cached_tokens, "response usage cached_tokens");
+    assertEqual(7, result.usage.completion_tokens_details.reasoning_tokens, "response usage reasoning_tokens");
+    assertEqual(1, result.tool_calls.length, "response tool_calls count");
+    assertEqual("collection_search", result.tool_calls[0].tool_name, "response tool_calls tool name");
+    assertEqual("Searching collection", result.tool_calls[0].display_label, "response tool_calls display label");
+    assertEqual(3, result.tool_calls[0].result_count, "response tool_calls result count");
+    assertEqual(2, result.tool_calls[0].credits_used, "response tool_calls credits used");
+    assertEqual(45.5, result.tool_calls[0].provider_latency_ms, "response tool_calls provider latency");
+    assertFalse(Object.prototype.hasOwnProperty.call(result.tool_calls[0], "ArgumentsJson"), "response tool_calls should not expose raw arguments");
+    assertFalse(Object.prototype.hasOwnProperty.call(result.tool_calls[0], "OutputJson"), "response tool_calls should not expose raw output");
+  });
+
+  await runner.runTest("SDK contract: chatCompletion sends local_attachments", async () => {
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (_url, init) => {
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            id: "chatcmpl_local_attachment",
+            object: "chat.completion",
+            created: 0,
+            model: "test-model",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "done" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    await client.chatCompletion("asst_local", {
+      Messages: [{ role: "user", content: "Summarize this local file." }],
+      local_attachments: [
+        {
+          name: "notes.txt",
+          content_type: "text/plain",
+          base64_content: "SGVsbG8=",
+        },
+      ],
+    });
+
+    assertNotNull(capturedInit, "captured fetch init");
+    const body = JSON.parse(capturedInit.body);
+    assertEqual(1, body.local_attachments.length, "request local_attachments count");
+    assertEqual("notes.txt", body.local_attachments[0].name, "request local attachment name");
+    assertEqual("SGVsbG8=", body.local_attachments[0].base64_content, "request local attachment base64");
+    assertFalse(Object.prototype.hasOwnProperty.call(body, "LocalAttachments"), "request should not use PascalCase local attachment key");
+  });
+
+  await runner.runTest("SDK contract: validateAssistantToolPolicy sends ToolPolicy", async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        capturedUrl = String(url);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            Success: false,
+            Message: "Policy invalid.",
+            ToolPolicyJson: "{}",
+            ToolPolicy: {
+              EnableToolCalls: true,
+              EnableCollectionSearchTool: true,
+              EnableDocumentAtomExtractionTool: true,
+              EnableWebSearchTool: true,
+              ToolChoiceMode: "Required",
+              MaxToolResultItems: 9,
+              AllowedToolNames: ["collection_search"],
+              MaxSearchTopK: 7,
+              MaxDocumentsConsideredPerSearch: 25,
+              MaxResultsConsideredPerSearch: 50,
+              MaxAtomExtractionBytes: 2097152,
+              MaxAtomExtractionCharacters: 24000,
+              AllowedSearchModes: ["FullText"],
+              ReturnFullSearchContent: true,
+              MaxWebResults: 3,
+              TavilyEndpoint: "https://assistant.tavily.test/search",
+              TavilyApiKey: "assistant-key",
+              AllowUngovernedWebAccess: true,
+              AllowedWebDomains: ["example.com"],
+            },
+            Tools: [],
+            Errors: ["EnableToolCalls is true but no enabled tool is currently executable."],
+            ErrorCodes: ["no_available_tools"],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const result = await client.validateAssistantToolPolicy("asst_local", {
+      ToolPolicy: {
+        EnableToolCalls: true,
+        EnableCollectionSearchTool: true,
+        EnableDocumentAtomExtractionTool: true,
+        EnableWebSearchTool: true,
+        ToolChoiceMode: "Required",
+        MaxToolResultItems: 9,
+        AllowedToolNames: ["collection_search"],
+        MaxSearchTopK: 7,
+        MaxDocumentsConsideredPerSearch: 25,
+        MaxResultsConsideredPerSearch: 50,
+        MaxAtomExtractionBytes: 2097152,
+        MaxAtomExtractionCharacters: 24000,
+        AllowedSearchModes: ["FullText"],
+        ReturnFullSearchContent: true,
+        MaxWebResults: 3,
+        TavilyEndpoint: "https://assistant.tavily.test/search",
+        TavilyApiKey: "assistant-key",
+        AllowUngovernedWebAccess: true,
+        AllowedWebDomains: ["example.com"],
+      },
+    });
+
+    assertEqual("http://localhost:6600/v1.0/assistants/asst_local/settings/tools/validate", capturedUrl, "validateAssistantToolPolicy URL");
+    assertNotNull(capturedInit, "captured fetch init");
+    assertEqual("POST", capturedInit.method, "validateAssistantToolPolicy method");
+
+    const body = JSON.parse(capturedInit.body);
+    assertNotNull(body.ToolPolicy, "request ToolPolicy");
+    assertEqual(true, body.ToolPolicy.EnableToolCalls, "request EnableToolCalls");
+    assertEqual(true, body.ToolPolicy.EnableCollectionSearchTool, "request EnableCollectionSearchTool");
+    assertEqual(true, body.ToolPolicy.EnableDocumentAtomExtractionTool, "request EnableDocumentAtomExtractionTool");
+    assertEqual("Required", body.ToolPolicy.ToolChoiceMode, "request ToolChoiceMode");
+    assertEqual(9, body.ToolPolicy.MaxToolResultItems, "request MaxToolResultItems");
+    assertEqual("collection_search", body.ToolPolicy.AllowedToolNames[0], "request AllowedToolNames");
+    assertEqual(7, body.ToolPolicy.MaxSearchTopK, "request MaxSearchTopK");
+    assertEqual(25, body.ToolPolicy.MaxDocumentsConsideredPerSearch, "request MaxDocumentsConsideredPerSearch");
+    assertEqual(50, body.ToolPolicy.MaxResultsConsideredPerSearch, "request MaxResultsConsideredPerSearch");
+    assertEqual(2097152, body.ToolPolicy.MaxAtomExtractionBytes, "request MaxAtomExtractionBytes");
+    assertEqual(24000, body.ToolPolicy.MaxAtomExtractionCharacters, "request MaxAtomExtractionCharacters");
+    assertEqual("FullText", body.ToolPolicy.AllowedSearchModes[0], "request AllowedSearchModes");
+    assertEqual(true, body.ToolPolicy.ReturnFullSearchContent, "request ReturnFullSearchContent");
+    assertEqual(3, body.ToolPolicy.MaxWebResults, "request MaxWebResults");
+    assertEqual("https://assistant.tavily.test/search", body.ToolPolicy.TavilyEndpoint, "request TavilyEndpoint");
+    assertEqual("assistant-key", body.ToolPolicy.TavilyApiKey, "request TavilyApiKey");
+    assertEqual(true, body.ToolPolicy.AllowUngovernedWebAccess, "request AllowUngovernedWebAccess");
+    assertEqual("example.com", body.ToolPolicy.AllowedWebDomains[0], "request AllowedWebDomains");
+    assertFalse(Object.prototype.hasOwnProperty.call(body, "toolPolicy"), "request should not use lower-camel ToolPolicy");
+
+    assertEqual(false, result.Success, "validation result Success");
+    assertNotNull(result.ToolPolicy, "validation result ToolPolicy");
+    assertEqual(true, result.ToolPolicy.EnableCollectionSearchTool, "validation result EnableCollectionSearchTool");
+    assertEqual(true, result.ToolPolicy.EnableDocumentAtomExtractionTool, "validation result EnableDocumentAtomExtractionTool");
+    assertEqual("Required", result.ToolPolicy.ToolChoiceMode, "validation result ToolChoiceMode");
+    assertEqual("collection_search", result.ToolPolicy.AllowedToolNames[0], "validation result AllowedToolNames");
+    assertEqual(7, result.ToolPolicy.MaxSearchTopK, "validation result MaxSearchTopK");
+    assertEqual(25, result.ToolPolicy.MaxDocumentsConsideredPerSearch, "validation result MaxDocumentsConsideredPerSearch");
+    assertEqual(50, result.ToolPolicy.MaxResultsConsideredPerSearch, "validation result MaxResultsConsideredPerSearch");
+    assertEqual(2097152, result.ToolPolicy.MaxAtomExtractionBytes, "validation result MaxAtomExtractionBytes");
+    assertEqual(24000, result.ToolPolicy.MaxAtomExtractionCharacters, "validation result MaxAtomExtractionCharacters");
+    assertEqual("https://assistant.tavily.test/search", result.ToolPolicy.TavilyEndpoint, "validation result TavilyEndpoint");
+    assertEqual("example.com", result.ToolPolicy.AllowedWebDomains[0], "validation result AllowedWebDomains");
+    assertEqual("no_available_tools", result.ErrorCodes[0], "validation result ErrorCodes");
+  });
+
+  await runner.runTest("SDK contract: testAssistantToolPolicy uses diagnostics route", async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        capturedUrl = String(url);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            Success: false,
+            Message: "Tool diagnostics found blocking issues.",
+            AssistantId: "asst_local",
+            InferenceEndpointId: "cep_local",
+            ToolRoutingInferenceEndpointId: "cep_router",
+            EffectiveToolRoutingInferenceEndpointId: "cep_router",
+            EndpointResolved: true,
+            EndpointModel: "qwen3-tool",
+            EndpointApiFormat: "OpenAI",
+            EndpointActive: true,
+            EndpointSupportsToolCalling: false,
+            EndpointToolCallingApiFormat: null,
+            EndpointSupportsParallelToolCalls: false,
+            EndpointSupportsStreamingToolCalls: false,
+            Validation: { Success: true, Errors: [], ErrorCodes: [] },
+            Tools: [],
+            Warnings: [],
+            Errors: ["The effective tool-routing completion endpoint does not explicitly support tool calling."],
+            ErrorCodes: ["tool_routing_endpoint_not_tool_capable"],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const result = await client.testAssistantToolPolicy("asst_local", {
+      ToolPolicyJson: "{\"EnableToolCalls\":true}",
+    });
+
+    assertEqual("http://localhost:6600/v1.0/assistants/asst_local/settings/tools/test", capturedUrl, "testAssistantToolPolicy URL");
+    assertNotNull(capturedInit, "captured fetch init");
+    assertEqual("POST", capturedInit.method, "testAssistantToolPolicy method");
+    const body = JSON.parse(capturedInit.body);
+    assertEqual("{\"EnableToolCalls\":true}", body.ToolPolicyJson, "diagnostics request ToolPolicyJson");
+    assertEqual(false, result.Success, "diagnostics result Success");
+    assertEqual("cep_router", result.ToolRoutingInferenceEndpointId, "diagnostics configured tool routing endpoint");
+    assertEqual("cep_router", result.EffectiveToolRoutingInferenceEndpointId, "diagnostics effective tool routing endpoint");
+    assertEqual(true, result.EndpointResolved, "diagnostics endpoint resolved");
+    assertEqual("qwen3-tool", result.EndpointModel, "diagnostics endpoint model");
+    assertEqual("tool_routing_endpoint_not_tool_capable", result.ErrorCodes[0], "diagnostics result ErrorCodes");
+  });
+
+  await runner.runTest("SDK contract: getExternalSearchStatus uses status route", async () => {
+    let capturedUrl = null;
+    let capturedInit = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        capturedUrl = String(url);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            Enabled: true,
+            EnabledProviders: 1,
+            ConfiguredProviders: 1,
+            MisconfiguredProviders: 0,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const result = await client.getExternalSearchStatus();
+    assertEqual("http://localhost:6600/v1.0/configuration/external-search/status", capturedUrl, "external-search status URL");
+    assertNotNull(capturedInit, "captured fetch init");
+    assertEqual("GET", capturedInit.method, "external-search status method");
+    assertEqual(true, result.Enabled, "external-search status enabled");
+    assertEqual(1, result.ConfiguredProviders, "external-search status configured providers");
+    assertFalse(Object.prototype.hasOwnProperty.call(result, "ApiKey"), "external-search status must not include secrets");
+  });
+
+  await runner.runTest("SDK contract: assistant tool-call trace routes", async () => {
+    const requests = [];
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        requests.push({ url: String(url), init });
+        const method = init?.method || "GET";
+        const requestUrl = String(url);
+        if (method === "GET" && requestUrl.includes("/v1.0/assistants/asst_local/tool-calls?")) {
+          return new Response(
+            JSON.stringify({
+              Success: true,
+              MaxResults: 5,
+              TotalRecords: 1,
+              RecordsRemaining: 0,
+              EndOfResults: true,
+              Objects: [
+                {
+                  Id: "atc_local",
+                  AssistantId: "asst_local",
+                  TraceId: "trace_local",
+                  ToolName: "collection_search",
+                  ArgumentsJson: "[redacted]",
+                  Success: true,
+                },
+              ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        if (method === "GET" && requestUrl.endsWith("/v1.0/assistants/asst_local/tool-calls/atc_local")) {
+          return new Response(
+            JSON.stringify({ Id: "atc_local", AssistantId: "asst_local", ToolName: "collection_search", Success: true }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        if (method === "DELETE" && requestUrl.includes("/v1.0/assistants/asst_local/tool-calls?")) {
+          return new Response(JSON.stringify({ DeletedCount: 1 }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (method === "DELETE" && requestUrl.endsWith("/v1.0/assistants/asst_local/tool-calls/atc_local")) {
+          return new Response(null, { status: 204 });
+        }
+        return new Response("{}", { status: 404, headers: { "Content-Type": "application/json" } });
+      },
+    });
+
+    const list = await client.listAssistantToolCalls("asst_local", {
+      maxResults: 5,
+      traceId: "trace_local",
+      toolName: "collection_search",
+      success: true,
+    });
+    assertEqual(1, list.Objects.length, "tool-call list count");
+    assertEqual("atc_local", list.Objects[0].Id, "tool-call list id");
+    assertEqual("collection_search", list.Objects[0].ToolName, "tool-call list tool");
+    assertFalse(String(list.Objects[0].ArgumentsJson || "").includes("secret"), "tool-call list arguments redacted");
+
+    const record = await client.getAssistantToolCall("asst_local", "atc_local");
+    assertEqual("atc_local", record.Id, "tool-call get id");
+
+    const deleted = await client.deleteAssistantToolCalls("asst_local", { toolName: "collection_search" });
+    assertEqual(1, deleted.DeletedCount, "tool-call bulk delete count");
+
+    await client.deleteAssistantToolCall("asst_local", "atc_local");
+
+    assertEqual("GET", requests[0].init.method, "tool-call list method");
+    assertTrue(requests[0].url.includes("/v1.0/assistants/asst_local/tool-calls?"), "tool-call list path");
+    assertTrue(requests[0].url.includes("traceId=trace_local"), "tool-call list trace query");
+    assertTrue(requests[0].url.includes("toolName=collection_search"), "tool-call list tool query");
+    assertTrue(requests[0].url.includes("success=true"), "tool-call list success query");
+    assertEqual("GET", requests[1].init.method, "tool-call get method");
+    assertTrue(requests[1].url.endsWith("/v1.0/assistants/asst_local/tool-calls/atc_local"), "tool-call get path");
+    assertEqual("DELETE", requests[2].init.method, "tool-call bulk delete method");
+    assertTrue(requests[2].url.includes("toolName=collection_search"), "tool-call bulk delete query");
+    assertEqual("DELETE", requests[3].init.method, "tool-call delete method");
+    assertTrue(requests[3].url.endsWith("/v1.0/assistants/asst_local/tool-calls/atc_local"), "tool-call delete path");
+  });
+
+  await runner.runTest("SDK contract: ChatHistory parses attached document metadata", async () => {
+    let capturedUrl = null;
+
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url) => {
+        capturedUrl = String(url);
+        return new Response(
+          JSON.stringify({
+            Id: "chist_local",
+            TenantId: "default",
+            ThreadId: "thr_local",
+            AssistantId: "asst_local",
+            AttachedDocumentIdsJson: "[\"adoc_one\"]",
+            AttachedDocumentsJson: "[{\"Id\":\"adoc_one\",\"Name\":\"Policy Handbook\"}]",
+            CreatedUtc: "2026-01-01T00:00:00Z",
+            LastUpdateUtc: "2026-01-01T00:00:00Z",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const history = await client.getHistory("chist_local");
+    assertEqual("http://localhost:6600/v1.0/history/chist_local", capturedUrl, "getHistory URL");
+    assertEqual("chist_local", history.Id, "history ID");
+    assertTrue(history.AttachedDocumentIdsJson.includes("adoc_one"), "history attached document IDs JSON");
+    assertTrue(history.AttachedDocumentsJson.includes("Policy Handbook"), "history attached documents JSON");
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Test groups
 // ---------------------------------------------------------------------------
@@ -894,6 +1381,7 @@ async function configTests(runner, client) {
 async function main() {
   const baseUrl = process.env.ASSISTANTHUB_URL || "http://localhost:6600";
   const apiKey = process.env.ASSISTANTHUB_API_KEY || "default";
+  const localOnly = localOnlyRequested();
 
   console.log("==========================================================");
   console.log("  AssistantHub JS SDK Test Suite");
@@ -901,13 +1389,23 @@ async function main() {
   console.log("");
   console.log("  Base URL:  " + baseUrl);
   console.log("  API Key:   " + (apiKey ? "(set)" : "(none)"));
+  console.log("  LocalOnly: " + localOnly);
   console.log("");
 
-  const client = new AssistantHubClient({ baseUrl, apiKey });
   const runner = new TestRunner();
   const totalStart = performance.now();
 
   try {
+    await sdkContractTests(runner);
+
+    if (localOnly) {
+      const totalMs = performance.now() - totalStart;
+      runner.printSummary(totalMs);
+      const failed = runner.results.some((r) => !r.passed);
+      process.exit(failed ? 1 : 0);
+    }
+
+    const client = new AssistantHubClient({ baseUrl, apiKey });
     await healthTests(runner, client);
     await tenantTests(runner, client);
     await assistantTests(runner, client);

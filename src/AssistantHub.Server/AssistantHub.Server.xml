@@ -163,6 +163,24 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.GetToolsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/tools - Get effective tool availability for an assistant.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.ValidateToolsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/settings/tools/validate - Validate draft tool policy.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.TestToolsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/settings/tools/test - Dry-run assistant tool diagnostics.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.PutSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             PUT /v1.0/assistants/{assistantId}/settings - Create or update assistant settings.
@@ -172,6 +190,40 @@
         <member name="M:AssistantHub.Server.Handlers.AssistantSettingsHandler.VerifySlackSettingsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/assistants/{assistantId}/settings/slack/verify - Verify draft Slack settings.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.AssistantToolCallHandler">
+            <summary>
+            Handles admin assistant tool-call trace routes.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantToolCallHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantToolCallHandler.GetAssistantToolCallsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/tool-calls - enumerate assistant tool-call traces.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantToolCallHandler.GetAssistantToolCallAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId} - get one assistant tool-call trace.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantToolCallHandler.DeleteAssistantToolCallAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId} - delete one assistant tool-call trace.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantToolCallHandler.DeleteAssistantToolCallsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            DELETE /v1.0/assistants/{assistantId}/tool-calls - delete filtered assistant tool-call traces.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -381,6 +433,18 @@
         <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetAssistantPublicAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/assistants/{assistantId}/public - Public assistant info.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.GetAssistantDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/assistants/{assistantId}/documents - List selectable public chat documents.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ChatHandlerRouteBase.PostChatOpenAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/chat/open - Load configured endpoint models when a chat window opens.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -594,7 +658,7 @@
             Copy a response header from Partio when present.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.InjectTenantId(System.String)">
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.BuildPartioEndpointRequestBody(System.String,AssistantHub.Core.Models.PartioEndpointConfig)">
             <summary>
             Inject the default TenantId into a JSON request body if not already present.
             Partio requires a TenantId to scope endpoints to the correct tenant.
@@ -629,6 +693,11 @@
         <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.GetConfigurationAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/configuration - Return current settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.GetExternalSearchStatusAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/configuration/external-search/status - Return safe external-search configuration status.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.ConfigurationHandler.PutConfigurationAsync(WatsonWebserver.Core.HttpContextBase)">
@@ -756,6 +825,12 @@
         <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.TestConnectivityAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/crawlplans/{id}/connectivity - Test connectivity to the repository.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CrawlPlanHandler.TestDraftConnectivityAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/crawlplans/connectivity - Test connectivity for a draft crawl plan without persisting it.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -1222,6 +1297,14 @@
             <param name="recordTenantId">Tenant ID on the record.</param>
             <returns>True if ownership is valid.</returns>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.AuditGlobalAdminBypass(AssistantHub.Core.Models.AuthContext,System.String,System.String)">
+            <summary>
+            Emit a metadata-only audit log when a global admin intentionally bypasses tenant ownership checks.
+            </summary>
+            <param name="auth">Auth context.</param>
+            <param name="targetTenantId">Target tenant identifier.</param>
+            <param name="reason">Stable bypass reason.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.HandlerBase.BuildEnumerationQuery(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             Build an enumeration query from request query parameters.
@@ -1514,6 +1597,12 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.OpenApiHandler.GetSwaggerAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /swagger - Swagger UI.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.RequestHistoryHandler">
             <summary>
             Handles request-history routes.
@@ -1698,6 +1787,51 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder">
+            <summary>
+            Builds short prompt context for chat turns scoped to selected assistant documents.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder.MessageReferencesAttachedDocuments(System.String)">
+            <summary>
+            Determine whether the user's message refers to selected/attached documents.
+            </summary>
+            <param name="message">Message text.</param>
+            <returns>True if the message refers to attached document scope.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder.BuildRetrievalGatePrompt(System.String,System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantDocumentSelectionItem})">
+            <summary>
+            Build a retrieval gate prompt with selected-document context.
+            </summary>
+            <param name="template">Gate prompt template.</param>
+            <param name="messages">Conversation messages.</param>
+            <param name="lastUserMessage">Latest user message.</param>
+            <param name="attachedDocuments">Selected document metadata.</param>
+            <returns>Prompt text.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder.AddQueryRewriteContext(System.String,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantDocumentSelectionItem})">
+            <summary>
+            Add selected-document context to query rewrite prompts.
+            </summary>
+            <param name="prompt">Prompt after normal template substitution.</param>
+            <param name="attachedDocuments">Selected document metadata.</param>
+            <returns>Prompt with optional attachment context.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder.BuildAttachmentContext(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantDocumentSelectionItem})">
+            <summary>
+            Build a safe document-name context block without internal storage details.
+            </summary>
+            <param name="attachedDocuments">Selected document metadata.</param>
+            <returns>Document context text.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder.FilterChunksByAttachedDocuments(System.Collections.Generic.List{AssistantHub.Core.Models.RetrievalChunk},System.Collections.Generic.ICollection{System.String})">
+            <summary>
+            Defensively remove retrieved chunks outside selected document scope.
+            </summary>
+            <param name="chunks">Retrieved chunks.</param>
+            <param name="attachedDocumentIds">Allowed attached document IDs.</param>
+            <returns>Filtered chunks.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatExecutionRequest">
             <summary>
             Chat execution request.
@@ -1768,6 +1902,16 @@
             Optional metadata filter override.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.AttachedDocumentIds">
+            <summary>
+            Optional AssistantDocument.Id values used to constrain retrieval for this chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.LocalAttachments">
+            <summary>
+            Optional user-uploaded files attached to this chat turn.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.UserMessageUtc">
             <summary>
             Optional user message timestamp override.
@@ -1776,6 +1920,21 @@
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.Origin">
             <summary>
             Request origin label persisted to history.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ToolProgress">
+            <summary>
+            Optional callback invoked with safe tool lifecycle progress events.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ResponseDelta">
+            <summary>
+            Optional callback invoked with final assistant response content deltas.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionRequest.ThinkingDelta">
+            <summary>
+            Optional callback invoked with final assistant thinking/reasoning deltas.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatExecutionResult">
@@ -1791,6 +1950,11 @@
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.ErrorMessage">
             <summary>
             Error message when execution fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.StatusCode">
+            <summary>
+            HTTP status code to use when execution fails through an HTTP route.
             </summary>
         </member>
         <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.Assistant">
@@ -1818,12 +1982,17 @@
             Persisted chat-history identifier when history was written.
             </summary>
         </member>
+        <member name="P:AssistantHub.Server.Services.AssistantChatExecutionResult.ToolCalls">
+            <summary>
+            Safe tool-call trace metadata produced during execution.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatService">
             <summary>
             Shared non-streaming assistant chat execution service.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,System.Net.Http.HttpClient,AssistantHub.Server.Services.IAssistantToolExecutor,AssistantHub.Core.Services.IInferenceEndpointService)">
             <summary>
             Instantiate the shared assistant chat execution service.
             </summary>
@@ -1832,6 +2001,11 @@
             <param name="settings">Application settings.</param>
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
+            <param name="storage">Optional object storage service for S3-backed tools.</param>
+            <param name="invertedIndex">Optional inverted index service for Verbex-backed tools.</param>
+            <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
+            <param name="toolExecutor">Optional tool executor override for tests.</param>
+            <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
         </member>
         <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)">
             <summary>
@@ -1846,7 +2020,7 @@
             Provides shared non-streaming chat execution helpers.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,System.Net.Http.HttpClient,AssistantHub.Server.Services.IAssistantToolExecutor,AssistantHub.Core.Services.IInferenceEndpointService)">
             <summary>
             Instantiate the shared assistant chat helper base.
             </summary>
@@ -1855,6 +2029,464 @@
             <param name="settings">Application settings.</param>
             <param name="retrieval">Retrieval service.</param>
             <param name="inference">Inference service.</param>
+            <param name="storage">Optional object storage service for S3-backed tools.</param>
+            <param name="invertedIndex">Optional inverted index service for Verbex-backed tools.</param>
+            <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
+            <param name="toolExecutor">Optional tool executor override for tests.</param>
+            <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution">
+            <summary>
+            Result from resolving chat document attachments.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution.Success">
+            <summary>
+            Indicates whether resolution succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution.StatusCode">
+            <summary>
+            HTTP status code to use when resolution fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution.ErrorMessage">
+            <summary>
+            Error message when resolution fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution.DocumentIds">
+            <summary>
+            Validated document identifiers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution.Documents">
+            <summary>
+            Safe document metadata.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantDocumentAttachmentResolver">
+            <summary>
+            Resolves and validates attached document identifiers for assistant chat.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantDocumentAttachmentResolver.#ctor(AssistantHub.Core.Database.DatabaseDriverBase)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantDocumentAttachmentResolver.ResolveAsync(AssistantHub.Core.Models.Assistant,AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Resolve attached documents and enforce assistant tenant, collection, status, and count policy.
+            </summary>
+            <param name="assistant">Assistant.</param>
+            <param name="settings">Assistant settings.</param>
+            <param name="documentIds">Client-supplied document identifiers.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Resolution result.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantDocumentPolicyFilter">
+            <summary>
+            Applies assistant document visibility filters to document-backed surfaces.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolArgumentValidator">
+            <summary>
+            Validates model-supplied tool arguments before dispatch.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolArgumentValidator.Validate(System.String,System.Text.Json.JsonElement)">
+            <summary>
+            Ensure the argument payload is a JSON object with only known properties and expected value types.
+            </summary>
+            <param name="toolName">Tool name.</param>
+            <param name="arguments">Parsed argument root.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolAuditWriter">
+            <summary>
+            Builds policy-aware, redacted tool-call audit payloads.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolAuditWriter.BuildPersistedArguments(System.String,AssistantHub.Core.Models.AssistantToolPolicy)">
+            <summary>
+            Build persisted arguments according to policy.
+            </summary>
+            <param name="argumentsJson">Raw JSON arguments.</param>
+            <param name="policy">Assistant tool policy.</param>
+            <returns>Redacted or suppressed argument JSON.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolAuditWriter.BuildPersistedOutput(AssistantHub.Core.Models.AssistantToolExecutionResult,AssistantHub.Core.Models.AssistantToolPolicy)">
+            <summary>
+            Build persisted output according to policy.
+            </summary>
+            <param name="toolResult">Tool result.</param>
+            <param name="policy">Assistant tool policy.</param>
+            <returns>Output summary or redacted full output.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolAuditWriter.RedactToolJson(System.String)">
+            <summary>
+            Redact sensitive fields from arbitrary tool JSON.
+            </summary>
+            <param name="json">JSON payload.</param>
+            <returns>Redacted JSON payload.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolAuditWriter.RedactModelVisibleToolJson(System.String)">
+            <summary>
+            Redact sensitive fields from model-visible tool JSON while preserving safe pagination cursors.
+            </summary>
+            <param name="json">JSON payload.</param>
+            <returns>Redacted JSON payload.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolDefinition">
+            <summary>
+            OpenAI-compatible model-facing assistant tool definition.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolDefinition.Type">
+            <summary>
+            Tool definition type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolDefinition.Function">
+            <summary>
+            Function tool definition.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolExecutionContext">
+            <summary>
+            Context for executing a model-directed server-side tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.Assistant">
+            <summary>
+            Assistant that owns the chat turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.Settings">
+            <summary>
+            Assistant settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.Policy">
+            <summary>
+            Normalized tool policy.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.TraceId">
+            <summary>
+            Optional trace identifier for audit correlation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolExecutionContext.LocalAttachments">
+            <summary>
+            Per-turn user-uploaded attachments available to tools.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolExecutor">
+            <summary>
+            Executes policy-approved, read-only server-side tools for assistant chat.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolExecutor.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolExecutor.ExecuteAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Core.Models.AssistantToolExecutionRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a server-side assistant tool if policy and prerequisites allow it.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolFunctionDefinition">
+            <summary>
+            Model-facing function definition for one assistant tool.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolFunctionDefinition.Name">
+            <summary>
+            Stable model-facing function name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolFunctionDefinition.Description">
+            <summary>
+            Tool description shown to the model.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolFunctionDefinition.Parameters">
+            <summary>
+            JSON Schema parameters.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolJsonSchema">
+            <summary>
+            Small JSON Schema subset used for model-facing assistant tool parameters.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Type">
+            <summary>
+            JSON Schema type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Description">
+            <summary>
+            Human-readable field description.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Properties">
+            <summary>
+            Object properties.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Required">
+            <summary>
+            Required object properties.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.AdditionalProperties">
+            <summary>
+            Whether unspecified object properties are allowed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Items">
+            <summary>
+            Array item schema.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Enum">
+            <summary>
+            Allowed string values.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Minimum">
+            <summary>
+            Numeric minimum.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantToolJsonSchema.Maximum">
+            <summary>
+            Numeric maximum.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolOutputLimiter">
+            <summary>
+            Applies per-call and per-turn model-visible tool output limits.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolOutputLimiter.ApplyPerCallLimit(AssistantHub.Core.Models.AssistantToolExecutionResult,System.Object,System.Int32)">
+            <summary>
+            Serialize and limit one tool result.
+            </summary>
+            <param name="result">Tool execution result to populate.</param>
+            <param name="output">Serializable output.</param>
+            <param name="maxChars">Maximum output characters.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolOutputLimiter.ApplyTurnLimit(System.String,System.Int32,System.Boolean@)">
+            <summary>
+            Apply the remaining turn-level output budget to already serialized model-visible JSON.
+            </summary>
+            <param name="json">Model-visible JSON.</param>
+            <param name="remainingChars">Remaining turn budget.</param>
+            <param name="truncated">Whether output was truncated.</param>
+            <returns>Limited model-visible JSON.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolPolicyResolver">
+            <summary>
+            Resolves assistant tool policy into effective server-side tool availability.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolPolicyResolver.#ctor(AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Server settings.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolPolicyResolver.Resolve(AssistantHub.Core.Models.Assistant,AssistantHub.Core.Models.AssistantSettings,System.Boolean)">
+            <summary>
+            Resolve effective tools for the supplied assistant settings.
+            </summary>
+            <param name="assistant">Assistant.</param>
+            <param name="settings">Assistant settings.</param>
+            <param name="includeDisabled">Include tools disabled by policy.</param>
+            <returns>Effective tool descriptors.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantToolRegistry">
+            <summary>
+            Builds model-facing tool definitions from assistant policy and server capabilities.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolRegistry.#ctor(AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Server settings.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolRegistry.BuildDefinitions(AssistantHub.Core.Models.Assistant,AssistantHub.Core.Models.AssistantSettings)">
+            <summary>
+            Build tool definitions that may be sent to a tool-capable model.
+            </summary>
+            <param name="assistant">Assistant.</param>
+            <param name="settings">Assistant settings.</param>
+            <returns>Model-facing tool definitions.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolRegistry.IsImplementedTool(System.String)">
+            <summary>
+            Determine whether the current server can execute a tool.
+            </summary>
+            <param name="toolName">Tool name.</param>
+            <returns>True if execution is implemented.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolRegistry.NormalizeToolName(System.String)">
+            <summary>
+            Normalize a model- or policy-supplied tool name to the implemented canonical name.
+            </summary>
+            <param name="toolName">Tool name.</param>
+            <returns>Canonical tool name or null when unknown.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentProcessor">
+            <summary>
+            Processes per-turn user-uploaded chat attachments into model-visible context.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.ResolveAsync(AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.List{AssistantHub.Core.Models.ChatLocalAttachment},AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,System.Threading.CancellationToken)">
+            <summary>
+            Process local chat attachments.
+            </summary>
+            <param name="settings">Assistant settings.</param>
+            <param name="attachments">Request attachments.</param>
+            <param name="appSettings">Application settings.</param>
+            <param name="logging">Logging module.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Attachment resolution.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.Count(System.Collections.Generic.List{AssistantHub.Core.Models.ChatLocalAttachment})">
+            <summary>
+            Count non-empty local attachments.
+            </summary>
+            <param name="attachments">Attachments.</param>
+            <returns>Count.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.BuildPromptContext(System.Collections.Generic.IEnumerable{AssistantHub.Server.Services.ChatLocalAttachmentContext})">
+            <summary>
+            Build model-visible attachment context.
+            </summary>
+            <param name="attachments">Processed attachments.</param>
+            <returns>Prompt context.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ChatLocalAttachmentProcessor.AppendToSystemPrompt(System.String,System.String)">
+            <summary>
+            Append attachment context to a system prompt.
+            </summary>
+            <param name="systemPrompt">Base system prompt.</param>
+            <param name="attachmentContext">Attachment context.</param>
+            <returns>Combined prompt.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentContext">
+            <summary>
+            Processed local chat attachment.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.AttachmentId">
+            <summary>Stable per-turn local attachment ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Name">
+            <summary>Filename.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.ContentType">
+            <summary>Content type.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.SizeBytes">
+            <summary>Original size in bytes when supplied as a file.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.SourceBytes">
+            <summary>Original attachment bytes for per-turn tool access.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.DocumentType">
+            <summary>Best-effort DocumentAtom document type.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Text">
+            <summary>Extracted or supplied text.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentContext.Truncated">
+            <summary>Whether text was truncated for prompt safety.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ChatLocalAttachmentResolution">
+            <summary>
+            Local chat attachment processing result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.Success">
+            <summary>Whether processing succeeded.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.StatusCode">
+            <summary>HTTP status code for failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.ErrorMessage">
+            <summary>Error message for failures.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.ChatLocalAttachmentResolution.Attachments">
+            <summary>Processed attachments.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CollectionToolService">
+            <summary>
+            Typed facade for assistant collection tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CollectionToolService.#ctor(AssistantHub.Server.Services.IAssistantToolExecutor)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="executor">Assistant tool executor.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CollectionToolService.SearchCollectionAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.CollectionToolSearchRequest,System.Threading.CancellationToken)">
+            <summary>
+            Search the assistant collection through the policy-scoped collection_search tool.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CollectionToolService.ReadChunksAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.CollectionToolReadChunksRequest,System.Threading.CancellationToken)">
+            <summary>
+            Read exact chunks from a completed assistant document.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.CollectionToolService.EnumerateDocumentsAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.CollectionToolEnumerateDocumentsRequest,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate assistant-visible collection documents.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CollectionToolSearchRequest">
+            <summary>
+            Strongly typed collection_search request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CollectionToolReadChunksRequest">
+            <summary>
+            Strongly typed collection_read_chunks request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CollectionToolChunkRange">
+            <summary>
+            Strongly typed chunk range.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.CollectionToolEnumerateDocumentsRequest">
+            <summary>
+            Strongly typed collection_enumerate_documents request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ConfigurationSettingsRedactor">
+            <summary>
+            Redacts secret-bearing server configuration values for API responses.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ConfigurationSettingsRedactor.CreateRedactedCopy(AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Create a response-safe configuration copy.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ConfigurationSettingsRedactor.PreserveRedactedExternalSearchSecrets(AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Settings.AssistantHubSettings)">
+            <summary>
+            Preserve existing provider API keys when a redacted configuration response is submitted back.
+            </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.CrawlOperationCleanupService">
             <summary>
@@ -2008,6 +2640,20 @@
         <member name="M:AssistantHub.Server.Services.ExternalServiceHealthService.ValidateConnectivityAsync">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Server.Services.IAssistantToolExecutor">
+            <summary>
+            Executes policy-approved server-side assistant tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.IAssistantToolExecutor.ExecuteAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Core.Models.AssistantToolExecutionRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a server-side assistant tool.
+            </summary>
+            <param name="context">Tool execution context.</param>
+            <param name="request">Tool execution request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Tool execution result.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Services.IExternalServiceHealthService">
             <summary>
             Aggregate health validation for subordinate external services.
@@ -2037,6 +2683,47 @@
         <member name="M:AssistantHub.Server.Services.ISlackAssistantConnectionManager.RefreshAssistantAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Refresh a single assistant worker.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ObjectToolService">
+            <summary>
+            Typed facade for assistant S3/object tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ObjectToolService.#ctor(AssistantHub.Server.Services.IAssistantToolExecutor)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="executor">Assistant tool executor.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ObjectToolService.ReadObjectAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.ObjectToolReadRequest,System.Threading.CancellationToken)">
+            <summary>
+            Read a document-backed or explicitly bucket-wide object through the policy-scoped s3_object_read tool.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.ObjectToolService.EnumerateObjectsAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.ObjectToolEnumerateRequest,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate objects through the policy-scoped bucket_enumerate_objects tool.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ObjectToolReadRequest">
+            <summary>
+            Strongly typed s3_object_read request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ObjectToolEnumerateRequest">
+            <summary>
+            Strongly typed bucket_enumerate_objects request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ObjectToolReadResult">
+            <summary>
+            Safe response model for mapped object reads.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.ObjectToolEnumerationItem">
+            <summary>
+            Safe response model for bucket object enumeration.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.OpenApiDocumentService">
@@ -2078,7 +2765,7 @@
             Slack assistant connection manager.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+        <member name="M:AssistantHub.Server.Services.SlackAssistantConnectionManager.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService)">
             <summary>
             Instantiate.
             </summary>
@@ -2130,12 +2817,19 @@
             <param name="maxLength">Maximum chunk length.</param>
             <returns>Chunked message parts.</returns>
         </member>
+        <member name="M:AssistantHub.Server.Services.SlackAssistantUtilities.ShapeSlackToolProgressMessage(AssistantHub.Core.Models.AssistantToolProgressEvent)">
+            <summary>
+            Shape a safe tool-progress lifecycle event for Slack delivery.
+            </summary>
+            <param name="evt">Safe tool-progress event.</param>
+            <returns>Slack-safe short status text, or null when the event should not be posted.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Services.SlackAssistantWorker">
             <summary>
             Assistant-scoped Slack worker.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,System.String)">
+        <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,System.String,AssistantHub.Core.Services.IObjectStorageService)">
             <summary>
             Instantiate the worker.
             </summary>
@@ -2148,6 +2842,68 @@
         <member name="M:AssistantHub.Server.Services.SlackAssistantWorker.StopAsync(System.Threading.CancellationToken)">
             <summary>
             Stop the worker.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolService">
+            <summary>
+            Typed facade for assistant Verbex tools.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.VerbexToolService.#ctor(AssistantHub.Server.Services.IAssistantToolExecutor,AssistantHub.Core.Database.DatabaseDriverBase)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="executor">Assistant tool executor.</param>
+            <param name="database">Optional database driver used for scope and mapping helpers.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Services.VerbexToolService.ResolveAllowedVerbexScopeAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,System.Threading.CancellationToken)">
+            <summary>
+            Resolve the assistant-visible Verbex tenant/index scope.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.VerbexToolService.SearchAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.VerbexToolSearchRequest,System.Threading.CancellationToken)">
+            <summary>
+            Search an allowed Verbex index through the policy-scoped verbex_full_text_search tool.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.VerbexToolService.EnumerateRecordsAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Server.Services.VerbexToolEnumerateRecordsRequest,System.Threading.CancellationToken)">
+            <summary>
+            Enumerate records from an allowed Verbex index through the policy-scoped index_enumerate_records tool.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.VerbexToolService.MapRecordToAssistantDocumentAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Map a Verbex record back to an assistant-visible document.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolScope">
+            <summary>
+            Assistant-visible Verbex scope.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolSearchRequest">
+            <summary>
+            Strongly typed verbex_full_text_search request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolEnumerateRecordsRequest">
+            <summary>
+            Strongly typed index_enumerate_records request.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolSearchHit">
+            <summary>
+            Safe response model for Verbex search hits.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolRecordItem">
+            <summary>
+            Safe response model for Verbex record enumeration.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.VerbexToolDocumentMap">
+            <summary>
+            Safe mapping from a Verbex record to an assistant document.
             </summary>
         </member>
     </members>

@@ -105,15 +105,25 @@ export const ASSISTANT_TEMPLATES = [
     path: '/v1.0/assistants/{assistantId}/chat',
     tags: ['Assistant Public APIs'],
     summary: 'Chat with assistant',
-    description: 'Execute assistant chat and inspect streaming or non-streaming responses.',
+    description: 'Execute assistant chat and inspect streaming or non-streaming responses. Optional attached_document_ids values constrain RecallDB retrieval to selected assistant documents.',
     includeAuth: false,
     expectStream: true,
     headersText: 'X-Thread-ID: ',
     bodyTemplate: {
       messages: [
-        { role: 'user', content: 'Hello. Please give me a short response.' },
+        { role: 'user', content: 'Give me a summary of this document.' },
       ],
+      attached_document_ids: ['adoc_example'],
     },
+  },
+  {
+    key: 'assistant-documents',
+    method: 'GET',
+    path: '/v1.0/assistants/{assistantId}/documents',
+    tags: ['Assistant Public APIs'],
+    summary: 'List selectable assistant documents',
+    description: 'List completed documents from the assistant collection that may be used in attached_document_ids for chat retrieval filtering. Supports optional query and contentType filters.',
+    includeAuth: false,
   },
   {
     key: 'assistant-chat-open',
@@ -202,6 +212,7 @@ const COMPOUND_RESOURCE_NAMES = {
   'assistants': { collection: 'assistants', single: 'assistant' },
   'assistants/settings': { collection: 'assistant settings', single: 'assistant settings' },
   'assistants/settings/slack': { collection: 'assistant Slack settings', single: 'assistant Slack settings' },
+  'assistants/tool-calls': { collection: 'assistant tool-call traces', single: 'assistant tool-call trace' },
   'assistants/threads': { collection: 'threads', single: 'thread' },
   'buckets': { collection: 'buckets', single: 'bucket' },
   'buckets/objects': { collection: 'bucket objects', single: 'bucket object' },
@@ -339,9 +350,12 @@ function generateOperationSummary(method, path) {
   if (normalizedPath === '/assistants/{assistantId}/threads') return method === 'POST' ? 'Create thread' : 'Retrieve threads';
   if (normalizedPath === '/assistants/{assistantId}/threads/{threadId}/history') return 'Retrieve thread history';
   if (normalizedPath === '/assistants/{assistantId}/chat') return 'Chat with assistant';
+  if (normalizedPath === '/assistants/{assistantId}/documents') return 'List selectable assistant documents';
   if (normalizedPath === '/assistants/{assistantId}/compact') return 'Compact conversation';
   if (normalizedPath === '/assistants/{assistantId}/generate') return 'Generate assistant response';
   if (normalizedPath === '/assistants/{assistantId}/feedback') return 'Submit assistant feedback';
+  if (normalizedPath === '/assistants/{assistantId}/tool-calls') return method === 'DELETE' ? 'Delete assistant tool-call traces' : 'List assistant tool-call traces';
+  if (normalizedPath === '/assistants/{assistantId}/tool-calls/{toolCallRecordId}') return method === 'DELETE' ? 'Delete assistant tool-call trace' : 'Get assistant tool-call trace';
   if (normalizedPath === '/buckets/{name}/objects/metadata') return 'Retrieve bucket object metadata';
   if (normalizedPath === '/buckets/{name}/objects/download') return 'Download bucket object';
   if (normalizedPath === '/buckets/{name}/objects/upload') return 'Upload bucket object';

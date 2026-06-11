@@ -611,8 +611,12 @@ namespace Test.Automated
                 AssertHelper.StringContains(slackUtilitiesSource, "Tool running:", "Slack running tool progress text");
                 AssertHelper.StringContains(slackUtilitiesSource, "Tool completed:", "Slack completed tool progress text");
                 AssertHelper.StringContains(slackUtilitiesSource, "Tool failed:", "Slack failed tool progress text");
-                AssertHelper.StringContains(chatPanelSource, "chat-pending-content-wrap", "Dashboard tool status shares assistant pending content column");
-                AssertHelper.StringContains(chatPanelSource, "title={toolStatus || waitMessage}", "Dashboard long tool status has hover text");
+                AssertHelper.StringContains(chatPanelSource, "chat-pending-content-wrap", "Dashboard pending wait label uses assistant content column");
+                AssertHelper.StringContains(chatPanelSource, "title={waitMessage}", "Dashboard wait label has hover text");
+                AssertHelper.StringContains(chatPanelSource, "const bubbleKey = `tool-progress:${runKey}`", "Dashboard groups tool progress into one bubble per run");
+                AssertHelper.StringContains(chatPanelSource, "chat-tool-progress-line", "Dashboard renders compact tool progress rows");
+                AssertHelper.StringContains(chatPanelSource, "<b className=\"chat-tool-progress-title\">", "Dashboard tool progress rows emphasize inline labels");
+                AssertHelper.StringContains(chatPanelSource, "item.meta.join(' / ')", "Dashboard tool progress rows keep metadata inline");
                 AssertHelper.StringContains(chatPanelSource, "The assistant tool stream was interrupted", "Dashboard interrupted tool stream copy");
                 AssertHelper.StringContains(chatPanelSource, "<details className=\"chat-tool-trace\"", "Dashboard tool activity is collapsible");
                 AssertHelper.StringContains(chatPanelSource, "chat-tool-trace-table", "Dashboard tool activity renders tabular trace");

@@ -436,12 +436,12 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     const summary = readTraceField(event, 'summary', 'Summary', 'status', 'Status') || statusText;
     const truncated = !!readTraceField(event, 'truncated', 'Truncated');
 
-    const keyParts = [
-      toolCallId,
-      eventType.includes('iteration') ? `iteration-${iteration || 'current'}` : null,
-      !toolCallId && !eventType.includes('iteration') ? `${toolName || label}-${iteration || '0'}-${sequence || '0'}` : null
-    ].filter(Boolean);
-    const key = `tool-progress:${runKey}:${keyParts[0] || eventType}`;
+    const bubbleKey = `tool-progress:${runKey}`;
+    const itemKey = toolCallId
+      ? `call:${toolCallId}`
+      : eventType.includes('tool_iteration')
+        ? `${eventType}:${iteration || 'current'}`
+        : `${eventType}:${toolName || label}:${iteration || '0'}:${sequence || '0'}`;
 
     let state = 'running';
     let title = label;
@@ -495,26 +495,59 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
     return {
       role: 'assistant',
       isToolProgress: true,
-      toolProgressKey: key,
+      toolProgressKey: bubbleKey,
       toolProgressState: state,
-      content: detail,
-      title,
-      detail,
-      meta
+      content: `${title}: ${detail}`,
+      items: [{
+        key: itemKey,
+        title,
+        detail,
+        state,
+        meta
+      }]
     };
   };
 
   const upsertToolProgressMessage = (event, statusText, runKey) => {
     const progress = buildToolProgressMessage(event, statusText, runKey);
     if (!progress) return;
+    const nextItem = progress.items?.[0];
+    if (!nextItem) return;
+
+    const summarizeProgressItems = (items) => (
+      items.map(item => `${item.title}: ${item.detail}`).join('\n')
+    );
+
+    const summarizeProgressState = (items) => {
+      const lastProblem = [...items].reverse().find(item => item.state === 'failed' || item.state === 'denied');
+      if (lastProblem) return lastProblem.state;
+      return items[items.length - 1]?.state || 'running';
+    };
 
     setMessages(prev => {
       const updated = [...prev];
       const index = updated.findIndex(msg => msg.isToolProgress && msg.toolProgressKey === progress.toolProgressKey);
       if (index >= 0) {
-        updated[index] = { ...updated[index], ...progress };
+        const items = Array.isArray(updated[index].items) ? [...updated[index].items] : [];
+        const itemIndex = items.findIndex(item => item.key === nextItem.key);
+        if (itemIndex >= 0) {
+          items[itemIndex] = nextItem;
+        } else {
+          items.push(nextItem);
+        }
+        const state = summarizeProgressState(items);
+        updated[index] = {
+          ...updated[index],
+          toolProgressState: state,
+          content: summarizeProgressItems(items),
+          items
+        };
       } else {
-        updated.push(progress);
+        updated.push({
+          ...progress,
+          toolProgressState: nextItem.state,
+          content: summarizeProgressItems(progress.items)
+        });
       }
       return updated;
     });
@@ -1133,6 +1166,16 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
             }
 
             if (msg.isToolProgress) {
+              const progressItems = Array.isArray(msg.items) && msg.items.length > 0
+                ? msg.items
+                : [{
+                    key: 'legacy',
+                    title: msg.title || 'Tool activity',
+                    detail: msg.detail || msg.content,
+                    meta: msg.meta || [],
+                    state: msg.toolProgressState
+                  }];
+
               return (
                 <div key={idx} className={`chat-message-row assistant tool-progress ${msg.toolProgressState || 'running'}`}>
                   <div className="chat-avatar assistant-avatar">
@@ -1144,15 +1187,21 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
                   </div>
                   <div className="chat-message-content-wrap">
                     <div className={`chat-bubble assistant tool-progress ${msg.toolProgressState || 'running'}`} aria-live="polite">
-                      <div className="chat-tool-progress-title">{msg.title || 'Tool activity'}</div>
-                      <div className="chat-tool-progress-detail">{msg.detail || msg.content}</div>
-                      {Array.isArray(msg.meta) && msg.meta.length > 0 && (
-                        <div className="chat-tool-progress-meta">
-                          {msg.meta.map((item, metaIndex) => (
-                            <span key={`${item}-${metaIndex}`}>{item}</span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="chat-tool-progress-list">
+                        {progressItems.map((item, itemIndex) => (
+                          <div
+                            key={item.key || `${item.title}-${itemIndex}`}
+                            className={`chat-tool-progress-line ${item.state || 'running'}`}
+                          >
+                            <b className="chat-tool-progress-title">{item.title || 'Tool activity'}</b>
+                            <span className="chat-tool-progress-separator">: </span>
+                            <span className="chat-tool-progress-detail">{item.detail || ''}</span>
+                            {Array.isArray(item.meta) && item.meta.length > 0 && (
+                              <span className="chat-tool-progress-meta"> ({item.meta.join(' / ')})</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>

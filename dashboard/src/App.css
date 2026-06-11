@@ -1719,35 +1719,37 @@ body {
 
 .chat-bubble.tool-progress {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  padding: 0.5rem 0.75rem;
 }
 
-.chat-tool-progress-title {
+.chat-tool-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.chat-tool-progress-line {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.chat-tool-progress-title,
+.chat-tool-progress-separator {
   color: var(--text-secondary);
   font-weight: 650;
-  line-height: 1.35;
 }
 
 .chat-tool-progress-detail {
-  margin-top: 0.2rem;
   color: var(--text-secondary);
-  line-height: 1.45;
 }
 
 .chat-tool-progress-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
-  margin-top: 0.4rem;
+  display: inline;
+  margin-left: 0.15rem;
   color: var(--text-tertiary, #7a8797);
-  font-size: 0.75rem;
-  line-height: 1.35;
-}
-
-.chat-tool-progress-meta span:not(:last-child)::after {
-  content: "/";
-  margin-left: 0.5rem;
-  color: var(--border-color);
+  font-size: 0.78em;
 }
 
 .chat-bubble.error {

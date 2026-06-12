@@ -481,7 +481,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 // Group chunk record IDs by collection for batch delete
-                Dictionary<string, List<string>> recordIdsByCollection = new Dictionary<string, List<string>>();
+                Dictionary<string, (string TenantId, string CollectionId, List<string> RecordIds)> recordIdsByCollection = new Dictionary<string, (string TenantId, string CollectionId, List<string> RecordIds)>();
                 Dictionary<string, (string TenantId, string IndexId, List<string> RecordIds)> recordIdsByIndex = new Dictionary<string, (string TenantId, string IndexId, List<string> RecordIds)>();
                 foreach (AssistantDocument doc in docs)
                 {
@@ -492,9 +492,10 @@ namespace AssistantHub.Server.Handlers
                             List<string> recordIds = JsonSerializer.Deserialize<List<string>>(doc.ChunkRecordIds);
                             if (recordIds != null && recordIds.Count > 0)
                             {
-                                if (!recordIdsByCollection.ContainsKey(doc.CollectionId))
-                                    recordIdsByCollection[doc.CollectionId] = new List<string>();
-                                recordIdsByCollection[doc.CollectionId].AddRange(recordIds);
+                                string collectionKey = doc.TenantId + "|" + doc.CollectionId;
+                                if (!recordIdsByCollection.ContainsKey(collectionKey))
+                                    recordIdsByCollection[collectionKey] = (doc.TenantId, doc.CollectionId, new List<string>());
+                                recordIdsByCollection[collectionKey].RecordIds.AddRange(recordIds);
                             }
                         }
                         catch (Exception parseEx)
@@ -514,15 +515,15 @@ namespace AssistantHub.Server.Handlers
                 // Batch delete embeddings per collection
                 if (Ingestion != null)
                 {
-                    foreach (KeyValuePair<string, List<string>> kvp in recordIdsByCollection)
+                    foreach (KeyValuePair<string, (string TenantId, string CollectionId, List<string> RecordIds)> kvp in recordIdsByCollection)
                     {
                         try
                         {
-                            await Ingestion.DeleteEmbeddingBatchAsync(auth.TenantId, kvp.Key, kvp.Value).ConfigureAwait(false);
+                            await Ingestion.DeleteEmbeddingBatchAsync(kvp.Value.TenantId, kvp.Value.CollectionId, kvp.Value.RecordIds).ConfigureAwait(false);
                         }
                         catch (Exception embeddingEx)
                         {
-                            Logging.Warn(_Header + "failed to batch delete embeddings for collection " + kvp.Key + ": " + embeddingEx.Message);
+                            Logging.Warn(_Header + "failed to batch delete embeddings for tenant " + kvp.Value.TenantId + " collection " + kvp.Value.CollectionId + ": " + embeddingEx.Message);
                         }
                     }
                 }

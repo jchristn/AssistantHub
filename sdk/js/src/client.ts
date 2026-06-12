@@ -1029,7 +1029,8 @@ export class AssistantHubClient {
 
   /** Delete multiple records from an inverted index. */
   async deleteIndexRecords(indexId: string, recordIds: string[]): Promise<void> {
-    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}/records?ids=${encodeURIComponent(recordIds.join(","))}`);
+    const ids = recordIds.map((recordId) => encodeURIComponent(recordId)).join(",");
+    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}/records?ids=${ids}`);
   }
 
   /** Get an inverted-index record by ID. */

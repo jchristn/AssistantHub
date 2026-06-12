@@ -497,7 +497,15 @@ export class ApiClient {
   getIndexRecords(indexId, params) { return this.request('GET', `/v1.0/indices/${indexId}/records` + this.buildQuery(params)); }
   getIndexRecord(indexId, recordId) { return this.request('GET', `/v1.0/indices/${indexId}/records/${recordId}`); }
   deleteIndexRecord(indexId, recordId) { return this.request('DELETE', `/v1.0/indices/${indexId}/records/${recordId}`); }
-  deleteIndexRecords(indexId, ids) { return this.request('DELETE', `/v1.0/indices/${indexId}/records` + this.buildQuery({ ids: Array.isArray(ids) ? ids.join(',') : ids })); }
+  deleteIndexRecords(indexId, ids) {
+    const idList = Array.isArray(ids) ? ids : String(ids || '').split(',');
+    const idsParam = idList
+      .map((id) => String(id || '').trim())
+      .filter(Boolean)
+      .map((id) => encodeURIComponent(id))
+      .join(',');
+    return this.request('DELETE', `/v1.0/indices/${indexId}/records?ids=${idsParam}`);
+  }
   indexRecordsExist(indexId, request) { return this.request('POST', `/v1.0/indices/${indexId}/records/exists`, request); }
   updateIndexRecordLabels(indexId, recordId, labels) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/labels`, labels); }
   updateIndexRecordTags(indexId, recordId, tags) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/tags`, tags); }

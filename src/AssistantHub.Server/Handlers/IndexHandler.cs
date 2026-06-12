@@ -238,7 +238,9 @@ namespace AssistantHub.Server.Handlers
                 path += "/" + childPath.TrimStart('/');
 
             if (includeQuery)
-                path = AppendRequestQuery(ctx, path);
+                path = method == NetHttpMethod.Delete && String.IsNullOrEmpty(childPath)
+                    ? AppendRecordDeleteQuery(ctx, path)
+                    : AppendRequestQuery(ctx, path);
 
             await ProxyAsync(ctx, method, path, body).ConfigureAwait(false);
         }
@@ -268,6 +270,47 @@ namespace AssistantHub.Server.Handlers
             int queryStart = raw.IndexOf('?');
             if (queryStart < 0) return path;
             return path + raw.Substring(queryStart);
+        }
+
+        private string AppendRecordDeleteQuery(HttpContextBase ctx, string path)
+        {
+            string idsParam = ctx?.Request?.Query?.Elements?.Get("ids");
+            if (String.IsNullOrWhiteSpace(idsParam))
+                return AppendRequestQuery(ctx, path);
+
+            return BuildRecordDeleteQueryPath(path, idsParam);
+        }
+
+        private static string BuildRecordDeleteQueryPath(string path, string idsParam)
+        {
+            string decoded = DecodeQueryValue(idsParam);
+            List<string> ids = decoded
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(id => id.Trim())
+                .Where(id => !String.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            if (ids.Count == 0)
+                return path + "?ids=";
+
+            return path + "?ids=" + String.Join(",", ids.Select(Uri.EscapeDataString));
+        }
+
+        private static string DecodeQueryValue(string value)
+        {
+            if (String.IsNullOrEmpty(value)) return value;
+
+            string previous = value;
+            for (int i = 0; i < 2; i++)
+            {
+                string decoded = Uri.UnescapeDataString(previous.Replace("+", " "));
+                if (String.Equals(decoded, previous, StringComparison.Ordinal))
+                    return decoded;
+                previous = decoded;
+            }
+
+            return previous;
         }
 
         private string InjectTenantId(string body, string tenantId)

@@ -266,6 +266,26 @@ namespace Test.Automated
                 AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Delete, null, null, true)", "batch delete records proxy");
             });
 
+            await ExecuteTestAsync("Verbex index record proxy: normalizes encoded batch-delete ids", async () =>
+            {
+                MethodInfo method = typeof(IndexHandler).GetMethod("BuildRecordDeleteQueryPath", BindingFlags.NonPublic | BindingFlags.Static);
+                AssertHelper.IsNotNull(method, "batch delete normalization helper");
+
+                string normalized = (string)method.Invoke(null, new object[] { "/v1.0/indices/default/documents", "adoc_one%2Cadoc_two%2Cadoc_two" });
+
+                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_one,adoc_two", normalized, "encoded comma batch delete path");
+                await Task.CompletedTask.ConfigureAwait(false);
+            });
+
+            await ExecuteTestAsync("Document bulk delete: cascades subordinate deletes by document tenant", async () =>
+            {
+                string root = GetRepositoryRoot();
+                string documentHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "DocumentHandler.cs"));
+
+                AssertHelper.StringContains(documentHandlerSource, "doc.TenantId + \"|\" + doc.CollectionId", "embedding delete grouping includes tenant");
+                AssertHelper.StringContains(documentHandlerSource, "DeleteEmbeddingBatchAsync(kvp.Value.TenantId, kvp.Value.CollectionId, kvp.Value.RecordIds)", "embedding delete uses document tenant");
+            });
+
             await ExecuteTestAsync("Verbex search proxy: route forwards request body", async () =>
             {
                 string root = GetRepositoryRoot();

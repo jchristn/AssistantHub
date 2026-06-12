@@ -423,7 +423,7 @@ class AsyncAssistantHubClientParityMixin:
         await self._request("DELETE", f"/v1.0/collections/{collection_id}/records/{record_id}")
 
     async def batch_delete_collection_records(self, collection_id: str, record_ids: list[str]) -> None:
-        await self._request("POST", f"/v1.0/collections/{collection_id}/records/batch/delete", json=record_ids)
+        await self._request("POST", f"/v1.0/collections/{collection_id}/records/delete", json={"RecordIds": record_ids})
 
     async def search_collection(self, collection_id: str, request: dict[str, Any]) -> dict[str, Any]:
         response = await self._request("POST", f"/v1.0/collections/{collection_id}/search", json=request)
@@ -504,7 +504,7 @@ class AsyncAssistantHubClientParityMixin:
         return response.json()
 
     async def delete_index_records(self, index_id: str, record_ids: list[str]) -> None:
-        await self._request("DELETE", f"/v1.0/indices/{index_id}/records", params={"ids": ",".join(record_ids)})
+        await self._request("POST", f"/v1.0/indices/{index_id}/records/delete", json={"RecordIds": record_ids})
 
     async def get_index_record(self, index_id: str, record_id: str) -> dict[str, Any]:
         response = await self._request("GET", f"/v1.0/indices/{index_id}/records/{record_id}")

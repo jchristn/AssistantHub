@@ -1495,10 +1495,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "[\n\t\"record-guid-1\",\n\t\"record-guid-2\"\n]"
+              "raw": "{\n\t\"RecordIds\": [\n\t\t\"record-guid-1\",\n\t\t\"record-guid-2\"\n\t]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/batch/delete",
+              "raw": "{{baseUrl}}/v1.0/collections/:collectionId/records/delete",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1507,7 +1507,6 @@
                 "collections",
                 ":collectionId",
                 "records",
-                "batch",
                 "delete"
               ],
               "variable": [
@@ -1951,10 +1950,19 @@
         {
           "name": "Delete Index Records Batch",
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"RecordIds\": [\n\t\t\"{{indexRecordId}}\"\n\t]\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records?ids={{recordId}}",
+              "raw": "{{baseUrl}}/v1.0/indices/{{indexId}}/records/delete",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1962,7 +1970,8 @@
                 "v1.0",
                 "indices",
                 "{{indexId}}",
-                "records"
+                "records",
+                "delete"
               ]
             }
           }

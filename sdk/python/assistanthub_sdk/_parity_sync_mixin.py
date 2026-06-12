@@ -423,7 +423,7 @@ class AssistantHubClientParityMixin:
         self._request("DELETE", f"/v1.0/collections/{collection_id}/records/{record_id}")
 
     def batch_delete_collection_records(self, collection_id: str, record_ids: list[str]) -> None:
-        self._request("POST", f"/v1.0/collections/{collection_id}/records/batch/delete", json=record_ids)
+        self._request("POST", f"/v1.0/collections/{collection_id}/records/delete", json={"RecordIds": record_ids})
 
     def search_collection(self, collection_id: str, request: dict[str, Any]) -> dict[str, Any]:
         response = self._request("POST", f"/v1.0/collections/{collection_id}/search", json=request)
@@ -504,7 +504,7 @@ class AssistantHubClientParityMixin:
         return response.json()
 
     def delete_index_records(self, index_id: str, record_ids: list[str]) -> None:
-        self._request("DELETE", f"/v1.0/indices/{index_id}/records", params={"ids": ",".join(record_ids)})
+        self._request("POST", f"/v1.0/indices/{index_id}/records/delete", json={"RecordIds": record_ids})
 
     def get_index_record(self, index_id: str, record_id: str) -> dict[str, Any]:
         response = self._request("GET", f"/v1.0/indices/{index_id}/records/{record_id}")

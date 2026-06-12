@@ -8976,8 +8976,9 @@ namespace Test.Automated
                     new List<string> { "adoc_one", "ADOC_ONE", "", null, "adoc_two" }).ConfigureAwait(false);
 
                 AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex batch delete calls");
-                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[0].Method, "batch delete method");
-                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_one,adoc_two", invertedIndex.Calls[0].Path, "batch delete path");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[0].Method, "batch delete method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/delete", invertedIndex.Calls[0].Path, "batch delete path");
+                AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"DocumentIds\":[\"adoc_one\",\"adoc_two\"]", "batch delete body");
             });
 
             await ExecuteTestAsync("IngestionService.DeleteIndexRecordBatchAsync: cleanup failure does not throw", async () =>
@@ -8989,7 +8990,8 @@ namespace Test.Automated
                 await service.DeleteIndexRecordBatchAsync(Constants.DefaultTenantId, "default", new List<string> { "adoc_failed" }).ConfigureAwait(false);
 
                 AssertHelper.HasCount(invertedIndex.Calls, 1, "Verbex batch delete calls");
-                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_failed", invertedIndex.Calls[0].Path, "failed batch delete path");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/delete", invertedIndex.Calls[0].Path, "failed batch delete path");
+                AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"DocumentIds\":[\"adoc_failed\"]", "failed batch delete body");
             });
 
             await ExecuteTestAsync("TenantProvisioningService.ProvisionAsync: creates Verbex tenant and default index", async () =>

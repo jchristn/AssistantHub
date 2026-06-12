@@ -3132,13 +3132,13 @@
         "operationId": "delete_v1_0_collections_collectionid_records_recordid"
       }
     },
-    "/v1.0/collections/{collectionId}/records/batch/delete": {
+    "/v1.0/collections/{collectionId}/records/delete": {
       "post": {
         "tags": [
           "Collection Records"
         ],
         "summary": "Delete records batch",
-        "operationId": "post_v1_0_collections_collectionid_records_batch_delete",
+        "operationId": "post_v1_0_collections_collectionid_records_delete",
         "parameters": [
           {
             "name": "collectionId",
@@ -3172,12 +3172,11 @@
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "$ref": "#/components/schemas/RecordBulkDeleteRequest"
               }
             }
           }
@@ -10253,8 +10252,10 @@
           }
         },
         "operationId": "put_v1_0_indices_indexid_records"
-      },
-      "delete": {
+      }
+    },
+    "/v1.0/indices/{indexId}/records/delete": {
+      "post": {
         "tags": [
           "Index Records"
         ],
@@ -10270,9 +10271,6 @@
           },
           {
             "$ref": "#/components/parameters/indexId"
-          },
-          {
-            "$ref": "#/components/parameters/ids"
           }
         ],
         "security": [
@@ -10303,7 +10301,18 @@
             "$ref": "#/components/responses/InternalError"
           }
         },
-        "operationId": "delete_v1_0_indices_indexid_records"
+        "requestBody": {
+          "required": true,
+          "description": "Record IDs to delete.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordBulkDeleteRequest"
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_0_indices_indexid_records_delete"
       }
     },
     "/v1.0/indices/{indexId}/records/{recordId}": {
@@ -13741,6 +13750,20 @@
         ],
         "properties": {
           "DocumentIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RecordBulkDeleteRequest": {
+        "type": "object",
+        "required": [
+          "RecordIds"
+        ],
+        "properties": {
+          "RecordIds": {
             "type": "array",
             "items": {
               "type": "string"

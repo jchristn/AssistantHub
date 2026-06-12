@@ -935,7 +935,7 @@ export class AssistantHubClient {
 
   /** Batch delete records in a collection. */
   async batchDeleteCollectionRecords(collectionId: string, recordIds: string[]): Promise<void> {
-    return this._request("POST", `/v1.0/collections/${encodeURIComponent(collectionId)}/records/batch/delete`, recordIds);
+    return this._request("POST", `/v1.0/collections/${encodeURIComponent(collectionId)}/records/delete`, { RecordIds: recordIds });
   }
 
   /** Search records in a RecallDB collection. */
@@ -1029,8 +1029,7 @@ export class AssistantHubClient {
 
   /** Delete multiple records from an inverted index. */
   async deleteIndexRecords(indexId: string, recordIds: string[]): Promise<void> {
-    const ids = recordIds.map((recordId) => encodeURIComponent(recordId)).join(",");
-    return this._request("DELETE", `/v1.0/indices/${encodeURIComponent(indexId)}/records?ids=${ids}`);
+    return this._request("POST", `/v1.0/indices/${encodeURIComponent(indexId)}/records/delete`, { RecordIds: recordIds });
   }
 
   /** Get an inverted-index record by ID. */

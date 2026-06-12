@@ -1,6 +1,7 @@
 namespace AssistantHub.Server.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
     using System.Text.Json.Nodes;
@@ -539,7 +540,7 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// POST /v1.0/collections/{collectionId}/records/batch/delete - Batch delete records in a collection.
+        /// POST /v1.0/collections/{collectionId}/records/delete - Batch delete records in a collection.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>
         public async Task BatchDeleteRecordsAsync(HttpContextBase ctx)
@@ -566,7 +567,16 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = ctx.Request.DataAsString;
+                List<string> recordIds = BulkDeleteRequestParser.ParseRecordIds(ctx.Request.DataAsString);
+                if (recordIds.Count == 0)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                string body = Serializer.SerializeJson(recordIds, false);
                 HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(auth.TenantId, collectionId, "batch/delete"), body).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;

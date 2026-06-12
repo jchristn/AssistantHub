@@ -606,10 +606,10 @@ namespace AssistantHub.Core.Services
                 ? scopedIndexId
                 : indexId;
 
-            string idsQuery = String.Join(",", distinctIds.Select(Uri.EscapeDataString));
-            string path = "/v1.0/indices/" + Uri.EscapeDataString(effectiveIndexId) + "/documents?ids=" + idsQuery;
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(effectiveIndexId) + "/documents/delete";
+            string body = JsonSerializer.Serialize(new { DocumentIds = distinctIds }, _JsonOptions);
 
-            using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Delete, path).ConfigureAwait(false))
+            using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Post, path, body).ConfigureAwait(false))
             {
                 if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {

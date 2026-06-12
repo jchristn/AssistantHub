@@ -1064,7 +1064,7 @@ Delete a record from a collection.
 **Error Responses:**
 - `404` -- Record not found.
 
-### POST /v1.0/collections/{collectionId}/records/batch/delete
+### POST /v1.0/collections/{collectionId}/records/delete
 
 Batch delete multiple records from a collection.
 
@@ -1074,13 +1074,13 @@ Batch delete multiple records from a collection.
 
 ```json
 {
-  "DocumentIds": ["record-id-1", "record-id-2", "record-id-3"]
+  "RecordIds": ["record-id-1", "record-id-2", "record-id-3"]
 }
 ```
 
-| Field         | Type     | Required | Description                            |
-|---------------|----------|----------|----------------------------------------|
-| `DocumentIds` | string[] | Yes      | List of record IDs to delete.          |
+| Field       | Type     | Required | Description                   |
+|-------------|----------|----------|-------------------------------|
+| `RecordIds` | string[] | Yes      | List of record IDs to delete. |
 
 **Response:** `204 No Content`
 
@@ -1267,9 +1267,17 @@ Check whether one index record exists.
 
 Delete one index record.
 
-### DELETE /v1.0/indices/{indexId}/records?ids=record1,record2
+### POST /v1.0/indices/{indexId}/records/delete
 
 Delete records in batch.
+
+**Request Body:**
+
+```json
+{
+  "RecordIds": ["record1", "record2"]
+}
+```
 
 ### PUT /v1.0/indices/{indexId}/records/{recordId}/labels
 

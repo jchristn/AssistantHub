@@ -122,9 +122,20 @@ namespace AssistantHub.Server.Handlers
         public Task PostRecordExistsAsync(HttpContextBase ctx) => ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, "exists", ctx.Request.DataAsString, false);
 
         /// <summary>
-        /// DELETE /v1.0/indices/{indexId}/records?ids=a,b - Delete records in batch.
+        /// POST /v1.0/indices/{indexId}/records/delete - Delete records in batch.
         /// </summary>
-        public Task DeleteRecordsAsync(HttpContextBase ctx) => ProxyRecordCollectionAsync(ctx, NetHttpMethod.Delete, null, null, true);
+        public async Task DeleteRecordsAsync(HttpContextBase ctx)
+        {
+            List<string> recordIds = BulkDeleteRequestParser.ParseRecordIds(ctx.Request.DataAsString);
+            if (recordIds.Count == 0)
+            {
+                await SendBadRequestAsync(ctx).ConfigureAwait(false);
+                return;
+            }
+
+            string body = Serializer.SerializeJson(new { DocumentIds = recordIds }, false);
+            await ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, "delete", body, false).ConfigureAwait(false);
+        }
 
         /// <summary>
         /// GET /v1.0/indices/{indexId}/records/{recordId} - Get an index record.
@@ -238,9 +249,7 @@ namespace AssistantHub.Server.Handlers
                 path += "/" + childPath.TrimStart('/');
 
             if (includeQuery)
-                path = method == NetHttpMethod.Delete && String.IsNullOrEmpty(childPath)
-                    ? AppendRecordDeleteQuery(ctx, path)
-                    : AppendRequestQuery(ctx, path);
+                path = AppendRequestQuery(ctx, path);
 
             await ProxyAsync(ctx, method, path, body).ConfigureAwait(false);
         }
@@ -270,47 +279,6 @@ namespace AssistantHub.Server.Handlers
             int queryStart = raw.IndexOf('?');
             if (queryStart < 0) return path;
             return path + raw.Substring(queryStart);
-        }
-
-        private string AppendRecordDeleteQuery(HttpContextBase ctx, string path)
-        {
-            string idsParam = ctx?.Request?.Query?.Elements?.Get("ids");
-            if (String.IsNullOrWhiteSpace(idsParam))
-                return AppendRequestQuery(ctx, path);
-
-            return BuildRecordDeleteQueryPath(path, idsParam);
-        }
-
-        private static string BuildRecordDeleteQueryPath(string path, string idsParam)
-        {
-            string decoded = DecodeQueryValue(idsParam);
-            List<string> ids = decoded
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => id.Trim())
-                .Where(id => !String.IsNullOrWhiteSpace(id))
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
-
-            if (ids.Count == 0)
-                return path + "?ids=";
-
-            return path + "?ids=" + String.Join(",", ids.Select(Uri.EscapeDataString));
-        }
-
-        private static string DecodeQueryValue(string value)
-        {
-            if (String.IsNullOrEmpty(value)) return value;
-
-            string previous = value;
-            for (int i = 0; i < 2; i++)
-            {
-                string decoded = Uri.UnescapeDataString(previous.Replace("+", " "));
-                if (String.Equals(decoded, previous, StringComparison.Ordinal))
-                    return decoded;
-                previous = decoded;
-            }
-
-            return previous;
         }
 
         private string InjectTenantId(string body, string tenantId)

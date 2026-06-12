@@ -578,7 +578,7 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.CollectionHandler.BatchDeleteRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            POST /v1.0/collections/{collectionId}/records/batch/delete - Batch delete records in a collection.
+            POST /v1.0/collections/{collectionId}/records/delete - Batch delete records in a collection.
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
@@ -1436,7 +1436,7 @@
         </member>
         <member name="M:AssistantHub.Server.Handlers.IndexHandler.DeleteRecordsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
-            DELETE /v1.0/indices/{indexId}/records?ids=a,b - Delete records in batch.
+            POST /v1.0/indices/{indexId}/records/delete - Delete records in batch.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.IndexHandler.GetRecordAsync(WatsonWebserver.Core.HttpContextBase)">

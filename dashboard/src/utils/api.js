@@ -499,12 +499,10 @@ export class ApiClient {
   deleteIndexRecord(indexId, recordId) { return this.request('DELETE', `/v1.0/indices/${indexId}/records/${recordId}`); }
   deleteIndexRecords(indexId, ids) {
     const idList = Array.isArray(ids) ? ids : String(ids || '').split(',');
-    const idsParam = idList
+    const recordIds = idList
       .map((id) => String(id || '').trim())
-      .filter(Boolean)
-      .map((id) => encodeURIComponent(id))
-      .join(',');
-    return this.request('DELETE', `/v1.0/indices/${indexId}/records?ids=${idsParam}`);
+      .filter(Boolean);
+    return this.request('POST', `/v1.0/indices/${indexId}/records/delete`, { RecordIds: recordIds });
   }
   indexRecordsExist(indexId, request) { return this.request('POST', `/v1.0/indices/${indexId}/records/exists`, request); }
   updateIndexRecordLabels(indexId, recordId, labels) { return this.request('PUT', `/v1.0/indices/${indexId}/records/${recordId}/labels`, labels); }

@@ -119,7 +119,7 @@ namespace AssistantHub.Sdk
             if (recordIds == null)
                 throw new ArgumentNullException(nameof(recordIds));
 
-            await SendAsync(HttpMethod.Post, "/v1.0/collections/" + UrlEncode(collectionId) + "/records/batch/delete", recordIds, cancellationToken).ConfigureAwait(false);
+            await SendAsync(HttpMethod.Post, "/v1.0/collections/" + UrlEncode(collectionId) + "/records/delete", new { RecordIds = recordIds }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -317,12 +317,7 @@ namespace AssistantHub.Sdk
             if (recordIds == null)
                 throw new ArgumentNullException(nameof(recordIds));
 
-            string path = AppendQueryString("/v1.0/indices/" + UrlEncode(indexId) + "/records", new Dictionary<string, string>
-            {
-                ["ids"] = String.Join(",", recordIds)
-            });
-
-            await SendAsync(HttpMethod.Delete, path, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await SendAsync(HttpMethod.Post, "/v1.0/indices/" + UrlEncode(indexId) + "/records/delete", new { RecordIds = recordIds }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

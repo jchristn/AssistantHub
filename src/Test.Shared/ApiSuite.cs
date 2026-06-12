@@ -256,6 +256,7 @@ namespace Test.Automated
                 string indexHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "IndexHandler.cs"));
 
                 AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records", "index records route");
+                AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/delete", "index record batch delete route");
                 AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/batch", "index record batch route");
                 AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/exists", "index record exists route");
                 AssertHelper.StringContains(serverSource, "/v1.0/indices/{indexId}/records/{recordId}", "index record item route");
@@ -263,17 +264,18 @@ namespace Test.Automated
                 AssertHelper.StringContains(indexHandlerSource, "+ \"/documents/\" + Uri.EscapeDataString(recordId)", "record item proxy uses Verbex documents path");
                 AssertHelper.StringContains(indexHandlerSource, "PopulateIndexRecordNames(ctx.Request.DataAsString)", "record create populates names before proxy");
                 AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, \"batch\", PopulateIndexRecordNames(ctx.Request.DataAsString), false)", "batch create records proxy");
-                AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Delete, null, null, true)", "batch delete records proxy");
+                AssertHelper.StringContains(indexHandlerSource, "BulkDeleteRequestParser.ParseRecordIds(ctx.Request.DataAsString)", "batch delete parses record IDs from request body");
+                AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, \"delete\", body, false)", "batch delete records proxy");
             });
 
-            await ExecuteTestAsync("Verbex index record proxy: normalizes encoded batch-delete ids", async () =>
+            await ExecuteTestAsync("Verbex index record proxy: bulk delete uses POST body", async () =>
             {
-                MethodInfo method = typeof(IndexHandler).GetMethod("BuildRecordDeleteQueryPath", BindingFlags.NonPublic | BindingFlags.Static);
-                AssertHelper.IsNotNull(method, "batch delete normalization helper");
+                string root = GetRepositoryRoot();
+                string indexHandlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "IndexHandler.cs"));
+                string requestParserSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "BulkDeleteRequest.cs"));
 
-                string normalized = (string)method.Invoke(null, new object[] { "/v1.0/indices/default/documents", "adoc_one%2Cadoc_two%2Cadoc_two" });
-
-                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_one,adoc_two", normalized, "encoded comma batch delete path");
+                AssertHelper.StringContains(indexHandlerSource, "new { DocumentIds = recordIds }", "batch delete maps AssistantHub record IDs to Verbex document IDs");
+                AssertHelper.StringContains(requestParserSource, "\"RecordIds\", \"Ids\", \"DocumentIds\"", "batch delete accepts compatible record ID body fields");
                 await Task.CompletedTask.ConfigureAwait(false);
             });
 
@@ -324,7 +326,7 @@ namespace Test.Automated
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/terms/top", "get", "index top terms OpenAPI route");
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "get", "index record list OpenAPI route");
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "put", "index record create OpenAPI route");
-                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records", "delete", "index record batch delete OpenAPI route");
+                AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/delete", "post", "index record batch delete OpenAPI route");
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/batch", "post", "index record batch create OpenAPI route");
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/exists", "post", "index record exists OpenAPI route");
                 AssertOpenApiOperation(paths, "/v1.0/indices/{indexId}/records/{recordId}", "get", "index record get OpenAPI route");

@@ -84,6 +84,7 @@ function IndexRecordsView() {
   const [editForm, setEditForm] = useState({ Labels: '', Tags: '', CustomMetadata: '{}' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [alert, setAlert] = useState(null);
 
   useEffect(() => {
@@ -216,6 +217,9 @@ function IndexRecordsView() {
   };
 
   const handleBulkDelete = async () => {
+    if (bulkDeleting || selectedIds.size === 0) return;
+
+    setBulkDeleting(true);
     try {
       await api.deleteIndexRecords(selectedIndex, Array.from(selectedIds));
       setBulkDeleteConfirm(false);
@@ -223,6 +227,8 @@ function IndexRecordsView() {
       await loadRecords();
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to delete records' });
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -285,7 +291,7 @@ function IndexRecordsView() {
           </select>
         </label>
         <button className="btn btn-secondary btn-sm" onClick={loadRecords} disabled={!selectedIndex || loading}>Refresh</button>
-        {selectedIds.size > 0 && <button className="btn btn-danger btn-sm" onClick={() => setBulkDeleteConfirm(true)}>Delete Selected ({selectedIds.size})</button>}
+        {selectedIds.size > 0 && <button className="btn btn-danger btn-sm" onClick={() => setBulkDeleteConfirm(true)} disabled={bulkDeleting}>{bulkDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}</button>}
       </div>
 
       <div className="data-table-container">
@@ -454,7 +460,7 @@ function IndexRecordsView() {
 
       {showJson && <JsonViewModal title="Index Record JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Index Record" message={`Are you sure you want to delete record "${getRecordId(deleteTarget)}"?`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
-      {bulkDeleteConfirm && <ConfirmModal title="Delete Index Records" message={`Delete ${selectedIds.size} selected record(s)?`} confirmLabel="Delete" danger onConfirm={handleBulkDelete} onClose={() => setBulkDeleteConfirm(false)} />}
+      {bulkDeleteConfirm && <ConfirmModal title="Delete Index Records" message={`Delete ${selectedIds.size} selected record(s)?`} confirmLabel="Delete" loadingLabel="Deleting..." danger isLoading={bulkDeleting} onConfirm={handleBulkDelete} onClose={() => setBulkDeleteConfirm(false)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
     </div>
   );

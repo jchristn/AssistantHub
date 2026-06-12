@@ -1058,6 +1058,11 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
 
   const logoSrc = assistant?.LogoUrl || '/logo-new.png';
   const chatTitle = assistant?.Title || assistant?.Name || 'AssistantHub';
+  const hasVisibleStreamingAssistantContent = messages.some(msg =>
+    msg.role === 'assistant'
+    && msg.isStreaming
+    && String(msg.content || '').trim().length > 0
+  );
 
   if (!assistantId) {
     return null;
@@ -1352,7 +1357,7 @@ function ChatPanel({ assistantId, showHeader = true, showStatusBar = true, theme
               </div>
             );
           })}
-          {loading && !compacting && !messages.some(m => m.isStreaming) && (
+          {loading && !compacting && !hasVisibleStreamingAssistantContent && (
             <div className="chat-message-row assistant">
               <div className="chat-avatar assistant-avatar">
                 <img

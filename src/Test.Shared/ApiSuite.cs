@@ -700,6 +700,8 @@ namespace Test.Automated
                 AssertHelper.StringContains(chatPanelSource, "result_count", "Dashboard chat tool trace parser reads result-count fields");
                 AssertHelper.StringContains(chatPanelSource, "duration_ms", "Dashboard chat tool trace parser reads duration fields");
                 AssertHelper.StringContains(chatPanelSource, "chat-thinking", "Dashboard assistant thinking is collapsible");
+                AssertHelper.StringContains(chatPanelSource, "hasVisibleStreamingAssistantContent", "Dashboard keeps pending indicator visible for thinking-only streaming");
+                AssertHelper.StringContains(chatPanelSource, "String(msg.content || '').trim().length > 0", "Dashboard pending indicator waits for visible assistant content");
                 AssertHelper.StringContains(appCssSource, ".chat-pending-content-wrap", "Dashboard pending status column CSS");
                 AssertHelper.StringContains(appCssSource, "text-overflow: ellipsis", "Dashboard tool status truncates long labels");
                 AssertHelper.StringContains(appCssSource, "max-width: min(420px, 100%)", "Dashboard tool status constrained to message column");

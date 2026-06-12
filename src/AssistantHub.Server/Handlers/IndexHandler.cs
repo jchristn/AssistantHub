@@ -3,6 +3,7 @@ namespace AssistantHub.Server.Handlers
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Text.Json;
     using System.Text.Json.Nodes;
@@ -134,7 +135,7 @@ namespace AssistantHub.Server.Handlers
             }
 
             string body = Serializer.SerializeJson(new { DocumentIds = recordIds }, false);
-            await ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, "delete", body, false).ConfigureAwait(false);
+            await DeleteRecordsWithVerbexFallbackAsync(ctx, recordIds, body).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -188,16 +189,7 @@ namespace AssistantHub.Server.Handlers
             {
                 using (HttpResponseMessage resp = await _InvertedIndex.SendAsync(method, verbexPath, body).ConfigureAwait(false))
                 {
-                    ctx.Response.StatusCode = (int)resp.StatusCode;
-                    if (method == NetHttpMethod.Head || ctx.Response.StatusCode == 204)
-                    {
-                        await ctx.Response.Send().ConfigureAwait(false);
-                        return;
-                    }
-
-                    string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    ctx.Response.ContentType = "application/json";
-                    await ctx.Response.Send(respBody).ConfigureAwait(false);
+                    await SendVerbexResponseAsync(ctx, method, resp).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -207,6 +199,20 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
             }
+        }
+
+        private async Task SendVerbexResponseAsync(HttpContextBase ctx, NetHttpMethod method, HttpResponseMessage resp)
+        {
+            ctx.Response.StatusCode = (int)resp.StatusCode;
+            if (method == NetHttpMethod.Head || ctx.Response.StatusCode == 204)
+            {
+                await ctx.Response.Send().ConfigureAwait(false);
+                return;
+            }
+
+            string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            ctx.Response.ContentType = "application/json";
+            await ctx.Response.Send(respBody).ConfigureAwait(false);
         }
 
         private async Task<bool> EnsureAuthorizedAsync(HttpContextBase ctx, AuthContext auth)
@@ -252,6 +258,54 @@ namespace AssistantHub.Server.Handlers
                 path = AppendRequestQuery(ctx, path);
 
             await ProxyAsync(ctx, method, path, body).ConfigureAwait(false);
+        }
+
+        private async Task DeleteRecordsWithVerbexFallbackAsync(HttpContextBase ctx, List<string> recordIds, string body)
+        {
+            string indexId = ctx.Request.Url.Parameters["indexId"];
+            if (String.IsNullOrEmpty(indexId))
+            {
+                await SendBadRequestAsync(ctx).ConfigureAwait(false);
+                return;
+            }
+
+            AuthContext auth = RequireGlobalAdmin(ctx);
+            if (!await EnsureAuthorizedAsync(ctx, auth).ConfigureAwait(false)) return;
+
+            string postPath = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents/delete";
+
+            try
+            {
+                using (HttpResponseMessage resp = await _InvertedIndex.SendAsync(NetHttpMethod.Post, postPath, body).ConfigureAwait(false))
+                {
+                    if (resp.StatusCode != HttpStatusCode.NotFound)
+                    {
+                        await SendVerbexResponseAsync(ctx, NetHttpMethod.Post, resp).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
+                Logging.Warn(_Header + "Verbex batch delete POST route returned 404; retrying legacy DELETE route for index " + indexId);
+
+                string fallbackPath = BuildLegacyBatchDeletePath(indexId, recordIds);
+                using (HttpResponseMessage fallbackResp = await _InvertedIndex.SendAsync(NetHttpMethod.Delete, fallbackPath).ConfigureAwait(false))
+                {
+                    await SendVerbexResponseAsync(ctx, NetHttpMethod.Delete, fallbackResp).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception deleting Verbex records: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        private static string BuildLegacyBatchDeletePath(string indexId, List<string> recordIds)
+        {
+            string ids = String.Join(",", recordIds.Select(id => Uri.EscapeDataString(id)));
+            return "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents?ids=" + ids;
         }
 
         private async Task ProxyRecordAsync(HttpContextBase ctx, NetHttpMethod method, string childPath, string body = null)

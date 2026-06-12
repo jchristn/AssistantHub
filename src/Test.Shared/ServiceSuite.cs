@@ -8981,6 +8981,26 @@ namespace Test.Automated
                 AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"DocumentIds\":[\"adoc_one\",\"adoc_two\"]", "batch delete body");
             });
 
+            await ExecuteTestAsync("IngestionService.DeleteIndexRecordBatchAsync: falls back to legacy Verbex batch delete", async () =>
+            {
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.NotFound, "{\"ErrorMessage\":\"Not found\"}");
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{}");
+                IngestionService service = CreateTestIngestionService(new MockDatabaseDriver(), new VerbexSettings(), invertedIndex);
+
+                await service.DeleteIndexRecordBatchAsync(
+                    Constants.DefaultTenantId,
+                    "default",
+                    new List<string> { "adoc_one", "adoc_two" }).ConfigureAwait(false);
+
+                AssertHelper.HasCount(invertedIndex.Calls, 2, "Verbex batch delete calls");
+                AssertHelper.AreEqual("POST", invertedIndex.Calls[0].Method, "batch delete primary method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents/delete", invertedIndex.Calls[0].Path, "batch delete primary path");
+                AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"DocumentIds\":[\"adoc_one\",\"adoc_two\"]", "batch delete primary body");
+                AssertHelper.AreEqual("DELETE", invertedIndex.Calls[1].Method, "batch delete fallback method");
+                AssertHelper.AreEqual("/v1.0/indices/default/documents?ids=adoc_one,adoc_two", invertedIndex.Calls[1].Path, "batch delete fallback path");
+            });
+
             await ExecuteTestAsync("IngestionService.DeleteIndexRecordBatchAsync: cleanup failure does not throw", async () =>
             {
                 RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();

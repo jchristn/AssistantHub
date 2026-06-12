@@ -265,7 +265,7 @@ namespace Test.Automated
                 AssertHelper.StringContains(indexHandlerSource, "PopulateIndexRecordNames(ctx.Request.DataAsString)", "record create populates names before proxy");
                 AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, \"batch\", PopulateIndexRecordNames(ctx.Request.DataAsString), false)", "batch create records proxy");
                 AssertHelper.StringContains(indexHandlerSource, "BulkDeleteRequestParser.ParseRecordIds(ctx.Request.DataAsString)", "batch delete parses record IDs from request body");
-                AssertHelper.StringContains(indexHandlerSource, "ProxyRecordCollectionAsync(ctx, NetHttpMethod.Post, \"delete\", body, false)", "batch delete records proxy");
+                AssertHelper.StringContains(indexHandlerSource, "DeleteRecordsWithVerbexFallbackAsync(ctx, recordIds, body)", "batch delete records proxy");
             });
 
             await ExecuteTestAsync("Verbex index record proxy: bulk delete uses POST body", async () =>
@@ -275,6 +275,8 @@ namespace Test.Automated
                 string requestParserSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "BulkDeleteRequest.cs"));
 
                 AssertHelper.StringContains(indexHandlerSource, "new { DocumentIds = recordIds }", "batch delete maps AssistantHub record IDs to Verbex document IDs");
+                AssertHelper.StringContains(indexHandlerSource, "\"/documents/delete\"", "batch delete uses Verbex POST delete route");
+                AssertHelper.StringContains(indexHandlerSource, "BuildLegacyBatchDeletePath(indexId, recordIds)", "batch delete falls back to legacy Verbex delete route");
                 AssertHelper.StringContains(requestParserSource, "\"RecordIds\", \"Ids\", \"DocumentIds\"", "batch delete accepts compatible record ID body fields");
                 await Task.CompletedTask.ConfigureAwait(false);
             });

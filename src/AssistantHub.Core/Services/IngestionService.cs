@@ -611,14 +611,39 @@ namespace AssistantHub.Core.Services
 
             using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Post, path, body).ConfigureAwait(false))
             {
-                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (response.IsSuccessStatusCode)
                 {
                     _Logging.Debug(_Header + "batch deleted " + distinctIds.Count + " Verbex index records from index " + effectiveIndexId + " for tenant " + tenantId);
                     return;
                 }
 
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _Logging.Warn(_Header + "Verbex batch delete POST route returned 404; retrying legacy DELETE route for index " + effectiveIndexId + " for tenant " + tenantId);
+                    await DeleteIndexRecordBatchLegacyAsync(tenantId, effectiveIndexId, distinctIds, token).ConfigureAwait(false);
+                    return;
+                }
+
                 string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                 _Logging.Warn(_Header + "Verbex batch delete returned " + (int)response.StatusCode + " for " + distinctIds.Count + " records in index " + effectiveIndexId + " for tenant " + tenantId + ": " + responseBody);
+            }
+        }
+
+        private async Task DeleteIndexRecordBatchLegacyAsync(string tenantId, string indexId, List<string> recordIds, CancellationToken token)
+        {
+            string ids = String.Join(",", recordIds.Select(id => Uri.EscapeDataString(id)));
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/documents?ids=" + ids;
+
+            using (HttpResponseMessage response = await _InvertedIndex.SendAsync(HttpMethod.Delete, path).ConfigureAwait(false))
+            {
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _Logging.Debug(_Header + "batch deleted " + recordIds.Count + " Verbex index records from index " + indexId + " for tenant " + tenantId + " using legacy DELETE route");
+                    return;
+                }
+
+                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                _Logging.Warn(_Header + "legacy Verbex batch delete returned " + (int)response.StatusCode + " for " + recordIds.Count + " records in index " + indexId + " for tenant " + tenantId + ": " + responseBody);
             }
         }
 

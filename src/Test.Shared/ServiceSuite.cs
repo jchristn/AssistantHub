@@ -3992,6 +3992,54 @@ namespace Test.Automated
                 AssertHelper.StringContains(result.OutputJson, "\"Truncated\":true", "local atom truncated");
             });
 
+            await ExecuteTestAsync("DocumentAtomAtomizationService.ExtractTextAsync: includes child quark hierarchy", async () =>
+            {
+                string atomJson =
+                    "[" +
+                    "{" +
+                    "\"Type\":\"Binary\"," +
+                    "\"Quarks\":[" +
+                    "{\"Type\":\"Text\",\"Text\":\"OCR page heading\"}," +
+                    "{\"Type\":\"List\",\"OrderedList\":[\"first item\",\"second item\"]}," +
+                    "{\"Type\":\"Table\",\"Table\":{\"Columns\":[{\"Name\":\"Name\",\"Type\":\"String\"},{\"Name\":\"Amount\",\"Type\":\"String\"}],\"Rows\":[{\"Name\":\"Alpha\",\"Amount\":\"42\"}]}}," +
+                    "{\"Type\":\"Binary\",\"Quarks\":[{\"Type\":\"Text\",\"Text\":\"Nested child OCR text\"}]}," +
+                    "{\"Type\":\"Text\",\"Text\":\"Direct text prefers atom text\",\"Chunks\":[{\"Text\":\"duplicate chunk should not appear\"}]}," +
+                    "{\"Type\":\"Unknown\",\"Chunks\":[{\"Text\":\"fallback chunk text\"}]}" +
+                    "]" +
+                    "}" +
+                    "]";
+
+                using (DocumentAtomStubServer stub = new DocumentAtomStubServer(GetAvailableTcpPort(), atomJson))
+                {
+                    stub.Start();
+
+                    DocumentAtomAtomizationService service = new DocumentAtomAtomizationService(
+                        new DocumentAtomSettings
+                        {
+                            Endpoint = stub.BaseUrl,
+                            AccessKey = "test-key"
+                        },
+                        CreateSilentLogging());
+
+                    string text = await service.ExtractTextAsync(
+                        "adoc_quark_test",
+                        Encoding.UTF8.GetBytes("not a real pdf"),
+                        "pdf",
+                        "quark-test.pdf").ConfigureAwait(false);
+
+                    AssertHelper.IsNotNull(text, "extracted text");
+                    AssertHelper.StringContains(text, "OCR page heading", "text quark extracted");
+                    AssertHelper.StringContains(text, "1. first item", "ordered list first item extracted");
+                    AssertHelper.StringContains(text, "2. second item", "ordered list second item extracted");
+                    AssertHelper.StringContains(text, "| Name | Amount |", "table header extracted");
+                    AssertHelper.StringContains(text, "| Alpha | 42 |", "table row extracted");
+                    AssertHelper.StringContains(text, "Nested child OCR text", "nested quark extracted");
+                    AssertHelper.StringContains(text, "Direct text prefers atom text", "direct atom text extracted");
+                    AssertHelper.StringContains(text, "fallback chunk text", "chunk fallback extracted");
+                    AssertHelper.IsFalse(text.Contains("duplicate chunk should not appear", StringComparison.Ordinal), "chunk text not duplicated when direct atom text exists");
+                }
+            });
+
             await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: extracts text from assistant document object", async () =>
             {
                 MockDatabaseDriver database = new MockDatabaseDriver();
@@ -9371,6 +9419,15 @@ namespace Test.Automated
             throw new DirectoryNotFoundException("Unable to locate the AssistantHub repository root.");
         }
 
+        private static int GetAvailableTcpPort()
+        {
+            using (System.Net.Sockets.TcpListener listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0))
+            {
+                listener.Start();
+                return ((IPEndPoint)listener.LocalEndpoint).Port;
+            }
+        }
+
         private static AssistantDocument CreateVerbexTestDocument(string id = "adoc_verbex_test")
         {
             return new AssistantDocument
@@ -9431,6 +9488,109 @@ namespace Test.Automated
             MethodInfo method = typeof(IngestionServiceBase).GetMethod("DeleteIndexRecordInternalAsync", BindingFlags.Instance | BindingFlags.NonPublic);
             Task task = (Task)method.Invoke(service, new object[] { tenantId, indexId, recordId, CancellationToken.None });
             await task.ConfigureAwait(false);
+        }
+
+        private sealed class DocumentAtomStubServer : IDisposable
+        {
+            private readonly HttpListener _Listener = new HttpListener();
+            private readonly CancellationTokenSource _TokenSource = new CancellationTokenSource();
+            private readonly string _AtomResponseJson;
+            private Task _ListenerTask;
+
+            public DocumentAtomStubServer(int port, string atomResponseJson)
+            {
+                BaseUrl = "http://127.0.0.1:" + port.ToString() + "/";
+                _AtomResponseJson = atomResponseJson;
+                _Listener.Prefixes.Add(BaseUrl);
+            }
+
+            public string BaseUrl { get; }
+
+            public void Start()
+            {
+                _Listener.Start();
+                _ListenerTask = Task.Run(() => ListenAsync(_TokenSource.Token));
+            }
+
+            public void Dispose()
+            {
+                _TokenSource.Cancel();
+
+                try
+                {
+                    _Listener.Stop();
+                    _Listener.Close();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    _ListenerTask?.Wait(TimeSpan.FromSeconds(2));
+                }
+                catch
+                {
+                }
+
+                _TokenSource.Dispose();
+            }
+
+            private async Task ListenAsync(CancellationToken cancellationToken)
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    HttpListenerContext context;
+                    try
+                    {
+                        context = await _Listener.GetContextAsync().ConfigureAwait(false);
+                    }
+                    catch (HttpListenerException) when (cancellationToken.IsCancellationRequested || !_Listener.IsListening)
+                    {
+                        break;
+                    }
+                    catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested || !_Listener.IsListening)
+                    {
+                        break;
+                    }
+
+                    _ = Task.Run(() => HandleAsync(context), cancellationToken);
+                }
+            }
+
+            private async Task HandleAsync(HttpListenerContext context)
+            {
+                try
+                {
+                    string path = context.Request.Url?.AbsolutePath ?? "/";
+                    if (!String.Equals(path, "/atom/pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Response.StatusCode = 404;
+                        context.Response.Close();
+                        return;
+                    }
+
+                    context.Response.StatusCode = 200;
+                    context.Response.ContentType = "application/json";
+
+                    byte[] data = Encoding.UTF8.GetBytes(_AtomResponseJson);
+                    context.Response.ContentLength64 = data.Length;
+                    await context.Response.OutputStream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    try
+                    {
+                        context.Response.OutputStream.Close();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
         }
 
         private class NoOpObjectStorageService : IObjectStorageService

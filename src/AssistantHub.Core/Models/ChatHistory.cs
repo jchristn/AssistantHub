@@ -129,6 +129,38 @@ namespace AssistantHub.Core.Models
         public int RerankOutputCount { get; set; } = 0;
 
         /// <summary>
+        /// Classified user-query type for this turn, when classification is enabled or supplied by the pipeline.
+        /// Null means classification did not run.
+        /// </summary>
+        public string QueryClass { get; set; } = null;
+
+        /// <summary>
+        /// Answerability decision after retrieval and before final generation.
+        /// Values include answerable, needs_clarification, unsupported, and not_checked.
+        /// </summary>
+        public string AnswerabilityDecision { get; set; } = null;
+
+        /// <summary>
+        /// Safe reason for the answerability decision.
+        /// </summary>
+        public string AnswerabilityReason { get; set; } = null;
+
+        /// <summary>
+        /// Number of retrieval candidates dropped after initial retrieval.
+        /// </summary>
+        public int? DroppedCandidateCount { get; set; } = null;
+
+        /// <summary>
+        /// JSON-serialized safe summary of dropped retrieval candidates and reasons.
+        /// </summary>
+        public string DroppedCandidateSummaryJson { get; set; } = null;
+
+        /// <summary>
+        /// Number of citation references extracted from the final answer.
+        /// </summary>
+        public int? FinalCitationCount { get; set; } = null;
+
+        /// <summary>
         /// Text retrieved from the vector database.
         /// </summary>
         public string RetrievalContext { get; set; } = null;
@@ -273,6 +305,12 @@ namespace AssistantHub.Core.Models
             obj.RerankDurationMs = DataTableHelper.GetDoubleValue(row, "rerank_duration_ms");
             obj.RerankInputCount = DataTableHelper.GetIntValue(row, "rerank_input_count");
             obj.RerankOutputCount = DataTableHelper.GetIntValue(row, "rerank_output_count");
+            obj.QueryClass = DataTableHelper.GetStringValue(row, "query_class");
+            obj.AnswerabilityDecision = DataTableHelper.GetStringValue(row, "answerability_decision");
+            obj.AnswerabilityReason = DataTableHelper.GetStringValue(row, "answerability_reason");
+            obj.DroppedCandidateCount = DataTableHelper.GetNullableIntValue(row, "dropped_candidate_count");
+            obj.DroppedCandidateSummaryJson = DataTableHelper.GetStringValue(row, "dropped_candidate_summary_json");
+            obj.FinalCitationCount = DataTableHelper.GetNullableIntValue(row, "final_citation_count");
             obj.RetrievalContext = DataTableHelper.GetStringValue(row, "retrieval_context");
             obj.PromptSentUtc = DataTableHelper.GetNullableDateTimeValue(row, "prompt_sent_utc");
             obj.PromptTokens = DataTableHelper.GetIntValue(row, "prompt_tokens");

@@ -279,6 +279,12 @@ namespace AssistantHub.Server.Services
             List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
             DateTime? retrievalStartUtc = null;
             double retrievalDurationMs = 0;
+            List<RetrievalCandidateDropSummary> droppedCandidates = new List<RetrievalCandidateDropSummary>();
+            string queryClass = null;
+            string answerabilityDecision = settings.EnableAnswerabilityCheck ? null : "not_checked";
+            string answerabilityReason = null;
+            AssistantPerformanceStage answerabilityTelemetry = null;
+            string answerabilityForcedResponse = null;
 
             if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage) && shouldRetrieve)
             {
@@ -354,7 +360,10 @@ namespace AssistantHub.Server.Services
                 int preFilterChunkCount = retrievalChunks.Count;
                 retrievalChunks = AssistantAttachmentPromptBuilder.FilterChunksByAttachedDocuments(retrievalChunks, attachedDocumentIds);
                 if (retrievalChunks.Count != preFilterChunkCount)
+                {
+                    AddDropSummary(droppedCandidates, "attachment_filter", "outside_attached_document_scope", preFilterChunkCount - retrievalChunks.Count);
                     _Logging.Warn(_Header + "retrieval returned chunks outside attached document scope; filtered " + (preFilterChunkCount - retrievalChunks.Count) + " chunk(s)");
+                }
                 retrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
             }
 
@@ -433,6 +442,7 @@ namespace AssistantHub.Server.Services
                                 .OrderByDescending(c => c.RerankScore!.Value)
                                 .Take(settings.RerankerTopK)
                                 .ToList();
+                            AddDropSummary(droppedCandidates, "rerank", "below_threshold_or_top_k", rerankInputCount - retrievalChunks.Count);
                         }
                     }
                 }
@@ -538,6 +548,7 @@ namespace AssistantHub.Server.Services
             double topP = request.TopP ?? settings.TopP;
             int maxTokens = request.MaxTokens ?? settings.MaxTokens;
 
+            int preTrimChunkCount = retrievalChunks.Count;
             TrimRetrievalContextToPromptBudget(
                 messages,
                 settings,
@@ -547,6 +558,8 @@ namespace AssistantHub.Server.Services
                 citationSources,
                 baseSystemPrompt,
                 systemMessageIndex);
+            AddDropSummary(droppedCandidates, "prompt_budget", "trimmed_to_context_window", preTrimChunkCount - retrievalChunks.Count);
+            contextChunks = retrievalChunks.Select(c => c.MergedContent).ToList();
 
             Enums.InferenceProviderEnum inferenceProvider = _Settings.Inference.Provider;
             string inferenceEndpoint = _Settings.Inference.Endpoint;
@@ -588,6 +601,21 @@ namespace AssistantHub.Server.Services
             compactionSw.Stop();
             double compactionMs = Math.Round(compactionSw.Elapsed.TotalMilliseconds, 2);
 
+            if (settings.EnableAnswerabilityCheck && settings.EnableRag)
+            {
+                AnswerabilityCheckOutcome outcome = await RunAnswerabilityCheckAsync(
+                    settings,
+                    lastUserMessage,
+                    retrievalChunks,
+                    token).ConfigureAwait(false);
+
+                queryClass = outcome.QueryClass;
+                answerabilityDecision = outcome.Decision;
+                answerabilityReason = outcome.Reason;
+                answerabilityTelemetry = outcome.Telemetry;
+                answerabilityForcedResponse = BuildAnswerabilityForcedResponse(settings, outcome);
+            }
+
             int promptTokenEstimate = EstimateTokenCount(messages);
             DateTime promptSentUtc = DateTime.UtcNow;
             Stopwatch inferenceSw = Stopwatch.StartNew();
@@ -600,6 +628,8 @@ namespace AssistantHub.Server.Services
             bool toolCallsActive = toolPolicy.EnableToolCalls
                 && !String.Equals(toolPolicy.ToolChoiceMode, "None", StringComparison.OrdinalIgnoreCase)
                 && modelToolDefinitions.Count > 0;
+            if (!String.IsNullOrEmpty(answerabilityForcedResponse))
+                toolCallsActive = false;
             List<ChatCompletionMessage> responsePromptMessages = messages;
 
             if (toolPolicy.EnableToolCalls && modelToolDefinitions.Count == 0)
@@ -688,7 +718,16 @@ namespace AssistantHub.Server.Services
                 };
             }
 
-            if (toolCallsActive)
+            if (!String.IsNullOrEmpty(answerabilityForcedResponse))
+            {
+                inferenceResult = InferenceResult.FromSuccess(
+                    answerabilityForcedResponse,
+                    BuildSyntheticAnswerabilityFinalStage(answerabilityDecision, answerabilityReason),
+                    "answerability_" + answerabilityDecision,
+                    null,
+                    null);
+            }
+            else if (toolCallsActive)
             {
                 messages = AddToolBehaviorInstructions(messages);
                 ToolLoopExecutionResult toolLoopResult = await ExecuteToolCallingLoopAsync(
@@ -835,6 +874,13 @@ namespace AssistantHub.Server.Services
             int responsePromptTokens = EstimateTokenCount(responsePromptMessages);
             int completionTokens = EstimateTokenCount(canonicalResponseText);
 
+            ChatCompletionCitations responseCitations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
+                ? CitationExtractor.Extract(citationSources, canonicalResponseText)
+                : null;
+            int? finalCitationCount = responseCitations?.ReferencedIndices?.Count;
+            int droppedCandidateCount = droppedCandidates.Sum(summary => Math.Max(0, summary.Count));
+            string droppedCandidateSummaryJson = SerializeNonEmptyJson(droppedCandidates);
+
             ChatCompletionResponse response = new ChatCompletionResponse
             {
                 Id = IdGenerator.NewChatCompletionId(),
@@ -873,11 +919,15 @@ namespace AssistantHub.Server.Services
                     RerankOutputCount = rerankOutputCount,
                     AttachedDocumentIds = attachedDocumentIds,
                     AttachedDocuments = attachedDocuments,
-                    DocumentFilterApplied = attachedDocumentIds != null && attachedDocumentIds.Count > 0
+                    DocumentFilterApplied = attachedDocumentIds != null && attachedDocumentIds.Count > 0,
+                    QueryClass = queryClass,
+                    AnswerabilityDecision = answerabilityDecision,
+                    AnswerabilityReason = answerabilityReason,
+                    DroppedCandidateCount = droppedCandidateCount,
+                    DroppedCandidates = droppedCandidates,
+                    FinalCitationCount = finalCitationCount
                 } : null,
-                Citations = (settings.EnableCitations && citationSources != null && citationSources.Count > 0)
-                    ? CitationExtractor.Extract(citationSources, canonicalResponseText)
-                    : null
+                Citations = responseCitations
             };
             if (toolPolicy.ExposeToolTraceToUser && toolTraces.Count > 0)
                 response.ToolCalls = toolTraces;
@@ -925,7 +975,14 @@ namespace AssistantHub.Server.Services
                     SerializeNonEmptyJson(attachedDocuments),
                     token,
                     toolTraces,
-                    toolModelStages);
+                    toolModelStages,
+                    queryClass,
+                    answerabilityDecision,
+                    answerabilityReason,
+                    droppedCandidateCount,
+                    droppedCandidateSummaryJson,
+                    finalCitationCount,
+                    answerabilityTelemetry);
                 if (history != null)
                 {
                     persistedChatHistoryId = history.Id;
@@ -944,6 +1001,208 @@ namespace AssistantHub.Server.Services
                 ChatHistoryId = persistedChatHistoryId,
                 ToolCalls = toolTraces
             };
+        }
+
+        private async Task<AnswerabilityCheckOutcome> RunAnswerabilityCheckAsync(
+            AssistantSettings settings,
+            string question,
+            List<RetrievalChunk> retrievalChunks,
+            CancellationToken token)
+        {
+            AnswerabilityCheckOutcome ret = new AnswerabilityCheckOutcome
+            {
+                Decision = retrievalChunks != null && retrievalChunks.Count > 0 ? "answerable" : "unsupported",
+                QueryClass = "other",
+                Reason = retrievalChunks != null && retrievalChunks.Count > 0
+                    ? "Retrieval returned context for the question."
+                    : "Retrieval returned no context for the question."
+            };
+
+            if (String.IsNullOrWhiteSpace(question))
+            {
+                ret.Decision = "needs_clarification";
+                ret.Reason = "No user question was available.";
+                ret.RequiredClarification = "What would you like me to answer?";
+                return ret;
+            }
+
+            try
+            {
+                string answerabilityEndpointId = ResolveUtilityInferenceEndpointId(settings.AnswerabilityInferenceEndpointId, settings.InferenceEndpointId);
+                ResolvedEndpoint endpoint = await ResolveCompletionEndpointOrFallbackAsync(answerabilityEndpointId, token).ConfigureAwait(false);
+                string model = !String.IsNullOrEmpty(endpoint.Model) ? endpoint.Model : _Settings.Inference.DefaultModel;
+                string promptTemplate = !String.IsNullOrWhiteSpace(settings.AnswerabilityPrompt)
+                    ? settings.AnswerabilityPrompt
+                    : _DefaultAnswerabilityPrompt;
+
+                string context = BuildAnswerabilityContext(retrievalChunks);
+                string prompt = promptTemplate
+                    .Replace("{question}", question ?? "")
+                    .Replace("{context}", context ?? "");
+
+                InferenceResult result = await GenerateWithCompletionEndpointLimitAsync(
+                    new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = prompt } },
+                    model,
+                    512,
+                    0.0,
+                    1.0,
+                    endpoint.Provider,
+                    endpoint.Endpoint,
+                    endpoint.ApiKey,
+                    endpoint.EndpointId,
+                    endpoint.MaxConcurrentRequests,
+                    token).ConfigureAwait(false);
+                ret.Telemetry = result?.Telemetry;
+
+                if (result == null || !result.Success || String.IsNullOrWhiteSpace(result.Content))
+                {
+                    ret.Decision = retrievalChunks != null && retrievalChunks.Count > 0 ? "answerable" : "unsupported";
+                    ret.Reason = "Answerability check did not return content.";
+                    return ret;
+                }
+
+                ApplyAnswerabilityJson(ret, result.Content);
+                return ret;
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "answerability check failed, continuing with default decision: " + e.Message);
+                ret.Decision = retrievalChunks != null && retrievalChunks.Count > 0 ? "answerable" : "unsupported";
+                ret.Reason = "Answerability check failed: " + e.Message;
+                return ret;
+            }
+        }
+
+        private static string BuildAnswerabilityContext(List<RetrievalChunk> retrievalChunks)
+        {
+            if (retrievalChunks == null || retrievalChunks.Count < 1)
+                return "(no retrieved context)";
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < retrievalChunks.Count; i++)
+            {
+                string text = retrievalChunks[i]?.MergedContent ?? retrievalChunks[i]?.Content ?? "";
+                if (text.Length > 1200) text = text.Substring(0, 1200);
+                builder.AppendLine("[" + (i + 1) + "] " + text);
+            }
+
+            return builder.ToString();
+        }
+
+        private static void ApplyAnswerabilityJson(AnswerabilityCheckOutcome outcome, string content)
+        {
+            string json = StripJsonFence(content);
+            int firstBrace = json.IndexOf('{');
+            int lastBrace = json.LastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace)
+                json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+
+            using JsonDocument document = JsonDocument.Parse(json);
+            JsonElement root = document.RootElement;
+            outcome.Decision = NormalizeAnswerabilityDecision(GetJsonString(root, "decision"), outcome.Decision);
+            outcome.QueryClass = NormalizeQueryClass(GetJsonString(root, "query_class"), outcome.QueryClass);
+            outcome.Reason = GetJsonString(root, "reason") ?? outcome.Reason;
+            outcome.RequiredClarification = GetJsonString(root, "required_clarification");
+        }
+
+        private static string StripJsonFence(string content)
+        {
+            string ret = (content ?? "").Trim();
+            if (ret.StartsWith("```json", StringComparison.OrdinalIgnoreCase)) ret = ret.Substring(7);
+            else if (ret.StartsWith("```", StringComparison.OrdinalIgnoreCase)) ret = ret.Substring(3);
+            if (ret.EndsWith("```", StringComparison.OrdinalIgnoreCase)) ret = ret.Substring(0, ret.Length - 3);
+            return ret.Trim();
+        }
+
+        private static string GetJsonString(JsonElement root, string name)
+        {
+            if (root.ValueKind != JsonValueKind.Object) return null;
+            foreach (JsonProperty property in root.EnumerateObject())
+            {
+                if (!String.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+                return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : property.Value.ToString();
+            }
+
+            return null;
+        }
+
+        private static string NormalizeAnswerabilityDecision(string value, string fallback)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return fallback ?? "not_checked";
+            string normalized = value.Trim().ToLowerInvariant().Replace("-", "_", StringComparison.Ordinal);
+            if (normalized == "answerable" || normalized == "needs_clarification" || normalized == "unsupported" || normalized == "not_checked")
+                return normalized;
+            if (normalized.Contains("clarif")) return "needs_clarification";
+            if (normalized.Contains("unsupport") || normalized.Contains("insufficient")) return "unsupported";
+            return fallback ?? "answerable";
+        }
+
+        private static string NormalizeQueryClass(string value, string fallback)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return fallback ?? "other";
+            string normalized = value.Trim().ToLowerInvariant().Replace("-", "_", StringComparison.Ordinal);
+            if (normalized == "specific" || normalized == "broad" || normalized == "follow_up" || normalized == "procedural" || normalized == "other")
+                return normalized;
+            return fallback ?? "other";
+        }
+
+        private static string BuildAnswerabilityForcedResponse(AssistantSettings settings, AnswerabilityCheckOutcome outcome)
+        {
+            if (settings == null || outcome == null) return null;
+            string mode = settings.AnswerabilityMode ?? "LogOnly";
+            if (String.Equals(mode, "AskClarifyingQuestion", StringComparison.OrdinalIgnoreCase)
+                && String.Equals(outcome.Decision, "needs_clarification", StringComparison.OrdinalIgnoreCase))
+            {
+                return !String.IsNullOrWhiteSpace(outcome.RequiredClarification)
+                    ? outcome.RequiredClarification.Trim()
+                    : "I need one clarification before I can answer that accurately.";
+            }
+
+            if (String.Equals(mode, "ReturnUnsupported", StringComparison.OrdinalIgnoreCase)
+                && String.Equals(outcome.Decision, "unsupported", StringComparison.OrdinalIgnoreCase))
+            {
+                return "I do not have enough information in the retrieved context to answer that reliably."
+                    + (String.IsNullOrWhiteSpace(outcome.Reason) ? "" : " " + outcome.Reason.Trim());
+            }
+
+            return null;
+        }
+
+        private static AssistantPerformanceStage BuildSyntheticAnswerabilityFinalStage(string decision, string reason)
+        {
+            return new AssistantPerformanceStage
+            {
+                Name = "final_inference",
+                Kind = "inference",
+                Success = true,
+                DurationMs = 0,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["phase"] = "answerability_strict_response",
+                    ["answerability_decision"] = decision,
+                    ["answerability_reason"] = reason
+                }
+            };
+        }
+
+        private static void AddDropSummary(List<RetrievalCandidateDropSummary> summaries, string stage, string reason, int count)
+        {
+            if (summaries == null || count <= 0) return;
+            RetrievalCandidateDropSummary existing = summaries.FirstOrDefault(summary =>
+                String.Equals(summary.Stage, stage, StringComparison.OrdinalIgnoreCase)
+                && String.Equals(summary.Reason, reason, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                existing.Count += count;
+                return;
+            }
+
+            summaries.Add(new RetrievalCandidateDropSummary
+            {
+                Stage = stage,
+                Reason = reason,
+                Count = count
+            });
         }
 
         private async Task<ToolLoopExecutionResult> ExecuteToolCallingLoopAsync(
@@ -2852,6 +3111,19 @@ namespace AssistantHub.Server.Services
                     Instruction = instruction
                 };
             }
+        }
+
+        private class AnswerabilityCheckOutcome
+        {
+            public string Decision { get; set; } = "not_checked";
+
+            public string QueryClass { get; set; } = "other";
+
+            public string Reason { get; set; } = null;
+
+            public string RequiredClarification { get; set; } = null;
+
+            public AssistantPerformanceStage Telemetry { get; set; } = null;
         }
 
     }

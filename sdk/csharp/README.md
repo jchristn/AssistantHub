@@ -144,6 +144,8 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
     if (threadResponse.Retrieval != null)
     {
         Console.WriteLine($"Retrieval took {threadResponse.Retrieval.DurationMs}ms");
+        Console.WriteLine($"Answerability: {threadResponse.Retrieval.AnswerabilityDecision ?? "not checked"}");
+        Console.WriteLine($"Dropped candidates: {threadResponse.Retrieval.DroppedCandidateCount ?? 0}");
     }
     if (threadResponse.Citations != null)
     {

@@ -214,6 +214,18 @@ namespace AssistantHub.Core.Database.Sqlite
             if (!HasColumn(columns, "rerank_inference_endpoint_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
 
+            if (!HasColumn(columns, "enable_answerability_check"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsEnableAnswerabilityCheckColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "answerability_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "answerability_mode"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsAnswerabilityModeColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "answerability_prompt"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsAnswerabilityPromptColumn, true, token).ConfigureAwait(false);
+
             if (!HasColumn(columns, "load_models_on_chat_open"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, true, token).ConfigureAwait(false);
 
@@ -273,6 +285,55 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(chatHistoryColumns, "attached_documents_json"))
                 await ExecuteQueryAsync(TableQueries.AddChatHistoryAttachedDocumentsJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "query_class"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryQueryClassColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "answerability_decision"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryAnswerabilityDecisionColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "answerability_reason"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryAnswerabilityReasonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "dropped_candidate_count"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryDroppedCandidateCountColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "dropped_candidate_summary_json"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryDroppedCandidateSummaryJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(chatHistoryColumns, "final_citation_count"))
+                await ExecuteQueryAsync(TableQueries.AddChatHistoryFinalCitationCountColumn, true, token).ConfigureAwait(false);
+
+            DataTable evalRunColumns = await ExecuteQueryAsync("PRAGMA table_info(eval_runs);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalRunColumns, "execution_mode"))
+                await ExecuteQueryAsync(TableQueries.AddEvalRunsExecutionModeColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalRunColumns, "category_filter_json"))
+                await ExecuteQueryAsync(TableQueries.AddEvalRunsCategoryFilterJsonColumn, true, token).ConfigureAwait(false);
+
+            DataTable evalResultColumns = await ExecuteQueryAsync("PRAGMA table_info(eval_results);", false, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "chat_history_id"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsChatHistoryIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "trace_id"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsTraceIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "retrieval_json"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsRetrievalJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "citations_json"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsCitationsJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "tool_calls_json"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsToolCallsJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "query_class"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsQueryClassColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(evalResultColumns, "answerability_decision"))
+                await ExecuteQueryAsync(TableQueries.AddEvalResultsAnswerabilityDecisionColumn, true, token).ConfigureAwait(false);
 
             DataTable requestHistoryColumns = await ExecuteQueryAsync("PRAGMA table_info(request_history);", false, token).ConfigureAwait(false);
 

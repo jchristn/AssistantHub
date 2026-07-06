@@ -102,6 +102,10 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `retrieval_gate_inference_endpoint_id` TEXT, " +
             "  `query_rewrite_inference_endpoint_id` TEXT, " +
             "  `rerank_inference_endpoint_id` TEXT, " +
+            "  `enable_answerability_check` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `answerability_inference_endpoint_id` TEXT, " +
+            "  `answerability_mode` VARCHAR(32) DEFAULT 'LogOnly', " +
+            "  `answerability_prompt` TEXT, " +
             "  `embedding_endpoint_id` TEXT, " +
             "  `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0, " +
             "  `expose_thinking` TINYINT(1) NOT NULL DEFAULT 0, " +
@@ -133,6 +137,18 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsEnableAnswerabilityCheckColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `enable_answerability_check` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `answerability_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsAnswerabilityModeColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `answerability_mode` VARCHAR(32) DEFAULT 'LogOnly'";
+
+        internal static string AddAssistantSettingsAnswerabilityPromptColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `answerability_prompt` TEXT";
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `load_models_on_chat_open` TINYINT(1) NOT NULL DEFAULT 0";
@@ -305,6 +321,12 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `rerank_duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
             "  `rerank_input_count` INT NOT NULL DEFAULT 0, " +
             "  `rerank_output_count` INT NOT NULL DEFAULT 0, " +
+            "  `query_class` VARCHAR(64), " +
+            "  `answerability_decision` VARCHAR(64), " +
+            "  `answerability_reason` TEXT, " +
+            "  `dropped_candidate_count` INT, " +
+            "  `dropped_candidate_summary_json` LONGTEXT, " +
+            "  `final_citation_count` INT, " +
             "  `retrieval_context` LONGTEXT, " +
             "  `prompt_sent_utc` TEXT, " +
             "  `prompt_tokens` INT NOT NULL DEFAULT 0, " +
@@ -343,6 +365,24 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddChatHistoryAttachedDocumentsJsonColumn =
             "ALTER TABLE `chat_history` ADD COLUMN `attached_documents_json` LONGTEXT";
+
+        internal static string AddChatHistoryQueryClassColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `query_class` VARCHAR(64)";
+
+        internal static string AddChatHistoryAnswerabilityDecisionColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `answerability_decision` VARCHAR(64)";
+
+        internal static string AddChatHistoryAnswerabilityReasonColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `answerability_reason` TEXT";
+
+        internal static string AddChatHistoryDroppedCandidateCountColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `dropped_candidate_count` INT";
+
+        internal static string AddChatHistoryDroppedCandidateSummaryJsonColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `dropped_candidate_summary_json` LONGTEXT";
+
+        internal static string AddChatHistoryFinalCitationCountColumn =
+            "ALTER TABLE `chat_history` ADD COLUMN `final_citation_count` INT";
 
         internal static string CreateRequestHistoryTable =
             "CREATE TABLE IF NOT EXISTS `request_history` (" +

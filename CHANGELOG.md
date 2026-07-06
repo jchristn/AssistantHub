@@ -24,6 +24,7 @@
 - **Collection search work caps**: Added assistant tool-policy caps for `MaxDocumentsConsideredPerSearch` and `MaxResultsConsideredPerSearch`; capped exhaustive searches now report explicit incomplete reasons while timed-out tool calls fail with `ErrorCode=timeout`.
 - **Tool-derived citations**: Collection, Verbex, S3, and web tool outputs can now contribute citation sources when assistant citations are enabled; web citation sources include URLs and dashboard citation cards link them directly.
 - **Tavily external search configuration**: Added server JSON settings for external search providers with Tavily-compatible defaults, environment-variable expansion for endpoint/API-key values, safe secret handling in committed examples, response redaction for provider API keys, startup status logging, and a redacted admin status route/SDK method.
+- **Retrieval answerability diagnostics**: Added optional post-retrieval answerability classification, query-class telemetry, dropped-candidate summaries, final citation counts, chat-rail evaluation execution, dashboard controls, SDK/OpenAPI/Postman coverage, and provider migrations for retained chat history diagnostics.
 
 ### Changed
 - **Product and package version**: Updated active product, Docker image, dashboard, SDK, OpenAPI, REST, and documentation metadata to `0.16.0`.

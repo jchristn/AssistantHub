@@ -77,6 +77,14 @@ namespace AssistantHub.Server.Services
             "User query:\n{query}\n\n" +
             "Retrieved chunks:\n{chunks}";
 
+        private protected static readonly string _DefaultAnswerabilityPrompt =
+            "You are an answerability classifier for a retrieval augmented assistant. Given the user's question and the final retrieval context that will be sent to the assistant, decide whether the assistant has enough grounded information to answer.\n\n" +
+            "Return ONLY a JSON object with these fields:\n" +
+            "{ \"decision\": \"answerable|needs_clarification|unsupported\", \"query_class\": \"specific|broad|follow_up|procedural|other\", \"reason\": \"brief reason\", \"required_clarification\": \"optional clarification question\" }\n\n" +
+            "Use answerable when the context likely supports a grounded answer. Use needs_clarification when the user request is ambiguous. Use unsupported when the context does not contain enough evidence.\n\n" +
+            "User question:\n{question}\n\n" +
+            "Retrieved context:\n{context}";
+
         private protected static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -374,7 +382,14 @@ namespace AssistantHub.Server.Services
             string attachedDocumentsJson,
             CancellationToken token,
             List<ChatCompletionToolTrace> toolTraces = null,
-            List<AssistantPerformanceStage> toolModelStages = null)
+            List<AssistantPerformanceStage> toolModelStages = null,
+            string queryClass = null,
+            string answerabilityDecision = null,
+            string answerabilityReason = null,
+            int? droppedCandidateCount = null,
+            string droppedCandidateSummaryJson = null,
+            int? finalCitationCount = null,
+            AssistantPerformanceStage answerabilityTelemetry = null)
         {
             try
             {
@@ -412,6 +427,12 @@ namespace AssistantHub.Server.Services
                     Origin = origin,
                     TraceId = traceId,
                     RequestHistoryId = requestHistoryId,
+                    QueryClass = queryClass,
+                    AnswerabilityDecision = answerabilityDecision,
+                    AnswerabilityReason = answerabilityReason,
+                    DroppedCandidateCount = droppedCandidateCount,
+                    DroppedCandidateSummaryJson = droppedCandidateSummaryJson,
+                    FinalCitationCount = finalCitationCount,
                     PerformanceSchemaVersion = 1
                 };
 
@@ -431,7 +452,8 @@ namespace AssistantHub.Server.Services
                     queryRewriteTelemetry,
                     rerankTelemetry,
                     toolTraces,
-                    toolModelStages);
+                    toolModelStages,
+                    answerabilityTelemetry);
                 history.PerformanceJson = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
 
                 await _Database.ChatHistory.CreateAsync(history, token).ConfigureAwait(false);

@@ -653,7 +653,16 @@ namespace AssistantHub.Server
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog, _CrawlScheduler);
             CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
-            EvalService evalService = new EvalService(_Settings, _Logging, _Database, _Inference, _InferenceEndpointService);
+            AssistantChatEvalExecutor evalChatExecutor = new AssistantChatEvalExecutor(
+                _Database,
+                _Logging,
+                _Settings,
+                _Retrieval,
+                _Inference,
+                _Storage,
+                _InvertedIndex,
+                _InferenceEndpointService);
+            EvalService evalService = new EvalService(_Settings, _Logging, _Database, _Inference, _InferenceEndpointService, evalChatExecutor);
             EvalHandler evalHandler = new EvalHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, evalService);
 
             // Unauthenticated routes

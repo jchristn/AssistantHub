@@ -1832,6 +1832,19 @@
             <param name="attachedDocumentIds">Allowed attached document IDs.</param>
             <returns>Filtered chunks.</returns>
         </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatEvalExecutor">
+            <summary>
+            Executes eval facts through the production assistant chat rail.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatEvalExecutor.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,AssistantHub.Core.Services.IInferenceEndpointService)">
+            <summary>
+            Instantiate the eval chat executor.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatEvalExecutor.ExecuteAsync(AssistantHub.Core.Services.EvalChatExecutionRequest,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatExecutionRequest">
             <summary>
             Chat execution request.

@@ -310,6 +310,10 @@ export interface AssistantSettings {
   RetrievalGateInferenceEndpointId?: string;
   QueryRewriteInferenceEndpointId?: string;
   RerankInferenceEndpointId?: string;
+  EnableAnswerabilityCheck?: boolean;
+  AnswerabilityInferenceEndpointId?: string;
+  AnswerabilityMode?: string;
+  AnswerabilityPrompt?: string;
   EmbeddingEndpointId?: string;
   LoadModelsOnChatOpen?: boolean;
   ExposeThinking?: boolean;
@@ -811,7 +815,20 @@ export interface ChatCompletionRetrieval {
   attached_document_ids?: string[];
   attached_documents?: AssistantDocumentSelectionItem[];
   document_filter_applied?: boolean;
+  query_class?: string;
+  answerability_decision?: string;
+  answerability_reason?: string;
+  dropped_candidate_count?: number;
+  dropped_candidates?: RetrievalCandidateDropSummary[];
+  final_citation_count?: number;
   chunks?: RetrievalChunk[];
+}
+
+/** Aggregated retrieval candidate drops by pipeline stage. */
+export interface RetrievalCandidateDropSummary {
+  stage?: string;
+  reason?: string;
+  count?: number;
 }
 
 /** Citation information. */
@@ -934,6 +951,12 @@ export interface ChatHistory {
   RerankDurationMs?: number;
   RerankInputCount?: number;
   RerankOutputCount?: number;
+  QueryClass?: string;
+  AnswerabilityDecision?: string;
+  AnswerabilityReason?: string;
+  DroppedCandidateCount?: number | null;
+  DroppedCandidateSummaryJson?: string | null;
+  FinalCitationCount?: number | null;
   RetrievalContext?: string;
   PromptSentUtc?: string | null;
   PromptTokens?: number;

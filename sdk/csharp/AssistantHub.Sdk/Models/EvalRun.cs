@@ -70,6 +70,18 @@ namespace AssistantHub.Sdk.Models
         public string JudgePrompt { get; set; }
 
         /// <summary>
+        /// Execution mode used for the run.
+        /// </summary>
+        [JsonPropertyName("ExecutionMode")]
+        public string ExecutionMode { get; set; }
+
+        /// <summary>
+        /// JSON-serialized category filter used for the run.
+        /// </summary>
+        [JsonPropertyName("CategoryFilterJson")]
+        public string CategoryFilterJson { get; set; }
+
+        /// <summary>
         /// Timestamp when the run started in UTC.
         /// </summary>
         [JsonPropertyName("StartedUtc")]

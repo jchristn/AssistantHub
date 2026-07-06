@@ -54,6 +54,7 @@ export type {
   ChatCompletionPromptTokensDetails,
   ChatCompletionCompletionTokensDetails,
   ChatCompletionRetrieval,
+  RetrievalCandidateDropSummary,
   ChatCompletionCitations,
   CitationSource,
   RetrievalChunk,

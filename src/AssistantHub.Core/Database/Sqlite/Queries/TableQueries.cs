@@ -93,6 +93,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_gate_inference_endpoint_id TEXT, " +
                 "  query_rewrite_inference_endpoint_id TEXT, " +
                 "  rerank_inference_endpoint_id TEXT, " +
+                "  enable_answerability_check INTEGER NOT NULL DEFAULT 0, " +
+                "  answerability_inference_endpoint_id TEXT, " +
+                "  answerability_mode TEXT DEFAULT 'LogOnly', " +
+                "  answerability_prompt TEXT, " +
                 "  embedding_endpoint_id TEXT, " +
                 "  load_models_on_chat_open INTEGER NOT NULL DEFAULT 0, " +
                 "  expose_thinking INTEGER NOT NULL DEFAULT 0, " +
@@ -237,6 +241,12 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  rerank_duration_ms REAL NOT NULL DEFAULT 0, " +
                 "  rerank_input_count INTEGER NOT NULL DEFAULT 0, " +
                 "  rerank_output_count INTEGER NOT NULL DEFAULT 0, " +
+                "  query_class TEXT, " +
+                "  answerability_decision TEXT, " +
+                "  answerability_reason TEXT, " +
+                "  dropped_candidate_count INTEGER, " +
+                "  dropped_candidate_summary_json TEXT, " +
+                "  final_citation_count INTEGER, " +
                 "  retrieval_context TEXT, " +
                 "  prompt_sent_utc TEXT, " +
                 "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
@@ -395,6 +405,8 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  facts_failed INTEGER NOT NULL DEFAULT 0, " +
                 "  pass_rate REAL NOT NULL DEFAULT 0, " +
                 "  judge_prompt TEXT, " +
+                "  execution_mode TEXT DEFAULT 'ChatRail', " +
+                "  category_filter_json TEXT, " +
                 "  started_utc TEXT, " +
                 "  completed_utc TEXT, " +
                 "  created_utc TEXT NOT NULL" +
@@ -408,6 +420,13 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  llm_response TEXT, " +
                 "  fact_verdicts TEXT, " +
                 "  overall_pass INTEGER NOT NULL DEFAULT 0, " +
+                "  chat_history_id TEXT, " +
+                "  trace_id TEXT, " +
+                "  retrieval_json TEXT, " +
+                "  citations_json TEXT, " +
+                "  tool_calls_json TEXT, " +
+                "  query_class TEXT, " +
+                "  answerability_decision TEXT, " +
                 "  duration_ms INTEGER NOT NULL DEFAULT 0, " +
                 "  created_utc TEXT NOT NULL" +
                 "); ";
@@ -436,6 +455,30 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN rerank_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the answerability check enablement column.
+        /// </summary>
+        public static string AddAssistantSettingsEnableAnswerabilityCheckColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN enable_answerability_check INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the answerability inference endpoint ID column.
+        /// </summary>
+        public static string AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN answerability_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the answerability behavior mode column.
+        /// </summary>
+        public static string AddAssistantSettingsAnswerabilityModeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN answerability_mode TEXT DEFAULT 'LogOnly';";
+
+        /// <summary>
+        /// Add the answerability prompt column.
+        /// </summary>
+        public static string AddAssistantSettingsAnswerabilityPromptColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN answerability_prompt TEXT;";
 
         /// <summary>
         /// Add the load-models-on-chat-open column.
@@ -532,6 +575,96 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddChatHistoryAttachedDocumentsJsonColumn =
             "ALTER TABLE chat_history ADD COLUMN attached_documents_json TEXT;";
+
+        /// <summary>
+        /// Add the query class column to chat history.
+        /// </summary>
+        public static string AddChatHistoryQueryClassColumn =
+            "ALTER TABLE chat_history ADD COLUMN query_class TEXT;";
+
+        /// <summary>
+        /// Add the answerability decision column to chat history.
+        /// </summary>
+        public static string AddChatHistoryAnswerabilityDecisionColumn =
+            "ALTER TABLE chat_history ADD COLUMN answerability_decision TEXT;";
+
+        /// <summary>
+        /// Add the answerability reason column to chat history.
+        /// </summary>
+        public static string AddChatHistoryAnswerabilityReasonColumn =
+            "ALTER TABLE chat_history ADD COLUMN answerability_reason TEXT;";
+
+        /// <summary>
+        /// Add the dropped candidate count column to chat history.
+        /// </summary>
+        public static string AddChatHistoryDroppedCandidateCountColumn =
+            "ALTER TABLE chat_history ADD COLUMN dropped_candidate_count INTEGER;";
+
+        /// <summary>
+        /// Add the dropped candidate summary JSON column to chat history.
+        /// </summary>
+        public static string AddChatHistoryDroppedCandidateSummaryJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN dropped_candidate_summary_json TEXT;";
+
+        /// <summary>
+        /// Add the final citation count column to chat history.
+        /// </summary>
+        public static string AddChatHistoryFinalCitationCountColumn =
+            "ALTER TABLE chat_history ADD COLUMN final_citation_count INTEGER;";
+
+        /// <summary>
+        /// Add the execution mode column to eval runs.
+        /// </summary>
+        public static string AddEvalRunsExecutionModeColumn =
+            "ALTER TABLE eval_runs ADD COLUMN execution_mode TEXT DEFAULT 'ChatRail';";
+
+        /// <summary>
+        /// Add the category filter JSON column to eval runs.
+        /// </summary>
+        public static string AddEvalRunsCategoryFilterJsonColumn =
+            "ALTER TABLE eval_runs ADD COLUMN category_filter_json TEXT;";
+
+        /// <summary>
+        /// Add the chat history ID column to eval results.
+        /// </summary>
+        public static string AddEvalResultsChatHistoryIdColumn =
+            "ALTER TABLE eval_results ADD COLUMN chat_history_id TEXT;";
+
+        /// <summary>
+        /// Add the trace ID column to eval results.
+        /// </summary>
+        public static string AddEvalResultsTraceIdColumn =
+            "ALTER TABLE eval_results ADD COLUMN trace_id TEXT;";
+
+        /// <summary>
+        /// Add the retrieval JSON column to eval results.
+        /// </summary>
+        public static string AddEvalResultsRetrievalJsonColumn =
+            "ALTER TABLE eval_results ADD COLUMN retrieval_json TEXT;";
+
+        /// <summary>
+        /// Add the citations JSON column to eval results.
+        /// </summary>
+        public static string AddEvalResultsCitationsJsonColumn =
+            "ALTER TABLE eval_results ADD COLUMN citations_json TEXT;";
+
+        /// <summary>
+        /// Add the tool calls JSON column to eval results.
+        /// </summary>
+        public static string AddEvalResultsToolCallsJsonColumn =
+            "ALTER TABLE eval_results ADD COLUMN tool_calls_json TEXT;";
+
+        /// <summary>
+        /// Add the query class column to eval results.
+        /// </summary>
+        public static string AddEvalResultsQueryClassColumn =
+            "ALTER TABLE eval_results ADD COLUMN query_class TEXT;";
+
+        /// <summary>
+        /// Add the answerability decision column to eval results.
+        /// </summary>
+        public static string AddEvalResultsAnswerabilityDecisionColumn =
+            "ALTER TABLE eval_results ADD COLUMN answerability_decision TEXT;";
 
         /// <summary>
         /// Add the trace ID column to request history.

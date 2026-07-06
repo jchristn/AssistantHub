@@ -165,6 +165,8 @@ export interface EvalRun {
   FactsFailed?: number;
   PassRate?: number;
   JudgePrompt?: string;
+  ExecutionMode?: string;
+  CategoryFilterJson?: string;
   StartedUtc?: string | null;
   CompletedUtc?: string | null;
   CreatedUtc?: string;
@@ -174,6 +176,8 @@ export interface EvalRun {
 export interface EvalRunRequest {
   AssistantId: string;
   JudgePrompt?: string;
+  ExecutionMode?: string;
+  Categories?: string[];
 }
 
 /** Evaluation result. */
@@ -186,6 +190,13 @@ export interface EvalResult {
   LlmResponse?: string;
   FactVerdicts?: string;
   OverallPass?: boolean;
+  ChatHistoryId?: string;
+  TraceId?: string;
+  RetrievalJson?: string;
+  CitationsJson?: string;
+  ToolCallsJson?: string;
+  QueryClass?: string;
+  AnswerabilityDecision?: string;
   DurationMs?: number;
   CreatedUtc?: string;
 }

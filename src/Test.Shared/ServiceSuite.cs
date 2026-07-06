@@ -8021,6 +8021,11 @@ namespace Test.Automated
                     RerankDurationMs = 44,
                     RerankInputCount = 5,
                     RerankOutputCount = 2,
+                    QueryClass = "specific",
+                    AnswerabilityDecision = "answerable",
+                    AnswerabilityReason = "Retrieved context contains direct support.",
+                    DroppedCandidateCount = 3,
+                    FinalCitationCount = 1,
                     AttachedDocumentIdsJson = "[\"adoc_one\",\"adoc_two\"]",
                     AttachedDocumentsJson = "[{\"Id\":\"adoc_one\",\"Name\":\"Policy.pdf\"}]",
                     InferenceConnectionDurationMs = 100,
@@ -8170,6 +8175,15 @@ namespace Test.Automated
                                 ["requested_tool_names"] = new List<string> { "collection_search", "web_search" }
                             }
                         }
+                    },
+                    new AssistantPerformanceStage
+                    {
+                        Name = "provider_call",
+                        Kind = "inference",
+                        DurationMs = 18,
+                        EndpointId = "cep_answerability",
+                        Provider = "Ollama",
+                        Model = "gemma3:4b"
                     });
                 string json = AssistantPerformanceTelemetryBuilder.Serialize(telemetry);
                 List<ChatHistoryPerformanceEvent> events = AssistantPerformanceTelemetryBuilder.ToEvents(telemetry, history.TenantId);
@@ -8196,6 +8210,13 @@ namespace Test.Automated
                 AssertHelper.StringContains(retrievalEvent.MetadataJson, "\"attached_document_count\":2", "retrieval attachment count metadata");
                 AssertHelper.StringContains(retrievalEvent.MetadataJson, "\"document_filter_applied\":true", "retrieval attachment filter metadata");
                 AssertHelper.StringContains(retrievalEvent.MetadataJson, "\"document_filter_mode\":\"multi-native\"", "retrieval attachment filter mode metadata");
+
+                ChatHistoryPerformanceEvent answerabilityEvent = events.Find(evt => evt.Stage == "answerability");
+                AssertHelper.IsNotNull(answerabilityEvent, "answerability event");
+                AssertHelper.AreEqual("cep_answerability", answerabilityEvent.EndpointId, "Answerability EndpointId");
+                AssertHelper.StringContains(answerabilityEvent.MetadataJson, "\"query_class\":\"specific\"", "answerability query class metadata");
+                AssertHelper.StringContains(answerabilityEvent.MetadataJson, "\"decision\":\"answerable\"", "answerability decision metadata");
+                AssertHelper.StringContains(answerabilityEvent.MetadataJson, "\"dropped_candidate_count\":3", "answerability dropped candidate metadata");
 
                 ChatHistoryPerformanceEvent toolsEvent = events.Find(evt => evt.Stage == "tools");
                 AssertHelper.IsNotNull(toolsEvent, "tools telemetry event");

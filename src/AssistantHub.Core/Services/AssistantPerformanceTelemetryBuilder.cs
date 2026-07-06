@@ -35,6 +35,7 @@ namespace AssistantHub.Core.Services
         /// <param name="rerankStage">Measured rerank stage.</param>
         /// <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
         /// <param name="toolModelStages">Model-call stages that decided whether to request tools.</param>
+        /// <param name="answerabilityStage">Measured answerability check stage.</param>
         /// <returns>Provider-agnostic performance telemetry.</returns>
         public static AssistantPerformanceTelemetry Build(
             ChatHistory history,
@@ -45,7 +46,8 @@ namespace AssistantHub.Core.Services
             AssistantPerformanceStage queryRewriteStage = null,
             AssistantPerformanceStage rerankStage = null,
             IEnumerable<ChatCompletionToolTrace> toolTraces = null,
-            IEnumerable<AssistantPerformanceStage> toolModelStages = null)
+            IEnumerable<AssistantPerformanceStage> toolModelStages = null,
+            AssistantPerformanceStage answerabilityStage = null)
         {
             if (history == null) throw new ArgumentNullException(nameof(history));
 
@@ -120,6 +122,23 @@ namespace AssistantHub.Core.Services
                     ["chunks_output"] = history.RerankOutputCount
                 },
                 rerankStage);
+
+            AddMeasuredOrLegacyStage(
+                telemetry,
+                "answerability",
+                "inference",
+                45,
+                0,
+                null,
+                new Dictionary<string, object>
+                {
+                    ["query_class"] = history.QueryClass,
+                    ["decision"] = history.AnswerabilityDecision,
+                    ["reason"] = history.AnswerabilityReason,
+                    ["dropped_candidate_count"] = history.DroppedCandidateCount,
+                    ["final_citation_count"] = history.FinalCitationCount
+                },
+                answerabilityStage);
 
             AssistantPerformanceStage finalStage = finalInferenceStage != null
                 ? CloneStage(finalInferenceStage)

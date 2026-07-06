@@ -61,7 +61,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
+                "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, enable_answerability_check, answerability_inference_endpoint_id, answerability_mode, answerability_prompt, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(settings.Id) + "', " +
                 "'" + _Driver.Sanitize(settings.AssistantId) + "', " +
@@ -98,6 +98,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(settings.RetrievalGateInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
+                (settings.EnableAnswerabilityCheck ? 1 : 0) + ", " +
+                _Driver.FormatNullableString(settings.AnswerabilityInferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(settings.AnswerabilityMode) + ", " +
+                _Driver.FormatNullableString(settings.AnswerabilityPrompt) + ", " +
                 _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
                 (settings.ExposeThinking ? 1 : 0) + ", " +
@@ -188,6 +192,10 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "retrieval_gate_inference_endpoint_id = " + _Driver.FormatNullableString(settings.RetrievalGateInferenceEndpointId) + ", " +
                 "query_rewrite_inference_endpoint_id = " + _Driver.FormatNullableString(settings.QueryRewriteInferenceEndpointId) + ", " +
                 "rerank_inference_endpoint_id = " + _Driver.FormatNullableString(settings.RerankInferenceEndpointId) + ", " +
+                "enable_answerability_check = " + (settings.EnableAnswerabilityCheck ? 1 : 0) + ", " +
+                "answerability_inference_endpoint_id = " + _Driver.FormatNullableString(settings.AnswerabilityInferenceEndpointId) + ", " +
+                "answerability_mode = " + _Driver.FormatNullableString(settings.AnswerabilityMode) + ", " +
+                "answerability_prompt = " + _Driver.FormatNullableString(settings.AnswerabilityPrompt) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(settings.EmbeddingEndpointId) + ", " +
                 "load_models_on_chat_open = " + (settings.LoadModelsOnChatOpen ? 1 : 0) + ", " +
                 "expose_thinking = " + (settings.ExposeThinking ? 1 : 0) + ", " +

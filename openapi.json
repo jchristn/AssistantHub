@@ -8056,6 +8056,21 @@
                         "type": "string",
                         "nullable": true,
                         "description": "Optional judge prompt override for this run"
+                      },
+                      "ExecutionMode": {
+                        "type": "string",
+                        "description": "Execution mode: ChatRail or InferenceOnly",
+                        "enum": [
+                          "ChatRail",
+                          "InferenceOnly"
+                        ]
+                      },
+                      "Categories": {
+                        "type": "array",
+                        "description": "Optional eval fact categories to include",
+                        "items": {
+                          "type": "string"
+                        }
                       }
                     },
                     "required": [
@@ -13648,12 +13663,51 @@
           "document_filter_applied": {
             "type": "boolean"
           },
+          "query_class": {
+            "type": "string",
+            "nullable": true
+          },
+          "answerability_decision": {
+            "type": "string",
+            "nullable": true
+          },
+          "answerability_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "dropped_candidate_count": {
+            "type": "integer"
+          },
+          "dropped_candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RetrievalCandidateDropSummary"
+            }
+          },
+          "final_citation_count": {
+            "type": "integer",
+            "nullable": true
+          },
           "chunks": {
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": true
             }
+          }
+        }
+      },
+      "RetrievalCandidateDropSummary": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
           }
         }
       },
@@ -13785,6 +13839,30 @@
             "type": "boolean",
             "default": false,
             "description": "When true, provider-returned thinking/reasoning text may be included in assistant chat responses as message.thinking. Default false."
+          },
+          "EnableAnswerabilityCheck": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, run an LLM answerability check after retrieval and before final generation."
+          },
+          "AnswerabilityInferenceEndpointId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional completion endpoint ID for answerability checks. Null falls back to InferenceEndpointId."
+          },
+          "AnswerabilityMode": {
+            "type": "string",
+            "description": "Answerability behavior.",
+            "enum": [
+              "LogOnly",
+              "AskClarifyingQuestion",
+              "ReturnUnsupported"
+            ]
+          },
+          "AnswerabilityPrompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional answerability prompt template with {question} and {context} placeholders."
           },
           "ToolPolicyJson": {
             "type": "string",

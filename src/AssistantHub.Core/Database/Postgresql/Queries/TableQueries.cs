@@ -98,6 +98,10 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  retrieval_gate_inference_endpoint_id TEXT, " +
             "  query_rewrite_inference_endpoint_id TEXT, " +
             "  rerank_inference_endpoint_id TEXT, " +
+            "  enable_answerability_check BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  answerability_inference_endpoint_id TEXT, " +
+            "  answerability_mode TEXT DEFAULT 'LogOnly', " +
+            "  answerability_prompt TEXT, " +
             "  embedding_endpoint_id TEXT, " +
             "  load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE, " +
             "  expose_thinking BOOLEAN NOT NULL DEFAULT FALSE, " +
@@ -128,6 +132,18 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsEnableAnswerabilityCheckColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS enable_answerability_check BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS answerability_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsAnswerabilityModeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS answerability_mode TEXT DEFAULT 'LogOnly'";
+
+        internal static string AddAssistantSettingsAnswerabilityPromptColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS answerability_prompt TEXT";
 
         internal static string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS load_models_on_chat_open BOOLEAN NOT NULL DEFAULT FALSE";
@@ -295,6 +311,12 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  rerank_duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
             "  rerank_input_count INTEGER NOT NULL DEFAULT 0, " +
             "  rerank_output_count INTEGER NOT NULL DEFAULT 0, " +
+            "  query_class TEXT, " +
+            "  answerability_decision TEXT, " +
+            "  answerability_reason TEXT, " +
+            "  dropped_candidate_count INTEGER, " +
+            "  dropped_candidate_summary_json TEXT, " +
+            "  final_citation_count INTEGER, " +
             "  retrieval_context TEXT, " +
             "  prompt_sent_utc TEXT, " +
             "  prompt_tokens INTEGER NOT NULL DEFAULT 0, " +
@@ -332,6 +354,24 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddChatHistoryAttachedDocumentsJsonColumn =
             "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS attached_documents_json TEXT";
+
+        internal static string AddChatHistoryQueryClassColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS query_class TEXT";
+
+        internal static string AddChatHistoryAnswerabilityDecisionColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS answerability_decision TEXT";
+
+        internal static string AddChatHistoryAnswerabilityReasonColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS answerability_reason TEXT";
+
+        internal static string AddChatHistoryDroppedCandidateCountColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS dropped_candidate_count INTEGER";
+
+        internal static string AddChatHistoryDroppedCandidateSummaryJsonColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS dropped_candidate_summary_json TEXT";
+
+        internal static string AddChatHistoryFinalCitationCountColumn =
+            "ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS final_citation_count INTEGER";
 
         internal static string CreateRequestHistoryTable =
             "CREATE TABLE IF NOT EXISTS request_history (" +

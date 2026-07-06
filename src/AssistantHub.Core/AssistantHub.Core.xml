@@ -3023,6 +3023,26 @@
             Add the rerank inference endpoint ID column.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsEnableAnswerabilityCheckColumn">
+            <summary>
+            Add the answerability check enablement column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn">
+            <summary>
+            Add the answerability inference endpoint ID column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsAnswerabilityModeColumn">
+            <summary>
+            Add the answerability behavior mode column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsAnswerabilityPromptColumn">
+            <summary>
+            Add the answerability prompt column.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn">
             <summary>
             Add the load-models-on-chat-open column.
@@ -3101,6 +3121,81 @@
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryAttachedDocumentsJsonColumn">
             <summary>
             Add the attached-documents JSON column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryQueryClassColumn">
+            <summary>
+            Add the query class column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryAnswerabilityDecisionColumn">
+            <summary>
+            Add the answerability decision column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryAnswerabilityReasonColumn">
+            <summary>
+            Add the answerability reason column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryDroppedCandidateCountColumn">
+            <summary>
+            Add the dropped candidate count column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryDroppedCandidateSummaryJsonColumn">
+            <summary>
+            Add the dropped candidate summary JSON column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddChatHistoryFinalCitationCountColumn">
+            <summary>
+            Add the final citation count column to chat history.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalRunsExecutionModeColumn">
+            <summary>
+            Add the execution mode column to eval runs.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalRunsCategoryFilterJsonColumn">
+            <summary>
+            Add the category filter JSON column to eval runs.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsChatHistoryIdColumn">
+            <summary>
+            Add the chat history ID column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsTraceIdColumn">
+            <summary>
+            Add the trace ID column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsRetrievalJsonColumn">
+            <summary>
+            Add the retrieval JSON column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsCitationsJsonColumn">
+            <summary>
+            Add the citations JSON column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsToolCallsJsonColumn">
+            <summary>
+            Add the tool calls JSON column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsQueryClassColumn">
+            <summary>
+            Add the query class column to eval results.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddEvalResultsAnswerabilityDecisionColumn">
+            <summary>
+            Add the answerability decision column to eval results.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddRequestHistoryTraceIdColumn">
@@ -6115,6 +6210,27 @@
             When null or empty, the primary inference endpoint is used.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableAnswerabilityCheck">
+            <summary>
+            Whether to run an LLM-based answerability check after retrieval/rerank and before final generation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.AnswerabilityInferenceEndpointId">
+            <summary>
+            Completion endpoint identifier used for answerability checks.
+            When null or empty, the primary inference endpoint is used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.AnswerabilityMode">
+            <summary>
+            Answerability behavior mode. Values: LogOnly, AskClarifyingQuestion, ReturnUnsupported.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.AnswerabilityPrompt">
+            <summary>
+            Custom answerability prompt template. When null, a built-in default prompt is used.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingEndpointId">
             <summary>
             Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
@@ -7559,6 +7675,36 @@
             Number of chunks that survived re-ranking.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.QueryClass">
+            <summary>
+            Classified user-query type for this turn, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AnswerabilityDecision">
+            <summary>
+            Answerability decision made after retrieval and before final generation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AnswerabilityReason">
+            <summary>
+            Safe reason for the answerability decision.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.DroppedCandidateCount">
+            <summary>
+            Number of retrieval candidates dropped after initial retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.DroppedCandidates">
+            <summary>
+            Safe summary of retrieval candidates dropped after initial retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.FinalCitationCount">
+            <summary>
+            Number of citation references extracted from the final answer.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AttachedDocumentIds">
             <summary>
             Attached document identifiers used to constrain retrieval.
@@ -7868,6 +8014,38 @@
         <member name="P:AssistantHub.Core.Models.ChatHistory.RerankOutputCount">
             <summary>
             Number of chunks that survived re-ranking.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.QueryClass">
+            <summary>
+            Classified user-query type for this turn, when classification is enabled or supplied by the pipeline.
+            Null means classification did not run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AnswerabilityDecision">
+            <summary>
+            Answerability decision after retrieval and before final generation.
+            Values include answerable, needs_clarification, unsupported, and not_checked.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.AnswerabilityReason">
+            <summary>
+            Safe reason for the answerability decision.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.DroppedCandidateCount">
+            <summary>
+            Number of retrieval candidates dropped after initial retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.DroppedCandidateSummaryJson">
+            <summary>
+            JSON-serialized safe summary of dropped retrieval candidates and reasons.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatHistory.FinalCitationCount">
+            <summary>
+            Number of citation references extracted from the final answer.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatHistory.RetrievalContext">
@@ -9605,6 +9783,11 @@
             Evaluation fact record — a question with expected facts for RAG evaluation.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Models.EvalFact.RecommendedCategories">
+            <summary>
+            Recommended failure-mode categories for eval facts. Custom categories remain valid.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.EvalFact.Id">
             <summary>
             Unique identifier with prefix ef_.
@@ -9702,6 +9885,41 @@
             Whether all expected facts passed.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.ChatHistoryId">
+            <summary>
+            Chat history identifier produced by a chat-rail eval execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.TraceId">
+            <summary>
+            Trace identifier produced by a chat-rail eval execution.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.RetrievalJson">
+            <summary>
+            JSON-serialized retrieval metadata captured from the chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.CitationsJson">
+            <summary>
+            JSON-serialized citation metadata captured from the chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.ToolCallsJson">
+            <summary>
+            JSON-serialized safe tool-call trace metadata captured from the chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.QueryClass">
+            <summary>
+            Query class recorded for the evaluated chat turn, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalResult.AnswerabilityDecision">
+            <summary>
+            Answerability decision recorded for the evaluated chat turn, when available.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.EvalResult.DurationMs">
             <summary>
             Total execution time in milliseconds.
@@ -9779,6 +9997,16 @@
             Judge prompt override used for this run (null means default was used).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.ExecutionMode">
+            <summary>
+            Execution mode used for this run. ChatRail exercises the full assistant chat/RAG path; InferenceOnly uses the legacy model-only path.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRun.CategoryFilterJson">
+            <summary>
+            JSON-serialized category filter used for this run. Null means all categories.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.EvalRun.StartedUtc">
             <summary>
             Timestamp when the run started.
@@ -9819,6 +10047,17 @@
         <member name="P:AssistantHub.Core.Models.EvalRunRequest.JudgePrompt">
             <summary>
             Optional judge prompt override.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRunRequest.ExecutionMode">
+            <summary>
+            Optional execution mode. ChatRail uses the normal assistant chat/RAG path; InferenceOnly uses the legacy model-only path.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.EvalRunRequest.Categories">
+            <summary>
+            Optional eval fact categories to include in the run.
+            Empty or null means all categories.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.FactVerdict">
@@ -11243,6 +11482,26 @@
             Time buckets.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.RetrievalCandidateDropSummary">
+            <summary>
+            Safe summary of retrieval candidates removed before final context or answer generation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalCandidateDropSummary.Stage">
+            <summary>
+            Pipeline stage that removed the candidate(s).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalCandidateDropSummary.Reason">
+            <summary>
+            Safe reason for removal.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalCandidateDropSummary.Count">
+            <summary>
+            Number of candidates removed for this reason.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.RetrievalChunk">
             <summary>
             A retrieved chunk with source identification and scoring.
@@ -12418,7 +12677,7 @@
             Builds, serializes, and projects provider-agnostic assistant performance telemetry.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatCompletionToolTrace},System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantPerformanceStage})">
+        <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.Build(AssistantHub.Core.Models.ChatHistory,AssistantHub.Core.Models.AssistantPerformanceStage,System.Int32,System.Int32,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,AssistantHub.Core.Models.AssistantPerformanceStage,System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.ChatCompletionToolTrace},System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.AssistantPerformanceStage},AssistantHub.Core.Models.AssistantPerformanceStage)">
             <summary>
             Build provider-agnostic performance telemetry for a chat history row.
             </summary>
@@ -12431,6 +12690,7 @@
             <param name="rerankStage">Measured rerank stage.</param>
             <param name="toolTraces">Safe tool-call traces captured during the chat turn.</param>
             <param name="toolModelStages">Model-call stages that decided whether to request tools.</param>
+            <param name="answerabilityStage">Measured answerability check stage.</param>
             <returns>Provider-agnostic performance telemetry.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.AssistantPerformanceTelemetryBuilder.EnsureEstimatedToolModelStage(AssistantHub.Core.Models.AssistantPerformanceTelemetry)">
@@ -12468,9 +12728,59 @@
             Atom response from DocumentAtom.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Type">
+            <summary>
+            Atom type.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Title">
+            <summary>
+            Title.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Subtitle">
+            <summary>
+            Subtitle.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.AtomResponse.Text">
             <summary>
             Text content of the atom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.OrderedList">
+            <summary>
+            Ordered list content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.UnorderedList">
+            <summary>
+            Unordered list content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Table">
+            <summary>
+            Table content.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Quarks">
+            <summary>
+            Structural child atoms.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.Chunks">
+            <summary>
+            Text chunks produced by DocumentAtom chunking.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.AtomChunkResponse">
+            <summary>
+            Chunk response from DocumentAtom.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomChunkResponse.Text">
+            <summary>
+            Chunk text content.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.AuthenticationService">
@@ -13097,18 +13407,20 @@
             Default judge prompt template.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.EvalService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IInferenceEndpointService)">
+        <member name="M:AssistantHub.Core.Services.EvalService.#ctor(AssistantHub.Core.Settings.AssistantHubSettings,SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IInferenceEndpointService,AssistantHub.Core.Services.IEvalChatExecutor)">
             <summary>
             Instantiate.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.EvalService.StartRunAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.EvalService.StartRunAsync(System.String,System.String,System.String,System.String,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
             <summary>
             Start an evaluation run for an assistant. Executes in the background.
             </summary>
             <param name="tenantId">Tenant identifier.</param>
             <param name="assistantId">Assistant identifier.</param>
             <param name="judgePromptOverride">Optional judge prompt override for this run.</param>
+            <param name="executionMode">Execution mode, either ChatRail or InferenceOnly.</param>
+            <param name="categories">Optional eval fact categories to include.</param>
             <param name="token">Cancellation token.</param>
             <returns>The created EvalRun.</returns>
         </member>
@@ -13230,6 +13542,84 @@
         <member name="M:AssistantHub.Core.Services.IEmbeddingEndpointService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Send a request to the backing embedding endpoint management service.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IEvalChatExecutor">
+            <summary>
+            Executes eval questions through the product chat pipeline without coupling Core to the server implementation.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IEvalChatExecutor.ExecuteAsync(AssistantHub.Core.Services.EvalChatExecutionRequest,System.Threading.CancellationToken)">
+            <summary>
+            Execute a single eval question through the assistant chat rail.
+            </summary>
+            <param name="request">Eval chat execution request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Eval chat execution result.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.EvalChatExecutionRequest">
+            <summary>
+            Request for executing a single eval fact through the assistant chat rail.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionRequest.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionRequest.Messages">
+            <summary>
+            Messages to send through the assistant chat rail.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionRequest.Origin">
+            <summary>
+            Origin label to persist on chat history.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.EvalChatExecutionResult">
+            <summary>
+            Result from executing a single eval fact through the assistant chat rail.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.Success">
+            <summary>
+            Whether execution succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.ErrorMessage">
+            <summary>
+            Error message when execution fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.ResponseText">
+            <summary>
+            Final assistant response text.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.ChatHistoryId">
+            <summary>
+            Persisted chat history identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.TraceId">
+            <summary>
+            Trace identifier used for this eval turn.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.Retrieval">
+            <summary>
+            Retrieval metadata captured from the chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.Citations">
+            <summary>
+            Citation metadata captured from the chat response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.EvalChatExecutionResult.ToolCalls">
+            <summary>
+            Safe tool-call trace metadata captured from the chat response.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IInferenceEndpointService">

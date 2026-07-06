@@ -60,6 +60,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "retrieval_start_utc, retrieval_duration_ms, retrieval_gate_decision, retrieval_gate_duration_ms, " +
                 "query_rewrite_result, query_rewrite_duration_ms, " +
                 "rerank_duration_ms, rerank_input_count, rerank_output_count, " +
+                "query_class, answerability_decision, answerability_reason, dropped_candidate_count, dropped_candidate_summary_json, final_citation_count, " +
                 "retrieval_context, " +
                 "prompt_sent_utc, prompt_tokens, " +
                 "endpoint_resolution_duration_ms, compaction_duration_ms, inference_connection_duration_ms, " +
@@ -87,6 +88,12 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatDouble(history.RerankDurationMs) + ", " +
                 history.RerankInputCount + ", " +
                 history.RerankOutputCount + ", " +
+                _Driver.FormatNullableString(history.QueryClass) + ", " +
+                _Driver.FormatNullableString(history.AnswerabilityDecision) + ", " +
+                _Driver.FormatNullableString(history.AnswerabilityReason) + ", " +
+                (history.DroppedCandidateCount.HasValue ? history.DroppedCandidateCount.Value.ToString() : "NULL") + ", " +
+                _Driver.FormatNullableString(history.DroppedCandidateSummaryJson) + ", " +
+                (history.FinalCitationCount.HasValue ? history.FinalCitationCount.Value.ToString() : "NULL") + ", " +
                 _Driver.FormatNullableString(history.RetrievalContext) + ", " +
                 _Driver.FormatNullableDateTime(history.PromptSentUtc) + ", " +
                 history.PromptTokens + ", " +

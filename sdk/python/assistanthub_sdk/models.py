@@ -206,6 +206,26 @@ class AssistantSettings(BaseModel):
         alias="rerankInferenceEndpointId",
         validation_alias=AliasChoices("RerankInferenceEndpointId", "rerankInferenceEndpointId", "rerank_inference_endpoint_id"),
     )
+    enable_answerability_check: bool = Field(
+        False,
+        alias="enableAnswerabilityCheck",
+        validation_alias=AliasChoices("EnableAnswerabilityCheck", "enableAnswerabilityCheck", "enable_answerability_check"),
+    )
+    answerability_inference_endpoint_id: Optional[str] = Field(
+        None,
+        alias="answerabilityInferenceEndpointId",
+        validation_alias=AliasChoices("AnswerabilityInferenceEndpointId", "answerabilityInferenceEndpointId", "answerability_inference_endpoint_id"),
+    )
+    answerability_mode: Optional[str] = Field(
+        None,
+        alias="answerabilityMode",
+        validation_alias=AliasChoices("AnswerabilityMode", "answerabilityMode", "answerability_mode"),
+    )
+    answerability_prompt: Optional[str] = Field(
+        None,
+        alias="answerabilityPrompt",
+        validation_alias=AliasChoices("AnswerabilityPrompt", "answerabilityPrompt", "answerability_prompt"),
+    )
     embedding_endpoint_id: Optional[str] = Field(
         None,
         alias="embeddingEndpointId",
@@ -684,6 +704,14 @@ class CitationSource(BaseModel):
     download_url: Optional[str] = Field(None, alias="download_url")
 
 
+class RetrievalCandidateDropSummary(BaseModel):
+    """Aggregated count of retrieval candidates dropped at a pipeline stage."""
+
+    stage: Optional[str] = None
+    reason: Optional[str] = None
+    count: int = 0
+
+
 class ChatCompletionRetrieval(BaseModel):
     """Retrieval metadata in a chat completion response."""
 
@@ -702,6 +730,14 @@ class ChatCompletionRetrieval(BaseModel):
     document_filter_applied: bool = Field(
         False, alias="document_filter_applied"
     )
+    query_class: Optional[str] = Field(None, alias="query_class")
+    answerability_decision: Optional[str] = Field(None, alias="answerability_decision")
+    answerability_reason: Optional[str] = Field(None, alias="answerability_reason")
+    dropped_candidate_count: int = Field(0, alias="dropped_candidate_count")
+    dropped_candidates: Optional[list[RetrievalCandidateDropSummary]] = Field(
+        None, alias="dropped_candidates"
+    )
+    final_citation_count: Optional[int] = Field(None, alias="final_citation_count")
     chunks: Optional[list[RetrievalChunk]] = None
 
 
@@ -867,6 +903,36 @@ class ChatHistory(BaseModel):
     rerank_duration_ms: float = Field(0.0, alias="rerankDurationMs")
     rerank_input_count: int = Field(0, alias="rerankInputCount")
     rerank_output_count: int = Field(0, alias="rerankOutputCount")
+    query_class: Optional[str] = Field(
+        None,
+        alias="QueryClass",
+        validation_alias=AliasChoices("QueryClass", "queryClass", "query_class"),
+    )
+    answerability_decision: Optional[str] = Field(
+        None,
+        alias="AnswerabilityDecision",
+        validation_alias=AliasChoices("AnswerabilityDecision", "answerabilityDecision", "answerability_decision"),
+    )
+    answerability_reason: Optional[str] = Field(
+        None,
+        alias="AnswerabilityReason",
+        validation_alias=AliasChoices("AnswerabilityReason", "answerabilityReason", "answerability_reason"),
+    )
+    dropped_candidate_count: Optional[int] = Field(
+        None,
+        alias="DroppedCandidateCount",
+        validation_alias=AliasChoices("DroppedCandidateCount", "droppedCandidateCount", "dropped_candidate_count"),
+    )
+    dropped_candidate_summary_json: Optional[str] = Field(
+        None,
+        alias="DroppedCandidateSummaryJson",
+        validation_alias=AliasChoices("DroppedCandidateSummaryJson", "droppedCandidateSummaryJson", "dropped_candidate_summary_json"),
+    )
+    final_citation_count: Optional[int] = Field(
+        None,
+        alias="FinalCitationCount",
+        validation_alias=AliasChoices("FinalCitationCount", "finalCitationCount", "final_citation_count"),
+    )
     retrieval_context: Optional[str] = Field(None, alias="retrievalContext")
     prompt_sent_utc: Optional[datetime] = Field(None, alias="promptSentUtc")
     prompt_tokens: int = Field(0, alias="promptTokens")
@@ -1801,6 +1867,8 @@ class EvalRunRequest(BaseModel):
 
     assistant_id: Optional[str] = Field(None, alias="AssistantId")
     judge_prompt: Optional[str] = Field(None, alias="JudgePrompt")
+    execution_mode: Optional[str] = Field(None, alias="ExecutionMode")
+    categories: Optional[list[str]] = Field(None, alias="Categories")
 
 
 class EvalRun(BaseModel):
@@ -1816,6 +1884,16 @@ class EvalRun(BaseModel):
     facts_failed: int = Field(0, alias="factsFailed")
     pass_rate: float = Field(0.0, alias="passRate")
     judge_prompt: Optional[str] = Field(None, alias="judgePrompt")
+    execution_mode: Optional[str] = Field(
+        None,
+        alias="executionMode",
+        validation_alias=AliasChoices("ExecutionMode", "executionMode", "execution_mode"),
+    )
+    category_filter_json: Optional[str] = Field(
+        None,
+        alias="categoryFilterJson",
+        validation_alias=AliasChoices("CategoryFilterJson", "categoryFilterJson", "category_filter_json"),
+    )
     started_utc: Optional[datetime] = Field(None, alias="startedUtc")
     completed_utc: Optional[datetime] = Field(None, alias="completedUtc")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
@@ -1840,6 +1918,21 @@ class EvalResult(BaseModel):
     llm_response: Optional[str] = Field(None, alias="llmResponse")
     fact_verdicts: Optional[str] = Field(None, alias="factVerdicts")
     overall_pass: bool = Field(False, alias="overallPass")
+    chat_history_id: Optional[str] = Field(
+        None,
+        alias="chatHistoryId",
+        validation_alias=AliasChoices("ChatHistoryId", "chatHistoryId", "chat_history_id"),
+    )
+    trace_id: Optional[str] = Field(
+        None,
+        alias="traceId",
+        validation_alias=AliasChoices("TraceId", "traceId", "trace_id"),
+    )
+    retrieval_json: Optional[str] = Field(None, alias="retrievalJson")
+    citations_json: Optional[str] = Field(None, alias="citationsJson")
+    tool_calls_json: Optional[str] = Field(None, alias="toolCallsJson")
+    query_class: Optional[str] = Field(None, alias="queryClass")
+    answerability_decision: Optional[str] = Field(None, alias="answerabilityDecision")
     duration_ms: int = Field(0, alias="durationMs")
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
 

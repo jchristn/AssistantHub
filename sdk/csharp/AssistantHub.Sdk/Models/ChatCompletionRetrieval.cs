@@ -63,6 +63,42 @@ namespace AssistantHub.Sdk.Models
         public bool DocumentFilterApplied { get; set; }
 
         /// <summary>
+        /// Query class assigned by the answerability classifier.
+        /// </summary>
+        [JsonPropertyName("query_class")]
+        public string QueryClass { get; set; }
+
+        /// <summary>
+        /// Answerability classifier decision.
+        /// </summary>
+        [JsonPropertyName("answerability_decision")]
+        public string AnswerabilityDecision { get; set; }
+
+        /// <summary>
+        /// Brief answerability classifier rationale.
+        /// </summary>
+        [JsonPropertyName("answerability_reason")]
+        public string AnswerabilityReason { get; set; }
+
+        /// <summary>
+        /// Total number of retrieval candidates dropped by filtering, reranking, or prompt-budget trimming.
+        /// </summary>
+        [JsonPropertyName("dropped_candidate_count")]
+        public int DroppedCandidateCount { get; set; }
+
+        /// <summary>
+        /// Aggregated dropped candidate counts by pipeline stage and reason.
+        /// </summary>
+        [JsonPropertyName("dropped_candidates")]
+        public List<RetrievalCandidateDropSummary> DroppedCandidates { get; set; }
+
+        /// <summary>
+        /// Number of citation sources referenced in the final response.
+        /// </summary>
+        [JsonPropertyName("final_citation_count")]
+        public int? FinalCitationCount { get; set; }
+
+        /// <summary>
         /// The retrieved context chunks.
         /// </summary>
         [JsonPropertyName("chunks")]

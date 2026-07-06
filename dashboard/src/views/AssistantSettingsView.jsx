@@ -467,6 +467,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         RetrievalGateInferenceEndpointId: result?.RetrievalGateInferenceEndpointId || '',
         QueryRewriteInferenceEndpointId: result?.QueryRewriteInferenceEndpointId || '',
         RerankInferenceEndpointId: result?.RerankInferenceEndpointId || '',
+        AnswerabilityInferenceEndpointId: result?.AnswerabilityInferenceEndpointId || '',
         EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         LoadModelsOnChatOpen: result?.LoadModelsOnChatOpen ?? false,
         ExposeThinking: result?.ExposeThinking ?? false,
@@ -480,6 +481,9 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         RerankerTopK: result?.RerankerTopK ?? 5,
         RerankerScoreThreshold: result?.RerankerScoreThreshold ?? 3.0,
         RerankPrompt: result?.RerankPrompt || '',
+        EnableAnswerabilityCheck: result?.EnableAnswerabilityCheck ?? false,
+        AnswerabilityMode: result?.AnswerabilityMode || 'LogOnly',
+        AnswerabilityPrompt: result?.AnswerabilityPrompt || '',
         RetrievalLabelFilter: result?.RetrievalLabelFilter || '',
         RetrievalTagFilter: result?.RetrievalTagFilter || '',
         EnableSlack: result?.EnableSlack ?? false,
@@ -595,6 +599,7 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         RetrievalGateInferenceEndpointId: settings.RetrievalGateInferenceEndpointId || null,
         QueryRewriteInferenceEndpointId: settings.QueryRewriteInferenceEndpointId || null,
         RerankInferenceEndpointId: settings.RerankInferenceEndpointId || null,
+        AnswerabilityInferenceEndpointId: settings.AnswerabilityInferenceEndpointId || null,
         EmbeddingEndpointId: settings.EmbeddingEndpointId || null,
         RerankerTopK: parseInt(settings.RerankerTopK) || 5,
         RerankerScoreThreshold: parseFloat(settings.RerankerScoreThreshold) || 3.0,
@@ -905,6 +910,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                     {renderInferenceEndpointOptions('-- Use response endpoint --')}
                   </select>
                 </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Inference endpoint used to classify whether retrieved context can answer the latest question. Leave blank to use the response endpoint.">Answerability Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.AnswerabilityInferenceEndpointId} onChange={(e) => handleChange('AnswerabilityInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
               </div>
               <div className="form-group form-toggle">
                 <label>
@@ -1034,6 +1045,34 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
                           onChange={(e) => handleChange('RerankPrompt', e.target.value)}
                           rows={5}
                           placeholder="Leave blank to use built-in default re-rank prompt"
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div className="form-group form-toggle">
+                    <label>
+                      <input type="checkbox" checked={settings.EnableAnswerabilityCheck} onChange={(e) => handleChange('EnableAnswerabilityCheck', e.target.checked)} />
+                      <Tooltip text="Run an LLM check after retrieval to log whether the final context can answer the question. Strict modes can return a clarification or unsupported response instead of calling the final model.">Enable Answerability Check</Tooltip>
+                    </label>
+                  </div>
+                  {settings.EnableAnswerabilityCheck && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="LogOnly records the decision without changing answers. AskClarifyingQuestion blocks ambiguous questions. ReturnUnsupported blocks unsupported questions.">Answerability Mode</Tooltip></label>
+                        <select className="form-input" value={settings.AnswerabilityMode} onChange={(e) => handleChange('AnswerabilityMode', e.target.value)}>
+                          <option value="LogOnly">Log only</option>
+                          <option value="AskClarifyingQuestion">Ask clarifying question</option>
+                          <option value="ReturnUnsupported">Return unsupported</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="Optional prompt template. Available tokens: {question}, {context}. Leave blank to use the built-in classifier prompt.">Answerability Prompt</Tooltip></label>
+                        <textarea
+                          className="form-input"
+                          value={settings.AnswerabilityPrompt}
+                          onChange={(e) => handleChange('AnswerabilityPrompt', e.target.value)}
+                          rows={5}
+                          placeholder="Leave blank to use built-in default answerability prompt"
                         />
                       </div>
                     </>

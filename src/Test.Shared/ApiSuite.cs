@@ -508,8 +508,13 @@ namespace Test.Automated
                     string source = File.ReadAllText(file);
                     AssertHelper.StringContains(source, "attached_document_ids_json", Path.GetFileName(file) + " attached_document_ids_json column");
                     AssertHelper.StringContains(source, "attached_documents_json", Path.GetFileName(file) + " attached_documents_json column");
+                    AssertHelper.StringContains(source, "answerability_decision", Path.GetFileName(file) + " answerability_decision column");
+                    AssertHelper.StringContains(source, "dropped_candidate_count", Path.GetFileName(file) + " dropped_candidate_count column");
+                    AssertHelper.StringContains(source, "enable_answerability_check", Path.GetFileName(file) + " enable_answerability_check column");
                     AssertHelper.StringContains(source, "AddChatHistoryAttachedDocumentIdsJsonColumn", Path.GetFileName(file) + " attached IDs migration");
                     AssertHelper.StringContains(source, "AddChatHistoryAttachedDocumentsJsonColumn", Path.GetFileName(file) + " attached docs migration");
+                    AssertHelper.StringContains(source, "AddChatHistoryAnswerabilityDecisionColumn", Path.GetFileName(file) + " answerability decision migration");
+                    AssertHelper.StringContains(source, "AddAssistantSettingsEnableAnswerabilityCheckColumn", Path.GetFileName(file) + " answerability settings migration");
                 }
 
                 string[] implementationFiles =
@@ -527,6 +532,8 @@ namespace Test.Automated
                     AssertHelper.StringContains(source, "AttachedDocumentIdsJson", Path.GetFileName(file) + " writes AttachedDocumentIdsJson");
                     AssertHelper.StringContains(source, "attached_documents_json", Path.GetFileName(file) + " inserts attached_documents_json");
                     AssertHelper.StringContains(source, "AttachedDocumentsJson", Path.GetFileName(file) + " writes AttachedDocumentsJson");
+                    AssertHelper.StringContains(source, "answerability_decision", Path.GetFileName(file) + " inserts answerability_decision");
+                    AssertHelper.StringContains(source, "DroppedCandidateCount", Path.GetFileName(file) + " writes DroppedCandidateCount");
                 }
 
                 string sqliteDriver = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Core", "Database", "Sqlite", "SqliteDatabaseDriver.cs"));
@@ -538,6 +545,8 @@ namespace Test.Automated
                 {
                     AssertHelper.StringContains(source, "AddChatHistoryAttachedDocumentIdsJsonColumn", "driver attached IDs migration");
                     AssertHelper.StringContains(source, "AddChatHistoryAttachedDocumentsJsonColumn", "driver attached docs migration");
+                    AssertHelper.StringContains(source, "AddChatHistoryAnswerabilityDecisionColumn", "driver answerability migration");
+                    AssertHelper.StringContains(source, "AddAssistantSettingsEnableAnswerabilityCheckColumn", "driver answerability settings migration");
                 }
             });
 

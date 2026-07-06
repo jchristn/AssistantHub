@@ -129,6 +129,42 @@ namespace AssistantHub.Sdk.Models
         public int RerankOutputCount { get; set; }
 
         /// <summary>
+        /// Query class assigned by the answerability classifier.
+        /// </summary>
+        [JsonPropertyName("QueryClass")]
+        public string QueryClass { get; set; }
+
+        /// <summary>
+        /// Answerability classifier decision.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityDecision")]
+        public string AnswerabilityDecision { get; set; }
+
+        /// <summary>
+        /// Brief answerability classifier rationale.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityReason")]
+        public string AnswerabilityReason { get; set; }
+
+        /// <summary>
+        /// Total number of retrieval candidates dropped.
+        /// </summary>
+        [JsonPropertyName("DroppedCandidateCount")]
+        public int? DroppedCandidateCount { get; set; }
+
+        /// <summary>
+        /// JSON-serialized dropped candidate summaries.
+        /// </summary>
+        [JsonPropertyName("DroppedCandidateSummaryJson")]
+        public string DroppedCandidateSummaryJson { get; set; }
+
+        /// <summary>
+        /// Number of citation sources referenced in the final response.
+        /// </summary>
+        [JsonPropertyName("FinalCitationCount")]
+        public int? FinalCitationCount { get; set; }
+
+        /// <summary>
         /// Text retrieved from the vector database.
         /// </summary>
         [JsonPropertyName("RetrievalContext")]

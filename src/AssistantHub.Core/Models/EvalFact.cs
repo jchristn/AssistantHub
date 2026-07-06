@@ -9,6 +9,22 @@ namespace AssistantHub.Core.Models
     /// </summary>
     public class EvalFact
     {
+        /// <summary>
+        /// Recommended failure-mode categories for eval facts. Custom categories remain valid.
+        /// </summary>
+        public static readonly string[] RecommendedCategories = new[]
+        {
+            "factual_lookup",
+            "multi_hop",
+            "aggregation",
+            "temporal",
+            "ambiguous_query",
+            "unanswerable",
+            "citation_required",
+            "tool_required",
+            "structured_data"
+        };
+
         #region Public-Members
 
         /// <summary>

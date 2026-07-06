@@ -64,6 +64,41 @@ namespace AssistantHub.Core.Models
         public bool OverallPass { get; set; } = false;
 
         /// <summary>
+        /// Chat history identifier produced by a chat-rail eval execution.
+        /// </summary>
+        public string ChatHistoryId { get; set; } = null;
+
+        /// <summary>
+        /// Trace identifier produced by a chat-rail eval execution.
+        /// </summary>
+        public string TraceId { get; set; } = null;
+
+        /// <summary>
+        /// JSON-serialized retrieval metadata captured from the chat response.
+        /// </summary>
+        public string RetrievalJson { get; set; } = null;
+
+        /// <summary>
+        /// JSON-serialized citation metadata captured from the chat response.
+        /// </summary>
+        public string CitationsJson { get; set; } = null;
+
+        /// <summary>
+        /// JSON-serialized safe tool-call trace metadata captured from the chat response.
+        /// </summary>
+        public string ToolCallsJson { get; set; } = null;
+
+        /// <summary>
+        /// Query class recorded for the evaluated chat turn, when available.
+        /// </summary>
+        public string QueryClass { get; set; } = null;
+
+        /// <summary>
+        /// Answerability decision recorded for the evaluated chat turn, when available.
+        /// </summary>
+        public string AnswerabilityDecision { get; set; } = null;
+
+        /// <summary>
         /// Total execution time in milliseconds.
         /// </summary>
         public long DurationMs { get; set; } = 0;
@@ -109,6 +144,13 @@ namespace AssistantHub.Core.Models
             obj.LlmResponse = DataTableHelper.GetStringValue(row, "llm_response");
             obj.FactVerdicts = DataTableHelper.GetStringValue(row, "fact_verdicts");
             obj.OverallPass = DataTableHelper.GetBooleanValue(row, "overall_pass", false);
+            obj.ChatHistoryId = DataTableHelper.GetStringValue(row, "chat_history_id");
+            obj.TraceId = DataTableHelper.GetStringValue(row, "trace_id");
+            obj.RetrievalJson = DataTableHelper.GetStringValue(row, "retrieval_json");
+            obj.CitationsJson = DataTableHelper.GetStringValue(row, "citations_json");
+            obj.ToolCallsJson = DataTableHelper.GetStringValue(row, "tool_calls_json");
+            obj.QueryClass = DataTableHelper.GetStringValue(row, "query_class");
+            obj.AnswerabilityDecision = DataTableHelper.GetStringValue(row, "answerability_decision");
             obj.DurationMs = DataTableHelper.GetLongValue(row, "duration_ms");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             return obj;

@@ -75,6 +75,16 @@ namespace AssistantHub.Core.Models
         public string JudgePrompt { get; set; } = null;
 
         /// <summary>
+        /// Execution mode used for this run. ChatRail exercises the full assistant chat/RAG path; InferenceOnly uses the legacy model-only path.
+        /// </summary>
+        public string ExecutionMode { get; set; } = "ChatRail";
+
+        /// <summary>
+        /// JSON-serialized category filter used for this run. Null means all categories.
+        /// </summary>
+        public string CategoryFilterJson { get; set; } = null;
+
+        /// <summary>
         /// Timestamp when the run started.
         /// </summary>
         public DateTime? StartedUtc { get; set; } = null;
@@ -127,6 +137,8 @@ namespace AssistantHub.Core.Models
             obj.FactsFailed = DataTableHelper.GetIntValue(row, "facts_failed", 0);
             obj.PassRate = DataTableHelper.GetDoubleValue(row, "pass_rate", 0);
             obj.JudgePrompt = DataTableHelper.GetStringValue(row, "judge_prompt");
+            obj.ExecutionMode = DataTableHelper.GetStringValue(row, "execution_mode") ?? "ChatRail";
+            obj.CategoryFilterJson = DataTableHelper.GetStringValue(row, "category_filter_json");
             obj.StartedUtc = DataTableHelper.GetNullableDateTimeValue(row, "started_utc");
             obj.CompletedUtc = DataTableHelper.GetNullableDateTimeValue(row, "completed_utc");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");

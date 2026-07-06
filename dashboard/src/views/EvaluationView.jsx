@@ -29,6 +29,8 @@ function EvaluationView() {
   const [deleteRunTarget, setDeleteRunTarget] = useState(null);
   const [startRunModal, setStartRunModal] = useState(false);
   const [judgePromptOverride, setJudgePromptOverride] = useState('');
+  const [runExecutionMode, setRunExecutionMode] = useState('ChatRail');
+  const [runCategoryFilter, setRunCategoryFilter] = useState('');
   const [defaultJudgePrompt, setDefaultJudgePrompt] = useState('');
   const [startingRun, setStartingRun] = useState(false);
 
@@ -114,6 +116,7 @@ function EvaluationView() {
     { key: 'Id', label: 'ID', tooltip: 'Unique run identifier', render: (row) => <CopyableId id={row.Id} /> },
     { key: 'CreatedUtc', label: 'Date', tooltip: 'When the run was started', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
     { key: 'Status', label: 'Status', tooltip: 'Current run status', render: (row) => <StatusBadge status={row.Status} /> },
+    { key: 'ExecutionMode', label: 'Mode', tooltip: 'Execution mode used for the run', render: (row) => row.ExecutionMode || 'ChatRail' },
     { key: 'Facts', label: 'Facts', tooltip: 'Passed / Failed / Total', render: (row) => (
       <span>
         <span style={{ color: 'var(--success)' }}>{row.FactsPassed}</span>
@@ -173,9 +176,14 @@ function EvaluationView() {
     try {
       const body = { AssistantId: assistantFilter };
       if (judgePromptOverride.trim()) body.JudgePrompt = judgePromptOverride.trim();
+      body.ExecutionMode = runExecutionMode;
+      const categories = runCategoryFilter.split(',').map(c => c.trim()).filter(Boolean);
+      if (categories.length > 0) body.Categories = categories;
       const run = await api.startEvalRun(body);
       setStartRunModal(false);
       setJudgePromptOverride('');
+      setRunExecutionMode('ChatRail');
+      setRunCategoryFilter('');
       setRunProgressModal(run);
       setRefresh(r => r + 1);
     } catch (err) {
@@ -311,8 +319,28 @@ function EvaluationView() {
           </>
         }>
           <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-            This will evaluate all facts for the selected assistant. Each fact's question will be sent through the inference pipeline and judged against the expected facts.
+            This will evaluate facts for the selected assistant and judge each answer against the expected facts.
           </p>
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+              <Tooltip text="ChatRail sends each eval question through the full assistant pipeline. InferenceOnly uses the older direct model path without retrieval/tool telemetry.">Execution Mode</Tooltip>
+            </label>
+            <select className="form-input" value={runExecutionMode} onChange={(e) => setRunExecutionMode(e.target.value)}>
+              <option value="ChatRail">ChatRail</option>
+              <option value="InferenceOnly">InferenceOnly</option>
+            </select>
+          </div>
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
+              <Tooltip text="Optional comma-separated categories. Leave empty to include every fact for the assistant.">Category Filter</Tooltip>
+            </label>
+            <input
+              className="form-input"
+              value={runCategoryFilter}
+              onChange={(e) => setRunCategoryFilter(e.target.value)}
+              placeholder="ambiguous_query, unanswerable"
+            />
+          </div>
           <div className="form-group" style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
               <Tooltip text="Override the judge prompt for this run. Leave empty to use the assistant's configured prompt or the system default.">Judge Prompt Override (optional)</Tooltip>

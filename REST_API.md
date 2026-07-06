@@ -2168,6 +2168,10 @@ Retrieve settings for an assistant.
 | `RerankerTopK`             | int     | Maximum chunks to keep after re-ranking (min 1). Default `5`. |
 | `RerankerScoreThreshold`   | double  | Minimum LLM relevance score (0-10) to retain a chunk. Default `3.0`. |
 | `RerankPrompt`             | string? | Custom re-ranking prompt template (must contain `{query}` and `{chunks}` placeholders). Default `null`. |
+| `EnableAnswerabilityCheck` | bool    | Run an LLM answerability check after retrieval and before final generation. Default `false`. |
+| `AnswerabilityInferenceEndpointId` | string? | Optional managed completion endpoint ID for answerability calls. Null or empty falls back to `InferenceEndpointId`. |
+| `AnswerabilityMode`        | string  | Answerability behavior: `LogOnly`, `AskClarifyingQuestion`, or `ReturnUnsupported`. Default `LogOnly`. |
+| `AnswerabilityPrompt`      | string? | Custom answerability prompt template. Supports `{question}` and `{context}` placeholders. Null uses the built-in classifier prompt. |
 | `EnableCitations`          | bool    | Include citation metadata in chat responses. Requires `EnableRag` to also be `true`. Default `false`. |
 | `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token via `/v1.0/documents/{id}/download`), `Public` (unauthenticated server-proxied download via `/v1.0/assistants/{assistantId}/documents/{id}/download`). Default `None`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
@@ -3856,6 +3860,12 @@ The response may also include `retrieval` (when RAG is enabled) and `citations` 
 | `retrieval.attached_document_ids` | array | Normalized document IDs used to constrain retrieval. Omitted when no document attachment filter is applied. |
 | `retrieval.attached_documents` | array | Safe public metadata for selected documents. Uses the same item shape returned by `GET /v1.0/assistants/{assistantId}/documents`. |
 | `retrieval.document_filter_applied` | bool | Present and `true` when retrieval was constrained by `attached_document_ids`. |
+| `retrieval.query_class` | string \| null | Optional answerability classifier category for the latest user query, such as `specific`, `ambiguous`, or `unsupported`. |
+| `retrieval.answerability_decision` | string \| null | Optional post-retrieval decision such as `answerable`, `needs_clarification`, `unsupported`, `not_checked`, or `error`. |
+| `retrieval.answerability_reason` | string \| null | Short classifier rationale, intended for diagnostics rather than direct user display. |
+| `retrieval.dropped_candidate_count` | int \| null | Number of retrieved candidate chunks removed by attachment filters, rerank filtering, or prompt-budget trimming before final generation. |
+| `retrieval.dropped_candidates` | array \| null | Aggregated dropped-candidate summaries with `stage`, `reason`, and `count`. |
+| `retrieval.final_citation_count` | int \| null | Number of citation sources available to the final answer after filtering and citation extraction. |
 | `retrieval.chunks` | array | Retrieved context chunks with source identification. |
 | `citations` | object \| null | Citation metadata when `EnableCitations` is true and RAG or model-directed tools provide citation-capable evidence. |
 | `citations.sources` | array | Source evidence provided to the model, each with `index`, optional `source_type`, `document_id`, `url`, `document_name`, `content_type`, `score`, `excerpt`, and `download_url`. |
@@ -4637,7 +4647,7 @@ Delete an evaluation fact.
 
 ### POST /v1.0/eval/runs
 
-Start a new evaluation run. Executes all facts for the specified assistant asynchronously.
+Start a new evaluation run. By default each fact's question is sent through the full chat/RAG rail asynchronously.
 
 **Auth:** Required
 
@@ -4646,14 +4656,18 @@ Start a new evaluation run. Executes all facts for the specified assistant async
 ```json
 {
   "AssistantId": "asst_abc123...",
-  "JudgePrompt": null
+  "JudgePrompt": null,
+  "ExecutionMode": "ChatRail",
+  "Categories": ["citation_required", "unanswerable"]
 }
 ```
 
-| Field         | Type   | Required | Description                                              |
-|---------------|--------|----------|----------------------------------------------------------|
-| `AssistantId` | string | Yes      | The assistant to evaluate.                               |
-| `JudgePrompt` | string | No      | Custom judge prompt override. Null uses the default.     |
+| Field           | Type     | Required | Description |
+|-----------------|----------|----------|-------------|
+| `AssistantId`   | string   | Yes      | The assistant to evaluate. |
+| `JudgePrompt`   | string   | No       | Custom judge prompt override. Null uses the default. |
+| `ExecutionMode` | string   | No       | `ChatRail` runs through retrieval, answerability, tools, citations, telemetry, and chat history. `InferenceOnly` uses the legacy direct model path. Default `ChatRail`. |
+| `Categories`    | string[] | No       | Optional eval fact categories to include. Empty or null includes all facts for the assistant. |
 
 **Response (201 Created):** The created `EvalRun` object.
 
@@ -4687,6 +4701,8 @@ Retrieve a single evaluation run by ID.
   "FactsFailed": 2,
   "PassRate": 80.0,
   "JudgePrompt": null,
+  "ExecutionMode": "ChatRail",
+  "CategoryFilterJson": "[\"citation_required\"]",
   "StartedUtc": "2026-01-01T12:00:00Z",
   "CompletedUtc": "2026-01-01T12:01:30Z",
   "CreatedUtc": "2026-01-01T12:00:00Z"

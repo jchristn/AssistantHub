@@ -58,6 +58,48 @@ namespace AssistantHub.Sdk.Models
         public bool OverallPass { get; set; }
 
         /// <summary>
+        /// Chat history row created by ChatRail eval execution.
+        /// </summary>
+        [JsonPropertyName("ChatHistoryId")]
+        public string ChatHistoryId { get; set; }
+
+        /// <summary>
+        /// Trace identifier used for ChatRail eval execution.
+        /// </summary>
+        [JsonPropertyName("TraceId")]
+        public string TraceId { get; set; }
+
+        /// <summary>
+        /// Serialized retrieval telemetry captured from ChatRail execution.
+        /// </summary>
+        [JsonPropertyName("RetrievalJson")]
+        public string RetrievalJson { get; set; }
+
+        /// <summary>
+        /// Serialized citation metadata captured from ChatRail execution.
+        /// </summary>
+        [JsonPropertyName("CitationsJson")]
+        public string CitationsJson { get; set; }
+
+        /// <summary>
+        /// Serialized safe tool-call metadata captured from ChatRail execution.
+        /// </summary>
+        [JsonPropertyName("ToolCallsJson")]
+        public string ToolCallsJson { get; set; }
+
+        /// <summary>
+        /// Query class assigned by the answerability classifier.
+        /// </summary>
+        [JsonPropertyName("QueryClass")]
+        public string QueryClass { get; set; }
+
+        /// <summary>
+        /// Answerability decision recorded for the evaluated chat turn.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityDecision")]
+        public string AnswerabilityDecision { get; set; }
+
+        /// <summary>
         /// Duration in milliseconds.
         /// </summary>
         [JsonPropertyName("DurationMs")]

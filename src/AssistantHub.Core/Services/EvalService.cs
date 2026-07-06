@@ -3,6 +3,7 @@ namespace AssistantHub.Core.Services
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Net.Http;
     using System.Text.Json;
     using System.Threading;
@@ -27,6 +28,7 @@ namespace AssistantHub.Core.Services
         private DatabaseDriverBase _Database = null;
         private InferenceService _Inference = null;
         private IInferenceEndpointService _InferenceEndpoints = null;
+        private IEvalChatExecutor _EvalChatExecutor = null;
 
         private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -63,13 +65,15 @@ namespace AssistantHub.Core.Services
             LoggingModule logging,
             DatabaseDriverBase database,
             InferenceService inference,
-            IInferenceEndpointService inferenceEndpoints = null)
+            IInferenceEndpointService inferenceEndpoints = null,
+            IEvalChatExecutor evalChatExecutor = null)
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _Database = database ?? throw new ArgumentNullException(nameof(database));
             _Inference = inference ?? throw new ArgumentNullException(nameof(inference));
             _InferenceEndpoints = inferenceEndpoints ?? new PartioInferenceEndpointService(_Settings.Chunking, _Logging);
+            _EvalChatExecutor = evalChatExecutor;
         }
 
         #endregion
@@ -82,12 +86,16 @@ namespace AssistantHub.Core.Services
         /// <param name="tenantId">Tenant identifier.</param>
         /// <param name="assistantId">Assistant identifier.</param>
         /// <param name="judgePromptOverride">Optional judge prompt override for this run.</param>
+        /// <param name="executionMode">Execution mode, either ChatRail or InferenceOnly.</param>
+        /// <param name="categories">Optional eval fact categories to include.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>The created EvalRun.</returns>
         public async Task<EvalRun> StartRunAsync(
             string tenantId,
             string assistantId,
             string judgePromptOverride = null,
+            string executionMode = null,
+            List<string> categories = null,
             CancellationToken token = default)
         {
             // Load all facts for this assistant
@@ -97,6 +105,10 @@ namespace AssistantHub.Core.Services
 
             if (factsResult == null || factsResult.Objects == null || factsResult.Objects.Count == 0)
                 throw new InvalidOperationException("No eval facts defined for this assistant. Create at least one fact before starting a run.");
+
+            List<EvalFact> facts = ApplyCategoryFilter(factsResult.Objects, categories);
+            if (facts.Count == 0)
+                throw new InvalidOperationException("No eval facts matched the requested category filter.");
 
             // Load assistant settings to resolve inference endpoint and judge prompt
             AssistantSettings settings = await _Database.AssistantSettings.ReadByAssistantIdAsync(assistantId, token).ConfigureAwait(false);
@@ -120,15 +132,17 @@ namespace AssistantHub.Core.Services
             run.TenantId = tenantId;
             run.AssistantId = assistantId;
             run.Status = EvalStatusEnum.Running;
-            run.TotalFacts = factsResult.Objects.Count;
+            run.TotalFacts = facts.Count;
             run.StartedUtc = DateTime.UtcNow;
             run.JudgePrompt = effectiveJudgePrompt != _DefaultJudgePrompt ? effectiveJudgePrompt : null;
+            run.ExecutionMode = NormalizeExecutionMode(executionMode);
+            run.CategoryFilterJson = SerializeCategoryFilter(categories);
             await _Database.EvalRun.CreateAsync(run, token).ConfigureAwait(false);
 
-            _Logging.Info(_Header + "starting eval run " + run.Id + " for assistant " + assistantId + " with " + factsResult.Objects.Count + " facts");
+            _Logging.Info(_Header + "starting eval run " + run.Id + " for assistant " + assistantId + " with " + facts.Count + " facts, mode=" + run.ExecutionMode);
 
             // Fire and forget
-            _ = Task.Run(async () => await ExecuteRunAsync(run, factsResult.Objects, settings, effectiveJudgePrompt).ConfigureAwait(false));
+            _ = Task.Run(async () => await ExecuteRunAsync(run, facts, settings, effectiveJudgePrompt).ConfigureAwait(false));
 
             return run;
         }
@@ -136,6 +150,42 @@ namespace AssistantHub.Core.Services
         #endregion
 
         #region Private-Methods
+
+        private static List<EvalFact> ApplyCategoryFilter(List<EvalFact> facts, List<string> categories)
+        {
+            if (facts == null) return new List<EvalFact>();
+            List<string> normalized = NormalizeCategories(categories);
+            if (normalized.Count < 1) return facts;
+
+            HashSet<string> allowed = new HashSet<string>(normalized, StringComparer.OrdinalIgnoreCase);
+            return facts
+                .Where(fact => fact != null && allowed.Contains((fact.Category ?? "").Trim()))
+                .ToList();
+        }
+
+        private static string NormalizeExecutionMode(string executionMode)
+        {
+            if (String.IsNullOrWhiteSpace(executionMode)) return "ChatRail";
+            string normalized = executionMode.Trim();
+            if (String.Equals(normalized, "InferenceOnly", StringComparison.OrdinalIgnoreCase)) return "InferenceOnly";
+            return "ChatRail";
+        }
+
+        private static string SerializeCategoryFilter(List<string> categories)
+        {
+            List<string> normalized = NormalizeCategories(categories);
+            return normalized.Count > 0 ? JsonSerializer.Serialize(normalized, _JsonOptions) : null;
+        }
+
+        private static List<string> NormalizeCategories(List<string> categories)
+        {
+            return categories?
+                .Where(category => !String.IsNullOrWhiteSpace(category))
+                .Select(category => category.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(category => category, StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<string>();
+        }
 
         private async Task ExecuteRunAsync(EvalRun run, List<EvalFact> facts, AssistantSettings settings, string judgePrompt)
         {
@@ -174,18 +224,43 @@ namespace AssistantHub.Core.Services
                     {
                         Stopwatch sw = Stopwatch.StartNew();
 
-                        // Send question through inference (non-streamed, inference-only)
-                        List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>
+                        string llmResponse;
+                        EvalChatExecutionResult chatRailResult = null;
+                        if (String.Equals(run.ExecutionMode, "ChatRail", StringComparison.OrdinalIgnoreCase))
                         {
-                            new ChatCompletionMessage { Role = "system", Content = systemPrompt },
-                            new ChatCompletionMessage { Role = "user", Content = fact.Question }
-                        };
+                            if (_EvalChatExecutor == null)
+                                throw new InvalidOperationException("ChatRail eval mode is not available in this host.");
 
-                        InferenceResult chatResult = await _Inference.GenerateResponseAsync(
-                            messages, model, maxTokens, temperature, topP,
-                            provider, endpoint, apiKey).ConfigureAwait(false);
+                            chatRailResult = await _EvalChatExecutor.ExecuteAsync(
+                                new EvalChatExecutionRequest
+                                {
+                                    AssistantId = run.AssistantId,
+                                    Origin = "eval",
+                                    Messages = new List<ChatCompletionMessage>
+                                    {
+                                        new ChatCompletionMessage { Role = "user", Content = fact.Question }
+                                    }
+                                }).ConfigureAwait(false);
 
-                        string llmResponse = chatResult?.Content ?? String.Empty;
+                            if (chatRailResult == null || !chatRailResult.Success)
+                                throw new InvalidOperationException(chatRailResult?.ErrorMessage ?? "ChatRail eval execution failed.");
+
+                            llmResponse = chatRailResult.ResponseText ?? String.Empty;
+                        }
+                        else
+                        {
+                            List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>
+                            {
+                                new ChatCompletionMessage { Role = "system", Content = systemPrompt },
+                                new ChatCompletionMessage { Role = "user", Content = fact.Question }
+                            };
+
+                            InferenceResult chatResult = await _Inference.GenerateResponseAsync(
+                                messages, model, maxTokens, temperature, topP,
+                                provider, endpoint, apiKey).ConfigureAwait(false);
+
+                            llmResponse = chatResult?.Content ?? String.Empty;
+                        }
 
                         // Parse expected facts
                         List<string> expectedFacts = new List<string>();
@@ -252,6 +327,13 @@ namespace AssistantHub.Core.Services
                         evalResult.FactVerdicts = JsonSerializer.Serialize(verdicts, _JsonOptions);
                         evalResult.OverallPass = allPass;
                         evalResult.DurationMs = sw.ElapsedMilliseconds;
+                        evalResult.ChatHistoryId = chatRailResult?.ChatHistoryId;
+                        evalResult.TraceId = chatRailResult?.TraceId;
+                        evalResult.RetrievalJson = chatRailResult?.Retrieval == null ? null : JsonSerializer.Serialize(chatRailResult.Retrieval, _JsonOptions);
+                        evalResult.CitationsJson = chatRailResult?.Citations == null ? null : JsonSerializer.Serialize(chatRailResult.Citations, _JsonOptions);
+                        evalResult.ToolCallsJson = chatRailResult?.ToolCalls == null || chatRailResult.ToolCalls.Count < 1 ? null : JsonSerializer.Serialize(chatRailResult.ToolCalls, _JsonOptions);
+                        evalResult.QueryClass = chatRailResult?.Retrieval?.QueryClass;
+                        evalResult.AnswerabilityDecision = chatRailResult?.Retrieval?.AnswerabilityDecision;
 
                         await _Database.EvalResult.CreateAsync(evalResult).ConfigureAwait(false);
 

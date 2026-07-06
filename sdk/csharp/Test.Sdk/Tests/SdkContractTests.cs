@@ -333,6 +333,14 @@ namespace Test.Sdk.Tests
   ""collection_id"": ""col_abc123"",
   ""duration_ms"": 42.7,
   ""chunks_returned"": 3,
+  ""query_class"": ""specific"",
+  ""answerability_decision"": ""answerable"",
+  ""answerability_reason"": ""Retrieved context contains direct support."",
+  ""dropped_candidate_count"": 2,
+  ""dropped_candidates"": [
+    { ""stage"": ""rerank"", ""reason"": ""below_threshold_or_top_k"", ""count"": 2 }
+  ],
+  ""final_citation_count"": 1,
   ""attached_document_ids"": [""adoc_one""],
   ""attached_documents"": [
     {
@@ -352,6 +360,11 @@ namespace Test.Sdk.Tests
                 AssertHelper.AreEqual("col_abc123", retrieval.CollectionId, "retrieval collection ID");
                 AssertHelper.AreEqual(42.7, retrieval.DurationMs, "retrieval duration");
                 AssertHelper.AreEqual(3, retrieval.ChunksReturned, "retrieval chunks returned");
+                AssertHelper.AreEqual("specific", retrieval.QueryClass, "retrieval query class");
+                AssertHelper.AreEqual("answerable", retrieval.AnswerabilityDecision, "retrieval answerability decision");
+                AssertHelper.AreEqual(2, retrieval.DroppedCandidateCount, "retrieval dropped candidate count");
+                AssertHelper.HasCount(retrieval.DroppedCandidates, 1, "retrieval dropped candidates");
+                AssertHelper.AreEqual(1, retrieval.FinalCitationCount.Value, "retrieval final citation count");
                 AssertHelper.IsTrue(retrieval.DocumentFilterApplied, "retrieval document filter applied");
                 AssertHelper.HasCount(retrieval.AttachedDocumentIds, 1, "retrieval attached document IDs");
                 AssertHelper.HasCount(retrieval.AttachedDocuments, 1, "retrieval attached document metadata");
@@ -362,6 +375,8 @@ namespace Test.Sdk.Tests
                 AssertHelper.StringContains(serialized, "\"attached_document_ids\"", "serialized retrieval JSON");
                 AssertHelper.StringContains(serialized, "\"attached_documents\"", "serialized retrieval JSON");
                 AssertHelper.StringContains(serialized, "\"document_filter_applied\"", "serialized retrieval JSON");
+                AssertHelper.StringContains(serialized, "\"answerability_decision\"", "serialized retrieval JSON");
+                AssertHelper.StringContains(serialized, "\"dropped_candidates\"", "serialized retrieval JSON");
                 AssertHelper.IsFalse(serialized.Contains("S3Key"), "selection metadata should not expose S3 key");
                 AssertHelper.IsFalse(serialized.Contains("BucketName"), "selection metadata should not expose bucket name");
 

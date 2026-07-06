@@ -56,7 +56,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
             string query =
                 "INSERT INTO eval_runs " +
                 "(id, tenant_id, assistant_id, status, total_facts, facts_evaluated, " +
-                "facts_passed, facts_failed, pass_rate, judge_prompt, started_utc, completed_utc, created_utc) " +
+                "facts_passed, facts_failed, pass_rate, judge_prompt, execution_mode, category_filter_json, started_utc, completed_utc, created_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(run.Id) + "', " +
                 "'" + _Driver.Sanitize(run.TenantId) + "', " +
@@ -68,6 +68,8 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 run.FactsFailed + ", " +
                 _Driver.FormatDouble(run.PassRate) + ", " +
                 _Driver.FormatNullableString(run.JudgePrompt) + ", " +
+                _Driver.FormatNullableString(run.ExecutionMode) + ", " +
+                _Driver.FormatNullableString(run.CategoryFilterJson) + ", " +
                 _Driver.FormatNullableDateTime(run.StartedUtc) + ", " +
                 _Driver.FormatNullableDateTime(run.CompletedUtc) + ", " +
                 "'" + _Driver.FormatDateTime(run.CreatedUtc) + "'" +
@@ -103,6 +105,8 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 "facts_passed = " + run.FactsPassed + ", " +
                 "facts_failed = " + run.FactsFailed + ", " +
                 "pass_rate = " + _Driver.FormatDouble(run.PassRate) + ", " +
+                "execution_mode = " + _Driver.FormatNullableString(run.ExecutionMode) + ", " +
+                "category_filter_json = " + _Driver.FormatNullableString(run.CategoryFilterJson) + ", " +
                 "started_utc = " + _Driver.FormatNullableDateTime(run.StartedUtc) + ", " +
                 "completed_utc = " + _Driver.FormatNullableDateTime(run.CompletedUtc) + " " +
                 "WHERE id = '" + _Driver.Sanitize(run.Id) + "';";

@@ -288,6 +288,10 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("assistant_settings", "tool_routing_inference_endpoint_id", TableQueries.AddAssistantSettingsToolRoutingInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "query_rewrite_inference_endpoint_id", TableQueries.AddAssistantSettingsQueryRewriteInferenceEndpointIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "rerank_inference_endpoint_id", TableQueries.AddAssistantSettingsRerankInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "enable_answerability_check", TableQueries.AddAssistantSettingsEnableAnswerabilityCheckColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "answerability_inference_endpoint_id", TableQueries.AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "answerability_mode", TableQueries.AddAssistantSettingsAnswerabilityModeColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "answerability_prompt", TableQueries.AddAssistantSettingsAnswerabilityPromptColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "load_models_on_chat_open", TableQueries.AddAssistantSettingsLoadModelsOnChatOpenColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "expose_thinking", TableQueries.AddAssistantSettingsExposeThinkingColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "tool_policy_json", TableQueries.AddAssistantSettingsToolPolicyJsonColumn, token).ConfigureAwait(false);
@@ -312,6 +316,12 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("chat_history", "performance_json", TableQueries.AddChatHistoryPerformanceJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history", "attached_document_ids_json", TableQueries.AddChatHistoryAttachedDocumentIdsJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history", "attached_documents_json", TableQueries.AddChatHistoryAttachedDocumentsJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "query_class", TableQueries.AddChatHistoryQueryClassColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "answerability_decision", TableQueries.AddChatHistoryAnswerabilityDecisionColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "answerability_reason", TableQueries.AddChatHistoryAnswerabilityReasonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "dropped_candidate_count", TableQueries.AddChatHistoryDroppedCandidateCountColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "dropped_candidate_summary_json", TableQueries.AddChatHistoryDroppedCandidateSummaryJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("chat_history", "final_citation_count", TableQueries.AddChatHistoryFinalCitationCountColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "trace_id", TableQueries.AddRequestHistoryTraceIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("request_history", "chat_history_id", TableQueries.AddRequestHistoryChatHistoryIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("chat_history_performance_events", "assistant_id", TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn, token).ConfigureAwait(false);

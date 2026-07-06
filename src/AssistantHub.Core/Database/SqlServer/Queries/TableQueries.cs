@@ -107,6 +107,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 retrieval_gate_inference_endpoint_id NVARCHAR(MAX) NULL,
                 query_rewrite_inference_endpoint_id NVARCHAR(MAX) NULL,
                 rerank_inference_endpoint_id NVARCHAR(MAX) NULL,
+                enable_answerability_check BIT NOT NULL DEFAULT 0,
+                answerability_inference_endpoint_id NVARCHAR(MAX) NULL,
+                answerability_mode NVARCHAR(32) NULL DEFAULT 'LogOnly',
+                answerability_prompt NVARCHAR(MAX) NULL,
                 embedding_endpoint_id NVARCHAR(MAX) NULL,
                 load_models_on_chat_open BIT NOT NULL DEFAULT 0,
                 expose_thinking BIT NOT NULL DEFAULT 0,
@@ -142,6 +146,22 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantSettingsRerankInferenceEndpointIdColumn =
             @"IF COL_LENGTH('assistant_settings', 'rerank_inference_endpoint_id') IS NULL
             ALTER TABLE assistant_settings ADD rerank_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsEnableAnswerabilityCheckColumn =
+            @"IF COL_LENGTH('assistant_settings', 'enable_answerability_check') IS NULL
+            ALTER TABLE assistant_settings ADD enable_answerability_check BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsAnswerabilityInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'answerability_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD answerability_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsAnswerabilityModeColumn =
+            @"IF COL_LENGTH('assistant_settings', 'answerability_mode') IS NULL
+            ALTER TABLE assistant_settings ADD answerability_mode NVARCHAR(32) NULL DEFAULT 'LogOnly';";
+
+        internal static readonly string AddAssistantSettingsAnswerabilityPromptColumn =
+            @"IF COL_LENGTH('assistant_settings', 'answerability_prompt') IS NULL
+            ALTER TABLE assistant_settings ADD answerability_prompt NVARCHAR(MAX) NULL;";
 
         internal static readonly string AddAssistantSettingsLoadModelsOnChatOpenColumn =
             @"IF COL_LENGTH('assistant_settings', 'load_models_on_chat_open') IS NULL
@@ -330,6 +350,12 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 rerank_duration_ms FLOAT NOT NULL DEFAULT 0,
                 rerank_input_count INT NOT NULL DEFAULT 0,
                 rerank_output_count INT NOT NULL DEFAULT 0,
+                query_class NVARCHAR(64) NULL,
+                answerability_decision NVARCHAR(64) NULL,
+                answerability_reason NVARCHAR(MAX) NULL,
+                dropped_candidate_count INT NULL,
+                dropped_candidate_summary_json NVARCHAR(MAX) NULL,
+                final_citation_count INT NULL,
                 retrieval_context NVARCHAR(MAX) NULL,
                 prompt_sent_utc NVARCHAR(64) NULL,
                 prompt_tokens INT NOT NULL DEFAULT 0,
@@ -374,6 +400,30 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddChatHistoryAttachedDocumentsJsonColumn =
             @"IF COL_LENGTH('chat_history', 'attached_documents_json') IS NULL
             ALTER TABLE chat_history ADD attached_documents_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddChatHistoryQueryClassColumn =
+            @"IF COL_LENGTH('chat_history', 'query_class') IS NULL
+            ALTER TABLE chat_history ADD query_class NVARCHAR(64) NULL;";
+
+        internal static readonly string AddChatHistoryAnswerabilityDecisionColumn =
+            @"IF COL_LENGTH('chat_history', 'answerability_decision') IS NULL
+            ALTER TABLE chat_history ADD answerability_decision NVARCHAR(64) NULL;";
+
+        internal static readonly string AddChatHistoryAnswerabilityReasonColumn =
+            @"IF COL_LENGTH('chat_history', 'answerability_reason') IS NULL
+            ALTER TABLE chat_history ADD answerability_reason NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddChatHistoryDroppedCandidateCountColumn =
+            @"IF COL_LENGTH('chat_history', 'dropped_candidate_count') IS NULL
+            ALTER TABLE chat_history ADD dropped_candidate_count INT NULL;";
+
+        internal static readonly string AddChatHistoryDroppedCandidateSummaryJsonColumn =
+            @"IF COL_LENGTH('chat_history', 'dropped_candidate_summary_json') IS NULL
+            ALTER TABLE chat_history ADD dropped_candidate_summary_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddChatHistoryFinalCitationCountColumn =
+            @"IF COL_LENGTH('chat_history', 'final_citation_count') IS NULL
+            ALTER TABLE chat_history ADD final_citation_count INT NULL;";
 
         internal static readonly string CreateRequestHistoryTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'request_history')

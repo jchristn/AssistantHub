@@ -395,6 +395,7 @@ function HistoryViewModal({ history, onClose }) {
     { Name: 'query_rewrite', Kind: 'inference', DurationMs: history.QueryRewriteDurationMs },
     { Name: 'retrieval', Kind: 'retrieval', DurationMs: history.RetrievalDurationMs },
     { Name: 'rerank', Kind: 'inference', DurationMs: history.RerankDurationMs, Metadata: { chunks_input: history.RerankInputCount, chunks_output: history.RerankOutputCount } },
+    { Name: 'answerability', Kind: 'inference', DurationMs: 0, Metadata: { decision: history.AnswerabilityDecision, query_class: history.QueryClass, reason: history.AnswerabilityReason } },
     { Name: 'endpoint_resolution', Kind: 'network', DurationMs: history.EndpointResolutionDurationMs },
     { Name: 'context_compaction', Kind: 'inference', DurationMs: history.CompactionDurationMs },
     {
@@ -775,6 +776,16 @@ function HistoryViewModal({ history, onClose }) {
               Re-ranked: {history.RerankInputCount} to {history.RerankOutputCount} chunks in {formatMs(history.RerankDurationMs)}
             </Tooltip>
           )}
+          {history.AnswerabilityDecision && history.AnswerabilityDecision !== 'not_checked' && (
+            <Tooltip className="history-section-badge" text={history.AnswerabilityReason || 'Answerability classifier decision.'}>
+              {history.AnswerabilityDecision}{history.QueryClass ? ` - ${history.QueryClass}` : ''}
+            </Tooltip>
+          )}
+          {history.DroppedCandidateCount > 0 && (
+            <Tooltip className="history-section-badge" text="Retrieval candidates removed by attachment filtering, reranking, or prompt-budget trimming.">
+              Dropped: {history.DroppedCandidateCount}
+            </Tooltip>
+          )}
           {history.RetrievalStartUtc && (
             <Tooltip className="history-section-meta" text="UTC timestamp when retrieval started.">
               started {formatTimestamp(history.RetrievalStartUtc)}
@@ -783,6 +794,16 @@ function HistoryViewModal({ history, onClose }) {
         </div>
         {retrievalOpen && (
           <div className="history-retrieval-body">
+            {(history.AnswerabilityDecision || history.DroppedCandidateCount > 0 || history.FinalCitationCount != null) && (
+              <div className="history-retrieval-summary">
+                <div className="history-retrieval-summary-stats">
+                  {history.AnswerabilityDecision && <Metric label="Answerability" tooltip={history.AnswerabilityReason || 'Answerability classifier decision.'} value={history.AnswerabilityDecision} />}
+                  {history.QueryClass && <Metric label="Query Class" tooltip="Query class assigned by the answerability classifier." value={history.QueryClass} />}
+                  {history.DroppedCandidateCount > 0 && <Metric label="Dropped" tooltip={history.DroppedCandidateSummaryJson || 'Dropped retrieval candidates.'} value={history.DroppedCandidateCount.toLocaleString()} />}
+                  {history.FinalCitationCount != null && <Metric label="Citations" tooltip="Number of citation references in the final answer." value={history.FinalCitationCount.toLocaleString()} />}
+                </div>
+              </div>
+            )}
             {!history.RetrievalContext ? (
               <Tooltip as="div" className="json-view" text="No retrieval context was stored for this assistant turn.">
                 (no context retrieved)

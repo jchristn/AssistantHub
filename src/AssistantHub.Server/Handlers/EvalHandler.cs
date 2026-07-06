@@ -283,6 +283,8 @@ namespace AssistantHub.Server.Handlers
                 EvalRunRequest request = null;
                 string assistantId = null;
                 string judgePromptOverride = null;
+                string executionMode = null;
+                List<string> categories = null;
 
                 if (!String.IsNullOrEmpty(body))
                 {
@@ -291,6 +293,8 @@ namespace AssistantHub.Server.Handlers
                         request = JsonSerializer.Deserialize<EvalRunRequest>(body);
                         assistantId = request?.AssistantId;
                         judgePromptOverride = request?.JudgePrompt;
+                        executionMode = request?.ExecutionMode;
+                        categories = request?.Categories;
                     }
                     catch { }
                 }
@@ -303,7 +307,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                EvalRun run = await _EvalService.StartRunAsync(auth.TenantId, assistantId, judgePromptOverride).ConfigureAwait(false);
+                EvalRun run = await _EvalService.StartRunAsync(auth.TenantId, assistantId, judgePromptOverride, executionMode, categories).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 201;
                 ctx.Response.ContentType = "application/json";

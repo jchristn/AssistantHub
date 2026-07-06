@@ -630,12 +630,22 @@ namespace Test.Automated
                 ChatHistory ch = new ChatHistory();
                 ch.AttachedDocumentIdsJson = "[\"adoc_one\",\"adoc_two\"]";
                 ch.AttachedDocumentsJson = "[{\"Id\":\"adoc_one\",\"Name\":\"Policy.pdf\"}]";
+                ch.QueryClass = "specific";
+                ch.AnswerabilityDecision = "answerable";
+                ch.AnswerabilityReason = "Retrieved context contains direct support.";
+                ch.DroppedCandidateCount = 2;
+                ch.DroppedCandidateSummaryJson = "[{\"stage\":\"rerank\",\"reason\":\"below_threshold_or_top_k\",\"count\":2}]";
+                ch.FinalCitationCount = 1;
 
                 string json = JsonSerializer.Serialize(ch, _jsonOptionsIgnoreNever);
                 ChatHistory? d = JsonSerializer.Deserialize<ChatHistory>(json, _jsonOptionsIgnoreNever);
 
                 AssertHelper.StringContains(d.AttachedDocumentIdsJson, "adoc_one", "round-trip attachment ids");
                 AssertHelper.StringContains(d.AttachedDocumentsJson, "Policy.pdf", "round-trip attachment docs");
+                AssertHelper.AreEqual("specific", d.QueryClass, "round-trip query class");
+                AssertHelper.AreEqual("answerable", d.AnswerabilityDecision, "round-trip answerability decision");
+                AssertHelper.AreEqual(2, d.DroppedCandidateCount.Value, "round-trip dropped candidate count");
+                AssertHelper.AreEqual(1, d.FinalCitationCount.Value, "round-trip final citation count");
 
                 DataTable table = new DataTable();
                 table.Columns.Add("id", typeof(string));
@@ -645,6 +655,12 @@ namespace Test.Automated
                 table.Columns.Add("user_message_utc", typeof(string));
                 table.Columns.Add("attached_document_ids_json", typeof(string));
                 table.Columns.Add("attached_documents_json", typeof(string));
+                table.Columns.Add("query_class", typeof(string));
+                table.Columns.Add("answerability_decision", typeof(string));
+                table.Columns.Add("answerability_reason", typeof(string));
+                table.Columns.Add("dropped_candidate_count", typeof(int));
+                table.Columns.Add("dropped_candidate_summary_json", typeof(string));
+                table.Columns.Add("final_citation_count", typeof(int));
                 table.Columns.Add("created_utc", typeof(string));
                 table.Columns.Add("last_update_utc", typeof(string));
 
@@ -656,6 +672,12 @@ namespace Test.Automated
                 row["user_message_utc"] = DateTime.UtcNow.ToString("o");
                 row["attached_document_ids_json"] = "[\"adoc_one\"]";
                 row["attached_documents_json"] = "[{\"Id\":\"adoc_one\",\"Name\":\"Policy.pdf\"}]";
+                row["query_class"] = "specific";
+                row["answerability_decision"] = "answerable";
+                row["answerability_reason"] = "Retrieved context contains direct support.";
+                row["dropped_candidate_count"] = 2;
+                row["dropped_candidate_summary_json"] = "[{\"stage\":\"rerank\",\"reason\":\"below_threshold_or_top_k\",\"count\":2}]";
+                row["final_citation_count"] = 1;
                 row["created_utc"] = DateTime.UtcNow.ToString("o");
                 row["last_update_utc"] = DateTime.UtcNow.ToString("o");
                 table.Rows.Add(row);
@@ -663,6 +685,10 @@ namespace Test.Automated
                 ChatHistory hydrated = ChatHistory.FromDataRow(table.Rows[0]);
                 AssertHelper.AreEqual("[\"adoc_one\"]", hydrated.AttachedDocumentIdsJson, "hydrated attachment ids");
                 AssertHelper.StringContains(hydrated.AttachedDocumentsJson, "Policy.pdf", "hydrated attachment docs");
+                AssertHelper.AreEqual("specific", hydrated.QueryClass, "hydrated query class");
+                AssertHelper.AreEqual("answerable", hydrated.AnswerabilityDecision, "hydrated answerability decision");
+                AssertHelper.AreEqual(2, hydrated.DroppedCandidateCount.Value, "hydrated dropped candidate count");
+                AssertHelper.AreEqual(1, hydrated.FinalCitationCount.Value, "hydrated final citation count");
             });
 
             await ExecuteTestAsync("RequestHistoryEntry: JSON round-trip preserves telemetry correlation", async () =>

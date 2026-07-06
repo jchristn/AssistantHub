@@ -5321,7 +5321,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"AssistantId\": \"assistant-guid-here\",\n\t\"JudgePrompt\": null\n}"
+              "raw": "{\n\t\"AssistantId\": \"assistant-guid-here\",\n\t\"JudgePrompt\": null,\n\t\"ExecutionMode\": \"ChatRail\",\n\t\"Categories\": []\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1.0/eval/runs",

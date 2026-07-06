@@ -55,7 +55,7 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
             string query =
                 "INSERT INTO eval_results " +
                 "(id, run_id, fact_id, question, expected_facts, llm_response, " +
-                "fact_verdicts, overall_pass, duration_ms, created_utc) " +
+                "fact_verdicts, overall_pass, chat_history_id, trace_id, retrieval_json, citations_json, tool_calls_json, query_class, answerability_decision, duration_ms, created_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(result.Id) + "', " +
                 "'" + _Driver.Sanitize(result.RunId) + "', " +
@@ -65,6 +65,13 @@ namespace AssistantHub.Core.Database.Sqlite.Implementations
                 _Driver.FormatNullableString(result.LlmResponse) + ", " +
                 _Driver.FormatNullableString(result.FactVerdicts) + ", " +
                 _Driver.FormatBoolean(result.OverallPass) + ", " +
+                _Driver.FormatNullableString(result.ChatHistoryId) + ", " +
+                _Driver.FormatNullableString(result.TraceId) + ", " +
+                _Driver.FormatNullableString(result.RetrievalJson) + ", " +
+                _Driver.FormatNullableString(result.CitationsJson) + ", " +
+                _Driver.FormatNullableString(result.ToolCallsJson) + ", " +
+                _Driver.FormatNullableString(result.QueryClass) + ", " +
+                _Driver.FormatNullableString(result.AnswerabilityDecision) + ", " +
                 result.DurationMs + ", " +
                 "'" + _Driver.FormatDateTime(result.CreatedUtc) + "'" +
                 ");";

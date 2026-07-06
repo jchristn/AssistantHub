@@ -259,6 +259,27 @@ namespace AssistantHub.Core.Models
         public string RerankInferenceEndpointId { get; set; } = null;
 
         /// <summary>
+        /// Whether to run an LLM-based answerability check after retrieval/rerank and before final generation.
+        /// </summary>
+        public bool EnableAnswerabilityCheck { get; set; } = false;
+
+        /// <summary>
+        /// Completion endpoint identifier used for answerability checks.
+        /// When null or empty, the primary inference endpoint is used.
+        /// </summary>
+        public string AnswerabilityInferenceEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Answerability behavior mode. Values: LogOnly, AskClarifyingQuestion, ReturnUnsupported.
+        /// </summary>
+        public string AnswerabilityMode { get; set; } = "LogOnly";
+
+        /// <summary>
+        /// Custom answerability prompt template. When null, a built-in default prompt is used.
+        /// </summary>
+        public string AnswerabilityPrompt { get; set; } = null;
+
+        /// <summary>
         /// Embedding endpoint identifier (overrides server-wide default for per-assistant RAG queries).
         /// </summary>
         public string EmbeddingEndpointId { get; set; } = null;
@@ -464,6 +485,10 @@ namespace AssistantHub.Core.Models
             obj.RetrievalGateInferenceEndpointId = DataTableHelper.GetStringValue(row, "retrieval_gate_inference_endpoint_id");
             obj.QueryRewriteInferenceEndpointId = DataTableHelper.GetStringValue(row, "query_rewrite_inference_endpoint_id");
             obj.RerankInferenceEndpointId = DataTableHelper.GetStringValue(row, "rerank_inference_endpoint_id");
+            obj.EnableAnswerabilityCheck = DataTableHelper.GetBooleanValue(row, "enable_answerability_check", false);
+            obj.AnswerabilityInferenceEndpointId = DataTableHelper.GetStringValue(row, "answerability_inference_endpoint_id");
+            obj.AnswerabilityMode = DataTableHelper.GetStringValue(row, "answerability_mode") ?? "LogOnly";
+            obj.AnswerabilityPrompt = DataTableHelper.GetStringValue(row, "answerability_prompt");
             obj.EmbeddingEndpointId = DataTableHelper.GetStringValue(row, "embedding_endpoint_id");
             obj.LoadModelsOnChatOpen = DataTableHelper.GetBooleanValue(row, "load_models_on_chat_open", false);
             obj.ExposeThinking = DataTableHelper.GetBooleanValue(row, "expose_thinking", false);

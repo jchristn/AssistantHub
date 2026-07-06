@@ -48,6 +48,48 @@ namespace AssistantHub.Core.Models
         public int RerankOutputCount { get; set; } = 0;
 
         /// <summary>
+        /// Classified user-query type for this turn, when available.
+        /// </summary>
+        [JsonPropertyName("query_class")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string QueryClass { get; set; } = null;
+
+        /// <summary>
+        /// Answerability decision made after retrieval and before final generation.
+        /// </summary>
+        [JsonPropertyName("answerability_decision")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string AnswerabilityDecision { get; set; } = null;
+
+        /// <summary>
+        /// Safe reason for the answerability decision.
+        /// </summary>
+        [JsonPropertyName("answerability_reason")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string AnswerabilityReason { get; set; } = null;
+
+        /// <summary>
+        /// Number of retrieval candidates dropped after initial retrieval.
+        /// </summary>
+        [JsonPropertyName("dropped_candidate_count")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? DroppedCandidateCount { get; set; } = null;
+
+        /// <summary>
+        /// Safe summary of retrieval candidates dropped after initial retrieval.
+        /// </summary>
+        [JsonPropertyName("dropped_candidates")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<RetrievalCandidateDropSummary> DroppedCandidates { get; set; } = null;
+
+        /// <summary>
+        /// Number of citation references extracted from the final answer.
+        /// </summary>
+        [JsonPropertyName("final_citation_count")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? FinalCitationCount { get; set; } = null;
+
+        /// <summary>
         /// Attached document identifiers used to constrain retrieval.
         /// </summary>
         [JsonPropertyName("attached_document_ids")]

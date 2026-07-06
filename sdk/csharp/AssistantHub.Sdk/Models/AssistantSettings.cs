@@ -219,6 +219,30 @@ namespace AssistantHub.Sdk.Models
         public string RerankInferenceEndpointId { get; set; }
 
         /// <summary>
+        /// Whether to run an LLM answerability check after retrieval and before final answering.
+        /// </summary>
+        [JsonPropertyName("EnableAnswerabilityCheck")]
+        public bool EnableAnswerabilityCheck { get; set; }
+
+        /// <summary>
+        /// Completion endpoint identifier used for answerability calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityInferenceEndpointId")]
+        public string AnswerabilityInferenceEndpointId { get; set; }
+
+        /// <summary>
+        /// Answerability behavior: LogOnly, AskClarifyingQuestion, or ReturnUnsupported.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityMode")]
+        public string AnswerabilityMode { get; set; }
+
+        /// <summary>
+        /// Custom answerability prompt template.
+        /// </summary>
+        [JsonPropertyName("AnswerabilityPrompt")]
+        public string AnswerabilityPrompt { get; set; }
+
+        /// <summary>
         /// Embedding endpoint identifier.
         /// </summary>
         [JsonPropertyName("EmbeddingEndpointId")]

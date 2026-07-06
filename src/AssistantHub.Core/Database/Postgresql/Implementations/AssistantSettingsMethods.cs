@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
                 "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
-                "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
+                "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, enable_answerability_check, answerability_inference_endpoint_id, answerability_mode, answerability_prompt, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
                 "'" + _Driver.Sanitize(assistantSettings.Id) + "', " +
                 "'" + _Driver.Sanitize(assistantSettings.AssistantId) + "', " +
@@ -94,6 +94,10 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatNullableString(assistantSettings.RetrievalGateInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.QueryRewriteInferenceEndpointId) + ", " +
                 _Driver.FormatNullableString(assistantSettings.RerankInferenceEndpointId) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableAnswerabilityCheck) + ", " +
+                _Driver.FormatNullableString(assistantSettings.AnswerabilityInferenceEndpointId) + ", " +
+                _Driver.FormatNullableString(assistantSettings.AnswerabilityMode) + ", " +
+                _Driver.FormatNullableString(assistantSettings.AnswerabilityPrompt) + ", " +
                 _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 FormatBooleanColumn(assistantSettings.LoadModelsOnChatOpen) + ", " +
                 FormatBooleanColumn(assistantSettings.ExposeThinking) + ", " +
@@ -184,6 +188,10 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "retrieval_gate_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.RetrievalGateInferenceEndpointId) + ", " +
                 "query_rewrite_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.QueryRewriteInferenceEndpointId) + ", " +
                 "rerank_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.RerankInferenceEndpointId) + ", " +
+                "enable_answerability_check = " + FormatBooleanColumn(assistantSettings.EnableAnswerabilityCheck) + ", " +
+                "answerability_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.AnswerabilityInferenceEndpointId) + ", " +
+                "answerability_mode = " + _Driver.FormatNullableString(assistantSettings.AnswerabilityMode) + ", " +
+                "answerability_prompt = " + _Driver.FormatNullableString(assistantSettings.AnswerabilityPrompt) + ", " +
                 "embedding_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.EmbeddingEndpointId) + ", " +
                 "load_models_on_chat_open = " + FormatBooleanColumn(assistantSettings.LoadModelsOnChatOpen) + ", " +
                 "expose_thinking = " + FormatBooleanColumn(assistantSettings.ExposeThinking) + ", " +

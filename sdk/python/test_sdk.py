@@ -57,6 +57,8 @@ from assistanthub_sdk.enums import (
 @dataclass
 class TestResult:
     """Result of a single test execution."""
+    __test__ = False
+
     test_name: str
     passed: bool
     runtime_ms: float
@@ -65,6 +67,7 @@ class TestResult:
 
 class TestRunner:
     """Runs tests and collects results, matching the C# TestRunner output format."""
+    __test__ = False
 
     def __init__(self) -> None:
         self._results: list[TestResult] = []
@@ -836,6 +839,28 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         "SDK contract: ChatHistory parses attached document metadata",
         test_chat_history_attached_document_metadata,
     )
+
+
+def test_local_sdk_contracts_pass_under_pytest() -> None:
+    runner = TestRunner()
+    run_sdk_contract_tests(runner)
+
+    failures = [r for r in runner.results if not r.passed]
+    assert len(runner.results) > 0
+    assert not failures, "; ".join(
+        "{}: {}".format(r.test_name, r.error_message) for r in failures
+    )
+
+
+def test_runner_records_assertion_failures_under_pytest() -> None:
+    def fail() -> None:
+        raise AssertionError("expected failure")
+
+    runner = TestRunner()
+    result = runner.run_test("Runner: records assertion failures", fail)
+
+    assert result.passed is False
+    assert result.error_message == "expected failure"
 
 
 # ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@ namespace AssistantHub.McpServer.Registrations
     using System.Collections.Generic;
     using AssistantHub.McpServer.Classes;
     using AssistantHub.Sdk.Models;
-    using Voltaic;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// Registration methods for document operations.

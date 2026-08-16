@@ -2,7 +2,7 @@ namespace AssistantHub.McpServer.Registrations
 {
     using System.Collections.Generic;
     using AssistantHub.McpServer.Classes;
-    using Voltaic;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// Registration methods for bucket object operations.

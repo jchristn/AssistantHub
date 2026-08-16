@@ -469,19 +469,24 @@
             Empty input schema.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterHttpTools(Voltaic.McpHttpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterHttpTools(Voltaic.Mcp.McpHttpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
             <summary>
             Register HTTP tools.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterTcpMethods(Voltaic.McpTcpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterTcpMethods(Voltaic.Mcp.McpTcpServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
             <summary>
             Register TCP methods.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.RegisterWebSocketMethods(Voltaic.Mcp.McpWebsocketsServer,System.Collections.Generic.IEnumerable{AssistantHub.McpServer.Classes.McpMethodDefinition})">
             <summary>
             Register WebSocket methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.ToJsonElement(Voltaic.Core.RpcParameters)">
+            <summary>
+            Convert Voltaic RPC parameters into a JsonElement so tool handlers can consume them.
             </summary>
         </member>
         <member name="T:AssistantHub.McpServer.Classes.NodeSettings">
@@ -594,17 +599,17 @@
             Registration methods for authentication operations.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterHttpTools(Voltaic.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterHttpTools(Voltaic.Mcp.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register HTTP tools.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterTcpMethods(Voltaic.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterTcpMethods(Voltaic.Mcp.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register TCP methods.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.AuthenticationRegistrations.RegisterWebSocketMethods(Voltaic.Mcp.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register WebSocket methods.
             </summary>
@@ -709,17 +714,17 @@
             Registration methods for system operations.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterHttpTools(Voltaic.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterHttpTools(Voltaic.Mcp.McpHttpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register HTTP tools.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterTcpMethods(Voltaic.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterTcpMethods(Voltaic.Mcp.McpTcpServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register TCP methods.
             </summary>
         </member>
-        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterWebSocketMethods(Voltaic.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
+        <member name="M:AssistantHub.McpServer.Registrations.SystemRegistrations.RegisterWebSocketMethods(Voltaic.Mcp.McpWebsocketsServer,AssistantHub.McpServer.Classes.AssistantHubMcpContext)">
             <summary>
             Register WebSocket methods.
             </summary>

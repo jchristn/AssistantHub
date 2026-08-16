@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="EasySlack" Version="1.0.1" />
-    <PackageReference Include="Watson" Version="7.0.8" />
+    <PackageReference Include="Watson" Version="7.1.0" />
   </ItemGroup>
 
 </Project>

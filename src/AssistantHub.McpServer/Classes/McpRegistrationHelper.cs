@@ -1,7 +1,9 @@
 namespace AssistantHub.McpServer.Classes
 {
     using System.Collections.Generic;
-    using Voltaic;
+    using System.Text.Json;
+    using Voltaic.Core;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// MCP registration helper.
@@ -30,7 +32,7 @@ namespace AssistantHub.McpServer.Classes
                     definition.Name,
                     definition.Description,
                     definition.InputSchema,
-                    args => definition.Handler(args));
+                    parameters => definition.Handler(ToJsonElement(parameters)));
             }
         }
 
@@ -41,7 +43,7 @@ namespace AssistantHub.McpServer.Classes
         {
             foreach (McpMethodDefinition definition in definitions)
             {
-                server.RegisterMethod(definition.Name, args => definition.Handler(args));
+                server.RegisterMethod(definition.Name, parameters => definition.Handler(ToJsonElement(parameters)));
             }
         }
 
@@ -52,8 +54,20 @@ namespace AssistantHub.McpServer.Classes
         {
             foreach (McpMethodDefinition definition in definitions)
             {
-                server.RegisterMethod(definition.Name, args => definition.Handler(args));
+                server.RegisterMethod(definition.Name, parameters => definition.Handler(ToJsonElement(parameters)));
             }
+        }
+
+        /// <summary>
+        /// Convert Voltaic RPC parameters into a JsonElement so tool handlers can consume them.
+        /// </summary>
+        private static JsonElement? ToJsonElement(RpcParameters parameters)
+        {
+            if (parameters == null || !parameters.HasValue || string.IsNullOrEmpty(parameters.RawJson))
+                return null;
+
+            using JsonDocument document = JsonDocument.Parse(parameters.RawJson);
+            return document.RootElement.Clone();
         }
     }
 }

@@ -3,7 +3,7 @@ namespace AssistantHub.McpServer.Registrations
     using System.Collections.Generic;
     using AssistantHub.McpServer.Classes;
     using AssistantHub.Core.Settings;
-    using Voltaic;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// Registration methods for configuration operations.

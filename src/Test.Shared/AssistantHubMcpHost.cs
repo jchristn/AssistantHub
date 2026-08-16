@@ -15,7 +15,7 @@ namespace Test.Shared
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Settings;
-    using Voltaic;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// Spins up a real AssistantHub server plus MCP server for end-to-end MCP testing.

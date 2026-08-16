@@ -11,7 +11,8 @@ namespace AssistantHub.McpServer
     using AssistantHub.McpServer.Registrations;
     using AssistantHub.Sdk;
     using SyslogLogging;
-    using Voltaic;
+    using Voltaic.Core;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// AssistantHub MCP Server.

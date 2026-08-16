@@ -4,7 +4,7 @@ namespace AssistantHub.McpServer.Registrations
     using System.Net.Http;
     using AssistantHub.McpServer.Classes;
     using AssistantHub.Sdk.Models;
-    using Voltaic;
+    using Voltaic.Mcp;
 
     /// <summary>
     /// Registration methods for crawl plan operations.

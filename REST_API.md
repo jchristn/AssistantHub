@@ -214,7 +214,7 @@ Returns server information. **Unauthenticated.**
 ```json
 {
   "Product": "AssistantHub",
-  "Version": "0.16.0",
+  "Version": "0.16.1",
   "Timestamp": "2025-01-01T12:00:00Z"
 }
 ```

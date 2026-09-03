@@ -1,7 +1,9 @@
 namespace AssistantHub.McpServer.Classes
 {
+    using System;
     using System.Collections.Generic;
     using System.Text.Json;
+    using AssistantHub.Core.Telemetry;
     using Voltaic.Core;
     using Voltaic.Mcp;
 
@@ -28,11 +30,12 @@ namespace AssistantHub.McpServer.Classes
         {
             foreach (McpMethodDefinition definition in definitions)
             {
+                McpMethodDefinition instrumented = Instrument(definition, "http");
                 server.RegisterTool(
-                    definition.Name,
-                    definition.Description,
-                    definition.InputSchema,
-                    parameters => definition.Handler(ToJsonElement(parameters)));
+                    instrumented.Name,
+                    instrumented.Description,
+                    instrumented.InputSchema,
+                    parameters => instrumented.Handler(ToJsonElement(parameters)));
             }
         }
 
@@ -43,7 +46,8 @@ namespace AssistantHub.McpServer.Classes
         {
             foreach (McpMethodDefinition definition in definitions)
             {
-                server.RegisterMethod(definition.Name, parameters => definition.Handler(ToJsonElement(parameters)));
+                McpMethodDefinition instrumented = Instrument(definition, "tcp");
+                server.RegisterMethod(instrumented.Name, parameters => instrumented.Handler(ToJsonElement(parameters)));
             }
         }
 
@@ -54,8 +58,42 @@ namespace AssistantHub.McpServer.Classes
         {
             foreach (McpMethodDefinition definition in definitions)
             {
-                server.RegisterMethod(definition.Name, parameters => definition.Handler(ToJsonElement(parameters)));
+                McpMethodDefinition instrumented = Instrument(definition, "ws");
+                server.RegisterMethod(instrumented.Name, parameters => instrumented.Handler(ToJsonElement(parameters)));
             }
+        }
+
+        /// <summary>
+        /// Wrap a tool definition's handler so every invocation is timed and traced, tagged by tool name and
+        /// transport. Metrics and spans ride the AssistantHub meter/activity source and stay a no-op until a
+        /// telemetry host subscribes.
+        /// </summary>
+        private static McpMethodDefinition Instrument(McpMethodDefinition definition, string transport)
+        {
+            Func<JsonElement?, object?> inner = definition.Handler;
+            string toolName = definition.Name;
+
+            return new McpMethodDefinition
+            {
+                Name = definition.Name,
+                Description = definition.Description,
+                InputSchema = definition.InputSchema,
+                Handler = input =>
+                {
+                    using (McpToolScope scope = AssistantHubTelemetry.StartMcpTool(toolName, transport))
+                    {
+                        try
+                        {
+                            return inner(input);
+                        }
+                        catch (Exception e)
+                        {
+                            scope.Fail(e);
+                            throw;
+                        }
+                    }
+                }
+            };
         }
 
         /// <summary>

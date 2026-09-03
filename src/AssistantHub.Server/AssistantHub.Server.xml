@@ -33,6 +33,13 @@
             <param name="logging">Logging module.</param>
             <returns>True when the default index was ensured.</returns>
         </member>
+        <member name="M:AssistantHub.Server.AssistantHubServer.ResolveRoute(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            Resolve the low-cardinality route template for a request (for example /v1.0/tenants/{id}) so it can
+            be used as a metric label. Returns null when no route matched (default/404), which the telemetry
+            layer records as "unmatched".
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.AssistantAnalyticsHandler">
             <summary>
             Handles assistant analytics routes.
@@ -2918,6 +2925,22 @@
             <summary>
             Safe mapping from a Verbex record to an assistant document.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Server.TelemetryBootstrap">
+            <summary>
+            Builds and starts the Radiant telemetry host that subscribes to the AssistantHub meter and activity
+            source and exports metrics and traces over OTLP. Emit-side code never references this type; it only
+            wires the exporter pipeline at the composition root.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.TelemetryBootstrap.Start(AssistantHub.Core.Settings.TelemetrySettings,System.String,SyslogLogging.LoggingModule)">
+            <summary>
+            Start the telemetry host, or return null when telemetry is disabled or fails to start. Never throws.
+            </summary>
+            <param name="settings">Telemetry settings from configuration (environment variables override).</param>
+            <param name="defaultServiceName">The service.name to use when none is configured.</param>
+            <param name="logging">Logging module for diagnostics.</param>
+            <returns>A started <see cref="T:Radiant.RadiantHost"/>, or null.</returns>
         </member>
     </members>
 </doc>

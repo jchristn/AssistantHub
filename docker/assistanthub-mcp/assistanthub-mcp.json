@@ -2,13 +2,13 @@
   "CreatedUtc": "2026-05-19T00:00:00Z",
   "CreatedBy": "Setup",
   "DeploymentType": "Private",
-  "SoftwareVersion": "v0.16.0",
+  "SoftwareVersion": "v0.16.1",
   "Node": {
     "Guid": "00000000-0000-0000-0000-000000000001",
     "Name": "AssistantHub Model Context Protocol Server",
     "Hostname": "assistanthub-mcp-server",
     "InstanceType": "McpServer",
-    "LastStartUtc": "2026-06-11T21:48:56.2031715Z",
+    "LastStartUtc": "2026-06-12T16:50:43.6558395Z",
     "CreatedUtc": "2026-05-19T00:00:00Z"
   },
   "Logging": {
@@ -44,5 +44,14 @@
     "Exceptions": true,
     "Requests": false,
     "McpOperations": false
+  },
+  "Telemetry": {
+    "Enable": true,
+    "ServiceName": "assistanthub-mcp",
+    "OtlpEndpoint": "http://assistanthub-otel-collector:4317",
+    "OtlpProtocol": "Grpc",
+    "SamplingRatio": 1.0,
+    "EnableRuntimeMetrics": true,
+    "ExportIntervalMs": 15000
   }
 }

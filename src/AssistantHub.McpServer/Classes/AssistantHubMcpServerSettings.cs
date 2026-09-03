@@ -66,5 +66,10 @@ namespace AssistantHub.McpServer.Classes
         /// Debug settings.
         /// </summary>
         public DebugSettings Debug { get; set; } = new DebugSettings();
+
+        /// <summary>
+        /// Telemetry (OpenTelemetry metrics and traces) settings.
+        /// </summary>
+        public AssistantHub.Core.Settings.TelemetrySettings Telemetry { get; set; } = new AssistantHub.Core.Settings.TelemetrySettings();
     }
 }

@@ -54,6 +54,20 @@ const getExternalServiceLinks = (config) => {
   ].filter(link => typeof link.url === 'string' && link.url.trim().length > 0);
 };
 
+// Observability stack links. Ports are the docker compose defaults; the host is taken from the browser
+// location so the links resolve whether the dashboard is opened locally or against a remote host.
+const getObservabilityLinks = () => {
+  const host = (typeof window !== 'undefined' && window.location && window.location.hostname)
+    ? window.location.hostname
+    : 'localhost';
+  return [
+    { key: 'grafana', label: 'Grafana', url: `http://${host}:3000`, credentials: 'admin / admin' },
+    { key: 'prometheus', label: 'Prometheus (Metrics)', url: `http://${host}:9090`, credentials: 'No login required' },
+    { key: 'tempo', label: 'Tempo (Traces)', url: `http://${host}:3200`, credentials: 'No login required — explore via Grafana' },
+    { key: 'loki', label: 'Loki (Logs)', url: `http://${host}:3100`, credentials: 'No login required — explore via Grafana' },
+  ];
+};
+
 const isSensitiveConfigKey = (key) => {
   return /accesskey|secretkey|apikey|password/i.test(key || '');
 };
@@ -128,6 +142,7 @@ function ConfigurationView() {
   };
 
   const externalServiceLinks = getExternalServiceLinks(config);
+  const observabilityLinks = getObservabilityLinks();
 
   return (
     <div>
@@ -178,6 +193,24 @@ function ConfigurationView() {
               </div>
             </div>
           )}
+          <div className="config-summary-section">
+            <h4>Observability</h4>
+            <div className="config-links-grid">
+              {observabilityLinks.map(link => (
+                <a
+                  key={link.key}
+                  className="config-link-card"
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <span className="config-link-card-label">{link.label}</span>
+                  <span className="config-link-card-url">{link.url}</span>
+                  <span className="config-link-card-cred">Credentials: <code>{link.credentials}</code></span>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

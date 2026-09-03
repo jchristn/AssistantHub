@@ -35,6 +35,7 @@ namespace AssistantHub.McpServer
         private static McpHttpServer? _McpHttpServer = null;
         private static McpTcpServer? _McpTcpServer = null;
         private static McpWebsocketsServer? _McpWebSocketServer = null;
+        private static Radiant.RadiantHost? _TelemetryHost = null;
 
         private static readonly System.Threading.CancellationTokenSource _TokenSource = new System.Threading.CancellationTokenSource();
         private static readonly System.Threading.CancellationToken _Token = _TokenSource.Token;
@@ -75,6 +76,20 @@ namespace AssistantHub.McpServer
             while (!waitHandleSignal);
 
             _TokenSource.Cancel();
+
+            if (_TelemetryHost != null)
+            {
+                try
+                {
+                    _TelemetryHost.ForceFlush(5000);
+                    _TelemetryHost.Dispose();
+                }
+                catch (Exception e)
+                {
+                    _Logging.Warn(_Header + "telemetry shutdown error: " + e.Message);
+                }
+            }
+
             _Logging.Info(_Header + "stopping at " + DateTime.UtcNow);
         }
 
@@ -145,6 +160,7 @@ namespace AssistantHub.McpServer
         {
             ApplyEnvironmentOverrides();
             InitializeLogging();
+            _TelemetryHost = TelemetryBootstrap.Start(_Settings.Telemetry, "assistanthub-mcp", _Logging);
             InitializeStorage();
             InitializeSdk();
             InitializeMcpServers();

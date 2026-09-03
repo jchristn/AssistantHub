@@ -15,6 +15,7 @@ namespace AssistantHub.Core.Services
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -215,8 +216,13 @@ namespace AssistantHub.Core.Services
 
             string currentStep = "Initialization";
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("ingestion", "ingest-document"))
             {
+                op.SetTag("document.id", documentId);
+                string ingestOutcome = "error";
+
+                try
+                {
                 // Step 1: Read document from database
                 AssistantDocument document = await _Database.AssistantDocument.ReadAsync(documentId, token).ConfigureAwait(false);
                 if (document == null)
@@ -226,6 +232,8 @@ namespace AssistantHub.Core.Services
                 }
 
                 string tenantId = document.TenantId;
+                op.SetTag("tenant.id", tenantId);
+                if (!String.IsNullOrEmpty(document.CollectionId)) op.SetTag("collection.id", document.CollectionId);
 
                 // Pipeline start log
                 if (_ProcessingLog != null)
@@ -438,6 +446,9 @@ namespace AssistantHub.Core.Services
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Chunking", chunks.Count + " chunks generated", chunkSw).ConfigureAwait(false);
 
+                op.SetTag("ingestion.chunk_count", chunks.Count);
+                AssistantHubTelemetry.RecordIngestedChunks(chunks.Count);
+
                 _Logging.Debug(_Header + "generated " + chunks.Count + " chunks for document " + documentId);
 
                 // Step 11: Update status to StoringEmbeddings
@@ -491,18 +502,27 @@ namespace AssistantHub.Core.Services
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Completed, "Ingestion complete. " + storedCount + " chunks stored.", token).ConfigureAwait(false);
                 _Logging.Info(_Header + "ingestion pipeline completed for document " + documentId);
 
-                pipelineSw.Stop();
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline complete - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during ingestion of document " + documentId + ": " + e.Message);
-                await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Ingestion failed: " + e.Message, token).ConfigureAwait(false);
+                ingestOutcome = "ok";
 
                 pipelineSw.Stop();
                 if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "ERROR", "Pipeline failed during step: " + currentStep + " - " + e.Message + " - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Pipeline complete - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during ingestion of document " + documentId + ": " + e.Message);
+                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, "Ingestion failed: " + e.Message, token).ConfigureAwait(false);
+
+                    pipelineSw.Stop();
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Pipeline failed during step: " + currentStep + " - " + e.Message + " - total runtime " + pipelineSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                }
+                finally
+                {
+                    op.SetTag("ingestion.outcome", ingestOutcome);
+                    AssistantHubTelemetry.RecordIngestedDocument(ingestOutcome);
+                }
             }
         }
 

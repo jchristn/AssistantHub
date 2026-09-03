@@ -10,6 +10,7 @@ namespace AssistantHub.Core.Services
     using Amazon.S3;
     using Amazon.S3.Model;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using Blobject.AmazonS3;
     using Blobject.Core;
     using SyslogLogging;
@@ -85,9 +86,24 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            _Logging.Debug(_Header + "uploading " + key + " (" + data.Length + " bytes)");
-            await _Client.WriteAsync(key, contentType, data, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "upload complete for " + key);
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "put-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", _Settings.BucketName);
+                op.SetTag("object.size_bytes", data.Length);
+
+                try
+                {
+                    _Logging.Debug(_Header + "uploading " + key + " (" + data.Length + " bytes)");
+                    await _Client.WriteAsync(key, contentType, data, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "upload complete for " + key);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -104,10 +120,25 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
             if (data == null) throw new ArgumentNullException(nameof(data));
 
-            AmazonS3BlobClient client = GetClientForBucket(bucketName);
-            _Logging.Debug(_Header + "uploading " + key + " to bucket " + bucketName + " (" + data.Length + " bytes)");
-            await client.WriteAsync(key, contentType, data, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "upload complete for " + key + " in bucket " + bucketName);
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "put-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", bucketName);
+                op.SetTag("object.size_bytes", data.Length);
+
+                try
+                {
+                    AmazonS3BlobClient client = GetClientForBucket(bucketName);
+                    _Logging.Debug(_Header + "uploading " + key + " to bucket " + bucketName + " (" + data.Length + " bytes)");
+                    await client.WriteAsync(key, contentType, data, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "upload complete for " + key + " in bucket " + bucketName);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -120,10 +151,24 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            _Logging.Debug(_Header + "downloading " + key);
-            byte[] data = await _Client.GetAsync(key, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "download complete for " + key + " (" + (data != null ? data.Length : 0) + " bytes)");
-            return data;
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "get-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", _Settings.BucketName);
+
+                try
+                {
+                    _Logging.Debug(_Header + "downloading " + key);
+                    byte[] data = await _Client.GetAsync(key, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "download complete for " + key + " (" + (data != null ? data.Length : 0) + " bytes)");
+                    return data;
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -137,11 +182,25 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            AmazonS3BlobClient client = GetClientForBucket(bucketName);
-            _Logging.Debug(_Header + "downloading " + key + " from bucket " + bucketName);
-            byte[] data = await client.GetAsync(key, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "download complete for " + key + " from bucket " + bucketName + " (" + (data != null ? data.Length : 0) + " bytes)");
-            return data;
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "get-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", bucketName);
+
+                try
+                {
+                    AmazonS3BlobClient client = GetClientForBucket(bucketName);
+                    _Logging.Debug(_Header + "downloading " + key + " from bucket " + bucketName);
+                    byte[] data = await client.GetAsync(key, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "download complete for " + key + " from bucket " + bucketName + " (" + (data != null ? data.Length : 0) + " bytes)");
+                    return data;
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -161,20 +220,35 @@ namespace AssistantHub.Core.Services
             if (length < 0) throw new ArgumentOutOfRangeException(nameof(length));
             if (length == 0) return Array.Empty<byte>();
 
-            GetObjectRequest request = new GetObjectRequest
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "get-object"))
             {
-                BucketName = bucketName,
-                Key = key,
-                ByteRange = new ByteRange(start, start + length - 1)
-            };
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", bucketName);
+                op.SetTag("object.range", true);
 
-            _Logging.Debug(_Header + "range downloading " + key + " from bucket " + bucketName + " start " + start + " length " + length);
-            using GetObjectResponse response = await _S3Client.GetObjectAsync(request, token).ConfigureAwait(false);
-            using MemoryStream ms = new MemoryStream();
-            await response.ResponseStream.CopyToAsync(ms, token).ConfigureAwait(false);
-            byte[] data = ms.ToArray();
-            _Logging.Debug(_Header + "range download complete for " + key + " from bucket " + bucketName + " (" + data.Length + " bytes)");
-            return data;
+                try
+                {
+                    GetObjectRequest request = new GetObjectRequest
+                    {
+                        BucketName = bucketName,
+                        Key = key,
+                        ByteRange = new ByteRange(start, start + length - 1)
+                    };
+
+                    _Logging.Debug(_Header + "range downloading " + key + " from bucket " + bucketName + " start " + start + " length " + length);
+                    using GetObjectResponse response = await _S3Client.GetObjectAsync(request, token).ConfigureAwait(false);
+                    using MemoryStream ms = new MemoryStream();
+                    await response.ResponseStream.CopyToAsync(ms, token).ConfigureAwait(false);
+                    byte[] data = ms.ToArray();
+                    _Logging.Debug(_Header + "range download complete for " + key + " from bucket " + bucketName + " (" + data.Length + " bytes)");
+                    return data;
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -189,22 +263,36 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(bucketName)) throw new ArgumentNullException(nameof(bucketName));
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            GetObjectMetadataRequest request = new GetObjectMetadataRequest
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "head-object"))
             {
-                BucketName = bucketName,
-                Key = key
-            };
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", bucketName);
 
-            _Logging.Debug(_Header + "reading metadata for " + key + " from bucket " + bucketName);
-            GetObjectMetadataResponse response = await _S3Client.GetObjectMetadataAsync(request, token).ConfigureAwait(false);
-            return new ObjectStorageItem
-            {
-                Key = key,
-                SizeBytes = response.Headers?.ContentLength ?? 0,
-                ContentType = response.Headers?.ContentType ?? response.ContentType,
-                ETag = response.ETag,
-                LastModifiedUtc = response.LastModified
-            };
+                try
+                {
+                    GetObjectMetadataRequest request = new GetObjectMetadataRequest
+                    {
+                        BucketName = bucketName,
+                        Key = key
+                    };
+
+                    _Logging.Debug(_Header + "reading metadata for " + key + " from bucket " + bucketName);
+                    GetObjectMetadataResponse response = await _S3Client.GetObjectMetadataAsync(request, token).ConfigureAwait(false);
+                    return new ObjectStorageItem
+                    {
+                        Key = key,
+                        SizeBytes = response.Headers?.ContentLength ?? 0,
+                        ContentType = response.Headers?.ContentType ?? response.ContentType,
+                        ETag = response.ETag,
+                        LastModifiedUtc = response.LastModified
+                    };
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -217,9 +305,23 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            _Logging.Debug(_Header + "deleting " + key);
-            await _Client.DeleteAsync(key, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "delete complete for " + key);
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "delete-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", _Settings.BucketName);
+
+                try
+                {
+                    _Logging.Debug(_Header + "deleting " + key);
+                    await _Client.DeleteAsync(key, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "delete complete for " + key);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -233,10 +335,24 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
 
-            AmazonS3BlobClient client = GetClientForBucket(bucketName);
-            _Logging.Debug(_Header + "deleting " + key + " from bucket " + bucketName);
-            await client.DeleteAsync(key, token).ConfigureAwait(false);
-            _Logging.Debug(_Header + "delete complete for " + key + " from bucket " + bucketName);
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "delete-object"))
+            {
+                op.SetTag("object.key", key);
+                op.SetTag("object.bucket", bucketName);
+
+                try
+                {
+                    AmazonS3BlobClient client = GetClientForBucket(bucketName);
+                    _Logging.Debug(_Header + "deleting " + key + " from bucket " + bucketName);
+                    await client.DeleteAsync(key, token).ConfigureAwait(false);
+                    _Logging.Debug(_Header + "delete complete for " + key + " from bucket " + bucketName);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -272,43 +388,59 @@ namespace AssistantHub.Core.Services
         {
             if (String.IsNullOrWhiteSpace(bucketName)) throw new ArgumentNullException(nameof(bucketName));
 
-            int cappedMaxResults = Math.Clamp(maxResults, 1, 1000);
-            ListObjectsV2Request request = new ListObjectsV2Request
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("object", "list"))
             {
-                BucketName = bucketName,
-                Prefix = prefix ?? "",
-                MaxKeys = cappedMaxResults,
-                ContinuationToken = continuationToken
-            };
+                op.SetTag("object.bucket", bucketName);
+                op.SetTag("object.prefix", prefix ?? "");
 
-            _Logging.Debug(_Header + "listing bucket " + bucketName + " prefix " + (prefix ?? "") + " maxResults " + cappedMaxResults);
-            ListObjectsV2Response response = await _S3Client.ListObjectsV2Async(request, token).ConfigureAwait(false);
-
-            List<ObjectStorageItem> objects = new List<ObjectStorageItem>();
-            if (response.S3Objects != null)
-            {
-                foreach (S3Object obj in response.S3Objects)
+                try
                 {
-                    if (obj == null) continue;
-                    objects.Add(new ObjectStorageItem
+                    int cappedMaxResults = Math.Clamp(maxResults, 1, 1000);
+                    ListObjectsV2Request request = new ListObjectsV2Request
                     {
-                        Key = obj.Key,
-                        SizeBytes = obj.Size ?? 0,
-                        ETag = obj.ETag,
-                        LastModifiedUtc = obj.LastModified
-                    });
+                        BucketName = bucketName,
+                        Prefix = prefix ?? "",
+                        MaxKeys = cappedMaxResults,
+                        ContinuationToken = continuationToken
+                    };
+
+                    _Logging.Debug(_Header + "listing bucket " + bucketName + " prefix " + (prefix ?? "") + " maxResults " + cappedMaxResults);
+                    ListObjectsV2Response response = await _S3Client.ListObjectsV2Async(request, token).ConfigureAwait(false);
+
+                    List<ObjectStorageItem> objects = new List<ObjectStorageItem>();
+                    if (response.S3Objects != null)
+                    {
+                        foreach (S3Object obj in response.S3Objects)
+                        {
+                            if (obj == null) continue;
+                            objects.Add(new ObjectStorageItem
+                            {
+                                Key = obj.Key,
+                                SizeBytes = obj.Size ?? 0,
+                                ETag = obj.ETag,
+                                LastModifiedUtc = obj.LastModified
+                            });
+                        }
+                    }
+
+                    op.SetTag("object.count", objects.Count);
+
+                    return new ObjectStorageListResult
+                    {
+                        BucketName = bucketName,
+                        Prefix = prefix,
+                        MaxResults = cappedMaxResults,
+                        ContinuationToken = response.NextContinuationToken,
+                        EndOfResults = !response.IsTruncated.GetValueOrDefault(),
+                        Objects = objects
+                    };
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
                 }
             }
-
-            return new ObjectStorageListResult
-            {
-                BucketName = bucketName,
-                Prefix = prefix,
-                MaxResults = cappedMaxResults,
-                ContinuationToken = response.NextContinuationToken,
-                EndOfResults = !response.IsTruncated.GetValueOrDefault(),
-                Objects = objects
-            };
         }
 
 

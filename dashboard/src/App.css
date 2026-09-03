@@ -2865,6 +2865,16 @@ body {
   word-break: break-all;
 }
 
+.config-link-card-cred {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.config-link-card-cred code {
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+}
+
 /* Configuration Form Sections */
 .config-section {
   border: 1px solid var(--border-color);

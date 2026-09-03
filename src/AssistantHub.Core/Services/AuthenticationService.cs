@@ -8,6 +8,7 @@ namespace AssistantHub.Core.Services
     using AssistantHub.Core.Database;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -59,57 +60,74 @@ namespace AssistantHub.Core.Services
             if (String.IsNullOrEmpty(bearerToken))
                 return null;
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("auth", "authenticate"))
             {
-                // Check if token is a global admin API key
-                if (_Settings?.AdminApiKeys != null && _Settings.AdminApiKeys.Contains(bearerToken))
+                op.SetTag("auth.method", "bearer");
+
+                try
                 {
+                    // Check if token is a global admin API key
+                    if (_Settings?.AdminApiKeys != null && _Settings.AdminApiKeys.Contains(bearerToken))
+                    {
+                        op.SetTag("auth.principal", "global-admin");
+                        return new AuthContext
+                        {
+                            IsAuthenticated = true,
+                            IsGlobalAdmin = true,
+                            IsTenantAdmin = false,
+                            TenantId = null,
+                            UserId = null,
+                            CredentialId = null,
+                            Email = null,
+                            Tenant = null,
+                            User = null
+                        };
+                    }
+
+                    // Look up credential by bearer token
+                    Credential credential = await _Database.Credential.ReadByBearerTokenAsync(bearerToken, token).ConfigureAwait(false);
+                    if (credential == null || !credential.Active)
+                    {
+                        op.SetOutcome("unauthenticated");
+                        return null;
+                    }
+
+                    // Load user
+                    UserMaster user = await _Database.User.ReadAsync(credential.UserId, token).ConfigureAwait(false);
+                    if (user == null || !user.Active)
+                    {
+                        op.SetOutcome("unauthenticated");
+                        return null;
+                    }
+
+                    // Load tenant
+                    TenantMetadata tenant = await _Database.Tenant.ReadByIdAsync(credential.TenantId, token).ConfigureAwait(false);
+                    if (tenant == null || !tenant.Active)
+                    {
+                        op.SetOutcome("unauthenticated");
+                        return null;
+                    }
+
+                    op.SetTag("tenant.id", tenant.Id);
                     return new AuthContext
                     {
                         IsAuthenticated = true,
-                        IsGlobalAdmin = true,
-                        IsTenantAdmin = false,
-                        TenantId = null,
-                        UserId = null,
-                        CredentialId = null,
-                        Email = null,
-                        Tenant = null,
-                        User = null
+                        IsGlobalAdmin = user.IsAdmin,
+                        IsTenantAdmin = user.IsTenantAdmin,
+                        TenantId = tenant.Id,
+                        UserId = user.Id,
+                        CredentialId = credential.Id,
+                        Email = user.Email,
+                        Tenant = tenant,
+                        User = user
                     };
                 }
-
-                // Look up credential by bearer token
-                Credential credential = await _Database.Credential.ReadByBearerTokenAsync(bearerToken, token).ConfigureAwait(false);
-                if (credential == null || !credential.Active)
-                    return null;
-
-                // Load user
-                UserMaster user = await _Database.User.ReadAsync(credential.UserId, token).ConfigureAwait(false);
-                if (user == null || !user.Active)
-                    return null;
-
-                // Load tenant
-                TenantMetadata tenant = await _Database.Tenant.ReadByIdAsync(credential.TenantId, token).ConfigureAwait(false);
-                if (tenant == null || !tenant.Active)
-                    return null;
-
-                return new AuthContext
+                catch (Exception e)
                 {
-                    IsAuthenticated = true,
-                    IsGlobalAdmin = user.IsAdmin,
-                    IsTenantAdmin = user.IsTenantAdmin,
-                    TenantId = tenant.Id,
-                    UserId = user.Id,
-                    CredentialId = credential.Id,
-                    Email = user.Email,
-                    Tenant = tenant,
-                    User = user
-                };
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during bearer authentication: " + e.Message);
-                return null;
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during bearer authentication: " + e.Message);
+                    return null;
+                }
             }
         }
 
@@ -204,54 +222,70 @@ namespace AssistantHub.Core.Services
             // Default to "default" tenant if not specified
             if (String.IsNullOrEmpty(tenantId)) tenantId = Constants.DefaultTenantId;
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("auth", "authenticate"))
             {
-                // Validate tenant
-                TenantMetadata tenant = await _Database.Tenant.ReadByIdAsync(tenantId, token).ConfigureAwait(false);
-                if (tenant == null || !tenant.Active)
-                    return new AuthenticateResult { Success = false, ErrorMessage = "Tenant not found or inactive." };
+                op.SetTag("auth.method", "password");
+                op.SetTag("tenant.id", tenantId);
 
-                UserMaster user = await _Database.User.ReadByEmailAsync(tenantId, email, token).ConfigureAwait(false);
-                if (user == null || !user.Active)
-                    return new AuthenticateResult { Success = false, ErrorMessage = "Invalid email or password." };
-
-                if (!user.VerifyPassword(password))
-                    return new AuthenticateResult { Success = false, ErrorMessage = "Invalid email or password." };
-
-                // Find an active credential for this user
-                EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
-                EnumerationResult<Credential> credentials = await _Database.Credential.EnumerateAsync(tenantId, query, token).ConfigureAwait(false);
-
-                Credential credential = null;
-                if (credentials?.Objects != null)
+                try
                 {
-                    foreach (Credential cred in credentials.Objects)
+                    // Validate tenant
+                    TenantMetadata tenant = await _Database.Tenant.ReadByIdAsync(tenantId, token).ConfigureAwait(false);
+                    if (tenant == null || !tenant.Active)
                     {
-                        if (cred.UserId == user.Id && cred.Active)
+                        op.SetOutcome("unauthenticated");
+                        return new AuthenticateResult { Success = false, ErrorMessage = "Tenant not found or inactive." };
+                    }
+
+                    UserMaster user = await _Database.User.ReadByEmailAsync(tenantId, email, token).ConfigureAwait(false);
+                    if (user == null || !user.Active)
+                    {
+                        op.SetOutcome("unauthenticated");
+                        return new AuthenticateResult { Success = false, ErrorMessage = "Invalid email or password." };
+                    }
+
+                    if (!user.VerifyPassword(password))
+                    {
+                        op.SetOutcome("unauthenticated");
+                        return new AuthenticateResult { Success = false, ErrorMessage = "Invalid email or password." };
+                    }
+
+                    // Find an active credential for this user
+                    EnumerationQuery query = new EnumerationQuery { MaxResults = 100 };
+                    EnumerationResult<Credential> credentials = await _Database.Credential.EnumerateAsync(tenantId, query, token).ConfigureAwait(false);
+
+                    Credential credential = null;
+                    if (credentials?.Objects != null)
+                    {
+                        foreach (Credential cred in credentials.Objects)
                         {
-                            credential = cred;
-                            break;
+                            if (cred.UserId == user.Id && cred.Active)
+                            {
+                                credential = cred;
+                                break;
+                            }
                         }
                     }
+
+                    UserMaster redactedUser = RedactUser(user);
+
+                    return new AuthenticateResult
+                    {
+                        Success = true,
+                        User = redactedUser,
+                        Credential = credential,
+                        TenantId = tenant.Id,
+                        TenantName = tenant.Name,
+                        IsGlobalAdmin = user.IsAdmin,
+                        IsTenantAdmin = user.IsTenantAdmin
+                    };
                 }
-
-                UserMaster redactedUser = RedactUser(user);
-
-                return new AuthenticateResult
+                catch (Exception e)
                 {
-                    Success = true,
-                    User = redactedUser,
-                    Credential = credential,
-                    TenantId = tenant.Id,
-                    TenantName = tenant.Name,
-                    IsGlobalAdmin = user.IsAdmin,
-                    IsTenantAdmin = user.IsTenantAdmin
-                };
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during email/password authentication: " + e.Message);
-                return new AuthenticateResult { Success = false, ErrorMessage = "Authentication failed." };
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during email/password authentication: " + e.Message);
+                    return new AuthenticateResult { Success = false, ErrorMessage = "Authentication failed." };
+                }
             }
         }
 

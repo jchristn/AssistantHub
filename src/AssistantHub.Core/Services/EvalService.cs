@@ -13,6 +13,7 @@ namespace AssistantHub.Core.Services
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -189,8 +190,16 @@ namespace AssistantHub.Core.Services
 
         private async Task ExecuteRunAsync(EvalRun run, List<EvalFact> facts, AssistantSettings settings, string judgePrompt)
         {
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("eval", "run"))
             {
+                op.SetTag("eval.run_id", run.Id);
+                op.SetTag("assistant.id", run.AssistantId);
+                op.SetTag("tenant.id", run.TenantId);
+                op.SetTag("eval.execution_mode", run.ExecutionMode);
+                op.SetTag("eval.total_facts", facts?.Count ?? 0);
+
+                try
+                {
                 // Resolve inference endpoint (same logic as ChatHandler)
                 InferenceProviderEnum provider = _Settings.Inference.Provider;
                 string endpoint = _Settings.Inference.Endpoint;
@@ -369,18 +378,20 @@ namespace AssistantHub.Core.Services
                 await _Database.EvalRun.UpdateAsync(run).ConfigureAwait(false);
 
                 _Logging.Info(_Header + "eval run " + run.Id + " completed: " + passed + " passed, " + failed + " failed, " + run.PassRate + "% pass rate");
-            }
-            catch (Exception ex)
-            {
-                _Logging.Warn(_Header + "eval run " + run.Id + " failed: " + ex.Message);
-                run.Status = EvalStatusEnum.Failed;
-                run.CompletedUtc = DateTime.UtcNow;
-
-                try
-                {
-                    await _Database.EvalRun.UpdateAsync(run).ConfigureAwait(false);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    op.Fail(ex);
+                    _Logging.Warn(_Header + "eval run " + run.Id + " failed: " + ex.Message);
+                    run.Status = EvalStatusEnum.Failed;
+                    run.CompletedUtc = DateTime.UtcNow;
+
+                    try
+                    {
+                        await _Database.EvalRun.UpdateAsync(run).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
             }
         }
 

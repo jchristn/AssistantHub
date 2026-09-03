@@ -13,6 +13,7 @@ namespace AssistantHub.Core.Services
     using System.Threading.Tasks;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -97,9 +98,17 @@ namespace AssistantHub.Core.Services
 
             List<RetrievalChunk> results = new List<RetrievalChunk>();
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("retrieval", "search"))
             {
-                // Step 1: Embed the query (skip for FullText-only mode)
+                string mode = ResolveRetrievalMode(searchOptions.SearchMode);
+                op.SetTag("tenant.id", tenantId);
+                op.SetTag("collection.id", collectionId);
+                op.SetTag("retrieval.mode", mode);
+                op.SetTag("retrieval.top_k", topK);
+
+                try
+                {
+                    // Step 1: Embed the query (skip for FullText-only mode)
                 List<double> queryEmbeddings = null;
 
                 if (!searchOptions.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
@@ -161,13 +170,25 @@ namespace AssistantHub.Core.Services
                 }
 
                 _Logging.Info(_Header + "returning " + results.Count + " results above score threshold " + scoreThreshold);
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during retrieval: " + e.Message);
-            }
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during retrieval: " + e.Message);
+                }
 
-            return results;
+                op.SetTag("retrieval.result_count", results.Count);
+                AssistantHubTelemetry.RecordRetrievalResults(mode, results.Count);
+                return results;
+            }
+        }
+
+        private static string ResolveRetrievalMode(string searchMode)
+        {
+            if (String.IsNullOrEmpty(searchMode)) return "vector";
+            if (searchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase)) return "keyword";
+            if (searchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)) return "hybrid";
+            return "vector";
         }
 
         /// <summary>

@@ -18,6 +18,7 @@ namespace AssistantHub.Server.Services
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -68,6 +69,14 @@ namespace AssistantHub.Server.Services
             if (String.IsNullOrEmpty(request.AssistantId)) throw new ArgumentNullException(nameof(request.AssistantId));
             if (request.Messages == null || request.Messages.Count < 1) throw new ArgumentNullException(nameof(request.Messages));
 
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("chat", "respond"))
+            {
+                op.SetTag("assistant.id", request.AssistantId);
+                if (!String.IsNullOrEmpty(request.ThreadId)) op.SetTag("thread.id", request.ThreadId);
+                if (!String.IsNullOrEmpty(request.Origin)) op.SetTag("chat.origin", request.Origin);
+
+                try
+                {
             Assistant assistant = request.Assistant ?? await _Database.Assistant.ReadAsync(request.AssistantId, token).ConfigureAwait(false);
             if (assistant == null || !assistant.Active)
                 return new AssistantChatExecutionResult { Success = false, ErrorMessage = "Assistant not found." };
@@ -1001,6 +1010,13 @@ namespace AssistantHub.Server.Services
                 ChatHistoryId = persistedChatHistoryId,
                 ToolCalls = toolTraces
             };
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
         }
 
         private async Task<AnswerabilityCheckOutcome> RunAnswerabilityCheckAsync(

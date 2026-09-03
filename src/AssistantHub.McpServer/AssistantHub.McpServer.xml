@@ -234,6 +234,11 @@
             Debug settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.McpServer.Classes.AssistantHubMcpServerSettings.Telemetry">
+            <summary>
+            Telemetry (OpenTelemetry metrics and traces) settings.
+            </summary>
+        </member>
         <member name="T:AssistantHub.McpServer.Classes.AssistantHubServiceSettings">
             <summary>
             Upstream AssistantHub service settings.
@@ -484,6 +489,13 @@
             Register WebSocket methods.
             </summary>
         </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.Instrument(AssistantHub.McpServer.Classes.McpMethodDefinition,System.String)">
+            <summary>
+            Wrap a tool definition's handler so every invocation is timed and traced, tagged by tool name and
+            transport. Metrics and spans ride the AssistantHub meter/activity source and stay a no-op until a
+            telemetry host subscribes.
+            </summary>
+        </member>
         <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.ToJsonElement(Voltaic.Core.RpcParameters)">
             <summary>
             Convert Voltaic RPC parameters into a JsonElement so tool handlers can consume them.
@@ -558,6 +570,22 @@
             <summary>
             TCP port.
             </summary>
+        </member>
+        <member name="T:AssistantHub.McpServer.Classes.TelemetryBootstrap">
+            <summary>
+            Builds and starts the Radiant telemetry host that subscribes to the AssistantHub meter and activity
+            source and exports metrics and traces over OTLP. Emit-side code never references this type; it only
+            wires the exporter pipeline at the composition root.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.McpServer.Classes.TelemetryBootstrap.Start(AssistantHub.Core.Settings.TelemetrySettings,System.String,SyslogLogging.LoggingModule)">
+            <summary>
+            Start the telemetry host, or return null when telemetry is disabled or fails to start. Never throws.
+            </summary>
+            <param name="settings">Telemetry settings from configuration (environment variables override).</param>
+            <param name="defaultServiceName">The service.name to use when none is configured.</param>
+            <param name="logging">Logging module for diagnostics.</param>
+            <returns>A started <see cref="T:Radiant.RadiantHost"/>, or null.</returns>
         </member>
         <member name="T:AssistantHub.McpServer.Classes.WebSocketServerSettings">
             <summary>

@@ -14986,6 +14986,11 @@
             Crawl settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Telemetry">
+            <summary>
+            Telemetry (OpenTelemetry metrics and traces) settings.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
             <summary>
             Instantiate.
@@ -15601,6 +15606,61 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Settings.TelemetrySettings">
+            <summary>
+            OpenTelemetry / observability settings. These describe where metrics and traces are exported; the
+            emit surface itself (<see cref="T:AssistantHub.Core.Telemetry.AssistantHubTelemetry"/>) has no dependency
+            on any exporter. A telemetry host in the server/MCP executable reads these values (with environment
+            variables overriding, see below) and wires the OTLP pipeline.
+            <para>
+            Environment overrides: <c>ASSISTANTHUB_TELEMETRY_ENABLED</c> (true/false) overrides <see cref="P:AssistantHub.Core.Settings.TelemetrySettings.Enable"/>,
+            and <c>ASSISTANTHUB_OTLP_ENDPOINT</c> overrides <see cref="P:AssistantHub.Core.Settings.TelemetrySettings.OtlpEndpoint"/>.
+            </para>
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.Enable">
+            <summary>
+            Whether telemetry export is enabled. Default false; the docker observability stack sets the
+            ASSISTANTHUB_TELEMETRY_ENABLED environment variable to true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.ServiceName">
+            <summary>
+            The logical service name stamped as the service.name resource attribute. Null uses the host
+            default (assistanthub-server or assistanthub-mcp).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.OtlpEndpoint">
+            <summary>
+            The OTLP collector endpoint. Default http://localhost:4317 (gRPC). In docker this is set via the
+            ASSISTANTHUB_OTLP_ENDPOINT environment variable to the collector service.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.OtlpProtocol">
+            <summary>
+            The OTLP wire protocol: Grpc (port 4317) or HttpProtobuf (port 4318). Default Grpc.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.SamplingRatio">
+            <summary>
+            Head-based trace sampling ratio in the range 0.0 to 1.0. Default 1.0 (sample everything).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.EnableRuntimeMetrics">
+            <summary>
+            Whether to include .NET runtime instrumentation (GC, heap, threads). Default true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.TelemetrySettings.ExportIntervalMs">
+            <summary>
+            Metric export interval in milliseconds for the periodic OTLP reader. Default 15000.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.TelemetrySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Settings.VerbexSettings">
             <summary>
             Verbex service settings.
@@ -15696,6 +15756,158 @@
         <member name="M:AssistantHub.Core.Settings.WebserverSettings.#ctor">
             <summary>
             Instantiate.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Telemetry.AssistantHubTelemetry">
+            <summary>
+            AssistantHub telemetry emit surface. Instruments and spans are created through the .NET base class
+            library (<see cref="T:System.Diagnostics.Metrics.Meter"/> and <see cref="T:System.Diagnostics.ActivitySource"/>) so this type carries no dependency on
+            OpenTelemetry or any exporter. Emitting is a near-free no-op until a host (for example the Radiant
+            telemetry host in AssistantHub.Server or AssistantHub.McpServer) subscribes to the
+            <see cref="F:AssistantHub.Core.Telemetry.AssistantHubTelemetry.SourceName"/> meter and activity source by name.
+            <para>
+            Instrument names, units, and label keys follow the OpenTelemetry semantic conventions so the signals
+            render in stock Prometheus/Grafana dashboards. Durations are always seconds. Labels are kept
+            low-cardinality (methods, routes, domains, outcomes); identifiers belong on spans, not metrics.
+            </para>
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Telemetry.AssistantHubTelemetry.SourceName">
+            <summary>
+            The meter and activity source name a telemetry host subscribes to. Stable public contract.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Telemetry.AssistantHubTelemetry.Activity">
+            <summary>
+            The activity source used for all AssistantHub spans.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.IncrementHttpActive">
+            <summary>
+            Increment the in-flight HTTP request gauge. Pair with <see cref="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.DecrementHttpActive"/>.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.DecrementHttpActive">
+            <summary>
+            Decrement the in-flight HTTP request gauge.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordHttpRequest(System.String,System.String,System.Int32,System.Double)">
+            <summary>
+            Record a completed HTTP server request.
+            </summary>
+            <param name="method">HTTP method (for example GET).</param>
+            <param name="route">Matched route template (low cardinality), for example /v1.0/tenants/{id}.</param>
+            <param name="statusCode">HTTP response status code.</param>
+            <param name="seconds">Request duration in seconds.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.EmitHttpSpan(System.String,System.String,System.Int32,System.DateTime,System.DateTime)">
+            <summary>
+            Emit an HTTP server span with explicit start and end timestamps.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="route">Matched route template.</param>
+            <param name="statusCode">HTTP response status code.</param>
+            <param name="startUtc">Request start time (UTC).</param>
+            <param name="endUtc">Request end time (UTC).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.StartMcpTool(System.String,System.String)">
+            <summary>
+            Begin timing an MCP tool invocation. Dispose the returned scope when the invocation completes;
+            call <see cref="M:AssistantHub.Core.Telemetry.McpToolScope.Fail(System.Exception)"/> on failure.
+            </summary>
+            <param name="tool">The MCP tool name (for example assistant/list).</param>
+            <param name="transport">The transport the invocation arrived on (http, tcp, ws).</param>
+            <returns>A disposable MCP tool scope.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.StartOperation(System.String,System.String)">
+            <summary>
+            Begin timing an application-layer operation. Dispose the returned scope when the operation
+            completes; call <see cref="M:AssistantHub.Core.Telemetry.OperationScope.Fail(System.Exception)"/> on failure.
+            </summary>
+            <param name="domain">The operation domain (for example inference, retrieval, ingestion, storage).</param>
+            <param name="operation">The operation name (for example completion, search, ingest-document).</param>
+            <returns>A disposable operation scope.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordInferenceTokens(System.String,System.String,System.String,System.Int64)">
+            <summary>
+            Record tokens consumed or produced by an inference operation.
+            </summary>
+            <param name="provider">Inference provider (for example ollama, openai, gemini).</param>
+            <param name="model">Model name.</param>
+            <param name="tokenType">Token type: input or output.</param>
+            <param name="tokens">Token count.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordRetrievalResults(System.String,System.Int32)">
+            <summary>
+            Record the number of results returned by a retrieval query.
+            </summary>
+            <param name="mode">Retrieval mode (for example vector, keyword, hybrid).</param>
+            <param name="count">Result count.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordIngestedDocument(System.String)">
+            <summary>
+            Record a document processed by ingestion.
+            </summary>
+            <param name="outcome">Outcome (ok or error).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordIngestedChunks(System.Int64)">
+            <summary>
+            Record chunks produced during ingestion.
+            </summary>
+            <param name="count">Chunk count.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Telemetry.McpToolScope">
+            <summary>
+            Times a single MCP tool invocation and emits a span plus duration/count measurements on disposal.
+            Create via <see cref="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.StartMcpTool(System.String,System.String)"/>. Defaults to an "ok"
+            outcome; call <see cref="M:AssistantHub.Core.Telemetry.McpToolScope.Fail(System.Exception)"/> to mark failure. Safe to use even when no telemetry host
+            is listening.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.McpToolScope.Fail(System.Exception)">
+            <summary>
+            Mark this invocation as failed, record the exception on the span, and set the "error" outcome.
+            </summary>
+            <param name="exception">The failure.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.McpToolScope.Dispose">
+            <summary>
+            Record the duration and call-count measurements, decrement the in-flight gauge, and stop the span.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Telemetry.OperationScope">
+            <summary>
+            Times a single application-layer operation and emits a span plus a duration measurement on disposal.
+            Create via <see cref="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.StartOperation(System.String,System.String)"/>. The scope defaults to an
+            "ok" outcome; call <see cref="M:AssistantHub.Core.Telemetry.OperationScope.Fail(System.Exception)"/> (or <see cref="M:AssistantHub.Core.Telemetry.OperationScope.SetOutcome(System.String)"/>) to mark failure.
+            Safe to use even when no telemetry host is listening (the span is then inert).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.OperationScope.SetTag(System.String,System.Object)">
+            <summary>
+            Attach a tag to the underlying span (a no-op when nothing is sampling). Tags set here land on the
+            span only, never on the low-cardinality duration metric.
+            </summary>
+            <param name="key">Tag key.</param>
+            <param name="value">Tag value.</param>
+            <returns>This scope, for chaining.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.OperationScope.SetOutcome(System.String)">
+            <summary>
+            Set the outcome label recorded for this operation (default "ok").
+            </summary>
+            <param name="outcome">Outcome label (low cardinality).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.OperationScope.Fail(System.Exception)">
+            <summary>
+            Mark this operation as failed, record the exception on the span, and set the "error" outcome.
+            </summary>
+            <param name="exception">The failure.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.OperationScope.Dispose">
+            <summary>
+            Record the duration measurement and stop the span.
             </summary>
         </member>
     </members>

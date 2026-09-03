@@ -16,6 +16,7 @@ namespace AssistantHub.Server
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using AssistantHub.Server.Handlers;
     using AssistantHub.Server.Services;
     using SyslogLogging;
@@ -53,6 +54,7 @@ namespace AssistantHub.Server
         private static CrawlOperationCleanupService _CrawlOperationCleanup = null;
         private static ISlackAssistantConnectionManager _SlackConnectionManager = null;
         private static CancellationTokenSource _TokenSource = new CancellationTokenSource();
+        private static Radiant.RadiantHost _TelemetryHost = null;
         private static bool _ShuttingDown = false;
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace AssistantHub.Server
             Welcome();
             if (!InitializeSettings()) return;
             InitializeLogging();
+            _TelemetryHost = TelemetryBootstrap.Start(_Settings.Telemetry, "assistanthub-server", _Logging);
             await InitializeDatabaseAsync();
             await InitializeFirstRunAsync();
             await BackfillAssistantPerformanceTelemetryAsync();
@@ -116,6 +119,19 @@ namespace AssistantHub.Server
 
             if (_SlackConnectionManager != null)
                 await _SlackConnectionManager.StopAsync().ConfigureAwait(false);
+
+            if (_TelemetryHost != null)
+            {
+                try
+                {
+                    _TelemetryHost.ForceFlush(5000);
+                    _TelemetryHost.Dispose();
+                }
+                catch (Exception e)
+                {
+                    _Logging.Warn(_Header + "telemetry shutdown error: " + e.Message);
+                }
+            }
 
             _Logging.Info(_Header + "stopping at " + DateTime.UtcNow);
         }
@@ -927,6 +943,7 @@ namespace AssistantHub.Server
             _Server.Routes.PreRouting = async (ctx) =>
             {
                 ApplyCorsHeaders(ctx.Response, ctx.Request);
+                AssistantHubTelemetry.IncrementHttpActive();
                 await Task.CompletedTask.ConfigureAwait(false);
             };
 
@@ -943,6 +960,28 @@ namespace AssistantHub.Server
 
                 if (_RequestHistoryCapture != null)
                     _RequestHistoryCapture.Capture(ctx);
+
+                // Telemetry: record HTTP server metrics and emit a request span. Never let telemetry break a response.
+                try
+                {
+                    string method = ctx.Request.Method.ToString();
+                    string route = ResolveRoute(ctx);
+                    int status = ctx.Response.StatusCode;
+                    double seconds = (ctx.Timestamp.TotalMs ?? 0.0) / 1000.0;
+                    DateTime startUtc = ctx.Timestamp.Start;
+                    DateTime endUtc = ctx.Timestamp.End ?? DateTime.UtcNow;
+
+                    AssistantHubTelemetry.RecordHttpRequest(method, route, status, seconds);
+                    AssistantHubTelemetry.EmitHttpSpan(method, route, status, startUtc, endUtc);
+                }
+                catch (Exception te)
+                {
+                    _Logging.Debug(_Header + "telemetry post-routing error: " + te.Message);
+                }
+                finally
+                {
+                    AssistantHubTelemetry.DecrementHttpActive();
+                }
             };
 
             _Server.Start();
@@ -958,6 +997,30 @@ namespace AssistantHub.Server
             ctx.Response.StatusCode = 404;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Telemetry-Helpers
+
+        /// <summary>
+        /// Resolve the low-cardinality route template for a request (for example /v1.0/tenants/{id}) so it can
+        /// be used as a metric label. Returns null when no route matched (default/404), which the telemetry
+        /// layer records as "unmatched".
+        /// </summary>
+        private static string ResolveRoute(HttpContextBase ctx)
+        {
+            switch (ctx.Route)
+            {
+                case WatsonWebserver.Core.Routing.StaticRoute staticRoute:
+                    return staticRoute.Path;
+                case WatsonWebserver.Core.Routing.ParameterRoute parameterRoute:
+                    return parameterRoute.Path;
+                case WatsonWebserver.Core.Routing.ContentRoute contentRoute:
+                    return contentRoute.Path;
+                default:
+                    return null;
+            }
         }
 
         #endregion

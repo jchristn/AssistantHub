@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+storage:
+  exemplars:
+    max_exemplars: 100000
+
+scrape_configs:
+  - job_name: otel-collector
+    honor_labels: true
+    static_configs:
+      - targets: ["assistanthub-otel-collector:8889"]

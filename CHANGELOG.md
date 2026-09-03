@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 0.16.1
+
 ### Added
+- **OpenTelemetry metrics and tracing**: Instrumented the REST API (all routes), the MCP server (all tools across HTTP/TCP/WebSocket), and the application/service layer (inference, retrieval, ingestion, storage, chat, crawl, eval, auth) with `System.Diagnostics.Metrics.Meter` and `System.Diagnostics.ActivitySource` under a single `AssistantHub` meter/activity source, exported over OTLP via the Radiant telemetry host. Added a `Telemetry` settings section (with `ASSISTANTHUB_TELEMETRY_ENABLED`/`ASSISTANTHUB_OTLP_ENDPOINT` env overrides), a docker observability stack (OpenTelemetry Collector, Prometheus, Tempo, Loki, Grafana) with a pre-provisioned `AssistantHub` Grafana dashboard folder, an Observability links section on the dashboard Configuration page, and `TELEMETRY.md`. The published `AssistantHub.Core` package stays exporter-free (BCL emit only).
 - **CIFS and NFS crawler support**: Added CIFS/SMB and NFS repository types, file-server repository settings mapped from View's `DataRepository`, shared Blobject-backed crawler infrastructure, and lazy file-byte retrieval through `CrawlerBase`.
 - **File-server crawler product coverage**: Added dashboard create/edit support, REST/OpenAPI/Postman examples, C#/TypeScript/Python SDK models and tests, and archived the implementation checklist at `archive/FILE_CRAWLERS.md` for v0.16.0.
 - **Attached-document chat**: Added public assistant document listing, dashboard document selection, `attached_document_ids` chat requests, retrieval metadata for applied document filters, SDK/OpenAPI/Postman/REST coverage, and server validation that attached documents are completed records in the assistant tenant and collection.

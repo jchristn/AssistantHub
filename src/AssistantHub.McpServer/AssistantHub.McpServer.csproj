@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Title>AssistantHub.McpServer</Title>
-    <Version>0.16.0</Version>
+    <Version>0.16.1</Version>
     <Authors>Joel Christner</Authors>
     <Description>MCP server for AssistantHub.</Description>
     <Copyright>(c)2025 Joel Christner</Copyright>
@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Radiant" Version="0.1.2" />
     <PackageReference Include="SyslogLogging" Version="2.2.2" />
     <PackageReference Include="Voltaic" Version="0.6.1" />
   </ItemGroup>

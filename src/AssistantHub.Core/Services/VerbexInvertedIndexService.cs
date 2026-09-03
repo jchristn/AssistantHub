@@ -5,6 +5,7 @@ namespace AssistantHub.Core.Services
     using System.Text;
     using System.Threading.Tasks;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -60,15 +61,36 @@ namespace AssistantHub.Core.Services
             string path = relativePathAndQuery.StartsWith("/") ? relativePathAndQuery : "/" + relativePathAndQuery;
             string url = endpoint + path;
 
-            HttpRequestMessage request = new HttpRequestMessage(method, url);
-            if (!String.IsNullOrEmpty(_Settings.AccessKey))
-                request.Headers.Add("Authorization", "Bearer " + _Settings.AccessKey);
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("index", ResolveOperation(method, path)))
+            {
+                op.SetTag("http.method", method.Method);
+                op.SetTag("index.path", path);
 
-            if (!String.IsNullOrEmpty(body) && method != HttpMethod.Get && method != HttpMethod.Head)
-                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                try
+                {
+                    HttpRequestMessage request = new HttpRequestMessage(method, url);
+                    if (!String.IsNullOrEmpty(_Settings.AccessKey))
+                        request.Headers.Add("Authorization", "Bearer " + _Settings.AccessKey);
 
-            _Logging.Debug("[VerbexInvertedIndexService] " + method.Method + " " + path);
-            return await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                    if (!String.IsNullOrEmpty(body) && method != HttpMethod.Get && method != HttpMethod.Head)
+                        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                    _Logging.Debug("[VerbexInvertedIndexService] " + method.Method + " " + path);
+                    return await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    throw;
+                }
+            }
+        }
+
+        private static string ResolveOperation(HttpMethod method, string path)
+        {
+            if (!String.IsNullOrEmpty(path) && path.Contains("search", StringComparison.OrdinalIgnoreCase)) return "search";
+            if (method == HttpMethod.Delete) return "delete";
+            return "upsert";
         }
 
         #endregion

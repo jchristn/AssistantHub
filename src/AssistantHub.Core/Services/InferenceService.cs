@@ -16,6 +16,7 @@ namespace AssistantHub.Core.Services
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -329,55 +330,70 @@ namespace AssistantHub.Core.Services
 
             _Logging.Debug(_Header + "generating response using provider " + provider.ToString() + " model " + effectiveModel);
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("inference", "completion"))
             {
-                switch (provider)
+                op.SetTag("provider", provider.ToString());
+                op.SetTag("model", effectiveModel);
+
+                try
                 {
-                    case InferenceProviderEnum.OpenAI:
-                        return await GenerateOpenAIResponseAsync(
-                            fullSystemMessage,
-                            userMessage,
-                            effectiveModel,
-                            maxTokens,
-                            temperature,
-                            topP,
-                            effectiveEndpoint,
-                            effectiveApiKey,
-                            token).ConfigureAwait(false);
+                    InferenceResult result;
 
-                    case InferenceProviderEnum.Ollama:
-                        return await GenerateOllamaResponseAsync(
-                            fullSystemMessage,
-                            userMessage,
-                            effectiveModel,
-                            maxTokens,
-                            temperature,
-                            topP,
-                            effectiveEndpoint,
-                            effectiveApiKey,
-                            token).ConfigureAwait(false);
+                    switch (provider)
+                    {
+                        case InferenceProviderEnum.OpenAI:
+                            result = await GenerateOpenAIResponseAsync(
+                                fullSystemMessage,
+                                userMessage,
+                                effectiveModel,
+                                maxTokens,
+                                temperature,
+                                topP,
+                                effectiveEndpoint,
+                                effectiveApiKey,
+                                token).ConfigureAwait(false);
+                            break;
 
-                    case InferenceProviderEnum.Gemini:
-                        return await GenerateGeminiResponseAsync(
-                            fullSystemMessage,
-                            userMessage,
-                            effectiveModel,
-                            maxTokens,
-                            temperature,
-                            topP,
-                            effectiveEndpoint,
-                            effectiveApiKey,
-                            token).ConfigureAwait(false);
+                        case InferenceProviderEnum.Ollama:
+                            result = await GenerateOllamaResponseAsync(
+                                fullSystemMessage,
+                                userMessage,
+                                effectiveModel,
+                                maxTokens,
+                                temperature,
+                                topP,
+                                effectiveEndpoint,
+                                effectiveApiKey,
+                                token).ConfigureAwait(false);
+                            break;
 
-                    default:
-                        _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
-                        return InferenceResult.FromError("Unsupported inference provider: " + provider.ToString());
+                        case InferenceProviderEnum.Gemini:
+                            result = await GenerateGeminiResponseAsync(
+                                fullSystemMessage,
+                                userMessage,
+                                effectiveModel,
+                                maxTokens,
+                                temperature,
+                                topP,
+                                effectiveEndpoint,
+                                effectiveApiKey,
+                                token).ConfigureAwait(false);
+                            break;
+
+                        default:
+                            _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
+                            return InferenceResult.FromError("Unsupported inference provider: " + provider.ToString());
+                    }
+
+                    RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    return result;
                 }
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during inference: " + e.Message);
-                return InferenceResult.FromError("Inference exception: " + e.Message);
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during inference: " + e.Message);
+                    return InferenceResult.FromError("Inference exception: " + e.Message);
+                }
             }
         }
 
@@ -413,34 +429,49 @@ namespace AssistantHub.Core.Services
 
             _Logging.Debug(_Header + "generating multi-message response using provider " + provider.ToString() + " model " + effectiveModel);
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("inference", "completion"))
             {
-                switch (provider)
+                op.SetTag("provider", provider.ToString());
+                op.SetTag("model", effectiveModel);
+
+                try
                 {
-                    case InferenceProviderEnum.OpenAI:
-                        return await GenerateOpenAIResponseFromMessagesAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                    InferenceResult result;
 
-                    case InferenceProviderEnum.Ollama:
-                        return await GenerateOllamaResponseFromMessagesAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                    switch (provider)
+                    {
+                        case InferenceProviderEnum.OpenAI:
+                            result = await GenerateOpenAIResponseFromMessagesAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                            break;
 
-                    case InferenceProviderEnum.Gemini:
-                        return await GenerateGeminiResponseFromMessagesAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                        case InferenceProviderEnum.Ollama:
+                            result = await GenerateOllamaResponseFromMessagesAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                            break;
 
-                    default:
-                        _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
-                        return InferenceResult.FromError("Unsupported inference provider: " + provider.ToString());
+                        case InferenceProviderEnum.Gemini:
+                            result = await GenerateGeminiResponseFromMessagesAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey, token).ConfigureAwait(false);
+                            break;
+
+                        default:
+                            _Logging.Warn(_Header + "unsupported inference provider: " + provider.ToString());
+                            return InferenceResult.FromError("Unsupported inference provider: " + provider.ToString());
+                    }
+
+                    RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    return result;
                 }
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during inference: " + e.Message);
-                return InferenceResult.FromError("Inference exception: " + e.Message);
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during inference: " + e.Message);
+                    return InferenceResult.FromError("Inference exception: " + e.Message);
+                }
             }
         }
 
@@ -507,29 +538,44 @@ namespace AssistantHub.Core.Services
 
             _Logging.Debug(_Header + "generating tool-capable response using provider " + provider.ToString() + " model " + effectiveModel);
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("inference", "completion"))
             {
-                switch (provider)
+                op.SetTag("provider", provider.ToString());
+                op.SetTag("model", effectiveModel);
+                op.SetTag("inference.tools", true);
+
+                try
                 {
-                    case InferenceProviderEnum.OpenAI:
-                        return await GenerateOpenAIResponseWithToolsFromMessagesAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, tools, toolChoice, token).ConfigureAwait(false);
+                    InferenceResult result;
 
-                    case InferenceProviderEnum.Ollama:
-                        return await GenerateOllamaResponseWithToolsFromMessagesAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey, tools, token).ConfigureAwait(false);
+                    switch (provider)
+                    {
+                        case InferenceProviderEnum.OpenAI:
+                            result = await GenerateOpenAIResponseWithToolsFromMessagesAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey, tools, toolChoice, token).ConfigureAwait(false);
+                            break;
 
-                    default:
-                        _Logging.Warn(_Header + "tool calling is not supported for inference provider: " + provider.ToString());
-                        return InferenceResult.FromError("Tool calling is not supported for inference provider: " + provider.ToString());
+                        case InferenceProviderEnum.Ollama:
+                            result = await GenerateOllamaResponseWithToolsFromMessagesAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey, tools, token).ConfigureAwait(false);
+                            break;
+
+                        default:
+                            _Logging.Warn(_Header + "tool calling is not supported for inference provider: " + provider.ToString());
+                            return InferenceResult.FromError("Tool calling is not supported for inference provider: " + provider.ToString());
+                    }
+
+                    RecordInferenceTokensFromResult(provider, effectiveModel, result);
+                    return result;
                 }
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during tool-capable inference: " + e.Message);
-                return InferenceResult.FromError("Inference exception: " + e.Message);
+                catch (Exception e)
+                {
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during tool-capable inference: " + e.Message);
+                    return InferenceResult.FromError("Inference exception: " + e.Message);
+                }
             }
         }
 
@@ -579,67 +625,75 @@ namespace AssistantHub.Core.Services
 
             _Logging.Debug(_Header + "generating streaming response using provider " + provider.ToString() + " model " + effectiveModel);
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("inference", "completion"))
             {
-                switch (provider)
+                op.SetTag("provider", provider.ToString());
+                op.SetTag("model", effectiveModel);
+                op.SetTag("inference.streaming", true);
+
+                try
                 {
-                    case InferenceProviderEnum.OpenAI:
-                        await GenerateOpenAIStreamingAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
-                        break;
+                    switch (provider)
+                    {
+                        case InferenceProviderEnum.OpenAI:
+                            await GenerateOpenAIStreamingAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey,
+                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                            break;
 
-                    case InferenceProviderEnum.Ollama:
-                        await GenerateOllamaStreamingAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
-                        break;
+                        case InferenceProviderEnum.Ollama:
+                            await GenerateOllamaStreamingAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey,
+                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                            break;
 
-                    case InferenceProviderEnum.Gemini:
-                        await GenerateGeminiStreamingAsync(
-                            messages, effectiveModel, maxTokens, temperature, topP,
-                            effectiveEndpoint, effectiveApiKey,
-                            onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
-                        break;
+                        case InferenceProviderEnum.Gemini:
+                            await GenerateGeminiStreamingAsync(
+                                messages, effectiveModel, maxTokens, temperature, topP,
+                                effectiveEndpoint, effectiveApiKey,
+                                onDelta, onComplete, onError, onConnectionEstablished, onTelemetry, token, onThinkingDelta).ConfigureAwait(false);
+                            break;
 
-                    default:
-                        string error = "Unsupported inference provider: " + provider.ToString();
-                        onTelemetry?.Invoke(new AssistantPerformanceStage
-                        {
-                            Name = "streaming_inference",
-                            Kind = "inference",
-                            Provider = provider.ToString(),
-                            ApiFormat = provider.ToString(),
-                            Model = effectiveModel,
-                            EndpointName = effectiveEndpoint,
-                            EndpointType = "completion",
-                            Success = false,
-                            ErrorType = "UnsupportedProvider",
-                            ErrorMessage = error
-                        });
-                        await onError(error).ConfigureAwait(false);
-                        break;
+                        default:
+                            string error = "Unsupported inference provider: " + provider.ToString();
+                            onTelemetry?.Invoke(new AssistantPerformanceStage
+                            {
+                                Name = "streaming_inference",
+                                Kind = "inference",
+                                Provider = provider.ToString(),
+                                ApiFormat = provider.ToString(),
+                                Model = effectiveModel,
+                                EndpointName = effectiveEndpoint,
+                                EndpointType = "completion",
+                                Success = false,
+                                ErrorType = "UnsupportedProvider",
+                                ErrorMessage = error
+                            });
+                            await onError(error).ConfigureAwait(false);
+                            break;
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                _Logging.Warn(_Header + "exception during streaming inference: " + e.Message);
-                onTelemetry?.Invoke(new AssistantPerformanceStage
+                catch (Exception e)
                 {
-                    Name = "streaming_inference",
-                    Kind = "inference",
-                    Provider = provider.ToString(),
-                    ApiFormat = provider.ToString(),
-                    Model = effectiveModel,
-                    EndpointName = effectiveEndpoint,
-                    EndpointType = "completion",
-                    Success = false,
-                    ErrorType = e.GetType().Name,
-                    ErrorMessage = e.Message
-                });
-                await onError("Inference exception: " + e.Message).ConfigureAwait(false);
+                    op.Fail(e);
+                    _Logging.Warn(_Header + "exception during streaming inference: " + e.Message);
+                    onTelemetry?.Invoke(new AssistantPerformanceStage
+                    {
+                        Name = "streaming_inference",
+                        Kind = "inference",
+                        Provider = provider.ToString(),
+                        ApiFormat = provider.ToString(),
+                        Model = effectiveModel,
+                        EndpointName = effectiveEndpoint,
+                        EndpointType = "completion",
+                        Success = false,
+                        ErrorType = e.GetType().Name,
+                        ErrorMessage = e.Message
+                    });
+                    await onError("Inference exception: " + e.Message).ConfigureAwait(false);
+                }
             }
         }
 
@@ -707,6 +761,20 @@ namespace AssistantHub.Core.Services
             }
 
             return sb.ToString();
+        }
+
+        #endregion
+
+        #region Private-Methods
+
+        private static void RecordInferenceTokensFromResult(InferenceProviderEnum provider, string model, InferenceResult result)
+        {
+            AssistantTokenUsageTelemetry tokens = result?.Telemetry?.Tokens;
+            if (tokens == null) return;
+
+            string providerName = provider.ToString();
+            if (tokens.Input.HasValue) AssistantHubTelemetry.RecordInferenceTokens(providerName, model, "input", tokens.Input.Value);
+            if (tokens.Output.HasValue) AssistantHubTelemetry.RecordInferenceTokens(providerName, model, "output", tokens.Output.Value);
         }
 
         #endregion

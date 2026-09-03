@@ -280,12 +280,14 @@ services:
   # --- AssistantHub ---
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.16.0
+    image: jchristn77/assistanthub-server:v0.16.1
     container_name: assistanthub-server
     ports:
       - "8800:8800"
     environment:
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      ASSISTANTHUB_TELEMETRY_ENABLED: "true"
+      ASSISTANTHUB_OTLP_ENDPOINT: "http://assistanthub-otel-collector:4317"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -315,12 +317,15 @@ services:
     restart: unless-stopped
 
   assistanthub-mcp-server:
-    image: jchristn77/assistanthub-mcp:v0.16.0
+    image: jchristn77/assistanthub-mcp:v0.16.1
     container_name: assistanthub-mcp-server
     ports:
       - "8820:8820"
       - "8821:8821"
       - "8822:8822"
+    environment:
+      ASSISTANTHUB_TELEMETRY_ENABLED: "true"
+      ASSISTANTHUB_OTLP_ENDPOINT: "http://assistanthub-otel-collector:4317"
     volumes:
       - ./assistanthub-mcp/assistanthub-mcp.json:/app/assistanthub-mcp.json
       - ./assistanthub-mcp/logs/:/app/logs/
@@ -331,8 +336,81 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # --- Observability (OpenTelemetry, Prometheus, Tempo, Loki, Grafana) ---
+
+  assistanthub-otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    container_name: assistanthub-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+      - ./assistanthub/logs/:/logs/server/:ro
+      - ./assistanthub-mcp/logs/:/logs/mcp/:ro
+    restart: unless-stopped
+
+  assistanthub-prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: assistanthub-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--enable-feature=exemplar-storage"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - assistanthub-otel-collector
+    restart: unless-stopped
+
+  assistanthub-tempo:
+    image: grafana/tempo:2.6.1
+    container_name: assistanthub-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    ports:
+      - "3200:3200"
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    restart: unless-stopped
+
+  assistanthub-loki:
+    image: grafana/loki:3.2.1
+    container_name: assistanthub-loki
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+    restart: unless-stopped
+
+  assistanthub-grafana:
+    image: grafana/grafana:11.3.0
+    container_name: assistanthub-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/:ro
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - assistanthub-prometheus
+      - assistanthub-tempo
+      - assistanthub-loki
+    restart: unless-stopped
+
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.16.0
+    image: jchristn77/assistanthub-dashboard:v0.16.1
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"
@@ -349,3 +427,7 @@ services:
 volumes:
   postgres-data:
   ollama-models:
+  prometheus-data:
+  tempo-data:
+  loki-data:
+  grafana-data:

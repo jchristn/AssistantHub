@@ -159,6 +159,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _Crawl = value; }
         }
 
+        /// <summary>
+        /// Telemetry (OpenTelemetry metrics and traces) settings.
+        /// </summary>
+        public TelemetrySettings Telemetry
+        {
+            get => _Telemetry;
+            set { if (value != null) _Telemetry = value; }
+        }
+
         #endregion
 
         #region Private-Members
@@ -179,6 +188,7 @@ namespace AssistantHub.Core.Settings
         private RequestHistorySettings _RequestHistory = new RequestHistorySettings();
         private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
         private CrawlSettings _Crawl = new CrawlSettings();
+        private TelemetrySettings _Telemetry = new TelemetrySettings();
 
         #endregion
 

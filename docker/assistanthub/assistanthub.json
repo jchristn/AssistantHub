@@ -117,5 +117,14 @@
     "IncludeDateInFilename": true,
     "MinimumSeverity": 0,
     "Servers": []
+  },
+  "Telemetry": {
+    "Enable": true,
+    "ServiceName": "assistanthub-server",
+    "OtlpEndpoint": "http://assistanthub-otel-collector:4317",
+    "OtlpProtocol": "Grpc",
+    "SamplingRatio": 1.0,
+    "EnableRuntimeMetrics": true,
+    "ExportIntervalMs": 15000
   }
 }

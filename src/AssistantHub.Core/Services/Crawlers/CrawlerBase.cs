@@ -12,6 +12,7 @@ namespace AssistantHub.Core.Services.Crawlers
     using AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
+    using AssistantHub.Core.Telemetry;
     using SyslogLogging;
 
     /// <summary>
@@ -177,8 +178,13 @@ namespace AssistantHub.Core.Services.Crawlers
         {
             _CurrentEnumeration = new CrawlEnumeration();
 
-            try
+            using (OperationScope op = AssistantHubTelemetry.StartOperation("crawl", "crawl"))
             {
+                op.SetTag("crawl.plan_id", _CrawlPlan?.Id);
+                op.SetTag("crawl.operation_id", _CrawlOperation?.Id);
+
+                try
+                {
                 // Step 1: Set starting state
                 _Logging.Info(_Header + "starting crawl operation " + _CrawlOperation.Id + " for plan " + _CrawlPlan.Id);
                 _CrawlPlan.State = CrawlPlanStateEnum.Running;
@@ -328,23 +334,25 @@ namespace AssistantHub.Core.Services.Crawlers
                 _CrawlPlan.LastCrawlSuccess = (_CrawlOperation.State == CrawlOperationStateEnum.Success);
 
                 semaphore.Dispose();
-            }
-            catch (OperationCanceledException)
-            {
-                _CrawlOperation.State = CrawlOperationStateEnum.Canceled;
-                _CrawlOperation.StatusMessage = "Operation was canceled";
-                _Logging.Warn(_Header + "crawl operation " + _CrawlOperation.Id + " canceled");
-            }
-            catch (Exception ex)
-            {
-                _CrawlOperation.State = CrawlOperationStateEnum.Failed;
-                _CrawlOperation.StatusMessage = ex.Message;
-                _Logging.Alert(_Header + "crawl operation " + _CrawlOperation.Id + " failed: " + ex.Message);
-            }
-            finally
-            {
-                try
+                }
+                catch (OperationCanceledException)
                 {
+                    op.SetOutcome("canceled");
+                    _CrawlOperation.State = CrawlOperationStateEnum.Canceled;
+                    _CrawlOperation.StatusMessage = "Operation was canceled";
+                    _Logging.Warn(_Header + "crawl operation " + _CrawlOperation.Id + " canceled");
+                }
+                catch (Exception ex)
+                {
+                    op.Fail(ex);
+                    _CrawlOperation.State = CrawlOperationStateEnum.Failed;
+                    _CrawlOperation.StatusMessage = ex.Message;
+                    _Logging.Alert(_Header + "crawl operation " + _CrawlOperation.Id + " failed: " + ex.Message);
+                }
+                finally
+                {
+                    try
+                    {
                     // Update statistics
                     _CurrentEnumeration.Statistics = BuildStatistics();
 
@@ -369,12 +377,13 @@ namespace AssistantHub.Core.Services.Crawlers
                         + "| Objects processed         : " + (_CrawlOperation.ObjectsSuccess + _CrawlOperation.ObjectsFailed) + " (" + _CrawlOperation.ObjectsSuccess + " success, " + _CrawlOperation.ObjectsFailed + " failures)" + Environment.NewLine
                         + "| Total runtime             : " + runtimeMs.ToString("F2") + "ms");
                 }
-                catch (Exception ex)
-                {
-                    _Logging.Alert(_Header + "error during crawl finalization: " + ex.Message);
-                }
+                    catch (Exception ex)
+                    {
+                        _Logging.Alert(_Header + "error during crawl finalization: " + ex.Message);
+                    }
 
-                _CurrentEnumeration = null;
+                    _CurrentEnumeration = null;
+                }
             }
         }
 

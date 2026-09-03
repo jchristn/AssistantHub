@@ -914,6 +914,22 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/results/{resultId}", evalHandler.GetResultAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/judge-prompt/default", evalHandler.GetDefaultJudgePromptAsync);
 
+            // Preflight - Watson invokes this exclusively for OPTIONS (CORS preflight) requests
+            _Server.Routes.Preflight = async (ctx) =>
+            {
+                ApplyCorsHeaders(ctx.Response, ctx.Request);
+                ctx.Response.StatusCode = 204;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(ctx.Token).ConfigureAwait(false);
+            };
+
+            // Pre-routing - apply CORS headers to every non-OPTIONS response before it is handled
+            _Server.Routes.PreRouting = async (ctx) =>
+            {
+                ApplyCorsHeaders(ctx.Response, ctx.Request);
+                await Task.CompletedTask.ConfigureAwait(false);
+            };
+
             // Post-routing
             _Server.Routes.PostRouting = async (ctx) =>
             {
@@ -942,6 +958,63 @@ namespace AssistantHub.Server
             ctx.Response.StatusCode = 404;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region CORS
+
+        private static void ApplyCorsHeaders(HttpResponseBase response, HttpRequestBase request)
+        {
+            CorsSettings cors = _Settings?.Webserver?.Cors;
+            if (cors == null || !cors.Enable) return;
+
+            string origin = request.Headers.Get("Origin");
+            if (String.IsNullOrEmpty(origin)) return;
+
+            bool originAllowed = false;
+            string allowedOriginValue = null;
+
+            if (cors.AllowOrigins.Contains("*"))
+            {
+                originAllowed = true;
+                allowedOriginValue = cors.AllowCredentials ? origin : "*";
+            }
+            else
+            {
+                foreach (string allowedOrigin in cors.AllowOrigins)
+                {
+                    if (String.Equals(allowedOrigin, origin, StringComparison.OrdinalIgnoreCase))
+                    {
+                        originAllowed = true;
+                        allowedOriginValue = origin;
+                        break;
+                    }
+                }
+            }
+
+            if (!originAllowed) return;
+
+            response.Headers.Add("Access-Control-Allow-Origin", allowedOriginValue);
+
+            // When the allowed origin is echoed rather than "*", advertise that responses vary by origin
+            if (!String.Equals(allowedOriginValue, "*", StringComparison.Ordinal))
+                response.Headers.Add("Vary", "Origin");
+
+            if (cors.AllowMethods != null && cors.AllowMethods.Count > 0)
+                response.Headers.Add("Access-Control-Allow-Methods", String.Join(", ", cors.AllowMethods));
+
+            if (cors.AllowHeaders != null && cors.AllowHeaders.Count > 0)
+                response.Headers.Add("Access-Control-Allow-Headers", String.Join(", ", cors.AllowHeaders));
+
+            if (cors.ExposeHeaders != null && cors.ExposeHeaders.Count > 0)
+                response.Headers.Add("Access-Control-Expose-Headers", String.Join(", ", cors.ExposeHeaders));
+
+            if (cors.AllowCredentials)
+                response.Headers.Add("Access-Control-Allow-Credentials", "true");
+
+            if (request.Method == WatsonWebserver.Core.HttpMethod.OPTIONS && cors.MaxAgeSeconds > 0)
+                response.Headers.Add("Access-Control-Max-Age", cors.MaxAgeSeconds.ToString());
         }
 
         #endregion

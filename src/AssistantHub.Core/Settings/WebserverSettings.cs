@@ -32,12 +32,23 @@ namespace AssistantHub.Core.Settings
         /// </summary>
         public bool Ssl { get; set; } = false;
 
+        /// <summary>
+        /// Cross-Origin Resource Sharing (CORS) settings.
+        /// When absent or null in configuration, a new permissive instance is used.
+        /// </summary>
+        public CorsSettings Cors
+        {
+            get => _Cors;
+            set => _Cors = value ?? new CorsSettings();
+        }
+
         #endregion
 
         #region Private-Members
 
         private string _Hostname = "localhost";
         private int _Port = 8800;
+        private CorsSettings _Cors = new CorsSettings();
 
         #endregion
 

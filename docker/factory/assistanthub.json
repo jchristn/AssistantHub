@@ -2,7 +2,16 @@
   "Webserver": {
     "Hostname": "*",
     "Port": 8800,
-    "Ssl": false
+    "Ssl": false,
+    "Cors": {
+      "Enable": true,
+      "AllowOrigins": [ "*" ],
+      "AllowMethods": [ "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS" ],
+      "AllowHeaders": [ "*" ],
+      "ExposeHeaders": [],
+      "AllowCredentials": false,
+      "MaxAgeSeconds": 86400
+    }
   },
   "Database": {
     "Type": "Postgresql",

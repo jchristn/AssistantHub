@@ -15036,6 +15036,63 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Settings.CorsSettings">
+            <summary>
+            Cross-Origin Resource Sharing (CORS) settings.
+            Defaults are permissive so that a missing CORS section in configuration
+            yields a fully-open, browser-friendly instance.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.Enable">
+            <summary>
+            Enable or disable CORS support.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.AllowOrigins">
+            <summary>
+            List of allowed origins. Use "*" to allow all origins.
+            When AllowCredentials is true, "*" is not permitted and the matching
+            request origin is echoed back instead.
+            Default is "*" (all origins allowed).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.AllowMethods">
+            <summary>
+            List of allowed HTTP methods.
+            Default: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.AllowHeaders">
+            <summary>
+            List of allowed request headers.
+            Default is "*" (all headers allowed).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.ExposeHeaders">
+            <summary>
+            List of response headers to expose to the browser.
+            Default is empty.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.AllowCredentials">
+            <summary>
+            Whether to allow credentials (cookies, authorization headers).
+            When true, AllowOrigins cannot contain "*"; the request origin is echoed instead.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CorsSettings.MaxAgeSeconds">
+            <summary>
+            How long (in seconds) browsers should cache preflight results.
+            Default is 86400 (24 hours). Minimum is 0, maximum is 86400.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Settings.CorsSettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Settings.CrawlSettings">
             <summary>
             Crawl settings.
@@ -15628,6 +15685,12 @@
         <member name="P:AssistantHub.Core.Settings.WebserverSettings.Ssl">
             <summary>
             Enable or disable SSL.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.WebserverSettings.Cors">
+            <summary>
+            Cross-Origin Resource Sharing (CORS) settings.
+            When absent or null in configuration, a new permissive instance is used.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.WebserverSettings.#ctor">

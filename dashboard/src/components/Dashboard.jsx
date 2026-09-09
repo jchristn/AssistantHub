@@ -43,6 +43,7 @@ import CollectionsHub from '../views/hubs/CollectionsHub';
 import IndicesHub from '../views/hubs/IndicesHub';
 import EndpointsHub from '../views/hubs/EndpointsHub';
 import AuthenticationHub from '../views/hubs/AuthenticationHub';
+import AnalyticsHub from '../views/hubs/AnalyticsHub';
 
 function Dashboard() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
@@ -121,7 +122,8 @@ function Dashboard() {
             <Route path="/evaluation" element={<Navigate to="/assistants?tab=evaluation" replace />} />
 
             {/* Monitoring */}
-            {isAdminOrTenantAdmin && <Route path="/request-history" element={<RequestHistoryView />} />}
+            {isAdminOrTenantAdmin && <Route path="/analytics" element={<AnalyticsHub />} />}
+            {isAdminOrTenantAdmin && <Route path="/request-history" element={<Navigate to="/analytics?tab=requests" replace />} />}
             {isAdminOrTenantAdmin && <Route path="/api-explorer" element={<ApiExplorerView />} />}
 
             {/* Artifacts */}

@@ -337,6 +337,16 @@ class AssistantHubClientParityMixin:
         response = self._request("GET", f"/v1.0/documents/{document_id}/performance")
         return response.json()
 
+    def get_ingestion_analytics(self, hours: int | None = None, max_results: int | None = None) -> dict[str, Any]:
+        parts = []
+        if hours is not None:
+            parts.append(f"hours={hours}")
+        if max_results is not None:
+            parts.append(f"maxResults={max_results}")
+        query = ("?" + "&".join(parts)) if parts else ""
+        response = self._request("GET", f"/v1.0/analytics/ingestion{query}")
+        return response.json()
+
     def reindex_document(self, document_id: str) -> DocumentReindexResult:
         response = self._request("POST", f"/v1.0/documents/{document_id}/reindex", json={})
         return DocumentReindexResult.model_validate(response.json())

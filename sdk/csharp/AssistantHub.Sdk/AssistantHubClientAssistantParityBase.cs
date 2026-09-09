@@ -390,6 +390,17 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Retrieve tenant-wide ingestion performance events within a time window (analytics).
+        /// </summary>
+        public async Task<JsonElement> GetIngestionAnalyticsAsync(int? hours = null, int? maxResults = null, CancellationToken cancellationToken = default)
+        {
+            string query = "";
+            if (hours.HasValue) query += (query.Length == 0 ? "?" : "&") + "hours=" + hours.Value;
+            if (maxResults.HasValue) query += (query.Length == 0 ? "?" : "&") + "maxResults=" + maxResults.Value;
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/analytics/ingestion" + query, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Download a stored document.
         /// </summary>
         public async Task<byte[]> DownloadDocumentAsync(string documentId, CancellationToken cancellationToken = default)

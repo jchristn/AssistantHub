@@ -1069,6 +1069,11 @@
             List performance events for a document, ordered by pipeline sequence.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.ListByTenantAsync(System.String,System.DateTime,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            List performance events for a tenant created on or after a timestamp, most recent first, bounded by maxResults.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Delete performance events for a document.
@@ -1807,6 +1812,9 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.ListByTenantAsync(System.String,System.DateTime,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
@@ -2344,6 +2352,9 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.ListByTenantAsync(System.String,System.DateTime,System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
@@ -2886,6 +2897,9 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.ListByTenantAsync(System.String,System.DateTime,System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
@@ -3803,6 +3817,9 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.ListByTenantAsync(System.String,System.DateTime,System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">

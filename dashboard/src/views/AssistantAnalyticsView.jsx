@@ -720,7 +720,7 @@ function AssistantAnalyticsView({ embedded = false, scopeAssistantId = '' }) {
   };
 
   const openRequestHistory = (requestHistoryId) => {
-    navigate(`/request-history?requestId=${encodeURIComponent(requestHistoryId)}`);
+    navigate(`/analytics?tab=requests&requestId=${encodeURIComponent(requestHistoryId)}`);
   };
 
   const overview = data.overview;

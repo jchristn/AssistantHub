@@ -888,6 +888,54 @@ namespace AssistantHub.Server.Handlers
             }
         }
 
+        /// <summary>
+        /// GET /v1.0/analytics/ingestion - Ingestion performance events for the caller's tenant within a
+        /// time window. Query params: hours (default 24, max 2160), maxResults (default 5000, max 50000).
+        /// </summary>
+        public async Task GetIngestionAnalyticsAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = GetAuthContext(ctx);
+                if (auth == null || String.IsNullOrEmpty(auth.TenantId))
+                {
+                    ctx.Response.StatusCode = 403;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthorizationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                int hours = 24;
+                int maxResults = 5000;
+                string hoursStr = ctx.Request.Query.Elements.Get("hours");
+                string maxStr = ctx.Request.Query.Elements.Get("maxResults");
+                if (!String.IsNullOrEmpty(hoursStr) && int.TryParse(hoursStr, out int h) && h > 0) hours = Math.Min(h, 2160);
+                if (!String.IsNullOrEmpty(maxStr) && int.TryParse(maxStr, out int m) && m > 0) maxResults = Math.Min(m, 50000);
+
+                DateTime sinceUtc = DateTime.UtcNow.AddHours(-hours);
+                List<DocumentPerformanceEvent> events = await Database.DocumentPerformanceEvent.ListByTenantAsync(auth.TenantId, sinceUtc, maxResults).ConfigureAwait(false);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new
+                {
+                    WindowStartUtc = sinceUtc,
+                    WindowEndUtc = DateTime.UtcNow,
+                    TotalRecords = events.Count,
+                    Events = events
+                })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetIngestionAnalyticsAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
         #region Private-Classes
 
         #endregion

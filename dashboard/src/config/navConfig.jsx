@@ -52,7 +52,7 @@ export const navSections = [
     label: 'Monitoring',
     gate: 'adminOrTenant',
     items: [
-      { path: '/request-history', label: 'Request History', gate: 'adminOrTenant', icon: icon.requestHistory, matchers: ['/request-history'] },
+      { path: '/analytics', label: 'Analytics', gate: 'adminOrTenant', icon: icon.requestHistory, matchers: ['/analytics', '/request-history'] },
       { path: '/api-explorer', label: 'API Explorer', gate: 'adminOrTenant', icon: icon.apiExplorer, matchers: ['/api-explorer'] },
     ],
   },

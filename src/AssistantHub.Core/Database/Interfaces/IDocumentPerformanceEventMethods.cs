@@ -26,6 +26,11 @@ namespace AssistantHub.Core.Database.Interfaces
         Task<List<DocumentPerformanceEvent>> ListByDocumentIdAsync(string documentId, CancellationToken token = default);
 
         /// <summary>
+        /// List performance events for a tenant created on or after a timestamp, most recent first, bounded by maxResults.
+        /// </summary>
+        Task<List<DocumentPerformanceEvent>> ListByTenantAsync(string tenantId, DateTime sinceUtc, int maxResults, CancellationToken token = default);
+
+        /// <summary>
         /// Delete performance events for a document.
         /// </summary>
         Task DeleteByDocumentIdAsync(string documentId, CancellationToken token = default);

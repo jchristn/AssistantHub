@@ -30,6 +30,13 @@ namespace Test.Shared
         public Task<List<DocumentPerformanceEvent>> ListByDocumentIdAsync(string documentId, CancellationToken token = default)
             => Task.FromResult(Store.Values.Where(evt => evt.DocumentId == documentId).OrderBy(evt => evt.SequenceNumber).ToList());
 
+        public Task<List<DocumentPerformanceEvent>> ListByTenantAsync(string tenantId, DateTime sinceUtc, int maxResults, CancellationToken token = default)
+            => Task.FromResult(Store.Values
+                .Where(evt => evt.TenantId == tenantId && evt.CreatedUtc >= sinceUtc)
+                .OrderByDescending(evt => evt.CreatedUtc)
+                .Take(maxResults > 0 ? maxResults : 5000)
+                .ToList());
+
         public Task DeleteByDocumentIdAsync(string documentId, CancellationToken token = default)
         {
             foreach (DocumentPerformanceEvent evt in Store.Values.Where(evt => evt.DocumentId == documentId).ToList())

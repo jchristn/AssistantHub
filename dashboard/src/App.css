@@ -3741,6 +3741,69 @@ body {
   padding: 1rem 0;
 }
 
+/* Ingestion analytics: range selector + time-series bar chart */
+.ing-range {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.ing-range-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ing-range-btn:hover {
+  color: var(--text-primary);
+}
+
+.ing-range-btn.active {
+  background: var(--accent-color, #3b82f6);
+  border-color: var(--accent-color, #3b82f6);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ing-barchart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 160px;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ing-bar-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.ing-bar {
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent-color, #3b82f6);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.2s ease;
+}
+
+.ing-barchart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.375rem;
+}
+
 @media (max-width: 640px) {
   .ah-perf-timing-row {
     grid-template-columns: 110px 1fr 92px;

@@ -570,6 +570,15 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/documents/${encodeURIComponent(documentId)}/performance`);
   }
 
+  /** Get tenant-wide ingestion performance events within a time window (analytics). */
+  async getIngestionAnalytics(params?: { hours?: number; maxResults?: number }): Promise<unknown> {
+    const q = new URLSearchParams();
+    if (params?.hours != null) q.set("hours", String(params.hours));
+    if (params?.maxResults != null) q.set("maxResults", String(params.maxResults));
+    const qs = q.toString();
+    return this._request("GET", `/v1.0/analytics/ingestion${qs ? `?${qs}` : ""}`);
+  }
+
   /** Download a document file. Returns the raw Response for binary handling. */
   async downloadDocument(documentId: string): Promise<Response> {
     return this._requestRaw("GET", `/v1.0/documents/${encodeURIComponent(documentId)}/download`);

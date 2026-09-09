@@ -63,6 +63,18 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
         }
 
         /// <inheritdoc />
+        public async Task<List<DocumentPerformanceEvent>> ListByTenantAsync(string tenantId, DateTime sinceUtc, int maxResults, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            int limit = maxResults > 0 ? maxResults : 5000;
+            DataTable result = await _Driver.ExecuteQueryAsync("SELECT * FROM document_performance_events WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' AND created_utc >= '" + _Driver.FormatDateTime(sinceUtc) + "' ORDER BY created_utc DESC LIMIT " + limit, false, token).ConfigureAwait(false);
+            List<DocumentPerformanceEvent> ret = new List<DocumentPerformanceEvent>();
+            if (result == null) return ret;
+            foreach (DataRow row in result.Rows) ret.Add(DocumentPerformanceEvent.FromDataRow(row));
+            return ret;
+        }
+
+        /// <inheritdoc />
         public async Task DeleteByDocumentIdAsync(string documentId, CancellationToken token = default)
         {
             if (String.IsNullOrEmpty(documentId)) throw new ArgumentNullException(nameof(documentId));

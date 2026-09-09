@@ -991,6 +991,12 @@
             GET /v1.0/documents/{documentId}/performance - Get per-stage ingestion performance for a document.
             </summary>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetIngestionAnalyticsAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/analytics/ingestion - Ingestion performance events for the caller's tenant within a
+            time window. Query params: hours (default 24, max 2160), maxResults (default 5000, max 50000).
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.EmbeddingEndpointHandler">
             <summary>
             Handles embedding endpoint CRUD routes by proxying to Partio (admin only).

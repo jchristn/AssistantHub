@@ -104,6 +104,11 @@
             Chat history performance event identifier prefix.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Constants.DocumentPerformanceEventIdentifierPrefix">
+            <summary>
+            Document performance event identifier prefix.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Constants.AssistantToolCallRecordIdentifierPrefix">
             <summary>
             Assistant tool-call record identifier prefix.
@@ -312,6 +317,11 @@
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.ChatHistoryPerformanceEvent">
             <summary>
             Chat history performance event methods.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.DocumentPerformanceEvent">
+            <summary>
+            Document performance event methods.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Database.DatabaseDriverBase.AssistantToolCall">
@@ -1039,6 +1049,36 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods">
+            <summary>
+            Document performance event database methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.DocumentPerformanceEvent,System.Threading.CancellationToken)">
+            <summary>
+            Create a performance event.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.DocumentPerformanceEvent},System.Threading.CancellationToken)">
+            <summary>
+            Create multiple performance events.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            List performance events for a document, ordered by pipeline sequence.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete performance events for a document.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IDocumentPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Delete performance events older than a retention period.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IEvalFactMethods">
             <summary>
             Eval fact database methods interface.
@@ -1745,6 +1785,34 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods">
+            <summary>
+            MySQL document performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Mysql.MysqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the MySQL document performance-event data access layer.
+            </summary>
+            <param name="driver">MySQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.DocumentPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.DocumentPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.DocumentPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.IngestionRuleMethods">
             <summary>
             MySQL ingestion rule methods implementation.
@@ -2254,6 +2322,34 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods">
+            <summary>
+            PostgreSQL document performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Postgresql.PostgresqlDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the PostgreSQL document performance-event data access layer.
+            </summary>
+            <param name="driver">PostgreSQL database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.DocumentPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.DocumentPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.DocumentPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.IngestionRuleMethods">
@@ -2768,6 +2864,34 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods">
+            <summary>
+            SQLite document performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.#ctor(AssistantHub.Core.Database.Sqlite.SqliteDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the SQLite document performance-event data access layer.
+            </summary>
+            <param name="driver">SQLite database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.DocumentPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.DocumentPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.DocumentPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.EvalFactMethods">
@@ -3659,6 +3783,34 @@
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.CredentialMethods.DeleteByUserIdAsync(System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods">
+            <summary>
+            SQL Server document performance event methods.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.#ctor(AssistantHub.Core.Database.SqlServer.SqlServerDatabaseDriver,AssistantHub.Core.Settings.DatabaseSettings,SyslogLogging.LoggingModule)">
+            <summary>
+            Instantiate the SQL Server document performance-event data access layer.
+            </summary>
+            <param name="driver">SQL Server database driver.</param>
+            <param name="settings">Database settings.</param>
+            <param name="logging">Logging module.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.CreateAsync(AssistantHub.Core.Models.DocumentPerformanceEvent,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.CreateManyAsync(System.Collections.Generic.IEnumerable{AssistantHub.Core.Models.DocumentPerformanceEvent},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.ListByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.DeleteByDocumentIdAsync(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.DocumentPerformanceEventMethods.DeleteExpiredAsync(System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.IngestionRuleMethods">
             <summary>
             SQL Server ingestion rule methods implementation.
@@ -4441,6 +4593,12 @@
             Generate a chat history performance event identifier.
             </summary>
             <returns>Chat history performance event identifier.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewDocumentPerformanceEventId">
+            <summary>
+            Generate a new document performance event identifier.
+            </summary>
+            <returns>Document performance event identifier.</returns>
         </member>
         <member name="M:AssistantHub.Core.Helpers.IdGenerator.NewAssistantToolCallRecordId">
             <summary>
@@ -9187,6 +9345,83 @@
             <param name="row">Data row.</param>
             <returns>Credential instance or null.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Models.DocumentPerformanceEvent">
+            <summary>
+            Queryable performance event capturing the duration of a single document ingestion stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.Id">
+            <summary>
+            Event identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.TenantId">
+            <summary>
+            Tenant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.DocumentId">
+            <summary>
+            Associated document identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.IngestionRuleId">
+            <summary>
+            Ingestion rule identifier applied to the document, when available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.SequenceNumber">
+            <summary>
+            Ordering value within the ingestion pipeline.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.Stage">
+            <summary>
+            Stage name, such as "File download from S3", "Type detection", "Summarization", or "Chunking".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.Detail">
+            <summary>
+            Optional human-readable detail describing the stage result.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.StartedUtc">
+            <summary>
+            UTC timestamp when the stage started.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.FinishedUtc">
+            <summary>
+            UTC timestamp when the stage finished.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.DurationMs">
+            <summary>
+            Stage duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.Success">
+            <summary>
+            Indicates whether the stage completed successfully.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.ErrorMessage">
+            <summary>
+            Error message, when the stage failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.DocumentPerformanceEvent.CreatedUtc">
+            <summary>
+            UTC timestamp when the event row was created.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.DocumentPerformanceEvent.FromDataRow(System.Data.DataRow)">
+            <summary>
+            Build an event from a data row.
+            </summary>
+            <param name="row">Data row.</param>
+            <returns>Document performance event.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Models.DocumentReindexBatchResult">
             <summary>
             Result for a batch document Verbex reindex operation.
@@ -13880,6 +14115,12 @@
             <param name="documentId">Document identifier.</param>
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionService.RecordPerfEventAsync(System.String,System.String,System.String,System.Int32,System.String,System.String,System.Diagnostics.Stopwatch,System.Threading.CancellationToken,System.Boolean,System.String)">
+            <summary>
+            Persist a single ingestion stage timing as a first-class performance event. Failures here never
+            interrupt the ingestion pipeline.
+            </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionService.DeleteEmbeddingBatchAsync(System.String,System.String,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
             <summary>

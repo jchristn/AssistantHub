@@ -7,6 +7,7 @@ import CopyableId from '../components/CopyableId';
 import DocumentUploadModal from '../components/modals/DocumentUploadModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ProcessingLogModal from '../components/modals/ProcessingLogModal';
+import IngestionPerformanceModal from '../components/modals/IngestionPerformanceModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import DropRuleModal from '../components/DropRuleModal';
@@ -52,6 +53,7 @@ function DocumentsView() {
   const [showUpload, setShowUpload] = useState(false);
   const [showJson, setShowJson] = useState(null);
   const [showLogs, setShowLogs] = useState(null);
+  const [showPerformance, setShowPerformance] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
@@ -169,6 +171,7 @@ function DocumentsView() {
     const actions = [
       { label: 'View JSON', onClick: () => setShowJson(row) },
       { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
+      { label: 'View Ingestion Performance', onClick: () => setShowPerformance(row) },
     ];
     if ((isAdmin || isTenantAdmin) && canReindexDocument(row)) {
       actions.push({ label: 'Reindex into Verbex', onClick: () => handleReindex(row) });
@@ -312,6 +315,7 @@ function DocumentsView() {
       {showUpload && <DocumentUploadModal ingestionRules={ingestionRules} onUpload={handleUpload} onClose={() => setShowUpload(false)} />}
       {showJson && <JsonViewModal title="Document JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}
+      {showPerformance && <IngestionPerformanceModal api={api} doc={showPerformance} onClose={() => setShowPerformance(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {cancelTarget && <ConfirmModal title="Cancel Ingestion" message="This document will be deleted. Are you sure you wish to cancel ingestion?" confirmLabel="Cancel Ingestion" loadingLabel="Cancelling..." isLoading={cancelling} danger onConfirm={handleCancelIngestion} onClose={() => setCancelTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}

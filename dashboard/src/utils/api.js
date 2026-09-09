@@ -609,6 +609,7 @@ export class ApiClient {
   getDocuments(params) { return this.request('GET', '/v1.0/documents' + this.buildQuery(params)); }
   getDocument(id) { return this.request('GET', `/v1.0/documents/${id}`); }
   getDocumentProcessingLog(id) { return this.request('GET', `/v1.0/documents/${id}/processing-log`); }
+  getDocumentPerformance(id) { return this.request('GET', `/v1.0/documents/${id}/performance`); }
   reindexDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reindex`, {}); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
   deleteDocuments(ids) { return this.request('POST', '/v1.0/documents/delete', { DocumentIds: ids }); }

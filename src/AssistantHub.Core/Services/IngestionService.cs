@@ -256,6 +256,11 @@ namespace AssistantHub.Core.Services
                         await _ProcessingLog.LogAsync(documentId, "INFO", "Ingestion rule loaded: no rule").ConfigureAwait(false);
                 }
 
+                // Prepare per-stage performance capture for this run (clear any prior run's events first).
+                int perfSequence = 0;
+                try { await _Database.DocumentPerformanceEvent.DeleteByDocumentIdAsync(documentId, token).ConfigureAwait(false); }
+                catch (Exception perfEx) { _Logging.Warn(_Header + "failed to clear prior performance events for document " + documentId + ": " + perfEx.Message); }
+
                 // Step 2: Update status to TypeDetecting
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.TypeDetecting, "Detecting document type.", token).ConfigureAwait(false);
 
@@ -279,6 +284,7 @@ namespace AssistantHub.Core.Services
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "File download from S3", "bucket: " + (document.BucketName ?? "default") + ", key: " + document.S3Key + ", " + fileBytes.Length + " bytes", downloadSw).ConfigureAwait(false);
+                await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "File download from S3", fileBytes.Length + " bytes", downloadSw, token).ConfigureAwait(false);
 
                 _Logging.Debug(_Header + "downloaded " + fileBytes.Length + " bytes for document " + documentId);
 
@@ -301,6 +307,7 @@ namespace AssistantHub.Core.Services
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Type detection", "detected type: " + detectedType, typeDetectSw).ConfigureAwait(false);
+                await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "Type detection", "detected type: " + detectedType, typeDetectSw, token).ConfigureAwait(false);
 
                 // Update document content type from type detection result
                 if (!String.IsNullOrEmpty(typeDetectResult.MimeType) && document.ContentType != typeDetectResult.MimeType)
@@ -333,6 +340,7 @@ namespace AssistantHub.Core.Services
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Atom extraction", extractedContent.Length + " characters extracted", extractSw).ConfigureAwait(false);
+                await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "Atom extraction", extractedContent.Length + " characters extracted", extractSw, token).ConfigureAwait(false);
 
                 _Logging.Debug(_Header + "extracted " + extractedContent.Length + " characters from document " + documentId);
 
@@ -442,9 +450,12 @@ namespace AssistantHub.Core.Services
 
                 if (hasSummarization && _ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Summarization", "summarization complete, " + chunks.Count + " chunks generated", summarizeSw).ConfigureAwait(false);
+                if (hasSummarization)
+                    await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "Summarization", chunks.Count + " chunks generated", summarizeSw, token).ConfigureAwait(false);
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Chunking", chunks.Count + " chunks generated", chunkSw).ConfigureAwait(false);
+                await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "Chunking", chunks.Count + " chunks generated", chunkSw, token).ConfigureAwait(false);
 
                 op.SetTag("ingestion.chunk_count", chunks.Count);
                 AssistantHubTelemetry.RecordIngestedChunks(chunks.Count);
@@ -488,6 +499,7 @@ namespace AssistantHub.Core.Services
 
                 if (_ProcessingLog != null)
                     await _ProcessingLog.LogStepCompleteAsync(documentId, "Embedding storage", storedCount + "/" + chunks.Count + " stored", storeSw).ConfigureAwait(false);
+                await RecordPerfEventAsync(documentId, tenantId, rule?.Id, perfSequence++, "Embedding storage", storedCount + "/" + chunks.Count + " stored", storeSw, token).ConfigureAwait(false);
 
                 _Logging.Info(_Header + "stored " + storedCount + "/" + chunks.Count + " embeddings for document " + documentId);
 
@@ -523,6 +535,51 @@ namespace AssistantHub.Core.Services
                     op.SetTag("ingestion.outcome", ingestOutcome);
                     AssistantHubTelemetry.RecordIngestedDocument(ingestOutcome);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Persist a single ingestion stage timing as a first-class performance event. Failures here never
+        /// interrupt the ingestion pipeline.
+        /// </summary>
+        private async Task RecordPerfEventAsync(
+            string documentId,
+            string tenantId,
+            string ingestionRuleId,
+            int sequence,
+            string stage,
+            string detail,
+            Stopwatch sw,
+            CancellationToken token,
+            bool success = true,
+            string error = null)
+        {
+            try
+            {
+                sw?.Stop();
+                double ms = sw != null ? sw.Elapsed.TotalMilliseconds : 0;
+                DateTime finished = DateTime.UtcNow;
+
+                DocumentPerformanceEvent evt = new DocumentPerformanceEvent
+                {
+                    DocumentId = documentId,
+                    IngestionRuleId = ingestionRuleId,
+                    SequenceNumber = sequence,
+                    Stage = stage,
+                    Detail = detail,
+                    StartedUtc = finished.AddMilliseconds(-ms),
+                    FinishedUtc = finished,
+                    DurationMs = ms,
+                    Success = success,
+                    ErrorMessage = error
+                };
+                if (!String.IsNullOrEmpty(tenantId)) evt.TenantId = tenantId;
+
+                await _Database.DocumentPerformanceEvent.CreateAsync(evt, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "failed to record performance event for document " + documentId + " stage " + stage + ": " + e.Message);
             }
         }
 

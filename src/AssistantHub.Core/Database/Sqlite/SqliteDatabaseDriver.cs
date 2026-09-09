@@ -57,6 +57,7 @@ namespace AssistantHub.Core.Database.Sqlite
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
+            DocumentPerformanceEvent = new DocumentPerformanceEventMethods(this, _Settings, _Logging);
             AssistantToolCall = new AssistantToolCallMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             CrawlPlan = new CrawlPlanMethods(this, _Settings, _Logging);

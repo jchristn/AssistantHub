@@ -986,6 +986,11 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.GetDocumentPerformanceAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/documents/{documentId}/performance - Get per-stage ingestion performance for a document.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.EmbeddingEndpointHandler">
             <summary>
             Handles embedding endpoint CRUD routes by proxying to Partio (admin only).

@@ -476,6 +476,29 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "FROM chat_history h " +
             "WHERE e.assistant_id IS NULL AND h.id = e.chat_history_id";
 
+        internal static string CreateDocumentPerformanceEventsTable =
+            "CREATE TABLE IF NOT EXISTS document_performance_events (" +
+            "  id TEXT PRIMARY KEY, " +
+            "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+            "  document_id TEXT NOT NULL, " +
+            "  ingestion_rule_id TEXT, " +
+            "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+            "  stage TEXT NOT NULL, " +
+            "  detail TEXT, " +
+            "  started_utc TEXT, " +
+            "  finished_utc TEXT, " +
+            "  duration_ms DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  success INTEGER NOT NULL DEFAULT 1, " +
+            "  error_message TEXT, " +
+            "  created_utc TEXT NOT NULL " +
+            ")";
+
+        internal static string CreateDocumentPerformanceEventsDocumentIdIndex =
+            "CREATE INDEX IF NOT EXISTS idx_document_performance_events_document_id ON document_performance_events (document_id)";
+
+        internal static string CreateDocumentPerformanceEventsTenantCreatedIndex =
+            "CREATE INDEX IF NOT EXISTS idx_dpe_tenant_created ON document_performance_events (tenant_id, created_utc)";
+
         internal static string CreateAssistantToolCallsTable =
             "CREATE TABLE IF NOT EXISTS assistant_tool_calls (" +
             "  id TEXT PRIMARY KEY, " +

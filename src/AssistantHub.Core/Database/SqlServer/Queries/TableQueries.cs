@@ -536,6 +536,33 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             INNER JOIN chat_history h ON h.id = e.chat_history_id
             WHERE e.assistant_id IS NULL;";
 
+        internal static readonly string CreateDocumentPerformanceEventsTable =
+            @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_performance_events')
+            CREATE TABLE document_performance_events (
+                id NVARCHAR(256) NOT NULL,
+                tenant_id NVARCHAR(256) NOT NULL DEFAULT 'default',
+                document_id NVARCHAR(256) NOT NULL,
+                ingestion_rule_id NVARCHAR(256) NULL,
+                sequence_number INT NOT NULL DEFAULT 0,
+                stage NVARCHAR(128) NOT NULL,
+                detail NVARCHAR(MAX) NULL,
+                started_utc NVARCHAR(64) NULL,
+                finished_utc NVARCHAR(64) NULL,
+                duration_ms FLOAT NOT NULL DEFAULT 0,
+                success BIT NOT NULL DEFAULT 1,
+                error_message NVARCHAR(MAX) NULL,
+                created_utc NVARCHAR(64) NOT NULL,
+                CONSTRAINT pk_document_performance_events PRIMARY KEY (id)
+            );";
+
+        internal static readonly string CreateDocumentPerformanceEventsDocumentIdIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_document_performance_events_document_id')
+            CREATE INDEX idx_document_performance_events_document_id ON document_performance_events (document_id);";
+
+        internal static readonly string CreateDocumentPerformanceEventsTenantCreatedIndex =
+            @"IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_dpe_tenant_created')
+            CREATE INDEX idx_dpe_tenant_created ON document_performance_events (tenant_id, created_utc);";
+
         internal static readonly string CreateAssistantToolCallsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_tool_calls')
             CREATE TABLE assistant_tool_calls (

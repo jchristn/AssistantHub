@@ -350,6 +350,21 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  provider_raw_json TEXT, " +
                 "  created_utc TEXT NOT NULL" +
                 "); " +
+                "CREATE TABLE IF NOT EXISTS document_performance_events (" +
+                "  id TEXT PRIMARY KEY, " +
+                "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
+                "  document_id TEXT NOT NULL, " +
+                "  ingestion_rule_id TEXT, " +
+                "  sequence_number INTEGER NOT NULL DEFAULT 0, " +
+                "  stage TEXT NOT NULL, " +
+                "  detail TEXT, " +
+                "  started_utc TEXT, " +
+                "  finished_utc TEXT, " +
+                "  duration_ms REAL NOT NULL DEFAULT 0, " +
+                "  success INTEGER NOT NULL DEFAULT 1, " +
+                "  error_message TEXT, " +
+                "  created_utc TEXT NOT NULL" +
+                "); " +
                 "CREATE TABLE IF NOT EXISTS assistant_tool_calls (" +
                 "  id TEXT PRIMARY KEY, " +
                 "  tenant_id TEXT NOT NULL DEFAULT 'default', " +
@@ -806,6 +821,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_created ON chat_history_performance_events(tenant_id, assistant_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_stage_created ON chat_history_performance_events(tenant_id, assistant_id, stage, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_chpe_tenant_assistant_endpoint_created ON chat_history_performance_events(tenant_id, assistant_id, endpoint_id, created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_document_performance_events_document_id ON document_performance_events(document_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_document_performance_events_tenant_id ON document_performance_events(tenant_id); " +
+                "CREATE INDEX IF NOT EXISTS idx_document_performance_events_created_utc ON document_performance_events(created_utc); " +
+                "CREATE INDEX IF NOT EXISTS idx_dpe_tenant_created ON document_performance_events(tenant_id, created_utc); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_tenant_id ON assistant_tool_calls(tenant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_assistant_id ON assistant_tool_calls(assistant_id); " +
                 "CREATE INDEX IF NOT EXISTS idx_assistant_tool_calls_thread_id ON assistant_tool_calls(thread_id); " +

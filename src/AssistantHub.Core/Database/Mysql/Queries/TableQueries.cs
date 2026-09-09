@@ -480,6 +480,30 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  PRIMARY KEY (`id`)" +
             ")";
 
+        internal static string CreateDocumentPerformanceEventsTable =
+            "CREATE TABLE IF NOT EXISTS `document_performance_events` (" +
+            "  `id` VARCHAR(256) NOT NULL, " +
+            "  `tenant_id` VARCHAR(256) NOT NULL DEFAULT 'default', " +
+            "  `document_id` VARCHAR(256) NOT NULL, " +
+            "  `ingestion_rule_id` VARCHAR(256), " +
+            "  `sequence_number` INT NOT NULL DEFAULT 0, " +
+            "  `stage` VARCHAR(128) NOT NULL, " +
+            "  `detail` LONGTEXT, " +
+            "  `started_utc` TEXT, " +
+            "  `finished_utc` TEXT, " +
+            "  `duration_ms` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `success` TINYINT(1) NOT NULL DEFAULT 1, " +
+            "  `error_message` LONGTEXT, " +
+            "  `created_utc` TEXT NOT NULL, " +
+            "  PRIMARY KEY (`id`)" +
+            ")";
+
+        internal static string CreateDocumentPerformanceEventsDocumentIdIndex =
+            "CREATE INDEX idx_document_performance_events_document_id ON `document_performance_events` (`document_id`)";
+
+        internal static string CreateDocumentPerformanceEventsTenantCreatedIndex =
+            "CREATE INDEX idx_dpe_tenant_created ON `document_performance_events` (`tenant_id`, `created_utc`)";
+
         internal static string AddChatHistoryPerformanceEventsAssistantIdColumn =
             "ALTER TABLE `chat_history_performance_events` ADD COLUMN `assistant_id` VARCHAR(256)";
 

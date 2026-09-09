@@ -333,6 +333,10 @@ class AssistantHubClientParityMixin:
         response = self._request("GET", f"/v1.0/documents/{document_id}/processing-log")
         return response.json()
 
+    def get_document_performance(self, document_id: str) -> dict[str, Any]:
+        response = self._request("GET", f"/v1.0/documents/{document_id}/performance")
+        return response.json()
+
     def reindex_document(self, document_id: str) -> DocumentReindexResult:
         response = self._request("POST", f"/v1.0/documents/{document_id}/reindex", json={})
         return DocumentReindexResult.model_validate(response.json())

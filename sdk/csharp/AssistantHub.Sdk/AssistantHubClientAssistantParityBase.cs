@@ -379,6 +379,17 @@ namespace AssistantHub.Sdk
         }
 
         /// <summary>
+        /// Retrieve per-stage ingestion performance for a document.
+        /// </summary>
+        public async Task<JsonElement> GetDocumentPerformanceAsync(string documentId, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentNullException(nameof(documentId));
+
+            return await SendAsync<JsonElement>(HttpMethod.Get, "/v1.0/documents/" + UrlEncode(documentId) + "/performance", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Download a stored document.
         /// </summary>
         public async Task<byte[]> DownloadDocumentAsync(string documentId, CancellationToken cancellationToken = default)

@@ -134,6 +134,15 @@ namespace AssistantHub.Core.Helpers
         }
 
         /// <summary>
+        /// Generate a new document performance event identifier.
+        /// </summary>
+        /// <returns>Document performance event identifier.</returns>
+        public static string NewDocumentPerformanceEventId()
+        {
+            return _Generator.GenerateKSortable(Constants.DocumentPerformanceEventIdentifierPrefix, Constants.IdentifierLength);
+        }
+
+        /// <summary>
         /// Generate an assistant tool-call record identifier.
         /// </summary>
         /// <returns>Assistant tool-call record identifier.</returns>

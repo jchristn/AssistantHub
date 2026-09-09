@@ -123,6 +123,11 @@ namespace AssistantHub.Core
         public static string ChatHistoryPerformanceEventIdentifierPrefix = "chpe_";
 
         /// <summary>
+        /// Document performance event identifier prefix.
+        /// </summary>
+        public static string DocumentPerformanceEventIdentifierPrefix = "dpe_";
+
+        /// <summary>
         /// Assistant tool-call record identifier prefix.
         /// </summary>
         public static string AssistantToolCallRecordIdentifierPrefix = "atc_";

@@ -61,6 +61,7 @@ namespace AssistantHub.Core.Database.Mysql
             CrawlOperation = new CrawlOperationMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
+            DocumentPerformanceEvent = new DocumentPerformanceEventMethods(this, _Settings, _Logging);
             AssistantToolCall = new AssistantToolCallMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
         }
@@ -87,6 +88,7 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryTable,
                 TableQueries.CreateRequestHistoryTable,
                 TableQueries.CreateChatHistoryPerformanceEventsTable,
+                TableQueries.CreateDocumentPerformanceEventsTable,
                 TableQueries.CreateAssistantToolCallsTable
             };
 
@@ -158,6 +160,8 @@ namespace AssistantHub.Core.Database.Mysql
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex,
+                TableQueries.CreateDocumentPerformanceEventsDocumentIdIndex,
+                TableQueries.CreateDocumentPerformanceEventsTenantCreatedIndex,
                 TableQueries.CreateAssistantToolCallsTenantIdIndex,
                 TableQueries.CreateAssistantToolCallsAssistantIdIndex,
                 TableQueries.CreateAssistantToolCallsThreadIdIndex,

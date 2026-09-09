@@ -429,6 +429,9 @@ namespace AssistantHub.Server.Handlers
 
                 await Database.AssistantDocument.DeleteAsync(documentId).ConfigureAwait(false);
 
+                try { await Database.DocumentPerformanceEvent.DeleteByDocumentIdAsync(documentId).ConfigureAwait(false); }
+                catch (Exception perfEx) { Logging.Warn(_Header + "failed to delete performance events for document " + documentId + ": " + perfEx.Message); }
+
                 ctx.Response.StatusCode = 204;
                 await ctx.Response.Send().ConfigureAwait(false);
             }
@@ -833,6 +836,52 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetDocumentProcessingLogAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// GET /v1.0/documents/{documentId}/performance - Get per-stage ingestion performance for a document.
+        /// </summary>
+        public async Task GetDocumentPerformanceAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = GetAuthContext(ctx);
+
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                List<DocumentPerformanceEvent> stages = await Database.DocumentPerformanceEvent.ListByDocumentIdAsync(documentId).ConfigureAwait(false);
+                double totalMs = 0;
+                foreach (DocumentPerformanceEvent stage in stages) totalMs += stage.DurationMs;
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new { DocumentId = documentId, TotalMs = totalMs, Stages = stages })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in GetDocumentPerformanceAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);

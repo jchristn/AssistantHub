@@ -51,6 +51,7 @@ namespace AssistantHub.Core.Database.Postgresql
             IngestionRule = new IngestionRuleMethods(this, _Settings, _Logging);
             ChatHistory = new ChatHistoryMethods(this, _Settings, _Logging);
             ChatHistoryPerformanceEvent = new ChatHistoryPerformanceEventMethods(this, _Settings, _Logging);
+            DocumentPerformanceEvent = new DocumentPerformanceEventMethods(this, _Settings, _Logging);
             AssistantToolCall = new AssistantToolCallMethods(this, _Settings, _Logging);
             RequestHistory = new RequestHistoryMethods(this, _Settings, _Logging);
             Tenant = new TenantMethods(this, _Settings, _Logging);
@@ -130,6 +131,7 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.CreateChatHistoryPerformanceEventsTable,
                 TableQueries.AddChatHistoryPerformanceEventsAssistantIdColumn,
                 TableQueries.BackfillChatHistoryPerformanceEventsAssistantId,
+                TableQueries.CreateDocumentPerformanceEventsTable,
                 TableQueries.CreateAssistantToolCallsTable,
                 TableQueries.AddAssistantToolCallsTurnIndexColumn,
                 TableQueries.AddAssistantToolCallsResultSummaryJsonColumn,
@@ -174,6 +176,8 @@ namespace AssistantHub.Core.Database.Postgresql
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantStageCreatedIndex,
                 TableQueries.CreateChatHistoryPerformanceEventsTenantAssistantEndpointCreatedIndex,
+                TableQueries.CreateDocumentPerformanceEventsDocumentIdIndex,
+                TableQueries.CreateDocumentPerformanceEventsTenantCreatedIndex,
                 TableQueries.CreateAssistantToolCallsTenantIdIndex,
                 TableQueries.CreateAssistantToolCallsAssistantIdIndex,
                 TableQueries.CreateAssistantToolCallsThreadIdIndex,

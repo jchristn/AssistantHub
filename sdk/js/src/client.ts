@@ -565,6 +565,11 @@ export class AssistantHubClient {
     return this._request("GET", `/v1.0/documents/${encodeURIComponent(documentId)}/processing-log`);
   }
 
+  /** Get per-stage ingestion performance for a document. */
+  async getDocumentPerformance(documentId: string): Promise<unknown> {
+    return this._request("GET", `/v1.0/documents/${encodeURIComponent(documentId)}/performance`);
+  }
+
   /** Download a document file. Returns the raw Response for binary handling. */
   async downloadDocument(documentId: string): Promise<Response> {
     return this._requestRaw("GET", `/v1.0/documents/${encodeURIComponent(documentId)}/download`);

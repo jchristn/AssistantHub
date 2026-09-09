@@ -333,6 +333,10 @@ class AsyncAssistantHubClientParityMixin:
         response = await self._request("GET", f"/v1.0/documents/{document_id}/processing-log")
         return response.json()
 
+    async def get_document_performance(self, document_id: str) -> dict[str, Any]:
+        response = await self._request("GET", f"/v1.0/documents/{document_id}/performance")
+        return response.json()
+
     async def reindex_document(self, document_id: str) -> DocumentReindexResult:
         response = await self._request("POST", f"/v1.0/documents/{document_id}/reindex", json={})
         return DocumentReindexResult.model_validate(response.json())

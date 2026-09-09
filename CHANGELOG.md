@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.16.1
+## 0.16.0
 
 ### Added
 - **OpenTelemetry metrics and tracing**: Instrumented the REST API (all routes), the MCP server (all tools across HTTP/TCP/WebSocket), and the application/service layer (inference, retrieval, ingestion, storage, chat, crawl, eval, auth) with `System.Diagnostics.Metrics.Meter` and `System.Diagnostics.ActivitySource` under a single `AssistantHub` meter/activity source, exported over OTLP via the Radiant telemetry host. Added a `Telemetry` settings section (with `ASSISTANTHUB_TELEMETRY_ENABLED`/`ASSISTANTHUB_OTLP_ENDPOINT` env overrides), a docker observability stack (OpenTelemetry Collector, Prometheus, Tempo, Loki, Grafana) with a pre-provisioned `AssistantHub` Grafana dashboard folder, an Observability links section on the dashboard Configuration page, and `TELEMETRY.md`. The published `AssistantHub.Core` package stays exporter-free (BCL emit only).

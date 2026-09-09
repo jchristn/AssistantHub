@@ -7,8 +7,10 @@ import {
   HEALTH_CHECK_METHOD_OPTIONS,
   getApiFormatDefaults,
   getDefaultEndpoint,
+  getDefaultHealthCheckUrl,
   getDefaultModel,
-  getHealthCheckUrlForEndpointChange
+  getHealthCheckUrlForEndpointChange,
+  isDefaultHealthCheckUrl
 } from '../../utils/endpointDefaults';
 
 function isAbsoluteUrl(url) {
@@ -47,7 +49,16 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
   });
 
   const [saving, setSaving] = useState(false);
+  // The health check URL auto-follows the endpoint until the user edits it manually.
+  const [healthCheckUrlTouched, setHealthCheckUrlTouched] = useState(
+    !isDefaultHealthCheckUrl(
+      source?.HealthCheckUrl || '',
+      source?.Endpoint || initialDefaults.Endpoint,
+      initialApiFormat
+    )
+  );
   const handleChange = (field, value) => {
+    if (field === 'HealthCheckUrl') setHealthCheckUrlTouched(true);
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       if (field === 'ApiFormat') {
@@ -64,7 +75,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           updated.Model = newDefaultModel;
         }
 
-        if (!prev.HealthCheckUrl || prev.HealthCheckUrl === oldDefaults.HealthCheckUrl) {
+        if (!healthCheckUrlTouched) {
           updated.HealthCheckUrl = newDefaults.HealthCheckUrl;
         }
         if (prev.HealthCheckUseAuth === oldDefaults.HealthCheckUseAuth) {
@@ -77,7 +88,9 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           updated.HealthCheckTimeoutMs = newDefaults.HealthCheckTimeoutMs;
         }
       } else if (field === 'Endpoint') {
-        updated.HealthCheckUrl = getHealthCheckUrlForEndpointChange(prev.HealthCheckUrl, prev.Endpoint, value, prev.ApiFormat);
+        updated.HealthCheckUrl = healthCheckUrlTouched
+          ? getHealthCheckUrlForEndpointChange(prev.HealthCheckUrl, prev.Endpoint, value, prev.ApiFormat)
+          : getDefaultHealthCheckUrl(value, prev.ApiFormat);
       }
       return updated;
     });

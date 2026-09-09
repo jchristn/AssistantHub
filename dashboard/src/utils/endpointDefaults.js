@@ -88,6 +88,13 @@ export function getDefaultHealthCheckUrl(endpoint, apiFormat = 'Ollama') {
   }
 }
 
+// True when the health check URL is empty or still matches the default derived from the endpoint,
+// i.e. the user has not manually customized it and it can safely auto-follow endpoint changes.
+export function isDefaultHealthCheckUrl(healthCheckUrl, endpoint, apiFormat = 'Ollama') {
+  if (!healthCheckUrl) return true;
+  return normalizeComparableUrl(healthCheckUrl) === normalizeComparableUrl(getDefaultHealthCheckUrl(endpoint, apiFormat));
+}
+
 export function getHealthCheckUrlForEndpointChange(currentHealthCheckUrl, previousEndpoint, nextEndpoint, apiFormat = 'Ollama') {
   const nextDefault = getDefaultHealthCheckUrl(nextEndpoint, apiFormat);
   if (!currentHealthCheckUrl) return nextDefault;

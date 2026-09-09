@@ -79,7 +79,7 @@ const collectionSearchTooltips = {
   nextPage: 'Search again using the continuation token returned by RecallDB.',
 };
 
-function CollectionSearchView() {
+function CollectionSearchView({ embedded = false, scopeCollectionId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
@@ -104,16 +104,22 @@ function CollectionSearchView() {
         const result = await api.getCollections({ maxResults: 1000 });
         const items = unwrapObjects(result);
         setCollections(items);
-        setSelectedCollection((current) => {
-          if (requestedCollection && items.some((item) => getCollectionId(item) === requestedCollection)) return requestedCollection;
-          if (!current && items.length === 1) return getCollectionId(items[0]);
-          return current;
-        });
+        if (!embedded) {
+          setSelectedCollection((current) => {
+            if (requestedCollection && items.some((item) => getCollectionId(item) === requestedCollection)) return requestedCollection;
+            if (!current && items.length === 1) return getCollectionId(items[0]);
+            return current;
+          });
+        }
       } catch (err) {
         setAlert({ title: 'Error', message: err.message || 'Failed to load collections' });
       }
     })();
   }, [serverUrl, credential, requestedCollection]);
+
+  useEffect(() => {
+    if (embedded) setSelectedCollection(scopeCollectionId || '');
+  }, [embedded, scopeCollectionId]);
 
   const filteredResults = useMemo(() => {
     const minScore = filters.minScore === '' ? null : Number(filters.minScore);
@@ -234,13 +240,15 @@ function CollectionSearchView() {
 
       <form className="data-table-container artifact-form" onSubmit={runSearch}>
         <div className="form-row">
-          <div className="form-group">
-            <label><Tooltip text={collectionSearchTooltips.collection}>Collection</Tooltip></label>
-            <select title={collectionSearchTooltips.collection} value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)}>
-              <option value="">Select a collection...</option>
-              {collections.map((collection) => <option key={getCollectionId(collection)} value={getCollectionId(collection)}>{collection.Name || getCollectionId(collection)}</option>)}
-            </select>
-          </div>
+          {!embedded && (
+            <div className="form-group">
+              <label><Tooltip text={collectionSearchTooltips.collection}>Collection</Tooltip></label>
+              <select title={collectionSearchTooltips.collection} value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)}>
+                <option value="">Select a collection...</option>
+                {collections.map((collection) => <option key={getCollectionId(collection)} value={getCollectionId(collection)}>{collection.Name || getCollectionId(collection)}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-group">
             <label><Tooltip text={collectionSearchTooltips.query}>Full Text Query</Tooltip></label>
             <input title={collectionSearchTooltips.query} value={filters.query} onChange={(e) => setFilters({ ...filters, query: e.target.value })} />

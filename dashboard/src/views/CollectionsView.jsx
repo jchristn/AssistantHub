@@ -39,8 +39,8 @@ function CollectionsView() {
   const getRowActions = (row) => {
     const id = getCollectionId(row);
     return [
-      { label: 'View Records', onClick: () => navigate(`/records?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
-      { label: 'Search', onClick: () => navigate(`/collections/search?collectionId=${encodeURIComponent(id)}`, { state: { collectionId: id } }) },
+      { label: 'View Records', onClick: () => navigate(`/collections?tab=records&collectionId=${encodeURIComponent(id)}`) },
+      { label: 'Search', onClick: () => navigate(`/collections?tab=search&collectionId=${encodeURIComponent(id)}`) },
       { label: 'Edit', onClick: () => { setEditCollection(row); setInitialFormData(null); setShowForm(true); } },
       { label: 'Duplicate', onClick: () => {
         setEditCollection(null);

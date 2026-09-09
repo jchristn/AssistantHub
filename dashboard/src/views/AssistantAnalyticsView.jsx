@@ -621,7 +621,7 @@ function FeedbackChart({ result, rangeId }) {
   );
 }
 
-function AssistantAnalyticsView() {
+function AssistantAnalyticsView({ embedded = false, scopeAssistantId = '' }) {
   const { serverUrl, credential, isGlobalAdmin, isTenantAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -647,7 +647,7 @@ function AssistantAnalyticsView() {
         const requestedAssistantId = searchParams.get('assistantId') || localStorage.getItem('ah_analytics_assistant') || '';
         const selectedExists = requestedAssistantId && items.some((assistant) => assistant.Id === requestedAssistantId);
         const nextAssistantId = selectedExists ? requestedAssistantId : items[0]?.Id || '';
-        if (nextAssistantId && nextAssistantId !== assistantId) setAssistantId(nextAssistantId);
+        if (!embedded && nextAssistantId && nextAssistantId !== assistantId) setAssistantId(nextAssistantId);
       } catch (err) {
         if (!cancelled) setError(err.message || 'Failed to load assistants.');
       }
@@ -657,10 +657,15 @@ function AssistantAnalyticsView() {
   }, [api, serverUrl, credential]);
 
   useEffect(() => {
+    if (embedded) return;
     if (!assistantId) return;
     localStorage.setItem('ah_analytics_assistant', assistantId);
     setSearchParams({ assistantId });
-  }, [assistantId, setSearchParams]);
+  }, [assistantId, setSearchParams, embedded]);
+
+  useEffect(() => {
+    if (embedded) setAssistantId(scopeAssistantId || '');
+  }, [embedded, scopeAssistantId]);
 
   useEffect(() => {
     if (!assistantId) return;
@@ -711,7 +716,7 @@ function AssistantAnalyticsView() {
     const params = new URLSearchParams();
     params.set('assistantId', assistantId);
     if (chatHistoryId) params.set('historyId', chatHistoryId);
-    navigate(`/history?${params.toString()}`);
+    navigate(`/assistants?tab=history&${params.toString()}`);
   };
 
   const openRequestHistory = (requestHistoryId) => {
@@ -751,18 +756,22 @@ function AssistantAnalyticsView() {
   return (
     <div className="assistant-analytics-view">
       <div className="content-header analytics-header">
-        <div>
-          <h1 className="content-title">Assistant Analytics</h1>
-          <p className="content-subtitle">{selectedAssistant ? selectedAssistant.Name : 'Select an assistant'}</p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="content-title">Assistant Analytics</h1>
+            <p className="content-subtitle">{selectedAssistant ? selectedAssistant.Name : 'Select an assistant'}</p>
+          </div>
+        )}
         <div className="analytics-header-controls">
           <div className="analytics-assistant-control-group">
-            <select value={assistantId} onChange={(event) => setAssistantId(event.target.value)} disabled={!assistants.length}>
-              {assistants.length < 1 && <option value="">No assistants</option>}
-              {assistants.map((assistant) => (
-                <option key={assistant.Id} value={assistant.Id}>{assistant.Name} ({assistant.Id.substring(0, 10)}...)</option>
-              ))}
-            </select>
+            {!embedded && (
+              <select value={assistantId} onChange={(event) => setAssistantId(event.target.value)} disabled={!assistants.length}>
+                {assistants.length < 1 && <option value="">No assistants</option>}
+                {assistants.map((assistant) => (
+                  <option key={assistant.Id} value={assistant.Id}>{assistant.Name} ({assistant.Id.substring(0, 10)}...)</option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
               className="analytics-refresh-button"

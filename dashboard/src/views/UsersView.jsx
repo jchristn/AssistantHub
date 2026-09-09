@@ -37,7 +37,7 @@ function UsersView() {
   }, [serverUrl, credential, tenantId]);
 
   const getRowActions = (row) => [
-    { label: 'View Credentials', onClick: () => navigate('/credentials', { state: { initialFilters: { UserId: row.Id } } }) },
+    { label: 'View Credentials', onClick: () => navigate('/authentication?tab=credentials', { state: { initialFilters: { UserId: row.Id } } }) },
     { label: 'Edit', onClick: () => { setEditUser(row); setShowForm(true); } },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     ...(!row.IsProtected ? [{ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) }] : []),

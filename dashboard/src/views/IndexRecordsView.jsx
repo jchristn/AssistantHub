@@ -61,7 +61,7 @@ const getSourceDocumentId = (record) => {
   return metadata.AssistantHubDocumentId || metadata.AssistantDocumentId || metadata.DocumentId || metadata.ObjectId || '';
 };
 
-function IndexRecordsView() {
+function IndexRecordsView({ embedded = false, scopeIndexId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
@@ -93,16 +93,22 @@ function IndexRecordsView() {
         const result = await api.getIndices({ maxResults: 1000 });
         const items = unwrapObjects(result);
         setIndices(items);
-        setSelectedIndex((current) => {
-          if (requestedIndex && items.some((item) => getIndexId(item) === requestedIndex)) return requestedIndex;
-          if (!current && items.length === 1) return getIndexId(items[0]);
-          return current;
-        });
+        if (!embedded) {
+          setSelectedIndex((current) => {
+            if (requestedIndex && items.some((item) => getIndexId(item) === requestedIndex)) return requestedIndex;
+            if (!current && items.length === 1) return getIndexId(items[0]);
+            return current;
+          });
+        }
       } catch (err) {
         setAlert({ title: 'Error', message: err.message || 'Failed to load indices' });
       }
     })();
   }, [serverUrl, credential, requestedIndex]);
+
+  useEffect(() => {
+    if (embedded) setSelectedIndex(scopeIndexId || '');
+  }, [embedded, scopeIndexId]);
 
   const loadRecords = useCallback(async () => {
     setSelectedIds(new Set());
@@ -265,13 +271,15 @@ function IndexRecordsView() {
       </div>
 
       <div className="filter-bar artifact-filter-bar">
-        <label className="filter-label">
-          Index
-          <select value={selectedIndex} onChange={(e) => setSelectedIndex(e.target.value)}>
-            <option value="">Select an index...</option>
-            {indices.map((index) => <option key={getIndexId(index)} value={getIndexId(index)}>{index.Name || getIndexId(index)}</option>)}
-          </select>
-        </label>
+        {!embedded && (
+          <label className="filter-label">
+            Index
+            <select value={selectedIndex} onChange={(e) => setSelectedIndex(e.target.value)}>
+              <option value="">Select an index...</option>
+              {indices.map((index) => <option key={getIndexId(index)} value={getIndexId(index)}>{index.Name || getIndexId(index)}</option>)}
+            </select>
+          </label>
+        )}
         <label className="filter-label">
           Record
           <input value={filters.recordId} onChange={(e) => setFilters({ ...filters, recordId: e.target.value })} />

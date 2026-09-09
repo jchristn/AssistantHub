@@ -37,6 +37,12 @@ import { useUploadQueue } from '../hooks/useUploadQueue';
 import UploadProgressPanel from './UploadProgressPanel';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
+import AssistantsHub from '../views/hubs/AssistantsHub';
+import BucketsHub from '../views/hubs/BucketsHub';
+import CollectionsHub from '../views/hubs/CollectionsHub';
+import IndicesHub from '../views/hubs/IndicesHub';
+import EndpointsHub from '../views/hubs/EndpointsHub';
+import AuthenticationHub from '../views/hubs/AuthenticationHub';
 
 function Dashboard() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
@@ -101,32 +107,45 @@ function Dashboard() {
         <div className="content-area">
           <Routes>
             <Route path="/" element={<Navigate to="/assistants" />} />
-            {isGlobalAdmin && <Route path="/tenants" element={<TenantsView />} />}
-            {isAdminOrTenantAdmin && <Route path="/users" element={<UsersView />} />}
-            {isAdminOrTenantAdmin && <Route path="/credentials" element={<CredentialsView />} />}
-            {isAdmin && <Route path="/buckets" element={<BucketsView />} />}
-            {isAdmin && <Route path="/objects" element={<ObjectsView />} />}
-            {isAdmin && <Route path="/collections" element={<CollectionsView />} />}
-            {isAdmin && <Route path="/records" element={<RecordsView />} />}
-            {isAdmin && <Route path="/collections/search" element={<CollectionSearchView />} />}
-            {isAdmin && <Route path="/indices" element={<IndicesView />} />}
-            {isAdmin && <Route path="/indices/records" element={<IndexRecordsView />} />}
-            {isAdmin && <Route path="/indices/search" element={<IndexSearchView />} />}
-            <Route path="/assistants" element={<AssistantsView />} />
-            <Route path="/assistant-settings" element={<AssistantSettingsView onOpenChatDrawer={openChatDrawer} />} />
-            {isAdmin && <Route path="/endpoints/embedding" element={<EmbeddingEndpointsView />} />}
-            {isAdmin && <Route path="/endpoints/inference" element={<InferenceEndpointsView />} />}
-            {isAdminOrTenantAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
+
+            {/* Ingestion */}
             <Route path="/documents" element={<DocumentsView />} />
             <Route path="/crawlers" element={<CrawlersView />} />
-            <Route path="/feedback" element={<FeedbackView />} />
-            <Route path="/history" element={<HistoryView />} />
-            <Route path="/assistant-analytics" element={<AssistantAnalyticsView />} />
+
+            {/* Chat */}
+            <Route path="/assistants" element={<AssistantsHub onOpenChatDrawer={openChatDrawer} />} />
+            <Route path="/assistant-settings" element={<Navigate to="/assistants?tab=settings" replace />} />
+            <Route path="/feedback" element={<Navigate to="/assistants?tab=feedback" replace />} />
+            <Route path="/history" element={<Navigate to="/assistants?tab=history" replace />} />
+            <Route path="/assistant-analytics" element={<Navigate to="/assistants?tab=analytics" replace />} />
+            <Route path="/evaluation" element={<Navigate to="/assistants?tab=evaluation" replace />} />
+
+            {/* Monitoring */}
             {isAdminOrTenantAdmin && <Route path="/request-history" element={<RequestHistoryView />} />}
             {isAdminOrTenantAdmin && <Route path="/api-explorer" element={<ApiExplorerView />} />}
-            <Route path="/evaluation" element={<EvaluationView />} />
-            <Route path="/models" element={<ModelsView />} />
+
+            {/* Artifacts */}
+            {isAdmin && <Route path="/buckets" element={<BucketsHub />} />}
+            {isAdmin && <Route path="/objects" element={<Navigate to="/buckets?tab=objects" replace />} />}
+            {isAdmin && <Route path="/collections" element={<CollectionsHub />} />}
+            {isAdmin && <Route path="/records" element={<Navigate to="/collections?tab=records" replace />} />}
+            {isAdmin && <Route path="/collections/search" element={<Navigate to="/collections?tab=search" replace />} />}
+            {isAdmin && <Route path="/indices" element={<IndicesHub />} />}
+            {isAdmin && <Route path="/indices/records" element={<Navigate to="/indices?tab=records" replace />} />}
+            {isAdmin && <Route path="/indices/search" element={<Navigate to="/indices?tab=search" replace />} />}
+
+            {/* Configuration */}
+            {isAdmin && <Route path="/endpoints" element={<EndpointsHub />} />}
+            {isAdmin && <Route path="/endpoints/embedding" element={<Navigate to="/endpoints?tab=embedding" replace />} />}
+            {isAdmin && <Route path="/endpoints/inference" element={<Navigate to="/endpoints?tab=inference" replace />} />}
+            <Route path="/models" element={<Navigate to="/endpoints?tab=models" replace />} />
+            {isAdminOrTenantAdmin && <Route path="/ingestion-rules" element={<IngestionRulesView />} />}
+            {isAdminOrTenantAdmin && <Route path="/authentication" element={<AuthenticationHub />} />}
+            {isGlobalAdmin && <Route path="/tenants" element={<Navigate to="/authentication?tab=tenants" replace />} />}
+            {isAdminOrTenantAdmin && <Route path="/users" element={<Navigate to="/authentication?tab=users" replace />} />}
+            {isAdminOrTenantAdmin && <Route path="/credentials" element={<Navigate to="/authentication?tab=credentials" replace />} />}
             {isGlobalAdmin && <Route path="/configuration" element={<ConfigurationView />} />}
+
             <Route path="*" element={<Navigate to="/assistants" />} />
           </Routes>
         </div>

@@ -144,8 +144,8 @@ function IndicesView() {
     const id = getIndexId(row);
     const actions = [
       { label: 'View Details', onClick: () => setDetailTarget(row) },
-      { label: 'View Records', onClick: () => navigate(`/indices/records?indexId=${encodeURIComponent(id)}`, { state: { indexId: id } }) },
-      { label: 'Search', onClick: () => navigate(`/indices/search?indexId=${encodeURIComponent(id)}`, { state: { indexId: id } }) },
+      { label: 'View Records', onClick: () => navigate(`/indices?tab=records&indexId=${encodeURIComponent(id)}`) },
+      { label: 'Search', onClick: () => navigate(`/indices?tab=search&indexId=${encodeURIComponent(id)}`) },
       { label: 'Top Terms', onClick: () => loadTopTerms(row) },
       { label: 'Edit Metadata', onClick: () => openEdit(row) },
       { label: 'Duplicate', onClick: () => openDuplicate(row) },

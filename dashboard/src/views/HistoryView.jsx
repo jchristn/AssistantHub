@@ -10,7 +10,7 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
-function HistoryView() {
+function HistoryView({ embedded = false, scopeAssistantId = '' }) {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [viewHistory, setViewHistory] = useState(null);
@@ -29,7 +29,7 @@ function HistoryView() {
         const result = await api.getAssistants({ maxResults: 1000 });
         const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
         setAssistants(items);
-        if (items.length === 1) {
+        if (!embedded && items.length === 1) {
           setAssistantFilter(items[0].Id);
         }
       } catch (err) {
@@ -37,6 +37,10 @@ function HistoryView() {
       }
     })();
   }, [serverUrl, credential]);
+
+  useEffect(() => {
+    if (embedded) { setAssistantFilter(scopeAssistantId || ''); setRefresh(r => r + 1); }
+  }, [embedded, scopeAssistantId]);
 
   const columns = [
     { key: 'Id', label: 'ID', tooltip: 'Unique identifier for this history entry', filterable: true, render: (row) => <CopyableId id={row.Id} /> },
@@ -100,32 +104,38 @@ function HistoryView() {
   return (
     <div>
       <div className="content-header">
-        <div>
-          <h1 className="content-title">History</h1>
-          <p className="content-subtitle">View chat conversation history with timing metrics.</p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="content-title">History</h1>
+            <p className="content-subtitle">View chat conversation history with timing metrics.</p>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}><Tooltip text="Filter history by a specific assistant">Assistant:</Tooltip></label>
-          <select
-            value={assistantFilter}
-            onChange={handleAssistantFilterChange}
-            style={{
-              padding: '0.5rem 0.75rem',
-              border: '1px solid var(--input-border)',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              color: 'var(--text-primary)',
-              fontSize: '0.875rem',
-              minWidth: '220px',
-            }}
-          >
-            <option value="">All Assistants</option>
-            {assistants.map(a => (
-              <option key={a.Id} value={a.Id}>
-                {a.Name} ({a.Id.substring(0, 8)}...)
-              </option>
-            ))}
-          </select>
+          {!embedded && (
+            <>
+              <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}><Tooltip text="Filter history by a specific assistant">Assistant:</Tooltip></label>
+              <select
+                value={assistantFilter}
+                onChange={handleAssistantFilterChange}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid var(--input-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.875rem',
+                  minWidth: '220px',
+                }}
+              >
+                <option value="">All Assistants</option>
+                {assistants.map(a => (
+                  <option key={a.Id} value={a.Id}>
+                    {a.Name} ({a.Id.substring(0, 8)}...)
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}><Tooltip text="Filter by thread ID">Thread:</Tooltip></label>
           <input
             type="text"

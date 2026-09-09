@@ -9,7 +9,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import { createDuplicateInitialData } from '../utils/duplicateObject';
 
-function EvaluationView() {
+function EvaluationView({ embedded = false, scopeAssistantId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const [tab, setTab] = useState('facts');
@@ -40,10 +40,14 @@ function EvaluationView() {
         const result = await api.getAssistants({ maxResults: 1000 });
         const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
         setAssistants(items);
-        if (items.length === 1) setAssistantFilter(items[0].Id);
+        if (!embedded && items.length === 1) setAssistantFilter(items[0].Id);
       } catch (err) { console.error('Failed to load assistants', err); }
     })();
   }, [serverUrl, credential]);
+
+  useEffect(() => {
+    if (embedded) { setAssistantFilter(scopeAssistantId || ''); setRefresh(r => r + 1); }
+  }, [embedded, scopeAssistantId]);
 
   useEffect(() => {
     (async () => {
@@ -200,37 +204,39 @@ function EvaluationView() {
 
   return (
     <div>
-      <div className="content-header">
-        <div>
-          <h1 className="content-title">Evaluation</h1>
-          <p className="content-subtitle">Define expected facts and run RAG evaluation against your assistants.</p>
+      {!embedded && (
+        <div className="content-header">
+          <div>
+            <h1 className="content-title">Evaluation</h1>
+            <p className="content-subtitle">Define expected facts and run RAG evaluation against your assistants.</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+              <Tooltip text="Filter by a specific assistant">Assistant:</Tooltip>
+            </label>
+            <select
+              value={assistantFilter}
+              onChange={handleFilterChange}
+              style={{
+                padding: '0.5rem 0.75rem',
+                border: '1px solid var(--input-border)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--input-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '0.875rem',
+                minWidth: '280px',
+              }}
+            >
+              <option value="">All Assistants</option>
+              {assistants.map(a => (
+                <option key={a.Id} value={a.Id}>
+                  {a.Name} ({a.Id.substring(0, 8)}...)
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-            <Tooltip text="Filter by a specific assistant">Assistant:</Tooltip>
-          </label>
-          <select
-            value={assistantFilter}
-            onChange={handleFilterChange}
-            style={{
-              padding: '0.5rem 0.75rem',
-              border: '1px solid var(--input-border)',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              color: 'var(--text-primary)',
-              fontSize: '0.875rem',
-              minWidth: '280px',
-            }}
-          >
-            <option value="">All Assistants</option>
-            {assistants.map(a => (
-              <option key={a.Id} value={a.Id}>
-                {a.Name} ({a.Id.substring(0, 8)}...)
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      )}
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>

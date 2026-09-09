@@ -111,7 +111,7 @@ const renderMatchedTermsSummary = (terms, fallback = '') => {
   );
 };
 
-function IndexSearchView() {
+function IndexSearchView({ embedded = false, scopeIndexId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
@@ -137,16 +137,22 @@ function IndexSearchView() {
         const result = await api.getIndices({ maxResults: 1000 });
         const items = unwrapObjects(result);
         setIndices(items);
-        setSelectedIndex((current) => {
-          if (requestedIndex && items.some((item) => getIndexId(item) === requestedIndex)) return requestedIndex;
-          if (!current && items.length === 1) return getIndexId(items[0]);
-          return current;
-        });
+        if (!embedded) {
+          setSelectedIndex((current) => {
+            if (requestedIndex && items.some((item) => getIndexId(item) === requestedIndex)) return requestedIndex;
+            if (!current && items.length === 1) return getIndexId(items[0]);
+            return current;
+          });
+        }
       } catch (err) {
         setAlert({ title: 'Error', message: err.message || 'Failed to load indices' });
       }
     })();
   }, [serverUrl, credential, requestedIndex]);
+
+  useEffect(() => {
+    if (embedded) setSelectedIndex(scopeIndexId || '');
+  }, [embedded, scopeIndexId]);
 
   const filteredResults = useMemo(() => {
     const minScore = filters.minScore === '' ? null : Number(filters.minScore);
@@ -240,13 +246,15 @@ function IndexSearchView() {
 
       <form className="data-table-container artifact-form" onSubmit={runSearch}>
         <div className="form-row">
-          <div className="form-group">
-            <label><Tooltip text={indexSearchTooltips.index}>Index</Tooltip></label>
-            <select title={indexSearchTooltips.index} value={selectedIndex} onChange={(e) => setSelectedIndex(e.target.value)}>
-              <option value="">Select an index...</option>
-              {indices.map((index) => <option key={getIndexId(index)} value={getIndexId(index)}>{index.Name || getIndexId(index)}</option>)}
-            </select>
-          </div>
+          {!embedded && (
+            <div className="form-group">
+              <label><Tooltip text={indexSearchTooltips.index}>Index</Tooltip></label>
+              <select title={indexSearchTooltips.index} value={selectedIndex} onChange={(e) => setSelectedIndex(e.target.value)}>
+                <option value="">Select an index...</option>
+                {indices.map((index) => <option key={getIndexId(index)} value={getIndexId(index)}>{index.Name || getIndexId(index)}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-group">
             <label><Tooltip text={indexSearchTooltips.query}>Query</Tooltip></label>
             <input title={indexSearchTooltips.query} value={filters.query} onChange={(e) => setFilters({ ...filters, query: e.target.value })} placeholder="Search terms or *" />

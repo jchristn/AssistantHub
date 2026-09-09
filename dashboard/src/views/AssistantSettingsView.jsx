@@ -277,7 +277,7 @@ function getMultiSelectValues(event) {
     .filter(Boolean);
 }
 
-function AssistantSettingsView({ onOpenChatDrawer }) {
+function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssistantId = '' }) {
   const { serverUrl, credential } = useAuth();
   const [searchParams] = useSearchParams();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
@@ -337,13 +337,15 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
       const result = await api.getAssistants({ maxResults: 1000 });
       const items = (result && result.Objects) ? result.Objects : Array.isArray(result) ? result : [];
       setAssistants(items);
-      const paramId = searchParams.get('assistantId');
-      if (paramId && items.some(a => a.Id === paramId)) {
-        setSelectedId(paramId);
-        loadSettings(paramId);
-      } else if (items.length === 1) {
-        setSelectedId(items[0].Id);
-        loadSettings(items[0].Id);
+      if (!embedded) {
+        const paramId = searchParams.get('assistantId');
+        if (paramId && items.some(a => a.Id === paramId)) {
+          setSelectedId(paramId);
+          loadSettings(paramId);
+        } else if (items.length === 1) {
+          setSelectedId(items[0].Id);
+          loadSettings(items[0].Id);
+        }
       }
     } catch (err) {
       console.error('Failed to load assistants:', err);
@@ -410,6 +412,15 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
   }, [serverUrl, credential]);
 
   useEffect(() => { loadAssistants(); loadCollections(); loadIndices(); loadBuckets(); loadEndpoints(); loadExternalSearchStatus(); }, [loadAssistants, loadCollections, loadIndices, loadBuckets, loadEndpoints, loadExternalSearchStatus]);
+
+  // When embedded in the Assistants hub, the selected assistant is driven by the hub's scope.
+  useEffect(() => {
+    if (!embedded) return;
+    setSelectedId(scopeAssistantId || '');
+    if (scopeAssistantId) loadSettings(scopeAssistantId);
+    else setSettings(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, scopeAssistantId]);
 
   const loadAssistantTools = useCallback(async (id) => {
     if (!id) { setToolDescriptors([]); return; }
@@ -804,10 +815,12 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
   return (
     <div>
       <div className="content-header">
-        <div>
-          <h1 className="content-title">Assistant Settings</h1>
-          <p className="content-subtitle">Configure retrieval, prompts, and managed endpoint settings for each assistant.</p>
-        </div>
+        {!embedded && (
+          <div>
+            <h1 className="content-title">Assistant Settings</h1>
+            <p className="content-subtitle">Configure retrieval, prompts, and managed endpoint settings for each assistant.</p>
+          </div>
+        )}
         {selectedId && (
           <div style={{ display: 'flex', gap: '8px' }}>
             {onOpenChatDrawer && (
@@ -823,19 +836,21 @@ function AssistantSettingsView({ onOpenChatDrawer }) {
         )}
       </div>
       <div className="settings-view">
-        <div className="form-group">
-          <label className="form-label"><Tooltip text="Choose which assistant's settings to configure">Select Assistant</Tooltip></label>
-          <select
-            className="form-input"
-            value={selectedId}
-            onChange={handleSelectAssistant}
-          >
-            <option value="">-- Select an assistant --</option>
-            {assistants.map(a => (
-              <option key={a.Id} value={a.Id}>{a.Name} ({a.Id.substring(0, 8)}...)</option>
-            ))}
-          </select>
-        </div>
+        {!embedded && (
+          <div className="form-group">
+            <label className="form-label"><Tooltip text="Choose which assistant's settings to configure">Select Assistant</Tooltip></label>
+            <select
+              className="form-input"
+              value={selectedId}
+              onChange={handleSelectAssistant}
+            >
+              <option value="">-- Select an assistant --</option>
+              {assistants.map(a => (
+                <option key={a.Id} value={a.Id}>{a.Name} ({a.Id.substring(0, 8)}...)</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {loading && (
           <div className="loading"><div className="spinner" /></div>

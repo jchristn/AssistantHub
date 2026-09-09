@@ -13,7 +13,7 @@ import AlertModal from '../components/AlertModal';
 import { getCollectionId, unwrapObjects } from '../utils/artifactSearch.jsx';
 import { getStoredPageSize, setStoredPageSize } from '../utils/pageSizePreference';
 
-function RecordsView() {
+function RecordsView({ embedded = false, scopeCollectionId = '' }) {
   const { serverUrl, credential } = useAuth();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
   const location = useLocation();
@@ -41,14 +41,20 @@ function RecordsView() {
         const result = await api.getCollections({ maxResults: 1000 });
         const items = unwrapObjects(result);
         setCollections(items);
-        setSelectedCollection((current) => {
-          if (requestedCollection && items.some((item) => getCollectionId(item) === requestedCollection)) return requestedCollection;
-          if (!current && items.length === 1) return getCollectionId(items[0]);
-          return current;
-        });
+        if (!embedded) {
+          setSelectedCollection((current) => {
+            if (requestedCollection && items.some((item) => getCollectionId(item) === requestedCollection)) return requestedCollection;
+            if (!current && items.length === 1) return getCollectionId(items[0]);
+            return current;
+          });
+        }
       } catch (err) { console.error('Failed to load collections', err); }
     })();
   }, [serverUrl, credential, requestedCollection]);
+
+  useEffect(() => {
+    if (embedded) { setSelectedCollection(scopeCollectionId || ''); setDocumentKeyFilter(''); setCurrentPage(1); }
+  }, [embedded, scopeCollectionId]);
 
   useEffect(() => {
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
@@ -117,24 +123,28 @@ function RecordsView() {
 
   return (
     <div>
-      <div className="content-header">
-        <div>
-          <h1 className="content-title">Records</h1>
-          <p className="content-subtitle">Browse records in vector collections.</p>
+      {!embedded && (
+        <div className="content-header">
+          <div>
+            <h1 className="content-title">Records</h1>
+            <p className="content-subtitle">Browse records in vector collections.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="filter-bar">
-        <label className="filter-label">
-          <Tooltip text="Vector collection to browse records from">Collection:</Tooltip>
-          <select
-            value={selectedCollection}
-            onChange={(e) => { setSelectedCollection(e.target.value); setDocumentKeyFilter(''); setCurrentPage(1); }}
-          >
-            <option value="">Select a collection...</option>
-            {collections.map(c => <option key={c.GUID || c.Id} value={c.GUID || c.Id}>{c.Name || c.GUID || c.Id}</option>)}
-          </select>
-        </label>
+        {!embedded && (
+          <label className="filter-label">
+            <Tooltip text="Vector collection to browse records from">Collection:</Tooltip>
+            <select
+              value={selectedCollection}
+              onChange={(e) => { setSelectedCollection(e.target.value); setDocumentKeyFilter(''); setCurrentPage(1); }}
+            >
+              <option value="">Select a collection...</option>
+              {collections.map(c => <option key={c.GUID || c.Id} value={c.GUID || c.Id}>{c.Name || c.GUID || c.Id}</option>)}
+            </select>
+          </label>
+        )}
         {selectedCollection && (
           <label className="filter-label">
             <Tooltip text="Filter records by document key">Document:</Tooltip>

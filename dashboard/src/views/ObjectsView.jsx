@@ -9,7 +9,7 @@ import DirectoryFormModal from '../components/modals/DirectoryFormModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 
-function ObjectsView() {
+function ObjectsView({ embedded = false, scopeBucket = '' }) {
   const { serverUrl, credential } = useAuth();
   const location = useLocation();
   const api = new ApiClient(serverUrl, credential?.BearerToken);
@@ -35,16 +35,22 @@ function ObjectsView() {
         const result = await api.getBuckets();
         if (result && result.Objects) {
           setBuckets(result.Objects);
-          const navBucket = location.state?.bucket;
-          if (navBucket && result.Objects.some(b => b.Name === navBucket)) {
-            setSelectedBucket(navBucket);
-          } else if (result.Objects.length === 1) {
-            setSelectedBucket(result.Objects[0].Name);
+          if (!embedded) {
+            const navBucket = location.state?.bucket;
+            if (navBucket && result.Objects.some(b => b.Name === navBucket)) {
+              setSelectedBucket(navBucket);
+            } else if (result.Objects.length === 1) {
+              setSelectedBucket(result.Objects[0].Name);
+            }
           }
         }
       } catch (err) { console.error('Failed to load buckets', err); }
     })();
   }, [serverUrl, credential]);
+
+  useEffect(() => {
+    if (embedded) { setSelectedBucket(scopeBucket || ''); setPrefix(''); }
+  }, [embedded, scopeBucket]);
 
   useEffect(() => {
     return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
@@ -151,24 +157,28 @@ function ObjectsView() {
 
   return (
     <div>
-      <div className="content-header">
-        <div>
-          <h1 className="content-title">Objects</h1>
-          <p className="content-subtitle">Browse objects in S3-compatible storage buckets.</p>
-        </div>
-      </div>
+      {!embedded && (
+        <>
+          <div className="content-header">
+            <div>
+              <h1 className="content-title">Objects</h1>
+              <p className="content-subtitle">Browse objects in S3-compatible storage buckets.</p>
+            </div>
+          </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', marginRight: '0.5rem' }}><Tooltip text="S3-compatible storage bucket to browse">Bucket:</Tooltip></label>
-        <select
-          value={selectedBucket}
-          onChange={(e) => { setSelectedBucket(e.target.value); setPrefix(''); }}
-          style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--input-border)', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.875rem', minWidth: '300px' }}
-        >
-          <option value="">Select a bucket...</option>
-          {buckets.map(b => <option key={b.Name} value={b.Name}>{b.Name}</option>)}
-        </select>
-      </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', marginRight: '0.5rem' }}><Tooltip text="S3-compatible storage bucket to browse">Bucket:</Tooltip></label>
+            <select
+              value={selectedBucket}
+              onChange={(e) => { setSelectedBucket(e.target.value); setPrefix(''); }}
+              style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--input-border)', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.875rem', minWidth: '300px' }}
+            >
+              <option value="">Select a bucket...</option>
+              {buckets.map(b => <option key={b.Name} value={b.Name}>{b.Name}</option>)}
+            </select>
+          </div>
+        </>
+      )}
 
       {selectedBucket && (
         <div className="data-table-container">

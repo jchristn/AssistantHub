@@ -28,7 +28,7 @@ function BucketsView() {
   }, [serverUrl, credential]);
 
   const getRowActions = (row) => [
-    { label: 'View Objects', onClick: () => navigate('/objects', { state: { bucket: row.Name } }) },
+    { label: 'View Objects', onClick: () => navigate(`/buckets?tab=objects&bucket=${encodeURIComponent(row.Name)}`) },
     { label: 'View JSON', onClick: () => setShowJson(row) },
     { label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) },
   ];

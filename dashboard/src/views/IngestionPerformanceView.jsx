@@ -138,7 +138,7 @@ function TimeSeriesChart({ series, windowStartUtc, windowEndUtc, hours }) {
         return (
           <g key={v}>
             <line x1={mLeft} y1={y} x2={W - mRight} y2={y} className="ing-ts-grid" />
-            <text x={mLeft - 8} y={y + 4} className="ing-ts-label" fontSize="11" textAnchor="end">{v}</text>
+            <text x={mLeft - 8} y={y + 4} className="ing-ts-label" fontSize="10" textAnchor="end">{v}</text>
           </g>
         );
       })}
@@ -155,7 +155,7 @@ function TimeSeriesChart({ series, windowStartUtc, windowEndUtc, hours }) {
           x={l.x}
           y={H - 12}
           className="ing-ts-label"
-          fontSize="11"
+          fontSize="10"
           textAnchor={i === 0 ? 'start' : i === xLabels.length - 1 ? 'end' : 'middle'}
         >
           {l.label}

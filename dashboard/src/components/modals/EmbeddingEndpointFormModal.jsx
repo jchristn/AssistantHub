@@ -34,6 +34,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     ApiKey: source?.ApiKey || '',
     Active: source?.Active !== undefined ? source.Active : true,
     MaxConcurrentRequests: source?.MaxConcurrentRequests !== undefined ? source.MaxConcurrentRequests : 2,
+    MaximumTimeoutMs: source?.MaximumTimeoutMs !== undefined ? source.MaximumTimeoutMs : initialDefaults.MaximumTimeoutMs,
     HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
     HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
     HealthCheckMethod: source?.HealthCheckMethod || initialDefaults.HealthCheckMethod,
@@ -96,6 +97,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiKey: form.ApiKey,
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
+        MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
         HealthCheckMethod: form.HealthCheckMethod,
@@ -132,91 +134,112 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
       }
     >
       <form onSubmit={handleSubmit}>
-        {/* Name */}
-        <div className="form-group">
-          <label><Tooltip text="Optional display name for the embedding endpoint">Name</Tooltip></label>
-          <input
-            type="text"
-            value={form.Name}
-            onChange={(e) => handleChange('Name', e.target.value)}
-            placeholder="Optional"
-          />
-        </div>
+        {/* General */}
+        <div className="form-section">
+          <div className="form-section-title">General</div>
 
-        {/* ApiFormat */}
-        <div className="form-group">
-          <label><Tooltip text="API format used by the embedding endpoint (Ollama, OpenAI, or Gemini)">Format</Tooltip></label>
-          <select
-            value={form.ApiFormat}
-            onChange={(e) => handleChange('ApiFormat', e.target.value)}
-            required
-          >
-            <option value="">-- Select Format --</option>
-            {API_FORMAT_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+          <div className="form-group">
+            <label><Tooltip text="Optional display name for the embedding endpoint">Name</Tooltip></label>
+            <input
+              type="text"
+              value={form.Name}
+              onChange={(e) => handleChange('Name', e.target.value)}
+              placeholder="Optional"
+            />
+          </div>
 
-        {/* Model */}
-        <div className="form-group">
-          <label><Tooltip text="Name of the embedding model to use (e.g. nomic-embed-text, text-embedding-3-small, gemini-embedding-001)">Model</Tooltip></label>
-          <input
-            type="text"
-            value={form.Model}
-            onChange={(e) => handleChange('Model', e.target.value)}
-            required
-          />
-        </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="API format used by the embedding endpoint (Ollama, OpenAI, or Gemini)">Format</Tooltip></label>
+              <select
+                value={form.ApiFormat}
+                onChange={(e) => handleChange('ApiFormat', e.target.value)}
+                required
+              >
+                <option value="">-- Select Format --</option>
+                {API_FORMAT_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
 
-        {/* Endpoint */}
-        <div className="form-group">
-          <label><Tooltip text="Base URL of the embedding API server (e.g. http://ollama:11434 or https://generativelanguage.googleapis.com)">Endpoint</Tooltip></label>
-          <input
-            type="text"
-            value={form.Endpoint}
-            onChange={(e) => handleChange('Endpoint', e.target.value)}
-            required
-          />
-        </div>
-
-        {/* ApiKey */}
-        <div className="form-group">
-          <label><Tooltip text="Optional API key for authenticating with the embedding endpoint">API Key</Tooltip></label>
-          <PasswordInput
-            value={form.ApiKey}
-            onChange={(e) => handleChange('ApiKey', e.target.value)}
-            placeholder="Optional"
-          />
-        </div>
-
-        {/* Active */}
-        <div className="form-group">
-          <div className="form-toggle">
-            <label className="toggle-switch">
+            <div className="form-group">
+              <label><Tooltip text="Name of the embedding model to use (e.g. nomic-embed-text, text-embedding-3-small, gemini-embedding-001)">Model</Tooltip></label>
               <input
-                type="checkbox"
-                checked={form.Active}
-                onChange={(e) => handleChange('Active', e.target.checked)}
+                type="text"
+                value={form.Model}
+                onChange={(e) => handleChange('Model', e.target.value)}
+                required
               />
-              <span className="toggle-slider"></span>
-            </label>
-            <span><Tooltip text="Whether this endpoint is active and available for embedding requests">Active</Tooltip></span>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label><Tooltip text="Base URL of the embedding API server (e.g. http://ollama:11434 or https://generativelanguage.googleapis.com)">Endpoint</Tooltip></label>
+            <input
+              type="text"
+              value={form.Endpoint}
+              onChange={(e) => handleChange('Endpoint', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label><Tooltip text="Optional API key for authenticating with the embedding endpoint">API Key</Tooltip></label>
+            <PasswordInput
+              value={form.ApiKey}
+              onChange={(e) => handleChange('ApiKey', e.target.value)}
+              placeholder="Optional"
+            />
           </div>
         </div>
 
-        <div className="form-group">
-          <label><Tooltip text="Maximum number of concurrent requests Partio will allow for this embedding endpoint">Max Concurrent Requests</Tooltip></label>
-          <input
-            type="number"
-            value={form.MaxConcurrentRequests}
-            onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
-            min="1"
-          />
+        {/* Request Handling */}
+        <div className="form-section">
+          <div className="form-section-title">Request Handling</div>
+
+          <div className="form-group">
+            <div className="form-toggle">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={form.Active}
+                  onChange={(e) => handleChange('Active', e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span><Tooltip text="Whether this endpoint is active and available for embedding requests">Active</Tooltip></span>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Maximum number of concurrent requests Partio will allow for this embedding endpoint">Max Concurrent Requests</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaxConcurrentRequests}
+                onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
+                min="1"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="Maximum time in milliseconds to wait for an embedding response from the upstream model before the request is aborted. This is the request timeout, not the health check timeout (e.g. 300000 = 5 minutes).">Request Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaximumTimeoutMs}
+                onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
+                min="1000"
+                step="1000"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Health Check */}
-        <div className="form-group">
+        <div className="form-section">
+          <div className="form-section-title">Health Check</div>
+
           <div className="form-group">
             <div className="form-toggle">
               <label className="toggle-switch">
@@ -246,65 +269,71 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             )}
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="HTTP method used for health check requests">Health Check Method</Tooltip></label>
-            <select
-              value={form.HealthCheckMethod}
-              onChange={(e) => handleChange('HealthCheckMethod', e.target.value)}
-            >
-              {HEALTH_CHECK_METHOD_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="HTTP method used for health check requests">Health Check Method</Tooltip></label>
+              <select
+                value={form.HealthCheckMethod}
+                onChange={(e) => handleChange('HealthCheckMethod', e.target.value)}
+              >
+                {HEALTH_CHECK_METHOD_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="Time in milliseconds between consecutive health check requests">Interval (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckIntervalMs}
+                onChange={(e) => handleChange('HealthCheckIntervalMs', e.target.value)}
+                min="1000"
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="Time in milliseconds between consecutive health check requests">Interval (ms)</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckIntervalMs}
-              onChange={(e) => handleChange('HealthCheckIntervalMs', e.target.value)}
-              min="1000"
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Maximum time in milliseconds to wait for a health check response">Health Check Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckTimeoutMs}
+                onChange={(e) => handleChange('HealthCheckTimeoutMs', e.target.value)}
+                min="100"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="HTTP status code expected from a successful health check response">Expected Status Code</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckExpectedStatusCode}
+                onChange={(e) => handleChange('HealthCheckExpectedStatusCode', e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="Maximum time in milliseconds to wait for a health check response">Timeout (ms)</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckTimeoutMs}
-              onChange={(e) => handleChange('HealthCheckTimeoutMs', e.target.value)}
-              min="100"
-            />
-          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Number of consecutive successful health checks required before the endpoint is considered healthy">Healthy Threshold</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthyThreshold}
+                onChange={(e) => handleChange('HealthyThreshold', e.target.value)}
+                min="1"
+              />
+            </div>
 
-          <div className="form-group">
-            <label><Tooltip text="HTTP status code expected from a successful health check response">Expected Status Code</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckExpectedStatusCode}
-              onChange={(e) => handleChange('HealthCheckExpectedStatusCode', e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Tooltip text="Number of consecutive successful health checks required before the endpoint is considered healthy">Healthy Threshold</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthyThreshold}
-              onChange={(e) => handleChange('HealthyThreshold', e.target.value)}
-              min="1"
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Tooltip text="Number of consecutive failed health checks required before the endpoint is considered unhealthy">Unhealthy Threshold</Tooltip></label>
-            <input
-              type="number"
-              value={form.UnhealthyThreshold}
-              onChange={(e) => handleChange('UnhealthyThreshold', e.target.value)}
-              min="1"
-            />
+            <div className="form-group">
+              <label><Tooltip text="Number of consecutive failed health checks required before the endpoint is considered unhealthy">Unhealthy Threshold</Tooltip></label>
+              <input
+                type="number"
+                value={form.UnhealthyThreshold}
+                onChange={(e) => handleChange('UnhealthyThreshold', e.target.value)}
+                min="1"
+              />
+            </div>
           </div>
 
           <div className="form-group">

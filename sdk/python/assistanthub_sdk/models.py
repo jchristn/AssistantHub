@@ -1368,6 +1368,7 @@ class PartioEndpointConfig(BaseModel):
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
+    maximum_timeout_ms: int = Field(60000, alias="maximumTimeoutMs", validation_alias=AliasChoices("MaximumTimeoutMs", "maximumTimeoutMs", "maximum_timeout_ms"))
     supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
     tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
     supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))
@@ -1396,6 +1397,7 @@ class PartioEndpointRequest(BaseModel):
     api_key: Optional[str] = Field(None, alias="apiKey")
     active: bool = True
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
+    maximum_timeout_ms: int = Field(60000, alias="maximumTimeoutMs", validation_alias=AliasChoices("MaximumTimeoutMs", "maximumTimeoutMs", "maximum_timeout_ms"))
     supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
     tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
     supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))

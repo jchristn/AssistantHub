@@ -55,6 +55,12 @@ namespace AssistantHub.Core.Models
         public int MaxConcurrentRequests { get; set; } = 2;
 
         /// <summary>
+        /// Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
+        /// This is distinct from the health check timeout.
+        /// </summary>
+        public int MaximumTimeoutMs { get; set; } = 60000;
+
+        /// <summary>
         /// Whether this endpoint explicitly supports model tool calls.
         /// </summary>
         public bool SupportsToolCalling { get; set; } = false;

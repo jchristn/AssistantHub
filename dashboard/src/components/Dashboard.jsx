@@ -35,6 +35,8 @@ import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import { useUploadQueue } from '../hooks/useUploadQueue';
 import UploadProgressPanel from './UploadProgressPanel';
+import ConfirmModal from './ConfirmModal';
+import AlertModal from './AlertModal';
 
 function Dashboard() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
@@ -43,9 +45,28 @@ function Dashboard() {
   const [drawerAssistantId, setDrawerAssistantId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const api = new ApiClient(serverUrl, credential?.BearerToken);
-  const { records, dismissRecord, clearFinishedRecords } = useUploadQueue(api);
+  const { records, dismissRecord, cancelRecord, clearFinishedRecords } = useUploadQueue(api);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState(null);
 
   const isAdminOrTenantAdmin = isGlobalAdmin || isTenantAdmin;
+
+  const handleConfirmCancelIngestion = useCallback(async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      if (cancelTarget.serverDocId) {
+        await api.deleteDocument(cancelTarget.serverDocId);
+      }
+      cancelRecord(cancelTarget.id);
+      setCancelTarget(null);
+    } catch (err) {
+      setCancelError(err.message || 'Failed to cancel ingestion.');
+    } finally {
+      setCancelling(false);
+    }
+  }, [cancelTarget, api, cancelRecord]);
 
   const openChatDrawer = useCallback((assistantId) => {
     setDrawerAssistantId(assistantId);
@@ -111,7 +132,20 @@ function Dashboard() {
         </div>
       </div>
       <ChatDrawer assistantId={drawerAssistantId} isOpen={drawerOpen} onClose={closeChatDrawer} />
-      <UploadProgressPanel records={records} onDismiss={dismissRecord} onClearFinished={clearFinishedRecords} />
+      <UploadProgressPanel records={records} onDismiss={dismissRecord} onCancel={setCancelTarget} onClearFinished={clearFinishedRecords} />
+      {cancelTarget && (
+        <ConfirmModal
+          title="Cancel Ingestion"
+          message="This document will be deleted. Are you sure you wish to cancel ingestion?"
+          confirmLabel="Cancel Ingestion"
+          loadingLabel="Cancelling..."
+          isLoading={cancelling}
+          danger
+          onConfirm={handleConfirmCancelIngestion}
+          onClose={() => setCancelTarget(null)}
+        />
+      )}
+      {cancelError && <AlertModal title="Error" message={cancelError} onClose={() => setCancelError(null)} />}
       {showTour && <Tour onComplete={handleTourComplete} />}
       {showWizard && <SetupWizard onClose={() => setShowWizard(false)} />}
     </div>

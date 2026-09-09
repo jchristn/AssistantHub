@@ -455,65 +455,71 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
                 />
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Maximum number of tokens the model should produce for each summary (minimum 128)">Max Summary Tokens</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.MaxSummaryTokens}
-                  onChange={(e) => handleSummarizationChange('MaxSummaryTokens', e.target.value)}
-                  min="128"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Maximum number of tokens the model should produce for each summary (minimum 128)">Max Summary Tokens</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.MaxSummaryTokens}
+                    onChange={(e) => handleSummarizationChange('MaxSummaryTokens', e.target.value)}
+                    min="128"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><Tooltip text="Minimum character length a cell must have before summarization is attempted. Cells shorter than this are skipped (minimum 0)">Min Cell Length</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.MinCellLength}
+                    onChange={(e) => handleSummarizationChange('MinCellLength', e.target.value)}
+                    min="0"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Minimum character length a cell must have before summarization is attempted. Cells shorter than this are skipped (minimum 0)">Min Cell Length</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.MinCellLength}
-                  onChange={(e) => handleSummarizationChange('MinCellLength', e.target.value)}
-                  min="0"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Maximum number of summarization requests that can run concurrently (minimum 1)">Max Parallel Tasks</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.MaxParallelTasks}
+                    onChange={(e) => handleSummarizationChange('MaxParallelTasks', e.target.value)}
+                    min="1"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><Tooltip text="Maximum number of retry attempts for a single cell's summarization request before giving up on that cell">Max Retries Per Summary</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.MaxRetriesPerSummary}
+                    onChange={(e) => handleSummarizationChange('MaxRetriesPerSummary', e.target.value)}
+                    min="0"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Maximum number of summarization requests that can run concurrently (minimum 1)">Max Parallel Tasks</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.MaxParallelTasks}
-                  onChange={(e) => handleSummarizationChange('MaxParallelTasks', e.target.value)}
-                  min="1"
-                />
-              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Global failure counter upper limit across all cells. When this many total failures are reached, the entire summarization job is aborted (circuit breaker)">Max Retries</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.MaxRetries}
+                    onChange={(e) => handleSummarizationChange('MaxRetries', e.target.value)}
+                    min="0"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Maximum number of retry attempts for a single cell's summarization request before giving up on that cell">Max Retries Per Summary</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.MaxRetriesPerSummary}
-                  onChange={(e) => handleSummarizationChange('MaxRetriesPerSummary', e.target.value)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label><Tooltip text="Global failure counter upper limit across all cells. When this many total failures are reached, the entire summarization job is aborted (circuit breaker)">Max Retries</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.MaxRetries}
-                  onChange={(e) => handleSummarizationChange('MaxRetries', e.target.value)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label><Tooltip text="Timeout in milliseconds for each individual summarization request to the inference endpoint (minimum 100)">Timeout (ms)</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Summarization.TimeoutMs}
-                  onChange={(e) => handleSummarizationChange('TimeoutMs', e.target.value)}
-                  min="100"
-                  step="1000"
-                />
+                <div className="form-group">
+                  <label><Tooltip text="Timeout in milliseconds for each individual summarization request to the inference endpoint (minimum 100)">Timeout (ms)</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Summarization.TimeoutMs}
+                    onChange={(e) => handleSummarizationChange('TimeoutMs', e.target.value)}
+                    min="100"
+                    step="1000"
+                  />
+                </div>
               </div>
               </>
               )}
@@ -544,69 +550,75 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
                 </select>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Number of tokens per chunk when using the FixedTokenCount strategy">Fixed Token Count</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Chunking.FixedTokenCount}
-                  onChange={(e) => handleChunkingChange('FixedTokenCount', e.target.value)}
-                  min="1"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Number of tokens per chunk when using the FixedTokenCount strategy">Fixed Token Count</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Chunking.FixedTokenCount}
+                    onChange={(e) => handleChunkingChange('FixedTokenCount', e.target.value)}
+                    min="1"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><Tooltip text="Number of tokens to overlap between consecutive chunks for context continuity">Overlap Count</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Chunking.OverlapCount}
+                    onChange={(e) => handleChunkingChange('OverlapCount', e.target.value)}
+                    min="0"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Number of tokens to overlap between consecutive chunks for context continuity">Overlap Count</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Chunking.OverlapCount}
-                  onChange={(e) => handleChunkingChange('OverlapCount', e.target.value)}
-                  min="0"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Percentage of chunk size to overlap between consecutive chunks (0.0 to 1.0). Alternative to Overlap Count">Overlap Percentage</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Chunking.OverlapPercentage}
+                    onChange={(e) => handleChunkingChange('OverlapPercentage', e.target.value)}
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    placeholder="0.0 - 1.0"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><Tooltip text="Strategy for determining overlap boundaries between chunks">Overlap Strategy</Tooltip></label>
+                  <select
+                    value={form.Chunking.OverlapStrategy}
+                    onChange={(e) => handleChunkingChange('OverlapStrategy', e.target.value)}
+                  >
+                    {OVERLAP_STRATEGY_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt || '(none)'}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Percentage of chunk size to overlap between consecutive chunks (0.0 to 1.0). Alternative to Overlap Count">Overlap Percentage</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Chunking.OverlapPercentage}
-                  onChange={(e) => handleChunkingChange('OverlapPercentage', e.target.value)}
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  placeholder="0.0 - 1.0"
-                />
-              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Number of rows to group together when using RowGroupWithHeaders chunking strategy">Row Group Size</Tooltip></label>
+                  <input
+                    type="number"
+                    value={form.Chunking.RowGroupSize}
+                    onChange={(e) => handleChunkingChange('RowGroupSize', e.target.value)}
+                    min="1"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Strategy for determining overlap boundaries between chunks">Overlap Strategy</Tooltip></label>
-                <select
-                  value={form.Chunking.OverlapStrategy}
-                  onChange={(e) => handleChunkingChange('OverlapStrategy', e.target.value)}
-                >
-                  {OVERLAP_STRATEGY_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt || '(none)'}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label><Tooltip text="Number of rows to group together when using RowGroupWithHeaders chunking strategy">Row Group Size</Tooltip></label>
-                <input
-                  type="number"
-                  value={form.Chunking.RowGroupSize}
-                  onChange={(e) => handleChunkingChange('RowGroupSize', e.target.value)}
-                  min="1"
-                />
-              </div>
-
-              <div className="form-group">
-                <label><Tooltip text="Optional text prepended to each chunk to provide additional context">Context Prefix</Tooltip></label>
-                <input
-                  type="text"
-                  value={form.Chunking.ContextPrefix}
-                  onChange={(e) => handleChunkingChange('ContextPrefix', e.target.value)}
-                  placeholder="Optional"
-                />
+                <div className="form-group">
+                  <label><Tooltip text="Optional text prepended to each chunk to provide additional context">Context Prefix</Tooltip></label>
+                  <input
+                    type="text"
+                    value={form.Chunking.ContextPrefix}
+                    onChange={(e) => handleChunkingChange('ContextPrefix', e.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
               </div>
 
               <div className="form-group">

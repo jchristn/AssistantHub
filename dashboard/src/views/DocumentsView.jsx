@@ -36,6 +36,13 @@ function canReindexDocument(row) {
   return status === 'completed' || status === 'indexed' || status === 'active';
 }
 
+function isDocumentProcessing(row) {
+  const status = (row?.Status || '').toLowerCase();
+  if (!status) return false;
+  const finalStates = ['completed', 'indexed', 'active', 'failed', 'error', 'typedetectionfailed'];
+  return !finalStates.includes(status);
+}
+
 function DocumentsView() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
   const navigate = useNavigate();
@@ -46,6 +53,8 @@ function DocumentsView() {
   const [showJson, setShowJson] = useState(null);
   const [showLogs, setShowLogs] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
   const [ingestionRules, setIngestionRules] = useState([]);
@@ -169,6 +178,9 @@ function DocumentsView() {
         navigate(`/crawlers?op=${row.CrawlOperationId}&plan=${row.CrawlPlanId}`);
       }});
     }
+    if (isDocumentProcessing(row)) {
+      actions.push({ label: 'Cancel Ingestion', danger: true, onClick: () => setCancelTarget(row) });
+    }
     actions.push({ label: 'Delete', danger: true, onClick: () => setDeleteTarget(row) });
     return actions;
   };
@@ -186,6 +198,19 @@ function DocumentsView() {
       setRefresh(r => r + 1);
     } catch (err) {
       setAlert({ title: 'Error', message: err.message || 'Failed to delete document' });
+    }
+  };
+
+  const handleCancelIngestion = async () => {
+    setCancelling(true);
+    try {
+      await api.deleteDocument(cancelTarget.Id);
+      setCancelTarget(null);
+      setRefresh(r => r + 1);
+    } catch (err) {
+      setAlert({ title: 'Error', message: err.message || 'Failed to cancel ingestion' });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -288,6 +313,7 @@ function DocumentsView() {
       {showJson && <JsonViewModal title="Document JSON" data={showJson} onClose={() => setShowJson(null)} />}
       {showLogs && <ProcessingLogModal api={api} documentId={showLogs.Id} onClose={() => setShowLogs(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
+      {cancelTarget && <ConfirmModal title="Cancel Ingestion" message="This document will be deleted. Are you sure you wish to cancel ingestion?" confirmLabel="Cancel Ingestion" loadingLabel="Cancelling..." isLoading={cancelling} danger onConfirm={handleCancelIngestion} onClose={() => setCancelTarget(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
       {pendingDropFiles && (
         <DropRuleModal

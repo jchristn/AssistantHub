@@ -48,6 +48,9 @@ const uploadQueueStore = {
   activeCount: 0,
   queue: [],
   cleanupTimer: null,
+  // Ids cancelled while their upload was still in flight (before a server doc id existed).
+  // processOne consults this to delete the just-created server document instead of polling it.
+  cancelledIds: new Set(),
 };
 
 let nextId = 1;
@@ -199,6 +202,18 @@ async function processOne(item) {
     }
 
     const serverDocId = result?.Id || result?.GUID || result?.id;
+
+    // If the user cancelled this item while its upload was in flight, the record is already gone.
+    // Delete the document that just got created server-side (if any) rather than start polling it.
+    if (uploadQueueStore.cancelledIds.has(id)) {
+      uploadQueueStore.cancelledIds.delete(id);
+      if (serverDocId) {
+        try { await ensureApi().deleteDocument(serverDocId); } catch { /* best effort */ }
+      }
+      updateRecords((records) => records.filter((item) => item.id !== id));
+      return;
+    }
+
     if (serverDocId) {
       updateRecord(id, { serverDocId, status: 'Uploaded', stepCount: 2, stepTotal: INGESTION_STEP_TOTAL, stepLabel: 'Uploaded' });
       pollDocument(id, serverDocId);
@@ -275,6 +290,29 @@ function dismissRecordInternal(id) {
   updateRecords((records) => records.filter((item) => item.id !== id));
 }
 
+function cancelRecordInternal(id) {
+  const inQueue = uploadQueueStore.queue.some((item) => item.id === id);
+  const record = uploadQueueStore.records.find((item) => item.id === id);
+
+  removePollTimer(id);
+  uploadQueueStore.queue = uploadQueueStore.queue.filter((item) => item.id !== id);
+
+  if (!inQueue && record && !isDismissibleStatus(record.status)) {
+    // The item had already started processing (not sitting in the pending queue) and was
+    // not in a final state, so free the active slot it was occupying for queued work.
+    uploadQueueStore.activeCount = Math.max(0, uploadQueueStore.activeCount - 1);
+
+    // If its upload is still in flight (no server doc id yet), flag it so processOne deletes
+    // the document it is about to create instead of leaving it to ingest in the background.
+    if (!record.serverDocId) {
+      uploadQueueStore.cancelledIds.add(id);
+    }
+  }
+
+  updateRecords((records) => records.filter((item) => item.id !== id));
+  processQueue();
+}
+
 function clearFinishedRecordsInternal() {
   const removableIds = uploadQueueStore.records
     .filter((record) => isDismissibleStatus(record.status))
@@ -317,9 +355,13 @@ export function useUploadQueue(api) {
     dismissRecordInternal(id);
   }, []);
 
+  const cancelRecord = useCallback((id) => {
+    cancelRecordInternal(id);
+  }, []);
+
   const clearFinishedRecords = useCallback(() => {
     clearFinishedRecordsInternal();
   }, []);
 
-  return { records, enqueueFiles, dismissRecord, clearFinishedRecords };
+  return { records, enqueueFiles, dismissRecord, cancelRecord, clearFinishedRecords };
 }

@@ -393,15 +393,17 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
           </button>
           {generalOpen && (
             <div style={{ marginTop: '0.5rem' }}>
-              <div className="form-group">
-                <label><Tooltip text="Display name for this crawl plan">Name</Tooltip></label>
-                <input type="text" value={form.Name} onChange={(e) => handleChange('Name', e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label><Tooltip text="Repository type to crawl">Repository Type</Tooltip></label>
-                <select value={form.RepositoryType} onChange={(e) => handleRepositoryTypeChange(e.target.value)}>
-                  {REPOSITORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Display name for this crawl plan">Name</Tooltip></label>
+                  <input type="text" value={form.Name} onChange={(e) => handleChange('Name', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Repository type to crawl">Repository Type</Tooltip></label>
+                  <select value={form.RepositoryType} onChange={(e) => handleRepositoryTypeChange(e.target.value)}>
+                    {REPOSITORY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -468,7 +470,7 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                 </select>
               </div>
               {form.Repository.AuthType === 'Basic' && (
-                <>
+                <div className="form-row">
                   <div className="form-group">
                     <label><Tooltip text="Username for basic authentication">Username</Tooltip></label>
                     <input type="text" value={form.Repository.Username} onChange={(e) => handleRepoChange('Username', e.target.value)} />
@@ -477,7 +479,7 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                     <label><Tooltip text="Password for basic authentication">Password</Tooltip></label>
                     <PasswordInput value={form.Repository.Password} onChange={(e) => handleRepoChange('Password', e.target.value)} />
                   </div>
-                </>
+                </div>
               )}
               {form.Repository.AuthType === 'BearerToken' && (
                 <div className="form-group">
@@ -486,7 +488,7 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                 </div>
               )}
               {form.Repository.AuthType === 'ApiKey' && (
-                <>
+                <div className="form-row">
                   <div className="form-group">
                     <label><Tooltip text="Header name used to send the API key">API Key Header</Tooltip></label>
                     <input type="text" value={form.Repository.ApiKeyHeader} onChange={(e) => handleRepoChange('ApiKeyHeader', e.target.value)} placeholder="x-api-key" />
@@ -495,93 +497,103 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                     <label><Tooltip text="API key for authentication">API Key</Tooltip></label>
                     <PasswordInput value={form.Repository.ApiKey} onChange={(e) => handleRepoChange('ApiKey', e.target.value)} />
                   </div>
-                </>
+                </div>
               )}
               <div className="form-group">
                 <label><Tooltip text="User agent string sent with HTTP requests. Default: assistanthub-crawler">User Agent</Tooltip></label>
                 <input type="text" value={form.Repository.UserAgent} onChange={(e) => handleRepoChange('UserAgent', e.target.value)} placeholder="assistanthub-crawler" />
               </div>
 
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.FollowLinks} onChange={(e) => handleRepoChange('FollowLinks', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Follow hyperlinks discovered on crawled pages">Follow Links</Tooltip></span>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.FollowLinks} onChange={(e) => handleRepoChange('FollowLinks', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Follow hyperlinks discovered on crawled pages">Follow Links</Tooltip></span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.FollowRedirects} onChange={(e) => handleRepoChange('FollowRedirects', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Follow HTTP redirects (301, 302, etc.)">Follow Redirects</Tooltip></span>
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.FollowRedirects} onChange={(e) => handleRepoChange('FollowRedirects', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Follow HTTP redirects (301, 302, etc.)">Follow Redirects</Tooltip></span>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.ExtractSitemapLinks} onChange={(e) => handleRepoChange('ExtractSitemapLinks', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Extract and follow URLs found in the root domain sitemap.xml (e.g. example.com/sitemap.xml, not example.com/path/sitemap.xml)">Extract Sitemap Links</Tooltip></span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.RestrictToChildUrls} onChange={(e) => handleRepoChange('RestrictToChildUrls', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Only crawl URLs that are children of the start URL path">Restrict to Child URLs</Tooltip></span>
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.ExtractSitemapLinks} onChange={(e) => handleRepoChange('ExtractSitemapLinks', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Extract and follow URLs found in the root domain sitemap.xml (e.g. example.com/sitemap.xml, not example.com/path/sitemap.xml)">Extract Sitemap Links</Tooltip></span>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.RestrictToSubdomain} onChange={(e) => handleRepoChange('RestrictToSubdomain', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Only crawl URLs within the same subdomain as the start URL">Restrict to Subdomain</Tooltip></span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.RestrictToRootDomain} onChange={(e) => handleRepoChange('RestrictToRootDomain', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Only crawl URLs within the same root domain">Restrict to Root Domain</Tooltip></span>
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.RestrictToChildUrls} onChange={(e) => handleRepoChange('RestrictToChildUrls', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Only crawl URLs that are children of the start URL path">Restrict to Child URLs</Tooltip></span>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.IgnoreRobotsTxt} onChange={(e) => handleRepoChange('IgnoreRobotsTxt', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Ignore robots.txt rules when crawling">Ignore robots.txt</Tooltip></span>
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.RestrictToSubdomain} onChange={(e) => handleRepoChange('RestrictToSubdomain', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Only crawl URLs within the same subdomain as the start URL">Restrict to Subdomain</Tooltip></span>
-                </div>
-              </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.RestrictToRootDomain} onChange={(e) => handleRepoChange('RestrictToRootDomain', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Only crawl URLs within the same root domain">Restrict to Root Domain</Tooltip></span>
-                </div>
-              </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.IgnoreRobotsTxt} onChange={(e) => handleRepoChange('IgnoreRobotsTxt', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Ignore robots.txt rules when crawling">Ignore robots.txt</Tooltip></span>
-                </div>
-              </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Repository.UseHeadlessBrowser} onChange={(e) => handleRepoChange('UseHeadlessBrowser', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Use a headless browser to render JavaScript-heavy pages">Use Headless Browser</Tooltip></span>
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Repository.UseHeadlessBrowser} onChange={(e) => handleRepoChange('UseHeadlessBrowser', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Use a headless browser to render JavaScript-heavy pages">Use Headless Browser</Tooltip></span>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label><Tooltip text="Maximum depth to follow links from the start URL. Range: 1-100, default: 5">Max Depth</Tooltip></label>
-                <input type="number" value={form.Repository.MaxDepth} onChange={(e) => handleRepoChange('MaxDepth', e.target.value)} min="1" max="100" />
-              </div>
-              <div className="form-group">
-                <label><Tooltip text="Maximum number of pages to crawl concurrently. Range: 1-64, default: 8">Max Parallel Tasks</Tooltip></label>
-                <input type="number" value={form.Repository.MaxParallelTasks} onChange={(e) => handleRepoChange('MaxParallelTasks', e.target.value)} min="1" max="64" />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Maximum depth to follow links from the start URL. Range: 1-100, default: 5">Max Depth</Tooltip></label>
+                  <input type="number" value={form.Repository.MaxDepth} onChange={(e) => handleRepoChange('MaxDepth', e.target.value)} min="1" max="100" />
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Maximum number of pages to crawl concurrently. Range: 1-64, default: 8">Max Parallel Tasks</Tooltip></label>
+                  <input type="number" value={form.Repository.MaxParallelTasks} onChange={(e) => handleRepoChange('MaxParallelTasks', e.target.value)} min="1" max="64" />
+                </div>
               </div>
               <div className="form-group">
                 <label><Tooltip text="Delay in milliseconds between consecutive requests to the same host. Range: 0-60000, default: 100">Crawl Delay (ms)</Tooltip></label>
@@ -591,21 +603,25 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
               )}
               {form.RepositoryType === 'CIFS' && (
                 <>
-                  <div className="form-group">
-                    <label><Tooltip text="Hostname or IP address of the CIFS file server">Hostname</Tooltip></label>
-                    <input type="text" value={form.Repository.CifsHostname} onChange={(e) => handleRepoChange('CifsHostname', e.target.value)} placeholder="fileserver.example.com" />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Tooltip text="Hostname or IP address of the CIFS file server">Hostname</Tooltip></label>
+                      <input type="text" value={form.Repository.CifsHostname} onChange={(e) => handleRepoChange('CifsHostname', e.target.value)} placeholder="fileserver.example.com" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="Name of the CIFS share to crawl">Share Name</Tooltip></label>
+                      <input type="text" value={form.Repository.CifsShareName} onChange={(e) => handleRepoChange('CifsShareName', e.target.value)} placeholder="share" />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label><Tooltip text="Username used to connect to the CIFS share">Username</Tooltip></label>
-                    <input type="text" value={form.Repository.CifsUsername} onChange={(e) => handleRepoChange('CifsUsername', e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label><Tooltip text="Password used to connect to the CIFS share">Password</Tooltip></label>
-                    <PasswordInput value={form.Repository.CifsPassword} onChange={(e) => handleRepoChange('CifsPassword', e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label><Tooltip text="Name of the CIFS share to crawl">Share Name</Tooltip></label>
-                    <input type="text" value={form.Repository.CifsShareName} onChange={(e) => handleRepoChange('CifsShareName', e.target.value)} placeholder="share" />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Tooltip text="Username used to connect to the CIFS share">Username</Tooltip></label>
+                      <input type="text" value={form.Repository.CifsUsername} onChange={(e) => handleRepoChange('CifsUsername', e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="Password used to connect to the CIFS share">Password</Tooltip></label>
+                      <PasswordInput value={form.Repository.CifsPassword} onChange={(e) => handleRepoChange('CifsPassword', e.target.value)} />
+                    </div>
                   </div>
                   <div className="form-group">
                     <div className="form-toggle">
@@ -624,23 +640,27 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                     <label><Tooltip text="Hostname or IP address of the NFS file server">Hostname</Tooltip></label>
                     <input type="text" value={form.Repository.NfsHostname} onChange={(e) => handleRepoChange('NfsHostname', e.target.value)} placeholder="nfs.example.com" />
                   </div>
-                  <div className="form-group">
-                    <label><Tooltip text="Numeric NFS user ID used when connecting. Minimum: 0">User ID</Tooltip></label>
-                    <input type="number" value={form.Repository.NfsUserId} onChange={(e) => handleRepoChange('NfsUserId', e.target.value)} min="0" />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Tooltip text="Numeric NFS user ID used when connecting. Minimum: 0">User ID</Tooltip></label>
+                      <input type="number" value={form.Repository.NfsUserId} onChange={(e) => handleRepoChange('NfsUserId', e.target.value)} min="0" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="Numeric NFS group ID used when connecting. Minimum: 0">Group ID</Tooltip></label>
+                      <input type="number" value={form.Repository.NfsGroupId} onChange={(e) => handleRepoChange('NfsGroupId', e.target.value)} min="0" />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label><Tooltip text="Numeric NFS group ID used when connecting. Minimum: 0">Group ID</Tooltip></label>
-                    <input type="number" value={form.Repository.NfsGroupId} onChange={(e) => handleRepoChange('NfsGroupId', e.target.value)} min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label><Tooltip text="NFS export or share path to crawl">Share Name</Tooltip></label>
-                    <input type="text" value={form.Repository.NfsShareName} onChange={(e) => handleRepoChange('NfsShareName', e.target.value)} placeholder="/exports/content" />
-                  </div>
-                  <div className="form-group">
-                    <label><Tooltip text="NFS protocol version. Default: V3">NFS Version</Tooltip></label>
-                    <select value={form.Repository.NfsVersion} onChange={(e) => handleRepoChange('NfsVersion', e.target.value)}>
-                      {NFS_VERSIONS.map(version => <option key={version} value={version}>{version}</option>)}
-                    </select>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Tooltip text="NFS export or share path to crawl">Share Name</Tooltip></label>
+                      <input type="text" value={form.Repository.NfsShareName} onChange={(e) => handleRepoChange('NfsShareName', e.target.value)} placeholder="/exports/content" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="NFS protocol version. Default: V3">NFS Version</Tooltip></label>
+                      <select value={form.Repository.NfsVersion} onChange={(e) => handleRepoChange('NfsVersion', e.target.value)}>
+                        {NFS_VERSIONS.map(version => <option key={version} value={version}>{version}</option>)}
+                      </select>
+                    </div>
                   </div>
                   <div className="form-group">
                     <div className="form-toggle">
@@ -689,15 +709,17 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
           </button>
           {scheduleOpen && (
             <div style={{ marginTop: '0.5rem' }}>
-              <div className="form-group">
-                <label><Tooltip text="Unit of time for the crawl interval. Default: Hours">Interval Type</Tooltip></label>
-                <select value={form.Schedule.IntervalType} onChange={(e) => handleScheduleChange('IntervalType', e.target.value)}>
-                  {INTERVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label><Tooltip text="Number of interval units between crawls. Range: 1-10080, default: 24">Interval Value</Tooltip></label>
-                <input type="number" value={form.Schedule.IntervalValue} onChange={(e) => handleScheduleChange('IntervalValue', e.target.value)} min="1" max="10080" />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Unit of time for the crawl interval. Default: Hours">Interval Type</Tooltip></label>
+                  <select value={form.Schedule.IntervalType} onChange={(e) => handleScheduleChange('IntervalType', e.target.value)}>
+                    {INTERVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Number of interval units between crawls. Range: 1-10080, default: 24">Interval Value</Tooltip></label>
+                  <input type="number" value={form.Schedule.IntervalValue} onChange={(e) => handleScheduleChange('IntervalValue', e.target.value)} min="1" max="10080" />
+                </div>
               </div>
             </div>
           )}
@@ -710,25 +732,29 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
           </button>
           {filterOpen && (
             <div style={{ marginTop: '0.5rem' }}>
-              <div className="form-group">
-                <label><Tooltip text="Only process objects whose key starts with this prefix">Object Prefix</Tooltip></label>
-                <input type="text" value={form.Filter.ObjectPrefix} onChange={(e) => handleFilterChange('ObjectPrefix', e.target.value)} placeholder="Optional" />
-              </div>
-              <div className="form-group">
-                <label><Tooltip text="Only process objects whose key ends with this suffix">Object Suffix</Tooltip></label>
-                <input type="text" value={form.Filter.ObjectSuffix} onChange={(e) => handleFilterChange('ObjectSuffix', e.target.value)} placeholder="Optional" />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Only process objects whose key starts with this prefix">Object Prefix</Tooltip></label>
+                  <input type="text" value={form.Filter.ObjectPrefix} onChange={(e) => handleFilterChange('ObjectPrefix', e.target.value)} placeholder="Optional" />
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Only process objects whose key ends with this suffix">Object Suffix</Tooltip></label>
+                  <input type="text" value={form.Filter.ObjectSuffix} onChange={(e) => handleFilterChange('ObjectSuffix', e.target.value)} placeholder="Optional" />
+                </div>
               </div>
               <div className="form-group">
                 <label><Tooltip text="Comma-separated list of allowed MIME types (e.g. text/html, application/pdf)">Allowed Content Types</Tooltip></label>
                 <input type="text" value={form.Filter.AllowedContentTypes} onChange={(e) => handleFilterChange('AllowedContentTypes', e.target.value)} placeholder="e.g. text/html, application/pdf" />
               </div>
-              <div className="form-group">
-                <label><Tooltip text="Minimum file size in bytes to process. Default: 0 (no minimum)">Minimum Size (bytes)</Tooltip></label>
-                <input type="number" value={form.Filter.MinimumSize} onChange={(e) => handleFilterChange('MinimumSize', e.target.value)} min="0" placeholder="0" />
-              </div>
-              <div className="form-group">
-                <label><Tooltip text="Maximum file size in bytes to process. Leave empty for no limit">Maximum Size (bytes)</Tooltip></label>
-                <input type="number" value={form.Filter.MaximumSize} onChange={(e) => handleFilterChange('MaximumSize', e.target.value)} min="0" placeholder="No limit" />
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Minimum file size in bytes to process. Default: 0 (no minimum)">Minimum Size (bytes)</Tooltip></label>
+                  <input type="number" value={form.Filter.MinimumSize} onChange={(e) => handleFilterChange('MinimumSize', e.target.value)} min="0" placeholder="0" />
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Maximum file size in bytes to process. Leave empty for no limit">Maximum Size (bytes)</Tooltip></label>
+                  <input type="number" value={form.Filter.MaximumSize} onChange={(e) => handleFilterChange('MaximumSize', e.target.value)} min="0" placeholder="No limit" />
+                </div>
               </div>
             </div>
           )}
@@ -741,22 +767,24 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
           </button>
           {processingOpen && (
             <div style={{ marginTop: '0.5rem' }}>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Processing.ProcessAdditions} onChange={(e) => handleProcessingChange('ProcessAdditions', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Process new files discovered during crawl">Process Additions</Tooltip></span>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Processing.ProcessAdditions} onChange={(e) => handleProcessingChange('ProcessAdditions', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Process new files discovered during crawl">Process Additions</Tooltip></span>
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <div className="form-toggle">
-                  <label className="toggle-switch">
-                    <input type="checkbox" checked={form.Processing.ProcessUpdates} onChange={(e) => handleProcessingChange('ProcessUpdates', e.target.checked)} />
-                    <span className="toggle-slider"></span>
-                  </label>
-                  <span><Tooltip text="Process files that have been modified since the last crawl">Process Updates</Tooltip></span>
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input type="checkbox" checked={form.Processing.ProcessUpdates} onChange={(e) => handleProcessingChange('ProcessUpdates', e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Process files that have been modified since the last crawl">Process Updates</Tooltip></span>
+                  </div>
                 </div>
               </div>
               <div className="form-group">

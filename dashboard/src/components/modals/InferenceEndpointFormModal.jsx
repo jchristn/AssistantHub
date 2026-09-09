@@ -99,6 +99,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     ApiKey: getSourceText(source, 'ApiKey', 'apiKey'),
     Active: getSourceField(source, 'Active', 'active') !== undefined ? getSourceBoolean(source, 'Active', 'active') : true,
     MaxConcurrentRequests: getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') !== undefined ? getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') : 2,
+    MaximumTimeoutMs: getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') !== undefined ? getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') : initialDefaults.MaximumTimeoutMs,
     SupportsToolCalling: getSourceToolBoolean(source, ['SupportsToolCalling', 'supportsToolCalling'], TOOL_TAG_SUPPORTS, initialLabels),
     ToolCallingApiFormat: getSourceText(source, 'ToolCallingApiFormat', 'toolCallingApiFormat') || getTagValue(initialTags, TOOL_TAG_FORMAT) || getDefaultToolCallingApiFormat(initialApiFormat),
     SupportsParallelToolCalls: getSourceToolBoolean(source, ['SupportsParallelToolCalls', 'supportsParallelToolCalls'], TOOL_TAG_PARALLEL, []),
@@ -172,6 +173,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiKey: form.ApiKey,
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
+        MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         SupportsToolCalling: form.SupportsToolCalling,
         ToolCallingApiFormat: form.SupportsToolCalling ? form.ToolCallingApiFormat : null,
         SupportsParallelToolCalls: form.SupportsToolCalling && form.SupportsParallelToolCalls,
@@ -214,148 +216,176 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
       }
     >
       <form onSubmit={handleSubmit}>
-        {/* Name */}
-        <div className="form-group">
-          <label><Tooltip text="Optional display name for the inference endpoint">Name</Tooltip></label>
-          <input
-            type="text"
-            value={form.Name}
-            onChange={(e) => handleChange('Name', e.target.value)}
-            placeholder="Optional"
-          />
-        </div>
+        {/* General */}
+        <div className="form-section">
+          <div className="form-section-title">General</div>
 
-        {/* ApiFormat */}
-        <div className="form-group">
-          <label><Tooltip text="API format used by the inference endpoint (Ollama, OpenAI, or Gemini)">Format</Tooltip></label>
-          <select
-            value={form.ApiFormat}
-            onChange={(e) => handleChange('ApiFormat', e.target.value)}
-            required
-          >
-            <option value="">-- Select Format --</option>
-            {API_FORMAT_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Model */}
-        <div className="form-group">
-          <label><Tooltip text="Name of the language model to use for inference (e.g. llama3, gpt-4o-mini, gemini-2.5-flash)">Model</Tooltip></label>
-          <input
-            type="text"
-            value={form.Model}
-            onChange={(e) => handleChange('Model', e.target.value)}
-            required
-          />
-        </div>
-
-        {/* Endpoint */}
-        <div className="form-group">
-          <label><Tooltip text="Base URL of the inference API server (e.g. http://ollama:11434 or https://generativelanguage.googleapis.com)">Endpoint</Tooltip></label>
-          <input
-            type="text"
-            value={form.Endpoint}
-            onChange={(e) => handleChange('Endpoint', e.target.value)}
-            required
-          />
-        </div>
-
-        {/* ApiKey */}
-        <div className="form-group">
-          <label><Tooltip text="Optional API key for authenticating with the inference endpoint">API Key</Tooltip></label>
-          <PasswordInput
-            value={form.ApiKey}
-            onChange={(e) => handleChange('ApiKey', e.target.value)}
-            placeholder="Optional"
-          />
-        </div>
-
-        {/* Active */}
-        <div className="form-group">
-          <div className="form-toggle">
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={form.Active}
-                onChange={(e) => handleChange('Active', e.target.checked)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-            <span><Tooltip text="Whether this endpoint is active and available for inference requests">Active</Tooltip></span>
+          <div className="form-group">
+            <label><Tooltip text="Optional display name for the inference endpoint">Name</Tooltip></label>
+            <input
+              type="text"
+              value={form.Name}
+              onChange={(e) => handleChange('Name', e.target.value)}
+              placeholder="Optional"
+            />
           </div>
-        </div>
 
-        <div className="form-group">
-          <label><Tooltip text="Maximum number of concurrent requests Partio will allow for this inference endpoint">Max Concurrent Requests</Tooltip></label>
-          <input
-            type="number"
-            value={form.MaxConcurrentRequests}
-            onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
-            min="1"
-          />
-        </div>
-
-        <div className="form-group">
-          <div className="form-toggle">
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={form.SupportsToolCalling}
-                onChange={(e) => handleChange('SupportsToolCalling', e.target.checked)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-            <span><Tooltip text="Mark this endpoint as explicitly supporting model tool calls. Tool calls stay disabled for assistants unless this endpoint and the assistant policy both allow them.">Supports Tool Calling</Tooltip></span>
-          </div>
-        </div>
-
-        {form.SupportsToolCalling && (
-          <>
+          <div className="form-row">
             <div className="form-group">
-              <label><Tooltip text="Wire format used for tool definitions and model tool calls. Use Ollama Chat for native Ollama endpoints and OpenAI Chat Completions for OpenAI-compatible endpoints.">Tool Calling Format</Tooltip></label>
+              <label><Tooltip text="API format used by the inference endpoint (Ollama, OpenAI, or Gemini)">Format</Tooltip></label>
               <select
-                value={form.ToolCallingApiFormat}
-                onChange={(e) => handleChange('ToolCallingApiFormat', e.target.value)}
+                value={form.ApiFormat}
+                onChange={(e) => handleChange('ApiFormat', e.target.value)}
+                required
               >
-                <option value="OllamaChat">Ollama Chat</option>
-                <option value="OpenAIChatCompletions">OpenAI Chat Completions</option>
+                <option value="">-- Select Format --</option>
+                {API_FORMAT_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </select>
             </div>
 
             <div className="form-group">
-              <div className="form-toggle">
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={form.SupportsParallelToolCalls}
-                    onChange={(e) => handleChange('SupportsParallelToolCalls', e.target.checked)}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-                <span><Tooltip text="Endpoint can return multiple tool calls in a single assistant response. Leave disabled unless the endpoint is known to support it.">Parallel Tool Calls</Tooltip></span>
-              </div>
+              <label><Tooltip text="Name of the language model to use for inference (e.g. llama3, gpt-4o-mini, gemini-2.5-flash)">Model</Tooltip></label>
+              <input
+                type="text"
+                value={form.Model}
+                onChange={(e) => handleChange('Model', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label><Tooltip text="Base URL of the inference API server (e.g. http://ollama:11434 or https://generativelanguage.googleapis.com)">Endpoint</Tooltip></label>
+            <input
+              type="text"
+              value={form.Endpoint}
+              onChange={(e) => handleChange('Endpoint', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label><Tooltip text="Optional API key for authenticating with the inference endpoint">API Key</Tooltip></label>
+            <PasswordInput
+              value={form.ApiKey}
+              onChange={(e) => handleChange('ApiKey', e.target.value)}
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+
+        {/* Request Handling */}
+        <div className="form-section">
+          <div className="form-section-title">Request Handling</div>
+
+          <div className="form-group">
+            <div className="form-toggle">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={form.Active}
+                  onChange={(e) => handleChange('Active', e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span><Tooltip text="Whether this endpoint is active and available for inference requests">Active</Tooltip></span>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Maximum number of concurrent requests Partio will allow for this inference endpoint">Max Concurrent Requests</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaxConcurrentRequests}
+                onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
+                min="1"
+              />
             </div>
 
             <div className="form-group">
-              <div className="form-toggle">
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={form.SupportsStreamingToolCalls}
-                    onChange={(e) => handleChange('SupportsStreamingToolCalls', e.target.checked)}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-                <span><Tooltip text="Endpoint can stream responses that include tool-call deltas. Leave disabled unless the endpoint is known to support it.">Streaming Tool Calls</Tooltip></span>
-              </div>
+              <label><Tooltip text="Maximum time in milliseconds to wait for an inference response from the upstream model before the request is aborted. This is the request timeout, not the health check timeout (e.g. 300000 = 5 minutes).">Request Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaximumTimeoutMs}
+                onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
+                min="1000"
+                step="1000"
+              />
             </div>
-          </>
-        )}
+          </div>
+        </div>
+
+        {/* Tool Calling */}
+        <div className="form-section">
+          <div className="form-section-title">Tool Calling</div>
+
+          <div className="form-group">
+            <div className="form-toggle">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={form.SupportsToolCalling}
+                  onChange={(e) => handleChange('SupportsToolCalling', e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span><Tooltip text="Mark this endpoint as explicitly supporting model tool calls. Tool calls stay disabled for assistants unless this endpoint and the assistant policy both allow them.">Supports Tool Calling</Tooltip></span>
+            </div>
+          </div>
+
+          {form.SupportsToolCalling && (
+            <>
+              <div className="form-group">
+                <label><Tooltip text="Wire format used for tool definitions and model tool calls. Use Ollama Chat for native Ollama endpoints and OpenAI Chat Completions for OpenAI-compatible endpoints.">Tool Calling Format</Tooltip></label>
+                <select
+                  value={form.ToolCallingApiFormat}
+                  onChange={(e) => handleChange('ToolCallingApiFormat', e.target.value)}
+                >
+                  <option value="OllamaChat">Ollama Chat</option>
+                  <option value="OpenAIChatCompletions">OpenAI Chat Completions</option>
+                </select>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={form.SupportsParallelToolCalls}
+                        onChange={(e) => handleChange('SupportsParallelToolCalls', e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Endpoint can return multiple tool calls in a single assistant response. Leave disabled unless the endpoint is known to support it.">Parallel Tool Calls</Tooltip></span>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <div className="form-toggle">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={form.SupportsStreamingToolCalls}
+                        onChange={(e) => handleChange('SupportsStreamingToolCalls', e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span><Tooltip text="Endpoint can stream responses that include tool-call deltas. Leave disabled unless the endpoint is known to support it.">Streaming Tool Calls</Tooltip></span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Health Check */}
-        <div className="form-group">
+        <div className="form-section">
+          <div className="form-section-title">Health Check</div>
+
           <div className="form-group">
             <div className="form-toggle">
               <label className="toggle-switch">
@@ -385,65 +415,71 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             )}
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="HTTP method used for health check requests">Health Check Method</Tooltip></label>
-            <select
-              value={form.HealthCheckMethod}
-              onChange={(e) => handleChange('HealthCheckMethod', e.target.value)}
-            >
-              {HEALTH_CHECK_METHOD_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="HTTP method used for health check requests">Health Check Method</Tooltip></label>
+              <select
+                value={form.HealthCheckMethod}
+                onChange={(e) => handleChange('HealthCheckMethod', e.target.value)}
+              >
+                {HEALTH_CHECK_METHOD_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="Time in milliseconds between consecutive health check requests">Interval (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckIntervalMs}
+                onChange={(e) => handleChange('HealthCheckIntervalMs', e.target.value)}
+                min="1000"
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="Time in milliseconds between consecutive health check requests">Interval (ms)</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckIntervalMs}
-              onChange={(e) => handleChange('HealthCheckIntervalMs', e.target.value)}
-              min="1000"
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Maximum time in milliseconds to wait for a health check response">Health Check Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckTimeoutMs}
+                onChange={(e) => handleChange('HealthCheckTimeoutMs', e.target.value)}
+                min="100"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="HTTP status code expected from a successful health check response">Expected Status Code</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthCheckExpectedStatusCode}
+                onChange={(e) => handleChange('HealthCheckExpectedStatusCode', e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="Maximum time in milliseconds to wait for a health check response">Timeout (ms)</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckTimeoutMs}
-              onChange={(e) => handleChange('HealthCheckTimeoutMs', e.target.value)}
-              min="100"
-            />
-          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Number of consecutive successful health checks required before the endpoint is considered healthy">Healthy Threshold</Tooltip></label>
+              <input
+                type="number"
+                value={form.HealthyThreshold}
+                onChange={(e) => handleChange('HealthyThreshold', e.target.value)}
+                min="1"
+              />
+            </div>
 
-          <div className="form-group">
-            <label><Tooltip text="HTTP status code expected from a successful health check response">Expected Status Code</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthCheckExpectedStatusCode}
-              onChange={(e) => handleChange('HealthCheckExpectedStatusCode', e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Tooltip text="Number of consecutive successful health checks required before the endpoint is considered healthy">Healthy Threshold</Tooltip></label>
-            <input
-              type="number"
-              value={form.HealthyThreshold}
-              onChange={(e) => handleChange('HealthyThreshold', e.target.value)}
-              min="1"
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Tooltip text="Number of consecutive failed health checks required before the endpoint is considered unhealthy">Unhealthy Threshold</Tooltip></label>
-            <input
-              type="number"
-              value={form.UnhealthyThreshold}
-              onChange={(e) => handleChange('UnhealthyThreshold', e.target.value)}
-              min="1"
-            />
+            <div className="form-group">
+              <label><Tooltip text="Number of consecutive failed health checks required before the endpoint is considered unhealthy">Unhealthy Threshold</Tooltip></label>
+              <input
+                type="number"
+                value={form.UnhealthyThreshold}
+                onChange={(e) => handleChange('UnhealthyThreshold', e.target.value)}
+                min="1"
+              />
+            </div>
           </div>
 
           <div className="form-group">

@@ -44,64 +44,73 @@ function UserFormModal({ user, onSave, onClose }) {
       </>
     }>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label><Tooltip text="Email address used for login and notifications">Email</Tooltip></label>
-          <input type="email" value={form.Email} onChange={(e) => handleChange('Email', e.target.value)} required />
-        </div>
-        <div className="form-group">
-          <label><Tooltip text="Password for user authentication">Password</Tooltip> {isEdit && '(leave blank to keep current)'}</label>
-          <PasswordInput value={form.Password} onChange={(e) => handleChange('Password', e.target.value)} {...(!isEdit ? { required: true } : {})} />
-        </div>
-        <div className="form-row">
+        <div className="form-section">
+          <div className="form-section-title">Account</div>
           <div className="form-group">
-            <label><Tooltip text="User's given name">First Name</Tooltip></label>
-            <input type="text" value={form.FirstName} onChange={(e) => handleChange('FirstName', e.target.value)} />
+            <label><Tooltip text="Email address used for login and notifications">Email</Tooltip></label>
+            <input type="email" value={form.Email} onChange={(e) => handleChange('Email', e.target.value)} required />
           </div>
           <div className="form-group">
-            <label><Tooltip text="User's family name">Last Name</Tooltip></label>
-            <input type="text" value={form.LastName} onChange={(e) => handleChange('LastName', e.target.value)} />
+            <label><Tooltip text="Password for user authentication">Password</Tooltip> {isEdit && '(leave blank to keep current)'}</label>
+            <PasswordInput value={form.Password} onChange={(e) => handleChange('Password', e.target.value)} {...(!isEdit ? { required: true } : {})} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="User's given name">First Name</Tooltip></label>
+              <input type="text" value={form.FirstName} onChange={(e) => handleChange('FirstName', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label><Tooltip text="User's family name">Last Name</Tooltip></label>
+              <input type="text" value={form.LastName} onChange={(e) => handleChange('LastName', e.target.value)} />
+            </div>
           </div>
         </div>
-        <div className="form-group">
-          <div className="form-toggle">
-            <label className="toggle-switch">
-              <input type="checkbox" checked={form.IsTenantAdmin} onChange={(e) => handleChange('IsTenantAdmin', e.target.checked)} />
-              <span className="toggle-slider"></span>
-            </label>
-            <span><Tooltip text="Grant this user tenant administrator privileges (manage users, credentials, and resources within the tenant)">Tenant Admin</Tooltip></span>
-          </div>
-        </div>
-        <div className="form-group">
-          <div className="form-toggle">
-            <label className="toggle-switch">
-              <input type="checkbox" checked={form.IsAdmin} onChange={(e) => handleChange('IsAdmin', e.target.checked)} />
-              <span className="toggle-slider"></span>
-            </label>
-            <span><Tooltip text="Grant this user full administrative privileges">Administrator</Tooltip></span>
-          </div>
-        </div>
-        {isEdit && (
-          <>
+
+        <div className="form-section">
+          <div className="form-section-title">Roles &amp; Access</div>
+          <div className="form-row">
             <div className="form-group">
               <div className="form-toggle">
                 <label className="toggle-switch">
-                  <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+                  <input type="checkbox" checked={form.IsTenantAdmin} onChange={(e) => handleChange('IsTenantAdmin', e.target.checked)} />
                   <span className="toggle-slider"></span>
                 </label>
-                <span><Tooltip text="Whether this user account is currently active and can log in">Active</Tooltip></span>
+                <span><Tooltip text="Grant this user tenant administrator privileges (manage users, credentials, and resources within the tenant)">Tenant Admin</Tooltip></span>
               </div>
             </div>
             <div className="form-group">
               <div className="form-toggle">
                 <label className="toggle-switch">
-                  <input type="checkbox" checked={form.IsProtected} onChange={(e) => handleChange('IsProtected', e.target.checked)} />
+                  <input type="checkbox" checked={form.IsAdmin} onChange={(e) => handleChange('IsAdmin', e.target.checked)} />
                   <span className="toggle-slider"></span>
                 </label>
-                <span><Tooltip text="Protected records cannot be deleted">Protected</Tooltip></span>
+                <span><Tooltip text="Grant this user full administrative privileges">Administrator</Tooltip></span>
               </div>
             </div>
-          </>
-        )}
+          </div>
+          {isEdit && (
+            <div className="form-row">
+              <div className="form-group">
+                <div className="form-toggle">
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={form.Active} onChange={(e) => handleChange('Active', e.target.checked)} />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span><Tooltip text="Whether this user account is currently active and can log in">Active</Tooltip></span>
+                </div>
+              </div>
+              <div className="form-group">
+                <div className="form-toggle">
+                  <label className="toggle-switch">
+                    <input type="checkbox" checked={form.IsProtected} onChange={(e) => handleChange('IsProtected', e.target.checked)} />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span><Tooltip text="Protected records cannot be deleted">Protected</Tooltip></span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </form>
     </Modal>
   );

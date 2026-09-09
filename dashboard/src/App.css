@@ -848,6 +848,50 @@ body {
   gap: 1rem;
 }
 
+/* Grouped sections inside modal forms */
+.form-section {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: none;
+}
+
+.form-section + .form-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color, var(--input-border));
+}
+
+.form-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 0 0 0.875rem;
+}
+
+.form-section-hint {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: -0.5rem 0 0.875rem;
+  line-height: 1.4;
+}
+
+/* Last field in a section shouldn't add trailing space before the divider */
+.form-section > .form-group:last-child,
+.form-section > .form-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Fields laid out side-by-side in a section row share the row's rhythm */
+.form-section .form-row {
+  margin-bottom: 1rem;
+}
+
+.form-section .form-row > .form-group {
+  margin-bottom: 0;
+}
+
 .form-toggle {
   display: flex;
   align-items: center;
@@ -3403,7 +3447,7 @@ body {
 }
 
 .upload-progress-col-action {
-  width: 28px;
+  width: 64px;
   flex-shrink: 0;
   text-align: center;
 }
@@ -3475,6 +3519,24 @@ body {
 
 .upload-progress-dismiss:hover {
   color: var(--text-primary);
+}
+
+.upload-progress-cancel {
+  background: none;
+  border: 1px solid var(--danger-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--danger-color);
+  padding: 0.25rem 0.4rem;
+  white-space: nowrap;
+}
+
+.upload-progress-cancel:hover {
+  background: var(--danger-color);
+  color: #fff;
 }
 
 .upload-progress-error {

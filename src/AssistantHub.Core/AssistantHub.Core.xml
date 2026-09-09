@@ -10789,6 +10789,12 @@
             Maximum concurrent requests allowed for this endpoint.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaximumTimeoutMs">
+            <summary>
+            Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
+            This is distinct from the health check timeout.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.SupportsToolCalling">
             <summary>
             Whether this endpoint explicitly supports model tool calls.
@@ -10907,6 +10913,12 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaxConcurrentRequests">
             <summary>
             Maximum concurrent requests allowed for this endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaximumTimeoutMs">
+            <summary>
+            Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
+            This is distinct from the health check timeout. Left null on partial updates to preserve the stored value.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.SupportsToolCalling">

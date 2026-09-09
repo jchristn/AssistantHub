@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function UploadProgressPanel({ records, onDismiss, onClearFinished }) {
+function UploadProgressPanel({ records, onDismiss, onCancel, onClearFinished }) {
   const [collapsed, setCollapsed] = useState(false);
 
   if (!records || records.length === 0) return null;
@@ -81,8 +81,17 @@ function UploadProgressPanel({ records, onDismiss, onClearFinished }) {
                   </span>
                 </span>
                 <span className="upload-progress-col-action">
-                  {isDismissible(r) && (
+                  {isDismissible(r) ? (
                     <button className="upload-progress-dismiss" onClick={() => onDismiss(r.id)} title="Dismiss">&times;</button>
+                  ) : (
+                    <button
+                      className="upload-progress-cancel"
+                      type="button"
+                      onClick={() => onCancel?.(r)}
+                      title="Cancel ingestion and delete this document"
+                    >
+                      Cancel
+                    </button>
                   )}
                 </span>
                 {isError(r) && r.error && (

@@ -8,6 +8,7 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import { createDuplicateInitialData } from '../utils/duplicateObject';
+import { unwrapObjects } from '../utils/artifactSearch.jsx';
 
 function IngestionRulesView() {
   const { serverUrl, credential, isGlobalAdmin } = useAuth();
@@ -38,8 +39,7 @@ function IngestionRulesView() {
 
         if (isGlobalAdmin) {
           const indicesResult = await api.getIndices({ maxResults: 1000 });
-          const indexItems = (indicesResult && indicesResult.Objects) ? indicesResult.Objects : Array.isArray(indicesResult) ? indicesResult : [];
-          setIndices(indexItems);
+          setIndices(unwrapObjects(indicesResult));
         }
 
         const inferenceResult = await api.enumerateCompletionEndpoints({ maxResults: 1000 });

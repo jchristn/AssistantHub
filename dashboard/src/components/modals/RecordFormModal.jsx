@@ -74,42 +74,50 @@ function RecordFormModal({ onSave, onClose }) {
       </>
     }>
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label><Tooltip text="The text content of this record that will be stored and made searchable">Content</Tooltip> <span style={{ color: 'var(--danger-color)' }}>*</span></label>
-          <textarea
-            value={form.Content}
-            onChange={(e) => update('Content', e.target.value)}
-            rows={4}
-            required
-            autoFocus
-            style={{ fontFamily: 'inherit' }}
-          />
-          {errors.Content && <small style={{ color: 'var(--danger-color)', marginTop: '4px', display: 'block' }}>{errors.Content}</small>}
+        <div className="form-section">
+          <div className="form-section-title">Record</div>
+          <div className="form-group">
+            <label><Tooltip text="The text content of this record that will be stored and made searchable">Content</Tooltip> <span style={{ color: 'var(--danger-color)' }}>*</span></label>
+            <textarea
+              value={form.Content}
+              onChange={(e) => update('Content', e.target.value)}
+              rows={4}
+              required
+              autoFocus
+              style={{ fontFamily: 'inherit' }}
+            />
+            {errors.Content && <small style={{ color: 'var(--danger-color)', marginTop: '4px', display: 'block' }}>{errors.Content}</small>}
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><Tooltip text="Type of content stored in this record (Text, Code, List, Table, etc.)">Content Type</Tooltip></label>
+              <select value={form.ContentType} onChange={(e) => update('ContentType', e.target.value)}>
+                {CONTENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label><Tooltip text="Numeric position of this record within its document, used for ordering">Position</Tooltip></label>
+              <input
+                type="number"
+                value={form.Position}
+                onChange={(e) => update('Position', parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label><Tooltip text="Optional identifier to group related records under a single document">Document ID</Tooltip> <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
+            <input
+              type="text"
+              value={form.DocumentId}
+              onChange={(e) => update('DocumentId', e.target.value)}
+              placeholder="Optional — groups related chunks"
+            />
+          </div>
         </div>
-        <div className="form-group">
-          <label><Tooltip text="Type of content stored in this record (Text, Code, List, Table, etc.)">Content Type</Tooltip></label>
-          <select value={form.ContentType} onChange={(e) => update('ContentType', e.target.value)}>
-            {CONTENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label><Tooltip text="Optional identifier to group related records under a single document">Document ID</Tooltip> <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
-          <input
-            type="text"
-            value={form.DocumentId}
-            onChange={(e) => update('DocumentId', e.target.value)}
-            placeholder="Optional — groups related chunks"
-          />
-        </div>
-        <div className="form-group">
-          <label><Tooltip text="Numeric position of this record within its document, used for ordering">Position</Tooltip></label>
-          <input
-            type="number"
-            value={form.Position}
-            onChange={(e) => update('Position', parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="form-group">
+
+        <div className="form-section">
+          <div className="form-section-title">Metadata</div>
+          <div className="form-group">
           <label><Tooltip text="Optional labels for categorizing and filtering this record">Labels</Tooltip> <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
           {form.Labels.map((label, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
@@ -165,17 +173,22 @@ function RecordFormModal({ onSave, onClose }) {
             </div>
           ))}
           <button type="button" className="btn btn-secondary" style={{ marginTop: 4, fontSize: 12 }} onClick={() => update('Tags', [...form.Tags, { key: '', value: '' }])}>+ Add Tag</button>
+          </div>
         </div>
-        <div className="form-group">
-          <label><Tooltip text="Pre-computed embedding vector for this record. If not provided, embeddings will be generated automatically">Embeddings</Tooltip> <span style={{ color: '#888', fontWeight: 400 }}>(optional, comma-separated floats)</span></label>
-          <input
-            type="text"
-            value={form.Embeddings}
-            onChange={(e) => update('Embeddings', e.target.value)}
-            placeholder="0.1, 0.2, 0.3"
-            style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}
-          />
-          {errors.Embeddings && <small style={{ color: 'var(--danger-color)', marginTop: '4px', display: 'block' }}>{errors.Embeddings}</small>}
+
+        <div className="form-section">
+          <div className="form-section-title">Embeddings</div>
+          <div className="form-group">
+            <label><Tooltip text="Pre-computed embedding vector for this record. If not provided, embeddings will be generated automatically">Embeddings</Tooltip> <span style={{ color: '#888', fontWeight: 400 }}>(optional, comma-separated floats)</span></label>
+            <input
+              type="text"
+              value={form.Embeddings}
+              onChange={(e) => update('Embeddings', e.target.value)}
+              placeholder="0.1, 0.2, 0.3"
+              style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}
+            />
+            {errors.Embeddings && <small style={{ color: 'var(--danger-color)', marginTop: '4px', display: 'block' }}>{errors.Embeddings}</small>}
+          </div>
         </div>
       </form>
     </Modal>

@@ -1,6 +1,9 @@
 export const API_FORMAT_OPTIONS = ['Ollama', 'OpenAI', 'Gemini'];
 export const HEALTH_CHECK_METHOD_OPTIONS = ['GET', 'POST', 'HEAD'];
 
+// Default per-endpoint request timeout (distinct from the health check timeout), in milliseconds.
+export const DEFAULT_MAXIMUM_TIMEOUT_MS = 300000;
+
 const FORMAT_DEFAULTS = {
   Ollama: {
     DefaultEmbeddingModel: 'nomic-embed-text',
@@ -125,6 +128,7 @@ export function getApiFormatDefaults(apiFormat = 'Ollama', endpoint = null) {
 
   return {
     ...defaults,
+    MaximumTimeoutMs: DEFAULT_MAXIMUM_TIMEOUT_MS,
     Endpoint: resolvedEndpoint,
     HealthCheckUrl: getDefaultHealthCheckUrl(resolvedEndpoint, apiFormat)
   };

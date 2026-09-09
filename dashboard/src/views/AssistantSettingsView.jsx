@@ -69,6 +69,8 @@ function formatPolicyList(value) {
 function getEnumerationItems(result) {
   if (result && Array.isArray(result.Objects)) return result.Objects;
   if (result && Array.isArray(result.Data)) return result.Data;
+  if (result && Array.isArray(result.Indices)) return result.Indices;
+  if (result && result.Data && Array.isArray(result.Data.Indices)) return result.Data.Indices;
   return Array.isArray(result) ? result : [];
 }
 

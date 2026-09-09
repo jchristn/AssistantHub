@@ -44,7 +44,9 @@
     "Endpoint": "http://partio-server:8400",
     "AccessKey": "partioadmin",
     "EndpointId": "default",
-    "DashboardUrl": "http://localhost:8322"
+    "DashboardUrl": "http://localhost:8322",
+    "MaxRetries": 3,
+    "RetryDelayMs": 1000
   },
   "Embeddings": {
     "Endpoint": "http://partio-server:8400",

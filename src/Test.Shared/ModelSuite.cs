@@ -1429,6 +1429,8 @@ namespace Test.Automated
                     Model = "qwen3",
                     Endpoint = "http://localhost:11434",
                     ApiFormat = "OpenAI",
+                    MaxConcurrentRequests = 4,
+                    MaxQueueDepth = 8,
                     SupportsToolCalling = true,
                     ToolCallingApiFormat = "OpenAIChatCompletions",
                     SupportsParallelToolCalls = true,
@@ -1440,14 +1442,28 @@ namespace Test.Automated
                 string json = JsonSerializer.Serialize(endpoint, _jsonOptionsDefault);
                 AssertHelper.StringContains(json, "\"SupportsToolCalling\":true", "SupportsToolCalling serialized");
                 AssertHelper.StringContains(json, "\"ToolCallingApiFormat\":\"OpenAIChatCompletions\"", "ToolCallingApiFormat serialized");
+                AssertHelper.StringContains(json, "\"MaxQueueDepth\":8", "MaxQueueDepth serialized");
 
                 PartioEndpointConfig roundTrip = JsonSerializer.Deserialize<PartioEndpointConfig>(json, _jsonOptionsDefault);
                 AssertHelper.IsTrue(roundTrip.SupportsToolCalling, "SupportsToolCalling round-trip");
                 AssertHelper.AreEqual("OpenAIChatCompletions", roundTrip.ToolCallingApiFormat, "ToolCallingApiFormat round-trip");
                 AssertHelper.IsTrue(roundTrip.SupportsParallelToolCalls, "SupportsParallelToolCalls round-trip");
                 AssertHelper.IsTrue(roundTrip.SupportsStreamingToolCalls, "SupportsStreamingToolCalls round-trip");
+                AssertHelper.AreEqual(4, roundTrip.MaxConcurrentRequests, "MaxConcurrentRequests round-trip");
+                AssertHelper.AreEqual(8, roundTrip.MaxQueueDepth, "MaxQueueDepth round-trip");
                 AssertHelper.Contains(roundTrip.Labels, "production", "Labels round-trip");
                 AssertHelper.AreEqual("assistant-team", roundTrip.Tags["owner"], "Tags round-trip");
+            });
+
+            await ExecuteTestAsync("Models.PartioEmbedResponse: parses batched embed response", async () =>
+            {
+                string json = "{\"Success\":true,\"StatusCode\":200,\"EndpointId\":\"eep_x\",\"Model\":\"nomic-embed-text\",\"Embeddings\":[[0.1,0.2,0.3]],\"Count\":1,\"Dimensions\":3,\"L2Normalization\":false}";
+                PartioEmbedResponse parsed = JsonSerializer.Deserialize<PartioEmbedResponse>(json, _jsonOptionsDefault);
+                AssertHelper.IsNotNull(parsed, "embed response parsed");
+                AssertHelper.IsTrue(parsed.Success, "Success parsed");
+                AssertHelper.AreEqual(1, parsed.Embeddings.Count, "one vector returned");
+                AssertHelper.AreEqual(3, parsed.Embeddings[0].Count, "vector dimensions");
+                await Task.CompletedTask;
             });
 
             await ExecuteTestAsync("Models.PartioEndpointToolMetadata: maps tool fields to Partio labels and tags", async () =>

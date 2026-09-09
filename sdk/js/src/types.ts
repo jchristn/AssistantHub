@@ -1090,6 +1090,8 @@ export interface PartioEndpointRequest {
   ApiKey?: string;
   Active?: boolean;
   MaxConcurrentRequests?: number;
+  /** Maximum requests Partio queues once the concurrency limit is reached. 0 rejects with 429 immediately; a queued request that times out returns 504. */
+  MaxQueueDepth?: number;
   /** Maximum request timeout, in milliseconds, for upstream calls. Distinct from the health check timeout. */
   MaximumTimeoutMs?: number;
   SupportsToolCalling?: boolean;
@@ -1121,6 +1123,8 @@ export interface PartioEndpointConfig {
   ApiKey?: string;
   Active?: boolean;
   MaxConcurrentRequests?: number;
+  /** Maximum requests Partio queues once the concurrency limit is reached. 0 rejects with 429 immediately; a queued request that times out returns 504. */
+  MaxQueueDepth?: number;
   /** Maximum request timeout, in milliseconds, for upstream calls. Distinct from the health check timeout. */
   MaximumTimeoutMs?: number;
   SupportsToolCalling?: boolean;

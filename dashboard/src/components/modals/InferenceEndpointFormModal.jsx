@@ -101,6 +101,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     ApiKey: getSourceText(source, 'ApiKey', 'apiKey'),
     Active: getSourceField(source, 'Active', 'active') !== undefined ? getSourceBoolean(source, 'Active', 'active') : true,
     MaxConcurrentRequests: getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') !== undefined ? getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') : 2,
+    MaxQueueDepth: getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') !== undefined ? getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') : 0,
     MaximumTimeoutMs: getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') !== undefined ? getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') : initialDefaults.MaximumTimeoutMs,
     SupportsToolCalling: getSourceToolBoolean(source, ['SupportsToolCalling', 'supportsToolCalling'], TOOL_TAG_SUPPORTS, initialLabels),
     ToolCallingApiFormat: getSourceText(source, 'ToolCallingApiFormat', 'toolCallingApiFormat') || getTagValue(initialTags, TOOL_TAG_FORMAT) || getDefaultToolCallingApiFormat(initialApiFormat),
@@ -186,6 +187,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiKey: form.ApiKey,
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
+        MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 0 : Math.max(0, parseInt(form.MaxQueueDepth)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         SupportsToolCalling: form.SupportsToolCalling,
         ToolCallingApiFormat: form.SupportsToolCalling ? form.ToolCallingApiFormat : null,
@@ -315,6 +317,16 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 value={form.MaxConcurrentRequests}
                 onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
                 min="1"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="How many requests Partio queues once the concurrent-request limit is reached. 0 rejects extra requests immediately with 429; a positive value lets that many requests wait for a slot (a queued request that waits past the request timeout returns 504).">Max Queue Depth</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaxQueueDepth}
+                onChange={(e) => handleChange('MaxQueueDepth', e.target.value)}
+                min="0"
               />
             </div>
 

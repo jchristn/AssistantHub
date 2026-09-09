@@ -62,6 +62,14 @@ namespace AssistantHub.Sdk.Models
         public int MaxConcurrentRequests { get; set; }
 
         /// <summary>
+        /// Maximum number of requests Partio queues once the concurrency limit is reached. Zero rejects
+        /// excess requests immediately with 429; a positive value lets that many additional requests wait
+        /// for a slot before Partio returns 429, and a queued request that times out returns 504.
+        /// </summary>
+        [JsonPropertyName("MaxQueueDepth")]
+        public int MaxQueueDepth { get; set; }
+
+        /// <summary>
         /// Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
         /// Distinct from the health check timeout.
         /// </summary>

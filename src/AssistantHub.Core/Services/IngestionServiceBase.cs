@@ -339,44 +339,43 @@ namespace AssistantHub.Core.Services
                     },
                     token).ConfigureAwait(false))
                 {
-                    using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
+                    PartioCallResult processResult = await SendPartioWithRetryAsync(
+                        documentId, "Chunking/Embedding/Summarization", HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false);
+                    apiSw.Stop();
+                    string responseBody = processResult.Body;
+
+                    if (!processResult.IsSuccess)
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                        apiSw.Stop();
-
-                        if (!response.IsSuccessStatusCode)
+                        _Logging.Warn(_Header + "processing service returned " + processResult.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
+                        if (_ProcessingLog != null)
                         {
-                            _Logging.Warn(_Header + "processing service returned " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms: " + responseBody);
-                            if (_ProcessingLog != null)
-                            {
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                        "Step: Chunking/Embedding/Summarization via Partio - HTTP " + (int)response.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Request config: embeddingEndpoint=" + embEndpointId
-                                    + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
-                                    + ", strategy=" + chunkStrategy).ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Response body: " + responseBody).ConfigureAwait(false);
-                            }
-                            return null;
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                    "Step: Chunking/Embedding/Summarization via Partio - HTTP " + processResult.StatusCode + " in " + apiSw.Elapsed.TotalMilliseconds.ToString("F2") + "ms").ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Source content: " + content.Length + " chars, excerpt: " + Excerpt(content)).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Request config: embeddingEndpoint=" + embEndpointId
+                                + ", summarization=" + (summarizationEnabled ? "enabled" : "disabled")
+                                + ", strategy=" + chunkStrategy).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Response body: " + responseBody).ConfigureAwait(false);
                         }
-
-                        SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
-                        if (cellResult == null)
-                        {
-                            if (_ProcessingLog != null)
-                            {
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Response body: " + responseBody).ConfigureAwait(false);
-                            }
-                            return null;
-                        }
-                        return FlattenChunks(cellResult);
+                        return null;
                     }
+
+                    SemanticCellResponse cellResult = JsonSerializer.Deserialize<SemanticCellResponse>(responseBody, _JsonOptions);
+                    if (cellResult == null)
+                    {
+                        if (_ProcessingLog != null)
+                        {
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Partio returned HTTP 200 but response could not be deserialized").ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Response body: " + responseBody).ConfigureAwait(false);
+                        }
+                        return null;
+                    }
+                    return FlattenChunks(cellResult);
                 }
         }
 
@@ -404,13 +403,15 @@ namespace AssistantHub.Core.Services
         {
             try
             {
-                Dictionary<string, object> requestBody = new Dictionary<string, object>();
-                requestBody["Text"] = text;
-
                 string endpointId = _ChunkingSettings.EndpointId;
                 if (rule?.Embedding != null && !String.IsNullOrEmpty(rule.Embedding.EmbeddingEndpointId))
                     endpointId = rule.Embedding.EmbeddingEndpointId;
-                requestBody["EmbeddingEndpointId"] = endpointId;
+
+                // Partio's standalone /v1.0/embed (v0.4.0+) expects { EndpointId, Input[], L2Normalization }
+                // and returns a batched EmbedResponse with one vector per input string.
+                Dictionary<string, object> requestBody = new Dictionary<string, object>();
+                requestBody["EndpointId"] = endpointId;
+                requestBody["Input"] = new List<string> { text };
 
                 if (rule?.Embedding != null)
                     requestBody["L2Normalization"] = rule.Embedding.L2Normalization;
@@ -422,28 +423,40 @@ namespace AssistantHub.Core.Services
                     new List<EndpointLimiterTarget> { new EndpointLimiterTarget("embedding", endpointId) },
                     token).ConfigureAwait(false))
                 {
-                    using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/embed", json, token).ConfigureAwait(false))
+                    PartioCallResult embedResult = await SendPartioWithRetryAsync(
+                        documentId, "Single-chunk embedding", HttpMethod.Post, "/v1.0/embed", json, token).ConfigureAwait(false);
+                    string responseBody = embedResult.Body;
+
+                    if (!embedResult.IsSuccess)
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                        if (!response.IsSuccessStatusCode)
+                        _Logging.Warn(_Header + "embedding service returned " + embedResult.StatusCode + ": " + responseBody);
+                        if (_ProcessingLog != null)
                         {
-                            _Logging.Warn(_Header + "embedding service returned " + (int)response.StatusCode + ": " + responseBody);
-                            if (_ProcessingLog != null)
-                            {
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Step: Single-chunk embedding via Partio /v1.0/embed - HTTP " + (int)response.StatusCode).ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Source content: " + text.Length + " chars, excerpt: " + Excerpt(text)).ConfigureAwait(false);
-                                await _ProcessingLog.LogAsync(documentId, "ERROR",
-                                    "Response body: " + responseBody).ConfigureAwait(false);
-                            }
-                            return null;
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Step: Single-chunk embedding via Partio /v1.0/embed - HTTP " + embedResult.StatusCode).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Source content: " + text.Length + " chars, excerpt: " + Excerpt(text)).ConfigureAwait(false);
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Response body: " + responseBody).ConfigureAwait(false);
                         }
-
-                        PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody);
-                        return embedResponse?.Embeddings;
+                        return null;
                     }
+
+                    // Partio /v1.0/embed returns a batched EmbedResponse: one vector per input string.
+                    // We send a single input, so the first vector is our single-chunk embedding.
+                    PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody, _JsonOptions);
+                    if (embedResponse == null || !embedResponse.Success || embedResponse.Embeddings == null || embedResponse.Embeddings.Count == 0)
+                    {
+                        string embedError = embedResponse != null && !String.IsNullOrEmpty(embedResponse.Error) ? embedResponse.Error : null;
+                        _Logging.Warn(_Header + "embedding service returned no embeddings" + (embedError != null ? ": " + embedError : ""));
+                        if (_ProcessingLog != null)
+                            await _ProcessingLog.LogAsync(documentId, "ERROR",
+                                "Step: Single-chunk embedding via Partio /v1.0/embed - response contained no embedding vector"
+                                + (embedError != null ? " (" + embedError + ")" : "")).ConfigureAwait(false);
+                        return null;
+                    }
+
+                    return embedResponse.Embeddings[0];
                 }
             }
             catch (Exception e)
@@ -1163,6 +1176,73 @@ namespace AssistantHub.Core.Services
             }
         }
 
+        /// <summary>
+        /// Whether a Partio HTTP status code represents a transient failure that is safe to retry.
+        /// Covers request timeout (408), Partio's concurrency/queue rejection (429), and gateway/timeout
+        /// conditions (502/503/504) introduced by Partio v0.5.0 per-endpoint queueing.
+        /// </summary>
+        private protected static bool IsTransientPartioStatus(int statusCode)
+        {
+            return statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504;
+        }
+
+        /// <summary>
+        /// Compute the backoff delay before the next Partio retry using exponential growth capped at 60s.
+        /// </summary>
+        private protected int GetPartioRetryDelayMs(int failedAttempt)
+        {
+            int baseDelayMs = _ChunkingSettings.RetryDelayMs;
+            if (baseDelayMs <= 0) return 0;
+
+            int multiplier = 1 << Math.Min(Math.Max(0, failedAttempt - 1), 6);
+            return Math.Min(60000, baseDelayMs * multiplier);
+        }
+
+        /// <summary>
+        /// Send a Partio processing/embedding request, retrying transient failures (HTTP 408/429/502/503/504)
+        /// with exponential backoff up to <see cref="ChunkingSettings.MaxRetries"/> additional attempts.
+        /// Returns the final status code, success flag, and response body from the last attempt made.
+        /// </summary>
+        private protected async Task<PartioCallResult> SendPartioWithRetryAsync(
+            string documentId,
+            string stepLabel,
+            HttpMethod method,
+            string path,
+            string json,
+            CancellationToken token)
+        {
+            int maxAttempts = Math.Max(1, _ChunkingSettings.MaxRetries + 1);
+
+            for (int attempt = 1; ; attempt++)
+            {
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(method, path, json, token).ConfigureAwait(false))
+                {
+                    string body = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    int statusCode = (int)response.StatusCode;
+
+                    if (response.IsSuccessStatusCode)
+                        return new PartioCallResult { StatusCode = statusCode, IsSuccess = true, Body = body };
+
+                    bool canRetry = attempt < maxAttempts
+                        && IsTransientPartioStatus(statusCode)
+                        && !token.IsCancellationRequested;
+
+                    if (!canRetry)
+                        return new PartioCallResult { StatusCode = statusCode, IsSuccess = false, Body = body };
+
+                    int delayMs = GetPartioRetryDelayMs(attempt);
+                    string retryMessage = stepLabel + " via Partio returned HTTP " + statusCode
+                        + " (transient); retrying in " + delayMs + "ms after attempt " + attempt + " of " + maxAttempts;
+                    _Logging.Warn(_Header + retryMessage);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "WARN", retryMessage).ConfigureAwait(false);
+
+                    if (delayMs > 0)
+                        await Task.Delay(delayMs, token).ConfigureAwait(false);
+                }
+            }
+        }
+
         private protected async Task<int> ResolveEndpointMaxConcurrencyAsync(string endpointType, string endpointId, CancellationToken token)
         {
             try
@@ -1250,6 +1330,27 @@ namespace AssistantHub.Core.Services
         #endregion
 
         #region Private-Classes
+
+        /// <summary>
+        /// Result of a Partio HTTP call made through <see cref="SendPartioWithRetryAsync"/>.
+        /// </summary>
+        private protected sealed class PartioCallResult
+        {
+            /// <summary>
+            /// HTTP status code returned by the final attempt.
+            /// </summary>
+            public int StatusCode { get; set; }
+
+            /// <summary>
+            /// Whether the final attempt returned a success (2xx) status.
+            /// </summary>
+            public bool IsSuccess { get; set; }
+
+            /// <summary>
+            /// Response body from the final attempt.
+            /// </summary>
+            public string Body { get; set; }
+        }
 
         #endregion
     }

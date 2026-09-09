@@ -36,6 +36,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     ApiKey: source?.ApiKey || '',
     Active: source?.Active !== undefined ? source.Active : true,
     MaxConcurrentRequests: source?.MaxConcurrentRequests !== undefined ? source.MaxConcurrentRequests : 2,
+    MaxQueueDepth: source?.MaxQueueDepth !== undefined ? source.MaxQueueDepth : 0,
     MaximumTimeoutMs: source?.MaximumTimeoutMs !== undefined ? source.MaximumTimeoutMs : initialDefaults.MaximumTimeoutMs,
     HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
     HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
@@ -110,6 +111,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         ApiKey: form.ApiKey,
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
+        MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 0 : Math.max(0, parseInt(form.MaxQueueDepth)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
@@ -233,6 +235,16 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 value={form.MaxConcurrentRequests}
                 onChange={(e) => handleChange('MaxConcurrentRequests', e.target.value)}
                 min="1"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="How many requests Partio queues once the concurrent-request limit is reached. 0 rejects extra requests immediately with 429; a positive value lets that many requests wait for a slot (a queued request that waits past the request timeout returns 504).">Max Queue Depth</Tooltip></label>
+              <input
+                type="number"
+                value={form.MaxQueueDepth}
+                onChange={(e) => handleChange('MaxQueueDepth', e.target.value)}
+                min="0"
               />
             </div>
 

@@ -50,6 +50,14 @@ namespace AssistantHub.Core.Models
         public int? MaxConcurrentRequests { get; set; } = null;
 
         /// <summary>
+        /// Maximum number of requests Partio queues once <see cref="MaxConcurrentRequests"/> upstream calls
+        /// are in flight. Zero rejects excess requests immediately with 429; a positive value lets that many
+        /// additional requests wait for a slot. Left null on partial updates to preserve the stored value.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaxQueueDepth { get; set; } = null;
+
+        /// <summary>
         /// Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
         /// This is distinct from the health check timeout. Left null on partial updates to preserve the stored value.
         /// </summary>

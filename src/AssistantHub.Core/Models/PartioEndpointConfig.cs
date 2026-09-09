@@ -55,6 +55,14 @@ namespace AssistantHub.Core.Models
         public int MaxConcurrentRequests { get; set; } = 2;
 
         /// <summary>
+        /// Maximum number of requests Partio queues once <see cref="MaxConcurrentRequests"/> upstream calls
+        /// are in flight. Zero (the default) rejects excess requests immediately with 429; a positive value
+        /// lets up to that many additional requests wait for a slot before Partio returns 429, and a queued
+        /// request that waits past <see cref="MaximumTimeoutMs"/> returns 504.
+        /// </summary>
+        public int MaxQueueDepth { get; set; } = 0;
+
+        /// <summary>
         /// Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
         /// This is distinct from the health check timeout.
         /// </summary>

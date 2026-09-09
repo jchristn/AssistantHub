@@ -1534,6 +1534,9 @@ Create a new embedding endpoint.
   "ApiFormat": "Gemini",
   "ApiKey": "AIza...",
   "Active": true,
+  "MaxConcurrentRequests": 2,
+  "MaxQueueDepth": 0,
+  "MaximumTimeoutMs": 60000,
   "HealthCheckEnabled": true,
   "HealthCheckUrl": "https://generativelanguage.googleapis.com/v1beta/models",
   "HealthCheckMethod": "GET",
@@ -1547,6 +1550,11 @@ Create a new embedding endpoint.
 ```
 
 **Response:** The created endpoint object (proxied from Partio).
+
+**Concurrency and queueing fields (optional, forwarded to Partio):**
+- `MaxConcurrentRequests` (default `2`) -- maximum in-flight upstream calls Partio allows for this endpoint.
+- `MaxQueueDepth` (default `0`) -- how many additional requests Partio queues once the concurrency limit is reached. `0` rejects excess requests immediately with `429 Too Many Requests`; a positive value lets that many requests wait for a slot, and a queued request that waits past `MaximumTimeoutMs` returns `504 Gateway Timeout`.
+- `MaximumTimeoutMs` (default `60000`) -- per-request upstream timeout, distinct from the health-check timeout.
 
 **Error Responses:**
 - `403` -- Not an admin user.
@@ -1749,6 +1757,9 @@ Create a new completion endpoint.
   "ApiFormat": "OpenAI",
   "ApiKey": "optional-key",
   "Active": true,
+  "MaxConcurrentRequests": 2,
+  "MaxQueueDepth": 0,
+  "MaximumTimeoutMs": 60000,
   "Labels": ["production"],
   "Tags": {
     "owner": "assistant-team"
@@ -1772,6 +1783,8 @@ Create a new completion endpoint.
 **Response:** The created endpoint object (proxied from Partio).
 
 Tool-calling capability is disabled unless `SupportsToolCalling` is explicitly set on the managed completion endpoint and the assistant policy separately enables tool calls. AssistantHub persists these capability fields in Partio endpoint metadata using the reserved label `assistanthub:tool-calling` and reserved tags `AssistantHub.SupportsToolCalling`, `AssistantHub.ToolCallingApiFormat`, `AssistantHub.SupportsParallelToolCalls`, and `AssistantHub.SupportsStreamingToolCalls`. Other caller-supplied labels and tags are preserved. First-release provider support targets native Ollama endpoints with `ToolCallingApiFormat: "OllamaChat"` and OpenAI-compatible chat-completions endpoints with `ToolCallingApiFormat: "OpenAIChatCompletions"`.
+
+`MaxConcurrentRequests` (default `2`), `MaxQueueDepth` (default `0`), and `MaximumTimeoutMs` (default `60000`) are forwarded to Partio and behave as described under [PUT /v1.0/endpoints/embedding](#put-v10endpointsembedding): `MaxQueueDepth` of `0` rejects requests over the concurrency limit with `429`, while a positive value queues them until a slot frees or the request times out with `504`.
 
 **Error Responses:**
 - `403` -- Not an admin user.

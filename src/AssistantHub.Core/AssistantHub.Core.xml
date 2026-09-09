@@ -10983,12 +10983,60 @@
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEmbedResponse">
             <summary>
-            Typed response payload from Partio's embedding endpoint.
+            Typed response payload from Partio's standalone <c>POST /v1.0/embed</c> endpoint (Partio v0.4.0+).
+            The endpoint embeds one or more input strings in a single batch, so <see cref="P:AssistantHub.Core.Models.PartioEmbedResponse.Embeddings"/> is a
+            list of vectors -- one per input string, in request order.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Success">
+            <summary>
+            Whether the embed request succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.StatusCode">
+            <summary>
+            Result status code reported inside the response body. Partio may set this to a non-200 value
+            (for example 429) alongside the HTTP status when a request is rejected.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Error">
+            <summary>
+            Error text when the request fails.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.EndpointId">
+            <summary>
+            Target embedding endpoint identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Model">
+            <summary>
+            Target model name.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Embeddings">
             <summary>
-            Returned embedding vector.
+            Returned embedding vectors, one per input string in the same order.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Count">
+            <summary>
+            Number of embedding vectors returned.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.Dimensions">
+            <summary>
+            Number of dimensions in each returned embedding (0 when none).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.L2Normalization">
+            <summary>
+            Whether L2 normalization was applied to the returned vectors.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEmbedResponse.ResponseTimeMs">
+            <summary>
+            Overall request duration, in milliseconds.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEndpointConfig">
@@ -11039,6 +11087,14 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaxConcurrentRequests">
             <summary>
             Maximum concurrent requests allowed for this endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaxQueueDepth">
+            <summary>
+            Maximum number of requests Partio queues once <see cref="P:AssistantHub.Core.Models.PartioEndpointConfig.MaxConcurrentRequests"/> upstream calls
+            are in flight. Zero (the default) rejects excess requests immediately with 429; a positive value
+            lets up to that many additional requests wait for a slot before Partio returns 429, and a queued
+            request that waits past <see cref="P:AssistantHub.Core.Models.PartioEndpointConfig.MaximumTimeoutMs"/> returns 504.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.MaximumTimeoutMs">
@@ -11165,6 +11221,13 @@
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaxConcurrentRequests">
             <summary>
             Maximum concurrent requests allowed for this endpoint.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaxQueueDepth">
+            <summary>
+            Maximum number of requests Partio queues once <see cref="P:AssistantHub.Core.Models.PartioEndpointRequest.MaxConcurrentRequests"/> upstream calls
+            are in flight. Zero rejects excess requests immediately with 429; a positive value lets that many
+            additional requests wait for a slot. Left null on partial updates to preserve the stored value.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.MaximumTimeoutMs">
@@ -14339,6 +14402,25 @@
             <param name="token">Cancellation token.</param>
             <returns>Human-readable endpoint info string, or null on failure.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.IsTransientPartioStatus(System.Int32)">
+            <summary>
+            Whether a Partio HTTP status code represents a transient failure that is safe to retry.
+            Covers request timeout (408), Partio's concurrency/queue rejection (429), and gateway/timeout
+            conditions (502/503/504) introduced by Partio v0.5.0 per-endpoint queueing.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.GetPartioRetryDelayMs(System.Int32)">
+            <summary>
+            Compute the backoff delay before the next Partio retry using exponential growth capped at 60s.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.SendPartioWithRetryAsync(System.String,System.String,System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Send a Partio processing/embedding request, retrying transient failures (HTTP 408/429/502/503/504)
+            with exponential backoff up to <see cref="P:AssistantHub.Core.Settings.ChunkingSettings.MaxRetries"/> additional attempts.
+            Returns the final status code, success flag, and response body from the last attempt made.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.MergeLabels(AssistantHub.Core.Models.IngestionRule,AssistantHub.Core.Models.AssistantDocument)">
             <summary>
             Merge labels from ingestion rule and document.
@@ -14349,6 +14431,26 @@
             <summary>
             Merge tags from ingestion rule and document.
             Document tags override rule tags for the same key.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.IngestionServiceBase.PartioCallResult">
+            <summary>
+            Result of a Partio HTTP call made through <see cref="M:AssistantHub.Core.Services.IngestionServiceBase.SendPartioWithRetryAsync(System.String,System.String,System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)"/>.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionServiceBase.PartioCallResult.StatusCode">
+            <summary>
+            HTTP status code returned by the final attempt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionServiceBase.PartioCallResult.IsSuccess">
+            <summary>
+            Whether the final attempt returned a success (2xx) status.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.IngestionServiceBase.PartioCallResult.Body">
+            <summary>
+            Response body from the final attempt.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IObjectStorageService">
@@ -15304,6 +15406,21 @@
         <member name="P:AssistantHub.Core.Settings.ChunkingSettings.DashboardUrl">
             <summary>
             Browser URL for the chunking and embeddings service dashboard.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.MaxRetries">
+            <summary>
+            Number of times to retry a Partio processing/embedding call after a transient failure
+            (HTTP 408, 429, 502, 503, or 504) before giving up. Zero disables retries.
+            Partio v0.5.0 enforces per-endpoint concurrency and queue limits and can return 429
+            (queue full) or 504 (queued-wait/upstream timeout) under load, which are safe to retry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.RetryDelayMs">
+            <summary>
+            Base delay, in milliseconds, between transient-failure retries of a Partio call.
+            The effective delay grows exponentially per attempt and is capped at 60,000 ms.
+            Zero disables the delay (retries fire immediately).
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+- **Per-endpoint request queueing passthrough (`MaxQueueDepth`)**: Embedding and completion endpoints now expose a `MaxQueueDepth` field that is forwarded to Partio alongside `MaxConcurrentRequests` and `MaximumTimeoutMs`. `0` (the default) keeps today's behavior -- requests over the concurrency limit are rejected immediately with `429`; a positive value lets that many requests queue for a slot before Partio returns `429`, and a queued request that waits past `MaximumTimeoutMs` returns `504`. Added to the `PartioEndpointConfig`/`PartioEndpointRequest` models, the embedding and inference endpoint dashboard modals, the C#/TypeScript/Python SDK endpoint models, and the REST/MCP documentation. The endpoint proxy re-serializes request bodies through the typed model, so the field is only forwarded because it is now a first-class property.
+- **Transient-failure retries for Partio calls**: Document ingestion now retries the Partio `/v1.0/process` and `/v1.0/embed` calls on transient HTTP failures (`408`, `429`, `502`, `503`, `504`) with exponential backoff, so bursts that trip Partio v0.5.0's per-endpoint concurrency/queue limits no longer fail documents outright. Controlled by new `Chunking.MaxRetries` (default `3`) and `Chunking.RetryDelayMs` (default `1000`) settings.
+
+### Fixed
+- **Single-chunk embedding against Partio v0.5.0**: The `Chunking.Strategy = "None"` ingestion path called Partio's standalone `/v1.0/embed` with the pre-v0.4.0 request/response shape (`Text`/`EmbeddingEndpointId` and a single `Embeddings` vector). It now sends the current `{ EndpointId, Input[], L2Normalization }` body, reads the batched `EmbedResponse` (one vector per input, plus `Success`/`Error`), and honors a body-level failure -- fixing empty or missing single-chunk embeddings.
+
 ## 0.16.0
 
 ### Added

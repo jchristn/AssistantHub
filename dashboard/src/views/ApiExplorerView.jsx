@@ -489,12 +489,11 @@ function ApiExplorerView() {
         />
         <div className="api-explorer-toolbar-meta">
           <span>{loadingSpec ? 'Loading routes...' : `${operations.length} live operations loaded`}</span>
-          <span>{recentRequests.length} recent request{recentRequests.length === 1 ? '' : 's'}</span>
         </div>
       </div>
 
       <div className="api-explorer-layout">
-        <aside className="api-explorer-sidebar">
+        <div className="api-explorer-main">
           {mode === 'assistant' && (
             <div className="api-explorer-card">
               <h3>Assistant Context</h3>
@@ -517,23 +516,6 @@ function ApiExplorerView() {
             </div>
           )}
 
-          <div className="api-explorer-card">
-            <h3>Recent Requests</h3>
-            {recentRequests.length < 1 ? (
-              <p className="api-explorer-empty">Recent requests are stored locally after you execute them.</p>
-            ) : recentRequests.map((recent, index) => (
-              <button type="button" key={`${recent.method}-${recent.pathTemplate}-${index}`} className="api-explorer-recent" onClick={() => restoreRecentRequest(recent)}>
-                <span className={`request-history-method method-${(recent.method || 'GET').toLowerCase()}`}>{recent.method}</span>
-                <span>
-                  <strong>{recent.operationName || recent.pathTemplate}</strong>
-                  <small>{recent.pathTemplate}</small>
-                </span>
-              </button>
-            ))}
-          </div>
-        </aside>
-
-        <div className="api-explorer-main">
           <div className="api-explorer-card">
             <div className="form-group">
               <label>Operation</label>

@@ -660,7 +660,11 @@ function AssistantAnalyticsView({ embedded = false, scopeAssistantId = '' }) {
     if (embedded) return;
     if (!assistantId) return;
     localStorage.setItem('ah_analytics_assistant', assistantId);
-    setSearchParams({ assistantId });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('assistantId', assistantId);
+      return next;
+    });
   }, [assistantId, setSearchParams, embedded]);
 
   useEffect(() => {

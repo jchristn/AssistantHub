@@ -4,7 +4,6 @@ import AssistantsView from '../AssistantsView';
 import AssistantSettingsView from '../AssistantSettingsView';
 import FeedbackView from '../FeedbackView';
 import HistoryView from '../HistoryView';
-import AssistantAnalyticsView from '../AssistantAnalyticsView';
 import EvaluationView from '../EvaluationView';
 
 const loadOptions = async (api) => {
@@ -19,7 +18,6 @@ function AssistantsHub({ onOpenChatDrawer }) {
     { key: 'settings', label: 'Settings', render: (scopeId) => <AssistantSettingsView embedded scopeAssistantId={scopeId} onOpenChatDrawer={onOpenChatDrawer} /> },
     { key: 'feedback', label: 'Feedback', render: (scopeId) => <FeedbackView embedded scopeAssistantId={scopeId} /> },
     { key: 'history', label: 'History', render: (scopeId) => <HistoryView embedded scopeAssistantId={scopeId} /> },
-    { key: 'analytics', label: 'Analytics', render: (scopeId) => <AssistantAnalyticsView embedded scopeAssistantId={scopeId} /> },
     { key: 'evaluation', label: 'Evaluation', render: (scopeId) => <EvaluationView embedded scopeAssistantId={scopeId} /> },
   ];
   return (

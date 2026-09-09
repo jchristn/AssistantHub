@@ -118,7 +118,7 @@ function Dashboard() {
             <Route path="/assistant-settings" element={<Navigate to="/assistants?tab=settings" replace />} />
             <Route path="/feedback" element={<Navigate to="/assistants?tab=feedback" replace />} />
             <Route path="/history" element={<Navigate to="/assistants?tab=history" replace />} />
-            <Route path="/assistant-analytics" element={<Navigate to="/assistants?tab=analytics" replace />} />
+            <Route path="/assistant-analytics" element={<Navigate to="/analytics?tab=assistants" replace />} />
             <Route path="/evaluation" element={<Navigate to="/assistants?tab=evaluation" replace />} />
 
             {/* Monitoring */}

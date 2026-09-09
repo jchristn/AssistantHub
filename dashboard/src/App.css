@@ -3770,38 +3770,28 @@ body {
   font-weight: 600;
 }
 
-.ing-barchart {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 160px;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.ing-bar-col {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  height: 100%;
-  min-width: 0;
-}
-
-.ing-bar {
+.ing-ts-chart {
+  display: block;
   width: 100%;
-  min-height: 2px;
-  background: var(--accent-color, #3b82f6);
-  border-radius: 3px 3px 0 0;
-  transition: height 0.2s ease;
+  height: auto;
 }
 
-.ing-barchart-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  margin-top: 0.375rem;
+.ing-ts-grid {
+  stroke: var(--border-light, var(--border-color));
+  stroke-width: 1;
+}
+
+.ing-ts-axis {
+  stroke: var(--border-color);
+  stroke-width: 1;
+}
+
+.ing-ts-bar {
+  fill: var(--accent-color, #3b82f6);
+}
+
+.ing-ts-label {
+  fill: var(--text-secondary);
 }
 
 @media (max-width: 640px) {

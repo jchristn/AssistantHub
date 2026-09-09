@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import CopyableId from '../components/CopyableId';
+import DataTable from '../components/DataTable';
+import IngestionPerformanceModal from '../components/modals/IngestionPerformanceModal';
 
 const RANGE_OPTIONS = [
   { id: 'hour', label: 'Last hour', hours: 1, buckets: 12 },
@@ -47,7 +49,6 @@ function aggregate(events, windowStartUtc, windowEndUtc, buckets) {
 
   for (const e of events) {
     const ms = Number(e.DurationMs) || 0;
-    // per-document rollup
     const doc = byDoc.get(e.DocumentId) || {
       documentId: e.DocumentId, ingestionRuleId: e.IngestionRuleId,
       stageCount: 0, totalMs: 0, success: true, completedUtc: null,
@@ -59,7 +60,6 @@ function aggregate(events, windowStartUtc, windowEndUtc, buckets) {
     if (fin && (!doc.completedUtc || new Date(fin) > new Date(doc.completedUtc))) doc.completedUtc = fin;
     byDoc.set(e.DocumentId, doc);
 
-    // per-stage average
     const key = e.Stage || 'Stage';
     const st = byStage.get(key) || { stage: key, totalMs: 0, count: 0 };
     st.totalMs += ms;
@@ -72,7 +72,6 @@ function aggregate(events, windowStartUtc, windowEndUtc, buckets) {
     .map((s) => ({ ...s, avgMs: s.count ? s.totalMs / s.count : 0 }))
     .sort((a, b) => b.avgMs - a.avgMs);
 
-  // time series: documents completed per bucket
   const start = new Date(windowStartUtc).getTime();
   const end = new Date(windowEndUtc).getTime();
   const span = Math.max(1, end - start);
@@ -94,6 +93,78 @@ function aggregate(events, windowStartUtc, windowEndUtc, buckets) {
   return { docs, stages, series, totalDocs, failedDocs, avgTotalMs, successRate };
 }
 
+// Responsive SVG bar chart with X (time) and Y (count) axes.
+function TimeSeriesChart({ series, windowStartUtc, windowEndUtc, hours }) {
+  const W = 1000;
+  const H = 320;
+  const mLeft = 46;
+  const mRight = 16;
+  const mTop = 16;
+  const mBottom = 36;
+  const plotW = W - mLeft - mRight;
+  const plotH = H - mTop - mBottom;
+  const n = Math.max(1, series.length);
+
+  const rawMax = Math.max(1, ...series);
+  const tickCount = Math.min(5, Math.max(2, rawMax));
+  const step = Math.max(1, Math.ceil(rawMax / tickCount));
+  const niceMax = step * tickCount;
+  const yTicks = [];
+  for (let v = 0; v <= niceMax; v += step) yTicks.push(v);
+
+  const start = new Date(windowStartUtc).getTime();
+  const end = new Date(windowEndUtc).getTime();
+  const span = Math.max(1, end - start);
+  const fmtTime = (t) => {
+    const d = new Date(t);
+    return hours <= 24
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
+  };
+  const labelCount = Math.min(6, n);
+  const xLabels = [];
+  for (let i = 0; i < labelCount; i++) {
+    const frac = labelCount === 1 ? 0 : i / (labelCount - 1);
+    xLabels.push({ x: mLeft + frac * plotW, label: fmtTime(start + frac * span) });
+  }
+
+  const slot = plotW / n;
+  const barW = Math.max(1, slot - 3);
+
+  return (
+    <svg className="ing-ts-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Documents ingested over time">
+      {yTicks.map((v) => {
+        const y = mTop + plotH - (v / niceMax) * plotH;
+        return (
+          <g key={v}>
+            <line x1={mLeft} y1={y} x2={W - mRight} y2={y} className="ing-ts-grid" />
+            <text x={mLeft - 8} y={y + 4} className="ing-ts-label" fontSize="14" textAnchor="end">{v}</text>
+          </g>
+        );
+      })}
+      {series.map((v, i) => {
+        const h = (v / niceMax) * plotH;
+        const x = mLeft + i * slot + (slot - barW) / 2;
+        const y = mTop + plotH - h;
+        return <rect key={i} x={x} y={y} width={barW} height={Math.max(0, h)} className="ing-ts-bar" rx="2" />;
+      })}
+      <line x1={mLeft} y1={mTop + plotH} x2={W - mRight} y2={mTop + plotH} className="ing-ts-axis" />
+      {xLabels.map((l, i) => (
+        <text
+          key={i}
+          x={l.x}
+          y={H - 12}
+          className="ing-ts-label"
+          fontSize="14"
+          textAnchor={i === 0 ? 'start' : i === xLabels.length - 1 ? 'end' : 'middle'}
+        >
+          {l.label}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 function IngestionPerformanceView() {
   const { serverUrl, credential } = useAuth();
   const [rangeId, setRangeId] = useState(DEFAULT_RANGE);
@@ -101,14 +172,15 @@ function IngestionPerformanceView() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [nonce, setNonce] = useState(0);
+  const [perfDoc, setPerfDoc] = useState(null);
 
   const range = RANGE_OPTIONS.find((r) => r.id === rangeId) || RANGE_OPTIONS[1];
+  const api = useMemo(() => new ApiClient(serverUrl, credential?.BearerToken), [serverUrl, credential]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       setError(null);
-      const api = new ApiClient(serverUrl, credential?.BearerToken);
       const result = await api.getIngestionAnalytics({ hours: range.hours, maxResults: 20000 });
       setData(result || null);
     } catch (err) {
@@ -117,7 +189,7 @@ function IngestionPerformanceView() {
     } finally {
       setLoading(false);
     }
-  }, [serverUrl, credential, range.hours]);
+  }, [api, range.hours]);
 
   useEffect(() => { load(); }, [load, nonce]);
 
@@ -126,8 +198,22 @@ function IngestionPerformanceView() {
     return aggregate(data.Events, data.WindowStartUtc, data.WindowEndUtc, range.buckets);
   }, [data, range.buckets]);
 
-  const maxSeries = agg ? Math.max(1, ...agg.series) : 1;
   const maxStageMs = agg ? Math.max(1, ...agg.stages.map((s) => s.avgMs)) : 1;
+  const tableRows = useMemo(() => (agg ? agg.docs.map((d) => ({ ...d, Id: d.documentId })) : []), [agg]);
+  const fetchTableData = useCallback(async () => ({ Objects: tableRows }), [tableRows]);
+
+  const columns = [
+    { key: 'documentId', label: 'Document', tooltip: 'Ingested document identifier', filterable: true, render: (row) => <CopyableId id={row.documentId} /> },
+    { key: 'ingestionRuleId', label: 'Ingestion Rule', tooltip: 'Ingestion rule applied', filterable: true, render: (row) => (row.ingestionRuleId ? <CopyableId id={row.ingestionRuleId} /> : '—') },
+    { key: 'stageCount', label: 'Stages', tooltip: 'Number of timed pipeline stages', render: (row) => row.stageCount },
+    { key: 'totalMs', label: 'Total Duration', tooltip: 'Sum of stage durations', render: (row) => formatDuration(row.totalMs) },
+    { key: 'success', label: 'Status', tooltip: 'Whether all stages succeeded', render: (row) => <span className={`status-badge ${row.success ? 'active' : 'failed'}`}>{row.success ? 'OK' : 'Failed'}</span> },
+    { key: 'completedUtc', label: 'Completed', tooltip: 'When the last stage finished', render: (row) => formatWhen(row.completedUtc) },
+  ];
+
+  const getRowActions = (row) => [
+    { label: 'View Performance', onClick: () => setPerfDoc({ Id: row.documentId }) },
+  ];
 
   return (
     <div>
@@ -147,7 +233,7 @@ function IngestionPerformanceView() {
               {r.label}
             </button>
           ))}
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setNonce((n) => n + 1)} disabled={loading}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setNonce((v) => v + 1)} disabled={loading}>
             {loading ? 'Loading…' : 'Refresh'}
           </button>
         </div>
@@ -180,23 +266,13 @@ function IngestionPerformanceView() {
             </div>
           </div>
 
-          <div className="ah-perf-section">
-            <div className="ah-perf-section-title">Documents Ingested Over Time</div>
-            <div className="ing-barchart" role="img" aria-label="Documents ingested over time">
-              {agg.series.map((v, i) => (
-                <div className="ing-bar-col" key={i} title={`${v} document${v === 1 ? '' : 's'}`}>
-                  <div className="ing-bar" style={{ height: `${(v / maxSeries) * 100}%` }} />
-                </div>
-              ))}
-            </div>
-            <div className="ing-barchart-axis">
-              <span>{formatWhen(data.WindowStartUtc)}</span>
-              <span>{formatWhen(data.WindowEndUtc)}</span>
-            </div>
-          </div>
+          <section className="analytics-panel" style={{ marginBottom: '1rem' }}>
+            <div className="analytics-panel-header"><div><h2>Documents Ingested Over Time</h2></div></div>
+            <TimeSeriesChart series={agg.series} windowStartUtc={data.WindowStartUtc} windowEndUtc={data.WindowEndUtc} hours={range.hours} />
+          </section>
 
-          <div className="ah-perf-section">
-            <div className="ah-perf-section-title">Average Duration Per Stage</div>
+          <section className="analytics-panel" style={{ marginBottom: '1rem' }}>
+            <div className="analytics-panel-header"><div><h2>Average Duration Per Stage</h2></div></div>
             <div className="ah-perf-timing">
               {agg.stages.map((s, i) => {
                 const pct = maxStageMs > 0 ? Math.max(2, (s.avgMs / maxStageMs) * 100) : 0;
@@ -211,41 +287,16 @@ function IngestionPerformanceView() {
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          <div className="ah-perf-section">
-            <div className="ah-perf-section-title">Recent Ingestions</div>
-            <div className="data-table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Document</th>
-                    <th>Ingestion Rule</th>
-                    <th>Stages</th>
-                    <th>Total Duration</th>
-                    <th>Status</th>
-                    <th>Completed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agg.docs.slice(0, 100).map((d) => (
-                    <tr key={d.documentId}>
-                      <td><CopyableId id={d.documentId} /></td>
-                      <td>{d.ingestionRuleId ? <CopyableId id={d.ingestionRuleId} /> : '—'}</td>
-                      <td>{d.stageCount}</td>
-                      <td>{formatDuration(d.totalMs)}</td>
-                      <td>
-                        <span className={`status-badge ${d.success ? 'active' : 'failed'}`}>{d.success ? 'OK' : 'Failed'}</span>
-                      </td>
-                      <td>{formatWhen(d.completedUtc)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <section className="analytics-panel">
+            <div className="analytics-panel-header"><div><h2>Recent Ingestions</h2></div></div>
+            <DataTable columns={columns} fetchData={fetchTableData} getRowActions={getRowActions} refreshTrigger={nonce} />
+          </section>
         </>
       )}
+
+      {perfDoc && <IngestionPerformanceModal api={api} doc={perfDoc} onClose={() => setPerfDoc(null)} />}
     </div>
   );
 }

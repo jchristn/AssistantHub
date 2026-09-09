@@ -63,7 +63,6 @@ function IngestionRulesView() {
     { key: 'Bucket', label: 'Bucket', tooltip: 'Source storage bucket that this rule monitors', filterable: true },
     { key: 'CollectionName', label: 'Collection', tooltip: 'Target vector collection for processed documents', filterable: true },
     { key: 'VerbexIndexId', label: 'Index', tooltip: 'Target Verbex inverted index for full-text search', filterable: true, render: (row) => row.VerbexIndexId || 'default' },
-    { key: 'Summarization', label: 'Summarization', tooltip: 'Whether summarization is configured for this rule', render: (row) => row.Summarization ? 'Enabled' : 'Disabled' },
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the rule was created', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
   ];
 

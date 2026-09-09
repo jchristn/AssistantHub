@@ -64,8 +64,6 @@ function EmbeddingEndpointsView() {
     { key: 'Model', label: 'Model', tooltip: 'Model used for embedding generation', filterable: true },
     { key: 'Endpoint', label: 'Endpoint', tooltip: 'URL of the embedding endpoint', filterable: true },
     { key: 'ApiFormat', label: 'Format', tooltip: 'API format used by this endpoint', filterable: true },
-    { key: 'MaxConcurrentRequests', label: 'Max Concurrency', tooltip: 'Maximum concurrent requests allowed by Partio for this endpoint', render: (row) => row.MaxConcurrentRequests ?? '-' },
-    { key: 'MaximumTimeoutMs', label: 'Request Timeout', tooltip: 'Maximum request timeout for upstream calls through this endpoint (distinct from the health check timeout)', render: (row) => row.MaximumTimeoutMs ? `${Math.round(row.MaximumTimeoutMs / 1000)}s` : '-' },
     { key: 'Active', label: 'Active', tooltip: 'Whether this endpoint is currently active', render: (row) => row.Active ? 'Yes' : 'No' },
     {
       key: 'Health',

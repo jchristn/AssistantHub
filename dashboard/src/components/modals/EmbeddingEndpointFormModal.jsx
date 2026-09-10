@@ -37,6 +37,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     Active: source?.Active !== undefined ? source.Active : true,
     MaxConcurrentRequests: source?.MaxConcurrentRequests !== undefined ? source.MaxConcurrentRequests : 2,
     MaxQueueDepth: source?.MaxQueueDepth !== undefined ? source.MaxQueueDepth : 0,
+    ContextSize: source?.ContextSize !== undefined ? source.ContextSize : 0,
     MaximumTimeoutMs: source?.MaximumTimeoutMs !== undefined ? source.MaximumTimeoutMs : initialDefaults.MaximumTimeoutMs,
     HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
     HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
@@ -112,6 +113,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
         MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 0 : Math.max(0, parseInt(form.MaxQueueDepth)),
+        ContextSize: Number.isNaN(parseInt(form.ContextSize)) ? 0 : Math.max(0, parseInt(form.ContextSize)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
@@ -256,6 +258,16 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
                 min="1000"
                 step="1000"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.">Context Size</Tooltip></label>
+              <input
+                type="number"
+                value={form.ContextSize}
+                onChange={(e) => handleChange('ContextSize', e.target.value)}
+                min="0"
               />
             </div>
           </div>

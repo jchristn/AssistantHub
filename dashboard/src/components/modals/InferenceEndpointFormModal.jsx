@@ -102,6 +102,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     Active: getSourceField(source, 'Active', 'active') !== undefined ? getSourceBoolean(source, 'Active', 'active') : true,
     MaxConcurrentRequests: getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') !== undefined ? getSourceField(source, 'MaxConcurrentRequests', 'maxConcurrentRequests') : 2,
     MaxQueueDepth: getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') !== undefined ? getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') : 0,
+    ContextSize: getSourceField(source, 'ContextSize', 'contextSize') !== undefined ? getSourceField(source, 'ContextSize', 'contextSize') : 0,
     MaximumTimeoutMs: getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') !== undefined ? getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') : initialDefaults.MaximumTimeoutMs,
     SupportsToolCalling: getSourceToolBoolean(source, ['SupportsToolCalling', 'supportsToolCalling'], TOOL_TAG_SUPPORTS, initialLabels),
     ToolCallingApiFormat: getSourceText(source, 'ToolCallingApiFormat', 'toolCallingApiFormat') || getTagValue(initialTags, TOOL_TAG_FORMAT) || getDefaultToolCallingApiFormat(initialApiFormat),
@@ -188,6 +189,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         Active: form.Active,
         MaxConcurrentRequests: parseInt(form.MaxConcurrentRequests) || 2,
         MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 0 : Math.max(0, parseInt(form.MaxQueueDepth)),
+        ContextSize: Number.isNaN(parseInt(form.ContextSize)) ? 0 : Math.max(0, parseInt(form.ContextSize)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
         SupportsToolCalling: form.SupportsToolCalling,
         ToolCallingApiFormat: form.SupportsToolCalling ? form.ToolCallingApiFormat : null,
@@ -338,6 +340,16 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
                 min="1000"
                 step="1000"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.">Context Size</Tooltip></label>
+              <input
+                type="number"
+                value={form.ContextSize}
+                onChange={(e) => handleChange('ContextSize', e.target.value)}
+                min="0"
               />
             </div>
           </div>

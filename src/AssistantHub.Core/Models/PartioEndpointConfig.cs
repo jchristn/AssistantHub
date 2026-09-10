@@ -69,6 +69,11 @@ namespace AssistantHub.Core.Models
         public int MaximumTimeoutMs { get; set; } = 60000;
 
         /// <summary>
+        /// Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.
+        /// </summary>
+        public int ContextSize { get; set; } = 0;
+
+        /// <summary>
         /// Whether this endpoint explicitly supports model tool calls.
         /// </summary>
         public bool SupportsToolCalling { get; set; } = false;

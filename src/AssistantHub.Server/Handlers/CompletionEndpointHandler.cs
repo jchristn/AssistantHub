@@ -65,7 +65,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = BuildPartioEndpointRequestBody(ctx.Request.DataAsString);
+                string body = PartioEndpointMerge.BuildCreateBody(ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/completion", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -187,8 +187,8 @@ namespace AssistantHub.Server.Handlers
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
                 string requestBody = ctx.Request.DataAsString;
-                PartioEndpointConfig existing = await ResolveExistingCompletionEndpointForUpdateAsync(endpointId, requestBody).ConfigureAwait(false);
-                string body = BuildPartioEndpointRequestBody(requestBody, existing);
+                string existingRaw = await ReadExistingCompletionEndpointRawAsync(endpointId).ConfigureAwait(false);
+                string body = PartioEndpointMerge.BuildUpdateBody(existingRaw, requestBody);
 
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/completion/" + endpointId, body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -313,7 +313,9 @@ namespace AssistantHub.Server.Handlers
 
                 request.EndpointId = endpointId;
 
-                HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/explorer/completion", Serializer.SerializeJson(request)).ConfigureAwait(false);
+                // Use Partio's production completion endpoint (single upstream call), not the explorer
+                // endpoint. The request/response shapes are identical, so the body passes through as-is.
+                HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/completion", Serializer.SerializeJson(request)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -390,36 +392,6 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// Inject the default TenantId into a JSON request body if not already present.
-        /// Partio requires a TenantId to scope endpoints to the correct tenant.
-        /// </summary>
-        private string BuildPartioEndpointRequestBody(string body, PartioEndpointConfig existing = null)
-        {
-            if (String.IsNullOrEmpty(body))
-                body = "{}";
-
-            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body, _PartioJsonOptions);
-            if (request == null)
-                request = new PartioEndpointRequest();
-
-            if (String.IsNullOrEmpty(request.TenantId))
-                request.TenantId = "default";
-
-            if (existing != null)
-            {
-                if (!PartioEndpointToolMetadata.JsonObjectContainsProperty(body, nameof(PartioEndpointRequest.Labels)))
-                    request.Labels = existing.Labels;
-                if (!PartioEndpointToolMetadata.JsonObjectContainsProperty(body, nameof(PartioEndpointRequest.Tags)))
-                    request.Tags = existing.Tags;
-            }
-
-            if (PartioEndpointToolMetadata.RequestContainsToolCapabilityFields(body))
-                PartioEndpointToolMetadata.WriteRequestToolFieldsToTags(request);
-
-            return PartioEndpointToolMetadata.SerializePartioRequest(request);
-        }
-
-        /// <summary>
         /// Convert Partio's envelope format { Data, TotalCount, HasMore } to
         /// AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
         /// </summary>
@@ -447,12 +419,14 @@ namespace AssistantHub.Server.Handlers
             return Serializer.SerializeJson(result);
         }
 
-        private async Task<PartioEndpointConfig> ResolveExistingCompletionEndpointForUpdateAsync(string endpointId, string requestBody)
+        /// <summary>
+        /// GET the current completion endpoint's raw JSON so <see cref="PartioEndpointMerge.BuildUpdateBody"/>
+        /// can overlay only the caller's fields and preserve everything AssistantHub does not manage. Returns
+        /// "{}" when the endpoint cannot be read (the update then behaves like the caller's payload alone).
+        /// </summary>
+        private async Task<string> ReadExistingCompletionEndpointRawAsync(string endpointId)
         {
-            if (String.IsNullOrWhiteSpace(endpointId)) return null;
-            if (PartioEndpointToolMetadata.JsonObjectContainsProperty(requestBody, nameof(PartioEndpointRequest.Labels))
-                && PartioEndpointToolMetadata.JsonObjectContainsProperty(requestBody, nameof(PartioEndpointRequest.Tags)))
-                return null;
+            if (String.IsNullOrWhiteSpace(endpointId)) return "{}";
 
             try
             {
@@ -461,15 +435,15 @@ namespace AssistantHub.Server.Handlers
                     "/v1.0/endpoints/completion/" + endpointId).ConfigureAwait(false);
 
                 if (!resp.IsSuccessStatusCode)
-                    return null;
+                    return "{}";
 
                 string body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                return JsonSerializer.Deserialize<PartioEndpointConfig>(body, _PartioJsonOptions);
+                return String.IsNullOrWhiteSpace(body) ? "{}" : body;
             }
             catch (Exception e)
             {
-                Logging.Warn(_Header + "failed to read existing completion endpoint metadata for " + endpointId + ": " + e.Message);
-                return null;
+                Logging.Warn(_Header + "failed to read existing completion endpoint for merge " + endpointId + ": " + e.Message);
+                return "{}";
             }
         }
 

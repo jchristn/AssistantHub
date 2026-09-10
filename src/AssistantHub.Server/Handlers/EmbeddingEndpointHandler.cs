@@ -65,7 +65,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                string body = InjectTenantId(ctx.Request.DataAsString);
+                string body = PartioEndpointMerge.BuildCreateBody(ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -180,7 +180,8 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
-                string body = InjectTenantId(ctx.Request.DataAsString);
+                string existingRaw = await ReadExistingEmbeddingEndpointRawAsync(endpointId).ConfigureAwait(false);
+                string body = PartioEndpointMerge.BuildUpdateBody(existingRaw, ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding/" + endpointId, body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -302,12 +303,54 @@ namespace AssistantHub.Server.Handlers
 
                 request.EndpointId = endpointId;
 
-                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/explorer/embedding", Serializer.SerializeJson(request)).ConfigureAwait(false);
+                // Use Partio's production embed endpoint (POST /v1.0/embed), not the explorer endpoint.
+                // /v1.0/embed takes a batch (Input as an array) and returns one vector per input, so we
+                // send the single test input as a one-element batch and map the first vector back into
+                // the single-vector shape the dashboard test modal expects.
+                object embedRequest = new
+                {
+                    request.EndpointId,
+                    Input = new List<string> { request.Input ?? string.Empty },
+                    request.L2Normalization
+                };
+
+                HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Post, "/v1.0/embed", Serializer.SerializeJson(embedRequest)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                ctx.Response.StatusCode = (int)resp.StatusCode;
+                EndpointExplorerEmbeddingResponse mapped = new EndpointExplorerEmbeddingResponse
+                {
+                    EndpointId = endpointId,
+                    Input = request.Input
+                };
+
+                PartioEmbedResponse embedResponse = null;
+                try { embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(respBody, _PartioJsonOptions); }
+                catch (Exception parseEx) { Logging.Warn(_Header + "failed to parse embed response: " + parseEx.Message); }
+
+                if (resp.IsSuccessStatusCode && embedResponse != null)
+                {
+                    mapped.Success = embedResponse.Success;
+                    mapped.StatusCode = embedResponse.StatusCode != 0 ? embedResponse.StatusCode : (int)resp.StatusCode;
+                    mapped.Error = embedResponse.Error;
+                    mapped.Model = embedResponse.Model;
+                    mapped.Dimensions = embedResponse.Dimensions;
+                    mapped.ResponseTimeMs = (long)Math.Round(embedResponse.ResponseTimeMs);
+                    if (embedResponse.Embeddings != null && embedResponse.Embeddings.Count > 0)
+                        mapped.Embedding = embedResponse.Embeddings[0];
+                }
+                else
+                {
+                    // Surface the failure in the response body (HTTP 200) so the test modal renders a
+                    // failure card with the upstream status and error message.
+                    mapped.Success = false;
+                    mapped.StatusCode = embedResponse != null && embedResponse.StatusCode != 0 ? embedResponse.StatusCode : (int)resp.StatusCode;
+                    mapped.Error = embedResponse?.Error ?? respBody;
+                    mapped.Model = embedResponse?.Model;
+                }
+
+                ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(respBody).ConfigureAwait(false);
+                await ctx.Response.Send(Serializer.SerializeJson(mapped)).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -379,22 +422,32 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
-        /// Inject the default TenantId into a JSON request body if not already present.
-        /// Partio requires a TenantId to scope endpoints to the correct tenant.
+        /// GET the current embedding endpoint's raw JSON so <see cref="PartioEndpointMerge.BuildUpdateBody"/>
+        /// can overlay only the caller's fields and preserve everything AssistantHub does not manage
+        /// (health-check config, tokenization, context size, other services' tags/labels). Returns "{}" when
+        /// the endpoint cannot be read.
         /// </summary>
-        private string InjectTenantId(string body)
+        private async Task<string> ReadExistingEmbeddingEndpointRawAsync(string endpointId)
         {
-            if (String.IsNullOrEmpty(body))
-                return JsonSerializer.Serialize(new PartioEndpointRequest { TenantId = "default" });
+            if (String.IsNullOrWhiteSpace(endpointId)) return "{}";
 
-            PartioEndpointRequest request = JsonSerializer.Deserialize<PartioEndpointRequest>(body, _PartioJsonOptions);
-            if (request == null)
-                request = new PartioEndpointRequest();
+            try
+            {
+                using HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(
+                    System.Net.Http.HttpMethod.Get,
+                    "/v1.0/endpoints/embedding/" + endpointId).ConfigureAwait(false);
 
-            if (String.IsNullOrEmpty(request.TenantId))
-                request.TenantId = "default";
+                if (!resp.IsSuccessStatusCode)
+                    return "{}";
 
-            return JsonSerializer.Serialize(request);
+                string body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                return String.IsNullOrWhiteSpace(body) ? "{}" : body;
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "failed to read existing embedding endpoint for merge " + endpointId + ": " + e.Message);
+                return "{}";
+            }
         }
 
         /// <summary>

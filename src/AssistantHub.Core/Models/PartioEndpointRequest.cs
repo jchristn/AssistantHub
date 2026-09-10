@@ -65,6 +65,13 @@ namespace AssistantHub.Core.Models
         public int? MaximumTimeoutMs { get; set; } = null;
 
         /// <summary>
+        /// Context window size (maximum tokens) for the model served by this endpoint. Left null on partial
+        /// updates to preserve the stored value.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? ContextSize { get; set; } = null;
+
+        /// <summary>
         /// Whether this endpoint explicitly supports model tool calls.
         /// </summary>
         public bool SupportsToolCalling { get; set; } = false;

@@ -665,16 +665,17 @@
             Copy a response header from Partio when present.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.BuildPartioEndpointRequestBody(System.String,AssistantHub.Core.Models.PartioEndpointConfig)">
-            <summary>
-            Inject the default TenantId into a JSON request body if not already present.
-            Partio requires a TenantId to scope endpoints to the correct tenant.
-            </summary>
-        </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">
             <summary>
             Convert Partio's envelope format { Data, TotalCount, HasMore } to
             AssistantHub's standard EnumerationResult format { Objects, TotalRecords, EndOfResults, ... }.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.ReadExistingCompletionEndpointRawAsync(System.String)">
+            <summary>
+            GET the current completion endpoint's raw JSON so <see cref="M:AssistantHub.Core.Models.PartioEndpointMerge.BuildUpdateBody(System.String,System.String,System.String)"/>
+            can overlay only the caller's fields and preserve everything AssistantHub does not manage. Returns
+            "{}" when the endpoint cannot be read (the update then behaves like the caller's payload alone).
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.CompletionEndpointHandler.GetCompletionEndpointHealthAsync(WatsonWebserver.Core.HttpContextBase)">
@@ -968,6 +969,14 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.ReprocessDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/documents/{documentId}/reprocess - Re-run the ingestion pipeline for a document,
+            provided its source object still exists in storage. Returns SourceAvailable=false (HTTP 200)
+            when the source object is no longer stored and must be uploaded again.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.ReindexDocumentsAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             POST /v1.0/documents/reindex - Reindex completed documents into Verbex.
@@ -1057,10 +1066,12 @@
             Copy a response header from Partio when present.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.InjectTenantId(System.String)">
+        <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.ReadExistingEmbeddingEndpointRawAsync(System.String)">
             <summary>
-            Inject the default TenantId into a JSON request body if not already present.
-            Partio requires a TenantId to scope endpoints to the correct tenant.
+            GET the current embedding endpoint's raw JSON so <see cref="M:AssistantHub.Core.Models.PartioEndpointMerge.BuildUpdateBody(System.String,System.String,System.String)"/>
+            can overlay only the caller's fields and preserve everything AssistantHub does not manage
+            (health-check config, tokenization, context size, other services' tags/labels). Returns "{}" when
+            the endpoint cannot be read.
             </summary>
         </member>
         <member name="M:AssistantHub.Server.Handlers.EmbeddingEndpointHandler.ConvertPartioEnvelopeToEnumerationResult(System.String)">

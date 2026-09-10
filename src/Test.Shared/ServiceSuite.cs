@@ -9625,6 +9625,7 @@ namespace Test.Automated
             public Task DeleteAsync(string key, CancellationToken token = default) => Task.CompletedTask;
             public Task DeleteAsync(string bucketName, string key, CancellationToken token = default) => Task.CompletedTask;
             public Task<bool> ExistsAsync(string key, CancellationToken token = default) => Task.FromResult(true);
+            public Task<bool> ExistsAsync(string bucketName, string key, CancellationToken token = default) => Task.FromResult(true);
             public Task<ObjectStorageListResult> ListObjectsAsync(string bucketName, string prefix = null, int maxResults = 100, string continuationToken = null, CancellationToken token = default)
             {
                 return Task.FromResult(new ObjectStorageListResult
@@ -9729,6 +9730,11 @@ namespace Test.Automated
             public Task<bool> ExistsAsync(string key, CancellationToken token = default)
             {
                 return Task.FromResult(_Objects.ContainsKey(MakeKey(null, key)));
+            }
+
+            public Task<bool> ExistsAsync(string bucketName, string key, CancellationToken token = default)
+            {
+                return Task.FromResult(_Objects.ContainsKey(MakeKey(bucketName, key)));
             }
 
             public Task<ObjectStorageListResult> ListObjectsAsync(string bucketName, string prefix = null, int maxResults = 100, string continuationToken = null, CancellationToken token = default)

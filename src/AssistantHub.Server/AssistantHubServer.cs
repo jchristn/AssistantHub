@@ -861,6 +861,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/delete", documentHandler.BulkDeleteDocumentsAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/reindex", documentHandler.ReindexDocumentsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reindex", documentHandler.ReindexDocumentAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reprocess", documentHandler.ReprocessDocumentAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/processing-log", documentHandler.GetDocumentProcessingLogAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/performance", documentHandler.GetDocumentPerformanceAsync);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/analytics/ingestion", documentHandler.GetIngestionAnalyticsAsync);

@@ -54,6 +54,11 @@ namespace AssistantHub.Core.Services
         Task<bool> ExistsAsync(string key, CancellationToken token = default);
 
         /// <summary>
+        /// Check whether a file exists in a specific bucket.
+        /// </summary>
+        Task<bool> ExistsAsync(string bucketName, string key, CancellationToken token = default);
+
+        /// <summary>
         /// List objects from a specific bucket and optional prefix.
         /// </summary>
         Task<ObjectStorageListResult> ListObjectsAsync(

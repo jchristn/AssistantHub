@@ -632,6 +632,119 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// POST /v1.0/documents/{documentId}/reprocess - Re-run the ingestion pipeline for a document,
+        /// provided its source object still exists in storage. Returns SourceAvailable=false (HTTP 200)
+        /// when the source object is no longer stored and must be uploaded again.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task ReprocessDocumentAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                if (Storage == null || Ingestion == null)
+                {
+                    ctx.Response.StatusCode = 503;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError, null, "Reprocessing is unavailable. S3 storage is not configured."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AuthContext auth = RequireAuth(ctx);
+                if (auth == null)
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.AuthenticationFailed))).ConfigureAwait(false);
+                    return;
+                }
+
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                if (String.IsNullOrEmpty(documentId))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "DocumentId is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                AssistantDocument doc = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                // Confirm the source object still exists in storage before kicking off ingestion.
+                bool sourceAvailable = false;
+                if (!String.IsNullOrEmpty(doc.S3Key))
+                {
+                    try
+                    {
+                        if (!String.IsNullOrEmpty(doc.BucketName))
+                            sourceAvailable = await Storage.ExistsAsync(doc.BucketName, doc.S3Key).ConfigureAwait(false);
+                        else
+                            sourceAvailable = await Storage.ExistsAsync(doc.S3Key).ConfigureAwait(false);
+                    }
+                    catch (Exception existsEx)
+                    {
+                        Logging.Warn(_Header + "failed to check source object for document " + documentId + ": " + existsEx.Message);
+                    }
+                }
+
+                if (!sourceAvailable)
+                {
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new
+                    {
+                        DocumentId = documentId,
+                        Success = false,
+                        SourceAvailable = false,
+                        Message = "The source object is not stored and must be uploaded again."
+                    })).ConfigureAwait(false);
+                    return;
+                }
+
+                // Reset status and re-run the ingestion pipeline asynchronously (fire-and-forget).
+                await Database.AssistantDocument.UpdateStatusAsync(doc.Id, Enums.DocumentStatusEnum.Uploaded, "Reprocessing requested.").ConfigureAwait(false);
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Ingestion.ProcessDocumentAsync(doc.Id).ConfigureAwait(false);
+                    }
+                    catch (Exception ingestionEx)
+                    {
+                        Logging.Warn(_Header + "reprocess ingestion failed for document " + doc.Id + ": " + ingestionEx.Message);
+                        await Database.AssistantDocument.UpdateStatusAsync(doc.Id, Enums.DocumentStatusEnum.Failed, "Ingestion failed: " + ingestionEx.Message).ConfigureAwait(false);
+                    }
+                });
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new
+                {
+                    DocumentId = documentId,
+                    Success = true,
+                    SourceAvailable = true,
+                    Message = "Reprocessing started."
+                })).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in ReprocessDocumentAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// POST /v1.0/documents/reindex - Reindex completed documents into Verbex.
         /// </summary>
         /// <param name="ctx">HTTP context.</param>

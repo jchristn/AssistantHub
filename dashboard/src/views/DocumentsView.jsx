@@ -56,6 +56,7 @@ function DocumentsView() {
   const [showPerformance, setShowPerformance] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [reprocessBlocked, setReprocessBlocked] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
@@ -167,11 +168,29 @@ function DocumentsView() {
     }
   };
 
+  const handleReprocess = async (row) => {
+    try {
+      const result = await api.reprocessDocument(row.Id);
+      if (result && result.SourceAvailable === false) {
+        setReprocessBlocked(row);
+        return;
+      }
+      setRefresh(r => r + 1);
+      setAlert({
+        title: 'Reprocessing Started',
+        message: result.Message || 'Document ingestion has been restarted.'
+      });
+    } catch (err) {
+      setAlert({ title: 'Reprocess Failed', message: err.message || 'Failed to reprocess document' });
+    }
+  };
+
   const getRowActions = (row) => {
     const actions = [
       { label: 'View JSON', onClick: () => setShowJson(row) },
       { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
       { label: 'View Ingestion Performance', onClick: () => setShowPerformance(row) },
+      { label: 'Reprocess', onClick: () => handleReprocess(row) },
     ];
     if ((isAdmin || isTenantAdmin) && canReindexDocument(row)) {
       actions.push({ label: 'Reindex into Verbex', onClick: () => handleReindex(row) });
@@ -318,6 +337,7 @@ function DocumentsView() {
       {showPerformance && <IngestionPerformanceModal api={api} doc={showPerformance} onClose={() => setShowPerformance(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {cancelTarget && <ConfirmModal title="Cancel Ingestion" message="This document will be deleted. Are you sure you wish to cancel ingestion?" confirmLabel="Cancel Ingestion" loadingLabel="Cancelling..." isLoading={cancelling} danger onConfirm={handleCancelIngestion} onClose={() => setCancelTarget(null)} />}
+      {reprocessBlocked && <ConfirmModal title="Source Object Not Available" message={`The source object for "${reprocessBlocked.Name || reprocessBlocked.OriginalFilename}" is not stored and must be uploaded again before it can be reprocessed.`} confirmLabel="Upload Document" onConfirm={() => { setReprocessBlocked(null); setShowUpload(true); }} onClose={() => setReprocessBlocked(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
       {pendingDropFiles && (
         <DropRuleModal

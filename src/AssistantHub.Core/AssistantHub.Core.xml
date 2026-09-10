@@ -11103,6 +11103,11 @@
             This is distinct from the health check timeout.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.ContextSize">
+            <summary>
+            Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.SupportsToolCalling">
             <summary>
             Whether this endpoint explicitly supports model tool calls.
@@ -11178,6 +11183,29 @@
             Whether auth is used for health checks.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.PartioEndpointMerge">
+             <summary>
+             Builds Partio endpoint create/update request bodies using a raw-JSON merge.
+            
+             Partio's update is a full replace, not a merge: any field omitted from the PUT body is reset to its
+             default (health-check config, MaximumTimeoutMs, ContextSize, Tokenization) or wiped (ApiKey, other
+             services' Tags/Labels). To avoid clobbering data AssistantHub does not manage, an update GETs the current
+             endpoint and overlays ONLY the fields the caller actually sent, leaving everything else intact.
+             Tags and labels are unioned so entries owned by other services (or future keys) survive.
+             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointMerge.BuildCreateBody(System.String,System.String)">
+            <summary>
+            Build a create body: normalize the caller payload (fold tool-calling capabilities into tags/labels,
+            strip AssistantHub-only tool fields, default the tenant). There is no existing endpoint to preserve.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointMerge.BuildUpdateBody(System.String,System.String,System.String)">
+            <summary>
+            Build an update body: overlay the caller's fields onto the existing endpoint JSON, preserving every
+            field the caller did not send. A blank/absent ApiKey preserves the stored key.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.PartioEndpointRequest">
             <summary>
             Typed request payload for creating or updating a Partio-managed endpoint.
@@ -11234,6 +11262,12 @@
             <summary>
             Maximum request timeout, in milliseconds, applied to upstream calls made through this endpoint.
             This is distinct from the health check timeout. Left null on partial updates to preserve the stored value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.ContextSize">
+            <summary>
+            Context window size (maximum tokens) for the model served by this endpoint. Left null on partial
+            updates to preserve the stored value.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.SupportsToolCalling">
@@ -14503,6 +14537,11 @@
             Check whether a file exists in the default bucket.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Services.IObjectStorageService.ExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check whether a file exists in a specific bucket.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IObjectStorageService.ListObjectsAsync(System.String,System.String,System.Int32,System.String,System.Threading.CancellationToken)">
             <summary>
             List objects from a specific bucket and optional prefix.
@@ -15085,6 +15124,15 @@
             <summary>
             Check whether a file exists in S3-compatible storage.
             </summary>
+            <param name="key">Object key.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>True if the object exists.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StorageService.ExistsAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check whether a file exists in a specific S3 bucket.
+            </summary>
+            <param name="bucketName">Bucket name.</param>
             <param name="key">Object key.</param>
             <param name="token">Cancellation token.</param>
             <returns>True if the object exists.</returns>

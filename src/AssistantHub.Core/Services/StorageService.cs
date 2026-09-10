@@ -371,6 +371,24 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Check whether a file exists in a specific S3 bucket.
+        /// </summary>
+        /// <param name="bucketName">Bucket name.</param>
+        /// <param name="key">Object key.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>True if the object exists.</returns>
+        public async Task<bool> ExistsAsync(string bucketName, string key, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(key)) throw new ArgumentNullException(nameof(key));
+            if (String.IsNullOrEmpty(bucketName)) return await ExistsAsync(key, token).ConfigureAwait(false);
+
+            AmazonS3BlobClient client = GetClientForBucket(bucketName);
+            bool exists = await client.ExistsAsync(key, token).ConfigureAwait(false);
+            _Logging.Debug(_Header + "exists check for " + key + " in bucket " + bucketName + ": " + exists);
+            return exists;
+        }
+
+        /// <summary>
         /// List objects in a specific S3 bucket.
         /// </summary>
         /// <param name="bucketName">Bucket name.</param>

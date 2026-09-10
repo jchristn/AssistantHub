@@ -612,6 +612,7 @@ export class ApiClient {
   getDocumentPerformance(id) { return this.request('GET', `/v1.0/documents/${id}/performance`); }
   getIngestionAnalytics(params) { return this.request('GET', '/v1.0/analytics/ingestion' + this.buildQuery(params)); }
   reindexDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reindex`, {}); }
+  reprocessDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reprocess`, {}); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
   deleteDocuments(ids) { return this.request('POST', '/v1.0/documents/delete', { DocumentIds: ids }); }
 

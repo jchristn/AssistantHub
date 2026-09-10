@@ -736,6 +736,63 @@ body {
   max-width: 720px;
 }
 
+/* Feedback Details modal: ~66% wider than the standard wide modal (720px). */
+.modal-container.feedback-detail-modal {
+  max-width: 1195px;
+}
+
+.feedback-scroll {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  overflow: auto;
+}
+
+.feedback-md {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+.feedback-md > :first-child { margin-top: 0; }
+.feedback-md > :last-child { margin-bottom: 0; }
+.feedback-md p { margin: 0 0 0.6rem; }
+.feedback-md h1, .feedback-md h2, .feedback-md h3, .feedback-md h4 { margin: 0.8rem 0 0.4rem; line-height: 1.3; }
+.feedback-md ul, .feedback-md ol { margin: 0 0 0.6rem 1.25rem; }
+.feedback-md li { margin: 0.15rem 0; }
+.feedback-md blockquote {
+  margin: 0 0 0.6rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.feedback-md a { color: var(--accent-color); }
+.feedback-md pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  margin: 0 0 0.6rem;
+}
+.feedback-md code { font-family: var(--font-mono); font-size: 0.85em; }
+.feedback-md :not(pre) > code {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.feedback-md-table-wrap { overflow-x: auto; }
+.feedback-md-table { border-collapse: collapse; width: 100%; margin: 0 0 0.6rem; }
+.feedback-md-table th, .feedback-md-table td {
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.feedback-md-empty { color: var(--text-secondary); }
+
 .modal-container.extra-wide {
   max-width: 1400px;
 }

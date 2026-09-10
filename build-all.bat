@@ -12,7 +12,7 @@ set TAG=%~1
 
 pushd "%~dp0"
 
-call build-dashboard.bat "%TAG%"
+call "%~dp0build-dashboard.bat" "%TAG%"
 set EXIT_CODE=%ERRORLEVEL%
 if not "%EXIT_CODE%"=="0" (
     popd
@@ -20,7 +20,7 @@ if not "%EXIT_CODE%"=="0" (
     exit /b %EXIT_CODE%
 )
 
-call build-server.bat "%TAG%"
+call "%~dp0build-server.bat" "%TAG%"
 set EXIT_CODE=%ERRORLEVEL%
 if not "%EXIT_CODE%"=="0" (
     popd
@@ -28,7 +28,7 @@ if not "%EXIT_CODE%"=="0" (
     exit /b %EXIT_CODE%
 )
 
-call build-mcp.bat "%TAG%"
+call "%~dp0build-mcp.bat" "%TAG%"
 set EXIT_CODE=%ERRORLEVEL%
 if not "%EXIT_CODE%"=="0" (
     popd

@@ -10,7 +10,7 @@ if "%~1"=="" (
 set TAG=%~1
 set IMAGE=jchristn77/assistanthub-mcp
 
-echo Building %IMAGE%:latest and %IMAGE%:%TAG%...
+echo Building and pushing %IMAGE%:latest and %IMAGE%:%TAG%...
 docker buildx build ^
     --builder cloud-jchristn77-jchristn77 ^
     --platform linux/amd64,linux/arm64/v8 ^
@@ -19,6 +19,25 @@ docker buildx build ^
     -f src/AssistantHub.McpServer/Dockerfile ^
     --push ^
     .
+if errorlevel 1 (
+    echo Build/push failed.
+    endlocal
+    exit /b 1
+)
+
+echo Pulling %IMAGE% into the local registry...
+docker pull %IMAGE%:%TAG%
+if errorlevel 1 (
+    echo Pull of %IMAGE%:%TAG% failed.
+    endlocal
+    exit /b 1
+)
+docker pull %IMAGE%:latest
+if errorlevel 1 (
+    echo Pull of %IMAGE%:latest failed.
+    endlocal
+    exit /b 1
+)
 
 echo Done.
 endlocal

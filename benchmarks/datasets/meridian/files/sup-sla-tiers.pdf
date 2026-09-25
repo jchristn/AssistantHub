@@ -1,0 +1,122 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4256 >>
+stream
+BT /F2 16 Tf 54 723 Td (Customer Support SLA Tiers) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sup-sla-tiers | Version: 1 | Effective: 2025-04-01 | Owner: Customer Support \(Rosa) Tj ET
+BT /F1 10 Tf 54 688 Td (Delgado\)) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Purpose) Tj ET
+BT /F1 10 Tf 54 641 Td (This document defines the three customer support service levels offered by Meridian Instruments) Tj ET
+BT /F1 10 Tf 54 628 Td (Ltd for the Halcyon, Tessera and Lumen product lines: Essential, Professional and Premier. It) Tj ET
+BT /F1 10 Tf 54 615 Td (sets out coverage hours, response targets by ticket priority, TesseraCloud availability) Tj ET
+BT /F1 10 Tf 54 602 Td (commitments, service credits and included on-site services. Ticket priorities P1 to P4 are) Tj ET
+BT /F1 10 Tf 54 589 Td (defined in the Support Ticket Priority Codes document \(sup-ticket-priority-codes\). Annual) Tj ET
+BT /F1 10 Tf 54 576 Td (contract prices for each tier are published in the Support Contract Price List) Tj ET
+BT /F1 10 Tf 54 563 Td (\(sales-support-contract-price-list\).) Tj ET
+BT /F1 10 Tf 54 541 Td (These terms apply to all support contracts signed or renewed on or after 1 April 2025, the) Tj ET
+BT /F1 10 Tf 54 528 Td (start of fiscal year 2025/26.) Tj ET
+BT /F2 13 Tf 54 503 Td (2. Service levels at a glance) Tj ET
+BT /F2 9 Tf 54 482 Td (Service element | Essential | Professional | Premier) Tj ET
+BT /F1 9 Tf 54 470 Td (Coverage hours | Mon-Fri 08:00-18:00 local time | Mon-Fri 07:00-20:00 local time | 24x7x365) Tj ET
+BT /F1 9 Tf 54 458 Td (Contact channels | MSC portal, email | MSC portal, email, phone | MSC portal, email, phone,) Tj ET
+BT /F1 9 Tf 54 446 Td (dedicated P1 hotline) Tj ET
+BT /F1 9 Tf 54 434 Td (P1 Critical response | 8 business hours | 4 hours | 1 hour) Tj ET
+BT /F1 9 Tf 54 422 Td (P2 High response | 2 business days | 8 business hours | 4 hours) Tj ET
+BT /F1 9 Tf 54 410 Td (P3 Medium response | 5 business days | 2 business days | 1 business day) Tj ET
+BT /F1 9 Tf 54 398 Td (P4 Low response | Best effort | 5 business days | 3 business days) Tj ET
+BT /F1 9 Tf 54 386 Td (TesseraCloud monthly uptime | 99.5% | 99.7% | 99.9%) Tj ET
+BT /F1 9 Tf 54 374 Td (Advance replacement | No | Yes | Yes, next business day) Tj ET
+BT /F1 9 Tf 54 362 Td (Preventive on-site visits per year | None \(chargeable\) | 2 | 4) Tj ET
+BT /F1 9 Tf 54 350 Td (Named Technical Account Manager | No | No | Yes) Tj ET
+BT /F1 9 Tf 54 338 Td (Quarterly service review | No | No | Yes) Tj ET
+BT /F1 9 Tf 54 326 Td (Firmware upgrade assistance | Self-service | Remote assisted | Remote or on-site assisted) Tj ET
+BT /F1 10 Tf 54 304 Td (Response time is measured from the moment a ticket is logged in the Meridian Support Centre) Tj ET
+BT /F1 10 Tf 54 291 Td (\(MSC\) portal, or from the moment a phone call is answered, to the first substantive response by) Tj ET
+BT /F1 10 Tf 54 278 Td (a qualified support engineer. An automated acknowledgement does not count as a response.) Tj ET
+BT /F1 10 Tf 54 265 Td (Business hours and business days follow the calendar of the customer's regional support hub) Tj ET
+BT /F1 10 Tf 54 252 Td (\(Leeds, Rotterdam, Austin or Penang\).) Tj ET
+BT /F2 13 Tf 54 227 Td (3. Resolution targets) Tj ET
+BT /F1 10 Tf 54 205 Td (Meridian does not guarantee resolution times, because many faults depend on site access, gas) Tj ET
+BT /F1 10 Tf 54 192 Td (supply or third-party networks. We do publish target restoration times for P1 tickets: 2) Tj ET
+BT /F1 10 Tf 54 179 Td (business days for Essential, 1 business day for Professional and 8 hours for Premier. For) Tj ET
+BT /F1 10 Tf 54 166 Td (hardware faults the target is met when a working replacement unit is dispatched under the RMA) Tj ET
+BT /F1 10 Tf 54 153 Td (process.) Tj ET
+BT /F2 13 Tf 54 128 Td (4. TesseraCloud availability and service credits) Tj ET
+BT /F1 10 Tf 54 106 Td (TesseraCloud availability is measured monthly, excluding scheduled maintenance announced at) Tj ET
+BT /F1 10 Tf 54 93 Td (least 5 business days in advance and capped at 6 hours per month. If monthly availability falls) Tj ET
+BT /F1 10 Tf 54 80 Td (below the committed level, the customer may claim a service credit against the next) Tj ET
+BT /F1 10 Tf 54 67 Td (TesseraCloud subscription invoice.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 3430 >>
+stream
+BT /F2 9 Tf 54 730 Td (Monthly availability shortfall | Essential credit | Professional credit | Premier credit) Tj ET
+BT /F1 9 Tf 54 718 Td (Up to 0.5 percentage points below commitment | 5% | 10% | 10%) Tj ET
+BT /F1 9 Tf 54 706 Td (0.5 to 1.0 percentage points below commitment | 10% | 15% | 20%) Tj ET
+BT /F1 9 Tf 54 694 Td (More than 1.0 percentage points below commitment | 15% | 25% | 30%) Tj ET
+BT /F1 10 Tf 54 672 Td (Credits are calculated on the monthly TesseraCloud subscription fee for the affected tenant) Tj ET
+BT /F1 10 Tf 54 659 Td (only, and must be claimed through the MSC portal within 30 days of the end of the affected) Tj ET
+BT /F1 10 Tf 54 646 Td (month. Total credits in any month may not exceed 30% of that month's subscription fee. Service) Tj ET
+BT /F1 10 Tf 54 633 Td (credits are the sole remedy for availability shortfalls.) Tj ET
+BT /F2 13 Tf 54 608 Td (5. Included on-site services) Tj ET
+BT /F1 10 Tf 54 586 Td (Professional contracts include 2 preventive on-site visits per year per contracted site;) Tj ET
+BT /F1 10 Tf 54 573 Td (Premier contracts include 4. A preventive visit is one engineer for up to one working day and) Tj ET
+BT /F1 10 Tf 54 560 Td (typically covers Halcyon docking-station checks and bump-test audits, TS-4 gateway health) Tj ET
+BT /F1 10 Tf 54 547 Td (checks and TS-4e node battery surveys, or Lumen zero-point verification. Unused visits do not) Tj ET
+BT /F1 10 Tf 54 534 Td (carry over into the next contract year. Additional visits are charged at the rates in the Field) Tj ET
+BT /F1 10 Tf 54 521 Td (Service Visit Rates document \(sup-field-service-rates\).) Tj ET
+BT /F1 10 Tf 54 499 Td (Premier customers also receive a P1 on-site commitment: where a P1 fault cannot be resolved) Tj ET
+BT /F1 10 Tf 54 486 Td (remotely, an engineer will be on site within 48 hours in the UK, the Netherlands, Belgium,) Tj ET
+BT /F1 10 Tf 54 473 Td (Germany, the continental United States and Peninsular Malaysia, and within 5 business days) Tj ET
+BT /F1 10 Tf 54 460 Td (elsewhere.) Tj ET
+BT /F2 13 Tf 54 435 Td (6. Technical Account Manager) Tj ET
+BT /F1 10 Tf 54 413 Td (Premier customers are assigned a named Technical Account Manager \(TAM\) from the regional hub.) Tj ET
+BT /F1 10 Tf 54 400 Td (The TAM owns the quarterly service review, tracks open P1 and P2 tickets, coordinates firmware) Tj ET
+BT /F1 10 Tf 54 387 Td (roll-out plans and acts as the escalation point before the regional support manager.) Tj ET
+BT /F1 10 Tf 54 374 Td (Professional and Essential customers are served by the pooled support team.) Tj ET
+BT /F2 13 Tf 54 349 Td (7. Exclusions) Tj ET
+BT /F1 10 Tf 54 327 Td (SLA commitments do not apply to issues caused by unsupported firmware combinations \(see) Tj ET
+BT /F1 10 Tf 54 314 Td (prod-tessera-firmware-compatibility-matrix\), use of calibration gas outside the published) Tj ET
+BT /F1 10 Tf 54 301 Td (specification, products outside warranty and without a support contract, customer network) Tj ET
+BT /F1 10 Tf 54 288 Td (outages, or force majeure events. Response targets are suspended while a ticket is in the) Tj ET
+BT /F1 10 Tf 54 275 Td ("Awaiting customer" state.) Tj ET
+BT /F2 13 Tf 54 250 Td (8. Changing tier) Tj ET
+BT /F1 10 Tf 54 228 Td (Customers may upgrade tier at any time; the upgrade applies from the next business day and is) Tj ET
+BT /F1 10 Tf 54 215 Td (charged pro rata. Downgrades take effect only at contract renewal.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004579 00000 n 
+0000004715 00000 n 
+0000008197 00000 n 
+0000008333 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+8382
+%%EOF

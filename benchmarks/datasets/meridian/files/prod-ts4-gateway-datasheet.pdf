@@ -1,0 +1,104 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4094 >>
+stream
+BT /F2 16 Tf 54 723 Td (Tessera TS-4 Gateway Datasheet) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-ts4-gateway-datasheet | Version: 3.0 | Effective: 2025-08-25 | Owner: Tessera) Tj ET
+BT /F1 10 Tf 54 688 Td (Product Engineering) Tj ET
+BT /F2 13 Tf 54 663 Td (Overview) Tj ET
+BT /F1 10 Tf 54 641 Td (The Tessera TS-4 gateway is the site hub of the Tessera vibration-monitoring platform. It forms) Tj ET
+BT /F1 10 Tf 54 628 Td (and manages a TesseraMesh wireless network of up to 64 TS-4e edge nodes, buffers their) Tj ET
+BT /F1 10 Tf 54 615 Td (readings, and forwards them securely to TesseraCloud. The gateway is available in two variants) Tj ET
+BT /F1 10 Tf 54 602 Td (that differ only in backhaul: TS4-GW-LTE, with LTE Cat-M1 cellular and Ethernet, and) Tj ET
+BT /F1 10 Tf 54 589 Td (TS4-GW-ETH, with Ethernet only.) Tj ET
+BT /F1 10 Tf 54 567 Td (Typical applications include pump stations, cooling-water systems, HVAC plant rooms, conveyors) Tj ET
+BT /F1 10 Tf 54 554 Td (and process fans, where running a cable to every sensor would be costly or impractical.) Tj ET
+BT /F2 13 Tf 54 529 Td (Specifications) Tj ET
+BT /F2 9 Tf 54 508 Td (Parameter | TS4-GW-LTE | TS4-GW-ETH) Tj ET
+BT /F1 9 Tf 54 496 Td (Backhaul | LTE Cat-M1 and 10/100 Ethernet | 10/100 Ethernet) Tj ET
+BT /F1 9 Tf 54 484 Td (Cellular bands | LTE B1, B2, B3, B4, B5, B8, B12, B13, B20, B25, B26, B28 | Not applicable) Tj ET
+BT /F1 9 Tf 54 472 Td (SIM | Nano-SIM \(4FF\), optional TS4-SIM-GLB | Not applicable) Tj ET
+BT /F1 9 Tf 54 460 Td (Mesh radio | TesseraMesh, IEEE 802.15.4, 2.4 GHz, channels 11-26 | TesseraMesh, IEEE 802.15.4,) Tj ET
+BT /F1 9 Tf 54 448 Td (2.4 GHz, channels 11-26) Tj ET
+BT /F1 9 Tf 54 436 Td (Maximum nodes | 64 TS-4e | 64 TS-4e) Tj ET
+BT /F1 9 Tf 54 424 Td (Maximum mesh hops | 4 | 4) Tj ET
+BT /F1 9 Tf 54 412 Td (Power | PoE IEEE 802.3at or 10-30 VDC | PoE IEEE 802.3af/at or 10-30 VDC) Tj ET
+BT /F1 9 Tf 54 400 Td (Typical consumption | 6.5 W \(11 W peak\) | 4.0 W) Tj ET
+BT /F1 9 Tf 54 388 Td (Store-and-forward buffer | 256 MB flash, approx. 30 days at 64 nodes | 256 MB flash, approx. 30) Tj ET
+BT /F1 9 Tf 54 376 Td (days at 64 nodes) Tj ET
+BT /F1 9 Tf 54 364 Td (Service port | RJ45 \(SVC\), local UI at https://192.168.50.1 | RJ45 \(SVC\), local UI at) Tj ET
+BT /F1 9 Tf 54 352 Td (https://192.168.50.1) Tj ET
+BT /F1 9 Tf 54 340 Td (Antennas | 2.4 GHz mesh \(5 dBi\) and LTE \(3 dBi\), N-type | 2.4 GHz mesh \(5 dBi\), N-type) Tj ET
+BT /F1 9 Tf 54 328 Td (Operating temperature | -30 to +70 C | -30 to +70 C) Tj ET
+BT /F1 9 Tf 54 316 Td (Ingress protection | IP66 | IP66) Tj ET
+BT /F1 9 Tf 54 304 Td (Enclosure | UV-stabilised polycarbonate, 240 x 180 x 90 mm | UV-stabilised polycarbonate, 240 x) Tj ET
+BT /F1 9 Tf 54 292 Td (180 x 90 mm) Tj ET
+BT /F1 9 Tf 54 280 Td (Weight \(with bracket\) | 1.9 kg | 1.8 kg) Tj ET
+BT /F1 9 Tf 54 268 Td (Hazardous area | Safe area only | Safe area only) Tj ET
+BT /F1 9 Tf 54 256 Td (Current firmware | 5.3.0 | 5.3.0) Tj ET
+BT /F1 9 Tf 54 244 Td (Warranty | 36 months \(from 1 April 2025\) | 36 months \(from 1 April 2025\)) Tj ET
+BT /F1 10 Tf 54 222 Td (Note that the TS4-GW-ETH can run from an IEEE 802.3af \(PoE Type 1\) switch port because it has) Tj ET
+BT /F1 10 Tf 54 209 Td (no cellular modem; the TS4-GW-LTE requires IEEE 802.3at \(PoE+\).) Tj ET
+BT /F2 13 Tf 54 184 Td (Security) Tj ET
+BT /F1 10 Tf 54 162 Td (- Device identity: X.509 certificate issued at claim, valid 3 years, renewed automatically) Tj ET
+BT /F1 10 Tf 54 149 Td (   60 days before expiry on firmware 5.2.0 and later.) Tj ET
+BT /F1 10 Tf 54 136 Td (- Transport: TLS 1.3 to TesseraCloud over TCP 8883 \(MQTT\) and TCP 443 \(HTTPS\). No inbound) Tj ET
+BT /F1 10 Tf 54 123 Td (   ports.) Tj ET
+BT /F1 10 Tf 54 110 Td (- Mesh: AES-128 CCM link encryption with a per-network key.) Tj ET
+BT /F1 10 Tf 54 97 Td (- Firmware: signed images, A/B partitions with automatic rollback after three failed boots.) Tj ET
+BT /F2 13 Tf 54 81 Td (Certifications) Tj ET
+BT /F1 10 Tf 54 59 Td (CE \(RED 2014/53/EU\), UKCA, FCC Part 15 and Part 22/24/27 \(LTE variant\), ISED Canada, SIRIM) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1110 >>
+stream
+BT /F1 10 Tf 54 729 Td (Malaysia, IEC 62368-1.) Tj ET
+BT /F2 13 Tf 54 704 Td (Ordering information) Tj ET
+BT /F2 9 Tf 54 683 Td (SKU | Description) Tj ET
+BT /F1 9 Tf 54 671 Td (TS4-GW-LTE | TS-4 gateway, LTE Cat-M1 and Ethernet, with mesh and LTE antennas and bracket) Tj ET
+BT /F1 9 Tf 54 659 Td (TS4-BRK-01) Tj ET
+BT /F1 9 Tf 54 647 Td (TS4-GW-ETH | TS-4 gateway, Ethernet only, with mesh antenna and bracket TS4-BRK-01) Tj ET
+BT /F1 9 Tf 54 635 Td (TS4-SIM-GLB | Global IoT SIM, pre-activated, 5-year data plan) Tj ET
+BT /F1 9 Tf 54 623 Td (TS4-LPA-01 | Coaxial lightning arrestor, N-type) Tj ET
+BT /F1 9 Tf 54 611 Td (TS4-GLD-KIT-02 | Cable gland kit with EMC gland \(replaces TS4-GLD-KIT-01\)) Tj ET
+BT /F1 9 Tf 54 599 Td (TS4-ANT-MESH | Spare 2.4 GHz mesh antenna, 5 dBi) Tj ET
+BT /F1 10 Tf 54 577 Td (Installation procedures are described in the Tessera TS-4 Gateway Installation Guide) Tj ET
+BT /F1 10 Tf 54 564 Td (\(prod-ts4-gateway-installation-guide\). TesseraCloud subscriptions \(TC-SUB-STD and TC-SUB-ENT\)) Tj ET
+BT /F1 10 Tf 54 551 Td (are sold separately, per monitored asset per year.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004417 00000 n 
+0000004553 00000 n 
+0000005715 00000 n 
+0000005851 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5900
+%%EOF

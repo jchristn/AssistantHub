@@ -1,0 +1,93 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4163 >>
+stream
+BT /F2 16 Tf 54 723 Td (Penang OT Network Security Standard) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: mfg-penang-ot-network-standard. Owner: IT Security \(Head of IT Security: Mei-Ling) Tj ET
+BT /F1 10 Tf 54 688 Td (Tan\) and Penang OT Support. Approved by: Nurul Aziz, Penang Factory Manager. Effective date: 5) Tj ET
+BT /F1 10 Tf 54 675 Td (May 2025.) Tj ET
+BT /F2 13 Tf 54 650 Td (Scope) Tj ET
+BT /F1 10 Tf 54 628 Td (This standard covers the operational technology \(OT\) network at the Penang factory: SMT line) Tj ET
+BT /F1 10 Tf 54 615 Td (PCs and machine controllers, reflow ovens, SPI and AOI systems, final test and calibration) Tj ET
+BT /F1 10 Tf 54 602 Td (stations, and line label printers. The OT network uses 10.41.0.0/16 and is separate from the) Tj ET
+BT /F1 10 Tf 54 589 Td (Penang corporate network \(10.40.0.0/16\).) Tj ET
+BT /F2 13 Tf 54 564 Td (Network zones) Tj ET
+BT /F2 9 Tf 54 543 Td (Zone | Subnet | Contents) Tj ET
+BT /F1 9 Tf 54 531 Td (OT core services | 10.41.0.0/24 | OT DNS, time server, historian) Tj ET
+BT /F1 9 Tf 54 519 Td (SMT-1 | 10.41.1.0/24 | Line PC, printer, SPI, placement, oven, AOI) Tj ET
+BT /F1 9 Tf 54 507 Td (SMT-2 | 10.41.2.0/24 | Line PC, printer, SPI, placement, oven, AOI) Tj ET
+BT /F1 9 Tf 54 495 Td (SMT-3 | 10.41.3.0/24 | Line PC, printer, SPI, placement, oven, AOI) Tj ET
+BT /F1 9 Tf 54 483 Td (SMT-4 | 10.41.4.0/24 | Line PC, printer, SPI, placement, oven, AOI) Tj ET
+BT /F1 9 Tf 54 471 Td (Final test and calibration | 10.41.10.0/24 | FT-LUM-01, FT-LUM-02, CAL-PEN-01 to CAL-PEN-06) Tj ET
+BT /F1 9 Tf 54 459 Td (Label printers | 10.41.20.0/24 | PEN-SMT-LABEL01 to PEN-SMT-LABEL04, PEN-FT-LABEL01) Tj ET
+BT /F1 9 Tf 54 447 Td (HIL test rigs | 10.41.30.0/24 | Rigs attached to forge-runner-pen-01 to forge-runner-pen-04) Tj ET
+BT /F1 9 Tf 54 435 Td (OT management | 10.41.250.0/24 | Jump host interface, monitoring sensors) Tj ET
+BT /F2 13 Tf 54 410 Td (Allowed traffic between corporate and OT) Tj ET
+BT /F2 9 Tf 54 389 Td (From | To | Port | Purpose) Tj ET
+BT /F1 9 Tf 54 377 Td (OT line PCs | Atlas application servers \(atlas-app-prd-01 to 04\) | 443 | Atlas shop-floor) Tj ET
+BT /F1 9 Tf 54 365 Td (module \(setup sheets, traceability\)) Tj ET
+BT /F1 9 Tf 54 353 Td (OT historian | Corporate log collector | 6514 | Syslog over TLS) Tj ET
+BT /F1 9 Tf 54 341 Td (forge-runner-pen hosts | HIL test rigs | 22 | Test orchestration) Tj ET
+BT /F1 9 Tf 54 329 Td (ot-jump-pen-01 | OT zones | 3389, 22 | Engineering access) Tj ET
+BT /F1 10 Tf 54 307 Td (All other traffic between the networks is denied. The OT network has no direct internet access.) Tj ET
+BT /F2 13 Tf 54 282 Td (Controls) Tj ET
+BT /F1 10 Tf 54 260 Td (- USB storage is disabled on all OT PCs. Recipe and program files are transferred only) Tj ET
+BT /F1 10 Tf 54 247 Td (   through the managed file transfer share on ot-jump-pen-01, where files are) Tj ET
+BT /F1 10 Tf 54 234 Td (   malware-scanned.) Tj ET
+BT /F1 10 Tf 54 221 Td (- OT PCs are patched quarterly in the Sunday maintenance window \(08:00 to 14:00 MYT\) after) Tj ET
+BT /F1 10 Tf 54 208 Td (   vendor qualification. Critical vulnerabilities with no qualified patch are covered by a) Tj ET
+BT /F1 10 Tf 54 195 Td (   SEC-EXCEPTION with compensating controls.) Tj ET
+BT /F1 10 Tf 54 182 Td (- Active vulnerability scanning of the OT network is forbidden; IT Security uses passive) Tj ET
+BT /F1 10 Tf 54 169 Td (   monitoring only \(see the Vulnerability Management Standard\).) Tj ET
+BT /F1 10 Tf 54 156 Td (- Any new device on 10.41.0.0/16 raises the alert OT_NEW_DEVICE_DETECTED.) Tj ET
+BT /F1 10 Tf 54 143 Td (- OT logs are retained for 12 months.) Tj ET
+BT /F2 13 Tf 54 127 Td (Remote access) Tj ET
+BT /F1 10 Tf 54 105 Td (- Staff: VPN to vpn-pen.meridian-instruments.com, then ot-jump-pen-01 with a FIDO2 key and) Tj ET
+BT /F1 10 Tf 54 92 Td (   an approved Beacon MFG-OT ticket. Sessions last a maximum of 4 hours and are recorded.) Tj ET
+BT /F1 10 Tf 54 79 Td (- Equipment vendors: escorted sessions only, started by Penang OT Support through the) Tj ET
+BT /F1 10 Tf 54 66 Td (   privileged access vault, maximum 2 hours per session. Vendors never receive standing) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 281 >>
+stream
+BT /F1 10 Tf 54 729 Td (   credentials.) Tj ET
+BT /F2 13 Tf 54 713 Td (Changes) Tj ET
+BT /F1 10 Tf 54 691 Td (Changes to OT systems follow the Change Management Procedure v2 and require sign-off from the) Tj ET
+BT /F1 10 Tf 54 678 Td (Penang factory manager or her delegate.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004486 00000 n 
+0000004622 00000 n 
+0000004954 00000 n 
+0000005090 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5139
+%%EOF

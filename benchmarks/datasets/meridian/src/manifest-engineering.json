@@ -1,0 +1,1092 @@
+[
+  {
+    "id": "sec-password-mfa-standard-v1",
+    "title": "Password and MFA Standard (v1)",
+    "source": "engineering/sec-password-mfa-standard-v1.md",
+    "format": "docx",
+    "summary": "2022 standard: 12-character minimum, 90-day rotation, SMS MFA accepted (superseded).",
+    "labels": [
+      "security",
+      "standard",
+      "identity",
+      "superseded"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2022",
+      "system": "all"
+    },
+    "date": "2022-09-01",
+    "version": "1"
+  },
+  {
+    "id": "sec-password-mfa-standard-v2",
+    "title": "Password and MFA Standard (v2)",
+    "source": "engineering/sec-password-mfa-standard-v2.md",
+    "format": "docx",
+    "summary": "2025 standard: 14-character minimum, no periodic rotation, SMS removed, FIDO2 for privileged accounts.",
+    "labels": [
+      "security",
+      "standard",
+      "identity"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-06-01",
+    "version": "2",
+    "supersedes": "sec-password-mfa-standard-v1"
+  },
+  {
+    "id": "sec-backup-retention-standard-v1",
+    "title": "Backup and Retention Standard (v1)",
+    "source": "engineering/sec-backup-retention-standard-v1.md",
+    "format": "pdf",
+    "summary": "2023 backup frequencies, retention periods, weekly offsite copy and annual restore test (superseded).",
+    "labels": [
+      "security",
+      "standard",
+      "backup",
+      "superseded"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2023",
+      "system": "strata"
+    },
+    "date": "2023-02-15",
+    "version": "1"
+  },
+  {
+    "id": "sec-backup-retention-standard-v2",
+    "title": "Backup and Retention Standard (v2)",
+    "source": "engineering/sec-backup-retention-standard-v2.md",
+    "format": "pdf",
+    "summary": "2025 backup and retention rules: 30-day dailies, immutable copies, daily offsite replication, quarterly restore tests, TesseraCloud retention.",
+    "labels": [
+      "security",
+      "standard",
+      "backup"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "strata"
+    },
+    "date": "2025-04-01",
+    "version": "2",
+    "supersedes": "sec-backup-retention-standard-v1"
+  },
+  {
+    "id": "sec-vulnerability-management-standard",
+    "title": "Vulnerability Management Standard",
+    "source": "engineering/sec-vulnerability-management-standard.md",
+    "format": "pdf",
+    "summary": "Scanning, CVSS-based remediation deadlines and exception rules for vulnerabilities.",
+    "labels": [
+      "security",
+      "standard",
+      "vulnerability"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2024",
+      "system": "all"
+    },
+    "date": "2024-10-01"
+  },
+  {
+    "id": "sec-access-review-procedure",
+    "title": "User Access Review Procedure",
+    "source": "engineering/sec-access-review-procedure.md",
+    "format": "docx",
+    "summary": "Quarterly and semi-annual access reviews for Atlas, Keel, Forge, TesseraCloud and privileged groups.",
+    "labels": [
+      "security",
+      "procedure",
+      "access"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-03-03"
+  },
+  {
+    "id": "sec-data-classification-standard",
+    "title": "Data Classification Standard",
+    "source": "engineering/sec-data-classification-standard.md",
+    "format": "md",
+    "summary": "Four data classification levels and their handling rules.",
+    "labels": [
+      "security",
+      "standard",
+      "data"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2024",
+      "system": "all"
+    },
+    "date": "2024-01-10"
+  },
+  {
+    "id": "sec-phishing-reporting-guide",
+    "title": "How to Report a Suspicious Email",
+    "source": "engineering/sec-phishing-reporting-guide.md",
+    "format": "txt",
+    "summary": "How to report phishing with the Report Phish button and what to do if you clicked.",
+    "labels": [
+      "security",
+      "guide",
+      "phishing"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2024",
+      "system": "beacon"
+    },
+    "date": "2024-11-18"
+  },
+  {
+    "id": "sec-privileged-access-management-guide",
+    "title": "Privileged Access Management Guide",
+    "source": "engineering/sec-privileged-access-management-guide.md",
+    "format": "md",
+    "summary": "Admin identities, vault check-out, break-glass accounts and just-in-time elevation.",
+    "labels": [
+      "security",
+      "guide",
+      "privileged-access"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-06-12"
+  },
+  {
+    "id": "it-incident-severity-definitions",
+    "title": "Incident Severity Definitions",
+    "source": "engineering/it-incident-severity-definitions.md",
+    "format": "md",
+    "summary": "SEV1 to SEV4 definitions with acknowledgement, update and restoration targets.",
+    "labels": [
+      "it",
+      "incident",
+      "table",
+      "severity"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "table",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-01-15"
+  },
+  {
+    "id": "it-oncall-policy-v1",
+    "title": "On-call Policy (v1)",
+    "source": "engineering/it-oncall-policy-v1.md",
+    "format": "md",
+    "summary": "2023 on-call policy with 15/30-minute paging acknowledgement for SEV1/SEV2 (superseded).",
+    "labels": [
+      "it",
+      "policy",
+      "on-call",
+      "superseded"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2023",
+      "system": "all"
+    },
+    "date": "2023-05-01",
+    "version": "1"
+  },
+  {
+    "id": "it-oncall-policy-v2",
+    "title": "On-call Policy (v2)",
+    "source": "engineering/it-oncall-policy-v2.md",
+    "format": "md",
+    "summary": "2025 on-call policy: paging SLAs taken from the severity table (SEV1 5 minutes), follow-the-sun Penang cover, escalation timings.",
+    "labels": [
+      "it",
+      "policy",
+      "on-call"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-01-15",
+    "version": "2",
+    "supersedes": "it-oncall-policy-v1"
+  },
+  {
+    "id": "it-oncall-rotation-platform-q3-fy26",
+    "title": "Platform Engineering On-call Rotation Q3 FY26",
+    "source": "engineering/it-oncall-rotation-platform-q3-fy26.html",
+    "format": "html",
+    "summary": "Weekly primary, secondary, Penang and duty manager rota for October to December 2025.",
+    "labels": [
+      "it",
+      "on-call",
+      "table",
+      "rota"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "table",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-09-22"
+  },
+  {
+    "id": "it-change-management-procedure-v1",
+    "title": "Change Management Procedure (v1)",
+    "source": "engineering/it-change-management-procedure-v1.md",
+    "format": "docx",
+    "summary": "2023 change process: CAB Tuesdays 14:00, 5-day lead time (superseded).",
+    "labels": [
+      "it",
+      "procedure",
+      "change",
+      "superseded"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2023",
+      "system": "all"
+    },
+    "date": "2023-01-10",
+    "version": "1"
+  },
+  {
+    "id": "it-change-management-procedure-v2",
+    "title": "Change Management Procedure (v2)",
+    "source": "engineering/it-change-management-procedure-v2.md",
+    "format": "docx",
+    "summary": "2025 change process: CAB Wednesdays 10:30, 3-day lead time, standard change catalogue, freeze windows.",
+    "labels": [
+      "it",
+      "procedure",
+      "change"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-03-03",
+    "version": "2",
+    "supersedes": "it-change-management-procedure-v1"
+  },
+  {
+    "id": "it-network-vpn-guide-leeds",
+    "title": "Network and VPN Setup Guide: Leeds",
+    "source": "engineering/it-network-vpn-guide-leeds.md",
+    "format": "md",
+    "summary": "Leeds subnets, Wi-Fi, VPN endpoint vpn-lds and printer queues.",
+    "labels": [
+      "it",
+      "network",
+      "vpn",
+      "leeds"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "guide",
+      "region": "uk",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-04-07"
+  },
+  {
+    "id": "it-network-vpn-guide-rotterdam",
+    "title": "Network and VPN Setup Guide: Rotterdam",
+    "source": "engineering/it-network-vpn-guide-rotterdam.md",
+    "format": "md",
+    "summary": "Rotterdam subnets, Wi-Fi, VPN endpoint vpn-rtm and printer queues.",
+    "labels": [
+      "it",
+      "network",
+      "vpn",
+      "rotterdam"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "guide",
+      "region": "nl",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-04-07"
+  },
+  {
+    "id": "it-network-vpn-guide-austin",
+    "title": "Network and VPN Setup Guide: Austin",
+    "source": "engineering/it-network-vpn-guide-austin.html",
+    "format": "html",
+    "summary": "Austin subnets, Wi-Fi, VPN endpoint vpn-aus and printer queues.",
+    "labels": [
+      "it",
+      "network",
+      "vpn",
+      "austin"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "guide",
+      "region": "us",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-04-07"
+  },
+  {
+    "id": "it-network-vpn-guide-penang",
+    "title": "Network and VPN Setup Guide: Penang",
+    "source": "engineering/it-network-vpn-guide-penang.md",
+    "format": "pdf",
+    "summary": "Penang corporate and OT subnets, VPN endpoint vpn-pen on UDP 443, OT jump host and printer queues.",
+    "labels": [
+      "it",
+      "network",
+      "vpn",
+      "penang"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "guide",
+      "region": "my",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-04-07"
+  },
+  {
+    "id": "it-beacon-ticket-categories",
+    "title": "Beacon Ticket Categories",
+    "source": "engineering/it-beacon-ticket-categories.md",
+    "format": "md",
+    "summary": "All Beacon ticket categories with default priority, resolver group and approval.",
+    "labels": [
+      "it",
+      "beacon",
+      "table",
+      "service-desk"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "table",
+      "region": "global",
+      "year": "2025",
+      "system": "beacon"
+    },
+    "date": "2025-06-30"
+  },
+  {
+    "id": "it-atlas-month-end-close-runbook",
+    "title": "Atlas Month-End Close Support Runbook",
+    "source": "engineering/it-atlas-month-end-close-runbook.md",
+    "format": "pdf",
+    "summary": "Step-by-step IT support for the Atlas month-end close window BD-2 to BD+3, batch chain and payroll export.",
+    "labels": [
+      "it",
+      "runbook",
+      "atlas",
+      "finance"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "runbook",
+      "region": "global",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-05-12"
+  },
+  {
+    "id": "it-port-service-matrix",
+    "title": "Port and Service Matrix",
+    "source": "engineering/it-port-service-matrix.md",
+    "format": "md",
+    "summary": "Ports and protocols permitted for Atlas, Forge, VPN endpoints and TesseraCloud production.",
+    "labels": [
+      "it",
+      "network",
+      "table",
+      "ports"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "table",
+      "region": "global",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-07-01"
+  },
+  {
+    "id": "it-laptop-provisioning-guide",
+    "title": "Laptop Provisioning Guide for Site IT Desks",
+    "source": "engineering/it-laptop-provisioning-guide.md",
+    "format": "txt",
+    "summary": "Steps for site technicians to build and hand over new-starter laptops.",
+    "labels": [
+      "it",
+      "guide",
+      "laptop"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "system": "beacon"
+    },
+    "date": "2025-07-02"
+  },
+  {
+    "id": "it-postmortem-inc-2025-007-atlas-payroll-export",
+    "title": "Postmortem: INC-2025-007 Atlas Payroll Export Failure",
+    "source": "engineering/it-postmortem-inc-2025-007-atlas-payroll-export.md",
+    "format": "md",
+    "summary": "SEV2 postmortem: PAYX-MONTHLY failed on a rotated SFTP host key; alerts went to a decommissioned list.",
+    "labels": [
+      "it",
+      "postmortem",
+      "incident",
+      "atlas"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "postmortem",
+      "region": "uk",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-01-14"
+  },
+  {
+    "id": "it-disaster-recovery-overview",
+    "title": "IT Disaster Recovery Overview",
+    "source": "engineering/it-disaster-recovery-overview.md",
+    "format": "pdf",
+    "summary": "Service tiers, RTO/RPO per service, invocation authority and DR test history.",
+    "labels": [
+      "it",
+      "disaster-recovery",
+      "table"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-07-01"
+  },
+  {
+    "id": "it-glossary-internal-terms",
+    "title": "Glossary of Internal Terms and Acronyms",
+    "source": "engineering/it-glossary-internal-terms.md",
+    "format": "md",
+    "summary": "Glossary of internal system names, site codes, process terms and manufacturing acronyms.",
+    "labels": [
+      "glossary",
+      "it",
+      "engineering",
+      "manufacturing"
+    ],
+    "tags": {
+      "department": "it-operations",
+      "doc_type": "glossary",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-08-01"
+  },
+  {
+    "id": "eng-adr-008-timeseries-influxdb",
+    "title": "ADR-008: Use InfluxDB as the TesseraCloud Time-Series Store",
+    "source": "engineering/eng-adr-008-timeseries-influxdb.md",
+    "format": "md",
+    "summary": "2022 decision to use InfluxDB for telemetry (superseded by ADR-023).",
+    "labels": [
+      "engineering",
+      "adr",
+      "tesseracloud",
+      "superseded"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "adr",
+      "region": "global",
+      "year": "2022",
+      "system": "tesseracloud"
+    },
+    "date": "2022-03-08"
+  },
+  {
+    "id": "eng-adr-012-message-broker-rabbitmq",
+    "title": "ADR-012: Use RabbitMQ as the TesseraCloud Message Broker",
+    "source": "engineering/eng-adr-012-message-broker-rabbitmq.md",
+    "format": "md",
+    "summary": "2022 decision to use RabbitMQ for TesseraCloud messaging (superseded by ADR-019).",
+    "labels": [
+      "engineering",
+      "adr",
+      "tesseracloud",
+      "superseded"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "adr",
+      "region": "global",
+      "year": "2022",
+      "system": "tesseracloud"
+    },
+    "date": "2022-11-21"
+  },
+  {
+    "id": "eng-adr-015-forge-runner-fleet",
+    "title": "ADR-015: Forge Runners as a Fixed Fleet with Per-Host Concurrency Limits",
+    "source": "engineering/eng-adr-015-forge-runner-fleet.md",
+    "format": "md",
+    "summary": "Decision to run Forge runners as a fixed on-premises fleet with concurrency 6/1/2.",
+    "labels": [
+      "engineering",
+      "adr",
+      "forge"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "adr",
+      "region": "global",
+      "year": "2023",
+      "system": "forge"
+    },
+    "date": "2023-05-30"
+  },
+  {
+    "id": "eng-adr-019-message-broker-kafka",
+    "title": "ADR-019: Move the TesseraCloud Message Broker from RabbitMQ to Kafka",
+    "source": "engineering/eng-adr-019-message-broker-kafka.md",
+    "format": "md",
+    "summary": "2024 decision replacing RabbitMQ with Kafka after INC-2024-031; topics, ports and migration dates.",
+    "labels": [
+      "engineering",
+      "adr",
+      "tesseracloud"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "adr",
+      "region": "global",
+      "year": "2024",
+      "system": "tesseracloud"
+    },
+    "date": "2024-09-12",
+    "supersedes": "eng-adr-012-message-broker-rabbitmq"
+  },
+  {
+    "id": "eng-adr-023-timeseries-timescaledb",
+    "title": "ADR-023: Replace InfluxDB with TimescaleDB for TesseraCloud Telemetry",
+    "source": "engineering/eng-adr-023-timeseries-timescaledb.md",
+    "format": "md",
+    "summary": "2024 decision replacing InfluxDB with TimescaleDB; retention, hosts and migration dates.",
+    "labels": [
+      "engineering",
+      "adr",
+      "tesseracloud"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "adr",
+      "region": "global",
+      "year": "2024",
+      "system": "tesseracloud"
+    },
+    "date": "2024-11-04",
+    "supersedes": "eng-adr-008-timeseries-influxdb"
+  },
+  {
+    "id": "eng-tesseracloud-failover-runbook",
+    "title": "TesseraCloud Regional Failover Runbook",
+    "source": "engineering/eng-tesseracloud-failover-runbook.md",
+    "format": "pdf",
+    "summary": "Step-by-step failover of TesseraCloud from euw1 to euc1, with prechecks, promotion, DNS switch and failback.",
+    "labels": [
+      "engineering",
+      "runbook",
+      "tesseracloud",
+      "disaster-recovery"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "runbook",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-06-20"
+  },
+  {
+    "id": "eng-forge-runner-rotation-runbook",
+    "title": "Forge Runner Token Rotation Runbook",
+    "source": "engineering/eng-forge-runner-rotation-runbook.md",
+    "format": "docx",
+    "summary": "Staggered rotation of Forge runner tokens across Leeds, Penang and Windows runners.",
+    "labels": [
+      "engineering",
+      "runbook",
+      "forge"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "runbook",
+      "region": "global",
+      "year": "2025",
+      "system": "forge"
+    },
+    "date": "2025-02-10"
+  },
+  {
+    "id": "eng-tesseracloud-config-dev",
+    "title": "TesseraCloud Environment Configuration: Development",
+    "source": "engineering/eng-tesseracloud-config-dev.html",
+    "format": "html",
+    "summary": "Hosts, ports and configuration keys for the TesseraCloud dev environment.",
+    "labels": [
+      "engineering",
+      "config",
+      "tesseracloud",
+      "dev"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "config",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-07-14"
+  },
+  {
+    "id": "eng-tesseracloud-config-staging",
+    "title": "TesseraCloud Environment Configuration: Staging",
+    "source": "engineering/eng-tesseracloud-config-staging.html",
+    "format": "html",
+    "summary": "Hosts, ports and configuration keys for the TesseraCloud staging environment.",
+    "labels": [
+      "engineering",
+      "config",
+      "tesseracloud",
+      "staging"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "config",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-07-14"
+  },
+  {
+    "id": "eng-tesseracloud-config-prod",
+    "title": "TesseraCloud Environment Configuration: Production",
+    "source": "engineering/eng-tesseracloud-config-prod.html",
+    "format": "html",
+    "summary": "Hosts, ports and configuration keys for the TesseraCloud production environment.",
+    "labels": [
+      "engineering",
+      "config",
+      "tesseracloud",
+      "prod"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "config",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-07-14"
+  },
+  {
+    "id": "eng-postmortem-inc-2024-031-tesseracloud-ingestion",
+    "title": "Postmortem: INC-2024-031 TesseraCloud Ingestion Outage",
+    "source": "engineering/eng-postmortem-inc-2024-031-tesseracloud-ingestion.md",
+    "format": "pdf",
+    "summary": "SEV1 postmortem: RabbitMQ memory alarm blocked ingestion for 3 h 42 min; led to ADR-019.",
+    "labels": [
+      "engineering",
+      "postmortem",
+      "incident",
+      "tesseracloud"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "postmortem",
+      "region": "global",
+      "year": "2024",
+      "system": "tesseracloud"
+    },
+    "date": "2024-05-24"
+  },
+  {
+    "id": "eng-postmortem-inc-2024-052-forge-token-expiry",
+    "title": "Postmortem: INC-2024-052 Forge Runner Token Expiry",
+    "source": "engineering/eng-postmortem-inc-2024-052-forge-token-expiry.md",
+    "format": "md",
+    "summary": "SEV2 postmortem: all 14 Forge runner tokens expired together; rotation and alerting fixes.",
+    "labels": [
+      "engineering",
+      "postmortem",
+      "incident",
+      "forge"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "postmortem",
+      "region": "global",
+      "year": "2024",
+      "system": "forge"
+    },
+    "date": "2024-08-13"
+  },
+  {
+    "id": "eng-ts4-firmware-release-process",
+    "title": "TS-4 and TS-4e Firmware Release Process",
+    "source": "engineering/eng-ts4-firmware-release-process.md",
+    "format": "pdf",
+    "summary": "Release stages, soak, rollout rings, halt criteria and minimum supported firmware for Tessera devices.",
+    "labels": [
+      "engineering",
+      "process",
+      "firmware",
+      "tessera"
+    ],
+    "tags": {
+      "department": "engineering",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "system": "forge"
+    },
+    "date": "2025-06-09"
+  },
+  {
+    "id": "eng-monitoring-alert-catalogue",
+    "title": "Monitoring Alert Catalogue",
+    "source": "engineering/eng-monitoring-alert-catalogue.md",
+    "format": "md",
+    "summary": "Paging alerts for TesseraCloud, Forge, Atlas and infrastructure with conditions and severities.",
+    "labels": [
+      "engineering",
+      "monitoring",
+      "table",
+      "alerts"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "table",
+      "region": "global",
+      "year": "2025",
+      "system": "all"
+    },
+    "date": "2025-08-18"
+  },
+  {
+    "id": "eng-kafka-topic-conventions",
+    "title": "Kafka Topic Naming Conventions",
+    "source": "engineering/eng-kafka-topic-conventions.md",
+    "format": "txt",
+    "summary": "Kafka topic and consumer group naming rules and the current production topic list.",
+    "labels": [
+      "engineering",
+      "standard",
+      "kafka",
+      "tesseracloud"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-01-20"
+  },
+  {
+    "id": "eng-forge-pipeline-standards",
+    "title": "Forge Pipeline Standards",
+    "source": "engineering/eng-forge-pipeline-standards.md",
+    "format": "md",
+    "summary": "Required pipeline stages, runner tags, artefact retention and environment approvals in Forge.",
+    "labels": [
+      "engineering",
+      "standard",
+      "forge"
+    ],
+    "tags": {
+      "department": "platform-engineering",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2025",
+      "system": "forge"
+    },
+    "date": "2025-04-16"
+  },
+  {
+    "id": "eng-ts4e-edge-node-deployment-guide",
+    "title": "TS-4e Edge Node Field Deployment Checklist",
+    "source": "engineering/eng-ts4e-edge-node-deployment-guide.md",
+    "format": "txt",
+    "summary": "Internal checklist for field engineers deploying TS-4 gateways and TS-4e edge nodes.",
+    "labels": [
+      "engineering",
+      "guide",
+      "tessera",
+      "field"
+    ],
+    "tags": {
+      "department": "engineering",
+      "doc_type": "guide",
+      "region": "us",
+      "year": "2025",
+      "system": "tesseracloud"
+    },
+    "date": "2025-09-01"
+  },
+  {
+    "id": "mfg-penang-smt-changeover-runbook",
+    "title": "Penang SMT Line Changeover Runbook",
+    "source": "engineering/mfg-penang-smt-changeover-runbook.md",
+    "format": "pdf",
+    "summary": "Step-by-step SMED changeover of Penang SMT lines, FAI criteria and reflow profile verification.",
+    "labels": [
+      "manufacturing",
+      "runbook",
+      "smt",
+      "penang"
+    ],
+    "tags": {
+      "department": "manufacturing",
+      "doc_type": "runbook",
+      "region": "my",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-08-04"
+  },
+  {
+    "id": "mfg-penang-smt-line-throughput",
+    "title": "Penang SMT Line Throughput and Capacity, FY26",
+    "source": "engineering/mfg-penang-smt-line-throughput.md",
+    "format": "docx",
+    "summary": "Rated and actual throughput, OEE and weekly capacity per SMT line and board family.",
+    "labels": [
+      "manufacturing",
+      "table",
+      "smt",
+      "penang"
+    ],
+    "tags": {
+      "department": "manufacturing",
+      "doc_type": "table",
+      "region": "my",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-05-02"
+  },
+  {
+    "id": "mfg-halcyon-calibration-procedure",
+    "title": "Halcyon Gas Detector Calibration Procedure",
+    "source": "engineering/mfg-halcyon-calibration-procedure.md",
+    "format": "docx",
+    "summary": "Factory and repair-centre calibration of HX-200, HX-210 and HX-220 detectors.",
+    "labels": [
+      "manufacturing",
+      "procedure",
+      "halcyon",
+      "calibration"
+    ],
+    "tags": {
+      "department": "quality",
+      "doc_type": "runbook",
+      "region": "global",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-06-16"
+  },
+  {
+    "id": "mfg-lumen-lf60-final-test-spec",
+    "title": "Lumen LF-60 and LF-60P Final Test Specification",
+    "source": "engineering/mfg-lumen-lf60-final-test-spec.md",
+    "format": "md",
+    "summary": "Final test programs and acceptance limits for LF-60 versus LF-60P meters at Penang.",
+    "labels": [
+      "manufacturing",
+      "specification",
+      "lumen",
+      "penang"
+    ],
+    "tags": {
+      "department": "quality",
+      "doc_type": "standard",
+      "region": "my",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-06-16"
+  },
+  {
+    "id": "mfg-esd-control-standard",
+    "title": "ESD Control Standard",
+    "source": "engineering/mfg-esd-control-standard.md",
+    "format": "txt",
+    "summary": "ESD protected areas, grounding checks, resistance limits and training.",
+    "labels": [
+      "manufacturing",
+      "standard",
+      "esd"
+    ],
+    "tags": {
+      "department": "quality",
+      "doc_type": "standard",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-10-14"
+  },
+  {
+    "id": "mfg-msl-handling-procedure",
+    "title": "Moisture Sensitive Device (MSL) Handling Procedure",
+    "source": "engineering/mfg-msl-handling-procedure.md",
+    "format": "md",
+    "summary": "Floor life by MSL, storage, line controls and baking at Penang.",
+    "labels": [
+      "manufacturing",
+      "procedure",
+      "msl",
+      "penang"
+    ],
+    "tags": {
+      "department": "manufacturing",
+      "doc_type": "guide",
+      "region": "my",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-02-03"
+  },
+  {
+    "id": "mfg-postmortem-inc-2025-014-penang-smt2-reflow",
+    "title": "Postmortem: INC-2025-014 Wrong Reflow Profile on Penang SMT-2",
+    "source": "engineering/mfg-postmortem-inc-2025-014-penang-smt2-reflow.md",
+    "format": "pdf",
+    "summary": "SEV2 postmortem: TS4E-EN boards run on the HX-MB reflow profile; 612 boards affected.",
+    "labels": [
+      "manufacturing",
+      "postmortem",
+      "incident",
+      "smt",
+      "penang"
+    ],
+    "tags": {
+      "department": "manufacturing",
+      "doc_type": "postmortem",
+      "region": "my",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-03-21"
+  },
+  {
+    "id": "mfg-penang-ot-network-standard",
+    "title": "Penang OT Network Security Standard",
+    "source": "engineering/mfg-penang-ot-network-standard.md",
+    "format": "pdf",
+    "summary": "OT network zones, allowed traffic, controls and remote access at the Penang factory.",
+    "labels": [
+      "manufacturing",
+      "security",
+      "standard",
+      "network",
+      "penang"
+    ],
+    "tags": {
+      "department": "security",
+      "doc_type": "standard",
+      "region": "my",
+      "year": "2025",
+      "system": "network"
+    },
+    "date": "2025-05-05"
+  },
+  {
+    "id": "mfg-rotterdam-repair-centre-process",
+    "title": "Rotterdam Repair Centre Internal Process",
+    "source": "engineering/mfg-rotterdam-repair-centre-process.html",
+    "format": "html",
+    "summary": "Internal repair workflow, turnaround targets and recalibration at the Rotterdam Repair Centre.",
+    "labels": [
+      "manufacturing",
+      "process",
+      "repair",
+      "rotterdam"
+    ],
+    "tags": {
+      "department": "manufacturing",
+      "doc_type": "guide",
+      "region": "nl",
+      "year": "2025",
+      "system": "atlas"
+    },
+    "date": "2025-04-01"
+  }
+]

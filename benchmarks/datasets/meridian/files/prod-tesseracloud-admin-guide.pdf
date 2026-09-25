@@ -1,0 +1,478 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R] /Count 9 >>
+endobj
+4 0 obj
+<< /Length 4005 >>
+stream
+BT /F2 16 Tf 54 723 Td (TesseraCloud Administrator Guide) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-tesseracloud-admin-guide | Version: 2025.2 | Effective: 2025-07-14 | Owner:) Tj ET
+BT /F1 10 Tf 54 688 Td (TesseraCloud Product Team, Meridian Instruments Ltd) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Introduction) Tj ET
+BT /F1 10 Tf 54 641 Td (TesseraCloud is Meridian Instruments' software-as-a-service platform for the Tessera) Tj ET
+BT /F1 10 Tf 54 628 Td (vibration-monitoring system. It receives telemetry from TS-4 gateways and their TS-4e edge) Tj ET
+BT /F1 10 Tf 54 615 Td (nodes, stores readings, evaluates alarm policies and presents condition information to) Tj ET
+BT /F1 10 Tf 54 602 Td (maintenance and reliability teams. This guide is written for customer administrators, that is,) Tj ET
+BT /F1 10 Tf 54 589 Td (users holding the Tenant Owner or Site Admin role, and for Meridian partners who administer) Tj ET
+BT /F1 10 Tf 54 576 Td (tenants on a customer's behalf.) Tj ET
+BT /F1 10 Tf 54 554 Td (This edition corresponds to the TesseraCloud 2025.2 release \(July 2025\). It introduces the) Tj ET
+BT /F1 10 Tf 54 541 Td (per-plan API rate limits described in the TesseraCloud API Rate Limits document) Tj ET
+BT /F1 10 Tf 54 528 Td (\(prod-tesseracloud-api-rate-limits-v2\), the revised data retention settings in section 8, and) Tj ET
+BT /F1 10 Tf 54 515 Td (the certificate re-provisioning procedure in section 11.) Tj ET
+BT /F1 10 Tf 54 493 Td (TesseraCloud is offered in two subscription plans, priced per monitored asset per year:) Tj ET
+BT /F1 10 Tf 54 471 Td (- Standard \(SKU TC-SUB-STD\): core monitoring, alarm policies, email and Microsoft Teams) Tj ET
+BT /F1 10 Tf 54 458 Td (   notifications, 13 months of raw reading retention.) Tj ET
+BT /F1 10 Tf 54 445 Td (- Enterprise \(SKU TC-SUB-ENT\): everything in Standard plus SCIM user provisioning, SMS) Tj ET
+BT /F1 10 Tf 54 432 Td (   notifications, 36 months of raw reading retention, higher API limits and the advanced) Tj ET
+BT /F1 10 Tf 54 419 Td (   analytics workspace.) Tj ET
+BT /F2 13 Tf 54 403 Td (2. Tenancy and data residency) Tj ET
+BT /F2 11 Tf 54 380 Td (2.1 Tenants) Tj ET
+BT /F1 10 Tf 54 358 Td (Each customer organisation is provisioned as one tenant. A tenant is identified by a tenant ID) Tj ET
+BT /F1 10 Tf 54 345 Td (in the format TC-T-NNNNNN \(for example TC-T-004817\), shown under Settings > Tenant > Overview.) Tj ET
+BT /F1 10 Tf 54 332 Td (All users, sites, gateways, nodes, alarm policies and API keys belong to exactly one tenant.) Tj ET
+BT /F1 10 Tf 54 319 Td (Data is never shared between tenants.) Tj ET
+BT /F1 10 Tf 54 297 Td (Large organisations sometimes ask for separate tenants per business unit. Meridian recommends a) Tj ET
+BT /F1 10 Tf 54 284 Td (single tenant with multiple sites instead, because cross-site reporting, shared alarm policies) Tj ET
+BT /F1 10 Tf 54 271 Td (and single sign-on are all tenant-scoped.) Tj ET
+BT /F2 11 Tf 54 248 Td (2.2 Hosting regions) Tj ET
+BT /F1 10 Tf 54 226 Td (When a tenant is created, it is assigned to one hosting region, which cannot be changed later) Tj ET
+BT /F1 10 Tf 54 213 Td (without a data migration project:) Tj ET
+BT /F2 9 Tf 54 192 Td (Region code | Hosting location | Typical customers) Tj ET
+BT /F1 9 Tf 54 180 Td (EU1 | Amsterdam, Netherlands | UK, EU, Middle East) Tj ET
+BT /F1 9 Tf 54 168 Td (US1 | Central United States | Americas) Tj ET
+BT /F1 9 Tf 54 156 Td (AP1 | Singapore | Asia-Pacific, including Malaysia) Tj ET
+BT /F1 10 Tf 54 134 Td (All readings, configuration and audit data for the tenant remain in its region. Backups are) Tj ET
+BT /F1 10 Tf 54 121 Td (replicated to a second availability zone within the same region.) Tj ET
+BT /F2 11 Tf 54 98 Td (2.3 Tenant Owner responsibilities) Tj ET
+BT /F1 10 Tf 54 76 Td (Every tenant must have at least two users with the Tenant Owner role. TesseraCloud prevents) Tj ET
+BT /F1 10 Tf 54 63 Td (removing or demoting the last remaining Tenant Owner. Tenant Owners receive service) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4094 >>
+stream
+BT /F1 10 Tf 54 729 Td (notifications, including planned maintenance announcements, certificate expiry warnings and API) Tj ET
+BT /F1 10 Tf 54 716 Td (key expiry warnings.) Tj ET
+BT /F2 13 Tf 54 691 Td (3. Signing in and single sign-on) Tj ET
+BT /F2 11 Tf 54 668 Td (3.1 Local accounts) Tj ET
+BT /F1 10 Tf 54 646 Td (Users can sign in with a local TesseraCloud account \(email address and password\). Local) Tj ET
+BT /F1 10 Tf 54 633 Td (accounts require multi-factor authentication with an authenticator app; SMS one-time codes are) Tj ET
+BT /F1 10 Tf 54 620 Td (not offered for sign-in. Passwords must be at least 12 characters. An idle web session expires) Tj ET
+BT /F1 10 Tf 54 607 Td (after 30 minutes.) Tj ET
+BT /F2 11 Tf 54 584 Td (3.2 SAML 2.0 single sign-on) Tj ET
+BT /F1 10 Tf 54 562 Td (TesseraCloud supports SAML 2.0 single sign-on with any compliant identity provider. Meridian) Tj ET
+BT /F1 10 Tf 54 549 Td (has tested Microsoft Entra ID, Okta and Ping Identity. To configure SSO, a Tenant Owner goes to) Tj ET
+BT /F1 10 Tf 54 536 Td (Settings > Security > Single Sign-On and enters the identity provider metadata URL or uploads) Tj ET
+BT /F1 10 Tf 54 523 Td (the metadata XML.) Tj ET
+BT /F1 10 Tf 54 501 Td (Values to give your identity provider team:) Tj ET
+BT /F1 10 Tf 54 479 Td (- Service provider entity ID: urn:tesseracloud:tenant:{tenantId}, for example) Tj ET
+BT /F1 10 Tf 54 466 Td (   urn:tesseracloud:tenant:TC-T-004817.) Tj ET
+BT /F1 10 Tf 54 453 Td (- Assertion consumer service \(ACS\) URL:) Tj ET
+BT /F1 10 Tf 54 440 Td (   https://login.tesseracloud.meridian-instruments.com/saml/acs) Tj ET
+BT /F1 10 Tf 54 427 Td (- NameID format: email address.) Tj ET
+BT /F1 10 Tf 54 414 Td (- Optional attribute "tc_role" to assign a role at sign-in; if absent, new users receive the) Tj ET
+BT /F1 10 Tf 54 401 Td (   Viewer role.) Tj ET
+BT /F1 10 Tf 54 388 Td (Once SSO is enforced \(the "Require SSO" switch\), local passwords stop working for all users) Tj ET
+BT /F1 10 Tf 54 375 Td (except designated break-glass accounts. At least one Tenant Owner must remain as a break-glass) Tj ET
+BT /F1 10 Tf 54 362 Td (local account so that the tenant can be recovered if the identity provider is unavailable.) Tj ET
+BT /F2 11 Tf 54 339 Td (3.3 SCIM provisioning \(Enterprise\)) Tj ET
+BT /F1 10 Tf 54 317 Td (Enterprise tenants can provision and deprovision users automatically using SCIM 2.0. The SCIM) Tj ET
+BT /F1 10 Tf 54 304 Td (base URL is https://api.tesseracloud.meridian-instruments.com/scim/v2 and it authenticates with) Tj ET
+BT /F1 10 Tf 54 291 Td (a dedicated SCIM token generated at Settings > Security > SCIM. Deprovisioned users are) Tj ET
+BT /F1 10 Tf 54 278 Td (deactivated immediately and deleted after 30 days.) Tj ET
+BT /F2 13 Tf 54 253 Td (4. Roles and permissions) Tj ET
+BT /F1 10 Tf 54 231 Td (TesseraCloud uses five fixed roles. Roles can be granted tenant-wide or restricted to specific) Tj ET
+BT /F1 10 Tf 54 218 Td (sites.) Tj ET
+BT /F2 9 Tf 54 197 Td (Role | Typical user | Key permissions) Tj ET
+BT /F1 9 Tf 54 185 Td (Tenant Owner | Customer IT or reliability lead | All permissions, including SSO, billing) Tj ET
+BT /F1 9 Tf 54 173 Td (contacts, API keys, support access and tenant deletion) Tj ET
+BT /F1 9 Tf 54 161 Td (Site Admin | Site maintenance manager | Manage sites, assets, gateways, nodes, alarm policies) Tj ET
+BT /F1 9 Tf 54 149 Td (and site users within assigned sites) Tj ET
+BT /F1 9 Tf 54 137 Td (Analyst | Reliability engineer | View all data, create dashboards and reports, acknowledge) Tj ET
+BT /F1 9 Tf 54 125 Td (alarms, run exports) Tj ET
+BT /F1 9 Tf 54 113 Td (Viewer | Operator or manager | View dashboards, assets and alarms; cannot acknowledge alarms) Tj ET
+BT /F1 9 Tf 54 101 Td (Integrator | Service account for integrations | API access only through API keys; no web) Tj ET
+BT /F1 9 Tf 54 89 Td (sign-in) Tj ET
+BT /F1 10 Tf 54 67 Td (Custom roles are not supported. A user may hold different roles on different sites; the most) Tj ET
+BT /F1 10 Tf 54 54 Td (permissive applicable role applies to tenant-wide objects.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 3795 >>
+stream
+BT /F2 13 Tf 54 717 Td (5. Sites and assets) Tj ET
+BT /F2 11 Tf 54 694 Td (5.1 Sites) Tj ET
+BT /F1 10 Tf 54 672 Td (A site represents a physical location, such as a plant or a pumping station. Create sites at) Tj ET
+BT /F1 10 Tf 54 659 Td (Sites > Add Site. Each site has a name, a time zone, an address and an optional site code used) Tj ET
+BT /F1 10 Tf 54 646 Td (in reports. Standard tenants can create up to 50 sites; Enterprise tenants have no site limit.) Tj ET
+BT /F1 10 Tf 54 624 Td (The site time zone controls how daily reports and business-hours notification rules are) Tj ET
+BT /F1 10 Tf 54 611 Td (evaluated. Readings are always stored in UTC.) Tj ET
+BT /F2 11 Tf 54 588 Td (5.2 Assets and measurement points) Tj ET
+BT /F1 10 Tf 54 566 Td (An asset is a monitored machine, such as a pump, fan, motor or gearbox. Each asset contains one) Tj ET
+BT /F1 10 Tf 54 553 Td (or more measurement points, and each measurement point is bound to exactly one TS-4e edge node.) Tj ET
+BT /F1 10 Tf 54 540 Td (Assets are created at Sites > [site] > Assets > Add Asset.) Tj ET
+BT /F1 10 Tf 54 518 Td (For each asset, record:) Tj ET
+BT /F1 10 Tf 54 496 Td (- Machine type and machine class \(used for ISO 10816-3 alarm defaults; see the Tessera Alarm) Tj ET
+BT /F1 10 Tf 54 483 Td (   Configuration Guide, prod-tessera-alarm-configuration-guide\).) Tj ET
+BT /F1 10 Tf 54 470 Td (- Rated power and running speed.) Tj ET
+BT /F1 10 Tf 54 457 Td (- Foundation type \(rigid or flexible\).) Tj ET
+BT /F1 10 Tf 54 444 Td (- Criticality \(A, B or C\), used to prioritise alarm routing.) Tj ET
+BT /F1 10 Tf 54 431 Td (Asset subscriptions are counted per asset, not per node. An asset with four measurement points) Tj ET
+BT /F1 10 Tf 54 418 Td (consumes one TC-SUB-STD or TC-SUB-ENT subscription.) Tj ET
+BT /F2 13 Tf 54 393 Td (6. Gateway fleet management) Tj ET
+BT /F2 11 Tf 54 370 Td (6.1 Fleet view) Tj ET
+BT /F1 10 Tf 54 348 Td (Fleet > Gateways lists all gateways in the tenant with their status \(Online, Offline,) Tj ET
+BT /F1 10 Tf 54 335 Td (Degraded\), firmware version, backhaul type, last heartbeat and number of paired nodes. A) Tj ET
+BT /F1 10 Tf 54 322 Td (gateway is marked Offline after 10 minutes without a heartbeat. Degraded means the gateway is) Tj ET
+BT /F1 10 Tf 54 309 Td (online but reporting at least one active T-code event.) Tj ET
+BT /F2 11 Tf 54 286 Td (6.2 Adding gateways) Tj ET
+BT /F1 10 Tf 54 264 Td (Gateways are claimed using the serial number and claim code on the rating label \(Fleet >) Tj ET
+BT /F1 10 Tf 54 251 Td (Gateways > Add Gateway\). Full installation instructions are in the Tessera TS-4 Gateway) Tj ET
+BT /F1 10 Tf 54 238 Td (Installation Guide \(prod-ts4-gateway-installation-guide\).) Tj ET
+BT /F2 11 Tf 54 215 Td (6.3 Transferring a gateway to another site) Tj ET
+BT /F1 10 Tf 54 193 Td (A gateway and all of its paired nodes can be moved from one site to another within the same) Tj ET
+BT /F1 10 Tf 54 180 Td (tenant, for example when a skid is relocated. Go to Fleet > Gateways > [gateway] > Actions >) Tj ET
+BT /F1 10 Tf 54 167 Td (Transfer Site, choose the destination site and confirm.) Tj ET
+BT /F1 10 Tf 54 145 Td (Behaviour on transfer:) Tj ET
+BT /F1 10 Tf 54 123 Td (- The paired nodes move with the gateway. Their asset and measurement point bindings are) Tj ET
+BT /F1 10 Tf 54 110 Td (   cleared and must be re-created in the destination site.) Tj ET
+BT /F1 10 Tf 54 97 Td (- Historical readings remain associated with the original site and assets. They are not) Tj ET
+BT /F1 10 Tf 54 84 Td (   moved.) Tj ET
+BT /F1 10 Tf 54 71 Td (- Active alarms on the original assets are closed with the reason "Gateway transferred".) Tj ET
+BT /F1 10 Tf 54 58 Td (- A transfer can only be performed by a user who is Site Admin on both sites, or a Tenant) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 3833 >>
+stream
+BT /F1 10 Tf 54 729 Td (   Owner.) Tj ET
+BT /F1 10 Tf 54 716 Td (Transfers between tenants are not possible through the portal. A gateway must be released) Tj ET
+BT /F1 10 Tf 54 703 Td (\(Actions > Release Gateway\) by the current tenant and claimed by the new tenant using the) Tj ET
+BT /F1 10 Tf 54 690 Td (original claim code.) Tj ET
+BT /F2 11 Tf 54 667 Td (6.4 Firmware management) Tj ET
+BT /F1 10 Tf 54 645 Td (Firmware updates are scheduled at Fleet > Gateways > [gateway] > Firmware > Schedule Update, or) Tj ET
+BT /F1 10 Tf 54 632 Td (in bulk from Fleet > Firmware Campaigns. A campaign can target up to 200 gateways and can be) Tj ET
+BT /F1 10 Tf 54 619 Td (limited to a maintenance window. TesseraCloud checks the firmware compatibility rules before) Tj ET
+BT /F1 10 Tf 54 606 Td (scheduling: it will refuse to schedule node firmware 2.8.0 onto nodes whose gateway is not) Tj ET
+BT /F1 10 Tf 54 593 Td (already on 5.3.0.) Tj ET
+BT /F1 10 Tf 54 571 Td (From 1 October 2025, TesseraCloud requires gateway firmware 5.2.0 or later. Gateways on 5.1.x) Tj ET
+BT /F1 10 Tf 54 558 Td (will still connect after that date but will be shown as Degraded and cannot receive) Tj ET
+BT /F1 10 Tf 54 545 Td (configuration changes until updated.) Tj ET
+BT /F2 13 Tf 54 520 Td (7. Alarm policies) Tj ET
+BT /F2 11 Tf 54 497 Td (7.1 Policy structure) Tj ET
+BT /F1 10 Tf 54 475 Td (An alarm policy defines when an alarm is raised and who is notified. A policy has:) Tj ET
+BT /F1 10 Tf 54 453 Td (- Scope: tenant-wide, site or individual asset.) Tj ET
+BT /F1 10 Tf 54 440 Td (- Conditions: metric \(velocity RMS, acceleration peak, crest factor, temperature, node) Tj ET
+BT /F1 10 Tf 54 427 Td (   battery\), comparison and threshold.) Tj ET
+BT /F1 10 Tf 54 414 Td (- Persistence: the number of consecutive readings that must breach the threshold before the) Tj ET
+BT /F1 10 Tf 54 401 Td (   alarm is raised. The default is 3.) Tj ET
+BT /F1 10 Tf 54 388 Td (- Severity: Warning or Alarm.) Tj ET
+BT /F1 10 Tf 54 375 Td (- Escalation plan: up to 3 escalation levels.) Tj ET
+BT /F1 10 Tf 54 362 Td (Asset-level policies override site-level policies, which override tenant-wide policies, for the) Tj ET
+BT /F1 10 Tf 54 349 Td (same metric.) Tj ET
+BT /F2 11 Tf 54 326 Td (7.2 Acknowledgement and escalation) Tj ET
+BT /F1 10 Tf 54 304 Td (When an alarm is raised, level 1 recipients are notified. If the alarm is not acknowledged) Tj ET
+BT /F1 10 Tf 54 291 Td (within the acknowledgement timeout \(default 15 minutes, configurable from 5 to 240 minutes\),) Tj ET
+BT /F1 10 Tf 54 278 Td (level 2 recipients are notified, and so on to level 3. Acknowledging an alarm stops escalation) Tj ET
+BT /F1 10 Tf 54 265 Td (but does not clear the alarm; an alarm clears automatically when readings fall below the) Tj ET
+BT /F1 10 Tf 54 252 Td (threshold minus the hysteresis band for the persistence count.) Tj ET
+BT /F2 11 Tf 54 229 Td (7.3 Suppression) Tj ET
+BT /F1 10 Tf 54 207 Td (Alarm suppression rules can silence notifications during known events such as start-up) Tj ET
+BT /F1 10 Tf 54 194 Td (transients. Suppression is set per asset at Sites > [site] > Assets > [asset] > Suppression.) Tj ET
+BT /F1 10 Tf 54 181 Td (Readings continue to be recorded during suppression.) Tj ET
+BT /F2 13 Tf 54 156 Td (8. Notification channels) Tj ET
+BT /F1 10 Tf 54 134 Td (TesseraCloud supports the following channels:) Tj ET
+BT /F2 9 Tf 54 113 Td (Channel | Plans | Notes) Tj ET
+BT /F1 9 Tf 54 101 Td (Email | Standard, Enterprise | Sent from alerts@tesseracloud.meridian-instruments.com) Tj ET
+BT /F1 9 Tf 54 89 Td (Microsoft Teams | Standard, Enterprise | Incoming webhook per channel) Tj ET
+BT /F1 9 Tf 54 77 Td (Generic webhook | Standard, Enterprise | HTTPS POST, JSON payload, HMAC-SHA256 signature header) Tj ET
+BT /F1 9 Tf 54 65 Td (X-Tessera-Signature) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 3735 >>
+stream
+BT /F1 9 Tf 54 730 Td (SMS | Enterprise only | 1,000 messages per month included; additional messages billed quarterly) Tj ET
+BT /F1 9 Tf 54 718 Td (Mobile push | Standard, Enterprise | Tessera mobile app, iOS and Android) Tj ET
+BT /F1 10 Tf 54 696 Td (Channels are configured at Settings > Notifications > Channels. Webhook deliveries are retried) Tj ET
+BT /F1 10 Tf 54 683 Td (up to 6 times with exponential back-off over approximately 1 hour. Webhook deliveries do not) Tj ET
+BT /F1 10 Tf 54 670 Td (count towards API rate limits.) Tj ET
+BT /F2 13 Tf 54 645 Td (9. Data retention and downsampling) Tj ET
+BT /F2 11 Tf 54 622 Td (9.1 Retention periods) Tj ET
+BT /F1 10 Tf 54 600 Td (Raw readings are retained according to the subscription plan:) Tj ET
+BT /F1 10 Tf 54 578 Td (- Standard: 13 months of raw readings.) Tj ET
+BT /F1 10 Tf 54 565 Td (- Enterprise: 36 months of raw readings.) Tj ET
+BT /F1 10 Tf 54 552 Td (After the raw retention period, readings are not simply deleted. They are downsampled into) Tj ET
+BT /F1 10 Tf 54 539 Td (hourly aggregates \(minimum, maximum, mean and 95th percentile for each metric\) which are) Tj ET
+BT /F1 10 Tf 54 526 Td (retained for 7 years. Alarm history and acknowledgement records are retained for 7 years on) Tj ET
+BT /F1 10 Tf 54 513 Td (both plans.) Tj ET
+BT /F2 11 Tf 54 490 Td (9.2 Configuring downsampling) Tj ET
+BT /F1 10 Tf 54 468 Td (Some customers prefer to downsample earlier, for example to reduce the volume of data exposed) Tj ET
+BT /F1 10 Tf 54 455 Td (to integrations. The setting is at Settings > Sites > Data Retention > Downsampling. The) Tj ET
+BT /F1 10 Tf 54 442 Td (options are:) Tj ET
+BT /F1 10 Tf 54 420 Td (- Plan default \(13 or 36 months, as above\).) Tj ET
+BT /F1 10 Tf 54 407 Td (- Downsample after 6 months.) Tj ET
+BT /F1 10 Tf 54 394 Td (- Downsample after 3 months.) Tj ET
+BT /F1 10 Tf 54 381 Td (The raw retention period can be shortened but never extended beyond the plan maximum. Changes) Tj ET
+BT /F1 10 Tf 54 368 Td (take effect at the next nightly retention job, which runs at 02:00 UTC in the tenant's hosting) Tj ET
+BT /F1 10 Tf 54 355 Td (region. Shortening retention is irreversible for data already downsampled.) Tj ET
+BT /F2 13 Tf 54 330 Td (10. API keys and integrations) Tj ET
+BT /F2 11 Tf 54 307 Td (10.1 Creating API keys) Tj ET
+BT /F1 10 Tf 54 285 Td (API keys are created at Settings > Integrations > API Keys by a Tenant Owner. Each key is bound) Tj ET
+BT /F1 10 Tf 54 272 Td (to either a named user or an Integrator service account and has one or more scopes:) Tj ET
+BT /F2 9 Tf 54 251 Td (Scope | Allows) Tj ET
+BT /F1 9 Tf 54 239 Td (devices:read | List and read gateways and nodes) Tj ET
+BT /F1 9 Tf 54 227 Td (devices:write | Rename devices, change reporting intervals) Tj ET
+BT /F1 9 Tf 54 215 Td (readings:read | Read readings and aggregates) Tj ET
+BT /F1 9 Tf 54 203 Td (alarms:read | Read alarms and alarm history) Tj ET
+BT /F1 9 Tf 54 191 Td (alarms:write | Acknowledge alarms) Tj ET
+BT /F1 9 Tf 54 179 Td (exports:write | Create bulk export jobs) Tj ET
+BT /F1 9 Tf 54 167 Td (webhooks:write | Manage webhook subscriptions) Tj ET
+BT /F1 10 Tf 54 145 Td (The key secret is shown once at creation. A tenant can have at most 20 active API keys.) Tj ET
+BT /F2 11 Tf 54 122 Td (10.2 Rotation) Tj ET
+BT /F1 10 Tf 54 100 Td (API keys have a mandatory maximum lifetime of 365 days. Tenant Owners receive an email warning) Tj ET
+BT /F1 10 Tf 54 87 Td (30 days and again 7 days before a key expires. To rotate a key without downtime, create a new) Tj ET
+BT /F1 10 Tf 54 74 Td (key with the same scopes, deploy it to the integration, then revoke the old key. Revoked keys) Tj ET
+BT /F1 10 Tf 54 61 Td (stop working within 60 seconds.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4036 >>
+stream
+BT /F2 11 Tf 54 719 Td (10.3 Rate limits) Tj ET
+BT /F1 10 Tf 54 697 Td (API requests are rate-limited per tenant according to plan. Current limits, headers and) Tj ET
+BT /F1 10 Tf 54 684 Td (back-off guidance are in the TesseraCloud API Rate Limits document) Tj ET
+BT /F1 10 Tf 54 671 Td (\(prod-tesseracloud-api-rate-limits-v2\). Endpoint details are in the TesseraCloud REST API) Tj ET
+BT /F1 10 Tf 54 658 Td (Reference \(prod-tesseracloud-api-reference\).) Tj ET
+BT /F2 13 Tf 54 633 Td (11. Device certificates and re-provisioning) Tj ET
+BT /F2 11 Tf 54 610 Td (11.1 How devices authenticate) Tj ET
+BT /F1 10 Tf 54 588 Td (Each TS-4 gateway authenticates to TesseraCloud with an X.509 device certificate issued by the) Tj ET
+BT /F1 10 Tf 54 575 Td (Tessera device certificate authority when the gateway is claimed. Gateway certificates are) Tj ET
+BT /F1 10 Tf 54 562 Td (valid for 3 years. Nodes do not hold their own certificates; they are authenticated to the) Tj ET
+BT /F1 10 Tf 54 549 Td (gateway by the mesh network key.) Tj ET
+BT /F1 10 Tf 54 527 Td (TesseraCloud renews gateway certificates automatically 60 days before expiry, provided the) Tj ET
+BT /F1 10 Tf 54 514 Td (gateway is online and running firmware 5.2.0 or later. Gateways on 5.1.x cannot auto-renew and) Tj ET
+BT /F1 10 Tf 54 501 Td (must be updated first.) Tj ET
+BT /F2 11 Tf 54 478 Td (11.2 Expired or invalid certificates \(T-327\)) Tj ET
+BT /F1 10 Tf 54 456 Td (If a gateway certificate expires, for example because the gateway was offline or in storage) Tj ET
+BT /F1 10 Tf 54 443 Td (during the renewal window, the gateway can no longer connect. It reports T-327 \(device) Tj ET
+BT /F1 10 Tf 54 430 Td (certificate expired\) in its local event log, its status LED flashes red, and TesseraCloud shows) Tj ET
+BT /F1 10 Tf 54 417 Td (it as Offline. The gateway continues to buffer readings.) Tj ET
+BT /F1 10 Tf 54 395 Td (To re-provision the certificate:) Tj ET
+BT /F1 10 Tf 54 373 Td (1. In TesseraCloud, go to Fleet > Gateways > [gateway] > Security > Re-provision Certificate.) Tj ET
+BT /F1 10 Tf 54 360 Td (   You need the Site Admin role for the gateway's site, or Tenant Owner.) Tj ET
+BT /F1 10 Tf 54 347 Td (2. TesseraCloud generates a one-time provisioning token \(12 characters, grouped as) Tj ET
+BT /F1 10 Tf 54 334 Td (   XXXX-XXXX-XXXX\). The token is valid for 24 hours and can be used once.) Tj ET
+BT /F1 10 Tf 54 321 Td (3. Connect a laptop to the gateway's SVC port and open the local interface at) Tj ET
+BT /F1 10 Tf 54 308 Td (   https://192.168.50.1.) Tj ET
+BT /F1 10 Tf 54 295 Td (4. Go to System > Cloud > Provisioning Token, enter the token and select Apply.) Tj ET
+BT /F1 10 Tf 54 282 Td (5. The gateway requests a new certificate, reconnects, and uploads its buffered readings. The) Tj ET
+BT /F1 10 Tf 54 269 Td (   LED returns to solid green within about 3 minutes.) Tj ET
+BT /F1 10 Tf 54 256 Td (If the token is rejected, check that the gateway clock is correct \(System > Time\); a clock) Tj ET
+BT /F1 10 Tf 54 243 Td (error of more than 24 hours causes certificate validation to fail. If the gateway is on) Tj ET
+BT /F1 10 Tf 54 230 Td (firmware 5.1.x, update it locally to 5.3.0 before re-provisioning, because the provisioning) Tj ET
+BT /F1 10 Tf 54 217 Td (token page does not exist in 5.1.x.) Tj ET
+BT /F2 11 Tf 54 194 Td (11.3 Revoking a certificate) Tj ET
+BT /F1 10 Tf 54 172 Td (If a gateway is lost or stolen, revoke its certificate immediately at Fleet > Gateways >) Tj ET
+BT /F1 10 Tf 54 159 Td ([gateway] > Security > Revoke. A revoked gateway cannot reconnect until it is re-provisioned by) Tj ET
+BT /F1 10 Tf 54 146 Td (a Tenant Owner.) Tj ET
+BT /F2 13 Tf 54 121 Td (12. Maintenance mode) Tj ET
+BT /F1 10 Tf 54 99 Td (Maintenance mode is used during planned work, such as a machine overhaul, when readings are) Tj ET
+BT /F1 10 Tf 54 86 Td (expected to be abnormal. It can be applied to an asset, a gateway or a whole site at Sites >) Tj ET
+BT /F1 10 Tf 54 73 Td ([site] > Maintenance Mode or from the asset page.) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 4087 >>
+stream
+BT /F1 10 Tf 54 729 Td (While maintenance mode is active:) Tj ET
+BT /F1 10 Tf 54 707 Td (- Readings continue to be recorded and are flagged "maintenance" in exports.) Tj ET
+BT /F1 10 Tf 54 694 Td (- Alarm policies are not evaluated and no notifications are sent.) Tj ET
+BT /F1 10 Tf 54 681 Td (- Gateway offline notifications are suppressed.) Tj ET
+BT /F1 10 Tf 54 668 Td (Maintenance mode has a maximum duration of 72 hours per activation. When it expires, alarm) Tj ET
+BT /F1 10 Tf 54 655 Td (evaluation resumes automatically; a new activation must be started if the work continues. This) Tj ET
+BT /F1 10 Tf 54 642 Td (limit is deliberate, to avoid assets being left unmonitored indefinitely. Each activation and) Tj ET
+BT /F1 10 Tf 54 629 Td (expiry is recorded in the audit log with the user who started it and the reason entered.) Tj ET
+BT /F2 13 Tf 54 604 Td (13. Audit log) Tj ET
+BT /F1 10 Tf 54 582 Td (The audit log records security-relevant and configuration events: sign-ins, failed sign-ins,) Tj ET
+BT /F1 10 Tf 54 569 Td (role changes, API key creation and revocation, SSO changes, alarm policy changes, gateway) Tj ET
+BT /F1 10 Tf 54 556 Td (transfers, certificate operations, maintenance mode activations and support access grants.) Tj ET
+BT /F1 10 Tf 54 534 Td (- View the log at Settings > Security > Audit Log.) Tj ET
+BT /F1 10 Tf 54 521 Td (- Filter by user, event type, site and date range.) Tj ET
+BT /F1 10 Tf 54 508 Td (- Export to CSV \(up to 100,000 rows per export\).) Tj ET
+BT /F1 10 Tf 54 495 Td (- Audit events are retained for 400 days on both plans.) Tj ET
+BT /F1 10 Tf 54 482 Td (Enterprise tenants can additionally stream audit events to a SIEM through a webhook) Tj ET
+BT /F1 10 Tf 54 469 Td (subscription with the event type "audit.*".) Tj ET
+BT /F2 13 Tf 54 444 Td (14. Data exports) Tj ET
+BT /F1 10 Tf 54 422 Td (Bulk historical data should be extracted using export jobs rather than repeated calls to the) Tj ET
+BT /F1 10 Tf 54 409 Td (readings endpoint. Exports can be created in the portal at Reports > Exports > New Export or) Tj ET
+BT /F1 10 Tf 54 396 Td (through the API with POST /v2/exports.) Tj ET
+BT /F1 10 Tf 54 374 Td (- An export job can cover at most 31 days of raw readings, or 12 months of hourly) Tj ET
+BT /F1 10 Tf 54 361 Td (   aggregates.) Tj ET
+BT /F1 10 Tf 54 348 Td (- Output formats: CSV \(gzip compressed\) or Parquet.) Tj ET
+BT /F1 10 Tf 54 335 Td (- Completed export files are available for download for 7 days, after which they are) Tj ET
+BT /F1 10 Tf 54 322 Td (   deleted.) Tj ET
+BT /F1 10 Tf 54 309 Td (- A tenant can run at most 3 export jobs concurrently.) Tj ET
+BT /F2 13 Tf 54 293 Td (15. Support access) Tj ET
+BT /F1 10 Tf 54 271 Td (Meridian Support engineers cannot see tenant data by default. When a support case requires it,) Tj ET
+BT /F1 10 Tf 54 258 Td (a Tenant Owner grants time-boxed access at Settings > Security > Support Access, entering the) Tj ET
+BT /F1 10 Tf 54 245 Td (Meridian Support Centre ticket number \(format MSC-YYYY-NNNNNN\). Access is read-only unless) Tj ET
+BT /F1 10 Tf 54 232 Td ("Allow configuration changes" is also selected, and it expires automatically after 7 days.) Tj ET
+BT /F1 10 Tf 54 219 Td (Every action taken by a support engineer is recorded in the audit log under the engineer's) Tj ET
+BT /F1 10 Tf 54 206 Td (named account.) Tj ET
+BT /F2 13 Tf 54 181 Td (16. Tenant offboarding) Tj ET
+BT /F1 10 Tf 54 159 Td (A Tenant Owner can request tenant deletion at Settings > Tenant > Close Tenant. Deletion is) Tj ET
+BT /F1 10 Tf 54 146 Td (subject to a 30-day grace period during which the tenant is read-only and can be restored by) Tj ET
+BT /F1 10 Tf 54 133 Td (Meridian Support. After the grace period, all data, including downsampled aggregates and audit) Tj ET
+BT /F1 10 Tf 54 120 Td (logs, is permanently deleted within a further 30 days. Customers who need to retain data should) Tj ET
+BT /F1 10 Tf 54 107 Td (run exports before requesting deletion.) Tj ET
+BT /F2 13 Tf 54 82 Td (17. Service limits summary) Tj ET
+BT /F2 9 Tf 54 61 Td (Limit | Standard | Enterprise) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Length 4108 >>
+stream
+BT /F1 9 Tf 54 730 Td (Sites per tenant | 50 | Unlimited) Tj ET
+BT /F1 9 Tf 54 718 Td (Raw reading retention | 13 months | 36 months) Tj ET
+BT /F1 9 Tf 54 706 Td (Aggregate retention | 7 years | 7 years) Tj ET
+BT /F1 9 Tf 54 694 Td (Active API keys | 20 | 20) Tj ET
+BT /F1 9 Tf 54 682 Td (API key maximum lifetime | 365 days | 365 days) Tj ET
+BT /F1 9 Tf 54 670 Td (API rate limit | 300 requests per minute | 1,200 requests per minute) Tj ET
+BT /F1 9 Tf 54 658 Td (Concurrent export jobs | 3 | 3) Tj ET
+BT /F1 9 Tf 54 646 Td (SMS notifications | Not available | 1,000 per month included) Tj ET
+BT /F1 9 Tf 54 634 Td (Maintenance mode maximum duration | 72 hours | 72 hours) Tj ET
+BT /F1 9 Tf 54 622 Td (Audit log retention | 400 days | 400 days) Tj ET
+BT /F1 9 Tf 54 610 Td (Support access grant | 7 days | 7 days) Tj ET
+BT /F2 13 Tf 54 585 Td (18. Dashboards and scheduled reports) Tj ET
+BT /F2 11 Tf 54 562 Td (18.1 Dashboards) Tj ET
+BT /F1 10 Tf 54 540 Td (Every site has a default dashboard showing asset health by ISO 10816-3 zone, active alarms,) Tj ET
+BT /F1 10 Tf 54 527 Td (gateway status and nodes with low battery. Users with the Analyst role or higher can create) Tj ET
+BT /F1 10 Tf 54 514 Td (additional dashboards at Dashboards > New Dashboard. A dashboard can contain up to 24 widgets.) Tj ET
+BT /F1 10 Tf 54 501 Td (Available widget types are trend chart, zone heat map, alarm list, spectrum viewer \(Enterprise) Tj ET
+BT /F1 10 Tf 54 488 Td (only\), fleet status and KPI tile.) Tj ET
+BT /F1 10 Tf 54 466 Td (Dashboards can be private, shared with a site, or shared tenant-wide. Tenant-wide dashboards) Tj ET
+BT /F1 10 Tf 54 453 Td (can only be published by a Tenant Owner. Dashboards shared with a site are visible to Viewers) Tj ET
+BT /F1 10 Tf 54 440 Td (of that site, which makes them the preferred way to give operators a read-only overview.) Tj ET
+BT /F2 11 Tf 54 417 Td (18.2 Scheduled reports) Tj ET
+BT /F1 10 Tf 54 395 Td (Scheduled reports deliver a PDF summary by email. They are configured at Reports > Scheduled) Tj ET
+BT /F1 10 Tf 54 382 Td (Reports > New Report. Options include:) Tj ET
+BT /F1 10 Tf 54 360 Td (- Frequency: daily, weekly \(choose the weekday\) or monthly \(first working day\).) Tj ET
+BT /F1 10 Tf 54 347 Td (- Delivery time: in the site's time zone; the default is 07:00.) Tj ET
+BT /F1 10 Tf 54 334 Td (- Content: asset health summary, alarms opened and closed in the period, top 10 assets by) Tj ET
+BT /F1 10 Tf 54 321 Td (   velocity RMS change, and node battery forecast.) Tj ET
+BT /F1 10 Tf 54 308 Td (- Recipients: up to 25 email addresses, which do not need to be TesseraCloud users.) Tj ET
+BT /F1 10 Tf 54 295 Td (A tenant can have at most 50 active scheduled reports. Reports that fail to generate for three) Tj ET
+BT /F1 10 Tf 54 282 Td (consecutive runs are paused automatically and the report owner is notified.) Tj ET
+BT /F2 11 Tf 54 259 Td (18.3 Mobile app) Tj ET
+BT /F1 10 Tf 54 237 Td (The Tessera mobile app \(iOS and Android\) supports sign-in with local accounts and SSO. It) Tj ET
+BT /F1 10 Tf 54 224 Td (provides alarm notifications by push, alarm acknowledgement, asset trends and the node pairing) Tj ET
+BT /F1 10 Tf 54 211 Td (assistant used during installation. The app caches the last 7 days of trend data for offline) Tj ET
+BT /F1 10 Tf 54 198 Td (viewing in plant areas without coverage. Mobile sessions are refreshed silently for up to 14) Tj ET
+BT /F1 10 Tf 54 185 Td (days; after that the user must sign in again.) Tj ET
+BT /F2 13 Tf 54 160 Td (19. Administrator FAQ) Tj ET
+BT /F2 11 Tf 54 137 Td (Can we change the hosting region after the tenant is created?) Tj ET
+BT /F1 10 Tf 54 115 Td (Not through the portal. A region move is a chargeable data migration project arranged through) Tj ET
+BT /F1 10 Tf 54 102 Td (your Meridian account manager. The tenant is read-only for up to 48 hours during the migration.) Tj ET
+BT /F2 11 Tf 54 79 Td (Why does a new user see nothing after signing in with SSO?) Tj ET
+BT /F1 10 Tf 54 57 Td (New SSO users receive the Viewer role with no site assignments unless the identity provider) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 18 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+20 0 obj
+<< /Length 2757 >>
+stream
+BT /F1 10 Tf 54 729 Td (sends the tc_role attribute. A Tenant Owner or Site Admin must assign sites at Settings > Users) Tj ET
+BT /F1 10 Tf 54 716 Td (> [user] > Site Access.) Tj ET
+BT /F2 11 Tf 54 693 Td (A reliability engineer left the company. What happens to the API keys they created?) Tj ET
+BT /F1 10 Tf 54 671 Td (API keys bound to a named user stop working when that user is deactivated, which is why) Tj ET
+BT /F1 10 Tf 54 658 Td (Meridian recommends binding integration keys to an Integrator service account instead. Keys) Tj ET
+BT /F1 10 Tf 54 645 Td (bound to an Integrator account are unaffected by staff changes.) Tj ET
+BT /F2 11 Tf 54 622 Td (How do we find which user acknowledged an alarm?) Tj ET
+BT /F1 10 Tf 54 600 Td (Open the alarm in the alarm history; the acknowledging user and time are shown. The same) Tj ET
+BT /F1 10 Tf 54 587 Td (information is in the audit log, event type "alarm.acknowledged", for 400 days.) Tj ET
+BT /F2 11 Tf 54 564 Td (Can we export the node list with battery status?) Tj ET
+BT /F1 10 Tf 54 542 Td (Yes. Fleet > Nodes > Export produces a CSV with node serial number, gateway, firmware version,) Tj ET
+BT /F1 10 Tf 54 529 Td (hop count, last reading time and estimated battery percentage. The export includes at most) Tj ET
+BT /F1 10 Tf 54 516 Td (5,000 nodes; larger tenants should use GET /v2/devices with the readings:read and devices:read) Tj ET
+BT /F1 10 Tf 54 503 Td (scopes.) Tj ET
+BT /F2 11 Tf 54 480 Td (Why does a gateway show Degraded when everything seems to work?) Tj ET
+BT /F1 10 Tf 54 458 Td (Degraded means at least one active T-code event, or firmware below the TesseraCloud minimum) Tj ET
+BT /F1 10 Tf 54 445 Td (\(5.2.0 from 1 October 2025\). Open the gateway page and check the Events tab. The most common) Tj ET
+BT /F1 10 Tf 54 432 Td (causes are T-312 \(clock drift\) and T-348 \(buffer near capacity after an outage\).) Tj ET
+BT /F2 11 Tf 54 409 Td (Is there a limit on how many users a tenant can have?) Tj ET
+BT /F1 10 Tf 54 387 Td (There is no user limit on either plan. Integrator service accounts are limited to 10 per) Tj ET
+BT /F1 10 Tf 54 374 Td (tenant.) Tj ET
+BT /F2 13 Tf 54 349 Td (20. Getting help) Tj ET
+BT /F1 10 Tf 54 327 Td (For TesseraCloud questions, raise a ticket in the Meridian Support Centre at) Tj ET
+BT /F1 10 Tf 54 314 Td (support.meridian-instruments.com. Include your tenant ID and, for device problems, the gateway) Tj ET
+BT /F1 10 Tf 54 301 Td (serial number and any T-codes displayed. Error codes are explained in the Tessera Error Code) Tj ET
+BT /F1 10 Tf 54 288 Td (Reference \(sup-tessera-error-codes\). Response targets depend on your support tier as defined in) Tj ET
+BT /F1 10 Tf 54 275 Td (the Support SLA Tiers document \(sup-sla-tiers\).) Tj ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 20 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+22 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000319 00000 n 
+0000004376 00000 n 
+0000004512 00000 n 
+0000008658 00000 n 
+0000008794 00000 n 
+0000012641 00000 n 
+0000012777 00000 n 
+0000016663 00000 n 
+0000016801 00000 n 
+0000020589 00000 n 
+0000020727 00000 n 
+0000024816 00000 n 
+0000024954 00000 n 
+0000029094 00000 n 
+0000029232 00000 n 
+0000033393 00000 n 
+0000033531 00000 n 
+0000036341 00000 n 
+0000036479 00000 n 
+trailer
+<< /Size 23 /Root 22 0 R >>
+startxref
+36529
+%%EOF

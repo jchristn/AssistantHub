@@ -1,0 +1,125 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 3950 >>
+stream
+BT /F2 16 Tf 54 723 Td (HX-DOCK-4 Docking Station Guide) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-halcyon-docking-station-guide | Revision: B | Effective: 2025-06-20 | Owner:) Tj ET
+BT /F1 10 Tf 54 688 Td (Halcyon Product Engineering, Leeds) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Overview) Tj ET
+BT /F1 10 Tf 54 641 Td (The HX-DOCK-4 is a four-bay docking station for the Halcyon family of portable gas detectors.) Tj ET
+BT /F1 10 Tf 54 628 Td (It automatically charges, bump tests and calibrates instruments, sets their real-time clock,) Tj ET
+BT /F1 10 Tf 54 615 Td (updates their firmware and downloads their datalogs. Results are stored on the dock and) Tj ET
+BT /F1 10 Tf 54 602 Td (synchronised to Meridian Link on a connected PC.) Tj ET
+BT /F1 10 Tf 54 580 Td (The HX-DOCK-4 accepts the HX-210 and HX-220 directly. The HX-200 must first be fitted into the) Tj ET
+BT /F1 10 Tf 54 567 Td (HX-ADP-200 adapter, which positions its smaller housing over the gas ports and charging) Tj ET
+BT /F1 10 Tf 54 554 Td (contacts. Up to four instruments of any mix can be docked at the same time.) Tj ET
+BT /F1 10 Tf 54 532 Td (The docking station is not certified for use in hazardous areas. Install it in a safe area) Tj ET
+BT /F1 10 Tf 54 519 Td (only.) Tj ET
+BT /F2 13 Tf 54 494 Td (2. Installation) Tj ET
+BT /F1 10 Tf 54 472 Td (1. Place the dock on a level bench or mount it on a wall using the four keyhole slots \(M5) Tj ET
+BT /F1 10 Tf 54 459 Td (   screws, not supplied\).) Tj ET
+BT /F1 10 Tf 54 446 Td (2. Connect the 24 V DC power supply \(supplied, part number HX-PSU-24\).) Tj ET
+BT /F1 10 Tf 54 433 Td (3. Connect the calibration gas cylinder to the GAS IN port using the demand-flow regulator) Tj ET
+BT /F1 10 Tf 54 420 Td (   MI-REG-DF. The dock controls flow internally; do not use a fixed-flow regulator on the) Tj ET
+BT /F1 10 Tf 54 407 Td (   dock. Inlet pressure must be between 0.5 and 1.0 bar.) Tj ET
+BT /F1 10 Tf 54 394 Td (4. Connect a vent hose \(maximum 10 m\) from the EXHAUST port to a safe area.) Tj ET
+BT /F1 10 Tf 54 381 Td (5. Connect the dock to a PC with the USB-C cable, or to the site network using the Ethernet) Tj ET
+BT /F1 10 Tf 54 368 Td (   port. The Ethernet port uses DHCP by default.) Tj ET
+BT /F1 10 Tf 54 355 Td (6. Install Meridian Link 4.2 or later on the PC and add the dock with Docks > Add Dock.) Tj ET
+BT /F2 13 Tf 54 339 Td (3. Gas configuration) Tj ET
+BT /F1 10 Tf 54 317 Td (Configure the cylinder in Meridian Link under Docks > [dock] > Cylinders. For HX-210 and HX-220) Tj ET
+BT /F1 10 Tf 54 304 Td (instruments on firmware 3.4.1 or later, the cylinder must be MI-CAL-Q4-B \(1.1% vol CH4, 18.0%) Tj ET
+BT /F1 10 Tf 54 291 Td (O2, 50 ppm CO, 15 ppm H2S\). For HX-200 instruments, a second gas inlet \(GAS IN 2\) can be) Tj ET
+BT /F1 10 Tf 54 278 Td (connected to MI-CAL-H2S25. The dock selects the correct inlet automatically based on the) Tj ET
+BT /F1 10 Tf 54 265 Td (instrument model.) Tj ET
+BT /F1 10 Tf 54 243 Td (The dock warns when a cylinder is within 30 days of expiry and refuses to use an expired) Tj ET
+BT /F1 10 Tf 54 230 Td (cylinder.) Tj ET
+BT /F2 13 Tf 54 205 Td (4. Operation) Tj ET
+BT /F1 10 Tf 54 183 Td (When an instrument is docked, the bay LED shows its status:) Tj ET
+BT /F1 10 Tf 54 161 Td (- Blue: charging) Tj ET
+BT /F1 10 Tf 54 148 Td (- Flashing yellow: bump test or calibration in progress) Tj ET
+BT /F1 10 Tf 54 135 Td (- Green: test passed, instrument charged) Tj ET
+BT /F1 10 Tf 54 122 Td (- Red: test failed or instrument fault) Tj ET
+BT /F1 10 Tf 54 109 Td (The dock performs whichever action is due according to the policy set in Meridian Link \(Docks >) Tj ET
+BT /F1 10 Tf 54 96 Td ([dock] > Policy\). The default policy is: bump test on every docking if the last bump test is) Tj ET
+BT /F1 10 Tf 54 83 Td (more than 20 hours old; calibrate when the calibration is due within 7 days; download datalogs;) Tj ET
+BT /F1 10 Tf 54 70 Td (synchronise the clock.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 3071 >>
+stream
+BT /F1 10 Tf 54 729 Td (A bump test in the dock takes about 60 seconds. A calibration takes about 4 minutes for an) Tj ET
+BT /F1 10 Tf 54 716 Td (HX-210 or HX-220 and about 3 minutes for an HX-200.) Tj ET
+BT /F2 13 Tf 54 691 Td (5. Firmware compatibility) Tj ET
+BT /F1 10 Tf 54 669 Td (The dock firmware must be compatible with the instrument firmware. Update the dock before) Tj ET
+BT /F1 10 Tf 54 656 Td (updating instruments.) Tj ET
+BT /F2 9 Tf 54 635 Td (Dock firmware | HX-200 firmware supported | HX-210 / HX-220 firmware supported | Notes) Tj ET
+BT /F1 9 Tf 54 623 Td (D-1.9.x | 3.2.0 to 3.2.2 | up to 3.3.x | End of support 31 March 2025) Tj ET
+BT /F1 9 Tf 54 611 Td (D-2.0.x | 3.2.0 to 3.2.4 | up to 3.4.0 | Cannot calibrate instruments on 3.4.1 or later) Tj ET
+BT /F1 9 Tf 54 599 Td (D-2.1.0 | 3.2.0 to 3.2.4 | 3.3.0 to 3.4.2 | Required for MI-CAL-Q4-B presets and 120-day HX-210) Tj ET
+BT /F1 9 Tf 54 587 Td (interval) Tj ET
+BT /F1 10 Tf 54 565 Td (To update the dock, select Docks > [dock] > Firmware > Check for Updates in Meridian Link. The) Tj ET
+BT /F1 10 Tf 54 552 Td (update takes about 8 minutes, during which the bays are disabled. Do not disconnect power.) Tj ET
+BT /F2 13 Tf 54 527 Td (6. Maintenance) Tj ET
+BT /F1 10 Tf 54 505 Td (- Replace the inlet filter HX-FLT-D4 every 12 months.) Tj ET
+BT /F1 10 Tf 54 492 Td (- Check the bay gaskets monthly for cracks.) Tj ET
+BT /F1 10 Tf 54 479 Td (- Leak-test the gas path every 6 months using Docks > [dock] > Service > Leak Test. The test) Tj ET
+BT /F1 10 Tf 54 466 Td (   fails if pressure drops by more than 5 mbar in 60 seconds.) Tj ET
+BT /F2 13 Tf 54 450 Td (7. Troubleshooting) Tj ET
+BT /F2 9 Tf 54 429 Td (Symptom | Action) Tj ET
+BT /F1 9 Tf 54 417 Td (Bay LED red, instrument shows E-104 | Check that the cylinder is MI-CAL-Q4-B and in date; see) Tj ET
+BT /F1 9 Tf 54 405 Td (sup-halcyon-error-codes) Tj ET
+BT /F1 9 Tf 54 393 Td (Instrument not recognised | Clean the charging contacts; for HX-200 check the HX-ADP-200) Tj ET
+BT /F1 9 Tf 54 381 Td (adapter is seated) Tj ET
+BT /F1 9 Tf 54 369 Td ("FW INCOMPATIBLE" on dock display | Update dock firmware to D-2.1.0) Tj ET
+BT /F1 9 Tf 54 357 Td (Dock not found in Meridian Link | Check USB-C cable or DHCP lease; the dock also answers on) Tj ET
+BT /F1 9 Tf 54 345 Td (169.254.10.4 if no DHCP server is found) Tj ET
+BT /F2 13 Tf 54 320 Td (8. Specifications) Tj ET
+BT /F2 9 Tf 54 299 Td (Parameter | Value) Tj ET
+BT /F1 9 Tf 54 287 Td (Bays | 4) Tj ET
+BT /F1 9 Tf 54 275 Td (Compatible instruments | HX-210, HX-220; HX-200 with HX-ADP-200) Tj ET
+BT /F1 9 Tf 54 263 Td (Power | 24 V DC, 60 W \(HX-PSU-24\)) Tj ET
+BT /F1 9 Tf 54 251 Td (Gas inlets | 2, demand flow, 0.5 to 1.0 bar) Tj ET
+BT /F1 9 Tf 54 239 Td (Connectivity | USB-C, Ethernet 10/100) Tj ET
+BT /F1 9 Tf 54 227 Td (Storage | 10,000 test records) Tj ET
+BT /F1 9 Tf 54 215 Td (Operating temperature | 0 to +40 C) Tj ET
+BT /F1 9 Tf 54 203 Td (Dimensions | 420 x 190 x 150 mm) Tj ET
+BT /F1 9 Tf 54 191 Td (Weight | 3.4 kg) Tj ET
+BT /F1 9 Tf 54 179 Td (Current dock firmware | D-2.1.0) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004273 00000 n 
+0000004409 00000 n 
+0000007532 00000 n 
+0000007668 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+7717
+%%EOF

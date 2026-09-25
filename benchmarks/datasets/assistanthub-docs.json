@@ -1,0 +1,2445 @@
+{
+  "name": "assistanthub-docs",
+  "description": "Retrieval benchmark over a frozen snapshot (2026-09-24) of AssistantHub's own documentation: README, REST/MCP API references, chat data flow, telemetry, testing, changelog, Docker links, and nine archived design notes. 120 questions spanning paraphrase, lexical, multi-document, deep-detail, table, metadata-filter, follow-up and unanswerable cases.",
+  "corpora": [
+    {
+      "id": "assistanthub-docs",
+      "documents": [
+        {
+          "id": "readme",
+          "title": "AssistantHub README",
+          "file": "assistanthub-docs/files/README.md",
+          "contentType": "text/markdown",
+          "summary": "Product overview, release highlights, Docker quick start, configuration, API overview, MCP server, architecture and SDKs.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "guide"
+          }
+        },
+        {
+          "id": "rest-api",
+          "title": "AssistantHub REST API Reference",
+          "file": "assistanthub-docs/files/REST_API.md",
+          "contentType": "text/markdown",
+          "summary": "Full REST API reference with request/response schemas, settings fields and error codes.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "reference"
+          }
+        },
+        {
+          "id": "mcp-api",
+          "title": "AssistantHub MCP API Reference",
+          "file": "assistanthub-docs/files/MCP_API.md",
+          "contentType": "text/markdown",
+          "summary": "MCP server transports, configuration, tool naming, secret handling and REST route coverage matrix.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "reference"
+          }
+        },
+        {
+          "id": "chat-data-flow",
+          "title": "AssistantHub Chat Data Flow",
+          "file": "assistanthub-docs/files/CHAT_DATA_FLOW.md",
+          "contentType": "text/markdown",
+          "summary": "Current public assistant chat path: validation, retrieval, utility LLM steps, inference and persistence.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "reference"
+          }
+        },
+        {
+          "id": "telemetry",
+          "title": "AssistantHub Telemetry",
+          "file": "assistanthub-docs/files/TELEMETRY.md",
+          "contentType": "text/markdown",
+          "summary": "OpenTelemetry metrics, traces and logs, configuration, bundled observability stack and integration notes.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "guide"
+          }
+        },
+        {
+          "id": "testing",
+          "title": "Running Tests",
+          "file": "assistanthub-docs/files/TESTING.md",
+          "contentType": "text/markdown",
+          "summary": "Test projects, runners, environment variables, SDK tests and crawler validation checklist.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "guide"
+          }
+        },
+        {
+          "id": "changelog",
+          "title": "AssistantHub Changelog",
+          "file": "assistanthub-docs/files/CHANGELOG.md",
+          "contentType": "text/markdown",
+          "summary": "Release notes from v0.2.0 through v0.16.0 and unreleased changes.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "changelog"
+          }
+        },
+        {
+          "id": "claude-mcp",
+          "title": "Using Claude or Cursor with AssistantHub MCP",
+          "file": "assistanthub-docs/files/CLAUDE_MCP.md",
+          "contentType": "text/markdown",
+          "summary": "Step-by-step setup of the AssistantHub MCP server for Claude Code and Cursor.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "guide"
+          }
+        },
+        {
+          "id": "docker-links",
+          "title": "AssistantHub Docker Links and Default Credentials",
+          "file": "assistanthub-docs/files/DOCKER_LINKS.md",
+          "contentType": "text/markdown",
+          "summary": "Local Docker dashboard and backend URLs plus default credentials for every service.",
+          "labels": [
+            "docs"
+          ],
+          "tags": {
+            "kind": "reference"
+          }
+        },
+        {
+          "id": "archive-reranking",
+          "title": "Re-Ranking Feature Plan (v0.6.0)",
+          "file": "assistanthub-docs/files/archive-RERANKING.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for LLM-based re-ranking.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-query-rewrite",
+          "title": "Query Rewrite Feature Plan (v0.4.0)",
+          "file": "assistanthub-docs/files/archive-QUERY_REWRITE.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for LLM-based query rewrite.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-neighbor-retrieval",
+          "title": "Neighbor Chunk Retrieval Implementation Plan",
+          "file": "assistanthub-docs/files/archive-NEIGHBOR_RETRIEVAL.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for retrieving neighboring chunks around search matches.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-metadata-filtering",
+          "title": "Metadata Filtering Implementation Plan",
+          "file": "assistanthub-docs/files/archive-METADATA_FILTERING.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for label/tag metadata filtering of RAG retrieval.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-multi-tenant",
+          "title": "Multi-Tenant Migration Plan",
+          "file": "assistanthub-docs/files/archive-MULTI_TENANT.md",
+          "contentType": "text/markdown",
+          "summary": "Archived plan for converting AssistantHub to a multi-tenant platform.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-crawlers",
+          "title": "Crawlers Implementation Plan",
+          "file": "assistanthub-docs/files/archive-CRAWLERS.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for native web crawlers, crawl plans and operations.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-summarization",
+          "title": "Partio v0.4.0 Summarization Integration Plan",
+          "file": "assistanthub-docs/files/archive-SUMMARIZATION.md",
+          "contentType": "text/markdown",
+          "summary": "Archived plan for integrating Partio summarization and endpoint management.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-slack-integration",
+          "title": "Slack Integration Plan",
+          "file": "assistanthub-docs/files/archive-SLACK_INTEGRATION.md",
+          "contentType": "text/markdown",
+          "summary": "Archived plan for per-assistant Slack Socket Mode integration.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        },
+        {
+          "id": "archive-citations",
+          "title": "Citations Implementation Plan",
+          "file": "assistanthub-docs/files/archive-CITATIONS.md",
+          "contentType": "text/markdown",
+          "summary": "Archived implementation plan for citation metadata in chat responses.",
+          "labels": [
+            "docs",
+            "archive"
+          ],
+          "tags": {
+            "kind": "design-note"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "q001",
+          "text": "How long does AssistantHub keep conversation logs before deleting them automatically, and how often does that purge run?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "RetentionDays int 7 Number of days to retain chat history records",
+            "Records older than this are automatically deleted by the background cleanup service (runs every hour)",
+            "Retention period in days for chat history records (0 = keep indefinitely). Background cleanup runs hourly."
+          ],
+          "answer": "Chat history is kept 7 days by default (0 keeps it forever); the cleanup job runs every hour."
+        },
+        {
+          "id": "q002",
+          "text": "Is there a way to have the bot skip searching documents when a follow-up can be answered from what was already said in the conversation?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "rest-api",
+            "changelog",
+            "chat-data-flow"
+          ],
+          "grades": {
+            "readme": 2,
+            "rest-api": 1,
+            "changelog": 1,
+            "chat-data-flow": 1
+          },
+          "evidence": [
+            "Optional LLM-based retrieval gate that intelligently decides whether each user message requires a new document search or can be answered from existing conversation context, reducing unnecessary retrieval calls.",
+            "an LLM call classifies whether each user message requires new document retrieval (RETRIEVE) or can be answered from existing conversation context (SKIP)"
+          ],
+          "answer": "Yes. Enable the LLM-based retrieval gate (EnableRetrievalGate), which decides per message whether to RETRIEVE or SKIP."
+        },
+        {
+          "id": "q003",
+          "text": "What happens to earlier messages when a chat gets so long it would overflow the model?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "rest-api",
+            "changelog",
+            "chat-data-flow"
+          ],
+          "grades": {
+            "readme": 2,
+            "rest-api": 1,
+            "changelog": 1,
+            "chat-data-flow": 1
+          },
+          "evidence": [
+            "Automatic summarization of older messages when the conversation approaches the context window limit, preserving continuity across long conversations.",
+            "When the conversation history approaches the context window limit, older messages are automatically summarized (compacted)."
+          ],
+          "answer": "Older messages are automatically summarized (compacted) before the final inference call."
+        },
+        {
+          "id": "q004",
+          "text": "If the LLM step that re-scores search hits crashes or returns garbage, does the user's chat request fail?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-reranking"
+          ],
+          "grades": {
+            "archive-reranking": 2
+          },
+          "evidence": [
+            "If the re-ranking LLM call fails or returns unparseable output, the pipeline falls back to the original retrieval ordering. Re-ranking never blocks chat completion."
+          ],
+          "answer": "No. It falls back to the original retrieval ordering; re-ranking never blocks the chat."
+        },
+        {
+          "id": "q005",
+          "text": "Why does the relevance-scoring step put every candidate passage into one prompt instead of making a call per passage?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-reranking"
+          ],
+          "grades": {
+            "archive-reranking": 2
+          },
+          "evidence": [
+            "all candidate chunks are presented in a single prompt with indexed labels",
+            "This keeps latency proportional to one LLM call, not N."
+          ],
+          "answer": "To keep latency at a single LLM call instead of one call per chunk."
+        },
+        {
+          "id": "q006",
+          "text": "When I remove a file from the knowledge base, what else gets cleaned up along with it?",
+          "type": "paraphrase",
+          "category": "aggregation",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Delete a document, its S3 object, all associated RecallDB embeddings, and its Verbex text-search record.",
+            "Document deletion now also removes associated Verbex text-search records"
+          ],
+          "answer": "Its S3 object, all of its RecallDB embeddings, and its Verbex text-search record."
+        },
+        {
+          "id": "q007",
+          "text": "Does leaving the metrics instrumentation in the code slow anything down when nothing is collecting it?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "Emitting is a near-free no-op until a host subscribes, so there is no cost when telemetry is disabled."
+          ],
+          "answer": "No. Emitting is a near-free no-op until a telemetry host subscribes."
+        },
+        {
+          "id": "q008",
+          "text": "Why can't I break down the Prometheus metrics by tenant or by document?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "High-cardinality identifiers (tenant id, document id, request id) are attached to spans, never to metrics."
+          ],
+          "answer": "Those high-cardinality IDs are only attached to trace spans, never to metric labels."
+        },
+        {
+          "id": "q009",
+          "text": "My crawler runs in the AssistantHub container but the SMB share lives on my own machine at localhost. How does that get resolved?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "rest-api",
+            "testing"
+          ],
+          "grades": {
+            "readme": 2,
+            "rest-api": 1,
+            "testing": 1
+          },
+          "evidence": [
+            "localhost from inside assistanthub-server means the container, not the host machine",
+            "AssistantHub normalizes loopback file-server hostnames to that alias when it is available",
+            "loopback file-server hostnames such as localhost, 127.0.0.1, and ::1 are treated as the Docker host"
+          ],
+          "answer": "Loopback hostnames are mapped to host.docker.internal (the Docker host) when that alias resolves."
+        },
+        {
+          "id": "q010",
+          "text": "Will the Slack bot answer in the main channel, or keep its replies grouped under the message that asked?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "archive-slack-integration",
+            "changelog"
+          ],
+          "grades": {
+            "readme": 2,
+            "archive-slack-integration": 1,
+            "changelog": 1
+          },
+          "evidence": [
+            "Slack responses are posted back into the originating Slack thread",
+            "replies are posted back into the originating Slack thread"
+          ],
+          "answer": "Replies are posted in the originating Slack thread."
+        },
+        {
+          "id": "q011",
+          "text": "Are the Slack app and bot tokens encrypted when AssistantHub saves them?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "archive-slack-integration"
+          ],
+          "grades": {
+            "readme": 2,
+            "archive-slack-integration": 1
+          },
+          "evidence": [
+            "Slack tokens are stored in the AssistantHub database in plaintext, so rely on your deployment's at-rest protections"
+          ],
+          "answer": "No. They are stored in plaintext; rely on the deployment's at-rest protections."
+        },
+        {
+          "id": "q012",
+          "text": "Can people using the public chat page switch on extra model tools such as web search themselves?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "chat-data-flow"
+          ],
+          "grades": {
+            "chat-data-flow": 2
+          },
+          "evidence": [
+            "Public chat users cannot choose or broaden tool permissions."
+          ],
+          "answer": "No. Tool permissions come from the admin-configured assistant tool policy."
+        },
+        {
+          "id": "q013",
+          "text": "What's the point of also pulling in the passages right before and after a search hit?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-neighbor-retrieval",
+            "rest-api",
+            "changelog"
+          ],
+          "grades": {
+            "archive-neighbor-retrieval": 2,
+            "rest-api": 1,
+            "changelog": 1
+          },
+          "evidence": [
+            "This provides surrounding context for each match, which is critical for RAG pipelines where isolated chunks lose meaning without their adjacent content.",
+            "Provides surrounding document context for each search match."
+          ],
+          "answer": "It gives the model the surrounding document context so isolated chunks don't lose their meaning."
+        },
+        {
+          "id": "q014",
+          "text": "If I turn on adjacent-chunk expansion, will answers end up listing more sources?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "archive-neighbor-retrieval"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "archive-neighbor-retrieval": 1
+          },
+          "evidence": [
+            "Does not affect scoring, citation count, or top-K limits.",
+            "Neighbor content enriches the context block but does not create additional citations."
+          ],
+          "answer": "No. Each matched chunk still maps to one citation source."
+        },
+        {
+          "id": "q015",
+          "text": "If I pin a few files to a chat message, can the model read their raw storage objects or summarize them in full?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "chat-data-flow",
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "chat-data-flow": 2,
+            "rest-api": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Attached documents narrow retrieval scope. They do not request whole-document summarization and do not grant object-storage access.",
+            "attached_document_ids narrows retrieval scope only; it does not grant direct object storage access."
+          ],
+          "answer": "No. Attached documents only narrow retrieval to those documents."
+        },
+        {
+          "id": "q016",
+          "text": "After wiping everything and starting the stack again, why does the main API container sit waiting before it starts?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "docker-links"
+          ],
+          "grades": {
+            "readme": 2,
+            "docker-links": 1
+          },
+          "evidence": [
+            "assistanthub-server will not start until partio-server is healthy",
+            "assistanthub-server waits for partio-server to report healthy before starting"
+          ],
+          "answer": "It intentionally waits for partio-server (and postgres-init) to be healthy before starting."
+        },
+        {
+          "id": "q017",
+          "text": "If a user drags a file from their laptop into the chat, does it become part of the assistant's permanent knowledge base?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme",
+            "changelog"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1,
+            "changelog": 1
+          },
+          "evidence": [
+            "These files are not added to the assistant collection.",
+            "without adding those files to the assistant collection"
+          ],
+          "answer": "No. Local attachments are text-extracted for that request's prompt only and are not stored in the collection."
+        },
+        {
+          "id": "q018",
+          "text": "How does a scheduled crawl figure out whether a file it saw last time has been modified?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-crawlers",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "archive-crawlers": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "compares two enumerations to produce Added, Changed, Deleted, and Unchanged lists",
+            "Compare in precedence order — first mismatch means Changed"
+          ],
+          "answer": "It compares against the previous enumeration: ContentLength, then ETag, SHA256/SHA1/MD5 hashes and LastModifiedUtc; the first mismatch marks it Changed."
+        },
+        {
+          "id": "q019",
+          "text": "If a file failed to ingest during one crawl, will the next crawl try it again?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-crawlers"
+          ],
+          "grades": {
+            "archive-crawlers": 2
+          },
+          "evidence": [
+            "This ensures failed items get another ingestion attempt on the next crawl."
+          ],
+          "answer": "Yes. Previously failed items are re-added to the Added list on the next crawl."
+        },
+        {
+          "id": "q020",
+          "text": "Why were model endpoints kept shared across tenants instead of giving each tenant its own?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-multi-tenant"
+          ],
+          "grades": {
+            "archive-multi-tenant": 2
+          },
+          "evidence": [
+            "Keep endpoints global (configured by global admin), any tenant can use them",
+            "more isolation but more management overhead"
+          ],
+          "answer": "Per-tenant endpoints add management overhead, so endpoints stay global, managed by the global admin."
+        },
+        {
+          "id": "q021",
+          "text": "Could a burst of uploads make documents fail because the embedding service is overloaded?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "changelog": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "so bursts that trip Partio v0.5.0's per-endpoint concurrency/queue limits no longer fail documents outright",
+            "Ingestion automatically retries transient Partio failures (408/429/502/503/504) with exponential backoff so bursts do not fail documents."
+          ],
+          "answer": "Not anymore. Ingestion retries transient Partio failures with exponential backoff (Chunking.MaxRetries, default 3)."
+        },
+        {
+          "id": "q022",
+          "text": "Can I watch an evaluation run's progress live instead of polling for results?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Stream evaluation run progress via Server-Sent Events (SSE). Events are sent as each fact is evaluated."
+          ],
+          "answer": "Yes, via the SSE stream at GET /v1.0/eval/runs/{runId}/stream."
+        },
+        {
+          "id": "q023",
+          "text": "Does turning on source references in answers cost an extra model call per turn?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-citations"
+          ],
+          "grades": {
+            "archive-citations": 2
+          },
+          "evidence": [
+            "Citations are model-generated via prompt instruction and extracted via regex; no extra LLM calls."
+          ],
+          "answer": "No. Citations come from prompt instructions and regex extraction; there are no extra LLM calls."
+        },
+        {
+          "id": "q024",
+          "text": "What happens if the model points to a source number that isn't in the list it was given?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "archive-citations"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "archive-citations": 1
+          },
+          "evidence": [
+            "Invalid references (e.g., 99 when only 3 sources exist) are silently dropped"
+          ],
+          "answer": "The invalid reference is silently dropped from referenced_indices."
+        },
+        {
+          "id": "q025",
+          "text": "Why isn't the Slack-formatted version of a reply what gets saved in conversation history?",
+          "type": "paraphrase",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-slack-integration",
+            "changelog"
+          ],
+          "grades": {
+            "archive-slack-integration": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "This prevents compaction, replay, and cross-transport history from ingesting Slack-specific formatting.",
+            "Slack responses are transport-shaped only at delivery time while canonical response text is persisted to history"
+          ],
+          "answer": "Only canonical response text is persisted, so compaction, replay and other transports never see Slack-specific formatting."
+        },
+        {
+          "id": "q026",
+          "text": "What does ASSISTANTHUB_TEST_KEEP_ARTIFACTS do?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "testing",
+            "mcp-api"
+          ],
+          "grades": {
+            "testing": 2,
+            "mcp-api": 1
+          },
+          "evidence": [
+            "Preserve spawned server/MCP temp directories, logs, and databases for inspection when set to 1, true, or yes."
+          ],
+          "answer": "When set to 1/true/yes it keeps the spawned server/MCP temp directories, logs and databases for inspection."
+        },
+        {
+          "id": "q027",
+          "text": "What is the default MaxQueueDepth on a Partio endpoint and what happens when it is 0?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "0 rejects excess requests immediately with 429 Too Many Requests",
+            "0 (the default) keeps today's behavior -- requests over the concurrency limit are rejected immediately with 429"
+          ],
+          "answer": "Default is 0: requests over the concurrency limit are rejected immediately with 429."
+        },
+        {
+          "id": "q028",
+          "text": "What does POST /v1.0/crawlplans/connectivity (without a plan id) do?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "mcp-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "mcp-api": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Test connectivity for a draft crawl plan payload without creating or updating a persisted crawl plan."
+          ],
+          "answer": "Tests connectivity for an unsaved (draft) crawl plan payload without persisting it."
+        },
+        {
+          "id": "q029",
+          "text": "What does RecallDb.SupportsMultiDocumentFilter control?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme",
+            "changelog"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1,
+            "changelog": 1
+          },
+          "evidence": [
+            "AssistantHub then loops over single-document DocumentId searches for attached-document retrieval and logs a fallback warning.",
+            "set it to false only for RecallDB deployments that do not accept native DocumentIds search filters"
+          ],
+          "answer": "Defaults to true; set false for RecallDB versions without native DocumentIds filters, making AssistantHub loop over single-document searches with a warning."
+        },
+        {
+          "id": "q030",
+          "text": "What does the migrations/010_upgrade_to_v0.12.0 provider script add?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "changelog"
+          ],
+          "grades": {
+            "readme": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "Existing deployments can add the new telemetry columns and chat_history_performance_events table"
+          ],
+          "answer": "The v0.12.0 telemetry columns and the chat_history_performance_events table."
+        },
+        {
+          "id": "q031",
+          "text": "What is ASSISTANTHUB_OTLP_ENDPOINT used for?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "telemetry",
+            "changelog"
+          ],
+          "grades": {
+            "telemetry": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "Set ASSISTANTHUB_OTLP_ENDPOINT (and ASSISTANTHUB_TELEMETRY_ENABLED=true) to your OpenTelemetry Collector or any OTLP-compatible endpoint."
+          ],
+          "answer": "It overrides Telemetry.OtlpEndpoint, the OTLP collector endpoint telemetry is exported to."
+        },
+        {
+          "id": "q032",
+          "text": "What does the object_byte_limit tool error mean?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "Aggregate model-visible S3 object byte cap per assistant chat turn. Exceeding the cap returns a structured object_byte_limit tool error instead of source text."
+          ],
+          "answer": "The turn exceeded MaxObjectBytesPerTurn, the per-turn cap on model-visible S3 object bytes (default 524288)."
+        },
+        {
+          "id": "q033",
+          "text": "Which ErrorCodes can POST /v1.0/assistants/{assistantId}/settings/tools/validate return?",
+          "type": "lexical",
+          "category": "aggregation",
+          "relevant": [
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "Current validation codes are invalid_tool_policy_json, unknown_allowed_tool, no_tool_enabled, and no_available_tools."
+          ],
+          "answer": "invalid_tool_policy_json, unknown_allowed_tool, no_tool_enabled and no_available_tools."
+        },
+        {
+          "id": "q034",
+          "text": "What is the assistanthub:tool-calling label on a Partio completion endpoint?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "AssistantHub persists these capability fields in Partio endpoint metadata using the reserved label assistanthub:tool-calling and reserved tags"
+          ],
+          "answer": "A reserved label AssistantHub uses to persist tool-calling capability on the Partio endpoint."
+        },
+        {
+          "id": "q035",
+          "text": "What is the default value of Storage.MaxInlineBinaryBytes?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "mcp-api"
+          ],
+          "grades": {
+            "mcp-api": 2
+          },
+          "evidence": [
+            "default inline size limit is 5242880 bytes"
+          ],
+          "answer": "5242880 bytes (5 MiB)."
+        },
+        {
+          "id": "q036",
+          "text": "What does the --include-models flag do for the factory reset script?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme"
+          ],
+          "grades": {
+            "readme": 2
+          },
+          "evidence": [
+            "Downloaded Ollama models are kept by default; pass --include-models to remove them as well."
+          ],
+          "answer": "It also removes downloaded Ollama models, which are otherwise kept."
+        },
+        {
+          "id": "q037",
+          "text": "What is EnableServerGeneratedQueryVariants?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Allows the server to add deterministic collection-search query variants, such as punctuation-normalized forms, after model-supplied queries and only within MaxSearchQueriesPerCall."
+          ],
+          "answer": "An opt-in tool-policy flag (default false) letting the server add deterministic query variants within MaxSearchQueriesPerCall."
+        },
+        {
+          "id": "q038",
+          "text": "What does GET /v1.0/configuration/external-search/status return?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme",
+            "mcp-api"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1,
+            "mcp-api": 1
+          },
+          "evidence": [
+            "Retrieve a safe external-search configuration status summary for admin UI and diagnostics. The response does not include provider names, endpoints, or API keys.",
+            "Admins can check redacted readiness counts with GET /v1.0/configuration/external-search/status"
+          ],
+          "answer": "A redacted external-search readiness summary without provider names, endpoints or API keys."
+        },
+        {
+          "id": "q039",
+          "text": "What does the ExposeDocumentSourceUrls assistant setting control?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "SourceUrl is only populated when the assistant setting ExposeDocumentSourceUrls is enabled."
+          ],
+          "answer": "Whether SourceUrl is included in attached-document metadata."
+        },
+        {
+          "id": "q040",
+          "text": "What does chat_history.origin record?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "changelog",
+            "rest-api",
+            "archive-slack-integration"
+          ],
+          "grades": {
+            "readme": 2,
+            "changelog": 1,
+            "rest-api": 1,
+            "archive-slack-integration": 1
+          },
+          "evidence": [
+            "chat_history.origin now records request source such as web or slack",
+            "Origin of the chat request (e.g. web, slack, api)."
+          ],
+          "answer": "The source of the chat request, such as web, slack or api."
+        },
+        {
+          "id": "q041",
+          "text": "What does the X-Thread-ID header do on a chat request?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "When provided, the server records timing metrics and conversation history for this turn.",
+            "History entries are created automatically when the X-Thread-ID header is provided on chat requests."
+          ],
+          "answer": "It ties the request to a thread so timing metrics and chat history are recorded for the turn."
+        },
+        {
+          "id": "q042",
+          "text": "Which version of the EasySlack package does AssistantHub use?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "archive-slack-integration"
+          ],
+          "grades": {
+            "readme": 2,
+            "archive-slack-integration": 1
+          },
+          "evidence": [
+            "AssistantHub consumes the EasySlack NuGet package at version 1.0.1",
+            "Consume EasySlack as a NuGet package at version 1.0.1"
+          ],
+          "answer": "EasySlack 1.0.1 from NuGet."
+        },
+        {
+          "id": "q043",
+          "text": "Which values does ASSISTANTHUB_TEST_SUITES accept?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "testing"
+          ],
+          "grades": {
+            "testing": 2
+          },
+          "evidence": [
+            "Supported values: model, service, api, integration, mcp."
+          ],
+          "answer": "model, service, api, integration and mcp."
+        },
+        {
+          "id": "q044",
+          "text": "What does Verbex.RequireIngestion do?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "When true, document ingestion fails if Verbex indexing fails. When false, failures are logged and ingestion continues."
+          ],
+          "answer": "If true (default), a Verbex indexing failure fails ingestion; if false it is logged and ingestion continues."
+        },
+        {
+          "id": "q045",
+          "text": "What does the LoadModelsOnChatOpen setting do?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Load or warm configured completion and embedding endpoint models when a chat window opens."
+          ],
+          "answer": "Loads or warms the assistant's completion and embedding models when a chat window opens (default false)."
+        },
+        {
+          "id": "q046",
+          "text": "What prefix do AssistantHub tenant IDs use?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-multi-tenant"
+          ],
+          "grades": {
+            "archive-multi-tenant": 2
+          },
+          "evidence": [
+            "Use k-sortable IDs with ten_ prefix (consistent with RecallDB/Partio/Verbex)"
+          ],
+          "answer": "ten_ (k-sortable IDs)."
+        },
+        {
+          "id": "q047",
+          "text": "What schema changes are in migrations/003_upgrade_to_v0.5.0.sql?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "changelog"
+          ],
+          "grades": {
+            "changelog": 2
+          },
+          "evidence": [
+            "v0.5.0 includes schema changes to add crawl_plans and crawl_operations tables and add crawl_plan_id, crawl_operation_id, source_url columns to assistant_documents"
+          ],
+          "answer": "Adds crawl_plans and crawl_operations tables and crawl_plan_id, crawl_operation_id, source_url columns on assistant_documents."
+        },
+        {
+          "id": "q048",
+          "text": "What is the default for ReturnFullSearchContent?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "rest-api"
+          ],
+          "grades": {
+            "readme": 2,
+            "rest-api": 1
+          },
+          "evidence": [
+            "ReturnFullSearchContent stays false by default so search returns excerpts and exact text is requested through collection_read_chunks",
+            "When false, collection_search returns excerpts and ContentOmitted=true"
+          ],
+          "answer": "false: collection_search returns excerpts and full text is read via collection_read_chunks."
+        },
+        {
+          "id": "q049",
+          "text": "What is the default Telemetry SamplingRatio?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "Head-based sampling is configurable (SamplingRatio, default 1.0 = sample everything) via a parent-based sampler"
+          ],
+          "answer": "1.0 (sample everything)."
+        },
+        {
+          "id": "q050",
+          "text": "What does IsProtected = true mean for a tenant, user or credential?",
+          "type": "lexical",
+          "category": "factual_lookup",
+          "relevant": [
+            "changelog",
+            "rest-api"
+          ],
+          "grades": {
+            "changelog": 2,
+            "rest-api": 1
+          },
+          "evidence": [
+            "Default tenant, admin user, and credential are marked IsProtected = true and cannot be deleted via API (returns 403).",
+            "Deactivate protected records by setting Active = false instead"
+          ],
+          "answer": "The record can't be deleted through the API (403); deactivate it with Active = false instead."
+        },
+        {
+          "id": "q051",
+          "text": "I'm monitoring the MCP server: what's its default HTTP JSON-RPC endpoint, and which Prometheus metric counts its tool calls?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "mcp-api",
+            "telemetry",
+            "readme",
+            "claude-mcp"
+          ],
+          "grades": {
+            "mcp-api": 2,
+            "telemetry": 2,
+            "readme": 1,
+            "claude-mcp": 1
+          },
+          "evidence": [
+            "HTTP JSON-RPC http://127.0.0.1:8820/rpc Voltaic HTTP transport",
+            "mcp.server.tool.calls Counter {call} mcp.tool, mcp.transport, outcome mcp_server_tool_calls_total"
+          ],
+          "answer": "http://127.0.0.1:8820/rpc; mcp_server_tool_calls_total."
+        },
+        {
+          "id": "q052",
+          "text": "Which local URLs do I open in a browser for the AssistantHub dashboard and for Grafana?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "docker-links",
+            "telemetry",
+            "readme"
+          ],
+          "grades": {
+            "docker-links": 2,
+            "telemetry": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "The AssistantHub dashboard server URL should be set to http://localhost:8801",
+            "Open Grafana at http://localhost:3000 (admin/admin) and browse the AssistantHub folder."
+          ],
+          "answer": "http://localhost:8801 for AssistantHub and http://localhost:3000 for Grafana."
+        },
+        {
+          "id": "q053",
+          "text": "What are the default logins for the AssistantHub dashboard and for Grafana?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "docker-links",
+            "telemetry",
+            "readme",
+            "changelog",
+            "archive-multi-tenant"
+          ],
+          "grades": {
+            "docker-links": 2,
+            "telemetry": 2,
+            "readme": 1,
+            "changelog": 1,
+            "archive-multi-tenant": 1
+          },
+          "evidence": [
+            "Email admin@assistanthub Password password",
+            "Grafana assistanthub-grafana 3000 admin / admin"
+          ],
+          "answer": "AssistantHub: admin@assistanthub / password; Grafana: admin / admin."
+        },
+        {
+          "id": "q054",
+          "text": "What's the Verbex admin API key in the default Docker setup, and which setting caps how much text gets sent to Verbex per document?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "docker-links",
+            "rest-api",
+            "readme",
+            "changelog"
+          ],
+          "grades": {
+            "docker-links": 2,
+            "rest-api": 2,
+            "readme": 1,
+            "changelog": 1
+          },
+          "evidence": [
+            "Admin API Key verbexadmin",
+            "Optional maximum normalized text characters sent to Verbex per document record. 0 means unlimited."
+          ],
+          "answer": "verbexadmin; Verbex.MaxContentCharacters (0 = unlimited)."
+        },
+        {
+          "id": "q055",
+          "text": "Which chat request field restricts retrieval to specific documents, and which MCP tool lists the documents a user can pick?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "rest-api",
+            "mcp-api",
+            "chat-data-flow",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "mcp-api": 2,
+            "chat-data-flow": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "When present, RAG retrieval is constrained to those completed documents in the assistant's configured collection.",
+            "Assistant public document listing is exposed as assistant/documents/list and mirrors GET /v1.0/assistants/{assistantId}/documents."
+          ],
+          "answer": "attached_document_ids; the MCP tool assistant/documents/list."
+        },
+        {
+          "id": "q056",
+          "text": "How do I backfill existing documents into Verbex over REST after upgrading, and what's the equivalent MCP tool?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "readme",
+            "mcp-api",
+            "rest-api"
+          ],
+          "grades": {
+            "readme": 2,
+            "mcp-api": 2,
+            "rest-api": 1
+          },
+          "evidence": [
+            "Existing completed documents from deployments upgraded to v0.14.0 need a one-time admin reindex before they appear in ARTIFACTS > Indices > Search.",
+            "Reindex a page of completed documents into Verbex",
+            "Reindex a bounded page of completed documents into Verbex for upgrade/backfill and repair workflows."
+          ],
+          "answer": "POST /v1.0/documents/reindex (or /v1.0/documents/{id}/reindex); in MCP use document/reindex-batch or document/reindex."
+        },
+        {
+          "id": "q057",
+          "text": "The old design notes say query rewrite and re-ranking reuse the main inference endpoint. Is that still how it works, and when did it change?",
+          "type": "multi",
+          "category": "temporal",
+          "relevant": [
+            "changelog",
+            "archive-reranking",
+            "archive-query-rewrite",
+            "readme",
+            "rest-api"
+          ],
+          "grades": {
+            "changelog": 2,
+            "archive-reranking": 2,
+            "archive-query-rewrite": 1,
+            "readme": 1,
+            "rest-api": 1
+          },
+          "evidence": [
+            "Re-ranking uses the same resolved inference endpoint as the retrieval gate, query rewrite, and final completion.",
+            "Retrieval gate, query rewrite, and re-ranking now honor their dedicated endpoint settings while falling back to InferenceEndpointId when unset."
+          ],
+          "answer": "Not necessarily: since v0.11.0 they can use dedicated endpoints (QueryRewriteInferenceEndpointId, RerankInferenceEndpointId), falling back to InferenceEndpointId."
+        },
+        {
+          "id": "q058",
+          "text": "Which operation domains does the telemetry duration metric use, and which stage names can show up in a chat turn's PerformanceJson?",
+          "type": "multi",
+          "category": "aggregation",
+          "relevant": [
+            "telemetry",
+            "rest-api"
+          ],
+          "grades": {
+            "telemetry": 2,
+            "rest-api": 2
+          },
+          "evidence": [
+            "Domains: inference, retrieval, ingestion, storage, vector, index, object, crawl, eval, auth, chat, embedding, chunking.",
+            "Known stage names include retrieval_gate, query_rewrite, retrieval, rerank, endpoint_resolution, context_compaction, tools, and final_inference."
+          ],
+          "answer": "Domains: inference, retrieval, ingestion, storage, vector, index, object, crawl, eval, auth, chat, embedding, chunking. Stages: retrieval_gate, query_rewrite, retrieval, rerank, endpoint_resolution, context_compaction, tools, final_inference."
+        },
+        {
+          "id": "q059",
+          "text": "What .NET SDK do I need to run the MCP server, and which .NET version does the C# client SDK target?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "claude-mcp",
+            "readme"
+          ],
+          "grades": {
+            "claude-mcp": 2,
+            "readme": 2
+          },
+          "evidence": [
+            ".NET 10 SDK",
+            ".NET 8.0, System.Text.Json, typed exceptions, IAsyncEnumerable streaming"
+          ],
+          "answer": ".NET 10 SDK for the MCP server; the C# SDK targets .NET 8.0."
+        },
+        {
+          "id": "q060",
+          "text": "Which release added NFS crawling, and which NFS settings have to line up with the export policy?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "readme",
+            "testing",
+            "changelog",
+            "mcp-api"
+          ],
+          "grades": {
+            "readme": 2,
+            "testing": 2,
+            "changelog": 1,
+            "mcp-api": 1
+          },
+          "evidence": [
+            "v0.16.0 adds CIFS and NFS file-server crawler support alongside the existing web crawler",
+            "verify the AssistantHub server or container can resolve and reach the export, and that NfsUserId, NfsGroupId, and NfsVersion match the export policy"
+          ],
+          "answer": "v0.16.0; NfsUserId, NfsGroupId and NfsVersion must match the export policy."
+        },
+        {
+          "id": "q061",
+          "text": "Which Prometheus metric tracks REST request latency, and which API gives me per-assistant p95/p99 latency?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "telemetry",
+            "rest-api"
+          ],
+          "grades": {
+            "telemetry": 2,
+            "rest-api": 2
+          },
+          "evidence": [
+            "http.server.request.duration Histogram s http.request.method, http.route, http.response.status_code",
+            "Response fields include: RequestCount, SuccessCount, FailureCount, SuccessRate, AverageDurationMs, P50DurationMs, P90DurationMs, P95DurationMs, P99DurationMs"
+          ],
+          "answer": "http_server_request_duration_seconds (http.server.request.duration); GET /v1.0/assistants/{assistantId}/analytics/overview."
+        },
+        {
+          "id": "q062",
+          "text": "How long are assistant tool-call traces retained, and which MCP tools let me list or delete them?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "rest-api",
+            "mcp-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "mcp-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "Tool-call trace retention follows RequestHistory.RetentionDays.",
+            "assistant/tool-calls/list, assistant/tool-calls/get, assistant/tool-calls/delete, assistant/tool-calls/delete-bulk"
+          ],
+          "answer": "They follow RequestHistory.RetentionDays; MCP tools assistant/tool-calls/list, get, delete and delete-bulk."
+        },
+        {
+          "id": "q063",
+          "text": "Can I open the Swagger UI through the MCP server, and where is it served over REST?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "mcp-api",
+            "rest-api",
+            "testing"
+          ],
+          "grades": {
+            "mcp-api": 2,
+            "rest-api": 2,
+            "testing": 1
+          },
+          "evidence": [
+            "Browser Swagger UI; use system/openapi for the OpenAPI JSON from MCP",
+            "Serves the Swagger UI for the live AssistantHub OpenAPI document.",
+            "Swagger rendering at http://localhost:8800/swagger"
+          ],
+          "answer": "No, it's deferred in MCP (use system/openapi); over REST it's GET /swagger, e.g. http://localhost:8800/swagger."
+        },
+        {
+          "id": "q064",
+          "text": "What prefix must the Slack bot token have, and will the MCP server show that token when I fetch assistant settings?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "rest-api",
+            "mcp-api",
+            "readme",
+            "archive-slack-integration"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "mcp-api": 2,
+            "readme": 1,
+            "archive-slack-integration": 1
+          },
+          "evidence": [
+            "SlackBotToken must start with xoxb-",
+            "assistant/settings/get and assistant/settings/update return redacted secret-bearing fields by default."
+          ],
+          "answer": "It must start with xoxb-; MCP redacts it unless includeSecrets=true."
+        },
+        {
+          "id": "q065",
+          "text": "Which archived plans introduced the chat_history origin column and the chat_history metadata_filter column?",
+          "type": "multi",
+          "category": "multi_hop",
+          "relevant": [
+            "archive-slack-integration",
+            "archive-metadata-filtering"
+          ],
+          "grades": {
+            "archive-slack-integration": 2,
+            "archive-metadata-filtering": 2
+          },
+          "evidence": [
+            "Also add origin to chat_history across all supported DB providers and CRUD paths.",
+            "Add column metadata_filter TEXT to chat_history CREATE TABLE"
+          ],
+          "answer": "The Slack Integration plan added origin; the Metadata Filtering plan added metadata_filter."
+        },
+        {
+          "id": "q066",
+          "text": "Is there a cap on how many time buckets an assistant analytics query returns?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Optional bucket width. The server caps responses to 240 buckets."
+          ],
+          "answer": "Yes, 240 buckets."
+        },
+        {
+          "id": "q067",
+          "text": "What's the largest limit I can pass to the assistant analytics slowest-requests endpoint?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Returns the slowest request-history rows in the selected range",
+            "and limit (default 25, max 250)"
+          ],
+          "answer": "250 (default 25)."
+        },
+        {
+          "id": "q068",
+          "text": "How big can the files users attach from their own computer to a chat be?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Per-file uploads are limited to 10 MB, the total local upload payload is limited to 25 MB"
+          ],
+          "answer": "10 MB per file and 25 MB total per request."
+        },
+        {
+          "id": "q069",
+          "text": "If I PUT the configuration back with the Tavily API key still showing as REDACTED, will it wipe my real key?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "If a previously returned ExternalSearch.Providers.ApiKey value is submitted as REDACTED, the existing configured provider key is preserved."
+          ],
+          "answer": "No, the existing provider key is preserved."
+        },
+        {
+          "id": "q070",
+          "text": "When I create a Verbex index record through AssistantHub without a Name, what does it get filled with?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "If Name is omitted or blank, AssistantHub populates it from ObjectName, CustomMetadata.ObjectName, object key/source URL basename, Id/Identifier, or record"
+          ],
+          "answer": "The first available of ObjectName, CustomMetadata.ObjectName, object key/source URL basename, Id/Identifier, or 'record'."
+        },
+        {
+          "id": "q071",
+          "text": "Does the tool-policy dry-run diagnostics route actually call the model or execute any tools?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "Run administrator dry-run diagnostics for a draft assistant tool policy without saving it, calling the model, or executing tools."
+          ],
+          "answer": "No. It validates the draft policy and endpoint metadata without saving, calling the model, or executing tools."
+        },
+        {
+          "id": "q072",
+          "text": "When a crawl plan connectivity test can't reach the share, what HTTP status does the API return?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Validation errors return 400 Bad Request. A failed repository connection returns 200 OK with Success=false."
+          ],
+          "answer": "200 OK with Success=false (400 is only for validation errors)."
+        },
+        {
+          "id": "q073",
+          "text": "What happens on a tool-enabled chat if the routing endpoint doesn't advertise tool-calling support?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "If capability is missing, the server returns a configuration error before calling the model."
+          ],
+          "answer": "The server returns a configuration error before calling the model."
+        },
+        {
+          "id": "q074",
+          "text": "What max_connections does the Docker PostgreSQL run with, and why?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme"
+          ],
+          "grades": {
+            "readme": 2
+          },
+          "evidence": [
+            "so concurrent document ingestion, Verbex indexing, RecallDB embedding writes, object storage, and dashboard/API activity have enough connection headroom during crawler bursts"
+          ],
+          "answer": "250, to give ingestion, indexing, storage and dashboard/API traffic connection headroom during crawler bursts."
+        },
+        {
+          "id": "q075",
+          "text": "I'm on Linux without Docker Desktop. What address should AssistantHub use to reach Ollama running on the host?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme"
+          ],
+          "grades": {
+            "readme": 2
+          },
+          "evidence": [
+            "Use http://172.17.0.1:11434 (the default Docker bridge gateway), or run the compose stack with network_mode: host."
+          ],
+          "answer": "http://172.17.0.1:11434 (the Docker bridge gateway), or use network_mode: host."
+        },
+        {
+          "id": "q076",
+          "text": "After pointing Partio at my own Ollama, endpoint health checks fail with an invalid request URI error. What's wrong?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme"
+          ],
+          "grades": {
+            "readme": 2
+          },
+          "evidence": [
+            "Change the Health Check URL from a relative path (/api/tags) to a fully-qualified URL",
+            "Health checks using relative paths will fail with an \"invalid request URI\" error."
+          ],
+          "answer": "The health check URL is relative; change /api/tags to a fully-qualified URL."
+        },
+        {
+          "id": "q077",
+          "text": "When a tenant is deleted, are its Verbex indices cleaned up as well?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Delete a tenant and deprovision all associated resources (users, credentials, assistants, documents, S3 buckets, RecallDB tenant, and mapped Verbex tenant/index resources)."
+          ],
+          "answer": "Yes, mapped Verbex tenant/index resources are deprovisioned too."
+        },
+        {
+          "id": "q078",
+          "text": "Where does AssistantHub keep the Verbex tenant ID and default index ID for tenants other than the default one?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "AssistantHub stores the generated Verbex tenant ID and deterministic default index ID in tenant tags (VerbexTenantId, VerbexDefaultIndexId) during provisioning."
+          ],
+          "answer": "In tenant tags VerbexTenantId and VerbexDefaultIndexId."
+        },
+        {
+          "id": "q079",
+          "text": "What does the compact endpoint give back, and what should my chat client do with it?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "The generated summary is returned as a system message; clients should retain it for the next chat request and may hide it from the visible transcript."
+          ],
+          "answer": "A system-message summary; keep it for the next chat request (it can be hidden from the transcript)."
+        },
+        {
+          "id": "q080",
+          "text": "Does the batch reindex route re-process documents that already have a Verbex record?",
+          "type": "detail",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "Batch mode skips non-completed documents and, by default, skips documents that already have VerbexRecordId.",
+            "Set IncludeAlreadyIndexed to true to repair or replace existing Verbex records."
+          ],
+          "answer": "Not by default; set IncludeAlreadyIndexed to true to reindex them."
+        },
+        {
+          "id": "q081",
+          "text": "What port does the Verbex dashboard container use?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "readme",
+            "docker-links"
+          ],
+          "grades": {
+            "readme": 2,
+            "docker-links": 1
+          },
+          "evidence": [
+            "verbex-dashboard 8502 Web-based management UI for Verbex."
+          ],
+          "answer": "8502."
+        },
+        {
+          "id": "q082",
+          "text": "What's the Prometheus name of the counter for ingested documents?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "ingestion.documents Counter {document} outcome ingestion_documents_total"
+          ],
+          "answer": "ingestion_documents_total (labelled by outcome)."
+        },
+        {
+          "id": "q083",
+          "text": "Which protocols can Telemetry.OtlpProtocol be set to, and which is the default?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "OtlpProtocol Grpc (:4317) or HttpProtobuf (:4318) Grpc"
+          ],
+          "answer": "Grpc (port 4317, default) or HttpProtobuf (port 4318)."
+        },
+        {
+          "id": "q084",
+          "text": "What HTTP status and error type does the API return when a resource already exists?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Conflict 409 A conflict occurred. The resource already exists or has been modified."
+          ],
+          "answer": "409 with error type Conflict."
+        },
+        {
+          "id": "q085",
+          "text": "What's the default and the allowed range for maxResults on list endpoints?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "maxResults int 100 Maximum number of results to return (1-1000)."
+          ],
+          "answer": "Default 100, range 1-1000."
+        },
+        {
+          "id": "q086",
+          "text": "What are the default MaxToolIterations and MaxToolCallsPerTurn in an assistant tool policy?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "MaxToolIterations 6 Maximum tool-call loop iterations in one chat turn.",
+            "MaxToolCallsPerTurn 12 Maximum individual tool calls in one chat turn."
+          ],
+          "answer": "6 iterations and 12 tool calls per turn."
+        },
+        {
+          "id": "q087",
+          "text": "What does the StoringText document status mean?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "StoringText Writing extracted text to Verbex."
+          ],
+          "answer": "The extracted text is being written to Verbex."
+        },
+        {
+          "id": "q088",
+          "text": "What's the PostgreSQL password for the RecallDB application role in the Docker stack?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "docker-links"
+          ],
+          "grades": {
+            "docker-links": 2
+          },
+          "evidence": [
+            "RecallDB recalldb recalldb_app recalldb_password"
+          ],
+          "answer": "recalldb_password (role recalldb_app, database recalldb)."
+        },
+        {
+          "id": "q089",
+          "text": "What are the default MaxSummaryTokens and MinCellLength in an ingestion rule's summarization config?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api",
+            "archive-summarization"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "archive-summarization": 1
+          },
+          "evidence": [
+            "MaxSummaryTokens int 1024 Maximum tokens for each summary response. Minimum: 128.",
+            "MinCellLength int 128 Minimum cell content length (in characters) to trigger summarization."
+          ],
+          "answer": "MaxSummaryTokens 1024 and MinCellLength 128."
+        },
+        {
+          "id": "q090",
+          "text": "Which modes does AnswerabilityMode support, and which is the default?",
+          "type": "table",
+          "category": "structured_data",
+          "relevant": [
+            "rest-api"
+          ],
+          "grades": {
+            "rest-api": 2
+          },
+          "evidence": [
+            "Answerability behavior: LogOnly, AskClarifyingQuestion, or ReturnUnsupported. Default LogOnly."
+          ],
+          "answer": "LogOnly (default), AskClarifyingQuestion, ReturnUnsupported."
+        },
+        {
+          "id": "q091",
+          "text": "In the original design, did re-ranking need its own inference endpoint configuration?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-reranking"
+          ],
+          "grades": {
+            "archive-reranking": 2
+          },
+          "evidence": [
+            "Re-ranking uses the same resolved inference endpoint as the retrieval gate, query rewrite, and final completion. No separate endpoint configuration is needed."
+          ],
+          "answer": "No. The design reused the same resolved inference endpoint.",
+          "metadataFilter": {
+            "required_labels": [
+              "archive"
+            ],
+            "excluded_labels": [],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q092",
+          "text": "Which completion endpoint handles query rewrite calls?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "readme"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "readme": 1
+          },
+          "evidence": [
+            "Optional managed completion endpoint ID for query rewrite calls. Null or empty falls back to InferenceEndpointId."
+          ],
+          "answer": "QueryRewriteInferenceEndpointId when set, otherwise InferenceEndpointId.",
+          "metadataFilter": {
+            "required_labels": [],
+            "excluded_labels": [
+              "archive"
+            ],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q093",
+          "text": "In which release did the LLM-based retrieval gate first appear?",
+          "type": "filter",
+          "category": "temporal",
+          "relevant": [
+            "changelog"
+          ],
+          "grades": {
+            "changelog": 2
+          },
+          "evidence": [
+            "Optional per-assistant retrieval gate that classifies whether each user message requires new document retrieval or can be answered from existing conversation context"
+          ],
+          "answer": "v0.2.0, the initial release.",
+          "metadataFilter": {
+            "required_labels": [],
+            "excluded_labels": [],
+            "required_tags": [
+              {
+                "key": "kind",
+                "condition": "Equals",
+                "value": "changelog"
+              }
+            ]
+          }
+        },
+        {
+          "id": "q094",
+          "text": "Under the multi-tenant plan, what email and password does the auto-created admin for a new tenant get?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-multi-tenant"
+          ],
+          "grades": {
+            "archive-multi-tenant": 2
+          },
+          "evidence": [
+            "Default admin user (admin@{tenantName}, password: password)"
+          ],
+          "answer": "admin@{tenantName} with password 'password'.",
+          "metadataFilter": {
+            "required_labels": [
+              "archive"
+            ],
+            "excluded_labels": [],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q095",
+          "text": "What database does the Docker deployment use by default for AssistantHub?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "changelog"
+          ],
+          "grades": {
+            "readme": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "The Docker deployment uses PostgreSQL by default for AssistantHub, Less3, Partio, RecallDB, and Verbex metadata.",
+            "The local Docker deployment now defaults AssistantHub, Less3, Partio, RecallDB, and Verbex to a shared PostgreSQL/pgvector container"
+          ],
+          "answer": "PostgreSQL (a shared PostgreSQL/pgvector container).",
+          "metadataFilter": {
+            "required_labels": [],
+            "excluded_labels": [
+              "archive"
+            ],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q096",
+          "text": "What are the default MCP transport endpoints?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "mcp-api"
+          ],
+          "grades": {
+            "mcp-api": 2
+          },
+          "evidence": [
+            "TCP tcp://127.0.0.1:8821 Voltaic TCP transport",
+            "WebSocket ws://127.0.0.1:8822/mcp Voltaic WebSocket transport"
+          ],
+          "answer": "HTTP http://127.0.0.1:8820/rpc (events at /events), TCP tcp://127.0.0.1:8821, WebSocket ws://127.0.0.1:8822/mcp.",
+          "metadataFilter": {
+            "required_labels": [],
+            "excluded_labels": [],
+            "required_tags": [
+              {
+                "key": "kind",
+                "condition": "Equals",
+                "value": "reference"
+              }
+            ]
+          }
+        },
+        {
+          "id": "q097",
+          "text": "Which migration file added the neighbor-retrieval settings column?",
+          "type": "filter",
+          "category": "factual_lookup",
+          "relevant": [
+            "archive-neighbor-retrieval"
+          ],
+          "grades": {
+            "archive-neighbor-retrieval": 2
+          },
+          "evidence": [
+            "File: migrations/008_add_retrieval_include_neighbors.sql — DONE (SQLite, PostgreSQL, SQL Server, MySQL)"
+          ],
+          "answer": "migrations/008_add_retrieval_include_neighbors.sql.",
+          "metadataFilter": {
+            "required_labels": [
+              "archive"
+            ],
+            "excluded_labels": [],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q098",
+          "text": "Which version did the citations implementation plan target?",
+          "type": "filter",
+          "category": "temporal",
+          "relevant": [
+            "archive-citations"
+          ],
+          "grades": {
+            "archive-citations": 2
+          },
+          "evidence": [
+            "Feature: Citation metadata in chat completion responses",
+            "Target version: v0.4.0"
+          ],
+          "answer": "v0.4.0.",
+          "metadataFilter": {
+            "required_labels": [
+              "archive"
+            ],
+            "excluded_labels": [],
+            "required_tags": []
+          }
+        },
+        {
+          "id": "q099",
+          "text": "And the web dashboard?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "readme",
+            "docker-links"
+          ],
+          "grades": {
+            "readme": 2,
+            "docker-links": 1
+          },
+          "evidence": [
+            "assistanthub-dashboard 8801 Browser-based management dashboard (React 19, served by nginx)."
+          ],
+          "answer": "Port 8801.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "What port does the AssistantHub REST API server listen on?"
+            },
+            {
+              "role": "assistant",
+              "content": "The assistanthub-server listens on port 8800."
+            }
+          ]
+        },
+        {
+          "id": "q100",
+          "text": "What about the score threshold setting?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "archive-reranking"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "archive-reranking": 1
+          },
+          "evidence": [
+            "RerankerScoreThreshold double Minimum LLM relevance score (0-10) to retain a chunk. Default 3.0."
+          ],
+          "answer": "RerankerScoreThreshold: minimum 0-10 relevance score to keep a chunk, default 3.0.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "What does RerankerTopK control?"
+            },
+            {
+              "role": "assistant",
+              "content": "It sets the maximum number of chunks kept after re-ranking; the default is 5."
+            }
+          ]
+        },
+        {
+          "id": "q101",
+          "text": "How often does it push metrics by default?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "telemetry"
+          ],
+          "grades": {
+            "telemetry": 2
+          },
+          "evidence": [
+            "ExportIntervalMs Periodic metric export interval 15000"
+          ],
+          "answer": "Every 15000 ms (15 seconds).",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "How do I turn on telemetry export?"
+            },
+            {
+              "role": "assistant",
+              "content": "Set Telemetry.Enable to true in the settings file, or set ASSISTANTHUB_TELEMETRY_ENABLED=true."
+            }
+          ]
+        },
+        {
+          "id": "q102",
+          "text": "And the S3 access and secret keys?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "docker-links",
+            "readme"
+          ],
+          "grades": {
+            "docker-links": 2,
+            "readme": 1
+          },
+          "evidence": [
+            "Access Key default Secret Key default",
+            "Admin API Key: less3admin, Access Key: default, Secret Key: default"
+          ],
+          "answer": "Both are default.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "What's the Less3 admin API key in the Docker stack?"
+            },
+            {
+              "role": "assistant",
+              "content": "less3admin."
+            }
+          ]
+        },
+        {
+          "id": "q103",
+          "text": "Can I send an attached-document chat through it too?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "mcp-api",
+            "readme",
+            "claude-mcp"
+          ],
+          "grades": {
+            "mcp-api": 2,
+            "readme": 1,
+            "claude-mcp": 1
+          },
+          "evidence": [
+            "Sending attached-document chat requests remains REST-only in this release; send attached_document_ids to POST /v1.0/assistants/{assistantId}/chat."
+          ],
+          "answer": "No. Chat is REST-only; send attached_document_ids to POST /v1.0/assistants/{assistantId}/chat.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "Which MCP tools work with documents?"
+            },
+            {
+              "role": "assistant",
+              "content": "document/list, document/get, document/upload, document/delete, document/download, document/reindex and a few others."
+            }
+          ]
+        },
+        {
+          "id": "q104",
+          "text": "And if I set it to None?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1
+          },
+          "evidence": [
+            "When set to None, chunking is skipped and the entire document is treated as a single chunk."
+          ],
+          "answer": "Chunking is skipped and the whole document becomes a single chunk.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "What's the default chunking strategy for ingestion rules?"
+            },
+            {
+              "role": "assistant",
+              "content": "FixedTokenCount, with 256 tokens per chunk."
+            }
+          ]
+        },
+        {
+          "id": "q105",
+          "text": "What about crawl operation records?",
+          "type": "followup",
+          "category": "factual_lookup",
+          "relevant": [
+            "rest-api",
+            "changelog",
+            "archive-crawlers"
+          ],
+          "grades": {
+            "rest-api": 2,
+            "changelog": 1,
+            "archive-crawlers": 1
+          },
+          "evidence": [
+            "RetentionDays int 7 Days to retain crawl operations (0-14).",
+            "Per-plan retention period (0-14 days) with automatic cleanup of expired operations"
+          ],
+          "answer": "Per crawl plan: 7 days by default, configurable from 0 to 14.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "How long are chat history records kept by default?"
+            },
+            {
+              "role": "assistant",
+              "content": "7 days, set by ChatHistory.RetentionDays."
+            }
+          ]
+        },
+        {
+          "id": "q106",
+          "text": "Can the AssistantHub dashboard sign users in through SAML or OpenID Connect single sign-on?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q107",
+          "text": "Is there a limit on how many assistants a single tenant can create?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q108",
+          "text": "Is there an official Helm chart for deploying AssistantHub on Kubernetes?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q109",
+          "text": "What's the recommended pg_dump procedure for backing up and restoring the AssistantHub PostgreSQL volume?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q110",
+          "text": "How much GPU memory do I need to run gemma3:4b in the bundled Ollama container?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q111",
+          "text": "What per-IP rate limit applies to the public chat endpoint?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q112",
+          "text": "Can I export chat history to CSV or Excel from the dashboard?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q113",
+          "text": "How do I register a webhook that fires when a document finishes ingesting?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q114",
+          "text": "Does AssistantHub have a Microsoft Teams integration like the Slack one?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q115",
+          "text": "Does the MCP server support OAuth for authenticating MCP clients?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q116",
+          "text": "What's the maximum number of PDF pages DocumentAtom will extract from a single file?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q117",
+          "text": "What uptime SLA or paid support plan is offered for AssistantHub?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q118",
+          "text": "Which PostgreSQL major version does the Docker compose stack run?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q119",
+          "text": "What's the minimum RAM needed to run the full Docker Compose stack?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        },
+        {
+          "id": "q120",
+          "text": "Does the AssistantHub dashboard have a dark mode setting?",
+          "type": "negative",
+          "category": "unanswerable",
+          "relevant": [],
+          "answer": "NOT_IN_CORPUS"
+        }
+      ]
+    }
+  ]
+}

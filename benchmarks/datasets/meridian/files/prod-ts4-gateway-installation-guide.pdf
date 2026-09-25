@@ -1,0 +1,375 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 7 >>
+endobj
+4 0 obj
+<< /Length 4434 >>
+stream
+BT /F2 16 Tf 54 723 Td (Tessera TS-4 Gateway Installation Guide) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-ts4-gateway-installation-guide | Version: 4.2 | Effective: 2025-08-25 |) Tj ET
+BT /F1 10 Tf 54 688 Td (Owner: Tessera Product Engineering, Meridian Instruments Ltd) Tj ET
+BT /F2 13 Tf 54 663 Td (1. About this guide) Tj ET
+BT /F1 10 Tf 54 641 Td (This guide describes how to survey, mount, power, connect and commission the Tessera TS-4) Tj ET
+BT /F1 10 Tf 54 628 Td (gateway, and how to pair TS-4e edge nodes to it. It applies to both gateway variants:) Tj ET
+BT /F1 10 Tf 54 615 Td (TS4-GW-LTE \(LTE Cat-M1 plus Ethernet backhaul\) and TS4-GW-ETH \(Ethernet-only backhaul\). Where) Tj ET
+BT /F1 10 Tf 54 602 Td (the procedure differs between the two variants, the difference is called out explicitly.) Tj ET
+BT /F1 10 Tf 54 580 Td (The procedures in this edition assume gateway firmware 5.3.0, released on 18 August 2025.) Tj ET
+BT /F1 10 Tf 54 567 Td (Earlier firmware \(5.1.x and 5.2.x\) uses the same menu structure for most tasks, but the mesh) Tj ET
+BT /F1 10 Tf 54 554 Td (channel planner described in section 11 and the gland kit guidance in section 12 were) Tj ET
+BT /F1 10 Tf 54 541 Td (introduced or revised with 5.3.0. For the firmware versions supported with each TS-4e edge node) Tj ET
+BT /F1 10 Tf 54 528 Td (release, refer to the Tessera Firmware Compatibility Matrix) Tj ET
+BT /F1 10 Tf 54 515 Td (\(prod-tessera-firmware-compatibility-matrix\).) Tj ET
+BT /F1 10 Tf 54 493 Td (This guide is intended for Meridian field engineers, certified Tessera partners and customer) Tj ET
+BT /F1 10 Tf 54 480 Td (maintenance technicians who have completed the Tessera Installer module. Only qualified) Tj ET
+BT /F1 10 Tf 54 467 Td (personnel should open the gateway enclosure or work on the power supply.) Tj ET
+BT /F2 13 Tf 54 442 Td (2. Safety information) Tj ET
+BT /F1 10 Tf 54 420 Td (The TS-4 gateway is not certified for use in hazardous areas. It must be installed in a) Tj ET
+BT /F1 10 Tf 54 407 Td (non-classified \(safe\) area. TS-4e edge nodes in the Zone 2 variant \(TS4E-NODE-3AX-Z2\) may be) Tj ET
+BT /F1 10 Tf 54 394 Td (installed inside a Zone 2 area, but the gateway they report to must remain outside the) Tj ET
+BT /F1 10 Tf 54 381 Td (classified boundary. Radio range through a hazardous-area boundary wall should be verified) Tj ET
+BT /F1 10 Tf 54 368 Td (during the site survey.) Tj ET
+BT /F1 10 Tf 54 346 Td (Observe the following precautions:) Tj ET
+BT /F1 10 Tf 54 324 Td (- Isolate the power supply before opening the enclosure lid. Where the gateway is powered by) Tj ET
+BT /F1 10 Tf 54 311 Td (   Power over Ethernet, disconnect the Ethernet cable at the switch or injector.) Tj ET
+BT /F1 10 Tf 54 298 Td (- Do not install the LTE antenna within 20 cm of locations normally occupied by people, in) Tj ET
+BT /F1 10 Tf 54 285 Td (   order to comply with RF exposure limits.) Tj ET
+BT /F1 10 Tf 54 272 Td (- When working at height, follow the site's permit-to-work and fall-protection rules. The) Tj ET
+BT /F1 10 Tf 54 259 Td (   gateway weighs 1.9 kg with the mounting bracket fitted.) Tj ET
+BT /F1 10 Tf 54 246 Td (- The internal lithium coin cell \(real-time clock backup\) is not user-replaceable.) Tj ET
+BT /F2 13 Tf 54 230 Td (3. Site survey) Tj ET
+BT /F1 10 Tf 54 208 Td (A site survey is required before any gateway is mounted. The survey confirms backhaul) Tj ET
+BT /F1 10 Tf 54 195 Td (availability, mesh radio coverage and a suitable mounting position. Meridian recommends using) Tj ET
+BT /F1 10 Tf 54 182 Td (the TesseraSurvey mobile app with a demo gateway from a Meridian demo kit, although a manual) Tj ET
+BT /F1 10 Tf 54 169 Td (survey is acceptable for small installations.) Tj ET
+BT /F1 10 Tf 54 147 Td (Check the following during the survey:) Tj ET
+BT /F1 10 Tf 54 125 Td (- Backhaul: for TS4-GW-LTE, confirm LTE Cat-M1 coverage with a minimum RSRP of -110 dBm at) Tj ET
+BT /F1 10 Tf 54 112 Td (   the proposed antenna position. For TS4-GW-ETH, confirm a switch port within 100 m of cable) Tj ET
+BT /F1 10 Tf 54 99 Td (   length and whether it supplies PoE \(IEEE 802.3at\).) Tj ET
+BT /F1 10 Tf 54 86 Td (- Firewall: the gateway requires outbound TCP 443 \(HTTPS\) and TCP 8883 \(MQTT over TLS\) to) Tj ET
+BT /F1 10 Tf 54 73 Td (   *.tesseracloud.meridian-instruments.com, and outbound UDP 123 for NTP. No inbound ports) Tj ET
+BT /F1 10 Tf 54 60 Td (   are required.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4604 >>
+stream
+BT /F1 10 Tf 54 729 Td (- Mesh coverage: TesseraMesh operates in the 2.4 GHz band using IEEE 802.15.4. Typical) Tj ET
+BT /F1 10 Tf 54 716 Td (   line-of-sight range between nodes is 80 m indoors in open plant rooms and 200 m outdoors.) Tj ET
+BT /F1 10 Tf 54 703 Td (   Dense steelwork, tank walls and concrete bunds reduce range significantly.) Tj ET
+BT /F1 10 Tf 54 690 Td (- Node count: one gateway supports up to 64 TS-4e edge nodes. For more nodes, plan an) Tj ET
+BT /F1 10 Tf 54 677 Td (   additional gateway per group of 64 nodes and assign each to a separate mesh network ID.) Tj ET
+BT /F1 10 Tf 54 664 Td (- Wi-Fi coexistence: record the channels used by existing 2.4 GHz Wi-Fi access points so) Tj ET
+BT /F1 10 Tf 54 651 Td (   that the mesh channel can be planned to avoid them \(see section 11\).) Tj ET
+BT /F1 10 Tf 54 638 Td (Record the survey results on form TS-F-012 \(Tessera Site Survey Record\) and attach it to the) Tj ET
+BT /F1 10 Tf 54 625 Td (installation work order.) Tj ET
+BT /F2 13 Tf 54 600 Td (4. Mounting the gateway) Tj ET
+BT /F1 10 Tf 54 578 Td (The TS-4 gateway is supplied with a stainless steel wall and pole bracket \(part TS4-BRK-01\).) Tj ET
+BT /F1 10 Tf 54 565 Td (The enclosure is rated IP66 and may be installed outdoors, but should be shielded from direct) Tj ET
+BT /F1 10 Tf 54 552 Td (sunlight where ambient temperatures regularly exceed 50 C.) Tj ET
+BT /F1 10 Tf 54 530 Td (To mount the gateway on a wall:) Tj ET
+BT /F1 10 Tf 54 508 Td (1. Choose a position at least 2 m above floor level and at least 1 m away from large metal) Tj ET
+BT /F1 10 Tf 54 495 Td (   obstructions, with the antenna ports facing upwards or sideways, never downwards.) Tj ET
+BT /F1 10 Tf 54 482 Td (2. Mark and drill the four bracket holes using the bracket as a template. On concrete or) Tj ET
+BT /F1 10 Tf 54 469 Td (   masonry, use M8 anchors rated for at least 0.5 kN pull-out load.) Tj ET
+BT /F1 10 Tf 54 456 Td (3. Fix the bracket with the four M8 bolts supplied and tighten them to 12 N m. Do not exceed) Tj ET
+BT /F1 10 Tf 54 443 Td (   15 N m, as over-tightening can distort the bracket and stress the enclosure base.) Tj ET
+BT /F1 10 Tf 54 430 Td (4. Hang the gateway on the bracket hooks and secure it with the two M5 locking screws,) Tj ET
+BT /F1 10 Tf 54 417 Td (   tightened to 3 N m.) Tj ET
+BT /F1 10 Tf 54 404 Td (5. Fit the earth bonding lead from the enclosure earth stud to a local protective earth) Tj ET
+BT /F1 10 Tf 54 391 Td (   point.) Tj ET
+BT /F1 10 Tf 54 378 Td (For pole mounting, use the two stainless steel band clamps included with TS4-BRK-01. The) Tj ET
+BT /F1 10 Tf 54 365 Td (bracket accepts poles from 40 mm to 110 mm in diameter.) Tj ET
+BT /F2 13 Tf 54 340 Td (5. Antennas) Tj ET
+BT /F1 10 Tf 54 318 Td (Each gateway ships with a 2.4 GHz mesh antenna \(TS4-ANT-MESH, 5 dBi omnidirectional\). The) Tj ET
+BT /F1 10 Tf 54 305 Td (TS4-GW-LTE variant additionally ships with an LTE antenna \(TS4-ANT-LTE, 3 dBi, 698-2690 MHz\).) Tj ET
+BT /F1 10 Tf 54 292 Td (Both antennas use N-type connectors.) Tj ET
+BT /F1 10 Tf 54 270 Td (- Hand-tighten each N-type connector, then tighten to 1.7 N m using a torque spanner.) Tj ET
+BT /F1 10 Tf 54 257 Td (   Over-tightening damages the connector centre pin.) Tj ET
+BT /F1 10 Tf 54 244 Td (- Where antennas are mounted remotely, use low-loss cable \(LMR-400 or equivalent\) and keep) Tj ET
+BT /F1 10 Tf 54 231 Td (   the run under 10 m. Every remote antenna run must include a coaxial lightning arrestor) Tj ET
+BT /F1 10 Tf 54 218 Td (   \(TS4-LPA-01\) bonded to the site earth.) Tj ET
+BT /F1 10 Tf 54 205 Td (- Seal outdoor connector joints with self-amalgamating tape, then a layer of UV-resistant) Tj ET
+BT /F1 10 Tf 54 192 Td (   PVC tape.) Tj ET
+BT /F1 10 Tf 54 179 Td (- The mesh and LTE antennas must be at least 30 cm apart to avoid desensitisation of the) Tj ET
+BT /F1 10 Tf 54 166 Td (   mesh receiver.) Tj ET
+BT /F2 13 Tf 54 150 Td (6. Power) Tj ET
+BT /F1 10 Tf 54 128 Td (The gateway can be powered in two ways. Do not connect both sources at the same time.) Tj ET
+BT /F1 10 Tf 54 106 Td (- Power over Ethernet: the Ethernet port \(ETH0\) accepts IEEE 802.3at \(PoE+, Type 2\) power.) Tj ET
+BT /F1 10 Tf 54 93 Td (   IEEE 802.3af \(Type 1\) is not sufficient when the LTE modem is active. Maximum cable length) Tj ET
+BT /F1 10 Tf 54 80 Td (   is 100 m.) Tj ET
+BT /F1 10 Tf 54 67 Td (- DC supply: the terminal block TB1 accepts 10-30 VDC. Typical consumption is 6.5 W, peak 11) Tj ET
+BT /F1 10 Tf 54 54 Td (   W during LTE transmission. Use a supply rated for at least 15 W and a 2 A slow-blow fuse) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 4296 >>
+stream
+BT /F1 10 Tf 54 729 Td (   in the positive line.) Tj ET
+BT /F1 10 Tf 54 716 Td (The gateway includes a supercapacitor hold-up that keeps the processor running for) Tj ET
+BT /F1 10 Tf 54 703 Td (approximately 20 seconds after power loss, which is sufficient to flush buffered readings to) Tj ET
+BT /F1 10 Tf 54 690 Td (flash memory and log a clean shutdown event. A power loss that exceeds this period is logged as) Tj ET
+BT /F1 10 Tf 54 677 Td (event code T-320 only if backhaul is also lost; a clean power loss is reported in TesseraCloud) Tj ET
+BT /F1 10 Tf 54 664 Td (as "Gateway powered down".) Tj ET
+BT /F2 13 Tf 54 639 Td (7. Backhaul configuration) Tj ET
+BT /F2 11 Tf 54 616 Td (7.1 Ethernet) Tj ET
+BT /F1 10 Tf 54 594 Td (By default ETH0 uses DHCP. To set a static address, open the local web interface \(section 8\)) Tj ET
+BT /F1 10 Tf 54 581 Td (and go to Network > Ethernet > IPv4, select Static, and enter the address, netmask, gateway and) Tj ET
+BT /F1 10 Tf 54 568 Td (DNS servers. Proxy servers are supported for HTTPS traffic \(Network > Proxy\), but the MQTT) Tj ET
+BT /F1 10 Tf 54 555 Td (connection on TCP 8883 cannot be proxied; if the site requires all traffic through a proxy,) Tj ET
+BT /F1 10 Tf 54 542 Td (enable "MQTT over WebSocket" on the same page, which tunnels telemetry over TCP 443.) Tj ET
+BT /F2 11 Tf 54 519 Td (7.2 LTE \(TS4-GW-LTE only\)) Tj ET
+BT /F1 10 Tf 54 497 Td (The TS4-GW-LTE uses a nano-SIM \(4FF\) inserted in the slot under the lid, beside the terminal) Tj ET
+BT /F1 10 Tf 54 484 Td (block. Meridian supplies a pre-activated global IoT SIM \(TS4-SIM-GLB\) as an option;) Tj ET
+BT /F1 10 Tf 54 471 Td (customer-supplied SIMs must support LTE Cat-M1 on the local network.) Tj ET
+BT /F1 10 Tf 54 449 Td (1. Isolate power and open the lid.) Tj ET
+BT /F1 10 Tf 54 436 Td (2. Insert the SIM with the notched corner towards the hinge until it clicks.) Tj ET
+BT /F1 10 Tf 54 423 Td (3. Close the lid, restore power and open the local interface.) Tj ET
+BT /F1 10 Tf 54 410 Td (4. Go to Network > Cellular > APN and enter the APN, and the username and password if the) Tj ET
+BT /F1 10 Tf 54 397 Td (   operator requires them. The TS4-SIM-GLB uses the APN "meridian.iot".) Tj ET
+BT /F1 10 Tf 54 384 Td (5. Set the backhaul priority at Network > Backhaul Priority. The default is Ethernet first,) Tj ET
+BT /F1 10 Tf 54 371 Td (   with LTE as failover. Failover occurs after 90 seconds without an Ethernet route to) Tj ET
+BT /F1 10 Tf 54 358 Td (   TesseraCloud.) Tj ET
+BT /F2 13 Tf 54 342 Td (8. Local web interface) Tj ET
+BT /F1 10 Tf 54 320 Td (The local web interface is used for initial configuration and for troubleshooting when the) Tj ET
+BT /F1 10 Tf 54 307 Td (gateway cannot reach TesseraCloud.) Tj ET
+BT /F1 10 Tf 54 285 Td (- Connect a laptop to the service port \(the second RJ45 port, labelled SVC\). The service) Tj ET
+BT /F1 10 Tf 54 272 Td (   port runs a DHCP server and assigns the laptop an address in 192.168.50.0/24.) Tj ET
+BT /F1 10 Tf 54 259 Td (- Browse to https://192.168.50.1. The certificate is self-signed; accept the browser) Tj ET
+BT /F1 10 Tf 54 246 Td (   warning.) Tj ET
+BT /F1 10 Tf 54 233 Td (- Log in as user "admin" with the unique initial password printed on the rating label inside) Tj ET
+BT /F1 10 Tf 54 220 Td (   the lid. You will be required to change it at first login. The new password must be at) Tj ET
+BT /F1 10 Tf 54 207 Td (   least 12 characters.) Tj ET
+BT /F1 10 Tf 54 194 Td (- The session times out after 15 minutes of inactivity.) Tj ET
+BT /F1 10 Tf 54 181 Td (The local interface is disabled on the ETH0 \(backhaul\) port by default. It can be enabled at) Tj ET
+BT /F1 10 Tf 54 168 Td (System > Access > Local UI on ETH0, but Meridian advises against this on shared corporate) Tj ET
+BT /F1 10 Tf 54 155 Td (networks.) Tj ET
+BT /F2 13 Tf 54 130 Td (9. Registering the gateway in TesseraCloud) Tj ET
+BT /F1 10 Tf 54 108 Td (Before the gateway can forward data, it must be claimed into a TesseraCloud tenant.) Tj ET
+BT /F1 10 Tf 54 86 Td (1. In TesseraCloud, a user with the Site Admin or Tenant Owner role opens Fleet > Gateways >) Tj ET
+BT /F1 10 Tf 54 73 Td (   Add Gateway.) Tj ET
+BT /F1 10 Tf 54 60 Td (2. Enter the gateway serial number \(format TS4G-YYWW-NNNNN, printed on the rating label\) and) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 4364 >>
+stream
+BT /F1 10 Tf 54 729 Td (   the 8-character claim code on the same label.) Tj ET
+BT /F1 10 Tf 54 716 Td (3. Select the site the gateway belongs to. Gateways can later be moved between sites using) Tj ET
+BT /F1 10 Tf 54 703 Td (   Transfer Site, described in the TesseraCloud Administrator Guide.) Tj ET
+BT /F1 10 Tf 54 690 Td (4. The gateway downloads its device certificate and appears as "Online" within approximately) Tj ET
+BT /F1 10 Tf 54 677 Td (   2 minutes.) Tj ET
+BT /F1 10 Tf 54 664 Td (If the gateway does not appear online, check the Status > Cloud page in the local interface.) Tj ET
+BT /F1 10 Tf 54 651 Td (The most common causes are blocked outbound TCP 8883, an incorrect APN, or incorrect system) Tj ET
+BT /F1 10 Tf 54 638 Td (time preventing TLS validation \(see section 13\).) Tj ET
+BT /F2 13 Tf 54 613 Td (10. Commissioning the mesh and pairing edge nodes) Tj ET
+BT /F2 11 Tf 54 590 Td (10.1 Creating the mesh network) Tj ET
+BT /F1 10 Tf 54 568 Td (At first boot the gateway generates a random 16-bit mesh network ID and a network key. The mesh) Tj ET
+BT /F1 10 Tf 54 555 Td (network ID is shown at Mesh > Overview. If several gateways are installed on the same site,) Tj ET
+BT /F1 10 Tf 54 542 Td (confirm that each has a distinct network ID; this is automatic in almost all cases, but a) Tj ET
+BT /F1 10 Tf 54 529 Td (collision can be resolved with Mesh > Overview > Regenerate Network ID. Regenerating the ID) Tj ET
+BT /F1 10 Tf 54 516 Td (unpairs all nodes.) Tj ET
+BT /F2 11 Tf 54 493 Td (10.2 Pairing TS-4e edge nodes) Tj ET
+BT /F1 10 Tf 54 471 Td (TS-4e edge nodes ship in a deep-sleep state to preserve their battery. To pair a node:) Tj ET
+BT /F1 10 Tf 54 449 Td (1. In TesseraCloud open the site, then Fleet > Gateways > [gateway] > Nodes > Pair Nodes.) Tj ET
+BT /F1 10 Tf 54 436 Td (   This opens a 10-minute pairing window on the gateway. Alternatively, open the window) Tj ET
+BT /F1 10 Tf 54 423 Td (   locally at Mesh > Pairing > Open Window.) Tj ET
+BT /F1 10 Tf 54 410 Td (2. Wake each node by holding a magnet \(supplied with the node\) against the marked spot on the) Tj ET
+BT /F1 10 Tf 54 397 Td (   node housing for 3 seconds. The node LED flashes green while searching.) Tj ET
+BT /F1 10 Tf 54 384 Td (3. The node joins, the LED shows a solid green for 5 seconds, and the node appears in the) Tj ET
+BT /F1 10 Tf 54 371 Td (   node list with its serial number \(TS4E-YYWW-NNNNN\).) Tj ET
+BT /F1 10 Tf 54 358 Td (4. Assign each node to an asset and measurement point in TesseraCloud.) Tj ET
+BT /F1 10 Tf 54 345 Td (A node that fails to join within the window reports T-301 \(node not joined\) once the gateway) Tj ET
+BT /F1 10 Tf 54 332 Td (sees its beacon. Refer to the Tessera Error Code Reference \(sup-tessera-error-codes\) for) Tj ET
+BT /F1 10 Tf 54 319 Td (causes. The most common cause is a node firmware version that the gateway does not support; for) Tj ET
+BT /F1 10 Tf 54 306 Td (example, a node running 2.8.0 will not join a gateway on 5.2.x.) Tj ET
+BT /F2 11 Tf 54 283 Td (10.3 Mounting edge nodes) Tj ET
+BT /F1 10 Tf 54 261 Td (TS-4e nodes mount on an M6 stud. The stud must be tightened into the machine surface first,) Tj ET
+BT /F1 10 Tf 54 248 Td (then the node is screwed onto the stud and tightened to 6 N m. Detailed mounting guidance,) Tj ET
+BT /F1 10 Tf 54 235 Td (including spot-facing and adhesive mounting pads, is in the TS-4e datasheet) Tj ET
+BT /F1 10 Tf 54 222 Td (\(prod-ts4e-edge-node-datasheet\).) Tj ET
+BT /F2 13 Tf 54 197 Td (11. Mesh radio planning and advanced mesh settings) Tj ET
+BT /F1 10 Tf 54 175 Td (The default mesh configuration suits most installations. The settings in this section should) Tj ET
+BT /F1 10 Tf 54 162 Td (only be changed after a site survey has shown a need.) Tj ET
+BT /F2 11 Tf 54 139 Td (11.1 Channel plan) Tj ET
+BT /F1 10 Tf 54 117 Td (TesseraMesh uses IEEE 802.15.4 channels 11 to 26 in the 2.4 GHz band. The factory default) Tj ET
+BT /F1 10 Tf 54 104 Td (channel is 15, chosen because it falls between Wi-Fi channels 1 and 6. If the survey shows) Tj ET
+BT /F1 10 Tf 54 91 Td (heavy Wi-Fi use on channels 1 and 6, channel 25 or 26 usually gives the cleanest spectrum; note) Tj ET
+BT /F1 10 Tf 54 78 Td (that channel 26 is restricted to reduced transmit power in some regions and is not available on) Tj ET
+BT /F1 10 Tf 54 65 Td (units sold in certain markets.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 4163 >>
+stream
+BT /F1 10 Tf 54 729 Td (To change the channel, go to Mesh > Radio > Channel Plan in the local interface, or Fleet >) Tj ET
+BT /F1 10 Tf 54 716 Td (Gateways > [gateway] > Mesh > Radio in TesseraCloud. Select either a fixed channel or) Tj ET
+BT /F1 10 Tf 54 703 Td ("Adaptive", which lets the gateway move between up to four channels you nominate. When the) Tj ET
+BT /F1 10 Tf 54 690 Td (channel changes, the gateway broadcasts the change to all paired nodes over the next three) Tj ET
+BT /F1 10 Tf 54 677 Td (beacon cycles, which takes up to 3 minutes. Nodes that are asleep or out of range during this) Tj ET
+BT /F1 10 Tf 54 664 Td (period will reappear with T-301 and must be re-paired.) Tj ET
+BT /F2 11 Tf 54 641 Td (11.2 Hop count and topology) Tj ET
+BT /F1 10 Tf 54 619 Td (TesseraMesh is a self-forming mesh. Nodes may relay messages for other nodes. The maximum hop) Tj ET
+BT /F1 10 Tf 54 606 Td (count from any node to the gateway is 4. A node that can only reach the gateway through more) Tj ET
+BT /F1 10 Tf 54 593 Td (than 4 hops will not join, and will report T-301. Meridian recommends designing for no more) Tj ET
+BT /F1 10 Tf 54 580 Td (than 3 hops, leaving a spare hop for route recovery when a relay node fails.) Tj ET
+BT /F1 10 Tf 54 558 Td (For network stability, no more than 24 nodes should connect directly to the gateway \(first) Tj ET
+BT /F1 10 Tf 54 545 Td (hop\). Above that number, some nodes should be positioned so that they route through neighbours.) Tj ET
+BT /F2 11 Tf 54 522 Td (11.3 Transmit power) Tj ET
+BT /F1 10 Tf 54 500 Td (The mesh transmit power is set at Mesh > Radio > TX Power. The default is +8 dBm. It may be) Tj ET
+BT /F1 10 Tf 54 487 Td (raised to a maximum of +10 dBm where regional regulations permit. Raising transmit power) Tj ET
+BT /F1 10 Tf 54 474 Td (increases range but also reduces TS-4e battery life on nodes that relay traffic.) Tj ET
+BT /F2 11 Tf 54 451 Td (11.4 Beacon and reporting intervals) Tj ET
+BT /F1 10 Tf 54 429 Td (The gateway beacon interval is fixed at 60 seconds. The node reporting interval is set per) Tj ET
+BT /F1 10 Tf 54 416 Td (asset in TesseraCloud. At the default of 1 sample per hour, the TS-4e battery lasts 5 years.) Tj ET
+BT /F1 10 Tf 54 403 Td (Faster reporting intervals shorten battery life proportionally.) Tj ET
+BT /F2 13 Tf 54 378 Td (12. Enclosure, cable entries and environmental limits) Tj ET
+BT /F2 11 Tf 54 355 Td (12.1 Cable glands) Tj ET
+BT /F1 10 Tf 54 333 Td (The gateway enclosure has three cable entries on the underside. From left to right as viewed) Tj ET
+BT /F1 10 Tf 54 320 Td (from the front:) Tj ET
+BT /F1 10 Tf 54 298 Td (- Entry 1: M20 x 1.5, for the Ethernet \(ETH0\) cable, cable diameter 6-12 mm.) Tj ET
+BT /F1 10 Tf 54 285 Td (- Entry 2: M20 x 1.5, for the DC power cable, cable diameter 6-12 mm.) Tj ET
+BT /F1 10 Tf 54 272 Td (- Entry 3: M16 x 1.5, for the service or auxiliary I/O cable, cable diameter 4-8 mm.) Tj ET
+BT /F1 10 Tf 54 259 Td (Unused entries must be closed with the blanking plugs provided. Tighten the gland cap nuts to 4) Tj ET
+BT /F1 10 Tf 54 246 Td (N m for M20 glands and 2.5 N m for M16 glands to maintain the IP66 rating. From firmware 5.3.0) Tj ET
+BT /F1 10 Tf 54 233 Td (onwards, the gland kit TS4-GLD-KIT-02 replaces the older TS4-GLD-KIT-01; the new kit adds an) Tj ET
+BT /F1 10 Tf 54 220 Td (EMC gland for M20 entry 1, which is recommended where the Ethernet cable runs alongside) Tj ET
+BT /F1 10 Tf 54 207 Td (variable-speed drive cabling.) Tj ET
+BT /F2 11 Tf 54 184 Td (12.2 Environmental limits) Tj ET
+BT /F1 10 Tf 54 162 Td (- Operating temperature: -30 to +70 C.) Tj ET
+BT /F1 10 Tf 54 149 Td (- Storage temperature: -40 to +85 C.) Tj ET
+BT /F1 10 Tf 54 136 Td (- Relative humidity: 5-95%, non-condensing.) Tj ET
+BT /F1 10 Tf 54 123 Td (- Ingress protection: IP66 with lid closed and all entries sealed.) Tj ET
+BT /F1 10 Tf 54 110 Td (- Enclosure: UV-stabilised polycarbonate, 240 x 180 x 90 mm excluding antennas.) Tj ET
+BT /F1 10 Tf 54 97 Td (A breather valve in the enclosure base equalises pressure. Do not paint over or block it.) Tj ET
+BT /F2 13 Tf 54 72 Td (13. Time, buffering and connectivity behaviour) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4391 >>
+stream
+BT /F2 11 Tf 54 728 Td (13.1 Time synchronisation) Tj ET
+BT /F1 10 Tf 54 706 Td (The gateway synchronises its clock using NTP, by default from pool servers operated for) Tj ET
+BT /F1 10 Tf 54 693 Td (TesseraCloud \(time.tesseracloud.meridian-instruments.com\). A custom NTP server can be entered) Tj ET
+BT /F1 10 Tf 54 680 Td (at System > Time > NTP Servers. If the clock drifts by more than 2 seconds relative to NTP, the) Tj ET
+BT /F1 10 Tf 54 667 Td (gateway logs T-312 \(clock drift\). TLS connections to TesseraCloud fail when the gateway clock) Tj ET
+BT /F1 10 Tf 54 654 Td (is wrong by more than 24 hours, which typically happens only after a long power outage combined) Tj ET
+BT /F1 10 Tf 54 641 Td (with blocked NTP.) Tj ET
+BT /F2 11 Tf 54 618 Td (13.2 Heartbeats and offline status) Tj ET
+BT /F1 10 Tf 54 596 Td (The gateway sends a heartbeat to TesseraCloud every 60 seconds. TesseraCloud marks the gateway) Tj ET
+BT /F1 10 Tf 54 583 Td (Offline after 10 consecutive missed heartbeats, that is, after 10 minutes without contact. A) Tj ET
+BT /F1 10 Tf 54 570 Td (knowledge-base article covering offline gateways is available \(sup-kb-ts4-gateway-offline\).) Tj ET
+BT /F2 11 Tf 54 547 Td (13.3 Store-and-forward buffer) Tj ET
+BT /F1 10 Tf 54 525 Td (When backhaul is unavailable, the gateway stores readings in a 256 MB flash buffer. At the) Tj ET
+BT /F1 10 Tf 54 512 Td (default reporting interval with 64 nodes, the buffer holds approximately 30 days of readings.) Tj ET
+BT /F1 10 Tf 54 499 Td (When the buffer reaches 90% the gateway raises event T-348 \(buffer near capacity\); once full,) Tj ET
+BT /F1 10 Tf 54 486 Td (the oldest readings are overwritten first. Buffered readings are uploaded automatically, oldest) Tj ET
+BT /F1 10 Tf 54 473 Td (first, when the connection is restored, at a rate of up to 2,000 readings per minute so that) Tj ET
+BT /F1 10 Tf 54 460 Td (live data is not delayed.) Tj ET
+BT /F2 13 Tf 54 435 Td (14. Firmware updates) Tj ET
+BT /F1 10 Tf 54 413 Td (Gateway firmware is normally updated over the air from TesseraCloud \(Fleet > Gateways >) Tj ET
+BT /F1 10 Tf 54 400 Td ([gateway] > Firmware > Schedule Update\). Updates can also be applied locally from System >) Tj ET
+BT /F1 10 Tf 54 387 Td (Firmware > Upload in the local interface using a signed image file \(.tfw\) downloaded from the) Tj ET
+BT /F1 10 Tf 54 374 Td (Meridian partner portal.) Tj ET
+BT /F1 10 Tf 54 352 Td (- An update takes approximately 6 minutes, including a reboot. Mesh traffic is buffered by) Tj ET
+BT /F1 10 Tf 54 339 Td (   the nodes during the reboot.) Tj ET
+BT /F1 10 Tf 54 326 Td (- The gateway uses A/B firmware partitions. If the new image fails to boot three times in) Tj ET
+BT /F1 10 Tf 54 313 Td (   succession, the gateway rolls back automatically to the previous version and logs the) Tj ET
+BT /F1 10 Tf 54 300 Td (   rollback.) Tj ET
+BT /F1 10 Tf 54 287 Td (- Always check the compatibility matrix before updating. Node firmware 2.8.0 requires) Tj ET
+BT /F1 10 Tf 54 274 Td (   gateway firmware 5.3.0. Updating nodes before their gateway will make them unable to) Tj ET
+BT /F1 10 Tf 54 261 Td (   rejoin.) Tj ET
+BT /F1 10 Tf 54 248 Td (- Update the gateway first, then the nodes. Node updates are distributed over the mesh and) Tj ET
+BT /F1 10 Tf 54 235 Td (   take approximately 40 minutes per node at 1-hop, longer for deeper nodes; up to 8 nodes) Tj ET
+BT /F1 10 Tf 54 222 Td (   are updated in parallel.) Tj ET
+BT /F2 13 Tf 54 206 Td (15. Factory reset) Tj ET
+BT /F1 10 Tf 54 184 Td (A factory reset erases all configuration, including the mesh network ID, the paired node list,) Tj ET
+BT /F1 10 Tf 54 171 Td (network settings and the admin password. The device certificate is retained, so the gateway can) Tj ET
+BT /F1 10 Tf 54 158 Td (reconnect to TesseraCloud once backhaul is configured again, but all nodes must be re-paired.) Tj ET
+BT /F1 10 Tf 54 136 Td (To reset: with the gateway powered, press and hold the recessed RESET button beside the SVC) Tj ET
+BT /F1 10 Tf 54 123 Td (port for 15 seconds, until the status LED flashes amber rapidly. Release the button. The) Tj ET
+BT /F1 10 Tf 54 110 Td (gateway reboots with factory defaults, which takes about 90 seconds. A shorter press \(between 2) Tj ET
+BT /F1 10 Tf 54 97 Td (and 5 seconds\) only reboots the gateway without resetting it.) Tj ET
+BT /F2 13 Tf 54 72 Td (16. Status LED reference) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 1682 >>
+stream
+BT /F2 9 Tf 54 730 Td (LED pattern | Meaning) Tj ET
+BT /F1 9 Tf 54 718 Td (Solid green | Connected to TesseraCloud, mesh running) Tj ET
+BT /F1 9 Tf 54 706 Td (Slow green flash | Connected to TesseraCloud, pairing window open) Tj ET
+BT /F1 9 Tf 54 694 Td (Solid amber | Booting or applying firmware update) Tj ET
+BT /F1 9 Tf 54 682 Td (Slow amber flash | No TesseraCloud connection; buffering readings) Tj ET
+BT /F1 9 Tf 54 670 Td (Rapid amber flash | Factory reset in progress) Tj ET
+BT /F1 9 Tf 54 658 Td (Solid red | Hardware fault; contact Meridian Support) Tj ET
+BT /F1 9 Tf 54 646 Td (Red flash | Certificate or authentication failure \(see T-327\)) Tj ET
+BT /F2 13 Tf 54 621 Td (17. Installation checklist) Tj ET
+BT /F1 10 Tf 54 599 Td (1. Site survey completed and TS-F-012 attached to the work order.) Tj ET
+BT /F1 10 Tf 54 586 Td (2. Bracket fixed with M8 bolts at 12 N m and earth bond fitted.) Tj ET
+BT /F1 10 Tf 54 573 Td (3. Antenna N-type connectors tightened to 1.7 N m and weatherproofed.) Tj ET
+BT /F1 10 Tf 54 560 Td (4. Power connected \(PoE+ or 10-30 VDC\), not both.) Tj ET
+BT /F1 10 Tf 54 547 Td (5. Backhaul configured and gateway Online in TesseraCloud.) Tj ET
+BT /F1 10 Tf 54 534 Td (6. Mesh channel and network ID recorded.) Tj ET
+BT /F1 10 Tf 54 521 Td (7. All nodes paired, mounted at 6 N m and assigned to assets.) Tj ET
+BT /F1 10 Tf 54 508 Td (8. Unused cable entries blanked; gland nuts tightened.) Tj ET
+BT /F1 10 Tf 54 495 Td (9. Firmware verified against the compatibility matrix.) Tj ET
+BT /F1 10 Tf 54 482 Td (10. Customer handover completed, including the admin password in the customer's password) Tj ET
+BT /F1 10 Tf 54 469 Td (   vault.) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 19
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000305 00000 n 
+0000004791 00000 n 
+0000004927 00000 n 
+0000009583 00000 n 
+0000009719 00000 n 
+0000014067 00000 n 
+0000014203 00000 n 
+0000018620 00000 n 
+0000018758 00000 n 
+0000022974 00000 n 
+0000023112 00000 n 
+0000027556 00000 n 
+0000027694 00000 n 
+0000029429 00000 n 
+0000029567 00000 n 
+trailer
+<< /Size 19 /Root 18 0 R >>
+startxref
+29617
+%%EOF

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TesseraCloud Environment Configuration: Development</title>
+</head>
+<body>
+<h1>TesseraCloud Environment Configuration: Development (dev)</h1>
+<p>Document ID: eng-tesseracloud-config-dev. Owner: Platform Engineering. Last updated: 14 July 2025. This page describes the development environment only. Staging and production use different hosts, ports and settings; see their own configuration pages.</p>
+
+<h2>Environment summary</h2>
+<ul>
+<li>Environment name (TC_ENV): dev</li>
+<li>Region: euw1 only, no disaster-recovery replica.</li>
+<li>Forge environment: tesseracloud-dev. Every merge to a feature branch with the label deploy-dev is deployed automatically.</li>
+<li>Data: synthetic telemetry only. Copying customer data into dev is prohibited by the Data Classification Standard.</li>
+<li>Access: all TesseraCloud engineers; no just-in-time elevation required.</li>
+</ul>
+
+<h2>Endpoints and ports</h2>
+<table border="1">
+<thead><tr><th>Service</th><th>Host</th><th>Port</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Public API (tc-api)</td><td>api.dev.tessera.meridian.internal</td><td>8443</td><td>Internal only, VPN required</td></tr>
+<tr><td>Device ingestion (tc-ingest)</td><td>mqtt-dev.tessera.meridian.internal</td><td>1883</td><td>Plain MQTT, no TLS; dev only</td></tr>
+<tr><td>tc-ingest health</td><td>tc-ingest pods</td><td>9081</td><td>/healthz</td></tr>
+<tr><td>TimescaleDB</td><td>tsdb-dev-01.tessera.meridian.internal</td><td>5432</td><td>Single node</td></tr>
+<tr><td>Kafka</td><td>kafka-dev-01.tessera.meridian.internal</td><td>9092</td><td>Single broker, plaintext listener</td></tr>
+<tr><td>Redis</td><td>redis-dev-01.tessera.meridian.internal</td><td>6379</td><td>No TLS</td></tr>
+</tbody>
+</table>
+
+<h2>Configuration keys</h2>
+<table border="1">
+<thead><tr><th>Key</th><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>TC_ENV</td><td>dev</td><td>Environment name used in logs and metrics</td></tr>
+<tr><td>TC_INGEST_BATCH_SIZE</td><td>500</td><td>Messages per Kafka produce batch in tc-ingest</td></tr>
+<tr><td>TC_INGEST_MAX_CONNECTIONS</td><td>500</td><td>Maximum concurrent MQTT connections per tc-ingest pod</td></tr>
+<tr><td>TC_RETENTION_RAW_DAYS</td><td>7</td><td>Raw telemetry retention in TimescaleDB</td></tr>
+<tr><td>TC_KAFKA_CONSUMER_GROUP</td><td>tc-stream-dev</td><td>Consumer group for tc-stream</td></tr>
+<tr><td>TC_API_RATE_LIMIT_RPM</td><td>0</td><td>API rate limiting disabled in dev</td></tr>
+<tr><td>TC_LOG_LEVEL</td><td>debug</td><td>Log verbosity</td></tr>
+<tr><td>TC_FEATURE_ANOMALY_DETECTION</td><td>true</td><td>Anomaly-detection service enabled</td></tr>
+</tbody>
+</table>
+
+<h2>Deployment</h2>
+<p>Deployments to dev need no approval and may happen at any time. The dev environment is reset every Sunday at 03:00 UK time, which truncates all telemetry tables and reloads the synthetic data set.</p>
+</body>
+</html>

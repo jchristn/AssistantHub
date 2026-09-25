@@ -35,6 +35,21 @@ namespace AssistantHub.Core.Services
         public double? TextScore { get; set; }
 
         /// <summary>
+        /// Raw vector similarity (null when the vector leg did not score this chunk).
+        /// </summary>
+        public double? VectorScore { get; set; }
+
+        /// <summary>
+        /// 1-based rank in the hybrid vector leg (null outside hybrid search or when absent from that leg).
+        /// </summary>
+        public int? VectorRank { get; set; }
+
+        /// <summary>
+        /// 1-based rank in the hybrid text leg (null outside hybrid search or when absent from that leg).
+        /// </summary>
+        public int? TextRank { get; set; }
+
+        /// <summary>
         /// Text content of the matching chunk.
         /// </summary>
         public string Content { get; set; } = null;

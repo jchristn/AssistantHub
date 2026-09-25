@@ -66,6 +66,8 @@ When `attached_document_ids` is present, every RecallDB search receives the docu
 
 Attached documents narrow retrieval scope. They do not request whole-document summarization and do not grant object-storage access.
 
+The same retrieval stages (gate, rewrite, search and fusion, attachment filter, rerank) back `POST /v1.0/assistants/{assistantId}/retrieve`, an admin route that runs them without final inference and returns each stage's ranked list. The benchmark harness in `benchmarks/` measures retrieval through it.
+
 ## Utility LLM Steps
 
 When enabled in assistant settings, the chat flow may run these utility model calls:
@@ -98,6 +100,7 @@ When retrieval runs, the chat response can include:
 - `retrieval.attached_document_ids`
 - `retrieval.attached_documents`
 - `retrieval.document_filter_applied`
+- `retrieval.hybrid_fallback_ran`, `retrieval.embedding_failed`, `retrieval.rerank_parse_failed`, `retrieval.answerability_parse_failed`, `retrieval.query_count`
 - `retrieval.chunks`
 
 When citations are enabled, citation sources should correspond to retrieved context. For attached-document turns, citation sources are expected to stay inside the selected document set.

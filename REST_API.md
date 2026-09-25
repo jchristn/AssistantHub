@@ -2456,6 +2456,79 @@ Current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `too
 - `403` -- Not an admin.
 - `404` -- Assistant or settings not found.
 
+### POST /v1.0/assistants/{assistantId}/retrieve
+
+Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, query rewrite, search with multi-query fusion, attached-document filtering, re-ranking and (when enabled) the answerability check — without final inference and without writing chat history. It shares its stage code with chat, so it is the route the benchmark harness (`benchmarks/`) uses to measure retrieval quality, and a quick way for administrators to diagnose why an answer missed. Utility model calls (gate, rewrite, rerank, answerability) still run when they are enabled in the assistant settings.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Request Body:**
+
+```json
+{
+  "query": "What is the per diem in Rotterdam?",
+  "messages": null,
+  "metadata_filter": { "required_labels": ["policy"] },
+  "attached_document_ids": null,
+  "include_stages": true,
+  "include_answerability": true
+}
+```
+
+Either `query` or `messages` is required. When both are given, `query` is appended as the last user message. `metadata_filter` and `attached_document_ids` behave as they do on the chat route.
+
+**Response (200 OK):**
+
+```json
+{
+  "assistant_id": "asst_abc123",
+  "collection_id": "col_abc123",
+  "search_mode": "Hybrid",
+  "retrieved": true,
+  "gate_decision": null,
+  "gate_duration_ms": 0,
+  "queries": ["What is the per diem in Rotterdam?"],
+  "query_rewrite_duration_ms": 0,
+  "retrieval_duration_ms": 41.2,
+  "hybrid_fallback_ran": false,
+  "embedding_failed": false,
+  "rerank_duration_ms": 0,
+  "rerank_input_count": 0,
+  "rerank_output_count": 0,
+  "rerank_parse_failed": false,
+  "answerability_decision": "not_checked",
+  "query_class": null,
+  "answerability_reason": null,
+  "answerability_parse_failed": false,
+  "answerability_duration_ms": 0,
+  "dropped_candidates": [],
+  "chunks": [
+    {
+      "document_id": "adoc_abc123",
+      "score": 1.0,
+      "vector_score": 0.71,
+      "text_score": 0.08,
+      "vector_rank": 1,
+      "text_rank": 1,
+      "content": "Rotterdam: EUR 185 per night ...",
+      "position": 4
+    }
+  ],
+  "stages": [
+    { "stage": "search", "query": "What is the per diem in Rotterdam?", "chunks": [] },
+    { "stage": "fused", "chunks": [] }
+  ],
+  "total_duration_ms": 44.9
+}
+```
+
+`chunks` is the final list chat would inject, before prompt-budget trimming. `stages` (when `include_stages` is true) holds the ranked list after each stage: one `search` entry per issued query, `fused`, `attachment_filter` (only when attached documents are supplied), `rerank_scored` (every re-rank input with its score) and `rerank`. In hybrid mode `score` is the fused score. `vector_score`, `text_score`, `vector_rank` and `text_rank` carry each leg's evidence when the store reports it. `rerank_parse_failed` is true when re-ranking was enabled but produced no usable scores, in which case the retrieval order is kept. `embedding_failed` is true when the query embedding could not be generated after retries, so vector and hybrid search returned nothing. Chat reports the same flags, plus `query_count` and `answerability_parse_failed`, in its `retrieval` block.
+
+**Error Responses:**
+- `400` -- Missing query, or malformed JSON.
+- `403` -- Not an admin.
+- `404` -- Assistant or settings not found.
+
 ### GET /v1.0/assistants/{assistantId}/tools
 
 Return the effective server-side tool availability for an assistant.

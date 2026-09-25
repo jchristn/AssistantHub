@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tessera TS-4e Edge Node Datasheet</title>
+</head>
+<body>
+<h1>Tessera TS-4e Edge Node Datasheet</h1>
+<p>Document ID: prod-ts4e-edge-node-datasheet | Version: 3.1 | Effective: 2025-08-25 | Owner: Tessera Product Engineering</p>
+
+<h2>Overview</h2>
+<p>The Tessera TS-4e is a battery-powered wireless vibration and temperature sensor for rotating equipment such as pumps, fans, motors, compressors and gearboxes. Each node measures triaxial vibration with a MEMS accelerometer, computes condition indicators at the edge, and reports them over the TesseraMesh 2.4 GHz network to a TS-4 gateway, which forwards them to TesseraCloud. A single TS-4 gateway supports up to 64 TS-4e nodes.</p>
+<p>Two variants are available. The standard node, TS4E-NODE-3AX, is for general industrial areas. The TS4E-NODE-3AX-Z2 variant is certified for Zone 2 hazardous areas and requires node firmware 2.8.0, which in turn requires gateway firmware 5.3.0.</p>
+
+<h2>Specifications</h2>
+<table>
+<tr><th>Parameter</th><th>TS4E-NODE-3AX</th><th>TS4E-NODE-3AX-Z2</th></tr>
+<tr><td>Sensor</td><td>Triaxial MEMS accelerometer</td><td>Triaxial MEMS accelerometer</td></tr>
+<tr><td>Frequency range</td><td>2 Hz to 8 kHz</td><td>2 Hz to 8 kHz</td></tr>
+<tr><td>Measurement range</td><td>+/-50 g</td><td>+/-50 g</td></tr>
+<tr><td>Noise density</td><td>80 micro-g per root Hz</td><td>80 micro-g per root Hz</td></tr>
+<tr><td>Spectrum resolution</td><td>Up to 3,200 lines</td><td>Up to 3,200 lines</td></tr>
+<tr><td>Temperature measurement</td><td>-40 to +85 C, +/-1 C</td><td>-40 to +85 C, +/-1 C</td></tr>
+<tr><td>Operating temperature</td><td>-40 to +85 C</td><td>-40 to +70 C</td></tr>
+<tr><td>Radio</td><td>TesseraMesh, IEEE 802.15.4, 2.4 GHz</td><td>TesseraMesh, IEEE 802.15.4, 2.4 GHz</td></tr>
+<tr><td>Transmit power</td><td>Up to +10 dBm</td><td>Up to +8 dBm</td></tr>
+<tr><td>Battery</td><td>Replaceable 3.6 V lithium-thionyl chloride, TS4E-BAT-01</td><td>Sealed lithium-thionyl chloride, factory replaced only</td></tr>
+<tr><td>Battery life</td><td>5 years at 1 sample per hour</td><td>5 years at 1 sample per hour</td></tr>
+<tr><td>Ingress protection</td><td>IP68 (2 m, 24 h)</td><td>IP68 (2 m, 24 h)</td></tr>
+<tr><td>Hazardous area</td><td>Not certified</td><td>II 3G Ex ec IIC T4 Gc (Zone 2)</td></tr>
+<tr><td>Housing</td><td>316L stainless base, PBT radome</td><td>316L stainless base, antistatic PBT radome</td></tr>
+<tr><td>Mounting</td><td>M6 stud, 6 N m</td><td>M6 stud, 6 N m</td></tr>
+<tr><td>Dimensions</td><td>46 mm diameter x 82 mm</td><td>46 mm diameter x 86 mm</td></tr>
+<tr><td>Weight</td><td>165 g</td><td>180 g</td></tr>
+<tr><td>Minimum node firmware</td><td>2.6.1</td><td>2.8.0</td></tr>
+<tr><td>Current node firmware</td><td>2.8.0</td><td>2.8.0</td></tr>
+<tr><td>Warranty</td><td>24 months</td><td>24 months</td></tr>
+</table>
+
+<h2>Edge-computed indicators</h2>
+<ul>
+<li>Velocity RMS (10 Hz to 1 kHz), per axis, in mm/s, for ISO 10816-3 evaluation</li>
+<li>Acceleration peak and RMS, per axis</li>
+<li>Crest factor and kurtosis, for early bearing fault detection</li>
+<li>Surface temperature</li>
+<li>Optional waveform capture (up to 16,384 samples) on demand or on alarm</li>
+</ul>
+
+<h2>Battery life by reporting interval</h2>
+<table>
+<tr><th>Reporting interval</th><th>Estimated battery life</th></tr>
+<tr><td>1 sample per hour (default)</td><td>5 years</td></tr>
+<tr><td>1 sample per 30 minutes</td><td>3 years</td></tr>
+<tr><td>1 sample per 10 minutes</td><td>14 months</td></tr>
+<tr><td>1 sample per hour plus daily waveform</td><td>4 years</td></tr>
+</table>
+<p>Estimates assume 20 C, a first-hop connection to the gateway and no relaying of other nodes' traffic. Nodes that relay for neighbours typically see 15 to 25 percent shorter battery life. The node reports a low-battery event, T-305, when the estimated remaining capacity falls below 10 percent.</p>
+
+<h2>Mounting guidance</h2>
+<ul>
+<li>Mount on the bearing housing, as close as possible to the load zone, with the Z axis radial.</li>
+<li>Spot-face the mounting surface to a flat diameter of at least 30 mm and drill and tap M6 x 10 mm.</li>
+<li>Screw the stud into the machine, then screw the node onto the stud and tighten to 6 N m.</li>
+<li>Where drilling is not permitted, use the epoxy mounting pad TS4E-PAD-EPX; allow 24 hours cure before enabling alarms.</li>
+<li>Magnetic mounting (TS4E-MAG-01) is supported for surveys only; it reduces usable frequency range to about 2 kHz.</li>
+</ul>
+
+<h2>Ordering information</h2>
+<table>
+<tr><th>SKU</th><th>Description</th></tr>
+<tr><td>TS4E-NODE-3AX</td><td>TS-4e edge node, standard, includes M6 stud and wake magnet</td></tr>
+<tr><td>TS4E-NODE-3AX-Z2</td><td>TS-4e edge node, Zone 2 certified</td></tr>
+<tr><td>TS4E-BAT-01</td><td>Replacement battery for TS4E-NODE-3AX</td></tr>
+<tr><td>TS4E-PAD-EPX</td><td>Epoxy mounting pad, pack of 10</td></tr>
+<tr><td>TS4E-MAG-01</td><td>Magnetic survey mount</td></tr>
+</table>
+<p>For gateway and node firmware compatibility, see the Tessera Firmware Compatibility Matrix (prod-tessera-firmware-compatibility-matrix). Prices are listed in the current Meridian price list.</p>
+</body>
+</html>

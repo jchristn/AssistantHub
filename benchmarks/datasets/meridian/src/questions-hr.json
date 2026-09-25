@@ -1,0 +1,1796 @@
+[
+  {
+    "id": "hr-q001",
+    "text": "If our baby ends up in the special care unit for a couple of weeks after the birth, do we get any extra paid time off on top of normal parental leave?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-parental-leave-policy-v2"
+    ],
+    "grades": {
+      "hr-parental-leave-policy-v2": 2,
+      "hr-parental-leave-policy-v1": 0
+    },
+    "evidence": [
+      "each parent may take up to 12 weeks of neonatal leave at full pay",
+      "Neonatal leave is taken in addition to birth parent or partner leave."
+    ],
+    "answer": "Yes. If the baby is admitted to neonatal care within 28 days of birth and stays 7 or more continuous days, each parent can take up to 12 weeks of neonatal leave at full pay, in addition to birth parent or partner leave."
+  },
+  {
+    "id": "hr-q002",
+    "text": "Will the company chip in for a proper desk and chair now that I'm working from home part of the week?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-remote-work-policy-v2"
+    ],
+    "grades": {
+      "hr-remote-work-policy-v2": 2,
+      "hr-remote-work-policy-v1": 0
+    },
+    "evidence": [
+      "Meridian pays a one-off home office allowance to help with furniture such as a desk and chair.",
+      "It may be claimed once every 3 years."
+    ],
+    "answer": "Yes. A one-off home office allowance of £400 (UK), €450 (NL), $500 (US) or RM 1,500 (MY), claimed in Atlas with receipts within six months of becoming hybrid; it can be claimed once every 3 years."
+  },
+  {
+    "id": "hr-q003",
+    "text": "Can my partner who lives with me use the counselling service too, or is it only for staff?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-eap-announcement-2025"
+    ],
+    "grades": {
+      "hr-eap-announcement-2025": 2
+    },
+    "evidence": [
+      "Family members living in the same household as the employee are also eligible to use the service."
+    ],
+    "answer": "Yes. Family members living in the same household as the employee can use the Harbour Wellbeing EAP."
+  },
+  {
+    "id": "hr-q004",
+    "text": "I came down with flu halfway through my week off. Do I just lose those holiday days?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-sickness-absence-policy-v2",
+      "hr-leave-entitlement-uk",
+      "hr-leave-entitlement-nl"
+    ],
+    "grades": {
+      "hr-sickness-absence-policy-v2": 2,
+      "hr-leave-entitlement-uk": 1,
+      "hr-leave-entitlement-nl": 1,
+      "hr-sickness-absence-policy-v1": 0
+    },
+    "evidence": [
+      "If you fall ill while on annual leave, you may treat the affected days as sickness if you report it as in section 3 and provide medical evidence for the whole period.",
+      "The annual leave days are then reinstated."
+    ],
+    "answer": "No. If you report the sickness as required and provide medical evidence for the whole period, the affected days are treated as sickness and the annual leave is reinstated."
+  },
+  {
+    "id": "hr-q005",
+    "text": "I think my boss is fiddling the numbers and I don't want to raise it with him. Who else can I go to, ideally without giving my name?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-whistleblowing-policy-v2",
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "corp-whistleblowing-policy-v2": 2,
+      "hr-employee-handbook": 1,
+      "corp-whistleblowing-policy-v1": 0
+    },
+    "evidence": [
+      "the Meridian Speak Up portal, operated independently by VeritasLine and available 24 hours a day in English, Dutch and Malay, which allows anonymous reporting and two-way anonymous messaging",
+      "The Speak Up Officer is Hannah Brightwell, General Counsel."
+    ],
+    "answer": "Use the Speak Up channels: the Meridian Speak Up portal run by VeritasLine (anonymous reporting allowed), speakup@meridian-instruments.example, or the VeritasLine hotline for your country; the Speak Up Officer is General Counsel Hannah Brightwell."
+  },
+  {
+    "id": "hr-q006",
+    "text": "If Meridian pays for my accountancy exams and I leave for another job soon after finishing, will I have to pay the money back?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-learning-development-policy"
+    ],
+    "grades": {
+      "hr-learning-development-policy": 2
+    },
+    "evidence": [
+      "Within 12 months of completion",
+      "100% of fees",
+      "Within 24 months of completion",
+      "50% of fees"
+    ],
+    "answer": "Yes, under the F-265 agreement: 100% of fees if you leave within 12 months of completion, 50% within 24 months, nothing after 24 months."
+  },
+  {
+    "id": "hr-q007",
+    "text": "Is there any extra pay for working the overnight shift on the Penang production floor?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-overtime-on-call-policy"
+    ],
+    "grades": {
+      "hr-overtime-on-call-policy": 2
+    },
+    "evidence": [
+      "Employees on the night shift receive a night-shift allowance of RM 15 per shift."
+    ],
+    "answer": "Yes, a night-shift allowance of RM 15 per shift (day and afternoon shifts attract no allowance)."
+  },
+  {
+    "id": "hr-q008",
+    "text": "I'm a G6 and keep staying late to hit deadlines. Can I claim paid overtime for those extra hours?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-overtime-on-call-policy"
+    ],
+    "grades": {
+      "hr-overtime-on-call-policy": 2
+    },
+    "evidence": [
+      "Paid overtime applies to employees in grades G1 to G4 only.",
+      "Employees in grade G5 and above are expected to manage their working time flexibly and are not paid for additional hours"
+    ],
+    "answer": "No. Paid overtime is only for grades G1 to G4; G5 and above are not paid for extra hours, though managers may agree time off in lieu for exceptional periods."
+  },
+  {
+    "id": "hr-q009",
+    "text": "My offer says it's conditional on checks. What are they actually going to check before I can start?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-recruitment-manual",
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "hr-recruitment-manual": 2,
+      "hr-employee-handbook": 1
+    },
+    "evidence": [
+      "Right to work in the country of employment.",
+      "Two satisfactory references, at least one from the most recent employer.",
+      "Verification of qualifications that are essential for the role."
+    ],
+    "answer": "Right to work, two satisfactory references (one from the most recent employer), verification of essential qualifications and any required professional registration; some roles also need enhanced credit and criminal record checks."
+  },
+  {
+    "id": "hr-q010",
+    "text": "I've just joined the Austin office. Is money going to start going into my retirement account without me doing anything?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-us-401k-guide",
+      "hr-benefits-comparison-2025"
+    ],
+    "grades": {
+      "hr-us-401k-guide": 2,
+      "hr-benefits-comparison-2025": 1
+    },
+    "evidence": [
+      "New hires are automatically enrolled at a pre-tax contribution of 4% of eligible pay 30 days after their hire date unless they make a different election or opt out before then."
+    ],
+    "answer": "Yes. New US hires are automatically enrolled in the 401(k) at 4% pre-tax contribution 30 days after their hire date unless they elect otherwise or opt out."
+  },
+  {
+    "id": "hr-q011",
+    "text": "Do I have to fill anything in to get Meridian's extra top-up on my EPF in Penang?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-my-statutory-contributions-guide",
+      "hr-benefits-comparison-2025"
+    ],
+    "grades": {
+      "hr-my-statutory-contributions-guide": 2,
+      "hr-benefits-comparison-2025": 1
+    },
+    "evidence": [
+      "Meridian tops up the employer contribution to 16% for all employees, regardless of salary.",
+      "The top-up is paid into your EPF account together with the statutory contribution, so there is nothing you need to do to receive it."
+    ],
+    "answer": "No. Meridian automatically tops up the employer EPF contribution to 16% for everyone; nothing needs to be done."
+  },
+  {
+    "id": "hr-q012",
+    "text": "If I resign in May, do I still get my annual bonus in June?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-grade-structure-2025"
+    ],
+    "grades": {
+      "hr-grade-structure-2025": 2
+    },
+    "evidence": [
+      "Employees who have resigned or are under notice on the payment date do not receive a payout."
+    ],
+    "answer": "No. Employees who have resigned or are under notice on the MIP payment date do not receive a payout."
+  },
+  {
+    "id": "hr-q013",
+    "text": "How often can my manager put me on the out-of-hours phone rota before I can push back?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-overtime-on-call-policy"
+    ],
+    "grades": {
+      "hr-overtime-on-call-policy": 2
+    },
+    "evidence": [
+      "No employee should be on the on-call rota for more than one week in every three without their agreement."
+    ],
+    "answer": "No more than one week in every three without your agreement."
+  },
+  {
+    "id": "hr-q014",
+    "text": "I joined Meridian in February 2025. Am I in line for a raise in this year's pay review?",
+    "type": "paraphrase",
+    "category": "temporal",
+    "relevant": [
+      "hr-salary-review-timeline-2025"
+    ],
+    "grades": {
+      "hr-salary-review-timeline-2025": 2
+    },
+    "evidence": [
+      "Employees must have joined Meridian before 1 January 2025 to be eligible for a review increase."
+    ],
+    "answer": "No. Only employees who joined before 1 January 2025 are eligible for the 2025 review increase."
+  },
+  {
+    "id": "hr-q015",
+    "text": "Does Meridian pay anything towards my heating and broadband bills on the days I work from home?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-remote-work-policy-v2"
+    ],
+    "grades": {
+      "hr-remote-work-policy-v2": 2,
+      "hr-remote-work-policy-v1": 0
+    },
+    "evidence": [
+      "Meridian does not reimburse household running costs such as heating, electricity or broadband."
+    ],
+    "answer": "No. Household running costs such as heating, electricity and broadband are not reimbursed (UK staff may be able to claim tax relief from HMRC)."
+  },
+  {
+    "id": "hr-q016",
+    "text": "How long is the probation period at Meridian?",
+    "type": "paraphrase",
+    "category": "ambiguous_query",
+    "relevant": [
+      "hr-probation-policy"
+    ],
+    "grades": {
+      "hr-probation-policy": 2
+    },
+    "evidence": [
+      "Probation length",
+      "6 months",
+      "2 months",
+      "90-day introductory period",
+      "3 months"
+    ],
+    "answer": "It depends on the country: UK 6 months, Netherlands 2 months, US 90-day introductory period, Malaysia 3 months."
+  },
+  {
+    "id": "hr-q017",
+    "text": "What is form F-412 and who approves it for a £50,000 purchase?",
+    "type": "lexical",
+    "category": "citation_required",
+    "relevant": [
+      "fin-procurement-manual"
+    ],
+    "grades": {
+      "fin-procurement-manual": 2
+    },
+    "evidence": [
+      "the requisitioner must complete form F-412 Single Source Justification and attach it to the requisition",
+      "The F-412 is approved by the Head of Procurement for purchases up to £75,000 and by the CFO for purchases above £75,000."
+    ],
+    "answer": "F-412 is the Single Source Justification form; for a £50,000 purchase it is approved by the Head of Procurement (the CFO approves above £75,000), in addition to normal financial approval."
+  },
+  {
+    "id": "hr-q018",
+    "text": "What is CC-2210 and who holds its budget?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-cost-centre-directory",
+      "hr-overtime-on-call-policy"
+    ],
+    "grades": {
+      "fin-cost-centre-directory": 2,
+      "hr-overtime-on-call-policy": 1
+    },
+    "evidence": [
+      "CC-2210",
+      "TesseraCloud Operations",
+      "Head of Cloud Operations"
+    ],
+    "answer": "CC-2210 is TesseraCloud Operations in Austin (USD); the budget holder is the Head of Cloud Operations."
+  },
+  {
+    "id": "hr-q019",
+    "text": "Which ap- mailbox do Rotterdam suppliers send their invoices to?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-supplier-invoicing-guide"
+    ],
+    "grades": {
+      "fin-supplier-invoicing-guide": 2
+    },
+    "evidence": [
+      "Netherlands (Rotterdam)       ap-nl@meridian-instruments.example",
+      "Send invoices as PDF attachments, one invoice per PDF, to the mailbox for the entity that issued the PO"
+    ],
+    "answer": "ap-nl@meridian-instruments.example (PDF, one invoice per PDF)."
+  },
+  {
+    "id": "hr-q020",
+    "text": "Where in Keel do I submit an F-318?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-keel-portal-guide",
+      "hr-employee-handbook",
+      "hr-remote-work-policy-v2"
+    ],
+    "grades": {
+      "hr-keel-portal-guide": 2,
+      "hr-employee-handbook": 1,
+      "hr-remote-work-policy-v2": 1
+    },
+    "evidence": [
+      "Keel > Requests > Work From Abroad",
+      "Requests to work from abroad are made through Keel > Requests > Work From Abroad using form F-318."
+    ],
+    "answer": "Keel > Requests > Work From Abroad (F-318 is the Work From Abroad Request)."
+  },
+  {
+    "id": "hr-q021",
+    "text": "What format does a Meridian PO number have? A supplier sent an invoice quoting PO-12345.",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-supplier-invoicing-guide",
+      "fin-procurement-manual"
+    ],
+    "grades": {
+      "fin-supplier-invoicing-guide": 2,
+      "fin-procurement-manual": 1
+    },
+    "evidence": [
+      "PO numbers have the format PO-45xxxxxxxx: the letters PO, a hyphen, and a 10-digit number that always starts with 45.",
+      "Purchase order numbers are ten digits beginning with 45 and are shown in the form PO-45xxxxxxxx."
+    ],
+    "answer": "PO- followed by a 10-digit number starting with 45 (e.g. PO-4500123456); PO-12345 is not valid, and invoices without a valid PO are returned unpaid."
+  },
+  {
+    "id": "hr-q022",
+    "text": "What's the Keel path for claiming a non-panel GP visit in Penang?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-my-statutory-contributions-guide",
+      "hr-keel-portal-guide"
+    ],
+    "grades": {
+      "hr-my-statutory-contributions-guide": 2,
+      "hr-keel-portal-guide": 2
+    },
+    "evidence": [
+      "you can claim reimbursement through Keel > Claims > Medical",
+      "Penang employees have an additional menu, Keel > Claims > Medical, for reimbursement of outpatient medical costs at non-panel clinics."
+    ],
+    "answer": "Keel > Claims > Medical, uploading the receipt and medical certificate within 30 days of the visit."
+  },
+  {
+    "id": "hr-q023",
+    "text": "Which Beacon ticket category do I raise for a suspected personal data breach?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-data-protection-policy",
+      "it-beacon-ticket-categories"
+    ],
+    "grades": {
+      "corp-data-protection-policy": 2,
+      "it-beacon-ticket-categories": 2
+    },
+    "evidence": [
+      "by raising a ticket in Beacon under the category \"Security Incident – Personal Data\"",
+      "SEC-INCIDENT-PD"
+    ],
+    "answer": "\"Security Incident – Personal Data\" (code SEC-INCIDENT-PD, priority P1), raised within 2 hours of becoming aware."
+  },
+  {
+    "id": "hr-q024",
+    "text": "What is the access code MERIDIAN25 used for?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-eap-announcement-2025"
+    ],
+    "grades": {
+      "hr-eap-announcement-2025": 2
+    },
+    "evidence": [
+      "To register on the Harbour Wellbeing website or app, use the access code MERIDIAN25."
+    ],
+    "answer": "It is the access code for registering on the Harbour Wellbeing (EAP) website or app."
+  },
+  {
+    "id": "hr-q025",
+    "text": "What is GS-02 and how often does it need redoing?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "hr-employee-handbook": 2
+    },
+    "evidence": [
+      "Anyone entering the Halcyon calibration lab must first complete the gas-safety induction GS-02",
+      "The GS-02 induction must be refreshed every two years."
+    ],
+    "answer": "GS-02 is the gas-safety induction required before entering the Halcyon calibration lab (Leeds, Building C); it must be refreshed every two years."
+  },
+  {
+    "id": "hr-q026",
+    "text": "What's the phone number for Northwind Travel Management if I'm stuck abroad?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-travel-booking-guide"
+    ],
+    "grades": {
+      "fin-travel-booking-guide": 2
+    },
+    "evidence": [
+      "In an emergency while travelling, call the Northwind Travel Management 24/7 line on +44 113 496 0735."
+    ],
+    "answer": "+44 113 496 0735 (24/7 line)."
+  },
+  {
+    "id": "hr-q027",
+    "text": "I'm a G6. Roughly what percentage of my salary should I expect as my FY2024/25 bonus?",
+    "type": "multi",
+    "category": "aggregation",
+    "relevant": [
+      "hr-grade-structure-2025",
+      "corp-pay-review-announcement-2025"
+    ],
+    "grades": {
+      "hr-grade-structure-2025": 2,
+      "corp-pay-review-announcement-2025": 2
+    },
+    "evidence": [
+      "Senior/Lead",
+      "12%",
+      "The Board has approved a Meridian Incentive Plan (MIP) payout factor of 92% of target for FY2024/25."
+    ],
+    "answer": "About 11.04% of base salary earned in FY2024/25 (12% G6–G7 MIP target x 92% payout factor), paid with June 2025 payroll."
+  },
+  {
+    "id": "hr-q028",
+    "text": "We need to buy £60,000 of test equipment. How many quotes do we need and who has to approve the requisition?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "fin-procurement-manual",
+      "fin-delegation-of-authority-v2"
+    ],
+    "grades": {
+      "fin-procurement-manual": 2,
+      "fin-delegation-of-authority-v2": 2,
+      "fin-delegation-of-authority-v1": 0
+    },
+    "evidence": [
+      "Three written quotes",
+      "for example, a £60,000 requisition is approved by the budget holder, the Head of Department and the CFO."
+    ],
+    "answer": "Three written quotes (the £10,000–£75,000 band), and approval by the budget holder, the Head of Department and the CFO."
+  },
+  {
+    "id": "hr-q029",
+    "text": "A £90,000 spare-parts order can only come from the original manufacturer. What approvals does it need?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "fin-procurement-manual",
+      "fin-delegation-of-authority-v2"
+    ],
+    "grades": {
+      "fin-procurement-manual": 2,
+      "fin-delegation-of-authority-v2": 2,
+      "fin-delegation-of-authority-v1": 0
+    },
+    "evidence": [
+      "The F-412 is approved by the Head of Procurement for purchases up to £75,000 and by the CFO for purchases above £75,000.",
+      "This approval is in addition to, not instead of, the normal financial approval of the requisition under POL-FIN-003.",
+      "£50,000.01 to £250,000"
+    ],
+    "answer": "An F-412 Single Source Justification approved by the CFO (above £75,000), plus normal requisition approval by budget holder, Head of Department and CFO (£50,000.01–£250,000 band)."
+  },
+  {
+    "id": "hr-q030",
+    "text": "I took a client out for dinner and it came to £90 a head. Can I claim all of it, and is there anything else I need to do?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-travel-expense-policy-v2",
+      "corp-code-of-conduct"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "corp-code-of-conduct": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "£75 per head",
+      "Spend above the client entertainment limit is not reimbursed unless approved in advance by the budget holder.",
+      "must be recorded in the Gifts and Hospitality Register using form F-140 within 5 working days of the gift or event"
+    ],
+    "answer": "Only up to the £75 per head client entertainment limit unless the budget holder approved more in advance; and because it exceeds £75 per person it must be recorded on F-140 in the Gifts and Hospitality Register within 5 working days."
+  },
+  {
+    "id": "hr-q031",
+    "text": "I referred a friend who's just been hired into a G6 role in Rotterdam. How much will I get and when?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-employee-referral-scheme",
+      "hr-probation-policy"
+    ],
+    "grades": {
+      "hr-employee-referral-scheme": 2,
+      "hr-probation-policy": 2
+    },
+    "evidence": [
+      "€3,500",
+      "The bonus is paid in full after the referred hire successfully completes probation at their site.",
+      "In the Netherlands, 2 months is the maximum probation period permitted for permanent contracts under Dutch law"
+    ],
+    "answer": "€3,500, paid through your payroll in the month after your friend passes the 2-month NL probation."
+  },
+  {
+    "id": "hr-q032",
+    "text": "My manager approved my UK expense claim in Atlas on 14 May 2025. When will the money land?",
+    "type": "multi",
+    "category": "temporal",
+    "relevant": [
+      "fin-payroll-calendar-uk",
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "fin-payroll-calendar-uk": 2,
+      "hr-travel-expense-policy-v2": 1,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "Mon 12 May 2025",
+      "Wed 25 Jun 2025",
+      "Claims approved after the expense cut-off are paid the following month.",
+      "an approved claim that misses a cut-off is paid in the following pay run"
+    ],
+    "answer": "With the June payroll on Wednesday 25 June 2025, because it missed the 12 May 2025 expense cut-off."
+  },
+  {
+    "id": "hr-q033",
+    "text": "I'm a UK G8 on the car allowance and drive my own car to customer sites. What do I get for the allowance and what mileage rate can I claim?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "fin-company-car-policy",
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "fin-company-car-policy": 2,
+      "hr-travel-expense-policy-v2": 1,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "£7,800",
+      "Employees who receive a car allowance or a company car must not claim the standard private car mileage rate set out in the Travel and Expense Policy (POL-FIN-007).",
+      "HMRC Advisory Fuel Rate for the car's engine size and fuel, or Advisory Electric Rate"
+    ],
+    "answer": "£7,800 a year car allowance (G8–G9), and business mileage at the HMRC Advisory Fuel (or Electric) Rate, not the 45p standard rate."
+  },
+  {
+    "id": "hr-q034",
+    "text": "I need a hotel in Amsterdam for a trade show. What's the most I can spend a night, and how do I book something over that?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-travel-expense-policy-v2",
+      "fin-travel-booking-guide"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "fin-travel-booking-guide": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "Amsterdam",
+      "€210",
+      "Out-of-policy bookings need budget holder approval in Atlas before they are ticketed.",
+      "Go to Atlas > Travel > Book Trip."
+    ],
+    "answer": "€210 per night; book through Atlas > Travel > Book Trip (Northwind Travel Management), and anything above the cap is an out-of-policy booking needing budget holder approval in Atlas before ticketing."
+  },
+  {
+    "id": "hr-q035",
+    "text": "A piece of kit costs £3,000 and I want to put it on my corporate card this year. Can I, and if not, what's the route and who signs it off?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "fin-corporate-card-policy-v2",
+      "fin-delegation-of-authority-v2",
+      "fin-procurement-manual"
+    ],
+    "grades": {
+      "fin-corporate-card-policy-v2": 2,
+      "fin-delegation-of-authority-v2": 2,
+      "fin-procurement-manual": 1,
+      "fin-corporate-card-policy-v1": 0,
+      "fin-delegation-of-authority-v1": 0
+    },
+    "evidence": [
+      "A purchase that would exceed the single transaction limit must not be put on the card.",
+      "Single transaction",
+      "Up to £10,000",
+      "Where a purchase is not permitted on a corporate card it must follow this manual."
+    ],
+    "answer": "No. The card single transaction limit is £2,500, so it must be raised as a purchase requisition in Atlas under the Procurement Manual; at £3,000 it is within the budget holder's £10,000 approval limit."
+  },
+  {
+    "id": "hr-q036",
+    "text": "I manage a team of G6s in Leeds. When are my salary review proposals due and what's the budget I'm working to?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-salary-review-timeline-2025",
+      "corp-pay-review-announcement-2025"
+    ],
+    "grades": {
+      "hr-salary-review-timeline-2025": 2,
+      "corp-pay-review-announcement-2025": 2
+    },
+    "evidence": [
+      "G6–G7 Senior/Lead",
+      "16 May 2025",
+      "3.5%"
+    ],
+    "answer": "Proposals are due 16 May 2025 (calibration 27–29 May, letters 16 June); the UK review budget is 3.5% (plus a separate 0.5% promotion and equity fund)."
+  },
+  {
+    "id": "hr-q037",
+    "text": "One of my UK G5 engineers has resigned. How much notice do they owe, what do I need to do first on the leaver form, and how long will their personnel file be kept?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-employee-handbook",
+      "hr-leaver-checklist-f110",
+      "corp-records-retention-schedule"
+    ],
+    "grades": {
+      "hr-employee-handbook": 2,
+      "hr-leaver-checklist-f110": 2,
+      "corp-records-retention-schedule": 2
+    },
+    "evidence": [
+      "G4–G7",
+      "2 months",
+      "Confirm the resignation in writing through Keel within 5 working days of receiving it.",
+      "Personnel file",
+      "6 years"
+    ],
+    "answer": "2 months' notice (G4–G7); confirm the resignation in writing through Keel within 5 working days on the F-110 Leaver Checklist; the personnel file is kept for 6 years after leaving."
+  },
+  {
+    "id": "hr-q038",
+    "text": "I did a weekend on-call day in Rotterdam in June 2025. How much is it worth and by when does the claim need approving to be paid that month?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "hr-overtime-on-call-policy",
+      "fin-payroll-calendar-nl"
+    ],
+    "grades": {
+      "hr-overtime-on-call-policy": 2,
+      "fin-payroll-calendar-nl": 2
+    },
+    "evidence": [
+      "€70",
+      "Overtime, on-call and shift allowances are claimed on F-340 and approved by the line manager in Keel.",
+      "Thu 12 Jun 2025"
+    ],
+    "answer": "€70 for the weekend day, claimed on F-340 and approved in Keel by the NL change cut-off (Thursday 12 June 2025 for June pay on 24 June); otherwise paid the following month."
+  },
+  {
+    "id": "hr-q039",
+    "text": "What do you get for reaching ten years at Meridian?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "hr-employee-handbook": 2
+    },
+    "evidence": [
+      "£1,000 plus 5 extra days of leave (one-off)",
+      "The extra days of leave are a one-off addition to your entitlement and should be taken within 12 months of the anniversary."
+    ],
+    "answer": "£1,000 plus 5 extra days of leave (one-off), to be taken within 12 months of the anniversary."
+  },
+  {
+    "id": "hr-q040",
+    "text": "I've lost my building badge for the second time this year. Who do I tell and will it cost me?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "hr-employee-handbook": 2
+    },
+    "evidence": [
+      "report the loss to the site security desk at security@meridian-instruments.example within 24 hours so that it can be deactivated",
+      "A second replacement within 12 months costs £15 (or the local currency equivalent), which is deducted from pay with your agreement."
+    ],
+    "answer": "Report it to security@meridian-instruments.example within 24 hours; a second replacement within 12 months costs £15 (or local equivalent), deducted from pay with your agreement."
+  },
+  {
+    "id": "hr-q041",
+    "text": "What should I do if an official at a border checkpoint threatens me and demands cash before letting our shipment through?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-code-of-conduct"
+    ],
+    "grades": {
+      "corp-code-of-conduct": 2
+    },
+    "evidence": [
+      "The only exception is where a payment is demanded under duress, meaning that you reasonably believe your personal safety or liberty is at immediate risk.",
+      "make the payment, keep yourself safe, and report it to Legal and Compliance within 24 hours"
+    ],
+    "answer": "Facilitation payments are banned, but under duress (risk to safety or liberty) you may pay, keep safe and report it to Legal and Compliance within 24 hours; it will not be treated as a disciplinary matter."
+  },
+  {
+    "id": "hr-q042",
+    "text": "Can we take a regulator from a water utility out for lunch, or give them a small gift?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-code-of-conduct"
+    ],
+    "grades": {
+      "corp-code-of-conduct": 2
+    },
+    "evidence": [
+      "You must not give any gift to a public official other than Meridian-branded promotional items of nominal value under £25",
+      "Any hospitality for a public official, whatever its value, including a working lunch, requires prior approval from the General Counsel."
+    ],
+    "answer": "Only Meridian-branded promotional items under £25 as gifts; any hospitality, even a working lunch, needs prior approval from the General Counsel."
+  },
+  {
+    "id": "hr-q043",
+    "text": "A supplier emailed asking us to pay into a new bank account. What checks are required before AP pays them?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-procurement-manual",
+      "fin-supplier-invoicing-guide"
+    ],
+    "grades": {
+      "fin-procurement-manual": 2,
+      "fin-supplier-invoicing-guide": 1
+    },
+    "evidence": [
+      "must be verified by call-back to a known telephone number held on file or independently sourced, never a number supplied in the request itself",
+      "After a change of bank details, the first payment to the new account is held for 5 working days before release"
+    ],
+    "answer": "Verify by call-back to a number already on file, enter the change with a two-person check, and hold the first payment to the new account for 5 working days; email-only or urgent requests should be reported to IT Security."
+  },
+  {
+    "id": "hr-q044",
+    "text": "Which suppliers have to fill in the sustainability questionnaire every year?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-procurement-manual"
+    ],
+    "grades": {
+      "fin-procurement-manual": 2
+    },
+    "evidence": [
+      "Suppliers with an annual spend over £500,000 must complete the Supplier Sustainability Questionnaire (SSQ) annually.",
+      "Procurement issues the SSQ each June and expects responses within 30 days."
+    ],
+    "answer": "Suppliers with annual spend over £500,000; the SSQ is issued each June with responses expected within 30 days."
+  },
+  {
+    "id": "hr-q045",
+    "text": "A Penang employee has asked for a copy of all the personal data we hold on them. Which policy sets our response deadline, and what is it?",
+    "type": "detail",
+    "category": "citation_required",
+    "relevant": [
+      "corp-data-protection-policy"
+    ],
+    "grades": {
+      "corp-data-protection-policy": 2
+    },
+    "evidence": [
+      "For Malaysian data subjects, the Personal Data Protection Act requires a response within 21 days."
+    ],
+    "answer": "21 days under the Malaysian PDPA, per the Data Protection Policy (POL-CORP-006, section 7.1); UK/NL requests get one calendar month."
+  },
+  {
+    "id": "hr-q046",
+    "text": "We want to roll out software that tracks staff keystrokes and app usage. What do we need before switching it on?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-data-protection-policy"
+    ],
+    "grades": {
+      "corp-data-protection-policy": 2
+    },
+    "evidence": [
+      "A data protection impact assessment (DPIA) is required before Meridian introduces any new HR monitoring tool",
+      "The DPIA must be signed off by the DPO before the tool is purchased or switched on."
+    ],
+    "answer": "A DPIA signed off by the DPO before purchase or switch-on (in NL the privacy lead also checks if works council consent is needed)."
+  },
+  {
+    "id": "hr-q047",
+    "text": "What's the maximum fee we'll pay a recruitment agency for a permanent hire?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-recruitment-manual"
+    ],
+    "grades": {
+      "hr-recruitment-manual": 2
+    },
+    "evidence": [
+      "The agency fee is capped at 15% of base salary for permanent placements.",
+      "Only agencies on the preferred supplier list may be engaged, and only on Meridian's standard agency terms."
+    ],
+    "answer": "15% of base salary, and only agencies on the preferred supplier list on Meridian's standard terms."
+  },
+  {
+    "id": "hr-q048",
+    "text": "I'm being offered a job that means moving from Leeds to Rotterdam. How much relocation support is there and what if I leave after a year and a half?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-recruitment-manual"
+    ],
+    "grades": {
+      "hr-recruitment-manual": 2
+    },
+    "evidence": [
+      "For international moves, Meridian will reimburse eligible costs of up to £20,000.",
+      "100% is repayable if they leave within 12 months of their start date, and 50% if they leave within 24 months"
+    ],
+    "answer": "Up to £20,000 for an international move (visa costs paid separately); leaving voluntarily after 18 months means repaying 50%."
+  },
+  {
+    "id": "hr-q049",
+    "text": "How long do I have to submit an expense claim after spending the money?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "Claims must be submitted within 60 days of the date the expense was incurred."
+    ],
+    "answer": "60 days from the date the expense was incurred."
+  },
+  {
+    "id": "hr-q050",
+    "text": "How many days a week am I expected to be in the office as a hybrid worker?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-remote-work-policy-v2"
+    ],
+    "grades": {
+      "hr-remote-work-policy-v2": 2,
+      "hr-remote-work-policy-v1": 0
+    },
+    "evidence": [
+      "Hybrid employees are expected to work from their contracted Meridian office for a minimum of 3 days per week.",
+      "Tuesday and Thursday are anchor days at Leeds, Rotterdam and Austin"
+    ],
+    "answer": "At least 3 days a week, with Tuesday and Thursday as anchor days (12 office days in any four weeks)."
+  },
+  {
+    "id": "hr-q051",
+    "text": "How much paid leave does the non-birthing partner get when a baby arrives, and when must it be taken?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-parental-leave-policy-v2"
+    ],
+    "grades": {
+      "hr-parental-leave-policy-v2": 2,
+      "hr-parental-leave-policy-v1": 0
+    },
+    "evidence": [
+      "Partners receive 6 weeks of partner leave at full pay.",
+      "The leave may be taken in blocks of at least one week at any time within 12 months of the birth or placement."
+    ],
+    "answer": "6 weeks at full pay, taken in blocks of at least a week any time within 12 months of the birth or placement."
+  },
+  {
+    "id": "hr-q052",
+    "text": "I've been with the company two years. How long will I get full pay if I'm off sick?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-sickness-absence-policy-v2"
+    ],
+    "grades": {
+      "hr-sickness-absence-policy-v2": 2,
+      "hr-sickness-absence-policy-v1": 0
+    },
+    "evidence": [
+      "1 to 3 years",
+      "10 weeks",
+      "After the full-pay period, company sick pay continues at half pay for a period of the same length."
+    ],
+    "answer": "10 weeks at full pay, followed by 10 weeks at half pay."
+  },
+  {
+    "id": "hr-q053",
+    "text": "Who approves a £40,000 purchase requisition?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "fin-delegation-of-authority-v2"
+    ],
+    "grades": {
+      "fin-delegation-of-authority-v2": 2,
+      "fin-delegation-of-authority-v1": 0
+    },
+    "evidence": [
+      "£10,000.01 to £50,000",
+      "Head of Department (G8+)",
+      "Each level also requires the approval of the levels below it"
+    ],
+    "answer": "The Head of Department (G8 or above), in addition to the budget holder."
+  },
+  {
+    "id": "hr-q054",
+    "text": "What are the spending limits on the corporate card?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "fin-corporate-card-policy-v2"
+    ],
+    "grades": {
+      "fin-corporate-card-policy-v2": 2,
+      "fin-corporate-card-policy-v1": 0
+    },
+    "evidence": [
+      "Single transaction limit increased from £2,000 to £2,500.",
+      "Monthly spend limit increased from £5,000 to £7,500."
+    ],
+    "answer": "£2,500 per transaction and £7,500 per month (local-currency equivalent outside the UK); cash withdrawals not permitted."
+  },
+  {
+    "id": "hr-q055",
+    "text": "Can I take out cash on my company card when I'm travelling somewhere that doesn't take cards?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "fin-corporate-card-policy-v2"
+    ],
+    "grades": {
+      "fin-corporate-card-policy-v2": 2,
+      "fin-corporate-card-policy-v1": 0
+    },
+    "evidence": [
+      "Cash withdrawals are blocked on all cards.",
+      "Where cash is unavoidable while travelling, pay personally and claim through Atlas > Expenses > New Claim with a receipt."
+    ],
+    "answer": "No. Cash withdrawals are blocked on all corporate cards; pay personally and claim through Atlas with a receipt."
+  },
+  {
+    "id": "hr-q056",
+    "text": "After I report a concern through the whistleblowing channels, how quickly should I hear back?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "corp-whistleblowing-policy-v2"
+    ],
+    "grades": {
+      "corp-whistleblowing-policy-v2": 2,
+      "corp-whistleblowing-policy-v1": 0
+    },
+    "evidence": [
+      "The Speak Up Officer will acknowledge your report within 5 working days of receipt.",
+      "You will receive feedback on the action taken or planned within 3 months of the acknowledgement."
+    ],
+    "answer": "Acknowledgement within 5 working days, and feedback within 3 months of the acknowledgement."
+  },
+  {
+    "id": "hr-q057",
+    "text": "How many days a year can I work from another country, and how much notice do I have to give?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-remote-work-policy-v2"
+    ],
+    "grades": {
+      "hr-remote-work-policy-v2": 2,
+      "hr-remote-work-policy-v1": 0
+    },
+    "evidence": [
+      "Employees may work temporarily from a country other than the one in which they are employed for up to 20 working days per year",
+      "at least 3 weeks before the first day abroad"
+    ],
+    "answer": "Up to 20 working days a year, with the F-318 request submitted at least 3 weeks before the first day abroad."
+  },
+  {
+    "id": "hr-q058",
+    "text": "When am I allowed to book first class on the train?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "First class may be booked where the scheduled journey time exceeds 4 hours, or where an advance first class ticket is cheaper than the flexible standard fare."
+    ],
+    "answer": "Only when the scheduled journey exceeds 4 hours, or when an advance first class ticket is cheaper than the flexible standard fare."
+  },
+  {
+    "id": "hr-q059",
+    "text": "How many days of annual leave does a new starter at the Penang site get?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-my"
+    ],
+    "grades": {
+      "hr-leave-entitlement-my": 2
+    },
+    "evidence": [
+      "Under 2 years",
+      "16"
+    ],
+    "answer": "16 days (under 2 years' service), plus public holidays."
+  },
+  {
+    "id": "hr-q060",
+    "text": "For UK staff, by when do carried-over holiday days have to be used?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-uk"
+    ],
+    "grades": {
+      "hr-leave-entitlement-uk": 2
+    },
+    "evidence": [
+      "Carried-over days must be used by 30 June of the new leave year; any carried-over days not used by 30 June are lost."
+    ],
+    "answer": "By 30 June of the new leave year (up to 5 days can be carried over)."
+  },
+  {
+    "id": "hr-q061",
+    "text": "How much unused PTO can Austin employees roll over at year end?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-us"
+    ],
+    "grades": {
+      "hr-leave-entitlement-us": 2
+    },
+    "evidence": [
+      "US employees may carry over a maximum of 5 days (40 hours) of unused PTO into the next leave year.",
+      "Any balance above 40 hours on March 31 is forfeited."
+    ],
+    "answer": "Up to 5 days (40 hours); anything above 40 hours on 31 March is forfeited."
+  },
+  {
+    "id": "hr-q062",
+    "text": "King's Day 2025 is on a Saturday. Do Rotterdam employees get another day off instead?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-nl"
+    ],
+    "grades": {
+      "hr-leave-entitlement-nl": 2
+    },
+    "evidence": [
+      "Saturday 26 April 2025 (falls on a Saturday)",
+      "When a public holiday falls on a weekend, no replacement day is given."
+    ],
+    "answer": "No. King's Day falls on Saturday 26 April 2025 and no replacement day is given in the Netherlands."
+  },
+  {
+    "id": "hr-q063",
+    "text": "Is December 2025 pay brought forward for Penang staff like it is in Leeds?",
+    "type": "confusable",
+    "category": "temporal",
+    "relevant": [
+      "fin-payroll-calendar-my"
+    ],
+    "grades": {
+      "fin-payroll-calendar-my": 2
+    },
+    "evidence": [
+      "Unlike the UK and NL payrolls, Penang December pay is not brought forward and is paid on Friday 26 December 2025."
+    ],
+    "answer": "No. Penang December pay is paid on Friday 26 December 2025."
+  },
+  {
+    "id": "hr-q064",
+    "text": "What's the monthly payroll change cut-off for the Netherlands?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-payroll-calendar-nl"
+    ],
+    "grades": {
+      "fin-payroll-calendar-nl": 2
+    },
+    "evidence": [
+      "must be fully approved by the 12th of the month to be included in that month's payroll"
+    ],
+    "answer": "The 12th of the month (previous working day if the 12th is not a working day)."
+  },
+  {
+    "id": "hr-q065",
+    "text": "What's the EAP counselling helpline number for staff in Malaysia?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-eap-announcement-2025"
+    ],
+    "grades": {
+      "hr-eap-announcement-2025": 2
+    },
+    "evidence": [
+      "1-800-81-6620"
+    ],
+    "answer": "1-800-81-6620 (Harbour Wellbeing)."
+  },
+  {
+    "id": "hr-q066",
+    "text": "What number do US employees call to report a Speak Up concern by phone?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "corp-whistleblowing-policy-v2"
+    ],
+    "grades": {
+      "corp-whistleblowing-policy-v2": 2,
+      "corp-whistleblowing-policy-v1": 0
+    },
+    "evidence": [
+      "1-855-555-0142"
+    ],
+    "answer": "1-855-555-0142 (VeritasLine hotline)."
+  },
+  {
+    "id": "hr-q067",
+    "text": "For Rotterdam employees, when do unused statutory holiday days expire?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-nl"
+    ],
+    "grades": {
+      "hr-leave-entitlement-nl": 2
+    },
+    "evidence": [
+      "Statutory days not taken in the leave year expire on 1 July of the following year (six months after the end of the leave year).",
+      "Extra-statutory days expire 5 years after the end of the leave year in which they were accrued."
+    ],
+    "answer": "On 1 July of the following year; extra-statutory days last 5 years."
+  },
+  {
+    "id": "hr-q068",
+    "text": "How and when are expense claims reimbursed for Austin employees?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-payroll-calendar-us"
+    ],
+    "grades": {
+      "fin-payroll-calendar-us": 2
+    },
+    "evidence": [
+      "Expense claims approved in Atlas are reimbursed by a separate ACH payment every Wednesday.",
+      "Claims approved by 17:00 CT on Monday are included in that week's Wednesday run."
+    ],
+    "answer": "Not through payroll: by a separate ACH payment every Wednesday, covering claims approved by 17:00 CT on the Monday."
+  },
+  {
+    "id": "hr-q069",
+    "text": "What are the current per-diem and hotel limits for a trip to London?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "London",
+      "£65",
+      "£210"
+    ],
+    "answer": "£65 per day for meals and £210 per night for the hotel."
+  },
+  {
+    "id": "hr-q070",
+    "text": "What is the UK salary range for a G7?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-grade-structure-2025"
+    ],
+    "grades": {
+      "hr-grade-structure-2025": 2
+    },
+    "evidence": [
+      "£60,000",
+      "£69,000",
+      "£78,000"
+    ],
+    "answer": "£60,000 to £78,000, midpoint £69,000."
+  },
+  {
+    "id": "hr-q071",
+    "text": "How much life cover do Netherlands employees get?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-benefits-comparison-2025"
+    ],
+    "grades": {
+      "hr-benefits-comparison-2025": 2
+    },
+    "evidence": [
+      "Life cover",
+      "3x salary"
+    ],
+    "answer": "3x salary."
+  },
+  {
+    "id": "hr-q072",
+    "text": "What are the standard weekly working hours for a full-timer in Malaysia?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-employee-handbook"
+    ],
+    "grades": {
+      "hr-employee-handbook": 2
+    },
+    "evidence": [
+      "Malaysia",
+      "44"
+    ],
+    "answer": "44 hours per week."
+  },
+  {
+    "id": "hr-q073",
+    "text": "If I put 4% into the UK pension, how much does Meridian add?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-uk-pension-guide"
+    ],
+    "grades": {
+      "hr-uk-pension-guide": 2
+    },
+    "evidence": [
+      "4%",
+      "6%",
+      "10%"
+    ],
+    "answer": "Meridian pays 6%, making 10% in total."
+  },
+  {
+    "id": "hr-q074",
+    "text": "In the 401(k), what match do I get if I contribute 5%?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-us-401k-guide"
+    ],
+    "grades": {
+      "hr-us-401k-guide": 2
+    },
+    "evidence": [
+      "5%",
+      "4.5%",
+      "9.5%"
+    ],
+    "answer": "4.5% company match, 9.5% in total."
+  },
+  {
+    "id": "hr-q075",
+    "text": "How long do we keep expense claims and receipts?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "corp-records-retention-schedule"
+    ],
+    "grades": {
+      "corp-records-retention-schedule": 2
+    },
+    "evidence": [
+      "Expense claims and receipts",
+      "7 years",
+      "after claim paid"
+    ],
+    "answer": "7 years after the claim is paid."
+  },
+  {
+    "id": "hr-q076",
+    "text": "Who needs to approve an offer for a G8 role?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-recruitment-manual"
+    ],
+    "grades": {
+      "hr-recruitment-manual": 2
+    },
+    "evidence": [
+      "G8–G9",
+      "Chief People Officer and CFO"
+    ],
+    "answer": "The Chief People Officer and the CFO (plus CPO approval for any offer above midpoint)."
+  },
+  {
+    "id": "hr-q077",
+    "text": "How long does a first written warning stay live, and a final written warning?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-disciplinary-grievance-procedure"
+    ],
+    "grades": {
+      "hr-disciplinary-grievance-procedure": 2
+    },
+    "evidence": [
+      "First written warning",
+      "6 months",
+      "Final written warning",
+      "12 months"
+    ],
+    "answer": "First written warning 6 months; final written warning 12 months."
+  },
+  {
+    "id": "hr-q078",
+    "text": "When are the probation review check-ins for a new hire in Austin?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "hr-probation-policy"
+    ],
+    "grades": {
+      "hr-probation-policy": 2
+    },
+    "evidence": [
+      "Day 30, day 60 and day 85"
+    ],
+    "answer": "Day 30, day 60 and day 85 of the 90-day introductory period."
+  },
+  {
+    "id": "hr-q079",
+    "text": "How many paid public holidays do we get each year?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-my"
+    ],
+    "grades": {
+      "hr-leave-entitlement-my": 2
+    },
+    "evidence": [
+      "Meridian Penang observes 14 paid public holidays each year, drawn from the federal and Penang state gazetted holidays."
+    ],
+    "answer": "14 paid public holidays.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "my"
+        }
+      ]
+    }
+  },
+  {
+    "id": "hr-q080",
+    "text": "What date in the month do we get paid?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-payroll-calendar-nl"
+    ],
+    "grades": {
+      "fin-payroll-calendar-nl": 2
+    },
+    "evidence": [
+      "The standard pay date is the 24th of each month."
+    ],
+    "answer": "The 24th of each month (previous working day if it falls on a weekend or Dutch public holiday).",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "nl"
+        }
+      ]
+    }
+  },
+  {
+    "id": "hr-q081",
+    "text": "Can I buy extra days of holiday, and how many?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-uk",
+      "hr-flexible-benefits-faq-2025"
+    ],
+    "grades": {
+      "hr-leave-entitlement-uk": 2,
+      "hr-flexible-benefits-faq-2025": 2
+    },
+    "evidence": [
+      "UK employees may buy up to 5 additional days of annual leave through the flexible benefits scheme.",
+      "You can buy up to 5 days of additional annual leave."
+    ],
+    "answer": "Yes, up to 5 extra days through the flexible benefits window.",
+    "metadataFilter": {
+      "required_labels": [
+        "uk"
+      ],
+      "excluded_labels": [],
+      "required_tags": []
+    }
+  },
+  {
+    "id": "hr-q082",
+    "text": "How many sick days do I get a year, and is it separate from my vacation?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-us"
+    ],
+    "grades": {
+      "hr-leave-entitlement-us": 2
+    },
+    "evidence": [
+      "US employees receive 7 days (56 hours) of paid sick time per leave year, separate from PTO."
+    ],
+    "answer": "7 days (56 hours) of paid sick time per year, separate from PTO.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "us"
+        }
+      ]
+    }
+  },
+  {
+    "id": "hr-q083",
+    "text": "Under this version of the policy, what was the nightly hotel cap in New York?",
+    "type": "filter",
+    "category": "structured_data",
+    "relevant": [
+      "hr-travel-expense-policy-v1"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v1": 2
+    },
+    "evidence": [
+      "New York",
+      "$320"
+    ],
+    "answer": "$320 per night (version 1, 2024).",
+    "attachedDocuments": [
+      "hr-travel-expense-policy-v1"
+    ]
+  },
+  {
+    "id": "hr-q084",
+    "text": "According to this matrix, who had to sign off a £60,000 requisition?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-delegation-of-authority-v1"
+    ],
+    "grades": {
+      "fin-delegation-of-authority-v1": 2
+    },
+    "evidence": [
+      "for example, a £60,000 requisition is approved by the budget holder, the Head of Department and the Finance Director."
+    ],
+    "answer": "The budget holder, the Head of Department and the Finance Director (v1, 2024).",
+    "attachedDocuments": [
+      "fin-delegation-of-authority-v1"
+    ]
+  },
+  {
+    "id": "hr-q085",
+    "text": "And the hotel cap there?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-travel-expense-policy-v2"
+    ],
+    "grades": {
+      "hr-travel-expense-policy-v2": 2,
+      "hr-travel-expense-policy-v1": 0
+    },
+    "evidence": [
+      "Frankfurt",
+      "€185"
+    ],
+    "answer": "€185 per night.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What's the meal per diem if I'm travelling to Frankfurt?"
+      },
+      {
+        "role": "assistant",
+        "content": "Under the current Travel and Expense Policy the Frankfurt per diem for meals is €65 a day."
+      }
+    ]
+  },
+  {
+    "id": "hr-q086",
+    "text": "What about for a senior G7 hire in Penang?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-employee-referral-scheme"
+    ],
+    "grades": {
+      "hr-employee-referral-scheme": 2
+    },
+    "evidence": [
+      "RM 6,000"
+    ],
+    "answer": "RM 6,000.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "How much is the referral bonus if someone I refer is hired into a G4 role in Leeds?"
+      },
+      {
+        "role": "assistant",
+        "content": "£1,500, paid after the new hire passes probation."
+      }
+    ]
+  },
+  {
+    "id": "hr-q087",
+    "text": "And for Rotterdam?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-leave-entitlement-nl"
+    ],
+    "grades": {
+      "hr-leave-entitlement-nl": 2
+    },
+    "evidence": [
+      "The NL leave year runs from 1 January to 31 December (calendar year)."
+    ],
+    "answer": "The calendar year, 1 January to 31 December.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "When does the leave year run for UK staff?"
+      },
+      {
+        "role": "assistant",
+        "content": "The UK leave year runs from 1 April to 31 March, in line with the financial year."
+      }
+    ]
+  },
+  {
+    "id": "hr-q088",
+    "text": "What happens if I miss that?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "fin-corporate-card-policy-v2"
+    ],
+    "grades": {
+      "fin-corporate-card-policy-v2": 2,
+      "fin-corporate-card-policy-v1": 0
+    },
+    "evidence": [
+      "Unreconciled statements after the deadline will lead to suspension of the card."
+    ],
+    "answer": "The card is suspended.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "How long do I have to reconcile my corporate card statement?"
+      },
+      {
+        "role": "assistant",
+        "content": "Within 5 working days of the statement date, in Atlas > Cards > Reconcile Statement."
+      }
+    ]
+  },
+  {
+    "id": "hr-q089",
+    "text": "How many sessions can I have?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "hr-eap-announcement-2025"
+    ],
+    "grades": {
+      "hr-eap-announcement-2025": 2
+    },
+    "evidence": [
+      "Up to 8 counselling sessions per issue per year (previously 6), by phone, video or face to face."
+    ],
+    "answer": "Up to 8 counselling sessions per issue per year.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Who runs the employee assistance programme now?"
+      },
+      {
+        "role": "assistant",
+        "content": "Since 1 June 2025 the EAP provider is Harbour Wellbeing; the UK helpline is 0800 802 3314."
+      }
+    ]
+  },
+  {
+    "id": "hr-q090",
+    "text": "Does Meridian have an employee share purchase plan or give stock options?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q091",
+    "text": "Is there a sabbatical scheme, and how long a sabbatical can I take after ten years?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q092",
+    "text": "Do we get childcare vouchers, or is there a workplace nursery at the Leeds site?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q093",
+    "text": "Am I allowed to bring my dog into the Rotterdam office?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q094",
+    "text": "If I'm sent on a two-year assignment to Austin, does Meridian offer tax equalisation?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q095",
+    "text": "Will Meridian keep paying my salary if I'm called up for jury service?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q096",
+    "text": "How many paid volunteering days do employees get each year?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q097",
+    "text": "Is there an on-site gym at the Leeds headquarters?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q098",
+    "text": "Can I get an advance on my salary before payday?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q099",
+    "text": "Is there a formal secondment programme for moving between the Leeds and Austin sites for six months?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q100",
+    "text": "Can I claim cryptocurrency purchases on expenses or be reimbursed in bitcoin?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "hr-q101",
+    "text": "How many days of paid bereavement leave do I get if a parent dies?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  }
+]

@@ -282,9 +282,11 @@ namespace AssistantHub.McpServer
                 ? "127.0.0.1"
                 : _Settings.Tcp.Address;
 
-            _McpHttpServer = new McpHttpServer(_Settings.Http.Hostname, _Settings.Http.Port, "/rpc", "/events", includeDefaultMethods: true);
-            _McpTcpServer = new McpTcpServer(IPAddress.Parse(tcpAddressForBinding), _Settings.Tcp.Port, includeDefaultMethods: true);
-            _McpWebSocketServer = new McpWebsocketsServer(_Settings.WebSocket.Hostname, _Settings.WebSocket.Port, "/mcp", includeDefaultMethods: true);
+            // Voltaic 2.x always registers the MCP protocol methods (initialize, ping, tools/list, tools/call, ...).
+            // Its optional echo/getTime diagnostic tools are left off so tools/list shows only AssistantHub tools.
+            _McpHttpServer = new McpHttpServer(_Settings.Http.Hostname, _Settings.Http.Port, "/rpc", "/events");
+            _McpTcpServer = new McpTcpServer(IPAddress.Parse(tcpAddressForBinding), _Settings.Tcp.Port);
+            _McpWebSocketServer = new McpWebsocketsServer(_Settings.WebSocket.Hostname, _Settings.WebSocket.Port, "/mcp");
 
             _McpHttpServer.ServerName = "AssistantHub.McpServer";
             _McpHttpServer.ServerVersion = AssistantHub.Core.Constants.ProductVersion;

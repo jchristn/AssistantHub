@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssistantHub.Sdk", "..\sdk\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Nunit", "Test.Nunit\Test.Nunit.csproj", "{F8626737-0F3D-4DD1-BF4E-30D8B2BC3B31}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Benchmark", "Test.Benchmark\Test.Benchmark.csproj", "{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{F8626737-0F3D-4DD1-BF4E-30D8B2BC3B31}.Release|x64.Build.0 = Release|Any CPU
 		{F8626737-0F3D-4DD1-BF4E-30D8B2BC3B31}.Release|x86.ActiveCfg = Release|Any CPU
 		{F8626737-0F3D-4DD1-BF4E-30D8B2BC3B31}.Release|x86.Build.0 = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|x64.Build.0 = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Debug|x86.Build.0 = Debug|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|x64.ActiveCfg = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|x64.Build.0 = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|x86.ActiveCfg = Release|Any CPU
+		{90218A4A-C0F1-4ACB-8EA4-B5B00E0417FE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

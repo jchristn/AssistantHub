@@ -558,7 +558,7 @@ namespace Test.Automated
                 SortedSet<string> postmanRoutes = ExtractPostmanRoutes(root);
                 SortedSet<string> restRoutes = ExtractRestApiRoutes(root);
 
-                AssertHelper.AreEqual(192, backendRoutes.Count, "backend route count");
+                AssertHelper.AreEqual(196, backendRoutes.Count, "backend route count");
                 AssertRouteSetsEqual(backendRoutes, openApiRoutes, "OpenAPI");
                 AssertRouteSetsEqual(backendRoutes, postmanRoutes, "Postman");
                 AssertRouteSetsEqual(backendRoutes, restRoutes, "REST_API.md");

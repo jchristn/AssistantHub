@@ -1,0 +1,5 @@
+# Machine-specific run output and downloaded public datasets are never committed.
+.run/
+data/
+results/*
+!results/.gitkeep

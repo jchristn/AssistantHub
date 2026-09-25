@@ -1,0 +1,452 @@
+[
+  {
+    "key": "assistanthub-docs/q093",
+    "type": "filter",
+    "question": "In which release did the LLM-based retrieval gate first appear?",
+    "gold": "v0.2.0, the initial release.",
+    "answer": "The LLM-based retrieval gate first appeared in release version [2].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q005",
+    "type": "paraphrase",
+    "question": "Why does the relevance-scoring step put every candidate passage into one prompt instead of making a call per passage?",
+    "gold": "To keep latency at a single LLM call instead of one call per chunk.",
+    "answer": "[7] explains this very clearly: “Rather than making one LLM call per chunk (which would be N calls for N chunks), all candidate chunks are presented in a single prompt with indexed labels. The LLM returns a JSON array of double relevance scores.” This approach is chosen to maintain latency and avoid an excessive number of LLM calls. By batching the scoring, the system uses a single inference endpoint, keeping latency proportional to one LLM call rather than N calls [2].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q029",
+    "type": "lexical",
+    "question": "What does RecallDb.SupportsMultiDocumentFilter control?",
+    "gold": "Defaults to true; set false for RecallDB versions without native DocumentIds filters, making AssistantHub loop over single-document searches with a warning.",
+    "answer": "RecallDB.SupportsMultiDocumentFilter controls how AssistantHub handles RecallDB collection searches when multiple document IDs are provided in a search query [6]. Specifically, it determines whether AssistantHub should attempt to use a native `DocumentIds` filter (which is more efficient) or loop over single-document searches if the `DocumentIds` filter isn't supported [6]. When set to `false`, AssistantHub logs a warning and loops over single-document RecallDB searches instead of sending a native `DocumentIds` filter [6].",
+    "judge": false,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q110",
+    "type": "negative",
+    "question": "How much GPU memory do I need to run gemma3:4b in the bundled Ollama container?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "According to source [1], you need approximately 33 GB of GPU memory to run the `gemma3:4b` model within the bundled Ollama container. This is indicated by the `SizeBytes` field in the JSON response for the `gemma3:4b` model, which is set to 3300000000 bytes (33 GB).",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q101",
+    "type": "followup",
+    "question": "How often does it push metrics by default?",
+    "gold": "Every 15000 ms (15 seconds).",
+    "answer": "By default, it pushes metrics every 5 minutes [7].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q006",
+    "type": "paraphrase",
+    "question": "When I remove a file from the knowledge base, what else gets cleaned up along with it?",
+    "gold": "Its S3 object, all of its RecallDB embeddings, and its Verbex text-search record.",
+    "answer": "According to sources [1] and [2], when a document is removed from the knowledge base, a cascading deletion pipeline performs the following cleanup steps:\n\n1.  **Delete RecallDB embeddings:** The vector record associated with the document is deleted from the RecallDB collection [2].\n2.  **Delete S3 object:** The file itself is deleted from Amazon S3 storage [2].\n3.  **Delete processing log:** A log file created during the document's processing is removed [2].\n4.  **Delete database record:** The document record within the database is also deleted [2]. \n\nSource [4] describes the overall process and error handling involved in this cleanup, including waiting for in-flight tasks and persisting the final state to the database.",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q053",
+    "type": "multi",
+    "question": "What are the default logins for the AssistantHub dashboard and for Grafana?",
+    "gold": "AssistantHub: admin@assistanthub / password; Grafana: admin / admin.",
+    "answer": "Here’s the information on the default login credentials:\n\n*   **AssistantHub Dashboard:** The default username is `admin` and the password is `admin`. [2]\n*   **Grafana:** The default username is `admin` and the password is `admin`. [2]",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q057",
+    "type": "multi",
+    "question": "The old design notes say query rewrite and re-ranking reuse the main inference endpoint. Is that still how it works, and when did it change?",
+    "gold": "Not necessarily: since v0.11.0 they can use dedicated endpoints (QueryRewriteInferenceEndpointId, RerankInferenceEndpointId), falling back to InferenceEndpointId.",
+    "answer": "According to sources",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q003",
+    "type": "paraphrase",
+    "question": "What happens to earlier messages when a chat gets so long it would overflow the model?",
+    "gold": "Older messages are automatically summarized (compacted) before the final inference call.",
+    "answer": "When a chat conversation approaches the context window limit, the AssistantHub system automatically performs **Conversation Compaction**. This involves summarizing older messages into a shorter form [3]. The generated summary is then returned as a `system` message and should be retained for subsequent chat requests [3].  This allows the conversation to continue without exceeding the model's input limits [1].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q098",
+    "type": "filter",
+    "question": "Which version did the citations implementation plan target?",
+    "gold": "v0.4.0.",
+    "answer": "[1] indicates that the citations implementation plan targeted version v0.4.0 [1].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q107",
+    "type": "negative",
+    "question": "Is there a limit on how many assistants a single tenant can create?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "According to source [2], a Tenant Admin (“is_tenant_admin = true”) can “manage all resources within their tenant,” which includes assistants. However, the provided documentation doesn’t explicitly state a hard limit on the number of assistants a tenant can create. It focuses on the administrative capabilities and scoping restrictions rather than a numerical limit [2].  Source [1] describes access levels but does not specify any limits on assistant creation.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q055",
+    "type": "multi",
+    "question": "Which chat request field restricts retrieval to specific documents, and which MCP tool lists the documents a user can pick?",
+    "gold": "attached_document_ids; the MCP tool assistant/documents/list.",
+    "answer": "The chat request field that restricts retrieval to specific documents is `attached_document_ids` [7].\n\nThe MCP tool that lists the documents a user can pick is `GET /v1.0/assistants/{assistantId}/documents` [2].",
+    "judge": true,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q002",
+    "type": "paraphrase",
+    "question": "Is there a way to have the bot skip searching documents when a follow-up can be answered from what was already said in the conversation?",
+    "gold": "Yes. Enable the LLM-based retrieval gate (EnableRetrievalGate), which decides per message whether to RETRIEVE or SKIP.",
+    "answer": "Yes, there is! According to source [2] and [3], the AssistantHub system includes an “EnableRetrievalGate” setting. When this is enabled, an LLM call classifies whether each user message requires new document retrieval (“RETRIEVE”) or can be answered from existing conversation context (“SKIP”). This means the bot can skip searching documents if it determines that a follow-up question can be answered based on the current chat history [2].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q097",
+    "type": "filter",
+    "question": "Which migration file added the neighbor-retrieval settings column?",
+    "gold": "migrations/008_add_retrieval_include_neighbors.sql.",
+    "answer": "The migration file that added the `RetrievalIncludeNeighbors` setting is `migrations/008_add_retrieval_include_neighbors.sql` [1].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q069",
+    "type": "detail",
+    "question": "If I PUT the configuration back with the Tavily API key still showing as REDACTED, will it wipe my real key?",
+    "gold": "No, the existing provider key is preserved.",
+    "answer": "According to source [4], “If a previously returned `ExternalSearch.Providers[].ApiKey` value is submitted as `[REDACTED]`, the existing configured provider key is preserved.” Therefore, putting the configuration back with the Tavily API key showing as REDACTED will *not* wipe your real key [4].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q073",
+    "type": "detail",
+    "question": "What happens on a tool-enabled chat if the routing endpoint doesn't advertise tool-calling support?",
+    "gold": "The server returns a configuration error before calling the model.",
+    "answer": "According to sources [2] and [4], if the routing endpoint doesn’t advertise tool-calling support (specifically, if it doesn’t explicitly set `SupportsToolCalling: true`), AssistantHub will revert to using the response inference endpoint for final answers. This means that even though a tool-enabled chat was initiated, the tools won't be executed server-side [2]. Instead, the model receives the user-facing final answer directly from the configured inference endpoint [4].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q082",
+    "type": "table",
+    "question": "What's the Prometheus name of the counter for ingested documents?",
+    "gold": "ingestion_documents_total (labelled by outcome).",
+    "answer": "The Prometheus name for the counter for ingested documents is `ingestion_documents_total` [10].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q081",
+    "type": "table",
+    "question": "What port does the Verbex dashboard container use?",
+    "gold": "8502.",
+    "answer": "The Verbex dashboard container uses port 8801 [4].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q112",
+    "type": "negative",
+    "question": "Can I export chat history to CSV or Excel from the dashboard?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "According to sources [1] and [3], the dashboard uses `ChatHistoryId` to load linked chat rows and display performance timing breakdowns. However, there isn't a direct feature to export chat history to CSV or Excel from the dashboard itself [1][3]. \n\nSource [7] mentions that the dashboard now includes expanded stage timing tables in assistant history details and request-history details, suggesting enhanced data visualization but not direct export functionality. \n\nTo achieve this, you would likely need to utilize the REST API endpoints provided in source [1] to retrieve the chat history data and then process it yourself using a tool or script to generate a CSV or Excel file.",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q086",
+    "type": "table",
+    "question": "What are the default MaxToolIterations and MaxToolCallsPerTurn in an assistant tool policy?",
+    "gold": "6 iterations and 12 tool calls per turn.",
+    "answer": "The default `MaxToolIterations` is 6 and the default `MaxToolCallsPerTurn` is 12 [1][4].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q031",
+    "type": "lexical",
+    "question": "What is ASSISTANTHUB_OTLP_ENDPOINT used for?",
+    "gold": "It overrides Telemetry.OtlpEndpoint, the OTLP collector endpoint telemetry is exported to.",
+    "answer": "According to source [4], `ASSISTANTHUB_OTLP_ENDPOINT` is used to point AssistantHub’s telemetry towards your own OpenTelemetry Collector or any OTLP-compatible endpoint.  It allows you to ship metrics, traces, and logs to your preferred observability platform instead of using the bundled stack. [4]",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q108",
+    "type": "negative",
+    "question": "Is there an official Helm chart for deploying AssistantHub on Kubernetes?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "Based on the provided sources, there isn't explicit mention of an *official* Helm chart for deploying AssistantHub. However, the README indicates that the recommended deployment method is using Docker Compose, which can be easily converted to a Helm chart [1]. The documentation also suggests using a ready-to-run observability stack with OpenTelemetry [8], which aligns well with Helm's capabilities for managing complex Kubernetes deployments.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q054",
+    "type": "multi",
+    "question": "What's the Verbex admin API key in the default Docker setup, and which setting caps how much text gets sent to Verbex per document?",
+    "gold": "verbexadmin; Verbex.MaxContentCharacters (0 = unlimited).",
+    "answer": "The Verbex admin API key in the default Docker setup is `verbexadmin`. [6]\n\nThe setting that caps how much text gets sent to Verbex per document is `Verbex.MaxContentCharacters`, and its default value is `0` which means unlimited. [9]",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q066",
+    "type": "detail",
+    "question": "Is there a cap on how many time buckets an assistant analytics query returns?",
+    "gold": "Yes, 240 buckets.",
+    "answer": "Yes, according to source [1], there is a cap on the number of time buckets returned by assistant analytics queries. The server caps responses to 240 buckets due to the `bucketSeconds` parameter [1].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q007",
+    "type": "paraphrase",
+    "question": "Does leaving the metrics instrumentation in the code slow anything down when nothing is collecting it?",
+    "gold": "No. Emitting is a near-free no-op until a telemetry host subscribes.",
+    "answer": "According to source [5], “Emitting is a near-free no-op until a host subscribes, so there is no cost when telemetry is disabled.” This means that leaving the metrics instrumentation in the code does not slow anything down when nothing is collecting it.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q106",
+    "type": "negative",
+    "question": "Can the AssistantHub dashboard sign users in through SAML or OpenID Connect single sign-on?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "No, the AssistantHub dashboard does not currently support signing users in through SAML or OpenID Connect single sign-on [4]. The authentication methods supported are email/password and bearer tokens [1].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q085",
+    "type": "table",
+    "question": "What's the default and the allowed range for maxResults on list endpoints?",
+    "gold": "Default 100, range 1-1000.",
+    "answer": "The default value for `maxResults` on list endpoints is 1000, and the allowed range is between 1 and 250 [6].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q099",
+    "type": "followup",
+    "question": "And the web dashboard?",
+    "gold": "Port 8801.",
+    "answer": "The browser-based management dashboard (AssistantHub.Server — Ingestion Rule Routes) listens on port 8801.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q071",
+    "type": "detail",
+    "question": "Does the tool-policy dry-run diagnostics route actually call the model or execute any tools?",
+    "gold": "No. It validates the draft policy and endpoint metadata without saving, calling the model, or executing tools.",
+    "answer": "No, the tool-policy dry-run diagnostics route does not actually call the model or execute any tools [1][5]. It is designed to validate the supplied policy without making any real calls to the backend services. It focuses on resolving effective tool descriptors and checking the metadata of the tool-routing completion endpoint [1][5].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q052",
+    "type": "multi",
+    "question": "Which local URLs do I open in a browser for the AssistantHub dashboard and for Grafana?",
+    "gold": "http://localhost:8801 for AssistantHub and http://localhost:3000 for Grafana.",
+    "answer": "Here’s how to access those local URLs:\n\n*   **AssistantHub Dashboard:** http://localhost:8801 [1]\n*   **Grafana:** http://localhost:3000 [3]",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q095",
+    "type": "filter",
+    "question": "What database does the Docker deployment use by default for AssistantHub?",
+    "gold": "PostgreSQL (a shared PostgreSQL/pgvector container).",
+    "answer": "[2] The Docker deployment uses PostgreSQL by default for AssistantHub.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q051",
+    "type": "multi",
+    "question": "I'm monitoring the MCP server: what's its default HTTP JSON-RPC endpoint, and which Prometheus metric counts its tool calls?",
+    "gold": "http://127.0.0.1:8820/rpc; mcp_server_tool_calls_total.",
+    "answer": "The MCP server’s default HTTP JSON-RPC endpoint is `http://127.0.0.1:8820/rpc` [7]. The Prometheus metric that counts its tool calls is `mcp_server_tool_calls_total[$__rate_interval]` [7].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q092",
+    "type": "filter",
+    "question": "Which completion endpoint handles query rewrite calls?",
+    "gold": "QueryRewriteInferenceEndpointId when set, otherwise InferenceEndpointId.",
+    "answer": "Source [4] states that retrieval gate, query rewrite, and re-ranking now honor their dedicated endpoint settings while falling back to `InferenceEndpointId` when unset. It also specifies that the `QueryRewriteInferenceEndpointId` is an optional managed completion endpoint ID for query rewrite calls.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q001",
+    "type": "paraphrase",
+    "question": "How long does AssistantHub keep conversation logs before deleting them automatically, and how often does that purge run?",
+    "gold": "Chat history is kept 7 days by default (0 keeps it forever); the cleanup job runs every hour.",
+    "answer": "According to source [6], the cleanup pipeline performs cascading deletion: “For each crawl plan: delete operations older than `RetentionDays`”. It also states that this runs “every 1 hour.”  Source [2] specifies that the retention period is defined by the `RetentionDays` parameter.",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q084",
+    "type": "table",
+    "question": "What HTTP status and error type does the API return when a resource already exists?",
+    "gold": "409 with error type Conflict.",
+    "answer": "[4] indicates that a `409 Conflict` is returned when a resource already exists.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q068",
+    "type": "detail",
+    "question": "How big can the files users attach from their own computer to a chat be?",
+    "gold": "10 MB per file and 25 MB total per request.",
+    "answer": "According to sources [1] and [4], local attachments have file size limitations:\n\n*   Per-file uploads are limited to 10 MB.\n*   The total local upload payload is limited to 25 MB.\n\nThese limits apply when users send `local_attachments` to a chat request.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q105",
+    "type": "followup",
+    "question": "What about crawl operation records?",
+    "gold": "Per crawl plan: 7 days by default, configurable from 0 to 14.",
+    "answer": "Crawl operation records are retained for 14 days, configurable via the `RetentionDays` setting in the CrawlPlan’s RepositorySettings [8].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q094",
+    "type": "filter",
+    "question": "Under the multi-tenant plan, what email and password does the auto-created admin for a new tenant get?",
+    "gold": "admin@{tenantName} with password 'password'.",
+    "answer": "According to sources [3] and [4], the auto-created admin user for a new tenant gets the following credentials:\n\n*   **`tenant_id`**: New tenant ID\n*   **`email`**: `admin@assistanthub`\n*   **`Password`**: `password`",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q070",
+    "type": "detail",
+    "question": "When I create a Verbex index record through AssistantHub without a Name, what does it get filled with?",
+    "gold": "The first available of ObjectName, CustomMetadata.ObjectName, object key/source URL basename, Id/Identifier, or 'record'.",
+    "answer": "According to source [6], when you create a Verbex index record through AssistantHub without specifying a `Name`, AssistantHub populates it from several sources:\n\n*   `ObjectName`\n*   `CustomMetadata.ObjectName`\n*   The object key/source URL basename\n*   `Id`/`Identifier`\n*   `record` \n\nAnd when `CustomMetadata.ObjectName` is absent, it sets it.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q104",
+    "type": "followup",
+    "question": "And if I set it to None?",
+    "gold": "Chunking is skipped and the whole document becomes a single chunk.",
+    "answer": "If you set it to `None`, AssistantHub will use a fixed chunk size of 4096 tokens [1].",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q028",
+    "type": "lexical",
+    "question": "What does POST /v1.0/crawlplans/connectivity (without a plan id) do?",
+    "gold": "Tests connectivity for an unsaved (draft) crawl plan payload without persisting it.",
+    "answer": "According to source [7], `POST /v1.0/crawlplans/connectivity` tests crawl plan connectivity before running a full crawl. It performs a single-page fetch against the configured URL and reports success or failure.",
+    "judge": true,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q103",
+    "type": "followup",
+    "question": "Can I send an attached-document chat through it too?",
+    "gold": "No. Chat is REST-only; send attached_document_ids to POST /v1.0/assistants/{assistantId}/chat.",
+    "answer": "[2] states: “Assistant public document listing is exposed as `assistant/documents/list` and mirrors `GET /v1.0/assistants/{assistantId}/documents`. Sending attached-document chat requests remains REST-only in this release; send `attached_document_ids` to `POST /v1.0/assistants/{assistantId}/chat`.” \n\nTherefore, yes, you can send an attached-document chat through it by sending the `attached_document_ids` with the POST request to `/v1.0/assistants/{assistantId}/chat`. [2]",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q111",
+    "type": "negative",
+    "question": "What per-IP rate limit applies to the public chat endpoint?",
+    "gold": "NOT_IN_CORPUS",
+    "answer": "According to source [5], the public chat endpoint has a `MaxQueueDepth` of 0 by default, which means that “excess requests are rejected with `429 Too Many Requests`; a positive value lets that many requests wait for a slot, and a queued request that waits past `MaximumTimeoutMs` returns `504 Gateway Timeout`”.  Therefore, there isn’t a specific per-IP rate limit stated explicitly in the provided sources.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q072",
+    "type": "detail",
+    "question": "When a crawl plan connectivity test can't reach the share, what HTTP status does the API return?",
+    "gold": "200 OK with Success=false (400 is only for validation errors).",
+    "answer": "[3] returns `200 OK` with `Success=false`.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q083",
+    "type": "table",
+    "question": "Which protocols can Telemetry.OtlpProtocol be set to, and which is the default?",
+    "gold": "Grpc (port 4317, default) or HttpProtobuf (port 4318).",
+    "answer": "According to source [5], the `Telemetry.OtlpProtocol` setting can be set to either “Grpc” or “HttpProtobuf”. The default value is “Grpc”.",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q033",
+    "type": "lexical",
+    "question": "Which ErrorCodes can POST /v1.0/assistants/{assistantId}/settings/tools/validate return?",
+    "gold": "invalid_tool_policy_json, unknown_allowed_tool, no_tool_enabled and no_available_tools.",
+    "answer": "[2] current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `tool_routing_endpoint_missing`, `tool_routing_endpoint_unresolved`, `tool_routing_endpoint_inactive`, `tool_routing_endpoint_not_tool_capable`, and `unsupported_tool_call_format`, plus any validation codes returned by the validation route.",
+    "judge": false,
+    "human": false
+  },
+  {
+    "key": "assistanthub-docs/q004",
+    "type": "paraphrase",
+    "question": "If the LLM step that re-scores search hits crashes or returns garbage, does the user's chat request fail?",
+    "gold": "No. It falls back to the original retrieval ordering; re-ranking never blocks the chat.",
+    "answer": "According to source [7], “7.2.3 Fallback on failure: if the LLM call fails, returns non-JSON, or returns fewer scores than chunks, log a warning and proceed with the original retrieval ordering (no chunks are dropped)”, the user’s chat request does *not* fail if the re-ranking LLM step crashes or returns garbage. Instead, the system logs a warning and continues using the initial retrieval ordering of the search hits [7].",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q102",
+    "type": "followup",
+    "question": "And the S3 access and secret keys?",
+    "gold": "Both are default.",
+    "answer": "The S3 access and secret keys are both default. [6]",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q100",
+    "type": "followup",
+    "question": "What about the score threshold setting?",
+    "gold": "RerankerScoreThreshold: minimum 0-10 relevance score to keep a chunk, default 3.0.",
+    "answer": "The `RerankerScoreThreshold` controls the minimum re-rank score for a chunk to be included, defaulting to 3.0. [6]",
+    "judge": true,
+    "human": true
+  },
+  {
+    "key": "assistanthub-docs/q030",
+    "type": "lexical",
+    "question": "What does the migrations/010_upgrade_to_v0.12.0 provider script add?",
+    "gold": "The v0.12.0 telemetry columns and the chat_history_performance_events table.",
+    "answer": "According to source [10], the `migrations/010_upgrade_to_v0.12.0.*.sql` provider scripts add new telemetry columns and the `chat_history_performance_events` table to existing databases.  It specifies that these additions mirror the schema changes found in the corresponding SDK models [10].",
+    "judge": true,
+    "human": true
+  }
+]

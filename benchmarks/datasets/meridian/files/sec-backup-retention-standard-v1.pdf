@@ -1,0 +1,72 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+4 0 obj
+<< /Length 3204 >>
+stream
+BT /F2 16 Tf 54 723 Td (Backup and Retention Standard \(v1\)) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sec-backup-retention-standard-v1. Owner: IT Infrastructure and IT Security.) Tj ET
+BT /F1 10 Tf 54 688 Td (Version 1. Effective date: 15 February 2023. Approved by: Mei-Ling Tan, Head of IT Security.) Tj ET
+BT /F2 13 Tf 54 663 Td (Purpose) Tj ET
+BT /F1 10 Tf 54 641 Td (This standard defines how often Meridian Instruments systems are backed up, how long backups) Tj ET
+BT /F1 10 Tf 54 628 Td (are retained, where copies are stored and how restores are tested. It covers on-premises) Tj ET
+BT /F1 10 Tf 54 615 Td (systems in the Leeds data centre, site servers in Rotterdam, Austin and Penang, and the) Tj ET
+BT /F1 10 Tf 54 602 Td (TesseraCloud production environment.) Tj ET
+BT /F2 13 Tf 54 577 Td (Backup platform) Tj ET
+BT /F1 10 Tf 54 555 Td (Backups are taken with the Strata Backup platform. The primary backup repository is in the) Tj ET
+BT /F1 10 Tf 54 542 Td (Leeds data centre \(repository name STRATA-LDS-01\). An offsite copy is written to the Rotterdam) Tj ET
+BT /F1 10 Tf 54 529 Td (site vault.) Tj ET
+BT /F2 13 Tf 54 504 Td (Backup frequency and retention) Tj ET
+BT /F2 9 Tf 54 483 Td (Backup type | Frequency | Retention) Tj ET
+BT /F1 9 Tf 54 471 Td (Daily incremental | Every night, 23:00 local time | 35 days) Tj ET
+BT /F1 9 Tf 54 459 Td (Weekly full | Sunday 02:00 | 8 weeks) Tj ET
+BT /F1 9 Tf 54 447 Td (Monthly full | First Sunday of the month | 12 months) Tj ET
+BT /F1 9 Tf 54 435 Td (Yearly full \(Atlas finance data\) | 1 April \(start of fiscal year\) | 7 years) Tj ET
+BT /F1 9 Tf 54 423 Td (TesseraCloud telemetry database snapshot | Every 6 hours | 14 days) Tj ET
+BT /F2 13 Tf 54 398 Td (Offsite copies) Tj ET
+BT /F1 10 Tf 54 376 Td (A copy of the most recent weekly full backup is replicated to the Rotterdam vault every week) Tj ET
+BT /F1 10 Tf 54 363 Td (\(Monday 06:00\). Offsite copies are retained for the same period as the source backup.) Tj ET
+BT /F2 13 Tf 54 338 Td (System-specific rules) Tj ET
+BT /F1 10 Tf 54 316 Td (- Atlas production database \(atlas-db-prd-01\): archive logs backed up every 30 minutes,) Tj ET
+BT /F1 10 Tf 54 303 Td (   retained 35 days.) Tj ET
+BT /F1 10 Tf 54 290 Td (- Keel HR portal: data is held by the HR platform vendor; Meridian keeps a monthly export) Tj ET
+BT /F1 10 Tf 54 277 Td (   for 12 months.) Tj ET
+BT /F1 10 Tf 54 264 Td (- Forge \(CI/CD\): repositories backed up nightly; build artefacts are not backed up.) Tj ET
+BT /F1 10 Tf 54 251 Td (- File shares: nightly incremental, 35 days.) Tj ET
+BT /F2 13 Tf 54 235 Td (Restore testing) Tj ET
+BT /F1 10 Tf 54 213 Td (A full restore test of Atlas and one file share is performed once per year and recorded in) Tj ET
+BT /F1 10 Tf 54 200 Td (Beacon \(category SEC-BACKUP-TEST\). Failed restore tests are treated as SEV3 incidents.) Tj ET
+BT /F2 13 Tf 54 175 Td (Encryption) Tj ET
+BT /F1 10 Tf 54 153 Td (All backups are encrypted at rest using AES-256. Encryption keys are held by IT Infrastructure) Tj ET
+BT /F1 10 Tf 54 140 Td (and escrowed with IT Security.) Tj ET
+BT /F2 13 Tf 54 115 Td (Review) Tj ET
+BT /F1 10 Tf 54 93 Td (This standard is reviewed every two years.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000265 00000 n 
+0000003521 00000 n 
+0000003657 00000 n 
+trailer
+<< /Size 7 /Root 6 0 R >>
+startxref
+3706
+%%EOF

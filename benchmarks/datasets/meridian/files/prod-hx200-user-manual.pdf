@@ -1,0 +1,175 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R] /Count 3 >>
+endobj
+4 0 obj
+<< /Length 3974 >>
+stream
+BT /F2 16 Tf 54 723 Td (Halcyon HX-200 User Manual) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-hx200-user-manual | Revision: D | Effective: 2025-01-20 | Owner: Halcyon) Tj ET
+BT /F1 10 Tf 54 688 Td (Product Engineering, Leeds | Applies to firmware 3.2.4) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Safety information) Tj ET
+BT /F1 10 Tf 54 641 Td (Read this manual in full before using the Halcyon HX-200 portable single-gas detector. The) Tj ET
+BT /F1 10 Tf 54 628 Td (HX-200 is personal protective equipment. It warns the wearer of hazardous concentrations of) Tj ET
+BT /F1 10 Tf 54 615 Td (hydrogen sulphide \(H2S\). It does not remove any hazard, and it cannot warn of any other gas.) Tj ET
+BT /F1 10 Tf 54 593 Td (The HX-200 is certified intrinsically safe with the marking II 2G Ex ib IIB T4 Gb. It may be) Tj ET
+BT /F1 10 Tf 54 580 Td (used in Zone 1 and Zone 2 hazardous areas for gas groups IIA and IIB only, with temperature) Tj ET
+BT /F1 10 Tf 54 567 Td (class T4. It must not be used in Zone 0 or in gas group IIC atmospheres such as hydrogen or) Tj ET
+BT /F1 10 Tf 54 554 Td (acetylene. The ATEX certificate is Baseefa21ATEX0147X and the IECEx certificate is IECEx BAS) Tj ET
+BT /F1 10 Tf 54 541 Td (21.0063X.) Tj ET
+BT /F1 10 Tf 54 519 Td (- Charge the instrument only in a safe \(non-hazardous\) area.) Tj ET
+BT /F1 10 Tf 54 506 Td (- Replace the battery pack HX-BAT-200 only in a safe area. Do not use any other battery) Tj ET
+BT /F1 10 Tf 54 493 Td (   pack.) Tj ET
+BT /F1 10 Tf 54 480 Td (- Do not open the housing in a hazardous area.) Tj ET
+BT /F1 10 Tf 54 467 Td (- Substitution of components may impair intrinsic safety.) Tj ET
+BT /F1 10 Tf 54 454 Td (- Perform a bump test before each day's use. Calibrate at least every 180 days, or sooner if) Tj ET
+BT /F1 10 Tf 54 441 Td (   a bump test fails.) Tj ET
+BT /F2 13 Tf 54 425 Td (2. Product overview) Tj ET
+BT /F1 10 Tf 54 403 Td (The Halcyon HX-200 is the single-gas member of the Halcyon family. It continuously monitors H2S) Tj ET
+BT /F1 10 Tf 54 390 Td (with an electrochemical sensor, part number HX-SNS-H2S-02, over a range of 0-100 ppm with a) Tj ET
+BT /F1 10 Tf 54 377 Td (resolution of 0.1 ppm. The four-gas HX-210 and the connected HX-220 share the same sensor,) Tj ET
+BT /F1 10 Tf 54 364 Td (controls and menu structure.) Tj ET
+BT /F1 10 Tf 54 342 Td (The housing is rated IP66 and weighs 210 g including the battery. Dimensions are 98 x 55 x 32) Tj ET
+BT /F1 10 Tf 54 329 Td (mm. The operating temperature range is -20 to +50 C.) Tj ET
+BT /F2 13 Tf 54 304 Td (3. Package contents) Tj ET
+BT /F1 10 Tf 54 282 Td (The HX-200 starter kit, part number HX-200-KIT-01, contains the HX-200 detector with H2S sensor) Tj ET
+BT /F1 10 Tf 54 269 Td (fitted and calibrated, the HX-BAT-200 rechargeable Li-ion battery pack \(2,600 mAh, fitted\), a) Tj ET
+BT /F1 10 Tf 54 256 Td (single-unit USB-C charger, calibration cap HX-CAP-200 with hose, a belt clip, a printed) Tj ET
+BT /F1 10 Tf 54 243 Td (quick-start guide and a factory calibration certificate.) Tj ET
+BT /F2 13 Tf 54 218 Td (4. Controls and indicators) Tj ET
+BT /F1 10 Tf 54 196 Td (The HX-200 has one large push button on the front \(ON/OK\) and two smaller buttons below the) Tj ET
+BT /F1 10 Tf 54 183 Td (display \(UP and DOWN\).) Tj ET
+BT /F1 10 Tf 54 161 Td (- ON/OK: press and hold for 3 seconds to switch on; press and hold for 5 seconds to switch) Tj ET
+BT /F1 10 Tf 54 148 Td (   off.) Tj ET
+BT /F1 10 Tf 54 135 Td (- UP: press and hold in measuring mode to display the peak reading.) Tj ET
+BT /F1 10 Tf 54 122 Td (- DOWN: press and hold in measuring mode to display STEL and TWA values.) Tj ET
+BT /F1 10 Tf 54 109 Td (Two red LEDs flash during alarms, a green LED flashes every 10 seconds as the confidence) Tj ET
+BT /F1 10 Tf 54 96 Td (signal, and a yellow LED lights when calibration or bump test is overdue. The sounder produces) Tj ET
+BT /F1 10 Tf 54 83 Td (95 dB at 30 cm.) Tj ET
+BT /F2 13 Tf 54 58 Td (5. Charging and power-on) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 3821 >>
+stream
+BT /F1 10 Tf 54 720 Td (A full charge takes approximately 4 hours at 20 C. A fully charged HX-BAT-200 gives a typical) Tj ET
+BT /F1 10 Tf 54 707 Td (runtime of 36 hours at 20 C, the longest of the Halcyon family because only one sensor is) Tj ET
+BT /F1 10 Tf 54 694 Td (powered. Charge only between 0 and +40 C.) Tj ET
+BT /F1 10 Tf 54 672 Td (The HX-200 does not fit the HX-DOCK-4 directly. To use the docking station, fit the HX-200 into) Tj ET
+BT /F1 10 Tf 54 659 Td (the HX-ADP-200 adapter first.) Tj ET
+BT /F1 10 Tf 54 637 Td (On power-on the instrument tests the LEDs, sounder and vibration motor, displays the firmware) Tj ET
+BT /F1 10 Tf 54 624 Td (version \(3.2.4\), the alarm set points and the days until calibration and bump test are due,) Tj ET
+BT /F1 10 Tf 54 611 Td (then warms up for 30 seconds before entering measuring mode.) Tj ET
+BT /F2 13 Tf 54 586 Td (6. Alarms) Tj ET
+BT /F1 10 Tf 54 564 Td (Factory default set points for the HX-200:) Tj ET
+BT /F2 9 Tf 54 543 Td (Alarm | Set point) Tj ET
+BT /F1 9 Tf 54 531 Td (Low | 5 ppm H2S) Tj ET
+BT /F1 9 Tf 54 519 Td (High | 10 ppm H2S) Tj ET
+BT /F1 9 Tf 54 507 Td (STEL \(15 min\) | 15 ppm H2S) Tj ET
+BT /F1 9 Tf 54 495 Td (TWA \(8 h\) | 5 ppm H2S) Tj ET
+BT /F1 10 Tf 54 473 Td (The low alarm is non-latching by default. The high alarm latches until acknowledged with ON/OK) Tj ET
+BT /F1 10 Tf 54 460 Td (in clean air. STEL and TWA alarms cannot be acknowledged until the instrument is switched off.) Tj ET
+BT /F1 10 Tf 54 447 Td (Set points can be changed only in the supervisor menu \(Menu > Supervisor > Alarms > Set Points\)) Tj ET
+BT /F1 10 Tf 54 434 Td (or with Meridian Link.) Tj ET
+BT /F2 13 Tf 54 409 Td (7. Bump testing and calibration) Tj ET
+BT /F1 10 Tf 54 387 Td (Bump test the HX-200 before each day's use. Fit the calibration cap and apply MI-CAL-H2S25 \(25) Tj ET
+BT /F1 10 Tf 54 374 Td (ppm H2S in nitrogen\) at 0.5 L/min using the MI-REG-05 regulator. The bump test passes if the) Tj ET
+BT /F1 10 Tf 54 361 Td (reading reaches at least 20 ppm within 45 seconds and the alarms operate.) Tj ET
+BT /F1 10 Tf 54 339 Td (The HX-200 must be calibrated at least every 180 days. Unlike the HX-210, the HX-200 interval) Tj ET
+BT /F1 10 Tf 54 326 Td (was not changed in 2025; it remains 180 days. Calibration uses MI-CAL-H2S25 at 0.5 L/min with a) Tj ET
+BT /F1 10 Tf 54 313 Td (span stabilisation wait of 90 seconds. Select Menu > Calibrate, perform the fresh-air zero,) Tj ET
+BT /F1 10 Tf 54 300 Td (then apply gas when prompted. If the span fails, the instrument shows E-104.) Tj ET
+BT /F2 13 Tf 54 275 Td (8. Datalogging) Tj ET
+BT /F1 10 Tf 54 253 Td (The HX-200 logs H2S readings at a 1-minute interval. At that interval the datalog holds) Tj ET
+BT /F1 10 Tf 54 240 Td (approximately 60 days. The event log holds the last 250 events. Logs are downloaded with) Tj ET
+BT /F1 10 Tf 54 227 Td (Meridian Link or the HX-DOCK-4 \(with HX-ADP-200\).) Tj ET
+BT /F2 13 Tf 54 202 Td (9. Maintenance) Tj ET
+BT /F1 10 Tf 54 180 Td (Clean with a damp cloth and mild detergent only. Replace the dust membrane HX-MEM-200 every 6) Tj ET
+BT /F1 10 Tf 54 167 Td (months. Check remaining sensor life at Menu > Instrument > Service > Sensor Life.) Tj ET
+BT /F1 10 Tf 54 145 Td (The rear housing of the HX-200 is held by four Torx T8 screws. Tighten them to 0.35 N m when) Tj ET
+BT /F1 10 Tf 54 132 Td (refitting. The rear gasket is HX-GSK-200.) Tj ET
+BT /F2 13 Tf 54 107 Td (10. Supervisor settings) Tj ET
+BT /F1 10 Tf 54 85 Td (The factory default supervisor passcode for the HX-200 is 2007. Change it on commissioning) Tj ET
+BT /F1 10 Tf 54 72 Td (using Menu > Supervisor > Security > Change Passcode. After five incorrect entries the) Tj ET
+BT /F1 10 Tf 54 59 Td (supervisor menu is locked for 10 minutes. The calibration interval can be set between 30 and) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 2925 >>
+stream
+BT /F1 10 Tf 54 729 Td (180 days.) Tj ET
+BT /F2 13 Tf 54 704 Td (11. Troubleshooting) Tj ET
+BT /F1 10 Tf 54 682 Td (Error codes are listed in the Halcyon Error Code Reference \(sup-halcyon-error-codes\). Codes) Tj ET
+BT /F1 10 Tf 54 669 Td (that can occur on the HX-200 include E-101, E-104, E-108, E-111, E-122, E-126 and E-140. Codes) Tj ET
+BT /F1 10 Tf 54 656 Td (E-113, E-117 and E-131 do not apply to the HX-200 because it has no pump, no LEL sensor and no) Tj ET
+BT /F1 10 Tf 54 643 Td (Bluetooth module.) Tj ET
+BT /F2 13 Tf 54 618 Td (12. Technical specifications) Tj ET
+BT /F2 9 Tf 54 597 Td (Parameter | Value) Tj ET
+BT /F1 9 Tf 54 585 Td (Gas and range | H2S 0-100 ppm, resolution 0.1 ppm) Tj ET
+BT /F1 9 Tf 54 573 Td (Sensor | HX-SNS-H2S-02 electrochemical) Tj ET
+BT /F1 9 Tf 54 561 Td (Battery | HX-BAT-200, 2,600 mAh Li-ion) Tj ET
+BT /F1 9 Tf 54 549 Td (Runtime | 36 h typical at 20 C) Tj ET
+BT /F1 9 Tf 54 537 Td (Charge time | 4 h) Tj ET
+BT /F1 9 Tf 54 525 Td (Calibration interval | 180 days maximum) Tj ET
+BT /F1 9 Tf 54 513 Td (Calibration gas | MI-CAL-H2S25 at 0.5 L/min \(MI-REG-05\)) Tj ET
+BT /F1 9 Tf 54 501 Td (Certification | ATEX II 2G Ex ib IIB T4 Gb \(Baseefa21ATEX0147X\); IECEx BAS 21.0063X) Tj ET
+BT /F1 9 Tf 54 489 Td (Hazardous area | Zone 1 and 2, gas groups IIA and IIB) Tj ET
+BT /F1 9 Tf 54 477 Td (Ingress protection | IP66) Tj ET
+BT /F1 9 Tf 54 465 Td (Operating temperature | -20 to +50 C) Tj ET
+BT /F1 9 Tf 54 453 Td (Audible alarm | 95 dB at 30 cm) Tj ET
+BT /F1 9 Tf 54 441 Td (Datalog | 60 days at 1-minute interval) Tj ET
+BT /F1 9 Tf 54 429 Td (Dimensions | 98 x 55 x 32 mm) Tj ET
+BT /F1 9 Tf 54 417 Td (Weight | 210 g) Tj ET
+BT /F1 9 Tf 54 405 Td (Firmware | 3.2.4) Tj ET
+BT /F1 9 Tf 54 393 Td (Starter kit | HX-200-KIT-01) Tj ET
+BT /F2 13 Tf 54 368 Td (13. Storage and disposal) Tj ET
+BT /F1 10 Tf 54 346 Td (Store the HX-200 switched off in a clean, dry area between 0 and +30 C. For storage longer than) Tj ET
+BT /F1 10 Tf 54 333 Td (30 days, charge the HX-BAT-200 to between 40% and 60% and recharge it every 3 months. The) Tj ET
+BT /F1 10 Tf 54 320 Td (calibration countdown continues during storage; an instrument stored for more than 180 days) Tj ET
+BT /F1 10 Tf 54 307 Td (must be calibrated before use.) Tj ET
+BT /F1 10 Tf 54 285 Td (At the end of its life, return the HX-200 to Meridian or to an approved WEEE collection point.) Tj ET
+BT /F1 10 Tf 54 272 Td (Remove the battery pack and dispose of it separately. The H2S sensor contains acid electrolyte) Tj ET
+BT /F1 10 Tf 54 259 Td (and must be treated as hazardous waste.) Tj ET
+BT /F2 13 Tf 54 234 Td (14. Document history) Tj ET
+BT /F2 9 Tf 54 213 Td (Revision | Date | Changes) Tj ET
+BT /F1 9 Tf 54 201 Td (C | 2024-05-06 | Updated for firmware 3.2.3) Tj ET
+BT /F1 9 Tf 54 189 Td (D | 2025-01-20 | Updated for firmware 3.2.4: 250-event log, improved low-temperature battery) Tj ET
+BT /F1 9 Tf 54 177 Td (gauge) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000277 00000 n 
+0000004303 00000 n 
+0000004439 00000 n 
+0000008312 00000 n 
+0000008448 00000 n 
+0000011425 00000 n 
+0000011561 00000 n 
+trailer
+<< /Size 11 /Root 10 0 R >>
+startxref
+11611
+%%EOF

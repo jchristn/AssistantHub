@@ -3234,6 +3234,40 @@
           }
         },
         {
+          "name": "Retrieve (Retrieval-Only Diagnostics)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"query\": \"What is the travel per diem in Rotterdam?\",\n\t\"include_stages\": true,\n\t\"include_answerability\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/assistants/:assistantId/retrieve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "assistants",
+                ":assistantId",
+                "retrieve"
+              ],
+              "variable": [
+                {
+                  "key": "assistantId",
+                  "value": "assistant-guid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Update Tool Policy - Enable Collection Tools",
           "request": {
             "method": "PUT",

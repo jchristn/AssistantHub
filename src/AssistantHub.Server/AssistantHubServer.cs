@@ -656,6 +656,7 @@ namespace AssistantHub.Server
             BucketHandler bucketHandler = new BucketHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantHandler assistantHandler = new AssistantHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantSettingsHandler assistantSettingsHandler = new AssistantSettingsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            AssistantRetrieveHandler assistantRetrieveHandler = new AssistantRetrieveHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantAnalyticsHandler assistantAnalyticsHandler = new AssistantAnalyticsHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             AssistantToolCallHandler assistantToolCallHandler = new AssistantToolCallHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             DocumentHandler documentHandler = new DocumentHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
@@ -804,6 +805,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/slack/verify", assistantSettingsHandler.VerifySlackSettingsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/validate", assistantSettingsHandler.ValidateToolsAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/test", assistantSettingsHandler.TestToolsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/retrieve", assistantRetrieveHandler.PostRetrieveAsync);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tools", assistantSettingsHandler.GetToolsAsync);
 
             // Authenticated routes - Assistant Analytics

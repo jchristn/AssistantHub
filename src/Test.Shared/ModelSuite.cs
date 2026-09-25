@@ -450,6 +450,44 @@ namespace Test.Automated
                 AssertHelper.IsNull(chunk.DocumentId, "default DocumentId");
             });
 
+            await ExecuteTestAsync("Model.RetrievalChunk: per-leg scores serialize and snapshot clone copies scores", async () =>
+            {
+                RetrievalChunk chunk = new RetrievalChunk
+                {
+                    DocumentId = "adoc_1",
+                    Score = 0.9,
+                    VectorScore = 0.72,
+                    VectorRank = 2,
+                    TextRank = 5,
+                    RerankScore = 8,
+                    Content = "text",
+                    Position = 4,
+                    Neighbors = new List<RetrievalChunk> { new RetrievalChunk { Content = "neighbor", Position = 3 } }
+                };
+
+                string json = System.Text.Json.JsonSerializer.Serialize(chunk);
+                AssertHelper.StringContains(json, "\"vector_score\":0.72", "vector_score json");
+                AssertHelper.StringContains(json, "\"vector_rank\":2", "vector_rank json");
+                AssertHelper.StringContains(json, "\"text_rank\":5", "text_rank json");
+
+                RetrievalChunk clone = chunk.CloneForSnapshot();
+                chunk.RerankScore = 1;
+                AssertHelper.AreEqual(8.0, clone.RerankScore, "clone keeps rerank score");
+                AssertHelper.AreEqual(0.72, clone.VectorScore, "clone keeps vector score");
+                AssertHelper.AreEqual(4, clone.Position, "clone keeps position");
+                AssertHelper.IsNull(clone.Neighbors, "clone drops neighbors");
+                await Task.CompletedTask;
+            });
+
+            await ExecuteTestAsync("ChunkingSettings.RequestTimeoutMs: defaults to 15 minutes and clamps below 1 second", async () =>
+            {
+                AssistantHub.Core.Settings.ChunkingSettings settings = new AssistantHub.Core.Settings.ChunkingSettings();
+                AssertHelper.AreEqual(900000, settings.RequestTimeoutMs, "RequestTimeoutMs default");
+                settings.RequestTimeoutMs = 10;
+                AssertHelper.AreEqual(1000, settings.RequestTimeoutMs, "RequestTimeoutMs clamps to 1000");
+                await Task.CompletedTask;
+            });
+
             // ===== RerankingModelTests =====
 
             await ExecuteTestAsync("AssistantSettings.EnableReranking: defaults to false", async () =>

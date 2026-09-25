@@ -1,0 +1,381 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 7 >>
+endobj
+4 0 obj
+<< /Length 4363 >>
+stream
+BT /F2 16 Tf 54 723 Td (Lumen LF-60P Installation Manual) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-lf60p-installation-manual | Version: 1 | Effective: 2025-03-17 | Owner: Lumen) Tj ET
+BT /F1 10 Tf 54 688 Td (Engineering, Rotterdam | Applies to firmware: 1.9.0) Tj ET
+BT /F2 13 Tf 54 663 Td (1. About this manual) Tj ET
+BT /F1 10 Tf 54 641 Td (This manual describes how to install, wire, ground, bolt and commission the Lumen LF-60P) Tj ET
+BT /F1 10 Tf 54 628 Td (optical flow meter. It applies to all LF-60P meters from DN25 to DN150 with PN40 flanges,) Tj ET
+BT /F1 10 Tf 54 615 Td (including the Hastelloy C-276 variants ordered with the -HC suffix. It is written for qualified) Tj ET
+BT /F1 10 Tf 54 602 Td (mechanical and instrumentation technicians working on pressurised pipework.) Tj ET
+BT /F1 10 Tf 54 580 Td (The LF-60P shares its measuring principle and much of its installation procedure with the) Tj ET
+BT /F1 10 Tf 54 567 Td (standard-pressure LF-60. Do not use the LF-60 Installation Manual for an LF-60P: straight-run) Tj ET
+BT /F1 10 Tf 54 554 Td (lengths, bolt torques, cable requirements and commissioning steps differ. The installation) Tj ET
+BT /F1 10 Tf 54 541 Td (manual revision that applies to your meter is printed on the label inside the terminal) Tj ET
+BT /F1 10 Tf 54 528 Td (compartment cover.) Tj ET
+BT /F1 10 Tf 54 506 Td (Throughout this manual, menu paths on the local display are written with the greater-than sign) Tj ET
+BT /F1 10 Tf 54 493 Td (between levels, for example Menu > Setup > Outputs. Terminal numbers refer to the terminal) Tj ET
+BT /F1 10 Tf 54 480 Td (block inside the rear compartment of the electronics housing.) Tj ET
+BT /F2 11 Tf 54 457 Td (1.1 Related documents) Tj ET
+BT /F1 10 Tf 54 435 Td (- Lumen LF-60P Optical Flow Meter Datasheet \(prod-lf60p-datasheet\)) Tj ET
+BT /F1 10 Tf 54 422 Td (- Lumen Modbus Register Map \(prod-lumen-modbus-register-map\)) Tj ET
+BT /F1 10 Tf 54 409 Td (- Lumen Error Code Reference \(sup-lumen-error-codes\)) Tj ET
+BT /F1 10 Tf 54 396 Td (- Lumen Firmware 1.9.0 Release Notes \(prod-lumen-firmware-1-9-0-release-notes\)) Tj ET
+BT /F2 13 Tf 54 380 Td (2. Safety) Tj ET
+BT /F1 10 Tf 54 358 Td (The LF-60P is a pressure-retaining component. Installation and removal must only be carried out) Tj ET
+BT /F1 10 Tf 54 345 Td (when the pipe section has been isolated, depressurised, drained and, where the fluid is hot,) Tj ET
+BT /F1 10 Tf 54 332 Td (cooled to below 40 \260C. Never loosen flange bolts or the pressure sensor fitting on a) Tj ET
+BT /F1 10 Tf 54 319 Td (pressurised line.) Tj ET
+BT /F1 10 Tf 54 297 Td (- Follow the site permit-to-work system and lock-out/tag-out rules before starting.) Tj ET
+BT /F1 10 Tf 54 284 Td (- Wear eye protection when handling the meter; the sapphire windows are recessed but the) Tj ET
+BT /F1 10 Tf 54 271 Td (   measuring tube edges are sharp.) Tj ET
+BT /F1 10 Tf 54 258 Td (- The meter weighs 9.8 kg at DN50 and up to 38 kg at DN150. Use lifting straps around the) Tj ET
+BT /F1 10 Tf 54 245 Td (   meter body, never around the electronics housing or cable glands.) Tj ET
+BT /F1 10 Tf 54 232 Td (- The LF-60P is not certified for hazardous areas. Do not install it in a location) Tj ET
+BT /F1 10 Tf 54 219 Td (   classified as Zone 0, 1 or 2.) Tj ET
+BT /F1 10 Tf 54 206 Td (- The 24 VDC supply must be a SELV/PELV source with a current limit not exceeding 2 A.) Tj ET
+BT /F2 13 Tf 54 190 Td (3. Product identification) Tj ET
+BT /F1 10 Tf 54 168 Td (Each meter carries two labels. The nameplate on the measuring tube shows the order code, serial) Tj ET
+BT /F1 10 Tf 54 155 Td (number, nominal size, pressure rating, maximum fluid temperature and wetted material. The) Tj ET
+BT /F1 10 Tf 54 142 Td (electronics label on the housing shows the power requirement, firmware version at the time of) Tj ET
+BT /F1 10 Tf 54 129 Td (shipment and HART device revision.) Tj ET
+BT /F1 10 Tf 54 107 Td (Order codes follow the pattern LF60P-{size}-PN40 with an optional -HC suffix. The serial number) Tj ET
+BT /F1 10 Tf 54 94 Td (format is LP followed by two digits for the year and six digits, for example LP25-004127. Quote) Tj ET
+BT /F1 10 Tf 54 81 Td (the serial number whenever you contact Meridian support.) Tj ET
+BT /F1 10 Tf 54 59 Td (Check that the pressure rating on the nameplate \(PN40, 40 bar\) is equal to or greater than the) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4175 >>
+stream
+BT /F1 10 Tf 54 729 Td (design pressure of the line, and that the maximum fluid temperature \(+120 \260C\) will not be) Tj ET
+BT /F1 10 Tf 54 716 Td (exceeded.) Tj ET
+BT /F2 13 Tf 54 691 Td (4. Unpacking and inspection) Tj ET
+BT /F1 10 Tf 54 669 Td (Each LF-60P is shipped in a foam-lined carton with the following items:) Tj ET
+BT /F1 10 Tf 54 647 Td (- LF-60P meter with protective flange covers fitted) Tj ET
+BT /F1 10 Tf 54 634 Td (- Two M20 x 1.5 nickel-plated brass cable glands \(fitted\) and one M20 blanking plug) Tj ET
+BT /F1 10 Tf 54 621 Td (- Terminal compartment key \(4 mm hex\)) Tj ET
+BT /F1 10 Tf 54 608 Td (- Printed quick reference card and calibration certificate) Tj ET
+BT /F1 10 Tf 54 595 Td (- For -HC variants only: FKM spare seal set, part LF-SEAL-P-FKM) Tj ET
+BT /F1 10 Tf 54 582 Td (Keep the flange covers in place until the meter is lifted into position. They protect the) Tj ET
+BT /F1 10 Tf 54 569 Td (sapphire windows from dust and knocks. Inspect the windows through the bore before) Tj ET
+BT /F1 10 Tf 54 556 Td (installation: they must be clear, undamaged and free from fingerprints. Clean only with) Tj ET
+BT /F1 10 Tf 54 543 Td (isopropyl alcohol and a lint-free cloth.) Tj ET
+BT /F1 10 Tf 54 521 Td (Store unused meters indoors between -40 and +70 \260C in their original packaging.) Tj ET
+BT /F2 13 Tf 54 496 Td (5. Site selection) Tj ET
+BT /F1 10 Tf 54 474 Td (The LF-60P measures accurately only when the pipe is full and the flow profile is well) Tj ET
+BT /F1 10 Tf 54 461 Td (developed. Choose a location that meets all of the following conditions:) Tj ET
+BT /F1 10 Tf 54 439 Td (- At least 15 pipe diameters \(15D\) of straight pipe of the same nominal size upstream of the) Tj ET
+BT /F1 10 Tf 54 426 Td (   meter.) Tj ET
+BT /F1 10 Tf 54 413 Td (- At least 5 pipe diameters \(5D\) of straight pipe downstream.) Tj ET
+BT /F1 10 Tf 54 400 Td (- Where the upstream disturbance is a control valve, a partially open butterfly valve or two) Tj ET
+BT /F1 10 Tf 54 387 Td (   elbows in different planes, increase the upstream length to 25D or install a flow) Tj ET
+BT /F1 10 Tf 54 374 Td (   conditioner.) Tj ET
+BT /F1 10 Tf 54 361 Td (- The meter must not be at the highest point of the line, where air collects.) Tj ET
+BT /F1 10 Tf 54 348 Td (- Avoid installing immediately downstream of a pump discharge; allow at least 20D.) Tj ET
+BT /F1 10 Tf 54 335 Td (- Ambient temperature at the electronics must stay between -40 and +60 \260C. Fit a sunshade) Tj ET
+BT /F1 10 Tf 54 322 Td (   where the housing is exposed to direct sun in hot climates.) Tj ET
+BT /F1 10 Tf 54 309 Td (The IP67 rating allows installation in valve chambers and pits that may flood temporarily, up) Tj ET
+BT /F1 10 Tf 54 296 Td (to 1 m of water for 30 minutes. Where prolonged submersion is likely, use the remote-mount) Tj ET
+BT /F1 10 Tf 54 283 Td (electronics kit LF-RMK-10, which allows the electronics to be mounted up to 10 m away.) Tj ET
+BT /F2 13 Tf 54 258 Td (6. Pipe preparation) Tj ET
+BT /F1 10 Tf 54 236 Td (Before fitting the meter, flush the line to remove welding slag, scale and debris. Particles) Tj ET
+BT /F1 10 Tf 54 223 Td (larger than 2 mm can scratch the sapphire windows.) Tj ET
+BT /F1 10 Tf 54 201 Td (Check that the mating flanges are EN 1092-1 PN40 \(or ASME Class 300 for meters ordered with) Tj ET
+BT /F1 10 Tf 54 188 Td (ASME flanges\), that they are parallel within 0.5 mm across the flange face and that the bolt) Tj ET
+BT /F1 10 Tf 54 175 Td (holes are aligned. Do not use the meter to pull misaligned pipework into position.) Tj ET
+BT /F1 10 Tf 54 153 Td (The gap between the mating flanges must equal the meter face-to-face length plus the thickness) Tj ET
+BT /F1 10 Tf 54 140 Td (of two gaskets. Face-to-face lengths are 200 mm for DN25 to DN50, 250 mm for DN65 to DN100 and) Tj ET
+BT /F1 10 Tf 54 127 Td (300 mm for DN125 and DN150.) Tj ET
+BT /F2 13 Tf 54 102 Td (7. Mechanical installation and orientation) Tj ET
+BT /F1 10 Tf 54 80 Td (The arrow on the meter body shows the forward flow direction. The meter measures reverse flow) Tj ET
+BT /F1 10 Tf 54 67 Td (as well, but accuracy is specified in the forward direction only.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 3773 >>
+stream
+BT /F1 10 Tf 54 729 Td (Acceptable orientations:) Tj ET
+BT /F1 10 Tf 54 707 Td (- Horizontal pipe, with the electronics housing on the side \(3 o'clock or 9 o'clock) Tj ET
+BT /F1 10 Tf 54 694 Td (   position\) so that the optical windows are not at the top or bottom of the pipe. This is) Tj ET
+BT /F1 10 Tf 54 681 Td (   the preferred orientation.) Tj ET
+BT /F1 10 Tf 54 668 Td (- Vertical pipe with upward flow.) Tj ET
+BT /F1 10 Tf 54 655 Td (Do not install on vertical pipe with downward flow unless there is enough back pressure to keep) Tj ET
+BT /F1 10 Tf 54 642 Td (the pipe full at all times. Do not install with the electronics housing directly underneath the) Tj ET
+BT /F1 10 Tf 54 629 Td (pipe, where leaks from the flanges can drip onto the cable glands.) Tj ET
+BT /F1 10 Tf 54 607 Td (Lift the meter into position with the flange covers still fitted, remove the covers, insert the) Tj ET
+BT /F1 10 Tf 54 594 Td (gaskets and fit the bolts finger tight. Tighten the bolts as described in section 11.) Tj ET
+BT /F2 11 Tf 54 571 Td (7.1 Gaskets) Tj ET
+BT /F1 10 Tf 54 549 Td (Use gaskets with an inside diameter no smaller than the pipe bore. A gasket that protrudes into) Tj ET
+BT /F1 10 Tf 54 536 Td (the bore creates turbulence directly upstream of the optical windows and causes L-204 low) Tj ET
+BT /F1 10 Tf 54 523 Td (signal quality warnings. For hot water applications above 80 \260C, use graphite-faced) Tj ET
+BT /F1 10 Tf 54 510 Td (spiral-wound or reinforced graphite gaskets. Compressed fibre gaskets are acceptable up to 80) Tj ET
+BT /F1 10 Tf 54 497 Td (\260C.) Tj ET
+BT /F2 13 Tf 54 472 Td (8. Electrical installation) Tj ET
+BT /F2 11 Tf 54 449 Td (8.1 Cable and glands) Tj ET
+BT /F1 10 Tf 54 427 Td (Use screened twisted-pair instrument cable with a conductor cross-section of 0.5 to 1.5 mm\262.) Tj ET
+BT /F1 10 Tf 54 414 Td (For the RS-485 bus, use cable with a characteristic impedance of 120 ohm. Terminate the screen) Tj ET
+BT /F1 10 Tf 54 401 Td (at the meter end in the cable gland \(360-degree termination\) and at the control system end only) Tj ET
+BT /F1 10 Tf 54 388 Td (if the site earthing philosophy requires it.) Tj ET
+BT /F1 10 Tf 54 366 Td (Unused cable entries must be closed with the supplied M20 blanking plug to maintain IP67.) Tj ET
+BT /F2 11 Tf 54 343 Td (8.2 Terminal assignment) Tj ET
+BT /F2 9 Tf 54 322 Td (Terminal | Function | Notes) Tj ET
+BT /F1 9 Tf 54 310 Td (1 | +24 VDC supply | 24 VDC \26110%, 5.5 W) Tj ET
+BT /F1 9 Tf 54 298 Td (2 | 0 V supply |) Tj ET
+BT /F1 9 Tf 54 286 Td (3 | 4-20 mA / HART + | Active or passive, selected in menu) Tj ET
+BT /F1 9 Tf 54 274 Td (4 | 4-20 mA / HART - |) Tj ET
+BT /F1 9 Tf 54 262 Td (5 | Pulse output + | Open collector, max 30 VDC, 100 mA, max 2 kHz) Tj ET
+BT /F1 9 Tf 54 250 Td (6 | Pulse output - |) Tj ET
+BT /F1 9 Tf 54 238 Td (7 | RS-485 A \(D+\) | Modbus RTU) Tj ET
+BT /F1 9 Tf 54 226 Td (8 | RS-485 B \(D-\) | Modbus RTU) Tj ET
+BT /F1 9 Tf 54 214 Td (9 | Functional earth / screen |) Tj ET
+BT /F1 10 Tf 54 192 Td (The RS-485 termination resistor \(120 ohm\) is switched on with DIP switch S1 on the terminal) Tj ET
+BT /F1 10 Tf 54 179 Td (board. Enable it only on the last device of the bus.) Tj ET
+BT /F2 11 Tf 54 156 Td (8.3 Power) Tj ET
+BT /F1 10 Tf 54 134 Td (The LF-60P draws 5.5 W at 24 VDC, around 230 mA, plus an inrush of up to 900 mA for 20 ms. Size) Tj ET
+BT /F1 10 Tf 54 121 Td (the supply and fuse accordingly. The meter starts measuring about 25 seconds after power is) Tj ET
+BT /F1 10 Tf 54 108 Td (applied; the display shows the firmware version \(1.9.0\) during start-up.) Tj ET
+BT /F2 13 Tf 54 83 Td (9. Grounding and bonding) Tj ET
+BT /F1 10 Tf 54 61 Td (Correct grounding is the single most important factor for stable optical signal processing on) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 4014 >>
+stream
+BT /F1 10 Tf 54 729 Td (the LF-60P. The receivers and the high-speed correlation electronics are sensitive to potential) Tj ET
+BT /F1 10 Tf 54 716 Td (differences between the fluid and the meter body.) Tj ET
+BT /F2 11 Tf 54 693 Td (9.1 Metallic, unlined pipe) Tj ET
+BT /F1 10 Tf 54 671 Td (On bare carbon steel or stainless steel pipe, connect the grounding lug on each flange of the) Tj ET
+BT /F1 10 Tf 54 658 Td (meter to the mating pipe flange with the supplied 6 mm\262 braided straps, and connect terminal 9) Tj ET
+BT /F1 10 Tf 54 645 Td (to the plant functional earth. The resistance between the meter body and the plant earth must) Tj ET
+BT /F1 10 Tf 54 632 Td (be less than 1 ohm.) Tj ET
+BT /F2 11 Tf 54 609 Td (9.2 Non-conductive or lined pipe) Tj ET
+BT /F1 10 Tf 54 587 Td (On plastic pipe \(PVC, PE, PP, GRP\) and on metallic pipe with an internal lining \(rubber, PTFE,) Tj ET
+BT /F1 10 Tf 54 574 Td (epoxy or cement\), grounding rings are mandatory on both sides of the meter. Grounding rings are) Tj ET
+BT /F1 10 Tf 54 561 Td (fitted between the meter flange and the gasket on each side, and each ring is bonded to the) Tj ET
+BT /F1 10 Tf 54 548 Td (meter grounding lug.) Tj ET
+BT /F2 9 Tf 54 527 Td (Meter size | Grounding ring part number \(316L\) | Grounding ring part number \(Hastelloy C-276\)) Tj ET
+BT /F1 9 Tf 54 515 Td (DN25 | LF-GR-025-P | LF-GR-025-HC) Tj ET
+BT /F1 9 Tf 54 503 Td (DN40 | LF-GR-040-P | LF-GR-040-HC) Tj ET
+BT /F1 9 Tf 54 491 Td (DN50 | LF-GR-050-P | LF-GR-050-HC) Tj ET
+BT /F1 9 Tf 54 479 Td (DN65 | LF-GR-065-P | LF-GR-065-HC) Tj ET
+BT /F1 9 Tf 54 467 Td (DN80 | LF-GR-080-P | LF-GR-080-HC) Tj ET
+BT /F1 9 Tf 54 455 Td (DN100 | LF-GR-100-P | LF-GR-100-HC) Tj ET
+BT /F1 9 Tf 54 443 Td (DN125 | LF-GR-125-P | LF-GR-125-HC) Tj ET
+BT /F1 9 Tf 54 431 Td (DN150 | LF-GR-150-P | LF-GR-150-HC) Tj ET
+BT /F1 10 Tf 54 409 Td (Grounding rings add 3 mm to the installed length per side; allow for a total of 6 mm when) Tj ET
+BT /F1 10 Tf 54 396 Td (setting the flange gap. Use grounding ring material that matches or exceeds the corrosion) Tj ET
+BT /F1 10 Tf 54 383 Td (resistance of the meter wetted parts.) Tj ET
+BT /F2 11 Tf 54 360 Td (9.3 Cathodically protected pipelines) Tj ET
+BT /F1 10 Tf 54 338 Td (On pipelines with impressed-current cathodic protection, the meter must be electrically) Tj ET
+BT /F1 10 Tf 54 325 Td (isolated from the pipe with an insulating flange kit, and the grounding rings are bonded to) Tj ET
+BT /F1 10 Tf 54 312 Td (each other but not to the pipe. Consult Meridian application engineering before installing on a) Tj ET
+BT /F1 10 Tf 54 299 Td (cathodically protected line.) Tj ET
+BT /F1 10 Tf 54 277 Td (A missing or broken ground connection typically shows up as intermittent L-204 low signal) Tj ET
+BT /F1 10 Tf 54 264 Td (quality warnings and a noisy flow reading at low velocities.) Tj ET
+BT /F2 13 Tf 54 239 Td (10. HART commissioning) Tj ET
+BT /F1 10 Tf 54 217 Td (The LF-60P supports HART 7 on the 4-20 mA output \(terminals 3 and 4\). The HART device revision) Tj ET
+BT /F1 10 Tf 54 204 Td (with firmware 1.9.0 is device revision 3. Use the DD or DTM for device revision 3; older DD) Tj ET
+BT /F1 10 Tf 54 191 Td (files for device revision 2 will connect but will not show the pressure variables.) Tj ET
+BT /F2 11 Tf 54 168 Td (10.1 Loop requirements) Tj ET
+BT /F1 10 Tf 54 146 Td (- A loop resistance of at least 250 ohm is required for HART communication. With a lower) Tj ET
+BT /F1 10 Tf 54 133 Td (   resistance, the handheld or asset management system will report no response and the meter) Tj ET
+BT /F1 10 Tf 54 120 Td (   may raise L-222.) Tj ET
+BT /F1 10 Tf 54 107 Td (- The maximum loop resistance in passive mode is \(supply voltage - 12 V\) / 0.022 A; with a) Tj ET
+BT /F1 10 Tf 54 94 Td (   24 V loop supply this is 545 ohm.) Tj ET
+BT /F1 10 Tf 54 81 Td (- In active mode, the meter sources the loop current and the maximum load is 600 ohm.) Tj ET
+BT /F2 11 Tf 54 67 Td (10.2 Setting the HART parameters on the local display) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 3874 >>
+stream
+BT /F1 10 Tf 54 729 Td (1. Enter the service passcode \(see section 13\).) Tj ET
+BT /F1 10 Tf 54 716 Td (2. Go to Menu > Setup > Outputs > HART > Poll Address and set the polling address. The) Tj ET
+BT /F1 10 Tf 54 703 Td (   default is 0, which keeps the loop current active. Addresses 1 to 63 put the output into) Tj ET
+BT /F1 10 Tf 54 690 Td (   multidrop mode with a fixed 4 mA current.) Tj ET
+BT /F1 10 Tf 54 677 Td (3. Go to Menu > Setup > Outputs > HART > Tag and enter the long tag \(up to 32 characters\).) Tj ET
+BT /F1 10 Tf 54 664 Td (   The short tag is limited to 8 characters and is set from the host system.) Tj ET
+BT /F1 10 Tf 54 651 Td (4. Go to Menu > Setup > Outputs > HART > Variable Map to assign the dynamic variables. The) Tj ET
+BT /F1 10 Tf 54 638 Td (   factory mapping is PV volume flow, SV forward totaliser, TV process pressure, QV fluid) Tj ET
+BT /F1 10 Tf 54 625 Td (   temperature.) Tj ET
+BT /F1 10 Tf 54 612 Td (5. If burst mode is required, enable it under Menu > Setup > Outputs > HART > Burst. Burst) Tj ET
+BT /F1 10 Tf 54 599 Td (   mode is disabled by default.) Tj ET
+BT /F2 11 Tf 54 585 Td (10.3 Loop test) Tj ET
+BT /F1 10 Tf 54 563 Td (Use Menu > Diagnostics > Loop Test to force the output to 4, 12 and 20 mA and confirm the) Tj ET
+BT /F1 10 Tf 54 550 Td (reading at the control system. The loop test times out after 10 minutes and returns the output) Tj ET
+BT /F1 10 Tf 54 537 Td (to normal operation.) Tj ET
+BT /F2 13 Tf 54 512 Td (11. Flange bolting) Tj ET
+BT /F1 10 Tf 54 490 Td (Flange joints on the LF-60P must be tightened in a controlled sequence to the values below.) Tj ET
+BT /F1 10 Tf 54 477 Td (Under-tightening causes leaks at operating pressure. Over-tightening distorts the measuring) Tj ET
+BT /F1 10 Tf 54 464 Td (tube flanges and can crack the window seats, which is not covered by warranty.) Tj ET
+BT /F2 11 Tf 54 441 Td (11.1 Torque values) Tj ET
+BT /F1 10 Tf 54 419 Td (The values apply to EN 1092-1 PN40 flanges, lightly oiled carbon steel or stainless steel bolts) Tj ET
+BT /F1 10 Tf 54 406 Td (\(property class 8.8 or A4-80\), and graphite-faced or compressed fibre gaskets. For PTFE) Tj ET
+BT /F1 10 Tf 54 393 Td (gaskets, reduce the values by 20%.) Tj ET
+BT /F2 9 Tf 54 372 Td (Meter size | Bolts | Torque) Tj ET
+BT /F1 9 Tf 54 360 Td (DN25 | 4 x M12 | 45 N m) Tj ET
+BT /F1 9 Tf 54 348 Td (DN40 | 4 x M16 | 75 N m) Tj ET
+BT /F1 9 Tf 54 336 Td (DN50 | 4 x M16 | 85 N m) Tj ET
+BT /F1 9 Tf 54 324 Td (DN65 | 8 x M16 | 80 N m) Tj ET
+BT /F1 9 Tf 54 312 Td (DN80 | 8 x M16 | 95 N m) Tj ET
+BT /F1 9 Tf 54 300 Td (DN100 | 8 x M20 | 140 N m) Tj ET
+BT /F1 9 Tf 54 288 Td (DN125 | 8 x M24 | 210 N m) Tj ET
+BT /F1 9 Tf 54 276 Td (DN150 | 8 x M24 | 250 N m) Tj ET
+BT /F1 10 Tf 54 254 Td (For meters with ASME Class 300 flanges, use the torque values in the ASME supplement) Tj ET
+BT /F1 10 Tf 54 241 Td (LF-ASME-300, which is supplied with the meter.) Tj ET
+BT /F2 11 Tf 54 218 Td (11.2 Tightening sequence) Tj ET
+BT /F1 10 Tf 54 196 Td (1. Fit all bolts finger tight and check that the gaskets are centred.) Tj ET
+BT /F1 10 Tf 54 183 Td (2. Tighten in a cross \(star\) pattern to 30% of the final torque.) Tj ET
+BT /F1 10 Tf 54 170 Td (3. Repeat the cross pattern to 60% of the final torque.) Tj ET
+BT /F1 10 Tf 54 157 Td (4. Repeat the cross pattern to 100% of the final torque.) Tj ET
+BT /F1 10 Tf 54 144 Td (5. Make one final circular pass at 100% to check that no bolt turns further.) Tj ET
+BT /F1 10 Tf 54 131 Td (6. Pressure test the line to 1.5 times the design pressure, but never above 60 bar.) Tj ET
+BT /F1 10 Tf 54 118 Td (7. For lines operating above 80 \260C, re-check the torque after the first heat-up and cool-down) Tj ET
+BT /F1 10 Tf 54 105 Td (   cycle.) Tj ET
+BT /F1 10 Tf 54 92 Td (Use a calibrated torque wrench. Do not use impact tools.) Tj ET
+BT /F2 13 Tf 54 67 Td (12. Zero-point adjustment) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4751 >>
+stream
+BT /F1 10 Tf 54 729 Td (The LF-60P is factory calibrated on a water flow rig traceable to national standards, and a) Tj ET
+BT /F1 10 Tf 54 716 Td (zero-point adjustment is not normally required. Carry out a zero-point adjustment after) Tj ET
+BT /F1 10 Tf 54 703 Td (installation only if the meter shows a flow reading above 0.5 cm/s when the line is known to be) Tj ET
+BT /F1 10 Tf 54 690 Td (full and completely stationary.) Tj ET
+BT /F1 10 Tf 54 668 Td (1. Make sure the measuring tube is completely full and that there is no flow. Close valves) Tj ET
+BT /F1 10 Tf 54 655 Td (   both upstream and downstream of the meter; a closed downstream valve alone is not enough.) Tj ET
+BT /F1 10 Tf 54 642 Td (2. Wait at least 5 minutes for the fluid to settle and, for hot lines, for the temperature to) Tj ET
+BT /F1 10 Tf 54 629 Td (   stabilise.) Tj ET
+BT /F1 10 Tf 54 616 Td (3. Enter the service passcode.) Tj ET
+BT /F1 10 Tf 54 603 Td (4. Go to Menu > Service > Calibration > Zero Adjust and confirm.) Tj ET
+BT /F1 10 Tf 54 590 Td (5. The meter averages the signal for 60 seconds and stores the new zero offset. The display) Tj ET
+BT /F1 10 Tf 54 577 Td (   shows the offset in cm/s.) Tj ET
+BT /F1 10 Tf 54 564 Td (6. If the offset is larger than \2612.0 cm/s, the adjustment is rejected. Check for leaking) Tj ET
+BT /F1 10 Tf 54 551 Td (   valves, air in the line and grounding \(section 9\) before trying again.) Tj ET
+BT /F1 10 Tf 54 538 Td (The previous zero offset can be restored under Menu > Service > Calibration > Restore Factory) Tj ET
+BT /F1 10 Tf 54 525 Td (Zero.) Tj ET
+BT /F2 11 Tf 54 502 Td (12.1 In-situ verification and window inspection) Tj ET
+BT /F1 10 Tf 54 480 Td (The LF-60P runs a continuous self-check of the LED emitter current, receiver gain and) Tj ET
+BT /F1 10 Tf 54 467 Td (correlation quality. The results can be read under Menu > Diagnostics > Verification, which) Tj ET
+BT /F1 10 Tf 54 454 Td (produces a pass or fail report with a four-digit verification code. Record the code at) Tj ET
+BT /F1 10 Tf 54 441 Td (commissioning; comparing later codes against the commissioning value shows whether the optical) Tj ET
+BT /F1 10 Tf 54 428 Td (path has degraded. Asset management systems can read the same report over HART \(device-specific) Tj ET
+BT /F1 10 Tf 54 415 Td (command 140\) or Modbus.) Tj ET
+BT /F1 10 Tf 54 393 Td (Window fouling shows as a gradual fall in signal quality. Under normal conditions the signal) Tj ET
+BT /F1 10 Tf 54 380 Td (quality indicator reads between 85% and 100%. Below 60%, the meter raises L-204; below 40% the) Tj ET
+BT /F1 10 Tf 54 367 Td (flow reading is held at its last good value and the output goes to the configured fail-safe) Tj ET
+BT /F1 10 Tf 54 354 Td (current \(3.6 mA by default, adjustable to 21.0 mA under Menu > Setup > Outputs > Current >) Tj ET
+BT /F1 10 Tf 54 341 Td (Fail-safe\).) Tj ET
+BT /F1 10 Tf 54 319 Td (On fluids that contain oils, biofilm or scale-forming minerals, plan an inspection of the) Tj ET
+BT /F1 10 Tf 54 306 Td (sapphire windows every 12 months. The windows can be inspected with a borescope through a) Tj ET
+BT /F1 10 Tf 54 293 Td (flange after isolating and draining the line, without removing the meter. Clean with isopropyl) Tj ET
+BT /F1 10 Tf 54 280 Td (alcohol; for mineral scale, use a 5% citric acid solution followed by a clean water rinse. Do) Tj ET
+BT /F1 10 Tf 54 267 Td (not use abrasive pads, wire brushes or hydrochloric acid, which will damage the window seals.) Tj ET
+BT /F2 11 Tf 54 244 Td (12.2 Low-flow cut-off and damping) Tj ET
+BT /F1 10 Tf 54 222 Td (The low-flow cut-off suppresses readings close to zero. The default is 0.02 m/s and can be) Tj ET
+BT /F1 10 Tf 54 209 Td (changed under Menu > Setup > Measurement > Low Flow Cutoff. The damping time constant defaults) Tj ET
+BT /F1 10 Tf 54 196 Td (to 2.0 seconds on the LF-60P and can be set between 0.2 and 60 seconds under Menu > Setup >) Tj ET
+BT /F1 10 Tf 54 183 Td (Measurement > Damping. Increase damping where the flow reading must be steady for control, and) Tj ET
+BT /F1 10 Tf 54 170 Td (decrease it for fast batching.) Tj ET
+BT /F2 13 Tf 54 145 Td (13. Local display and security) Tj ET
+BT /F1 10 Tf 54 123 Td (The two-line display shows the flow rate on the first line and, by default, the forward) Tj ET
+BT /F1 10 Tf 54 110 Td (totaliser on the second line. Press the right-hand key to scroll through velocity, reverse) Tj ET
+BT /F1 10 Tf 54 97 Td (totaliser, process pressure, fluid temperature and signal quality.) Tj ET
+BT /F1 10 Tf 54 75 Td (Configuration menus are protected by a four-digit service passcode. The factory default) Tj ET
+BT /F1 10 Tf 54 62 Td (passcode for the LF-60P is 4060. Change it at commissioning under Menu > Service > Security >) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 2592 >>
+stream
+BT /F1 10 Tf 54 729 Td (Change Passcode. If the passcode is lost, it can be reset only through Meridian Link over the) Tj ET
+BT /F1 10 Tf 54 716 Td (RS-485 service connection, using a site-specific reset token obtained from Meridian support.) Tj ET
+BT /F1 10 Tf 54 694 Td (After 5 minutes without a key press, the display returns to the measuring screen and the) Tj ET
+BT /F1 10 Tf 54 681 Td (passcode must be entered again. Write protection can additionally be enforced by DIP switch S3) Tj ET
+BT /F1 10 Tf 54 668 Td (on the terminal board; when S3 is ON, no parameter can be changed from the display, HART or) Tj ET
+BT /F1 10 Tf 54 655 Td (Modbus.) Tj ET
+BT /F1 10 Tf 54 633 Td (The display backlight can be set to Always On, Auto \(on for 60 seconds after a key press\) or) Tj ET
+BT /F1 10 Tf 54 620 Td (Off under Menu > Setup > Display > Backlight. The default is Auto.) Tj ET
+BT /F2 13 Tf 54 595 Td (14. Commissioning checklist and support) Tj ET
+BT /F1 10 Tf 54 573 Td (Complete this checklist and keep a copy with the plant instrument records.) Tj ET
+BT /F1 10 Tf 54 551 Td (- Nameplate order code, serial number and pressure rating recorded) Tj ET
+BT /F1 10 Tf 54 538 Td (- Straight run confirmed: at least 15D upstream and 5D downstream) Tj ET
+BT /F1 10 Tf 54 525 Td (- Flow arrow in the correct direction) Tj ET
+BT /F1 10 Tf 54 512 Td (- Gaskets do not protrude into the bore) Tj ET
+BT /F1 10 Tf 54 499 Td (- Bolts tightened to the section 11 values in a cross pattern) Tj ET
+BT /F1 10 Tf 54 486 Td (- Grounding straps or grounding rings fitted and resistance below 1 ohm) Tj ET
+BT /F1 10 Tf 54 473 Td (- Supply voltage at terminals 1 and 2 between 21.6 and 26.4 VDC) Tj ET
+BT /F1 10 Tf 54 460 Td (- 4-20 mA loop test completed at 4, 12 and 20 mA) Tj ET
+BT /F1 10 Tf 54 447 Td (- HART communication confirmed \(if used\), device revision 3) Tj ET
+BT /F1 10 Tf 54 434 Td (- Modbus communication confirmed \(if used\); default settings are address 1, 19200 baud, 8E1) Tj ET
+BT /F1 10 Tf 54 421 Td (- Zero-point checked with stationary full pipe) Tj ET
+BT /F1 10 Tf 54 408 Td (- Service passcode changed from the default) Tj ET
+BT /F1 10 Tf 54 395 Td (- No active error codes shown under Menu > Diagnostics > Active Errors) Tj ET
+BT /F1 10 Tf 54 382 Td (For technical support, raise a ticket in the Meridian Support Centre at) Tj ET
+BT /F1 10 Tf 54 369 Td (support.meridian-instruments.com and quote the meter serial number and firmware version. Error) Tj ET
+BT /F1 10 Tf 54 356 Td (code meanings and fixes are listed in the Lumen Error Code Reference \(sup-lumen-error-codes\).) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 19
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000305 00000 n 
+0000004720 00000 n 
+0000004856 00000 n 
+0000009083 00000 n 
+0000009219 00000 n 
+0000013044 00000 n 
+0000013180 00000 n 
+0000017247 00000 n 
+0000017385 00000 n 
+0000021312 00000 n 
+0000021450 00000 n 
+0000026254 00000 n 
+0000026392 00000 n 
+0000029037 00000 n 
+0000029175 00000 n 
+trailer
+<< /Size 19 /Root 18 0 R >>
+startxref
+29225
+%%EOF

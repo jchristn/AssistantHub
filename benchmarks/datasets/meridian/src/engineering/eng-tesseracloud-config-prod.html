@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TesseraCloud Environment Configuration: Production</title>
+</head>
+<body>
+<h1>TesseraCloud Environment Configuration: Production (prod)</h1>
+<p>Document ID: eng-tesseracloud-config-prod. Owner: Platform Engineering. Last updated: 14 July 2025. This page describes the production environment only. Development and staging use different hosts, ports and settings; see their own configuration pages.</p>
+
+<h2>Environment summary</h2>
+<ul>
+<li>Environment name (TC_ENV): prod</li>
+<li>Regions: euw1 (Dublin) primary; euc1 (Frankfurt) disaster recovery. See the TesseraCloud Regional Failover Runbook.</li>
+<li>Forge environment: tesseracloud-prod. Deployments need manual approval by two maintainers and must run in a TesseraCloud change window (Tuesday and Thursday 06:00 to 08:00 UK time) unless they are zero-downtime deployments.</li>
+<li>Data: customer telemetry, classified Confidential.</li>
+<li>Access: operator roles only through just-in-time elevation (pamctl elevate --role tc-operator), maximum 12 hours.</li>
+</ul>
+
+<h2>Endpoints and ports</h2>
+<table border="1">
+<thead><tr><th>Service</th><th>Host</th><th>Port</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Public API (tc-api)</td><td>api.tesseracloud.meridian-instruments.com</td><td>443</td><td>Internet-facing, DNS TTL 60 seconds</td></tr>
+<tr><td>Device ingestion (tc-ingest)</td><td>ingest.tesseracloud.meridian-instruments.com</td><td>8883</td><td>MQTT over TLS, DNS TTL 60 seconds</td></tr>
+<tr><td>tc-ingest health</td><td>tc-ingest pods</td><td>8081</td><td>/healthz</td></tr>
+<tr><td>TimescaleDB primary</td><td>tsdb-prd-01.tessera.meridian.internal</td><td>5432</td><td>Synchronous standby tsdb-prd-02; DR replica tsdb-dr-01 in euc1</td></tr>
+<tr><td>Kafka</td><td>kafka-prd-01 to kafka-prd-06.tessera.meridian.internal</td><td>9093</td><td>TLS listener; MirrorMaker 2 to kafka-dr-01 to kafka-dr-03</td></tr>
+<tr><td>Redis</td><td>redis-prd-01.tessera.meridian.internal</td><td>6380</td><td>TLS</td></tr>
+</tbody>
+</table>
+
+<h2>Configuration keys</h2>
+<table border="1">
+<thead><tr><th>Key</th><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>TC_ENV</td><td>prod</td><td>Environment name used in logs and metrics</td></tr>
+<tr><td>TC_INGEST_BATCH_SIZE</td><td>5000</td><td>Messages per Kafka produce batch in tc-ingest</td></tr>
+<tr><td>TC_INGEST_MAX_CONNECTIONS</td><td>60000</td><td>Maximum concurrent MQTT connections per tc-ingest pod</td></tr>
+<tr><td>TC_RETENTION_RAW_DAYS</td><td>400</td><td>Raw telemetry retention in TimescaleDB (Enterprise tenants: 36 months via archive tier)</td></tr>
+<tr><td>TC_KAFKA_CONSUMER_GROUP</td><td>tc-stream-prd</td><td>Consumer group for tc-stream</td></tr>
+<tr><td>TC_API_RATE_LIMIT_RPM</td><td>300</td><td>Default API requests per minute per tenant (Standard plan); Enterprise tenants are overridden to 1,200 in tenant settings</td></tr>
+<tr><td>TC_LOG_LEVEL</td><td>warn</td><td>Log verbosity</td></tr>
+<tr><td>TC_FEATURE_ANOMALY_DETECTION</td><td>false</td><td>Anomaly-detection service not yet generally available</td></tr>
+</tbody>
+</table>
+
+<h2>Deployment</h2>
+<p>Production deployments of tc-agg and tc-stream use a canary stage (10% of consumers for 15 minutes), introduced after INC-2024-031. During a regional failover, a Forge deploy freeze is applied to tesseracloud-prod.</p>
+</body>
+</html>

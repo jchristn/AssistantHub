@@ -1,0 +1,95 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 3999 >>
+stream
+BT /F2 16 Tf 54 723 Td (Backup and Retention Standard \(v2\)) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sec-backup-retention-standard-v2. Owner: IT Infrastructure and IT Security.) Tj ET
+BT /F1 10 Tf 54 688 Td (Version 2. Effective date: 1 April 2025. Supersedes: Backup and Retention Standard v1 \(February) Tj ET
+BT /F1 10 Tf 54 675 Td (2023\). Approved by: Mei-Ling Tan, Head of IT Security, and Lars Hedegaard, CTO.) Tj ET
+BT /F2 13 Tf 54 650 Td (Summary of changes from v1) Tj ET
+BT /F1 10 Tf 54 628 Td (- Daily incremental retention reduced from 35 days to 30 days.) Tj ET
+BT /F1 10 Tf 54 615 Td (- Weekly full retention increased from 8 weeks to 12 weeks.) Tj ET
+BT /F1 10 Tf 54 602 Td (- Monthly full retention increased from 12 months to 24 months.) Tj ET
+BT /F1 10 Tf 54 589 Td (- Offsite replication to the Rotterdam vault changed from weekly to daily.) Tj ET
+BT /F1 10 Tf 54 576 Td (- New immutable copy tier: all daily backups are written to an object-lock repository and) Tj ET
+BT /F1 10 Tf 54 563 Td (   cannot be deleted or altered for 30 days \(ransomware protection\).) Tj ET
+BT /F1 10 Tf 54 550 Td (- Restore testing increased from annual to quarterly.) Tj ET
+BT /F1 10 Tf 54 537 Td (- TesseraCloud retention rules added for the TimescaleDB telemetry store \(see ADR-023\).) Tj ET
+BT /F2 13 Tf 54 521 Td (Backup platform) Tj ET
+BT /F1 10 Tf 54 499 Td (Backups are taken with the Strata Backup platform. Primary repository STRATA-LDS-01 \(Leeds data) Tj ET
+BT /F1 10 Tf 54 486 Td (centre\); immutable object-lock repository STRATA-LDS-IMM; offsite copy in the Rotterdam vault) Tj ET
+BT /F1 10 Tf 54 473 Td (STRATA-RTM-02.) Tj ET
+BT /F2 13 Tf 54 448 Td (Backup frequency and retention) Tj ET
+BT /F2 9 Tf 54 427 Td (Backup type | Frequency | Retention) Tj ET
+BT /F1 9 Tf 54 415 Td (Daily incremental | Every night, 23:00 local time | 30 days) Tj ET
+BT /F1 9 Tf 54 403 Td (Immutable daily copy | Every night | 30 days \(object lock, cannot be shortened\)) Tj ET
+BT /F1 9 Tf 54 391 Td (Weekly full | Sunday 02:00 | 12 weeks) Tj ET
+BT /F1 9 Tf 54 379 Td (Monthly full | First Sunday of the month | 24 months) Tj ET
+BT /F1 9 Tf 54 367 Td (Yearly full \(Atlas finance data\) | 1 April \(start of fiscal year\) | 7 years \(unchanged\)) Tj ET
+BT /F1 9 Tf 54 355 Td (Atlas month-end pre-close backup \(tag MEC-YYYYMM\) | BD-3 at 22:00 | 13 months) Tj ET
+BT /F1 9 Tf 54 343 Td (TesseraCloud TimescaleDB base backup | Daily, 01:00 UTC | 30 days) Tj ET
+BT /F1 9 Tf 54 331 Td (TesseraCloud WAL archive | Continuous | 7 days) Tj ET
+BT /F2 13 Tf 54 306 Td (Data retention \(TesseraCloud\)) Tj ET
+BT /F2 9 Tf 54 285 Td (Data set | Retention) Tj ET
+BT /F1 9 Tf 54 273 Td (Raw vibration telemetry \(Standard plan\) | 400 days \(covers the 13-month contractual commitment\)) Tj ET
+BT /F1 9 Tf 54 261 Td (Raw vibration telemetry \(Enterprise plan\) | 36 months, older chunks held in compressed archive) Tj ET
+BT /F1 9 Tf 54 249 Td (tier) Tj ET
+BT /F1 9 Tf 54 237 Td (1-minute aggregates | 5 years) Tj ET
+BT /F1 9 Tf 54 225 Td (Hourly aggregates | Life of customer contract plus 1 year) Tj ET
+BT /F1 9 Tf 54 213 Td (Audit log \(tc-api\) | 2 years) Tj ET
+BT /F2 13 Tf 54 188 Td (Offsite copies) Tj ET
+BT /F1 10 Tf 54 166 Td (Every daily backup is replicated to STRATA-RTM-02 in Rotterdam by 06:00 UK time. Replication) Tj ET
+BT /F1 10 Tf 54 153 Td (failures raise a Beacon ticket in category SEC-BACKUP automatically and must be resolved within) Tj ET
+BT /F1 10 Tf 54 140 Td (one business day.) Tj ET
+BT /F2 13 Tf 54 115 Td (Restore testing) Tj ET
+BT /F1 10 Tf 54 93 Td (Restore tests are performed quarterly \(in the first month of each fiscal quarter: April, July,) Tj ET
+BT /F1 10 Tf 54 80 Td (October, January\). Each test restores Atlas to an isolated host, one file share and one) Tj ET
+BT /F1 10 Tf 54 67 Td (TesseraCloud tenant. Results are recorded in Beacon category SEC-BACKUP-TEST. A failed restore) Tj ET
+BT /F1 10 Tf 54 54 Td (test is treated as a SEV2 incident \(previously SEV3\).) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 486 >>
+stream
+BT /F2 13 Tf 54 717 Td (Encryption and access) Tj ET
+BT /F1 10 Tf 54 695 Td (All backups are encrypted at rest with AES-256. Deletion of backup sets before expiry requires) Tj ET
+BT /F1 10 Tf 54 682 Td (two approvers from IT Infrastructure and IT Security. Backup administrator accounts must use) Tj ET
+BT /F1 10 Tf 54 669 Td (FIDO2 MFA per the Password and MFA Standard v2.) Tj ET
+BT /F2 13 Tf 54 644 Td (Review) Tj ET
+BT /F1 10 Tf 54 622 Td (This standard is reviewed annually.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004322 00000 n 
+0000004458 00000 n 
+0000004995 00000 n 
+0000005131 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5180
+%%EOF

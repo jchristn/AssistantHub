@@ -17,6 +17,13 @@ Default transports:
 
 Container defaults use `0.0.0.0` for the bind host so the ports are reachable outside the container.
 
+### Protocol behavior (Voltaic 2.x)
+
+- **HTTP**: every AssistantHub operation is an MCP tool. `tools/list` returns only AssistantHub tools; Voltaic's demo tools (`ping`, `echo`, `getTime`, `getSessions`) are not published. Invoke tools through `tools/call` (`{"method":"tools/call","params":{"name":"tenant/get","arguments":{"tenantId":"..."}}}`). Calling a tool name as a bare JSON-RPC method returns `-32601` (method not found). Arguments are validated against the tool's input schema before the tool runs; a missing required argument returns `-32602`.
+- **TCP and WebSocket**: AssistantHub operations are registered as JSON-RPC methods with the same names, so clients call them directly (`{"method":"tenant/get","params":{"tenantId":"..."}}`). The Voltaic `echo`, `getTime`, and `getClients` methods are no longer available.
+- **`ping`** is the MCP protocol method on every transport and returns an empty object (`{}`), not `"pong"`. On HTTP it does not require authentication.
+- The HTTP JSON-RPC endpoint (`/rpc`) serves both handshake-era clients (`initialize` + `Mcp-Session-Id`) and stateless `2026-07-28` clients such as Claude Code 2.1.x.
+
 ## Quick Start
 
 Build the solution:

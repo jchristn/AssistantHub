@@ -1,0 +1,53 @@
+PAYROLL CALENDAR FY2025/26 - NETHERLANDS
+
+Meridian Instruments B.V. - NL payroll (Rotterdam)
+Issued by: Payroll, Finance (CC-1200)
+Issue date: 10 March 2025
+Applies to: 1 April 2025 to 31 March 2026
+Contact: payroll-nl@meridian-instruments.example
+
+1. HOW NL PAY WORKS
+
+NL employees are paid monthly by SEPA transfer to the bank account held in Keel. The standard pay date is the 24th of each month. If the 24th falls on a weekend or a Dutch public holiday, pay is made on the previous working day. December pay is brought forward to Friday 19 December 2025 because of the Christmas period.
+
+Payslips (loonstroken) are available in Keel > My Pay > Payslips two working days before each pay date.
+
+2. CUT-OFF DATES
+
+Change cut-off: changes that affect pay (new starters, leavers, bank details, salary changes, overtime and on-call claims, pension changes) must be fully approved by the 12th of the month to be included in that month's payroll. If the 12th is not a working day, the cut-off is the previous working day. Changes received after the cut-off are processed the following month.
+
+Expense cut-off: expense claims approved in Atlas by the same change cut-off (the 12th) are reimbursed with that month's salary. Tax-free travel allowance (reiskostenvergoeding) is paid automatically in the month following the travel.
+
+3. PAY DATES AND CUT-OFFS FY2025/26
+
+| Pay month | Change cut-off | Pay date |
+|---|---|---|
+| April 2025 | Fri 11 Apr 2025 | Thu 24 Apr 2025 |
+| May 2025 | Mon 12 May 2025 | Fri 23 May 2025 |
+| June 2025 | Thu 12 Jun 2025 | Tue 24 Jun 2025 |
+| July 2025 | Fri 11 Jul 2025 | Thu 24 Jul 2025 |
+| August 2025 | Tue 12 Aug 2025 | Fri 22 Aug 2025 |
+| September 2025 | Fri 12 Sep 2025 | Wed 24 Sep 2025 |
+| October 2025 | Fri 10 Oct 2025 | Fri 24 Oct 2025 |
+| November 2025 | Wed 12 Nov 2025 | Mon 24 Nov 2025 |
+| December 2025 | Fri 12 Dec 2025 | Fri 19 Dec 2025 |
+| January 2026 | Mon 12 Jan 2026 | Fri 23 Jan 2026 |
+| February 2026 | Thu 12 Feb 2026 | Tue 24 Feb 2026 |
+| March 2026 | Thu 12 Mar 2026 | Tue 24 Mar 2026 |
+
+Notes:
+- May 2025 pay moves to Friday 23 May because 24 May is a Saturday.
+- August 2025 pay moves to Friday 22 August because 24 August is a Sunday.
+- December 2025 pay is made early on Friday 19 December.
+
+4. OTHER KEY PAYROLL DATES
+
+- Holiday allowance (vakantiegeld), 8% of gross annual salary accrued June 2024 to May 2025: paid with the May 2025 payroll on Fri 23 May 2025.
+- MIP bonus for FY2024/25: paid with the June 2025 payroll (Tue 24 Jun 2025).
+- Salary review increases effective 1 July 2025: first paid in the July 2025 payroll (Thu 24 Jul 2025).
+- Annual statement (jaaropgaaf) for calendar year 2025: available in Keel > My Pay > Tax Documents by 31 January 2026.
+- Pension contributions to Zeevaart Pensioen are deducted every month; see the Netherlands Pension and 30% Ruling FAQ.
+
+5. BANK DETAILS AND CORRECTIONS
+
+Update bank details in Keel > My Profile > Bank Details before the change cut-off. If you believe you have been underpaid by more than EUR 120, contact payroll-nl@meridian-instruments.example; Payroll will make an off-cycle correction payment within five working days. Smaller corrections are made in the next scheduled payroll.

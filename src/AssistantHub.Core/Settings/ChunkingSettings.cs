@@ -64,6 +64,16 @@ namespace AssistantHub.Core.Settings
             set => _RetryDelayMs = value < 0 ? 0 : value;
         }
 
+        /// <summary>
+        /// Timeout, in milliseconds, for a single Partio request. Chunking and embedding a large document is one
+        /// request, so this bounds the largest document that can be ingested. Minimum 1,000 ms; default 900,000 ms.
+        /// </summary>
+        public int RequestTimeoutMs
+        {
+            get => _RequestTimeoutMs;
+            set => _RequestTimeoutMs = value < 1000 ? 1000 : value;
+        }
+
         #endregion
 
         #region Private-Members
@@ -73,6 +83,7 @@ namespace AssistantHub.Core.Settings
         private string _DashboardUrl = "";
         private int _MaxRetries = 3;
         private int _RetryDelayMs = 1000;
+        private int _RequestTimeoutMs = 900000;
 
         #endregion
 

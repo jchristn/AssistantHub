@@ -1,0 +1,414 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 7 >>
+endobj
+4 0 obj
+<< /Length 4324 >>
+stream
+BT /F2 16 Tf 54 723 Td (TesseraCloud Regional Failover Runbook) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: eng-tesseracloud-failover-runbook) Tj ET
+BT /F1 10 Tf 54 679 Td (Owner: Platform Engineering \(Head: Kofi Mensah-Bonsu\)) Tj ET
+BT /F1 10 Tf 54 657 Td (Last reviewed: 2025-06-20) Tj ET
+BT /F1 10 Tf 54 635 Td (Version: 3.2) Tj ET
+BT /F1 10 Tf 54 613 Td (Classification: Internal. Applies to TesseraCloud production only.) Tj ET
+BT /F2 13 Tf 54 588 Td (1. Purpose and scope) Tj ET
+BT /F1 10 Tf 54 566 Td (This runbook describes how to move TesseraCloud production traffic from the primary region euw1) Tj ET
+BT /F1 10 Tf 54 553 Td (\(Dublin\) to the secondary disaster recovery region euc1 \(Frankfurt\), how to verify the result,) Tj ET
+BT /F1 10 Tf 54 540 Td (and how to fail back once the primary region is healthy again. It covers the customer-facing) Tj ET
+BT /F1 10 Tf 54 527 Td (services that make up the TesseraCloud SaaS platform: the telemetry ingestion tier that) Tj ET
+BT /F1 10 Tf 54 514 Td (receives data from TS-4 gateways and TS-4e edge nodes, the public API and web application, the) Tj ET
+BT /F1 10 Tf 54 501 Td (stream processing tier, the Kafka event backbone and the TimescaleDB time-series store.) Tj ET
+BT /F1 10 Tf 54 479 Td (The runbook does not cover the Atlas ERP integration \(billing export\), which is batch based and) Tj ET
+BT /F1 10 Tf 54 466 Td (is re-run manually after a failover, and it does not cover the on-premises TS-4 gateway fleet) Tj ET
+BT /F1 10 Tf 54 453 Td (itself, which requires no action from Meridian during a failover because gateways reconnect by) Tj ET
+BT /F1 10 Tf 54 440 Td (DNS name.) Tj ET
+BT /F1 10 Tf 54 418 Td (The recovery objectives committed to customers in the TesseraCloud service description are:) Tj ET
+BT /F1 10 Tf 54 396 Td (- Recovery Time Objective \(RTO\): 60 minutes from the failover decision to restored ingestion) Tj ET
+BT /F1 10 Tf 54 383 Td (   and API service in euc1.) Tj ET
+BT /F1 10 Tf 54 370 Td (- Recovery Point Objective \(RPO\): 5 minutes of telemetry at most, measured at the Kafka and) Tj ET
+BT /F1 10 Tf 54 357 Td (   TimescaleDB layers.) Tj ET
+BT /F1 10 Tf 54 344 Td (Because TS-4 gateways buffer telemetry locally, the effective customer data loss in most) Tj ET
+BT /F1 10 Tf 54 331 Td (failovers is zero; the RPO applies to data that had already been acknowledged by tc-ingest in) Tj ET
+BT /F1 10 Tf 54 318 Td (euw1 but had not yet been replicated to euc1.) Tj ET
+BT /F2 13 Tf 54 293 Td (2. When to fail over) Tj ET
+BT /F1 10 Tf 54 271 Td (A regional failover is a significant event. It moves every customer tenant, invalidates warm) Tj ET
+BT /F1 10 Tf 54 258 Td (caches and requires a planned failback later. Do not fail over for a single degraded component) Tj ET
+BT /F1 10 Tf 54 245 Td (that can be repaired in place within the RTO. Use the criteria below. If in doubt, the Incident) Tj ET
+BT /F1 10 Tf 54 232 Td (Commander decides, and the decision is recorded in the incident channel.) Tj ET
+BT /F2 9 Tf 54 211 Td (Situation | Fail over? | Notes) Tj ET
+BT /F1 9 Tf 54 199 Td (Cloud provider declares a regional outage affecting euw1 compute or networking | Yes | Start at) Tj ET
+BT /F1 9 Tf 54 187 Td (step 1 immediately; do not wait for provider ETA) Tj ET
+BT /F1 9 Tf 54 175 Td (tc-ingest unavailable in all euw1 availability zones for more than 15 minutes with no) Tj ET
+BT /F1 9 Tf 54 163 Td (identified fix | Yes | Check the tc-ingest health endpoint first \(step 4\)) Tj ET
+BT /F1 9 Tf 54 151 Td (TimescaleDB primary and synchronous standby both lost | Yes | Regional failover is faster than) Tj ET
+BT /F1 9 Tf 54 139 Td (rebuilding the primary) Tj ET
+BT /F1 9 Tf 54 127 Td (Kafka cluster in euw1 has lost quorum or more than two brokers | Yes, unless the brokers are) Tj ET
+BT /F1 9 Tf 54 115 Td (returning | Confirm with the Kafka on-call engineer) Tj ET
+BT /F1 9 Tf 54 103 Td (Single broker, single database node or single availability zone lost | No | Handle with the) Tj ET
+BT /F1 9 Tf 54 91 Td (component runbooks) Tj ET
+BT /F1 9 Tf 54 79 Td (Elevated API latency or error rate under 5 percent | No | Treat as SEV2 or SEV3 per the) Tj ET
+BT /F1 9 Tf 54 67 Td (severity definitions) Tj ET
+BT /F1 9 Tf 54 55 Td (Security incident requiring isolation of euw1 | Case by case | Head of IT Security \(Mei-Ling) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4768 >>
+stream
+BT /F1 9 Tf 54 730 Td (Tan\) must be consulted) Tj ET
+BT /F1 10 Tf 54 708 Td (A failover is always handled as a SEV1 incident as defined in it-incident-severity-definitions,) Tj ET
+BT /F1 10 Tf 54 695 Td (regardless of how the incident was originally classified. If the incident was opened at a lower) Tj ET
+BT /F1 10 Tf 54 682 Td (severity, the Incident Commander raises it to SEV1 at the moment the failover decision is) Tj ET
+BT /F1 10 Tf 54 669 Td (taken.) Tj ET
+BT /F2 13 Tf 54 644 Td (3. Decision authority and roles) Tj ET
+BT /F1 10 Tf 54 622 Td (The decision to fail over is made by the Incident Commander, with approval from the Head of) Tj ET
+BT /F1 10 Tf 54 609 Td (Platform Engineering or the delegated duty manager listed on the Platform on-call rotation.) Tj ET
+BT /F1 10 Tf 54 596 Td (Approval may be given verbally on the incident bridge; the Incident Commander records the name) Tj ET
+BT /F1 10 Tf 54 583 Td (of the approver and the time in the incident channel. If neither the Head of Platform) Tj ET
+BT /F1 10 Tf 54 570 Td (Engineering nor the duty manager can be reached within 10 minutes, the Incident Commander may) Tj ET
+BT /F1 10 Tf 54 557 Td (proceed alone and must note the attempts to reach them.) Tj ET
+BT /F2 9 Tf 54 536 Td (Role | Filled by | Responsibilities) Tj ET
+BT /F1 9 Tf 54 524 Td (Incident Commander \(IC\) | Platform on-call primary, or the senior engineer who declared the) Tj ET
+BT /F1 9 Tf 54 512 Td (incident | Owns the decision, runs the bridge, keeps the timeline) Tj ET
+BT /F1 9 Tf 54 500 Td (Approver | Head of Platform Engineering or delegated duty manager | Approves failover and) Tj ET
+BT /F1 9 Tf 54 488 Td (failback) Tj ET
+BT /F1 9 Tf 54 476 Td (Operator | Platform on-call secondary | Runs tcctl commands and records output) Tj ET
+BT /F1 9 Tf 54 464 Td (Database lead | Data platform on-call | Promotes TimescaleDB, checks replication) Tj ET
+BT /F1 9 Tf 54 452 Td (Kafka lead | Streaming on-call | Checks MirrorMaker 2, moves consumer groups) Tj ET
+BT /F1 9 Tf 54 440 Td (Communications lead | Customer Support duty lead | Updates status page and key account contacts) Tj ET
+BT /F1 9 Tf 54 428 Td (Scribe | Any available engineer | Keeps timestamps in the incident channel) Tj ET
+BT /F1 10 Tf 54 406 Td (One person may hold several roles in a small incident, but the Incident Commander should never) Tj ET
+BT /F1 10 Tf 54 393 Td (also be the Operator.) Tj ET
+BT /F2 13 Tf 54 368 Td (4. Architecture summary) Tj ET
+BT /F1 10 Tf 54 346 Td (TesseraCloud runs active-passive across two regions. Only euw1 serves customer traffic in) Tj ET
+BT /F1 10 Tf 54 333 Td (normal operation. euc1 runs warm standby capacity: the Kubernetes services are deployed at) Tj ET
+BT /F1 10 Tf 54 320 Td (reduced replica counts, the database replica is continuously applying changes, and MirrorMaker) Tj ET
+BT /F1 10 Tf 54 307 Td (2 copies Kafka topics from euw1 to euc1.) Tj ET
+BT /F2 9 Tf 54 286 Td (Component | Primary \(euw1\) | DR \(euc1\) | Port | Replication) Tj ET
+BT /F1 9 Tf 54 274 Td (tc-ingest \(MQTT ingestion\) | tc-ingest deployment, 12 replicas | tc-ingest deployment, 3) Tj ET
+BT /F1 9 Tf 54 262 Td (replicas \(scaled on failover\) | 8883 MQTT over TLS; 8081 health | Stateless) Tj ET
+BT /F1 9 Tf 54 250 Td (tc-api \(public API and web\) | tc-api deployment, 8 replicas | tc-api deployment, 2 replicas |) Tj ET
+BT /F1 9 Tf 54 238 Td (443 HTTPS | Stateless) Tj ET
+BT /F1 9 Tf 54 226 Td (tc-stream \(Kafka consumers\) | consumer group tc-stream-prd | same group name, stopped until) Tj ET
+BT /F1 9 Tf 54 214 Td (promotion | n/a | Offsets translated by MirrorMaker 2) Tj ET
+BT /F1 9 Tf 54 202 Td (Kafka | kafka-prd-01 to kafka-prd-06 | kafka-dr-01 to kafka-dr-03 | 9093 TLS | MirrorMaker 2,) Tj ET
+BT /F1 9 Tf 54 190 Td (asynchronous) Tj ET
+BT /F1 9 Tf 54 178 Td (TimescaleDB primary | tsdb-prd-01.tessera.meridian.internal | n/a | 5432 | Synchronous to) Tj ET
+BT /F1 9 Tf 54 166 Td (tsdb-prd-02) Tj ET
+BT /F1 9 Tf 54 154 Td (TimescaleDB standby | tsdb-prd-02 \(synchronous\) | tsdb-dr-01.euc1.tessera.meridian.internal) Tj ET
+BT /F1 9 Tf 54 142 Td (\(asynchronous\) | 5432 | Streaming replication) Tj ET
+BT /F1 9 Tf 54 130 Td (Public DNS | ingest.tesseracloud.meridian-instruments.com,) Tj ET
+BT /F1 9 Tf 54 118 Td (api.tesseracloud.meridian-instruments.com | same names, switched by tcctl | n/a | TTL 60) Tj ET
+BT /F1 9 Tf 54 106 Td (seconds) Tj ET
+BT /F1 10 Tf 54 84 Td (TS-4 gateways connect to ingest.tesseracloud.meridian-instruments.com on port 8883 using MQTT) Tj ET
+BT /F1 10 Tf 54 71 Td (over TLS. TS-4e edge nodes normally forward through a TS-4 gateway; the small number of TS-4e) Tj ET
+BT /F1 10 Tf 54 58 Td (units configured for direct cloud connection use the same DNS name and port. The public API and) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 4851 >>
+stream
+BT /F1 10 Tf 54 729 Td (web application are reached at api.tesseracloud.meridian-instruments.com on port 443.) Tj ET
+BT /F1 10 Tf 54 707 Td (The DNS records for both names have a TTL of 60 seconds. Clients that honour the TTL will reach) Tj ET
+BT /F1 10 Tf 54 694 Td (euc1 within about one minute of the DNS switch. Some customer networks run caching resolvers) Tj ET
+BT /F1 10 Tf 54 681 Td (that ignore short TTLs; these clients reconnect as their caches expire, which in past drills) Tj ET
+BT /F1 10 Tf 54 668 Td (has taken up to 20 minutes for a small tail of sites.) Tj ET
+BT /F2 11 Tf 54 645 Td (Gateway buffering) Tj ET
+BT /F1 10 Tf 54 623 Td (TS-4 gateways store readings in their local store-and-forward buffer when they cannot reach) Tj ET
+BT /F1 10 Tf 54 610 Td (TesseraCloud, so readings are not lost during a failover. After the DNS switch they reconnect) Tj ET
+BT /F1 10 Tf 54 597 Td (to euc1 and replay the buffered data in order. Gateways running gateway firmware 5.0.0 or later) Tj ET
+BT /F1 10 Tf 54 584 Td (use jittered reconnect backoff and paced replay \(added after INC-2024-031, action item AI-3\).) Tj ET
+BT /F1 10 Tf 54 571 Td (Gateways on older 4.x firmware reconnect immediately and replay at full speed, which can) Tj ET
+BT /F1 10 Tf 54 558 Td (overload tc-ingest in the first 30 minutes after the switch. The firmware distribution report) Tj ET
+BT /F1 10 Tf 54 545 Td (in the TesseraCloud admin console \(Fleet, Firmware\) shows how many gateways are still below) Tj ET
+BT /F1 10 Tf 54 532 Td (5.0.0; at the last review in June 2025 this was under 4 percent of the fleet.) Tj ET
+BT /F2 13 Tf 54 507 Td (5. Prerequisites) Tj ET
+BT /F1 10 Tf 54 485 Td (Before starting the procedure, the Operator confirms the following. Most of these are standing) Tj ET
+BT /F1 10 Tf 54 472 Td (conditions that are checked monthly by the Platform team, but they must be reconfirmed during) Tj ET
+BT /F1 10 Tf 54 459 Td (an incident.) Tj ET
+BT /F1 10 Tf 54 437 Td (- Access to the tcctl command line tool at version 2.14 or later, authenticated with a) Tj ET
+BT /F1 10 Tf 54 424 Td (   production break-glass role. Run tcctl version to check.) Tj ET
+BT /F1 10 Tf 54 411 Td (- VPN access to the Meridian management network, or access through the cloud bastion if the) Tj ET
+BT /F1 10 Tf 54 398 Td (   corporate VPN is affected.) Tj ET
+BT /F1 10 Tf 54 385 Td (- Access to the Forge \(CI/CD\) administration console to freeze deployments.) Tj ET
+BT /F1 10 Tf 54 372 Td (- Access to the status page administration for status.tesseracloud.meridian-instruments.com.) Tj ET
+BT /F1 10 Tf 54 359 Td (- The incident channel is open in the chat tool and a bridge call is running.) Tj ET
+BT /F1 10 Tf 54 346 Td (- A Beacon incident ticket exists in category SEC-INCIDENT or INC-PLATFORM \(whichever the) Tj ET
+BT /F1 10 Tf 54 333 Td (   service desk used when opening the incident\); the ticket number is posted in the incident) Tj ET
+BT /F1 10 Tf 54 320 Td (   channel.) Tj ET
+BT /F1 10 Tf 54 307 Td (- The euc1 capacity reservation is active. This is confirmed by the monthly DR readiness) Tj ET
+BT /F1 10 Tf 54 294 Td (   check; if the check has failed in the last 30 days, the Operator must warn the IC that) Tj ET
+BT /F1 10 Tf 54 281 Td (   scale-up may be slower.) Tj ET
+BT /F2 13 Tf 54 265 Td (6. Failover procedure) Tj ET
+BT /F1 10 Tf 54 243 Td (Record the start time of each step in the incident channel. Steps are numbered continuously) Tj ET
+BT /F1 10 Tf 54 230 Td (across all phases so that they can be referenced from postmortems and other runbooks.) Tj ET
+BT /F2 11 Tf 54 207 Td (Phase A: Assess and declare) Tj ET
+BT /F1 10 Tf 54 185 Td (1. The IC declares or upgrades the incident to SEV1 and announces on the bridge that a) Tj ET
+BT /F1 10 Tf 54 172 Td (   regional failover is being considered. The Scribe starts the timeline.) Tj ET
+BT /F1 10 Tf 54 159 Td (2. The Operator runs tcctl status --region euw1 and posts the output to the incident channel.) Tj ET
+BT /F1 10 Tf 54 146 Td (   Note which components report DEGRADED or DOWN.) Tj ET
+BT /F1 10 Tf 54 133 Td (3. The Operator runs tcctl status --region euc1 to confirm the DR region is healthy. All) Tj ET
+BT /F1 10 Tf 54 120 Td (   components should report STANDBY or READY. If any euc1 component reports DOWN, stop and) Tj ET
+BT /F1 10 Tf 54 107 Td (   escalate to the Head of Platform Engineering before continuing.) Tj ET
+BT /F1 10 Tf 54 94 Td (4. The Operator checks the tc-ingest health endpoint /healthz on port 8081 in both regions) Tj ET
+BT /F1 10 Tf 54 81 Td (   through the internal load balancers. In euw1 this confirms whether ingestion is truly) Tj ET
+BT /F1 10 Tf 54 68 Td (   down; in euc1 it should return status ok with mode standby.) Tj ET
+BT /F1 10 Tf 54 55 Td (5. The IC reviews the decision criteria in section 2 with the Approver. If the decision is to) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 5438 >>
+stream
+BT /F1 10 Tf 54 729 Td (   fail over, the IC states on the bridge: failover approved, approver name, time. The Scribe) Tj ET
+BT /F1 10 Tf 54 716 Td (   records this.) Tj ET
+BT /F1 10 Tf 54 703 Td (6. The Communications lead posts an initial notice on) Tj ET
+BT /F1 10 Tf 54 690 Td (   status.tesseracloud.meridian-instruments.com. The first status page update must be) Tj ET
+BT /F1 10 Tf 54 677 Td (   published within 30 minutes of the SEV1 declaration, and further updates every 30 minutes) Tj ET
+BT /F1 10 Tf 54 664 Td (   until the incident is resolved.) Tj ET
+BT /F2 11 Tf 54 650 Td (Phase B: Precheck and freeze) Tj ET
+BT /F1 10 Tf 54 628 Td (7. The Operator freezes production deployments for TesseraCloud in Forge by enabling the) Tj ET
+BT /F1 10 Tf 54 615 Td (   deployment freeze flag on the tesseracloud-prod environment. This prevents pipelines from) Tj ET
+BT /F1 10 Tf 54 602 Td (   deploying to either region during the failover. Post a screenshot or the Forge audit entry) Tj ET
+BT /F1 10 Tf 54 589 Td (   in the channel.) Tj ET
+BT /F1 10 Tf 54 576 Td (8. The Operator runs tcctl failover precheck --target euc1. The precheck validates) Tj ET
+BT /F1 10 Tf 54 563 Td (   credentials, DNS zone access, database replica state, MirrorMaker 2 status and euc1) Tj ET
+BT /F1 10 Tf 54 550 Td (   capacity. It prints a summary table and exits with PASS, WARN or FAIL. Continue on PASS.) Tj ET
+BT /F1 10 Tf 54 537 Td (   On WARN, read each warning aloud on the bridge; the IC decides whether to continue. On) Tj ET
+BT /F1 10 Tf 54 524 Td (   FAIL, do not continue until the failure is resolved or the IC and Approver explicitly) Tj ET
+BT /F1 10 Tf 54 511 Td (   accept the risk.) Tj ET
+BT /F1 10 Tf 54 498 Td (9. The Kafka lead checks the consumer lag of consumer group tc-stream-prd in euw1 \(tcctl) Tj ET
+BT /F1 10 Tf 54 485 Td (   kafka lag --group tc-stream-prd --region euw1\). Record the total lag and the per-partition) Tj ET
+BT /F1 10 Tf 54 472 Td (   maximum. A large lag means processed data in TimescaleDB is behind raw data in Kafka,) Tj ET
+BT /F1 10 Tf 54 459 Td (   which affects how much reprocessing euc1 will need after promotion. This check was) Tj ET
+BT /F1 10 Tf 54 446 Td (   introduced as action item AI-2 of postmortem INC-2024-031, the May 2024 ingestion outage;) Tj ET
+BT /F1 10 Tf 54 433 Td (   at that time it was a RabbitMQ queue-depth check, and it was converted to a Kafka consumer) Tj ET
+BT /F1 10 Tf 54 420 Td (   lag check after the migration to Kafka under ADR-019.) Tj ET
+BT /F1 10 Tf 54 407 Td (10. If euw1 is still partially reachable, the Operator stops new MQTT connections to euw1 by) Tj ET
+BT /F1 10 Tf 54 394 Td (   setting tc-ingest to drain mode \(tcctl ingest drain --region euw1\). Gateways that lose) Tj ET
+BT /F1 10 Tf 54 381 Td (   their connection will start buffering locally. If euw1 is unreachable, skip this step and) Tj ET
+BT /F1 10 Tf 54 368 Td (   note it in the channel.) Tj ET
+BT /F1 10 Tf 54 355 Td (11. The Database lead checks replication status on tsdb-dr-01.euc1.tessera.meridian.internal) Tj ET
+BT /F1 10 Tf 54 342 Td (   and records the replay lag reported by the replica. In normal operation it is under 2) Tj ET
+BT /F1 10 Tf 54 329 Td (   seconds.) Tj ET
+BT /F1 10 Tf 54 316 Td (12. The Kafka lead confirms MirrorMaker 2 connectors are running for all replicated topics,) Tj ET
+BT /F1 10 Tf 54 303 Td (   including tessera.telemetry.raw, tessera.telemetry.agg and tessera.alerts. Any stopped) Tj ET
+BT /F1 10 Tf 54 290 Td (   connector must be noted; its topic may have a larger gap.) Tj ET
+BT /F1 10 Tf 54 277 Td (13. The Operator scales up euc1 stateless services to production capacity using tcctl scale) Tj ET
+BT /F1 10 Tf 54 264 Td (   --region euc1 --profile production. This takes 5 to 10 minutes and can run in parallel) Tj ET
+BT /F1 10 Tf 54 251 Td (   with the next steps. Do not proceed to DNS switch until the scale-up has completed.) Tj ET
+BT /F2 11 Tf 54 237 Td (Phase C: Promote data tier) Tj ET
+BT /F1 10 Tf 54 215 Td (14. The Kafka lead confirms that MirrorMaker 2 replication lag, reported as the metric) Tj ET
+BT /F1 10 Tf 54 202 Td (   replication-latency-ms-max, is below 30 seconds \(30000 ms\) for all replicated topics) Tj ET
+BT /F1 10 Tf 54 189 Td (   before promotion proceeds. If the lag is above 30 seconds, wait up to 10 minutes and) Tj ET
+BT /F1 10 Tf 54 176 Td (   re-check, because lag usually falls quickly once euw1 producers have stopped. If the lag) Tj ET
+BT /F1 10 Tf 54 163 Td (   is still above 30 seconds after 10 minutes, the Incident Commander may decide to accept) Tj ET
+BT /F1 10 Tf 54 150 Td (   the resulting data loss, provided it stays within the 5-minute RPO, and must record that) Tj ET
+BT /F1 10 Tf 54 137 Td (   decision, the observed lag and the time in the incident channel. If the lag suggests loss) Tj ET
+BT /F1 10 Tf 54 124 Td (   beyond the RPO, the IC must inform the Approver and the Communications lead before) Tj ET
+BT /F1 10 Tf 54 111 Td (   continuing.) Tj ET
+BT /F1 10 Tf 54 98 Td (15. The Database lead confirms that the DR replica has replayed all WAL it has received and) Tj ET
+BT /F1 10 Tf 54 85 Td (   that no further WAL is arriving from euw1.) Tj ET
+BT /F1 10 Tf 54 72 Td (16. The Operator runs tcctl failover promote --region euc1 --confirm. This command promotes) Tj ET
+BT /F1 10 Tf 54 59 Td (   tsdb-dr-01 to primary, switches the euc1 Kafka cluster from replica mode to active mode,) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 4919 >>
+stream
+BT /F1 10 Tf 54 729 Td (   stops MirrorMaker 2 and translates committed offsets for consumer group tc-stream-prd. The) Tj ET
+BT /F1 10 Tf 54 716 Td (   command is idempotent; if it times out, run it again rather than performing the steps) Tj ET
+BT /F1 10 Tf 54 703 Td (   manually.) Tj ET
+BT /F1 10 Tf 54 690 Td (17. The Database lead verifies that tsdb-dr-01.euc1.tessera.meridian.internal accepts writes) Tj ET
+BT /F1 10 Tf 54 677 Td (   on port 5432 and that the application role can connect. Record the promotion timestamp.) Tj ET
+BT /F1 10 Tf 54 664 Td (18. The Kafka lead verifies that kafka-dr-01, kafka-dr-02 and kafka-dr-03 accept produce) Tj ET
+BT /F1 10 Tf 54 651 Td (   requests on port 9093 and that all partitions of the telemetry topics have an in-sync) Tj ET
+BT /F1 10 Tf 54 638 Td (   leader.) Tj ET
+BT /F2 11 Tf 54 624 Td (Phase D: Start processing in euc1) Tj ET
+BT /F1 10 Tf 54 602 Td (19. The Operator starts tc-stream in euc1. The consumers join group tc-stream-prd using the) Tj ET
+BT /F1 10 Tf 54 589 Td (   translated offsets. Watch the consumer lag for the first 5 minutes; it should begin to) Tj ET
+BT /F1 10 Tf 54 576 Td (   fall.) Tj ET
+BT /F1 10 Tf 54 563 Td (20. The Operator confirms tc-api pods in euc1 report ready and that the API returns 200 on its) Tj ET
+BT /F1 10 Tf 54 550 Td (   internal health check.) Tj ET
+BT /F1 10 Tf 54 537 Td (21. The Operator confirms tc-ingest in euc1 reports mode active on /healthz port 8081.) Tj ET
+BT /F2 11 Tf 54 523 Td (Phase E: Switch traffic) Tj ET
+BT /F1 10 Tf 54 501 Td (22. The Operator runs tcctl dns switch --target euc1. This updates) Tj ET
+BT /F1 10 Tf 54 488 Td (   ingest.tesseracloud.meridian-instruments.com and api.tesseracloud.meridian-instruments.com) Tj ET
+BT /F1 10 Tf 54 475 Td (   to point at the euc1 load balancers. Record the time; clients honouring the 60-second TTL) Tj ET
+BT /F1 10 Tf 54 462 Td (   should arrive within about one minute.) Tj ET
+BT /F1 10 Tf 54 449 Td (23. The Operator monitors MQTT connection count on tc-ingest in euc1. Expect a rapid rise in) Tj ET
+BT /F1 10 Tf 54 436 Td (   the first 5 minutes followed by a slower tail. The connection count should reach at least) Tj ET
+BT /F1 10 Tf 54 423 Td (   90 percent of the pre-incident baseline within 30 minutes.) Tj ET
+BT /F1 10 Tf 54 410 Td (24. The Operator watches ingestion throughput. Throughput will temporarily exceed normal peak) Tj ET
+BT /F1 10 Tf 54 397 Td (   as TS-4 gateways replay their buffers. The euc1 production profile is sized for 2.5 times) Tj ET
+BT /F1 10 Tf 54 384 Td (   normal peak; if tc-ingest CPU stays above 85 percent for 10 minutes, scale further with) Tj ET
+BT /F1 10 Tf 54 371 Td (   tcctl scale --region euc1 --component tc-ingest --replicas 24.) Tj ET
+BT /F1 10 Tf 54 358 Td (25. The Communications lead updates status.tesseracloud.meridian-instruments.com to say that) Tj ET
+BT /F1 10 Tf 54 345 Td (   service has been restored from the secondary region and that historical data may take time) Tj ET
+BT /F1 10 Tf 54 332 Td (   to backfill.) Tj ET
+BT /F2 11 Tf 54 318 Td (Phase F: Verify and stabilise) Tj ET
+BT /F1 10 Tf 54 296 Td (26. The IC runs through the verification checklist in section 7 with the Operator and records) Tj ET
+BT /F1 10 Tf 54 283 Td (   each result.) Tj ET
+BT /F1 10 Tf 54 270 Td (27. The Operator re-enables Forge deployments for tesseracloud-prod only if the IC agrees; by) Tj ET
+BT /F1 10 Tf 54 257 Td (   default the freeze stays in place until failback, and only emergency fixes are deployed,) Tj ET
+BT /F1 10 Tf 54 244 Td (   through the ECAB process in the change management procedure.) Tj ET
+BT /F1 10 Tf 54 231 Td (28. The Operator raises a Beacon change record in category CHG-EMERG to document the failover) Tj ET
+BT /F1 10 Tf 54 218 Td (   as an emergency change, linking the incident ticket.) Tj ET
+BT /F1 10 Tf 54 205 Td (29. The IC declares service restored, records the total time from the failover decision in) Tj ET
+BT /F1 10 Tf 54 192 Td (   step 5 to completion of step 26, and compares it against the 60-minute RTO.) Tj ET
+BT /F1 10 Tf 54 179 Td (30. The IC confirms the incident remains open as SEV1 until customer impact has ended, then) Tj ET
+BT /F1 10 Tf 54 166 Td (   downgrades per the severity definitions and schedules the post-incident review within five) Tj ET
+BT /F1 10 Tf 54 153 Td (   business days.) Tj ET
+BT /F2 13 Tf 54 137 Td (7. Verification checklist) Tj ET
+BT /F2 9 Tf 54 116 Td (Check | How | Expected result) Tj ET
+BT /F1 9 Tf 54 104 Td (DNS resolves to euc1 | Resolve ingest.tesseracloud.meridian-instruments.com and) Tj ET
+BT /F1 9 Tf 54 92 Td (api.tesseracloud.meridian-instruments.com from two external networks | euc1 load balancer) Tj ET
+BT /F1 9 Tf 54 80 Td (addresses) Tj ET
+BT /F1 9 Tf 54 68 Td (Gateway connections | tc-ingest connection dashboard in euc1 | At least 90 percent of baseline) Tj ET
+BT /F1 9 Tf 54 56 Td (within 30 minutes) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4972 >>
+stream
+BT /F1 9 Tf 54 730 Td (Ingestion health | /healthz on port 8081 | status ok, mode active) Tj ET
+BT /F1 9 Tf 54 718 Td (API health | Synthetic check from status page provider | HTTP 200 on) Tj ET
+BT /F1 9 Tf 54 706 Td (api.tesseracloud.meridian-instruments.com port 443) Tj ET
+BT /F1 9 Tf 54 694 Td (Database writes | Insert and read a canary row via tcctl db canary | Success within 1 second) Tj ET
+BT /F1 9 Tf 54 682 Td (Kafka | tcctl kafka lag --group tc-stream-prd --region euc1 | Lag falling, no partitions) Tj ET
+BT /F1 9 Tf 54 670 Td (without leader) Tj ET
+BT /F1 9 Tf 54 658 Td (Customer view | Log in to a demo tenant and open a live TS-4 dashboard | New readings within 2) Tj ET
+BT /F1 9 Tf 54 646 Td (minutes) Tj ET
+BT /F1 9 Tf 54 634 Td (Alerts pipeline | Trigger a test vibration threshold alert on demo tenant | Email and webhook) Tj ET
+BT /F1 9 Tf 54 622 Td (delivered) Tj ET
+BT /F1 9 Tf 54 610 Td (Billing export | Confirm Atlas billing job paused | Job shows HELD; re-run after failback) Tj ET
+BT /F2 13 Tf 54 585 Td (8. Failback) Tj ET
+BT /F1 10 Tf 54 563 Td (Failback returns traffic to euw1. It is a planned activity, not an emergency action, and it has) Tj ET
+BT /F1 10 Tf 54 550 Td (its own risks, so it is not rushed.) Tj ET
+BT /F1 10 Tf 54 528 Td (- Failback is not started until TesseraCloud has run stably in euc1 for at least 24 hours,) Tj ET
+BT /F1 10 Tf 54 515 Td (   and the cause of the euw1 failure has been understood and fixed.) Tj ET
+BT /F1 10 Tf 54 502 Td (- Failback is performed in a change window approved through CAB, or through ECAB if a) Tj ET
+BT /F1 10 Tf 54 489 Td (   business reason requires it sooner than the next CAB meeting. The change is raised in) Tj ET
+BT /F1 10 Tf 54 476 Td (   Beacon with a link to the original incident.) Tj ET
+BT /F1 10 Tf 54 463 Td (- Customers are notified at least 48 hours in advance through the status page, unless the) Tj ET
+BT /F1 10 Tf 54 450 Td (   change is approved via ECAB, in which case the notice period is agreed by the Approver.) Tj ET
+BT /F1 10 Tf 54 437 Td (The failback procedure in outline:) Tj ET
+BT /F1 10 Tf 54 415 Td (1. Rebuild or resynchronise TimescaleDB in euw1 as a replica of tsdb-dr-01, then re-establish) Tj ET
+BT /F1 10 Tf 54 402 Td (   tsdb-prd-02 as a synchronous standby of tsdb-prd-01 once tsdb-prd-01 becomes primary) Tj ET
+BT /F1 10 Tf 54 389 Td (   again.) Tj ET
+BT /F1 10 Tf 54 376 Td (2. Reconfigure MirrorMaker 2 in the reverse direction, from euc1 to euw1, and wait for) Tj ET
+BT /F1 10 Tf 54 363 Td (   replication lag below 30 seconds.) Tj ET
+BT /F1 10 Tf 54 350 Td (3. Run tcctl failback plan to generate the ordered step list for the current state; the plan) Tj ET
+BT /F1 10 Tf 54 337 Td (   output is attached to the change record.) Tj ET
+BT /F1 10 Tf 54 324 Td (4. Execute the plan during the change window: drain euc1 ingestion, promote euw1, switch DNS) Tj ET
+BT /F1 10 Tf 54 311 Td (   back, start tc-stream in euw1.) Tj ET
+BT /F1 10 Tf 54 298 Td (5. Restore normal MirrorMaker 2 direction from euw1 to euc1 and return euc1 to standby) Tj ET
+BT /F1 10 Tf 54 285 Td (   capacity.) Tj ET
+BT /F1 10 Tf 54 272 Td (6. Lift the Forge deployment freeze and resume the Atlas billing export.) Tj ET
+BT /F2 13 Tf 54 256 Td (9. Known issues and troubleshooting) Tj ET
+BT /F2 9 Tf 54 235 Td (Symptom | Likely cause | Action) Tj ET
+BT /F1 9 Tf 54 223 Td (tcctl failover precheck --target euc1 reports WARN on capacity | euc1 capacity reservation not) Tj ET
+BT /F1 9 Tf 54 211 Td (fully available | Continue; scale-up may take up to 20 minutes. Inform IC) Tj ET
+BT /F1 9 Tf 54 199 Td (Promote command times out | Control plane API throttling in euc1 | Re-run tcctl failover) Tj ET
+BT /F1 9 Tf 54 187 Td (promote --region euc1 --confirm; it is idempotent) Tj ET
+BT /F1 9 Tf 54 175 Td (Consumer lag in euc1 not falling | Offset translation incomplete for some partitions | Kafka) Tj ET
+BT /F1 9 Tf 54 163 Td (lead resets affected partitions to translated checkpoint; see Kafka runbook) Tj ET
+BT /F1 9 Tf 54 151 Td (Some gateways never reconnect | Customer DNS caching or firewall allowing only euw1 addresses |) Tj ET
+BT /F1 9 Tf 54 139 Td (Communications lead contacts customer; customers should allow the documented TesseraCloud) Tj ET
+BT /F1 9 Tf 54 127 Td (address ranges for both regions) Tj ET
+BT /F1 9 Tf 54 115 Td (Duplicate readings in dashboards | Gateway replay overlapping data already replicated |) Tj ET
+BT /F1 9 Tf 54 103 Td (Expected; tc-stream deduplicates on gateway sequence number within 24 hours) Tj ET
+BT /F1 9 Tf 54 91 Td (Reconnect surge from some sites | Gateways on firmware older than 5.0.0 reconnect without) Tj ET
+BT /F1 9 Tf 54 79 Td (backoff | Scale tc-ingest \(step 24\); record affected tenants and recommend a firmware upgrade) Tj ET
+BT /F1 9 Tf 54 67 Td (API 401 errors after failover | Token signing key cache not warm in euc1 | Restart tc-api pods) Tj ET
+BT /F1 9 Tf 54 55 Td (in euc1 one availability zone at a time) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 2884 >>
+stream
+BT /F2 13 Tf 54 717 Td (10. Drills and testing) Tj ET
+BT /F1 10 Tf 54 695 Td (Failover drills are run twice a year, in April and October, against production with customer) Tj ET
+BT /F1 10 Tf 54 682 Td (notice, following this runbook exactly. Each drill produces a short report with timings per) Tj ET
+BT /F1 10 Tf 54 669 Td (phase and any runbook corrections. The most recent drill, on 2025-04-15, completed in 38) Tj ET
+BT /F1 10 Tf 54 656 Td (minutes from the failover decision to verification, within the 60-minute RTO. The drill found) Tj ET
+BT /F1 10 Tf 54 643 Td (that step 13 scale-up was the longest single step and that the status page template needed a) Tj ET
+BT /F1 10 Tf 54 630 Td (German translation for DACH customers; both were addressed in version 3.2.) Tj ET
+BT /F1 10 Tf 54 608 Td (In addition, the monthly DR readiness check runs tcctl failover precheck --target euc1 in) Tj ET
+BT /F1 10 Tf 54 595 Td (dry-run mode and reports the result to the Platform Engineering channel.) Tj ET
+BT /F2 13 Tf 54 570 Td (11. Related documents) Tj ET
+BT /F1 10 Tf 54 548 Td (- it-incident-severity-definitions: SEV1 definition and update cadence) Tj ET
+BT /F1 10 Tf 54 535 Td (- it-oncall-policy-v2: paging and acknowledgement rules for the Platform rotation) Tj ET
+BT /F1 10 Tf 54 522 Td (- it-change-management-procedure-v2: CAB and ECAB process for failback and emergency changes) Tj ET
+BT /F1 10 Tf 54 509 Td (- eng-postmortem-inc-2024-031-tesseracloud-ingestion: origin of the consumer lag check in) Tj ET
+BT /F1 10 Tf 54 496 Td (   step 9) Tj ET
+BT /F1 10 Tf 54 483 Td (- eng-adr-019-message-broker-kafka and eng-adr-023-timeseries-timescaledb: architecture) Tj ET
+BT /F1 10 Tf 54 470 Td (   decisions behind the current data tier) Tj ET
+BT /F1 10 Tf 54 457 Td (- eng-tesseracloud-config-prod: production hosts, ports and configuration keys) Tj ET
+BT /F2 13 Tf 54 441 Td (12. Revision history) Tj ET
+BT /F2 9 Tf 54 420 Td (Version | Date | Author | Change) Tj ET
+BT /F1 9 Tf 54 408 Td (1.0 | 2023-03-02 | Platform Engineering | First version for RabbitMQ and InfluxDB architecture) Tj ET
+BT /F1 9 Tf 54 396 Td (2.0 | 2024-06-27 | Platform Engineering | Added queue-depth check \(INC-2024-031 AI-2\) and) Tj ET
+BT /F1 9 Tf 54 384 Td (gateway buffering notes) Tj ET
+BT /F1 9 Tf 54 372 Td (3.0 | 2025-02-24 | Platform Engineering | Rewritten for Kafka \(ADR-019\) and TimescaleDB) Tj ET
+BT /F1 9 Tf 54 360 Td (\(ADR-023\); queue-depth check converted to consumer lag; added MirrorMaker 2 lag check) Tj ET
+BT /F1 9 Tf 54 348 Td (3.1 | 2025-04-22 | Platform Engineering | Updates after April 2025 drill: scale-up moved) Tj ET
+BT /F1 9 Tf 54 336 Td (earlier, promote command made idempotent) Tj ET
+BT /F1 9 Tf 54 324 Td (3.2 | 2025-06-20 | Kofi Mensah-Bonsu | Review; status page cadence aligned with SEV1) Tj ET
+BT /F1 9 Tf 54 312 Td (definition; added troubleshooting rows) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 19
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000305 00000 n 
+0000004681 00000 n 
+0000004817 00000 n 
+0000009637 00000 n 
+0000009773 00000 n 
+0000014676 00000 n 
+0000014812 00000 n 
+0000020303 00000 n 
+0000020441 00000 n 
+0000025413 00000 n 
+0000025551 00000 n 
+0000030576 00000 n 
+0000030714 00000 n 
+0000033651 00000 n 
+0000033789 00000 n 
+trailer
+<< /Size 19 /Root 18 0 R >>
+startxref
+33839
+%%EOF

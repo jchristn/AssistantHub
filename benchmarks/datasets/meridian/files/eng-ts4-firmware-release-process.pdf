@@ -1,0 +1,91 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 3889 >>
+stream
+BT /F2 16 Tf 54 723 Td (TS-4 and TS-4e Firmware Release Process) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: eng-ts4-firmware-release-process. Owner: Tessera Firmware Team \(release manager) Tj ET
+BT /F1 10 Tf 54 688 Td (role rotates per release\). Last updated: 9 June 2025.) Tj ET
+BT /F2 13 Tf 54 663 Td (Scope) Tj ET
+BT /F1 10 Tf 54 641 Td (This process covers firmware for the Tessera TS-4 gateway and the TS-4e edge node, from release) Tj ET
+BT /F1 10 Tf 54 628 Td (candidate to general availability through TesseraCloud over-the-air \(OTA\) updates.) Tj ET
+BT /F2 13 Tf 54 603 Td (Release types) Tj ET
+BT /F2 9 Tf 54 582 Td (Type | Version change | Example | Typical cadence) Tj ET
+BT /F1 9 Tf 54 570 Td (Major | First number | 4.x to 5.0 | Yearly) Tj ET
+BT /F1 9 Tf 54 558 Td (Minor | Second number | 5.2 to 5.3 | Quarterly) Tj ET
+BT /F1 9 Tf 54 546 Td (Patch | Third number | 5.2.0 to 5.2.1 | As needed) Tj ET
+BT /F1 9 Tf 54 534 Td (Hotfix | Patch released outside the normal cadence | 5.2.2 for a security fix | As needed) Tj ET
+BT /F2 13 Tf 54 509 Td (Stages) Tj ET
+BT /F1 10 Tf 54 487 Td (1. Release candidate built in Forge by a release pipeline on the release-tagged runners,) Tj ET
+BT /F1 10 Tf 54 474 Td (   including the hil-test stage on the tessera-tagged Penang runners and the sign stage.) Tj ET
+BT /F1 10 Tf 54 461 Td (2. The release manager declares a firmware release freeze on the release branch. During the) Tj ET
+BT /F1 10 Tf 54 448 Td (   freeze, Forge runner token rotation is also paused on the Penang runners.) Tj ET
+BT /F1 10 Tf 54 435 Td (3. Staging soak: the candidate runs on the 40 test TS-4 gateways and 25 TS-4e edge nodes) Tj ET
+BT /F1 10 Tf 54 422 Td (   connected to TesseraCloud staging for at least 7 days \(major and minor\) or 48 hours) Tj ET
+BT /F1 10 Tf 54 409 Td (   \(patch\).) Tj ET
+BT /F1 10 Tf 54 396 Td (4. Pilot ring: OTA to 2% of production devices that belong to customers enrolled in the) Tj ET
+BT /F1 10 Tf 54 383 Td (   early-access programme, for 7 days.) Tj ET
+BT /F1 10 Tf 54 370 Td (5. Staged rollout: 10%, then 25%, then 50%, then 100% of the fleet, with at least 48 hours) Tj ET
+BT /F1 10 Tf 54 357 Td (   between steps.) Tj ET
+BT /F1 10 Tf 54 344 Td (6. General availability announcement to customers.) Tj ET
+BT /F2 13 Tf 54 328 Td (Rollout halt criteria) Tj ET
+BT /F1 10 Tf 54 306 Td (The rollout is halted automatically if, in any ring:) Tj ET
+BT /F1 10 Tf 54 284 Td (- more than 0.5% of updated devices fail to reconnect within 30 minutes, or) Tj ET
+BT /F1 10 Tf 54 271 Td (- more than 1% of updated devices report a watchdog reset within 24 hours, or) Tj ET
+BT /F1 10 Tf 54 258 Td (- any SEV2 or higher incident is linked to the release.) Tj ET
+BT /F1 10 Tf 54 245 Td (Halted rollouts can only be resumed by the release manager with approval from the Head of) Tj ET
+BT /F1 10 Tf 54 232 Td (Platform Engineering.) Tj ET
+BT /F2 13 Tf 54 207 Td (Reconnect behaviour requirement) Tj ET
+BT /F1 10 Tf 54 185 Td (Since gateway firmware 5.0.0 \(September 2024\) the TS-4 gateway uses jittered reconnect backoff) Tj ET
+BT /F1 10 Tf 54 172 Td (and paced buffer replay, an action item from INC-2024-031. Any release that changes reconnect) Tj ET
+BT /F1 10 Tf 54 159 Td (or replay behaviour must pass a reconnect-storm test in staging \(all 40 test gateways) Tj ET
+BT /F1 10 Tf 54 146 Td (reconnecting at once\) and requires approval from the Head of Platform Engineering.) Tj ET
+BT /F2 13 Tf 54 121 Td (Minimum supported versions) Tj ET
+BT /F2 9 Tf 54 100 Td (Device | Minimum supported firmware | End of support for older versions) Tj ET
+BT /F1 9 Tf 54 88 Td (TS-4 gateway | 5.2.0 | TesseraCloud requires 5.2.0 or later from 1 October 2025; older gateways) Tj ET
+BT /F1 9 Tf 54 76 Td (show as Degraded) Tj ET
+BT /F1 9 Tf 54 64 Td (TS-4e edge node | 2.6.1 | Node 2.6.1 is deprecated on gateway 5.3.0; see the product firmware) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 314 >>
+stream
+BT /F1 9 Tf 54 730 Td (compatibility matrix) Tj ET
+BT /F2 13 Tf 54 705 Td (Records) Tj ET
+BT /F1 10 Tf 54 683 Td (The release manager records every release in the release register with the version, Forge) Tj ET
+BT /F1 10 Tf 54 670 Td (pipeline ID, signing timestamp, soak results and the rollout ring dates.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004212 00000 n 
+0000004348 00000 n 
+0000004713 00000 n 
+0000004849 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+4898
+%%EOF

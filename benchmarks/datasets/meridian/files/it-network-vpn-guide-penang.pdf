@@ -1,0 +1,100 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 3536 >>
+stream
+BT /F2 16 Tf 54 723 Td (Network and VPN Setup Guide: Penang) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: it-network-vpn-guide-penang. Site: Penang, Malaysia \(factory, Bayan Lepas, site) Tj ET
+BT /F1 10 Tf 54 688 Td (code PEN\). Owner: IT Operations, Network team, with Penang OT Support. Last updated: 7 April) Tj ET
+BT /F1 10 Tf 54 675 Td (2025.) Tj ET
+BT /F2 13 Tf 54 650 Td (Who this guide is for) Tj ET
+BT /F1 10 Tf 54 628 Td (New starters and visitors working at the Penang factory offices, and Penang-based staff) Tj ET
+BT /F1 10 Tf 54 615 Td (connecting from home. Other sites have their own guide; subnets, VPN endpoints and printer) Tj ET
+BT /F1 10 Tf 54 602 Td (queues are different at each site. Penang is the only site with a separate operational) Tj ET
+BT /F1 10 Tf 54 589 Td (technology \(OT\) network for production.) Tj ET
+BT /F2 13 Tf 54 564 Td (Wi-Fi) Tj ET
+BT /F1 10 Tf 54 542 Td (- Meridian-Corp: company laptops only, 802.1X certificate authentication. Not available on) Tj ET
+BT /F1 10 Tf 54 529 Td (   the production floor.) Tj ET
+BT /F1 10 Tf 54 516 Td (- Meridian-Guest: visitors, sponsor approval by email, sessions last 8 hours.) Tj ET
+BT /F1 10 Tf 54 503 Td (- There is no Wi-Fi on the OT network. Shop-floor kiosks are wired.) Tj ET
+BT /F2 13 Tf 54 487 Td (Site subnets) Tj ET
+BT /F2 9 Tf 54 466 Td (Network | VLAN | Subnet) Tj ET
+BT /F1 9 Tf 54 454 Td (Corporate supernet | n/a | 10.40.0.0/16) Tj ET
+BT /F1 9 Tf 54 442 Td (Users \(wired and Meridian-Corp\) | 410 | 10.40.16.0/20) Tj ET
+BT /F1 9 Tf 54 430 Td (Voice | 420 | 10.40.32.0/23) Tj ET
+BT /F1 9 Tf 54 418 Td (Printers | 430 | 10.40.40.0/24) Tj ET
+BT /F1 9 Tf 54 406 Td (Site servers | 440 | 10.40.100.0/24) Tj ET
+BT /F1 9 Tf 54 394 Td (OT network \(SMT lines, test stations, calibration stations\) | separate | 10.41.0.0/16) Tj ET
+BT /F1 10 Tf 54 372 Td (DNS servers: 10.40.1.10 and 10.40.1.11. Internal domain: meridian.internal. The OT network) Tj ET
+BT /F1 10 Tf 54 359 Td (10.41.0.0/16 has its own DNS and cannot be reached directly from the corporate network or the) Tj ET
+BT /F1 10 Tf 54 346 Td (VPN.) Tj ET
+BT /F2 13 Tf 54 321 Td (VPN \(Meridian Connect\)) Tj ET
+BT /F1 10 Tf 54 299 Td (- Client: Meridian Connect, installed on every company laptop.) Tj ET
+BT /F1 10 Tf 54 286 Td (- Penang endpoint: vpn-pen.meridian-instruments.com) Tj ET
+BT /F1 10 Tf 54 273 Td (- Protocol and port: UDP 443. Penang uses UDP 443 instead of the UDP 51820 used at other) Tj ET
+BT /F1 10 Tf 54 260 Td (   sites because several local home broadband providers filter non-standard UDP ports.) Tj ET
+BT /F1 10 Tf 54 247 Td (- Tunnel mode: split tunnel. Traffic to 10.0.0.0/8 and meridian.internal goes through the) Tj ET
+BT /F1 10 Tf 54 234 Td (   VPN.) Tj ET
+BT /F1 10 Tf 54 221 Td (- Authentication: directory account plus MFA.) Tj ET
+BT /F1 10 Tf 54 208 Td (- Idle timeout: 8 hours.) Tj ET
+BT /F1 10 Tf 54 195 Td (If vpn-pen is unavailable, use vpn-lds.meridian-instruments.com as the fallback \(note it) Tj ET
+BT /F1 10 Tf 54 182 Td (listens on UDP 51820\).) Tj ET
+BT /F2 13 Tf 54 157 Td (Remote access to the OT network) Tj ET
+BT /F1 10 Tf 54 135 Td (Access to the OT network from the VPN is only through the jump host) Tj ET
+BT /F1 10 Tf 54 122 Td (ot-jump-pen-01.meridian.internal. It requires a FIDO2 security key, an approved Beacon ticket) Tj ET
+BT /F1 10 Tf 54 109 Td (in category MFG-OT, and a session recorded by the privileged access vault. Sessions are limited) Tj ET
+BT /F1 10 Tf 54 96 Td (to 4 hours.) Tj ET
+BT /F2 13 Tf 54 71 Td (Printers) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1112 >>
+stream
+BT /F1 10 Tf 54 729 Td (Print server: prn-pen-01.meridian.internal. Queues:) Tj ET
+BT /F2 9 Tf 54 708 Td (Queue | Location | Type) Tj ET
+BT /F1 9 Tf 54 696 Td (PEN-ADM-MFP01 | Administration building | Colour multifunction) Tj ET
+BT /F1 9 Tf 54 684 Td (PEN-SMT-LABEL01 to PEN-SMT-LABEL04 | One per SMT line \(SMT-1 to SMT-4\) | Board serial label) Tj ET
+BT /F1 9 Tf 54 672 Td (printers) Tj ET
+BT /F1 9 Tf 54 660 Td (PEN-FT-LABEL01 | Final test and calibration | Product and calibration labels) Tj ET
+BT /F1 9 Tf 54 648 Td (PEN-WH-ZEBRA01 | Warehouse | Shipping labels) Tj ET
+BT /F1 10 Tf 54 626 Td (Label printers on the SMT lines are on the OT network and are managed by Penang OT Support, not) Tj ET
+BT /F1 10 Tf 54 613 Td (the corporate print server.) Tj ET
+BT /F2 13 Tf 54 588 Td (Getting help) Tj ET
+BT /F1 10 Tf 54 566 Td (Raise a Beacon ticket in category NET-VPN, NET-WIFI or PRN-QUEUE for corporate issues, and) Tj ET
+BT /F1 10 Tf 54 553 Td (MFG-OT for anything on the production floor. The Penang IT desk is in the administration) Tj ET
+BT /F1 10 Tf 54 540 Td (building, open 07:30 to 17:30 MYT.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000003859 00000 n 
+0000003995 00000 n 
+0000005159 00000 n 
+0000005295 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5344
+%%EOF

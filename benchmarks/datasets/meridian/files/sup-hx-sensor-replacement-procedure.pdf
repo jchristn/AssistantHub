@@ -1,0 +1,117 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4116 >>
+stream
+BT /F2 16 Tf 54 723 Td (Halcyon Sensor Replacement Procedure) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sup-hx-sensor-replacement-procedure | Revision: 3 | Effective: 2025-03-10 | Owner:) Tj ET
+BT /F1 10 Tf 54 688 Td (Customer Support Technical Services, Leeds) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Scope) Tj ET
+BT /F1 10 Tf 54 641 Td (This procedure describes how to replace the gas sensors in Halcyon HX-200, HX-210 and HX-220) Tj ET
+BT /F1 10 Tf 54 628 Td (portable gas detectors. It is intended for customer maintenance technicians who have completed) Tj ET
+BT /F1 10 Tf 54 615 Td (Meridian Halcyon service training, and for Meridian field service engineers. Replacing sensors) Tj ET
+BT /F1 10 Tf 54 602 Td (does not require the instrument to be returned under RMA.) Tj ET
+BT /F1 10 Tf 54 580 Td (Replacement sensors:) Tj ET
+BT /F1 10 Tf 54 558 Td (- HX-SNS-H2S-02: H2S sensor \(HX-200, HX-210, HX-220\)) Tj ET
+BT /F1 10 Tf 54 545 Td (- HX-SNS-CO-03: CO sensor \(HX-210, HX-220\)) Tj ET
+BT /F1 10 Tf 54 532 Td (- HX-SNS-LEL-04: catalytic LEL sensor \(HX-210, HX-220\)) Tj ET
+BT /F1 10 Tf 54 519 Td (- HX-SNS-O2-01: O2 sensor \(HX-210, HX-220\)) Tj ET
+BT /F2 13 Tf 54 503 Td (2. Safety and preparation) Tj ET
+BT /F1 10 Tf 54 481 Td (- Work only in a safe \(non-hazardous\) area, on an antistatic mat, with the instrument) Tj ET
+BT /F1 10 Tf 54 468 Td (   switched off.) Tj ET
+BT /F1 10 Tf 54 455 Td (- Wear an antistatic wrist strap.) Tj ET
+BT /F1 10 Tf 54 442 Td (- Have a new rear housing gasket \(HX-GSK-200, HX-GSK-210 or HX-GSK-220\) ready. The gasket) Tj ET
+BT /F1 10 Tf 54 429 Td (   must be replaced every time the housing is opened for sensor replacement.) Tj ET
+BT /F1 10 Tf 54 416 Td (- Tools: Torx T10 driver \(T8 for the HX-200\), torque screwdriver adjustable from 0.2 to 1.0) Tj ET
+BT /F1 10 Tf 54 403 Td (   N m, plastic spudger.) Tj ET
+BT /F1 10 Tf 54 390 Td (- Check the new sensor's date code. Do not fit a sensor that has been stored for more than 6) Tj ET
+BT /F1 10 Tf 54 377 Td (   months from its date code.) Tj ET
+BT /F2 13 Tf 54 361 Td (3. Removing the rear housing) Tj ET
+BT /F1 10 Tf 54 339 Td (1. Remove the belt clip.) Tj ET
+BT /F1 10 Tf 54 326 Td (2. Undo the rear housing screws: four Torx T8 screws on the HX-200, six Torx T10 screws on) Tj ET
+BT /F1 10 Tf 54 313 Td (   the HX-210, eight Torx T10 screws on the HX-220.) Tj ET
+BT /F1 10 Tf 54 300 Td (3. Lift the rear housing and disconnect the battery connector.) Tj ET
+BT /F1 10 Tf 54 287 Td (4. Remove and discard the old gasket.) Tj ET
+BT /F2 13 Tf 54 271 Td (4. Replacing the LEL sensor \(HX-SNS-LEL-04\)) Tj ET
+BT /F1 10 Tf 54 249 Td (The LEL sensor is fitted only in the HX-210 and HX-220. Replace it when the instrument shows) Tj ET
+BT /F1 10 Tf 54 236 Td (E-117 \(LEL sensor poisoned or bridge fault\), when the sensor life shown at Menu > Instrument >) Tj ET
+BT /F1 10 Tf 54 223 Td (Service > Sensor Life is below 20%, or when E-104 recurs on the LEL channel after a correct) Tj ET
+BT /F1 10 Tf 54 210 Td (calibration.) Tj ET
+BT /F1 10 Tf 54 188 Td (1. Locate the LEL sensor in the top-right position of the sensor board, marked "LEL".) Tj ET
+BT /F1 10 Tf 54 175 Td (2. Remove the two Torx T6 screws holding the sensor retaining bracket.) Tj ET
+BT /F1 10 Tf 54 162 Td (3. Lift the sensor straight out of its socket using the spudger under the flange. Do not rock) Tj ET
+BT /F1 10 Tf 54 149 Td (   it; the pins bend easily.) Tj ET
+BT /F1 10 Tf 54 136 Td (4. Inspect the socket for corrosion. Clean with a dry brush only; do not use solvent.) Tj ET
+BT /F1 10 Tf 54 123 Td (5. Insert the new HX-SNS-LEL-04 with the locating tab facing the display.) Tj ET
+BT /F1 10 Tf 54 110 Td (6. Refit the retaining bracket and tighten the two Torx T6 screws to 0.25 N m.) Tj ET
+BT /F1 10 Tf 54 97 Td (7. Reconnect the battery and refit the rear housing with a new gasket. Tighten the rear) Tj ET
+BT /F1 10 Tf 54 84 Td (   housing screws to 0.45 N m in a diagonal pattern.) Tj ET
+BT /F1 10 Tf 54 71 Td (8. Switch on the instrument. It detects the new sensor and shows "NEW SENSOR". Confirm with) Tj ET
+BT /F1 10 Tf 54 58 Td (   ON/OK.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 2675 >>
+stream
+BT /F1 10 Tf 54 729 Td (9. Leave the instrument switched on in clean air for a warm-up period of 4 hours before) Tj ET
+BT /F1 10 Tf 54 716 Td (   calibrating. The catalytic bead needs this time to stabilise; calibrating earlier gives a) Tj ET
+BT /F1 10 Tf 54 703 Td (   span that drifts by up to 10% LEL in the first day.) Tj ET
+BT /F1 10 Tf 54 690 Td (10. Perform a full calibration \(all channels\), following prod-hx210-calibration-procedure-v2) Tj ET
+BT /F1 10 Tf 54 677 Td (   for the HX-210 or the HX-220 user manual for the HX-220.) Tj ET
+BT /F1 10 Tf 54 664 Td (11. Perform a bump test before returning the instrument to service.) Tj ET
+BT /F1 10 Tf 54 651 Td (A poisoned LEL sensor must not be recalibrated. If E-117 recurs within 30 days of replacement,) Tj ET
+BT /F1 10 Tf 54 638 Td (investigate the site for poisons such as silicone sealants, silicone-based lubricants or high) Tj ET
+BT /F1 10 Tf 54 625 Td (H2S concentrations.) Tj ET
+BT /F2 13 Tf 54 600 Td (5. Replacing electrochemical sensors \(O2, CO, H2S\)) Tj ET
+BT /F1 10 Tf 54 578 Td (1. Locate the sensor \(O2 top left, CO bottom left, H2S bottom right on the HX-210 and HX-220;) Tj ET
+BT /F1 10 Tf 54 565 Td (   the HX-200 has a single central socket\).) Tj ET
+BT /F1 10 Tf 54 552 Td (2. Pull the sensor straight out of its socket.) Tj ET
+BT /F1 10 Tf 54 539 Td (3. Remove the shorting spring from the new sensor, if fitted. CO and H2S sensors are shipped) Tj ET
+BT /F1 10 Tf 54 526 Td (   with a shorting spring; O2 sensors are not.) Tj ET
+BT /F1 10 Tf 54 513 Td (4. Insert the new sensor with the locating tab facing the display.) Tj ET
+BT /F1 10 Tf 54 500 Td (5. Refit the rear housing with a new gasket. Tighten the screws to 0.45 N m \(HX-210 and) Tj ET
+BT /F1 10 Tf 54 487 Td (   HX-220\) or 0.35 N m \(HX-200\).) Tj ET
+BT /F1 10 Tf 54 474 Td (6. Switch on and confirm "NEW SENSOR".) Tj ET
+BT /F1 10 Tf 54 461 Td (7. Allow a warm-up period of 1 hour for CO and H2S sensors, or 30 minutes for the O2 sensor,) Tj ET
+BT /F1 10 Tf 54 448 Td (   before calibrating.) Tj ET
+BT /F1 10 Tf 54 435 Td (8. Calibrate all channels and perform a bump test.) Tj ET
+BT /F2 13 Tf 54 419 Td (6. Records and disposal) Tj ET
+BT /F1 10 Tf 54 397 Td (Record the old and new sensor serial numbers in Meridian Link \(Instruments > [serial] > Service) Tj ET
+BT /F1 10 Tf 54 384 Td (History\). Electrochemical sensors contain small amounts of acid electrolyte and lead \(O2\).) Tj ET
+BT /F1 10 Tf 54 371 Td (Dispose of them as hazardous waste in accordance with local regulations. Sensors that fail) Tj ET
+BT /F1 10 Tf 54 358 Td (within warranty should be kept for 30 days in case the warranty claim requires return.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004439 00000 n 
+0000004575 00000 n 
+0000007302 00000 n 
+0000007438 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+7487
+%%EOF

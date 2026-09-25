@@ -1,0 +1,84 @@
+{
+  "Rest": {
+    "Hostname": "*",
+    "Port": 8400,
+    "Ssl": false
+  },
+  "Database": {
+    "Type": "Postgresql",
+    "Filename": "",
+    "Hostname": "postgres",
+    "Port": 5432,
+    "DatabaseName": "partio",
+    "Username": "partio_app",
+    "Password": "partio_password",
+    "Instance": null,
+    "Schema": "public",
+    "RequireEncryption": false,
+    "LogQueries": false
+  },
+  "Logging": {
+    "SyslogServers": [],
+    "ConsoleLogging": true,
+    "EnableColors": false,
+    "LogDirectory": "/app/logs/",
+    "LogFilename": "partio.log",
+    "FileLogging": true,
+    "IncludeDateInFilename": true,
+    "MinimumSeverity": 0
+  },
+  "Debug": {
+    "Authentication": false,
+    "Exceptions": true,
+    "Requests": false,
+    "DatabaseQueries": false
+  },
+  "RequestHistory": {
+    "Enabled": true,
+    "Directory": "/app/request-history/",
+    "RetentionDays": 7,
+    "CleanupIntervalMinutes": 60,
+    "MaxRequestBodyBytes": 65536,
+    "MaxResponseBodyBytes": 65536
+  },
+  "AdminApiKeys": [
+    "partioadmin"
+  ],
+  "DefaultEmbeddingEndpoints": [
+    {
+      "Name": "all-minilm",
+      "Model": "all-minilm",
+      "Endpoint": "http://host.docker.internal:11434",
+      "ApiFormat": "Ollama",
+      "ApiKey": null,
+      "MaxConcurrentRequests": 2,
+      "Tokenization": {
+        "TokenizerKind": "BertWordPiece",
+        "TokenizerModel": "bert-base-uncased",
+        "MaxInputTokens": 256,
+        "ReservedInputTokens": 0,
+        "EffectiveInputBudget": 256,
+        "BatchLimitMode": "WholeRequest",
+        "AutoDetect": false
+      }
+    }
+  ],
+  "DefaultInferenceEndpoints": [
+    {
+      "Name": "gemma3:4b",
+      "Model": "gemma3:4b",
+      "Endpoint": "http://host.docker.internal:11434",
+      "ApiFormat": "Ollama",
+      "MaxConcurrentRequests": 2,
+      "Labels": [
+        "assistanthub:tool-calling"
+      ],
+      "Tags": {
+        "AssistantHub.SupportsToolCalling": "true",
+        "AssistantHub.ToolCallingApiFormat": "OllamaChat",
+        "AssistantHub.SupportsParallelToolCalls": "true",
+        "AssistantHub.SupportsStreamingToolCalls": "true"
+      }
+    }
+  ]
+}

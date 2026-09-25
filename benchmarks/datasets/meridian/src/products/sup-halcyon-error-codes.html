@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Halcyon Error Code Reference</title>
+</head>
+<body>
+<h1>Halcyon Error Code Reference</h1>
+<p>Document ID: sup-halcyon-error-codes | Revision: 7 | Effective: 2025-06-30 | Owner: Customer Support, Leeds (Rosa Delgado, Head of Customer Support)</p>
+<p>This reference lists the fault codes shown by Halcyon HX-200, HX-210 and HX-220 portable gas detectors. When a fault is detected the instrument shows the code, sounds the fault tone (three short beeps every 30 seconds) and lights the red LED. Gas monitoring continues on unaffected channels unless stated otherwise. Support agents should record the code in the Meridian Support Centre ticket before troubleshooting.</p>
+<h2>Error codes</h2>
+<table>
+<tr><th>Code</th><th>Meaning</th><th>Models</th><th>Corrective action</th></tr>
+<tr><td>E-101</td><td>Sensor not detected</td><td>HX-200, HX-210, HX-220</td><td>Switch off, open the rear housing in a safe area and reseat the sensor. If the code persists, replace the sensor following sup-hx-sensor-replacement-procedure.</td></tr>
+<tr><td>E-104</td><td>Span calibration failed</td><td>HX-200, HX-210, HX-220</td><td>Check that the correct cylinder (MI-CAL-Q4-B for HX-210/HX-220, MI-CAL-H2S25 for HX-200) and regulator are used and the cylinder is in date. For the HX-210 follow section 5 of prod-hx210-calibration-procedure-v2 (Failed span and error E-104).</td></tr>
+<tr><td>E-108</td><td>Calibration overdue</td><td>HX-200, HX-210, HX-220</td><td>Calibrate the instrument. The instrument can be used for up to 24 hours after E-108 appears if a bump test passes, unless the site policy enforces lock-out.</td></tr>
+<tr><td>E-111</td><td>Battery fault or cell imbalance</td><td>HX-200, HX-210, HX-220</td><td>Charge at room temperature. If the code returns, replace the battery pack (HX-BAT-200, HX-BAT-210 or HX-BAT-220L). A false E-111 when charging below 5 C was fixed in firmware 3.4.1.</td></tr>
+<tr><td>E-113</td><td>Pump flow fault (flow below 0.3 L/min)</td><td>HX-220 with HX-PMP-22 only</td><td>Check the inlet filter, sample tube and probe for blockage or kinks. Press ON/OK to restart the pump.</td></tr>
+<tr><td>E-117</td><td>LEL sensor poisoned or catalytic bridge fault</td><td>HX-210, HX-220</td><td>Do not attempt recalibration. Replace the LEL sensor HX-SNS-LEL-04 following section 4 of sup-hx-sensor-replacement-procedure, then perform a full calibration. Ask the customer about exposure to silicones, H2S above 200 ppm or leaded fuels.</td></tr>
+<tr><td>E-122</td><td>Firmware checksum error</td><td>HX-200, HX-210, HX-220</td><td>Reflash the firmware using an HX-DOCK-4 (dock firmware D-2.1.0 or later) or Meridian Link. Usually caused by an interrupted update.</td></tr>
+<tr><td>E-126</td><td>Real-time clock lost</td><td>HX-200, HX-210, HX-220</td><td>Dock the instrument or connect it to Meridian Link to set the clock. Occurs if the battery has been disconnected for more than 72 hours.</td></tr>
+<tr><td>E-131</td><td>Bluetooth module fault</td><td>HX-220 only</td><td>Power-cycle the instrument. If the fault persists, return under RMA; gas detection is not affected.</td></tr>
+<tr><td>E-140</td><td>Datalog memory full</td><td>HX-200, HX-210, HX-220</td><td>Download the datalog with Meridian Link, or enable overwrite in Menu > Supervisor > Datalog.</td></tr>
+</table>
+<h2>Escalation</h2>
+<ul>
+<li>If an E-117 occurs on more than three instruments at the same site within 30 days, raise the ticket to priority P2 and ask the customer for a site contaminant survey.</li>
+<li>Any fault that leaves a worker without working gas detection in a hazardous area is priority P1.</li>
+<li>Faults that cannot be cleared by the actions above require return under the current RMA process.</li>
+</ul>
+<h2>Codes that do not exist</h2>
+<p>Codes E-102, E-103 and E-105 were used in firmware before 3.0 and are no longer generated. If a customer reports one of these, the instrument is running obsolete firmware and must be updated.</p>
+</body>
+</html>

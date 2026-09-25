@@ -146,6 +146,31 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.Handlers.AssistantRetrieveHandler">
+            <summary>
+            Handles the retrieval-only diagnostic route, which runs an assistant's retrieval pipeline without final
+            inference. Used by the benchmark harness and for diagnosing retrieval quality.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantRetrieveHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="logging">Logging module.</param>
+            <param name="settings">Application settings.</param>
+            <param name="authentication">Authentication service.</param>
+            <param name="storage">Storage service.</param>
+            <param name="ingestion">Ingestion service.</param>
+            <param name="retrieval">Retrieval service.</param>
+            <param name="inference">Inference service.</param>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantRetrieveHandler.PostRetrieveAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/assistants/{assistantId}/retrieve - Run the assistant's retrieval pipeline without final inference.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.AssistantSettingsHandler">
             <summary>
             Handles assistant settings GET and PUT routes.
@@ -2057,6 +2082,34 @@
             <param name="token">Cancellation token.</param>
             <returns>Execution result.</returns>
         </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteRetrievalOnlyAsync(System.String,AssistantHub.Core.Models.AssistantRetrieveRequest,System.Threading.CancellationToken)">
+            <summary>
+            Run an assistant's retrieval pipeline (gate, rewrite, search, fusion, attachment filter, rerank and,
+            optionally, the answerability check) without final inference or history persistence. Uses the same stage
+            code as <see cref="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)"/>.
+            </summary>
+            <param name="assistantId">Assistant identifier.</param>
+            <param name="request">Retrieval request.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Execution result.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.RunRetrievalStagesAsync(System.String,AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,AssistantHub.Core.Models.ChatMetadataFilter,System.Collections.Generic.List{System.String},System.Collections.Generic.List{AssistantHub.Core.Models.AssistantDocumentSelectionItem},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Run the retrieval stages of the chat rail: retrieval gate, query rewrite, search (with multi-query fusion),
+            attachment filtering and re-ranking. Shared by chat and the retrieval-only route so both measure the same
+            pipeline.
+            </summary>
+            <param name="tenantId">Assistant tenant identifier.</param>
+            <param name="settings">Assistant settings.</param>
+            <param name="conversation">Conversation messages (used by the retrieval gate).</param>
+            <param name="lastUserMessage">The latest user message, used as the retrieval query.</param>
+            <param name="effectiveMetadataFilter">Merged metadata filter.</param>
+            <param name="attachedDocumentIds">Validated attached document identifiers, or null.</param>
+            <param name="attachedDocuments">Attached document metadata, or null.</param>
+            <param name="captureStages">Record the ranked list after each stage.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Stage outcome.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatServiceBase">
             <summary>
             Provides shared non-streaming chat execution helpers.
@@ -2131,6 +2184,137 @@
         <member name="T:AssistantHub.Server.Services.AssistantDocumentPolicyFilter">
             <summary>
             Applies assistant document visibility filters to document-backed surfaces.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantRetrievalExecutionResult">
+            <summary>
+            Result of a retrieval-only execution of the chat rail.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalExecutionResult.Success">
+            <summary>
+            Whether the execution succeeded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalExecutionResult.StatusCode">
+            <summary>
+            HTTP status code to return on failure.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalExecutionResult.ErrorMessage">
+            <summary>
+            Failure description.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalExecutionResult.Response">
+            <summary>
+            Retrieval response on success.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantRetrievalStagesResult">
+            <summary>
+            Outcome of the shared retrieval stages of the chat rail (gate, rewrite, search, fusion, attachment filter,
+            rerank). Chat and the retrieval-only route both consume it, so the benchmark measures what users get.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.ShouldRetrieve">
+            <summary>
+            Whether retrieval should run for this turn (false when the gate returned SKIP).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.GateDecision">
+            <summary>
+            Retrieval gate decision, null when the gate did not run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.GateDurationMs">
+            <summary>
+            Retrieval gate duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.GateTelemetry">
+            <summary>
+            Retrieval gate model telemetry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.QueryRewriteResult">
+            <summary>
+            Raw query rewrite output, null when rewrite did not run or failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.QueryRewriteDurationMs">
+            <summary>
+            Query rewrite duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.QueryRewriteTelemetry">
+            <summary>
+            Query rewrite model telemetry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.Queries">
+            <summary>
+            Queries issued to the store.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.Chunks">
+            <summary>
+            Final ranked chunks after every stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RetrievalStartUtc">
+            <summary>
+            When retrieval started, null when it did not run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RetrievalDurationMs">
+            <summary>
+            Search, fusion and attachment-filter duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.HybridFallbackRan">
+            <summary>
+            Whether any hybrid search fell back to vector-only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.EmbeddingFailed">
+            <summary>
+            Whether any query embedding failed after retries, so vector or hybrid search returned nothing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.DroppedCandidates">
+            <summary>
+            Candidates dropped per stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankDurationMs">
+            <summary>
+            Re-rank duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankInputCount">
+            <summary>
+            Chunks sent to the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankOutputCount">
+            <summary>
+            Chunks kept by the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankTelemetry">
+            <summary>
+            Re-rank model telemetry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankParseFailed">
+            <summary>
+            Whether the re-ranker ran but its reply could not be parsed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.Stages">
+            <summary>
+            Per-stage ranked lists, populated only when capture was requested.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantToolArgumentValidator">

@@ -14,7 +14,9 @@ namespace AssistantHub.Core.Services
     /// </summary>
     public class PartioChunkingService : IChunkingService
     {
-        private static readonly HttpClient _HttpClient = new HttpClient();
+        // The per-request timeout comes from ChunkingSettings.RequestTimeoutMs; the client's own 100-second default would
+        // cancel chunking and embedding of any large document.
+        private static readonly HttpClient _HttpClient = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         private readonly ChunkingSettings _Settings;
         private readonly LoggingModule _Logging;
 
@@ -44,7 +46,18 @@ namespace AssistantHub.Core.Services
                 request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
             _Logging.Debug("[PartioChunkingService] " + method.Method + " " + path);
-            return await _HttpClient.SendAsync(request, token).ConfigureAwait(false);
+            using (CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
+                timeout.CancelAfter(_Settings.RequestTimeoutMs);
+                try
+                {
+                    return await _HttpClient.SendAsync(request, timeout.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!token.IsCancellationRequested)
+                {
+                    throw new TimeoutException("Partio request " + method.Method + " " + path + " did not complete within " + _Settings.RequestTimeoutMs + " ms (Chunking.RequestTimeoutMs).");
+                }
+            }
         }
     }
 }

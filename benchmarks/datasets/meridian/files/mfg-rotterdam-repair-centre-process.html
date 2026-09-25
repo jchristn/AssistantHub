@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rotterdam Repair Centre Internal Process</title>
+</head>
+<body>
+<h1>Rotterdam Repair Centre: Internal Repair Process</h1>
+<p>Document ID: mfg-rotterdam-repair-centre-process. Owner: Rotterdam Repair Centre lead, with Quality Engineering. Effective date: 1 April 2025. This is the internal workflow for technicians. The customer-facing return rules are in the RMA process published by Support.</p>
+
+<h2>Scope</h2>
+<p>The Rotterdam Repair Centre handles returns from EU customers outside the UK for Halcyon detectors, TS-4 gateways, TS-4e edge nodes and Lumen meters. UK returns are handled in Leeds, Americas returns in Austin and APAC returns in Penang. Every return must have an RMA number in the format RMA-YYYY-NNNNNN linked to a Meridian Support Centre ticket.</p>
+
+<h2>Workflow</h2>
+<ol>
+<li>Goods inward: scan the RMA label and check the decontamination declaration form MI-F-031 is in the box. Units without MI-F-031 go to the quarantine shelf and Support is informed the same day; they are not opened.</li>
+<li>Log receipt in the Atlas service module. This starts the 10 business day turnaround clock.</li>
+<li>Triage within 2 business days: visual inspection, photos of any physical damage, and a functional check on the bench network (Meridian-Repair, VLAN 250).</li>
+<li>Decide repair, replace or return unrepaired, and record the warranty decision in Atlas.</li>
+<li>Repair using parts from the Rotterdam spares store. Sensor replacements on Halcyon detectors follow the product sensor replacement procedure.</li>
+<li>Recalibrate Halcyon detectors on calibration stations CAL-RTM-01 or CAL-RTM-02 following the Halcyon Gas Detector Calibration Procedure. Lumen meters are sent to Penang for flow-rig verification because Rotterdam has no reference rig.</li>
+<li>Final functional test and firmware update to the current release.</li>
+<li>Print the repair and calibration label on queue RTM-REP-ZEBRA01 and pack in ESD shielding bags.</li>
+<li>Close the Atlas service order; dispatch through the warehouse on RTM-WH-ZEBRA02.</li>
+</ol>
+
+<h2>Turnaround targets</h2>
+<table border="1">
+<thead><tr><th>Product</th><th>Target turnaround</th><th>FY25 actual average</th></tr></thead>
+<tbody>
+<tr><td>Halcyon HX-200, HX-210, HX-220</td><td>10 business days</td><td>7.8 business days</td></tr>
+<tr><td>TS-4 gateway</td><td>10 business days</td><td>8.9 business days</td></tr>
+<tr><td>TS-4e edge node</td><td>10 business days (usually replaced, not repaired)</td><td>4.1 business days</td></tr>
+<tr><td>Lumen LF-60 and LF-60P</td><td>10 business days plus shipping to Penang for rig verification</td><td>14.6 business days</td></tr>
+</tbody>
+</table>
+
+<h2>ESD and safety</h2>
+<ul>
+<li>The repair benches are an ESD protected area; follow the ESD Control Standard.</li>
+<li>Halcyon units that arrive in alarm or with a damaged sensor are opened in the fume cabinet only.</li>
+<li>Calibration gas cylinders are stored in the ventilated cage and checked for expiry weekly.</li>
+</ul>
+
+<h2>Escalation</h2>
+<p>Units that cannot meet the 10 business day target are flagged to Support by day 7 so the customer can be told. Equipment faults on the repair benches are raised in Beacon; the Rotterdam site has on-site IT support on Tuesday and Thursday only.</p>
+</body>
+</html>

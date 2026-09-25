@@ -1,0 +1,76 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+4 0 obj
+<< /Length 4145 >>
+stream
+BT /F2 16 Tf 54 723 Td (Lumen Error Code Reference) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sup-lumen-error-codes | Version: 1 | Effective: 2025-03-20 | Owner: Customer) Tj ET
+BT /F1 10 Tf 54 688 Td (Support, Technical Support Engineering) Tj ET
+BT /F2 13 Tf 54 663 Td (Purpose) Tj ET
+BT /F1 10 Tf 54 641 Td (This reference lists the error codes shown by Lumen LF-60 and LF-60P flow meters on the local) Tj ET
+BT /F1 10 Tf 54 628 Td (display, over Modbus \(input register 30018\) and, on the LF-60P, over HART. Support engineers) Tj ET
+BT /F1 10 Tf 54 615 Td (should use it for first-line diagnosis before raising a ticket with the Rotterdam Lumen) Tj ET
+BT /F1 10 Tf 54 602 Td (engineering team.) Tj ET
+BT /F1 10 Tf 54 580 Td (Active errors are shown on the display under Menu > Diagnostics > Active Errors. The error) Tj ET
+BT /F1 10 Tf 54 567 Td (history \(last 50 events with timestamps\) is under Menu > Diagnostics > Error Log.) Tj ET
+BT /F2 13 Tf 54 542 Td (Error codes) Tj ET
+BT /F2 9 Tf 54 521 Td (Code | Meaning | Models | Output behaviour | Recommended fix) Tj ET
+BT /F1 9 Tf 54 509 Td (L-201 | Empty pipe detected | LF-60, LF-60P | Flow forced to zero | Confirm the pipe is full.) Tj ET
+BT /F1 9 Tf 54 497 Td (Check that the meter is not at a high point and that vertical installations have upward flow) Tj ET
+BT /F1 9 Tf 54 485 Td (\(installation manual section 7\).) Tj ET
+BT /F1 9 Tf 54 473 Td (L-204 | Low signal quality \(below 60%\) | LF-60, LF-60P | Normal, warning only | Check grounding) Tj ET
+BT /F1 9 Tf 54 461 Td (and bonding: on non-conductive or lined pipe, grounding rings are mandatory \(LF-60P) Tj ET
+BT /F1 9 Tf 54 449 Td (installation manual section 9.2\). Also check for protruding gaskets and window fouling.) Tj ET
+BT /F1 9 Tf 54 437 Td (L-209 | Flow over range | LF-60, LF-60P | Output saturates at 20.5 mA | Velocity above 12 m/s) Tj ET
+BT /F1 9 Tf 54 425 Td (\(LF-60\) or 15 m/s \(LF-60P\). Check the 4-20 mA upper range value and the meter size selection.) Tj ET
+BT /F1 9 Tf 54 413 Td (L-215 | Coil drive fault in the optical source driver | LF-60, LF-60P | Fail-safe current |) Tj ET
+BT /F1 9 Tf 54 401 Td (Power cycle. If the error returns within 24 hours, the electronics module must be replaced) Tj ET
+BT /F1 9 Tf 54 389 Td (under RMA.) Tj ET
+BT /F1 9 Tf 54 377 Td (L-218 | Optical window contamination | LF-60, LF-60P | Normal, warning only | Inspect and clean) Tj ET
+BT /F1 9 Tf 54 365 Td (the sapphire windows \(LF-60P installation manual section 12.1\).) Tj ET
+BT /F1 9 Tf 54 353 Td (L-222 | HART communication fault | LF-60P only | Normal | Check that loop resistance is at) Tj ET
+BT /F1 9 Tf 54 341 Td (least 250 ohm \(LF-60P installation manual section 10.1\). On firmware 1.9.0 the error clears) Tj ET
+BT /F1 9 Tf 54 329 Td (automatically after 30 seconds of good communication.) Tj ET
+BT /F1 9 Tf 54 317 Td (L-230 | Fluid temperature out of range | LF-60, LF-60P | Normal, warning only | Fluid outside) Tj ET
+BT /F1 9 Tf 54 305 Td (-10 to +80 \260C \(LF-60\) or -20 to +120 \260C \(LF-60P\). Check the process; sustained operation) Tj ET
+BT /F1 9 Tf 54 293 Td (outside the range voids the warranty.) Tj ET
+BT /F2 13 Tf 54 268 Td (Escalation guidance) Tj ET
+BT /F1 10 Tf 54 246 Td (- L-215 is a hardware fault. Raise a P3 ticket unless the meter is used for custody transfer) Tj ET
+BT /F1 10 Tf 54 233 Td (   or billing, in which case raise a P2.) Tj ET
+BT /F1 10 Tf 54 220 Td (- L-204 that persists after grounding has been verified should be escalated with a) Tj ET
+BT /F1 10 Tf 54 207 Td (   screenshot or export of the signal quality trend over at least 24 hours.) Tj ET
+BT /F1 10 Tf 54 194 Td (- Repeated L-201 on a line that is known to be full usually indicates air entrainment; ask) Tj ET
+BT /F1 10 Tf 54 181 Td (   the customer for the installation photographs.) Tj ET
+BT /F1 10 Tf 54 168 Td (When raising a ticket in the Meridian Support Centre, always record the meter model, serial) Tj ET
+BT /F1 10 Tf 54 155 Td (number, firmware version \(1.8.2 for LF-60, 1.9.0 for current LF-60P\) and the value of Modbus) Tj ET
+BT /F1 10 Tf 54 142 Td (register 30017 \(signal quality\).) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000265 00000 n 
+0000004462 00000 n 
+0000004598 00000 n 
+trailer
+<< /Size 7 /Root 6 0 R >>
+startxref
+4647
+%%EOF

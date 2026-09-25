@@ -220,7 +220,7 @@ namespace AssistantHub.Core.Services
                     return "[" + atom.Title.Trim() + "](" + atom.Text.Trim() + ")";
 
                 if (IsAtomType(atom, "Code"))
-                    return "```" + Environment.NewLine + atom.Text + Environment.NewLine + "```";
+                    return "```" + "\n" + atom.Text + "\n" + "```";
 
                 return atom.Text;
             }
@@ -235,7 +235,7 @@ namespace AssistantHub.Core.Services
             if (!String.IsNullOrWhiteSpace(table)) return table;
 
             if (!String.IsNullOrWhiteSpace(atom.Title) && !String.IsNullOrWhiteSpace(atom.Subtitle))
-                return atom.Title.Trim() + Environment.NewLine + atom.Subtitle.Trim();
+                return atom.Title.Trim() + "\n" + atom.Subtitle.Trim();
 
             if (!String.IsNullOrWhiteSpace(atom.Title)) return atom.Title.Trim();
             if (!String.IsNullOrWhiteSpace(atom.Subtitle)) return atom.Subtitle.Trim();
@@ -256,7 +256,7 @@ namespace AssistantHub.Core.Services
                 if (ordered) sb.Append((i + 1).ToString() + ". ");
                 else sb.Append("- ");
 
-                sb.AppendLine(item.Trim());
+                sb.Append(item.Trim()).Append('\n');
             }
 
             return sb.ToString().TrimEnd();
@@ -298,10 +298,10 @@ namespace AssistantHub.Core.Services
             {
                 sb.Append("| ");
                 sb.Append(String.Join(" | ", columns.ConvertAll(EscapeTableCell)));
-                sb.AppendLine(" |");
+                sb.Append(" |").Append('\n');
                 sb.Append("| ");
                 sb.Append(String.Join(" | ", columns.ConvertAll(_ => "---")));
-                sb.AppendLine(" |");
+                sb.Append(" |").Append('\n');
             }
 
             foreach (List<string> row in rows)
@@ -311,7 +311,7 @@ namespace AssistantHub.Core.Services
 
                 sb.Append("| ");
                 sb.Append(String.Join(" | ", row.ConvertAll(EscapeTableCell)));
-                sb.AppendLine(" |");
+                sb.Append(" |").Append('\n');
             }
 
             return sb.ToString().TrimEnd();
@@ -466,7 +466,7 @@ namespace AssistantHub.Core.Services
         private static void AppendBlock(StringBuilder sb, string text)
         {
             if (String.IsNullOrWhiteSpace(text)) return;
-            if (sb.Length > 0) sb.Append(Environment.NewLine);
+            if (sb.Length > 0) sb.Append("\n");
             sb.Append(text.Trim());
         }
 

@@ -57,5 +57,11 @@ namespace AssistantHub.Core.Models
         /// Set by RetrievalService when a hybrid search falls back to vector-only retrieval.
         /// </summary>
         public bool HybridFallbackRan { get; set; } = false;
+
+        /// <summary>
+        /// Set by the retrieval service when the query embedding could not be generated (after retries), so vector
+        /// and hybrid search returned nothing. Callers surface it instead of treating the turn as "no relevant context".
+        /// </summary>
+        public bool EmbeddingFailed { get; set; } = false;
     }
 }

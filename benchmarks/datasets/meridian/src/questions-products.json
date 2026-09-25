@@ -1,0 +1,2007 @@
+[
+  {
+    "id": "prod-q001",
+    "text": "If we relocate a skid and move its Tessera gateway to another site in TesseraCloud, does the old vibration history move with it?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "Historical readings remain associated with the original site and assets. They are not moved.",
+      "Their asset and measurement point bindings are cleared and must be re-created in the destination site."
+    ],
+    "answer": "No. Historical readings stay with the original site and assets; the paired nodes move with the gateway but their asset and measurement point bindings are cleared and must be re-created."
+  },
+  {
+    "id": "prod-q002",
+    "text": "Can Meridian's support engineers just log into our TesseraCloud tenant and look at our data when we open a case?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "Meridian Support engineers cannot see tenant data by default.",
+      "Access is read-only unless \"Allow configuration changes\" is also selected, and it expires automatically after 7 days."
+    ],
+    "answer": "No. A Tenant Owner has to grant time-boxed access (Settings > Security > Support Access, quoting the MSC ticket number); it is read-only by default and expires after 7 days."
+  },
+  {
+    "id": "prod-q003",
+    "text": "Why would a Lumen flow meter read zero when there is definitely water going through the pipe?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-troubleshooting-compendium",
+      "sup-lumen-error-codes"
+    ],
+    "grades": {
+      "sup-troubleshooting-compendium": 2,
+      "sup-lumen-error-codes": 1
+    },
+    "evidence": [
+      "The meter declares an empty pipe when the optical path sees no fluid for longer than the detection delay.",
+      "Confirm the pipe is full. Check that the meter is not at a high point and that vertical installations have upward flow"
+    ],
+    "answer": "It has declared an empty pipe (L-201): the pipe is running partly full, air is collecting at a high point, or the detection delay is too short. Check the installation and lengthen the empty-pipe detection delay (default 5 s; 30 s recommended for gravity or pump-cycled lines, max 120 s)."
+  },
+  {
+    "id": "prod-q004",
+    "text": "Is there a hardware way to lock an LF-60P so nobody can change its settings, not even remotely over HART or Modbus?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60p-installation-manual",
+      "prod-lumen-modbus-register-map"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2,
+      "prod-lumen-modbus-register-map": 1
+    },
+    "evidence": [
+      "when S3 is ON, no parameter can be changed from the display, HART or Modbus.",
+      "Holding registers are write-protected when DIP switch S3 on the terminal board is ON; writes then return exception code 04."
+    ],
+    "answer": "Yes. Set DIP switch S3 on the terminal board to ON; no parameter can then be changed from the display, HART or Modbus (Modbus writes return exception 04)."
+  },
+  {
+    "id": "prod-q005",
+    "text": "Nobody on site remembers the supervisor code for one of our HX-210s. Can we reset it from the detector itself?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "It cannot be reset from the instrument itself.",
+      "it can be reset from Meridian Link (Instruments > Security > Reset Passcode) by a user with the Fleet Administrator role."
+    ],
+    "answer": "No. It can only be reset in Meridian Link (Instruments > Security > Reset Passcode) by a user with the Fleet Administrator role."
+  },
+  {
+    "id": "prod-q006",
+    "text": "Does TesseraCloud charge us for every vibration sensor we stick on a machine?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sales-price-list-fy25-26",
+      "prod-tesseracloud-admin-guide",
+      "sales-tessera-roi-guide",
+      "prod-portfolio-overview-fy26",
+      "prod-ts4-gateway-datasheet"
+    ],
+    "grades": {
+      "sales-price-list-fy25-26": 2,
+      "prod-tesseracloud-admin-guide": 2,
+      "sales-tessera-roi-guide": 1,
+      "prod-portfolio-overview-fy26": 1,
+      "prod-ts4-gateway-datasheet": 1
+    },
+    "evidence": [
+      "TesseraCloud subscriptions are billed per monitored asset per year, not per node.",
+      "Asset subscriptions are counted per asset, not per node.",
+      "Subscriptions are an annual operating cost billed per asset, not per node."
+    ],
+    "answer": "No. Subscriptions (TC-SUB-STD / TC-SUB-ENT) are billed per monitored asset per year, not per node; an asset with several nodes counts as one."
+  },
+  {
+    "id": "prod-q007",
+    "text": "What paperwork has to be in the box when a customer sends a gas detector back for repair, so it doesn't just get sent back unopened?",
+    "type": "paraphrase",
+    "category": "citation_required",
+    "relevant": [
+      "sup-rma-process-v2",
+      "sup-warranty-terms-2025",
+      "sales-partner-program-guide",
+      "sup-troubleshooting-compendium",
+      "mfg-rotterdam-repair-centre-process"
+    ],
+    "grades": {
+      "sup-rma-process-v2": 2,
+      "sup-warranty-terms-2025": 1,
+      "sales-partner-program-guide": 1,
+      "sup-troubleshooting-compendium": 1,
+      "mfg-rotterdam-repair-centre-process": 1,
+      "sup-rma-process-v1": 0
+    },
+    "evidence": [
+      "Every return must include a completed and signed Decontamination Declaration, form MI-F-031",
+      "Units that arrive without form MI-F-031 are quarantined unopened and returned to the customer at the customer's cost."
+    ],
+    "answer": "A completed and signed Decontamination Declaration, form MI-F-031 (uploaded to the RMA and in a clear pouch on the outside of the carton). Without it the unit is quarantined unopened and returned at the customer's cost."
+  },
+  {
+    "id": "prod-q008",
+    "text": "We just commissioned Tessera at a new plant and it has fired dozens of vibration alarms in the first week. Are the nodes faulty?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-troubleshooting-compendium",
+      "prod-tessera-alarm-configuration-guide"
+    ],
+    "grades": {
+      "sup-troubleshooting-compendium": 2,
+      "prod-tessera-alarm-configuration-guide": 1
+    },
+    "evidence": [
+      "TesseraCloud learns an operating baseline over the first 14 days of data for each asset.",
+      "alarm thresholds left at the generic defaults rather than set for the machine class",
+      "After 14 days of data, TesseraCloud computes a baseline for each measurement point"
+    ],
+    "answer": "Usually not. Baselines are still being learned for the first 14 days (adaptive alarms suppressed, only absolute ISO 10816 zone alarms active), and thresholds may be at generic defaults or the wrong machine class, or nodes may be mounted on non-rigid covers."
+  },
+  {
+    "id": "prod-q009",
+    "text": "Can I send a worker into an area where hydrogen might be present with only an HX-200 on them?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx200-user-manual",
+      "sales-competitive-battlecard-halcyon",
+      "prod-hx200-quick-start",
+      "prod-hx200-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx200-user-manual": 2,
+      "sales-competitive-battlecard-halcyon": 1,
+      "prod-hx200-quick-start": 1,
+      "prod-hx200-spec-sheet": 1
+    },
+    "evidence": [
+      "It must not be used in Zone 0 or in gas group IIC atmospheres such as hydrogen or acetylene.",
+      "Do not propose it where hydrogen or acetylene may be present. Those gases fall in group IIC."
+    ],
+    "answer": "No. The HX-200 (II 2G Ex ib IIB T4 Gb) is approved for gas groups IIA and IIB only; hydrogen is a group IIC gas."
+  },
+  {
+    "id": "prod-q010",
+    "text": "During a pump overhaul, how long can we mute Tessera alarms on that asset before they come back on by themselves?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide",
+      "prod-tessera-alarm-configuration-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2,
+      "prod-tessera-alarm-configuration-guide": 1
+    },
+    "evidence": [
+      "Maintenance mode has a maximum duration of 72 hours per activation.",
+      "When it expires, alarm evaluation resumes automatically"
+    ],
+    "answer": "Up to 72 hours per maintenance-mode activation; alarm evaluation then resumes automatically and a new activation is needed if work continues."
+  },
+  {
+    "id": "prod-q011",
+    "text": "The engineer who built our TesseraCloud integration has left the company. Will the API keys they created keep working?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "API keys bound to a named user stop working when that user is deactivated",
+      "Keys bound to an Integrator account are unaffected by staff changes."
+    ],
+    "answer": "Not if they were bound to that person: keys bound to a named user stop working when the user is deactivated. Keys bound to an Integrator service account are unaffected."
+  },
+  {
+    "id": "prod-q012",
+    "text": "What's the recommended way to pull a couple of years of vibration history into our data warehouse without getting throttled by the API?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-api-rate-limits-v2",
+      "prod-tesseracloud-admin-guide",
+      "prod-tesseracloud-api-reference",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-rate-limits-v2": 2,
+      "prod-tesseracloud-admin-guide": 1,
+      "prod-tesseracloud-api-reference": 1,
+      "sup-troubleshooting-compendium": 1,
+      "prod-tesseracloud-api-rate-limits-v1": 0
+    },
+    "evidence": [
+      "For historical backfills and data-warehouse loads, use export jobs (POST /v2/exports) instead of paging through the readings endpoint.",
+      "Bulk historical data should be extracted using export jobs rather than repeated calls to the readings endpoint."
+    ],
+    "answer": "Use asynchronous export jobs (POST /v2/exports), each covering up to 31 days of raw readings or 12 months of hourly aggregates, instead of paging through the readings endpoint."
+  },
+  {
+    "id": "prod-q013",
+    "text": "Does bump testing an HX-210 adjust the sensors the way a calibration does?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "a brief exposure to a known gas to confirm that sensors respond and alarms operate. It does not adjust the instrument.",
+      "adjustment of the zero and span of each sensor using a certified gas mixture."
+    ],
+    "answer": "No. A bump test only confirms that the sensors respond and the alarms work; calibration adjusts each sensor's zero and span."
+  },
+  {
+    "id": "prod-q014",
+    "text": "Why is the HX-220 only good for Zone 1 when the HX-210 is allowed in Zone 0?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx220-user-manual"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2
+    },
+    "evidence": [
+      "The lower protection level (ib rather than the ia of the HX-210) is a consequence of the larger 5,200 mAh battery and the radio module."
+    ],
+    "answer": "Because its larger 5,200 mAh battery and radio module limit it to Ex ib protection (Zone 1 and 2) instead of the HX-210's Ex ia."
+  },
+  {
+    "id": "prod-q015",
+    "text": "An HX-210 has been sitting in a store cupboard for about five months. Can we just charge it up and hand it out?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "must be calibrated before use, because the calibration countdown continues during storage."
+    ],
+    "answer": "No. After more than 120 days in storage it shows CAL DUE and must be calibrated before use, because the calibration countdown continues during storage."
+  },
+  {
+    "id": "prod-q016",
+    "text": "What does E-117 mean on a Halcyon detector and what's the fix?",
+    "type": "lexical",
+    "category": "citation_required",
+    "relevant": [
+      "sup-halcyon-error-codes",
+      "sup-troubleshooting-compendium",
+      "prod-hx210-user-manual",
+      "sup-hx-sensor-replacement-procedure"
+    ],
+    "grades": {
+      "sup-halcyon-error-codes": 2,
+      "sup-troubleshooting-compendium": 1,
+      "prod-hx210-user-manual": 1,
+      "sup-hx-sensor-replacement-procedure": 1
+    },
+    "evidence": [
+      "LEL sensor poisoned or catalytic bridge fault",
+      "Do not attempt recalibration. Replace the LEL sensor HX-SNS-LEL-04 following section 4 of sup-hx-sensor-replacement-procedure, then perform a full calibration."
+    ],
+    "answer": "LEL sensor poisoned or catalytic bridge fault (HX-210/HX-220). Do not recalibrate; replace the HX-SNS-LEL-04 sensor per section 4 of the sensor replacement procedure, then do a full calibration."
+  },
+  {
+    "id": "prod-q017",
+    "text": "Our integration is getting HTTP 429 with TC-ERR-429 from TesseraCloud. What does it mean and what should the client do?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-api-rate-limits-v2",
+      "prod-tesseracloud-api-reference",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-rate-limits-v2": 2,
+      "prod-tesseracloud-api-reference": 1,
+      "sup-troubleshooting-compendium": 1
+    },
+    "evidence": [
+      "Rate limit exceeded; honour Retry-After",
+      "Clients must honour Retry-After and use exponential back-off with jitter."
+    ],
+    "answer": "The API rate limit was exceeded. Honour the Retry-After header and retry with exponential back-off and jitter; a key that keeps getting 429s for 15 minutes is suspended for 10 minutes."
+  },
+  {
+    "id": "prod-q018",
+    "text": "What is Tessera event T-348?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-tessera-error-codes",
+      "prod-ts4-gateway-installation-guide",
+      "prod-tessera-gateway-firmware-5-3-0-release-notes",
+      "prod-tesseracloud-admin-guide",
+      "prod-tessera-firmware-compatibility-matrix"
+    ],
+    "grades": {
+      "sup-tessera-error-codes": 2,
+      "prod-ts4-gateway-installation-guide": 1,
+      "prod-tessera-gateway-firmware-5-3-0-release-notes": 1,
+      "prod-tesseracloud-admin-guide": 1,
+      "prod-tessera-firmware-compatibility-matrix": 1
+    },
+    "evidence": [
+      "Store-and-forward buffer above 90% after a long backhaul outage",
+      "When the buffer reaches 90% the gateway raises event T-348 (buffer near capacity)"
+    ],
+    "answer": "Buffer near capacity: the gateway's store-and-forward buffer is above 90% after a long backhaul outage. Restore backhaul; once full, the oldest readings are overwritten."
+  },
+  {
+    "id": "prod-q019",
+    "text": "Which Modbus input register do I poll to get the active L-code from a Lumen meter?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lumen-modbus-register-map",
+      "sup-lumen-error-codes"
+    ],
+    "grades": {
+      "prod-lumen-modbus-register-map": 2,
+      "sup-lumen-error-codes": 1
+    },
+    "evidence": [
+      "When more than one error is active, register 30018 returns the lowest-numbered code.",
+      "over Modbus (input register 30018)"
+    ],
+    "answer": "Input register 30018 (numeric part of the L-code; lowest-numbered code if several are active, 0 if none)."
+  },
+  {
+    "id": "prod-q020",
+    "text": "What is part number HX-FLT-D4?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-halcyon-accessories-catalogue",
+      "prod-halcyon-docking-station-guide"
+    ],
+    "grades": {
+      "prod-halcyon-accessories-catalogue": 2,
+      "prod-halcyon-docking-station-guide": 1
+    },
+    "evidence": [
+      "Dock inlet filter (annual replacement)",
+      "Replace the inlet filter HX-FLT-D4 every 12 months."
+    ],
+    "answer": "The inlet filter for the HX-DOCK-4 docking station, replaced every 12 months."
+  },
+  {
+    "id": "prod-q021",
+    "text": "Which image file do I pick in Meridian Link to put firmware 1.9.0 on an LF-60P?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lumen-firmware-1-9-0-release-notes"
+    ],
+    "grades": {
+      "prod-lumen-firmware-1-9-0-release-notes": 2
+    },
+    "evidence": [
+      "Select Device > Firmware Update and choose the image LF60P_1.9.0.mfw."
+    ],
+    "answer": "LF60P_1.9.0.mfw (the meter must already be on 1.8.2, using Meridian Link 4.2 or later)."
+  },
+  {
+    "id": "prod-q022",
+    "text": "Which Modbus holding register sets the HART poll address on an LF-60P, and what is it by default?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lumen-modbus-register-map",
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lumen-modbus-register-map": 2,
+      "prod-lf60p-installation-manual": 1
+    },
+    "evidence": [
+      "HART poll address",
+      "The default is 0, which keeps the loop current active."
+    ],
+    "answer": "Holding register 40020 (LF-60P only); default poll address 0."
+  },
+  {
+    "id": "prod-q023",
+    "text": "What does TS4-GLD-KIT-02 replace and what's different about it?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-ts4-gateway-installation-guide",
+      "prod-ts4-gateway-datasheet"
+    ],
+    "grades": {
+      "prod-ts4-gateway-installation-guide": 2,
+      "prod-ts4-gateway-datasheet": 1
+    },
+    "evidence": [
+      "the gland kit TS4-GLD-KIT-02 replaces the older TS4-GLD-KIT-01; the new kit adds an EMC gland for M20 entry 1",
+      "Cable gland kit with EMC gland (replaces TS4-GLD-KIT-01)"
+    ],
+    "answer": "It replaces TS4-GLD-KIT-01 and adds an EMC gland for M20 entry 1 (the Ethernet entry), recommended where Ethernet runs alongside VSD cabling."
+  },
+  {
+    "id": "prod-q024",
+    "text": "What's the longest time range I can ask for in a single GET /v2/devices/{id}/readings call?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-api-reference"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-reference": 2
+    },
+    "evidence": [
+      "End of range, ISO 8601; maximum range 7 days per request",
+      "Time range exceeds 7 days (readings) or 31 days (exports)"
+    ],
+    "answer": "7 days per request; longer ranges return TC-ERR-422-RANGE."
+  },
+  {
+    "id": "prod-q025",
+    "text": "What ACS URL do I give our identity provider team for TesseraCloud SAML SSO?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "Assertion consumer service (ACS) URL: https://login.tesseracloud.meridian-instruments.com/saml/acs"
+    ],
+    "answer": "https://login.tesseracloud.meridian-instruments.com/saml/acs"
+  },
+  {
+    "id": "prod-q026",
+    "text": "An LF-60P is showing L-222. What is that?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-lumen-error-codes",
+      "prod-lf60p-installation-manual",
+      "sup-troubleshooting-compendium",
+      "prod-lumen-firmware-1-9-0-release-notes"
+    ],
+    "grades": {
+      "sup-lumen-error-codes": 2,
+      "prod-lf60p-installation-manual": 1,
+      "sup-troubleshooting-compendium": 1,
+      "prod-lumen-firmware-1-9-0-release-notes": 1
+    },
+    "evidence": [
+      "HART communication fault",
+      "Check that loop resistance is at least 250 ohm"
+    ],
+    "answer": "HART communication fault (LF-60P only). Check the loop resistance is at least 250 ohm; on firmware 1.9.0 it clears automatically after 30 seconds of good communication."
+  },
+  {
+    "id": "prod-q027",
+    "text": "What APN do I enter for the TS4-SIM-GLB?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-ts4-gateway-installation-guide",
+      "sup-kb-ts4-gateway-offline"
+    ],
+    "grades": {
+      "prod-ts4-gateway-installation-guide": 2,
+      "sup-kb-ts4-gateway-offline": 1
+    },
+    "evidence": [
+      "The TS4-SIM-GLB uses the APN \"meridian.iot\"."
+    ],
+    "answer": "meridian.iot (Network > Cellular > APN)."
+  },
+  {
+    "id": "prod-q028",
+    "text": "We pay GBP 3,600 a year per site for Meridian support. What first-response time should we expect on a P1 ticket?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sales-support-contract-price-list",
+      "sup-sla-tiers"
+    ],
+    "grades": {
+      "sales-support-contract-price-list": 2,
+      "sup-sla-tiers": 2
+    },
+    "evidence": [
+      "SUP-PRO-SITE",
+      "P1 Critical response"
+    ],
+    "answer": "GBP 3,600 is the Professional tier (SUP-PRO-SITE); Professional P1 response is 4 hours."
+  },
+  {
+    "id": "prod-q029",
+    "text": "An HX-210 is throwing E-117. Once the new sensor is in, how tight do the bracket screws go and how long before I can calibrate it?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-hx-sensor-replacement-procedure",
+      "sup-halcyon-error-codes"
+    ],
+    "grades": {
+      "sup-halcyon-error-codes": 1,
+      "sup-hx-sensor-replacement-procedure": 2
+    },
+    "evidence": [
+      "Replace the LEL sensor HX-SNS-LEL-04 following section 4 of sup-hx-sensor-replacement-procedure",
+      "Refit the retaining bracket and tighten the two Torx T6 screws to 0.25 N m.",
+      "Leave the instrument switched on in clean air for a warm-up period of 4 hours before calibrating."
+    ],
+    "answer": "Replace HX-SNS-LEL-04 per section 4: tighten the two Torx T6 bracket screws to 0.25 N m, then leave it on in clean air for 4 hours before calibrating."
+  },
+  {
+    "id": "prod-q030",
+    "text": "Our HX-210s keep failing span with E-104 since the firmware update. What's the usual cause, and what gas and flow should we be using?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "prod-hx210-calibration-procedure-v2",
+      "sup-halcyon-error-codes",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-hx210-calibration-procedure-v2": 2,
+      "sup-halcyon-error-codes": 2,
+      "sup-troubleshooting-compendium": 1,
+      "prod-hx210-calibration-procedure-v1": 0
+    },
+    "evidence": [
+      "For the HX-210 follow section 5 of prod-hx210-calibration-procedure-v2",
+      "Using MI-CAL-Q4-A with firmware 3.4.1 is the most common cause of E-104 on the LEL channel.",
+      "Flow: confirm the regulator is MI-REG-10 (1.0 L/min)."
+    ],
+    "answer": "Most often the discontinued MI-CAL-Q4-A mix is still being used with firmware 3.4.1. Use MI-CAL-Q4-B at 1.0 L/min through an MI-REG-10 regulator (section 5 of calibration procedure v2)."
+  },
+  {
+    "id": "prod-q031",
+    "text": "A gateway is flashing red and reporting T-327. What do we have to enter on the gateway to fix it, and how long do we have to do it?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-tessera-error-codes",
+      "prod-tesseracloud-admin-guide",
+      "sup-kb-ts4-gateway-offline"
+    ],
+    "grades": {
+      "sup-tessera-error-codes": 2,
+      "prod-tesseracloud-admin-guide": 2,
+      "sup-kb-ts4-gateway-offline": 1
+    },
+    "evidence": [
+      "Re-provision the certificate with a one-time provisioning token",
+      "TesseraCloud generates a one-time provisioning token (12 characters, grouped as XXXX-XXXX-XXXX). The token is valid for 24 hours and can be used once.",
+      "Go to System > Cloud > Provisioning Token, enter the token and select Apply."
+    ],
+    "answer": "Re-provision the expired certificate: generate a one-time 12-character token (XXXX-XXXX-XXXX) in TesseraCloud (Security > Re-provision Certificate) and enter it in the gateway local UI at System > Cloud > Provisioning Token. The token is valid for 24 hours and can be used once."
+  },
+  {
+    "id": "prod-q032",
+    "text": "We pushed node firmware 2.8.0 with the TesseraSurvey app and now the gateway reports T-340. What gateway firmware do those nodes need?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-tessera-error-codes",
+      "prod-tessera-firmware-compatibility-matrix",
+      "prod-tessera-gateway-firmware-5-3-0-release-notes",
+      "prod-ts4-gateway-installation-guide",
+      "sup-troubleshooting-compendium",
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "sup-tessera-error-codes": 2,
+      "prod-tessera-firmware-compatibility-matrix": 2,
+      "prod-tessera-gateway-firmware-5-3-0-release-notes": 1,
+      "prod-ts4-gateway-installation-guide": 1,
+      "sup-troubleshooting-compendium": 1,
+      "prod-tesseracloud-admin-guide": 1
+    },
+    "evidence": [
+      "Node firmware not supported by the gateway firmware, for example node 2.8.0 on gateway 5.2.x",
+      "Never update nodes to 2.8.0 before their gateway is on 5.3.0."
+    ],
+    "answer": "Gateway firmware 5.3.0; node 2.8.0 is only supported on 5.3.0. Update the gateway first, then the nodes."
+  },
+  {
+    "id": "prod-q033",
+    "text": "How much is a replacement LEL sensor in euros, and which Halcyon models can take it?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sales-price-list-fy25-26",
+      "prod-halcyon-accessories-catalogue",
+      "sup-hx-sensor-replacement-procedure"
+    ],
+    "grades": {
+      "sales-price-list-fy25-26": 2,
+      "prod-halcyon-accessories-catalogue": 2,
+      "sup-hx-sensor-replacement-procedure": 1
+    },
+    "evidence": [
+      "Replacement catalytic LEL sensor",
+      "Catalytic bead LEL sensor",
+      "HX-SNS-LEL-04: catalytic LEL sensor (HX-210, HX-220)"
+    ],
+    "answer": "HX-SNS-LEL-04 costs EUR 192 list; it fits the HX-210 and HX-220 only (the HX-200 has no LEL sensor)."
+  },
+  {
+    "id": "prod-q034",
+    "text": "We're on a Premier contract. How many preventive site visits do we get a year, and what would an extra weekday visit cost in GBP?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-sla-tiers",
+      "sup-field-service-rates"
+    ],
+    "grades": {
+      "sup-sla-tiers": 2,
+      "sup-field-service-rates": 2
+    },
+    "evidence": [
+      "Professional contracts include 2 preventive on-site visits per year per contracted site; Premier contracts include 4.",
+      "Standard day rate (Mon-Fri)"
+    ],
+    "answer": "4 preventive visits per year per site; additional visits are charged at the standard Mon-Fri day rate of GBP 1,150."
+  },
+  {
+    "id": "prod-q035",
+    "text": "A customer wants vibration nodes inside a Zone 2 area. Which node do we quote, what firmware do the node and gateway need, and how is it priced?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "prod-ts4e-edge-node-datasheet",
+      "sales-price-list-fy25-26",
+      "prod-tessera-firmware-compatibility-matrix",
+      "sales-discount-approval-matrix",
+      "sales-tessera-roi-guide",
+      "sales-case-study-tank-terminal"
+    ],
+    "grades": {
+      "prod-ts4e-edge-node-datasheet": 2,
+      "sales-price-list-fy25-26": 2,
+      "prod-tessera-firmware-compatibility-matrix": 1,
+      "sales-discount-approval-matrix": 1,
+      "sales-tessera-roi-guide": 1,
+      "sales-case-study-tank-terminal": 1
+    },
+    "evidence": [
+      "The TS4E-NODE-3AX-Z2 variant is certified for Zone 2 hazardous areas and requires node firmware 2.8.0, which in turn requires gateway firmware 5.3.0.",
+      "The Zone 2 edge node variant TS4E-NODE-3AX-Z2 is quoted on request through the deal desk and is not on this list."
+    ],
+    "answer": "The TS4E-NODE-3AX-Z2, which needs node firmware 2.8.0 and therefore gateway firmware 5.3.0. It is not on the price list; quote it through the deal desk."
+  },
+  {
+    "id": "prod-q036",
+    "text": "A DN80 LF-60P on PVC pipe keeps raising L-204. What part do we need to order?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-lumen-error-codes",
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "sup-lumen-error-codes": 2,
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "on non-conductive or lined pipe, grounding rings are mandatory",
+      "On plastic pipe (PVC, PE, PP, GRP) and on metallic pipe with an internal lining (rubber, PTFE, epoxy or cement), grounding rings are mandatory on both sides of the meter.",
+      "LF-GR-080-P"
+    ],
+    "answer": "Grounding rings for both sides of the meter: LF-GR-080-P (316L), or LF-GR-080-HC for Hastelloy C-276."
+  },
+  {
+    "id": "prod-q037",
+    "text": "We're a Professional support customer and a TS-4 gateway has died. Can we get an advance replacement, and how long do we have to send the broken one back?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sup-rma-process-v2",
+      "sup-sla-tiers"
+    ],
+    "grades": {
+      "sup-rma-process-v2": 2,
+      "sup-sla-tiers": 1,
+      "sup-rma-process-v1": 0
+    },
+    "evidence": [
+      "Advance replacement is available to Professional and Premier support customers",
+      "The faulty unit must be received within 21 days of the replacement being delivered"
+    ],
+    "answer": "Yes, advance replacement covers Professional and Premier. The faulty unit must reach Meridian within 21 days of the replacement being delivered, or the replacement is invoiced at list price."
+  },
+  {
+    "id": "prod-q038",
+    "text": "If I quote 30 HX-210 kits and give the customer another 7% on top of the standard volume break, who has to approve it?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "sales-price-list-fy25-26",
+      "sales-discount-approval-matrix"
+    ],
+    "grades": {
+      "sales-price-list-fy25-26": 2,
+      "sales-discount-approval-matrix": 2
+    },
+    "evidence": [
+      "For example, a 5% volume break plus a 7% negotiated discount counts as 12% and needs regional sales manager approval.",
+      "More than 10% up to 20%"
+    ],
+    "answer": "The regional sales manager: 5% volume break (25-99 units) plus 7% makes a 12% total discount."
+  },
+  {
+    "id": "prod-q039",
+    "text": "What's the T90 response time of the CO channel on an HX-210?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "O2 15 s; LEL 20 s; CO 25 s; H2S 30 s"
+    ],
+    "answer": "25 seconds."
+  },
+  {
+    "id": "prod-q040",
+    "text": "We need to air-freight some spare HX-210 battery packs. Is there a charge limit?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "Spare packs shipped separately must be protected against short circuit and must not exceed 30% state of charge for air freight."
+    ],
+    "answer": "Yes. Spare HX-BAT-210 packs must be at no more than 30% state of charge and protected against short circuit."
+  },
+  {
+    "id": "prod-q041",
+    "text": "After fitting an LF-60P, what's the maximum pressure we can hydro-test the line to?",
+    "type": "detail",
+    "category": "citation_required",
+    "relevant": [
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "Pressure test the line to 1.5 times the design pressure, but never above 60 bar."
+    ],
+    "answer": "1.5 times the design pressure, but never above 60 bar."
+  },
+  {
+    "id": "prod-q042",
+    "text": "How many TS-4e nodes should talk directly to one TS-4 gateway at the first hop?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-ts4-gateway-installation-guide"
+    ],
+    "grades": {
+      "prod-ts4-gateway-installation-guide": 2
+    },
+    "evidence": [
+      "no more than 24 nodes should connect directly to the gateway (first hop)."
+    ],
+    "answer": "No more than 24; above that, some nodes should route through neighbours."
+  },
+  {
+    "id": "prod-q043",
+    "text": "What's the maximum HART loop resistance for an LF-60P in passive mode on a 24 V supply?",
+    "type": "detail",
+    "category": "citation_required",
+    "relevant": [
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "The maximum loop resistance in passive mode is (supply voltage - 12 V) / 0.022 A; with a 24 V loop supply this is 545 ohm."
+    ],
+    "answer": "545 ohm (with at least 250 ohm needed for HART communication)."
+  },
+  {
+    "id": "prod-q044",
+    "text": "How long does TesseraCloud keep audit log events, and how many rows can one CSV export contain?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "Export to CSV (up to 100,000 rows per export).",
+      "Audit events are retained for 400 days on both plans."
+    ],
+    "answer": "400 days on both plans; up to 100,000 rows per CSV export."
+  },
+  {
+    "id": "prod-q045",
+    "text": "What torque do the gland cap nuts get on the M16 service entry of a TS-4 gateway?",
+    "type": "detail",
+    "category": "citation_required",
+    "relevant": [
+      "prod-ts4-gateway-installation-guide"
+    ],
+    "grades": {
+      "prod-ts4-gateway-installation-guide": 2
+    },
+    "evidence": [
+      "Tighten the gland cap nuts to 4 N m for M20 glands and 2.5 N m for M16 glands to maintain the IP66 rating."
+    ],
+    "answer": "2.5 N m (M20 glands take 4 N m)."
+  },
+  {
+    "id": "prod-q046",
+    "text": "Using the HX-PMP-22 pump on an HX-220 with 20 m of sample tubing, how long should I wait before trusting the reading?",
+    "type": "detail",
+    "category": "aggregation",
+    "relevant": [
+      "prod-hx220-user-manual"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2
+    },
+    "evidence": [
+      "Allow 2 seconds per metre of tubing plus 60 seconds for the reading to stabilise."
+    ],
+    "answer": "About 100 seconds (20 m x 2 s + 60 s)."
+  },
+  {
+    "id": "prod-q047",
+    "text": "What's the maximum number of recipients on a TesseraCloud scheduled report, and how many scheduled reports can one tenant have?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-admin-guide": 2
+    },
+    "evidence": [
+      "Recipients: up to 25 email addresses, which do not need to be TesseraCloud users.",
+      "A tenant can have at most 50 active scheduled reports."
+    ],
+    "answer": "Up to 25 recipients per report; at most 50 active scheduled reports per tenant."
+  },
+  {
+    "id": "prod-q048",
+    "text": "When we bring Halcyon detectors out of the cold store into a warm room the O2 reading drops. How big a dip is normal and how long does it last?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "sup-troubleshooting-compendium": 2
+    },
+    "evidence": [
+      "a temporary O2 dip of up to 0.5% vol. The reading recovers within 5 minutes."
+    ],
+    "answer": "Up to 0.5% vol, recovering within 5 minutes (condensation on the sensor membranes)."
+  },
+  {
+    "id": "prod-q049",
+    "text": "How long does a TS-4 gateway wait before failing over from Ethernet to LTE?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-ts4-gateway-installation-guide",
+      "prod-tessera-gateway-firmware-5-3-0-release-notes"
+    ],
+    "grades": {
+      "prod-ts4-gateway-installation-guide": 2,
+      "prod-tessera-gateway-firmware-5-3-0-release-notes": 1
+    },
+    "evidence": [
+      "Failover occurs after 90 seconds without an Ethernet route to TesseraCloud.",
+      "Ethernet-to-LTE failover time reduced from 180 seconds to 90 seconds."
+    ],
+    "answer": "90 seconds (reduced from 180 seconds in gateway firmware 5.3.0)."
+  },
+  {
+    "id": "prod-q050",
+    "text": "What's the calibration interval for the HX-210 now?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "prod-hx210-calibration-procedure-v2",
+      "prod-hx210-user-manual",
+      "prod-hx210-quick-start",
+      "prod-hx210-spec-sheet",
+      "prod-halcyon-firmware-release-notes-3-4-1",
+      "sup-warranty-terms-2025",
+      "sales-competitive-battlecard-halcyon",
+      "mfg-halcyon-calibration-procedure"
+    ],
+    "grades": {
+      "prod-hx210-calibration-procedure-v2": 2,
+      "prod-hx210-user-manual": 1,
+      "prod-hx210-quick-start": 1,
+      "prod-hx210-spec-sheet": 1,
+      "prod-halcyon-firmware-release-notes-3-4-1": 1,
+      "sup-warranty-terms-2025": 1,
+      "sales-competitive-battlecard-halcyon": 1,
+      "mfg-halcyon-calibration-procedure": 1,
+      "prod-hx210-calibration-procedure-v1": 0,
+      "prod-halcyon-firmware-release-notes-3-4-0": 0,
+      "sup-warranty-terms-2024": 0
+    },
+    "evidence": [
+      "The HX-210 must be calibrated at least every 120 days.",
+      "The calibration interval is reduced from 180 days to 120 days."
+    ],
+    "answer": "120 days (reduced from 180 days by calibration procedure v2 in May 2025)."
+  },
+  {
+    "id": "prod-q051",
+    "text": "What's the overall API request limit for an Enterprise TesseraCloud tenant?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "prod-tesseracloud-api-rate-limits-v2",
+      "prod-tesseracloud-api-reference",
+      "prod-tesseracloud-admin-guide"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-rate-limits-v2": 2,
+      "prod-tesseracloud-api-reference": 1,
+      "prod-tesseracloud-admin-guide": 1,
+      "prod-tesseracloud-api-rate-limits-v1": 0
+    },
+    "evidence": [
+      "1,200 requests per minute"
+    ],
+    "answer": "1,200 requests per minute per tenant (Standard is 300)."
+  },
+  {
+    "id": "prod-q052",
+    "text": "What's the biggest page size I can request with the limit parameter on the TesseraCloud API?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "prod-tesseracloud-api-rate-limits-v2",
+      "prod-tesseracloud-api-reference"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-rate-limits-v2": 2,
+      "prod-tesseracloud-api-reference": 1,
+      "prod-tesseracloud-api-rate-limits-v1": 0
+    },
+    "evidence": [
+      "500 items",
+      "Page size, default 100, maximum 500"
+    ],
+    "answer": "500 items (default 100)."
+  },
+  {
+    "id": "prod-q053",
+    "text": "How long is an RMA number valid once it's issued?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sup-rma-process-v2"
+    ],
+    "grades": {
+      "sup-rma-process-v2": 2,
+      "sup-rma-process-v1": 0
+    },
+    "evidence": [
+      "An RMA number is valid for 21 days from issue."
+    ],
+    "answer": "21 days."
+  },
+  {
+    "id": "prod-q054",
+    "text": "Where should a customer in Germany ship a faulty HX-210 for repair?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sup-rma-process-v2",
+      "mfg-rotterdam-repair-centre-process"
+    ],
+    "grades": {
+      "sup-rma-process-v2": 2,
+      "mfg-rotterdam-repair-centre-process": 1,
+      "sup-rma-process-v1": 0
+    },
+    "evidence": [
+      "Meridian Instruments B.V., EU Returns Hub, Rotterdam, Netherlands"
+    ],
+    "answer": "To the Meridian Instruments B.V. EU Returns Hub in Rotterdam, Netherlands (not Leeds)."
+  },
+  {
+    "id": "prod-q055",
+    "text": "What warranty does a new HX-220 instrument get?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sup-warranty-terms-2025",
+      "sales-competitive-battlecard-halcyon"
+    ],
+    "grades": {
+      "sup-warranty-terms-2025": 2,
+      "sales-competitive-battlecard-halcyon": 1,
+      "sup-warranty-terms-2024": 0
+    },
+    "evidence": [
+      "36 months (registration required)",
+      "Products that are not registered within 90 days receive a 24-month warranty in place of any 36-month period."
+    ],
+    "answer": "36 months, provided it is registered in the MSC portal within 90 days; otherwise 24 months."
+  },
+  {
+    "id": "prod-q056",
+    "text": "How long is the warranty on the HX-SNS-O2-01 oxygen sensor?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sup-warranty-terms-2025",
+      "sales-competitive-battlecard-halcyon",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "sup-warranty-terms-2025": 2,
+      "sales-competitive-battlecard-halcyon": 1,
+      "sup-troubleshooting-compendium": 1,
+      "sup-warranty-terms-2024": 0
+    },
+    "evidence": [
+      "Halcyon oxygen sensor HX-SNS-O2-01",
+      "Under sup-warranty-terms-2025 the O2 sensor carries 18 months."
+    ],
+    "answer": "18 months."
+  },
+  {
+    "id": "prod-q057",
+    "text": "What's the minimum Meridian Link PC version I need to install the current HX-210 firmware?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "prod-halcyon-firmware-release-notes-3-4-1"
+    ],
+    "grades": {
+      "prod-halcyon-firmware-release-notes-3-4-1": 2,
+      "prod-halcyon-firmware-release-notes-3-4-0": 0
+    },
+    "evidence": [
+      "Install with Meridian Link 4.2 or later, or through an HX-DOCK-4 running dock firmware D-2.1.0."
+    ],
+    "answer": "Meridian Link 4.2 (or install through an HX-DOCK-4 on dock firmware D-2.1.0)."
+  },
+  {
+    "id": "prod-q058",
+    "text": "What's the factory default supervisor passcode on the HX-200?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx200-user-manual"
+    ],
+    "grades": {
+      "prod-hx200-user-manual": 2
+    },
+    "evidence": [
+      "The factory default supervisor passcode for the HX-200 is 2007."
+    ],
+    "answer": "2007."
+  },
+  {
+    "id": "prod-q059",
+    "text": "What's the default supervisor passcode on an HX-220?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx220-user-manual"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2
+    },
+    "evidence": [
+      "The factory default supervisor passcode for the HX-220 is 2207."
+    ],
+    "answer": "2207."
+  },
+  {
+    "id": "prod-q060",
+    "text": "How many screws hold the back on an HX-200 and what torque do they take?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx200-user-manual",
+      "sup-hx-sensor-replacement-procedure"
+    ],
+    "grades": {
+      "prod-hx200-user-manual": 2,
+      "sup-hx-sensor-replacement-procedure": 1
+    },
+    "evidence": [
+      "The rear housing of the HX-200 is held by four Torx T8 screws. Tighten them to 0.35 N m when refitting."
+    ],
+    "answer": "Four Torx T8 screws, tightened to 0.35 N m."
+  },
+  {
+    "id": "prod-q061",
+    "text": "What's the factory H2S high alarm set point on the HX-220?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx220-user-manual",
+      "prod-hx220-spec-sheet",
+      "prod-hx220-quick-start",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2,
+      "prod-hx220-spec-sheet": 1,
+      "prod-hx220-quick-start": 1,
+      "sup-troubleshooting-compendium": 1
+    },
+    "evidence": [
+      "H2S: low 5 ppm, high 15 ppm",
+      "5 / 15 / 15 / 5 ppm"
+    ],
+    "answer": "15 ppm (low 5 ppm)."
+  },
+  {
+    "id": "prod-q062",
+    "text": "What's the O2 measuring range on the HX-210?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual",
+      "prod-hx210-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2,
+      "prod-hx210-spec-sheet": 1
+    },
+    "evidence": [
+      "part number HX-SNS-O2-01, range 0-30% vol, resolution 0.1% vol."
+    ],
+    "answer": "0-30% vol (resolution 0.1% vol)."
+  },
+  {
+    "id": "prod-q063",
+    "text": "How many days of datalog does an HX-220 hold at a one-minute interval?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx220-user-manual",
+      "prod-hx220-spec-sheet",
+      "sales-competitive-battlecard-halcyon"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2,
+      "prod-hx220-spec-sheet": 1,
+      "sales-competitive-battlecard-halcyon": 1
+    },
+    "evidence": [
+      "At a 1-minute interval the datalog holds approximately 180 days, twice the HX-210 capacity."
+    ],
+    "answer": "About 180 days (including GPS position)."
+  },
+  {
+    "id": "prod-q064",
+    "text": "How long does an HX-200 take to charge fully?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx200-user-manual",
+      "prod-hx200-quick-start",
+      "prod-hx200-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx200-user-manual": 2,
+      "prod-hx200-quick-start": 1,
+      "prod-hx200-spec-sheet": 1
+    },
+    "evidence": [
+      "A full charge takes approximately 4 hours at 20 C."
+    ],
+    "answer": "About 4 hours."
+  },
+  {
+    "id": "prod-q065",
+    "text": "How many events does the HX-210 event log keep?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx210-user-manual",
+      "prod-halcyon-firmware-release-notes-3-4-0"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2,
+      "prod-halcyon-firmware-release-notes-3-4-0": 1
+    },
+    "evidence": [
+      "The event log records the last 500 events, including alarms, bump tests, calibrations, faults and power cycles"
+    ],
+    "answer": "The last 500 events."
+  },
+  {
+    "id": "prod-q066",
+    "text": "What's the default service passcode on an LF-60?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60-installation-manual": 2
+    },
+    "evidence": [
+      "The factory default passcode for the LF-60 is 1060."
+    ],
+    "answer": "1060."
+  },
+  {
+    "id": "prod-q067",
+    "text": "How much straight pipe does an LF-60P need upstream if it sits after a control valve?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "Where the upstream disturbance is a control valve, a partially open butterfly valve or two elbows in different planes, increase the upstream length to 25D or install a flow conditioner."
+    ],
+    "answer": "25 pipe diameters (25D) upstream, or fit a flow conditioner."
+  },
+  {
+    "id": "prod-q068",
+    "text": "What straight-run lengths does the LF-60 need?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60-datasheet",
+      "prod-lf60-installation-manual",
+      "sales-lumen-water-utilities-playbook",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-lf60-datasheet": 2,
+      "prod-lf60-installation-manual": 2,
+      "sales-lumen-water-utilities-playbook": 1,
+      "sup-troubleshooting-compendium": 1
+    },
+    "evidence": [
+      "Install the LF-60 with at least 10 pipe diameters of straight pipe upstream and 5 downstream of the meter."
+    ],
+    "answer": "10D upstream and 5D downstream (20D upstream after a control valve or out-of-plane elbows)."
+  },
+  {
+    "id": "prod-q069",
+    "text": "What's the default damping time constant on an LF-60?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60-installation-manual",
+      "prod-lumen-modbus-register-map"
+    ],
+    "grades": {
+      "prod-lf60-installation-manual": 2,
+      "prod-lumen-modbus-register-map": 1
+    },
+    "evidence": [
+      "The damping time constant defaults to 3.0 seconds"
+    ],
+    "answer": "3.0 seconds."
+  },
+  {
+    "id": "prod-q070",
+    "text": "What's the maximum fluid temperature for the LF-60P?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60p-datasheet",
+      "prod-lf60p-installation-manual",
+      "sup-lumen-error-codes",
+      "prod-portfolio-overview-fy26"
+    ],
+    "grades": {
+      "prod-lf60p-datasheet": 2,
+      "prod-lf60p-installation-manual": 1,
+      "sup-lumen-error-codes": 1,
+      "prod-portfolio-overview-fy26": 1
+    },
+    "evidence": [
+      "Boiler feed water and condensate return up to 120"
+    ],
+    "answer": "+120 C (fluid range -20 to +120 C)."
+  },
+  {
+    "id": "prod-q071",
+    "text": "Is the HX-200 rated IP67?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx200-user-manual",
+      "prod-hx200-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx200-user-manual": 2,
+      "prod-hx200-spec-sheet": 1
+    },
+    "evidence": [
+      "The housing is rated IP66 and weighs 210 g including the battery."
+    ],
+    "answer": "No, the HX-200 is IP66 (the HX-210 and HX-220 are IP67)."
+  },
+  {
+    "id": "prod-q072",
+    "text": "When does an LF-60P reject a zero-point adjustment?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "If the offset is larger than ±2.0 cm/s, the adjustment is rejected."
+    ],
+    "answer": "When the measured offset is larger than +/-2.0 cm/s."
+  },
+  {
+    "id": "prod-q073",
+    "text": "What does Premier support cost per site per year in Malaysian ringgit?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sales-support-contract-price-list"
+    ],
+    "grades": {
+      "sales-support-contract-price-list": 2
+    },
+    "evidence": [
+      "SUP-PRM-SITE",
+      "56,750"
+    ],
+    "answer": "MYR 56,750."
+  },
+  {
+    "id": "prod-q074",
+    "text": "What's the USD list price of the Ethernet-only TS-4 gateway?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sales-price-list-fy25-26"
+    ],
+    "grades": {
+      "sales-price-list-fy25-26": 2
+    },
+    "evidence": [
+      "Tessera TS-4 gateway, Ethernet backhaul only",
+      "2,190"
+    ],
+    "answer": "USD 2,190 (TS4-GW-ETH)."
+  },
+  {
+    "id": "prod-q075",
+    "text": "For a big motor over 300 kW on a flexible foundation, at what vibration level does TesseraCloud raise an Alarm by default?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "prod-tessera-alarm-configuration-guide"
+    ],
+    "grades": {
+      "prod-tessera-alarm-configuration-guide": 2
+    },
+    "evidence": [
+      "Group 1 (above 300 kW)",
+      "Flexible",
+      "11.0"
+    ],
+    "answer": "11.0 mm/s velocity RMS (C/D boundary); Warning at 7.1 mm/s."
+  },
+  {
+    "id": "prod-q076",
+    "text": "What's the flange bolt torque for a DN150 LF-60?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "prod-lf60-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60-installation-manual": 2
+    },
+    "evidence": [
+      "8 x M20",
+      "120 N m"
+    ],
+    "answer": "8 x M20 bolts at 120 N m."
+  },
+  {
+    "id": "prod-q077",
+    "text": "What multi-site discount do we get on a support contract covering six sites?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sales-support-contract-price-list"
+    ],
+    "grades": {
+      "sales-support-contract-price-list": 2
+    },
+    "evidence": [
+      "6-10",
+      "12.5%"
+    ],
+    "answer": "12.5%."
+  },
+  {
+    "id": "prod-q078",
+    "text": "What's the P3 response target on Essential support?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sup-sla-tiers"
+    ],
+    "grades": {
+      "sup-sla-tiers": 2
+    },
+    "evidence": [
+      "P3 Medium response",
+      "5 business days"
+    ],
+    "answer": "5 business days."
+  },
+  {
+    "id": "prod-q079",
+    "text": "What's the Saturday field service day rate in euros?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sup-field-service-rates"
+    ],
+    "grades": {
+      "sup-field-service-rates": 2
+    },
+    "evidence": [
+      "Saturday day rate",
+      "1,870"
+    ],
+    "answer": "EUR 1,870."
+  },
+  {
+    "id": "prod-q080",
+    "text": "How long does a TS-4e battery last if it reports every 10 minutes?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "prod-ts4e-edge-node-datasheet"
+    ],
+    "grades": {
+      "prod-ts4e-edge-node-datasheet": 2
+    },
+    "evidence": [
+      "1 sample per 10 minutes",
+      "14 months"
+    ],
+    "answer": "About 14 months."
+  },
+  {
+    "id": "prod-q081",
+    "text": "Who has to approve a 25% discount off list?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sales-discount-approval-matrix",
+      "sales-competitive-battlecard-halcyon"
+    ],
+    "grades": {
+      "sales-discount-approval-matrix": 2,
+      "sales-competitive-battlecard-halcyon": 1
+    },
+    "evidence": [
+      "More than 20% up to 30%",
+      "VP Sales"
+    ],
+    "answer": "The VP Sales (typically 2 working days)."
+  },
+  {
+    "id": "prod-q082",
+    "text": "What market development funds does a Silver partner get?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sales-partner-program-guide"
+    ],
+    "grades": {
+      "sales-partner-program-guide": 2
+    },
+    "evidence": [
+      "2% of prior-year net purchases"
+    ],
+    "answer": "2% of prior-year net purchases."
+  },
+  {
+    "id": "prod-q083",
+    "text": "What would Professional support for four sites cost per year in GBP after the multi-site discount?",
+    "type": "table",
+    "category": "aggregation",
+    "relevant": [
+      "sales-support-contract-price-list"
+    ],
+    "grades": {
+      "sales-support-contract-price-list": 2
+    },
+    "evidence": [
+      "SUP-PRO-SITE",
+      "3,600",
+      "3-5",
+      "7.5%"
+    ],
+    "answer": "GBP 13,320 (4 x GBP 3,600 = 14,400, less 7.5%)."
+  },
+  {
+    "id": "prod-q084",
+    "text": "A TS-4e node reports a parent-link RSSI of -85 dBm. Is that OK?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "sup-troubleshooting-compendium": 2
+    },
+    "evidence": [
+      "Marginal",
+      "Add a repeater node or reposition"
+    ],
+    "answer": "It is marginal (-83 to -88 dBm): add a repeater node or reposition."
+  },
+  {
+    "id": "prod-q085",
+    "text": "What's the factory default supervisor passcode?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "prod-hx210-user-manual"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2
+    },
+    "evidence": [
+      "The factory default supervisor passcode for the HX-210 is 2107."
+    ],
+    "answer": "2107.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "model",
+          "condition": "Equals",
+          "value": "HX-210"
+        }
+      ]
+    }
+  },
+  {
+    "id": "prod-q086",
+    "text": "How often does it have to be calibrated?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "prod-hx220-user-manual",
+      "prod-hx220-quick-start",
+      "prod-hx220-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2,
+      "prod-hx220-quick-start": 1,
+      "prod-hx220-spec-sheet": 1
+    },
+    "evidence": [
+      "The HX-220 must be calibrated at least every 150 days."
+    ],
+    "answer": "At least every 150 days.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "model",
+          "condition": "Equals",
+          "value": "HX-220"
+        }
+      ]
+    }
+  },
+  {
+    "id": "prod-q087",
+    "text": "What are the default Modbus communication settings?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "prod-lf60-installation-manual",
+      "prod-lf60-datasheet"
+    ],
+    "grades": {
+      "prod-lf60-installation-manual": 2,
+      "prod-lf60-datasheet": 1
+    },
+    "evidence": [
+      "Modbus settings are under Menu > Setup > Outputs > Modbus; the defaults are address 1, 9600 baud, 8N1."
+    ],
+    "answer": "Address 1, 9600 baud, 8N1.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "model",
+          "condition": "Equals",
+          "value": "LF-60"
+        }
+      ]
+    }
+  },
+  {
+    "id": "prod-q088",
+    "text": "Under these terms, how long is the warranty on a TS-4 gateway?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-warranty-terms-2024"
+    ],
+    "grades": {
+      "sup-warranty-terms-2024": 2
+    },
+    "evidence": [
+      "Tessera TS-4 gateway (TS4-GW-LTE, TS4-GW-ETH)",
+      "24 months"
+    ],
+    "answer": "24 months (2024 terms).",
+    "attachedDocuments": [
+      "sup-warranty-terms-2024"
+    ]
+  },
+  {
+    "id": "prod-q089",
+    "text": "What bolts and torque does a DN100 meter need?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "prod-lf60p-installation-manual"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2
+    },
+    "evidence": [
+      "8 x M20",
+      "140 N m"
+    ],
+    "answer": "8 x M20 bolts at 140 N m.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "model",
+          "condition": "Equals",
+          "value": "LF-60P"
+        }
+      ]
+    }
+  },
+  {
+    "id": "prod-q090",
+    "text": "What's the H2S measuring range?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "prod-hx210-user-manual",
+      "prod-hx210-spec-sheet"
+    ],
+    "grades": {
+      "prod-hx210-user-manual": 2,
+      "prod-hx210-spec-sheet": 1
+    },
+    "evidence": [
+      "part number HX-SNS-H2S-02, range 0-200 ppm, resolution 1 ppm.",
+      "Wide 0-200 ppm H2S range"
+    ],
+    "answer": "0-200 ppm (1 ppm resolution).",
+    "metadataFilter": {
+      "required_labels": [
+        "hx-210"
+      ],
+      "excluded_labels": [],
+      "required_tags": []
+    }
+  },
+  {
+    "id": "prod-q091",
+    "text": "And for the 220?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-hx220-user-manual",
+      "prod-hx220-spec-sheet",
+      "prod-hx220-quick-start",
+      "sup-troubleshooting-compendium",
+      "sales-competitive-battlecard-halcyon",
+      "prod-portfolio-overview-fy26"
+    ],
+    "grades": {
+      "prod-hx220-user-manual": 2,
+      "prod-hx220-spec-sheet": 1,
+      "prod-hx220-quick-start": 1,
+      "sup-troubleshooting-compendium": 1,
+      "sales-competitive-battlecard-halcyon": 1,
+      "prod-portfolio-overview-fy26": 1
+    },
+    "evidence": [
+      "A fully charged HX-BAT-220L pack gives a typical runtime of 22 hours at 20 C with Bluetooth and GPS enabled and no alarms."
+    ],
+    "answer": "About 22 hours at 20 C (roughly 15 hours with the HX-PMP-22 pump fitted).",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "How long does an HX-210 run on a full charge?"
+      },
+      {
+        "role": "assistant",
+        "content": "About 14 hours at 20 C on the HX-BAT-210 pack, with no alarms."
+      }
+    ]
+  },
+  {
+    "id": "prod-q092",
+    "text": "What about the P version?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-lf60p-installation-manual",
+      "sup-troubleshooting-compendium"
+    ],
+    "grades": {
+      "prod-lf60p-installation-manual": 2,
+      "sup-troubleshooting-compendium": 1
+    },
+    "evidence": [
+      "85 N m for the LF-60P (PN40, 4 x M16)",
+      "85 N m"
+    ],
+    "answer": "85 N m (4 x M16, PN40).",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What torque do the flange bolts on a DN50 LF-60 need?"
+      },
+      {
+        "role": "assistant",
+        "content": "60 N m on 4 x M16 bolts, tightened in a cross pattern in three passes."
+      }
+    ]
+  },
+  {
+    "id": "prod-q093",
+    "text": "And on Essential?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "sup-sla-tiers"
+    ],
+    "grades": {
+      "sup-sla-tiers": 2
+    },
+    "evidence": [
+      "P1 Critical response",
+      "8 business hours"
+    ],
+    "answer": "8 business hours.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What's the P1 response time on Professional support?"
+      },
+      {
+        "role": "assistant",
+        "content": "4 hours."
+      }
+    ]
+  },
+  {
+    "id": "prod-q094",
+    "text": "What about in ringgit?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "sales-price-list-fy25-26"
+    ],
+    "grades": {
+      "sales-price-list-fy25-26": 2
+    },
+    "evidence": [
+      "Halcyon HX-210 four-gas detector starter kit",
+      "6,650"
+    ],
+    "answer": "MYR 6,650.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "How much is an HX-210 starter kit in GBP?"
+      },
+      {
+        "role": "assistant",
+        "content": "GBP 1,150 list for the HX-210-KIT-03."
+      }
+    ]
+  },
+  {
+    "id": "prod-q095",
+    "text": "And the burst allowance?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "prod-tesseracloud-api-rate-limits-v2"
+    ],
+    "grades": {
+      "prod-tesseracloud-api-rate-limits-v2": 2,
+      "prod-tesseracloud-api-rate-limits-v1": 0
+    },
+    "evidence": [
+      "50 requests per 10 seconds"
+    ],
+    "answer": "50 requests per 10 seconds.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What's the API rate limit for a Standard TesseraCloud tenant?"
+      },
+      {
+        "role": "assistant",
+        "content": "300 requests per minute across all endpoints."
+      }
+    ]
+  },
+  {
+    "id": "prod-q096",
+    "text": "Is there a Halcyon HX-230, or a PID sensor option for VOC monitoring?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q097",
+    "text": "Does the HX-210 have UL or CSA Class I Division 1 approval for use in the United States?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q098",
+    "text": "What's the list price of an HX-220 starter kit in Australian dollars?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q099",
+    "text": "Can we run TesseraCloud on-premises in our own data centre instead of the SaaS?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q100",
+    "text": "Is there a built-in connector that raises SAP PM or Maximo work orders from Tessera alarms?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q101",
+    "text": "Does Meridian sell a clamp-on ultrasonic flow meter or a larger LF-80 model?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q102",
+    "text": "Is a 5G or NB-IoT backhaul module available for the TS-4 gateway?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q103",
+    "text": "How much do we charge customers for a Halcyon operator training course?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q104",
+    "text": "Can customers lease Halcyon detectors or finance the purchase instead of buying outright?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q105",
+    "text": "Can support tickets be handled in Spanish or Malay?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q106",
+    "text": "What is the IP rating of the HX-DOCK-4 docking station?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "prod-q107",
+    "text": "What is the MTBF of the TS-4 gateway?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "answer": "NOT_IN_CORPUS"
+  }
+]

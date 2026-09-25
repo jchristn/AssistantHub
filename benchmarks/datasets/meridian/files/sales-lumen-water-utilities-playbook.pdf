@@ -1,0 +1,125 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4177 >>
+stream
+BT /F2 16 Tf 54 723 Td (Lumen Sales Playbook: Water Utilities) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: sales-lumen-water-utilities-playbook | Version: 1 | Effective: 2025-05-06 | Owner:) Tj ET
+BT /F1 10 Tf 54 688 Td (Sales Enablement, Lumen segment) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Why water utilities) Tj ET
+BT /F1 10 Tf 54 641 Td (Water utilities are the largest single segment for the Lumen range, accounting for roughly 45%) Tj ET
+BT /F1 10 Tf 54 628 Td (of Lumen unit volume in FY2024/25. The typical buyer is a regional water company or municipal) Tj ET
+BT /F1 10 Tf 54 615 Td (water authority replacing mechanical and older electromagnetic meters at pumping stations,) Tj ET
+BT /F1 10 Tf 54 602 Td (district metered areas \(DMAs\), treatment works and reservoir outlets. Budgets are driven by) Tj ET
+BT /F1 10 Tf 54 589 Td (leakage reduction targets, regulatory reporting and asset renewal programmes that run on) Tj ET
+BT /F1 10 Tf 54 576 Td (five-year cycles.) Tj ET
+BT /F1 10 Tf 54 554 Td (Lumen wins in this segment on three points: no moving parts and no pressure loss, a full-bore) Tj ET
+BT /F1 10 Tf 54 541 Td (design that tolerates the occasional debris found in raw water mains, and good accuracy at low) Tj ET
+BT /F1 10 Tf 54 528 Td (velocities where night-flow analysis matters for leakage detection.) Tj ET
+BT /F2 13 Tf 54 503 Td (2. Qualification questions) Tj ET
+BT /F1 10 Tf 54 481 Td (Ask these on the first call. They decide whether the opportunity is real and which model to) Tj ET
+BT /F1 10 Tf 54 468 Td (propose.) Tj ET
+BT /F1 10 Tf 54 446 Td (- What is the maximum operating pressure of the line, including surge? Anything above 16 bar) Tj ET
+BT /F1 10 Tf 54 433 Td (   rules out the LF-60.) Tj ET
+BT /F1 10 Tf 54 420 Td (- What is the pipe size? The LF-60 covers DN25 to DN200; the LF-60P stops at DN150.) Tj ET
+BT /F1 10 Tf 54 407 Td (- What is the fluid temperature range? Treated and raw water is almost always within the) Tj ET
+BT /F1 10 Tf 54 394 Td (   LF-60 range of -10 to +80 \260C.) Tj ET
+BT /F1 10 Tf 54 381 Td (- Will the meter be installed in a chamber or pit that can flood? The LF-60 is IP65; flooded) Tj ET
+BT /F1 10 Tf 54 368 Td (   chambers need the IP67 LF-60P or a remote-mount kit.) Tj ET
+BT /F1 10 Tf 54 355 Td (- Does the SCADA or telemetry system use Modbus RTU, HART, or plain 4-20 mA and pulse? HART) Tj ET
+BT /F1 10 Tf 54 342 Td (   is only available on the LF-60P.) Tj ET
+BT /F1 10 Tf 54 329 Td (- How much straight pipe is available? The LF-60 needs 10D upstream and 5D downstream; the) Tj ET
+BT /F1 10 Tf 54 316 Td (   LF-60P needs 15D upstream.) Tj ET
+BT /F1 10 Tf 54 303 Td (- What is the lowest expected flow velocity, for example during night flow? Both models) Tj ET
+BT /F1 10 Tf 54 290 Td (   measure down to 0.1 m/s.) Tj ET
+BT /F1 10 Tf 54 277 Td (- Is the meter used for billing or regulatory reporting, and which accuracy class is) Tj ET
+BT /F1 10 Tf 54 264 Td (   specified?) Tj ET
+BT /F1 10 Tf 54 251 Td (- Who approves the product list: the utility's asset standards team, the contractor or a) Tj ET
+BT /F1 10 Tf 54 238 Td (   framework agreement?) Tj ET
+BT /F1 10 Tf 54 225 Td (- When does the current capital programme period end?) Tj ET
+BT /F2 13 Tf 54 209 Td (3. LF-60 or LF-60P) Tj ET
+BT /F1 10 Tf 54 187 Td (Default to the LF-60 for water utilities. Most distribution mains, DMA inlets and reservoir) Tj ET
+BT /F1 10 Tf 54 174 Td (outlets operate below 10 bar, at ambient water temperatures, in dry kiosks or above-ground) Tj ET
+BT /F1 10 Tf 54 161 Td (valve houses. The LF-60 meets those conditions at a lower price.) Tj ET
+BT /F1 10 Tf 54 139 Td (Propose the LF-60P when any of the following apply:) Tj ET
+BT /F1 10 Tf 54 117 Td (- Operating or surge pressure above 16 bar, typical of high-lift pumping stations and trunk) Tj ET
+BT /F1 10 Tf 54 104 Td (   mains in hilly terrain.) Tj ET
+BT /F1 10 Tf 54 91 Td (- Installation in chambers that flood, where IP67 is needed.) Tj ET
+BT /F1 10 Tf 54 78 Td (- The customer's asset management standard requires HART diagnostics.) Tj ET
+BT /F1 10 Tf 54 65 Td (- The customer wants the tighter \2610.75% accuracy for revenue or abstraction licence) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 3684 >>
+stream
+BT /F1 10 Tf 54 729 Td (   metering.) Tj ET
+BT /F1 10 Tf 54 716 Td (- Very cold exposed sites where the ambient can fall below -20 \260C.) Tj ET
+BT /F1 10 Tf 54 703 Td (Propose the LF-60 when the line is DN200; the LF-60P is not available above DN150.) Tj ET
+BT /F1 10 Tf 54 681 Td (Do not propose either model for sludge, grit-laden raw water or any fluid with high solids) Tj ET
+BT /F1 10 Tf 54 668 Td (content. Optical correlation needs a reasonably clear fluid; refer those enquiries to the) Tj ET
+BT /F1 10 Tf 54 655 Td (application engineering team in Rotterdam.) Tj ET
+BT /F2 13 Tf 54 630 Td (4. Objection handling) Tj ET
+BT /F1 10 Tf 54 608 Td ("Electromagnetic meters are the utility standard." Agree that they are proven. Point out that) Tj ET
+BT /F1 10 Tf 54 595 Td (Lumen meters also work on non-conductive fluids such as very low conductivity treated water and) Tj ET
+BT /F1 10 Tf 54 582 Td (demineralised water, and that the optical principle does not depend on fluid conductivity.) Tj ET
+BT /F1 10 Tf 54 569 Td (Offer a side-by-side trial against the incumbent meter.) Tj ET
+BT /F1 10 Tf 54 547 Td ("Optical windows will foul." Explain that on clean potable water the window inspection interval) Tj ET
+BT /F1 10 Tf 54 534 Td (is 12 months at most and often longer, that the meter reports signal quality continuously over) Tj ET
+BT /F1 10 Tf 54 521 Td (Modbus register 30017, and that the L-218 warning gives early notice before accuracy is) Tj ET
+BT /F1 10 Tf 54 508 Td (affected.) Tj ET
+BT /F1 10 Tf 54 486 Td ("Your price is higher than a mechanical meter." Move the conversation to whole-life cost: no) Tj ET
+BT /F1 10 Tf 54 473 Td (moving parts to wear, no recalibration, no pressure loss and therefore lower pumping energy.) Tj ET
+BT /F1 10 Tf 54 460 Td (The Lumen TCO worksheet on the sales enablement site shows typical payback periods.) Tj ET
+BT /F1 10 Tf 54 438 Td ("We need a meter that our technicians already know." Offer a half-day installation workshop,) Tj ET
+BT /F1 10 Tf 54 425 Td (delivered by the Rotterdam application team or a certified partner, covering installation,) Tj ET
+BT /F1 10 Tf 54 412 Td (grounding and commissioning.) Tj ET
+BT /F2 13 Tf 54 387 Td (5. Pricing and commercial terms) Tj ET
+BT /F1 10 Tf 54 365 Td (Do not quote prices from this playbook. Use the current hardware price list) Tj ET
+BT /F1 10 Tf 54 352 Td (\(sales-price-list-fy25-26\) for list prices in GBP, EUR, USD and MYR, and follow the discount) Tj ET
+BT /F1 10 Tf 54 339 Td (approval matrix \(sales-discount-approval-matrix\) for any discount. Framework agreements with) Tj ET
+BT /F1 10 Tf 54 326 Td (utilities frequently require fixed pricing for three to five years; any price hold beyond the) Tj ET
+BT /F1 10 Tf 54 313 Td (current financial year needs approval from the regional sales manager.) Tj ET
+BT /F1 10 Tf 54 291 Td (Utilities usually expect a support contract. Position the Professional support tier as the) Tj ET
+BT /F1 10 Tf 54 278 Td (default for utilities, because its advance replacement option keeps DMA metering online during) Tj ET
+BT /F1 10 Tf 54 265 Td (an RMA.) Tj ET
+BT /F2 13 Tf 54 240 Td (6. Proof points and references) Tj ET
+BT /F1 10 Tf 54 218 Td (- A UK water company replaced 140 mechanical meters at DMA inlets with LF-60 meters in 2024) Tj ET
+BT /F1 10 Tf 54 205 Td (   and reported a clearer picture of night flows within three months.) Tj ET
+BT /F1 10 Tf 54 192 Td (- A Malaysian state water operator uses LF-60P meters on high-lift pumping station) Tj ET
+BT /F1 10 Tf 54 179 Td (   discharges running at 22 bar.) Tj ET
+BT /F1 10 Tf 54 166 Td (Ask the Lumen product team for approval before naming any customer in a proposal.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004500 00000 n 
+0000004636 00000 n 
+0000008372 00000 n 
+0000008508 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+8557
+%%EOF

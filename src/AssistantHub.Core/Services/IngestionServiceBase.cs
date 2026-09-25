@@ -1187,6 +1187,21 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Whether a Partio HTTP 500 wraps a transient upstream failure. Partio v0.5.0 reports an embedding or completion
+        /// provider's own 429 (for example a load-shedding model proxy) as an InternalError whose message carries the
+        /// upstream status, so the status code alone would make a retryable condition permanent.
+        /// </summary>
+        public static bool IsWrappedTransientPartioError(int statusCode, string body)
+        {
+            if (statusCode != 500 || String.IsNullOrEmpty(body)) return false;
+            return body.Contains("HTTP 429", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("TooManyRequests", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("HTTP 503", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("HTTP 502", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("HTTP 504", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Compute the backoff delay before the next Partio retry using exponential growth capped at 60s.
         /// </summary>
         private protected int GetPartioRetryDelayMs(int failedAttempt)
@@ -1224,7 +1239,7 @@ namespace AssistantHub.Core.Services
                         return new PartioCallResult { StatusCode = statusCode, IsSuccess = true, Body = body };
 
                     bool canRetry = attempt < maxAttempts
-                        && IsTransientPartioStatus(statusCode)
+                        && (IsTransientPartioStatus(statusCode) || IsWrappedTransientPartioError(statusCode, body))
                         && !token.IsCancellationRequested;
 
                     if (!canRetry)

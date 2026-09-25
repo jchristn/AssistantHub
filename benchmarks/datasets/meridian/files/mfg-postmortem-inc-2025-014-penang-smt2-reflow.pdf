@@ -1,0 +1,97 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4288 >>
+stream
+BT /F2 16 Tf 54 723 Td (Postmortem: INC-2025-014 Wrong Reflow Profile on Penang) Tj ET
+BT /F2 16 Tf 54 704 Td (SMT-2) Tj ET
+BT /F1 10 Tf 54 682 Td (Document ID: mfg-postmortem-inc-2025-014-penang-smt2-reflow. Incident: INC-2025-014. Severity:) Tj ET
+BT /F1 10 Tf 54 669 Td (SEV2. Date of incident: 11 March 2025. Postmortem published: 21 March 2025. Author: Penang) Tj ET
+BT /F1 10 Tf 54 656 Td (Manufacturing Engineering. Review chaired by: Nurul Aziz \(Penang Factory Manager\).) Tj ET
+BT /F2 13 Tf 54 631 Td (Summary) Tj ET
+BT /F1 10 Tf 54 609 Td (On 11 March 2025, SMT-2 at the Penang factory ran 612 TS4E-EN boards \(Tessera TS-4e edge node\)) Tj ET
+BT /F1 10 Tf 54 596 Td (through the reflow oven using profile RP-HX-07, the profile for the Halcyon main board HX-MB,) Tj ET
+BT /F1 10 Tf 54 583 Td (instead of the correct profile RP-TS4E-03. RP-HX-07 peaks at 245 \260C, and runs in air, while) Tj ET
+BT /F1 10 Tf 54 570 Td (RP-TS4E-03 peaks at 240 \260C and requires nitrogen with oxygen below 1000 ppm. The boards passed) Tj ET
+BT /F1 10 Tf 54 557 Td (AOI but X-ray sampling at end of shift found excessive voiding under the TS4E-EN radio module) Tj ET
+BT /F1 10 Tf 54 544 Td (and discoloured connector housings.) Tj ET
+BT /F2 13 Tf 54 519 Td (Impact) Tj ET
+BT /F1 10 Tf 54 497 Td (- 612 boards affected: 540 scrapped, 72 reworked and re-inspected.) Tj ET
+BT /F1 10 Tf 54 484 Td (- SMT-2 stopped for 6 hours 15 minutes for investigation and containment.) Tj ET
+BT /F1 10 Tf 54 471 Td (- TS-4e edge node shipments to two customers delayed by 4 days.) Tj ET
+BT /F1 10 Tf 54 458 Td (- Estimated cost of scrap and overtime: MYR 186,000.) Tj ET
+BT /F2 13 Tf 54 442 Td (Timeline \(MYT, 11 March 2025\)) Tj ET
+BT /F2 9 Tf 54 421 Td (Time | Event) Tj ET
+BT /F1 9 Tf 54 409 Td (13:40 | Changeover on SMT-2 from HX-MB to TS4E-EN begins) Tj ET
+BT /F1 9 Tf 54 397 Td (13:58 | Operator selects oven recipe from the "recent recipes" list; RP-HX-07 remains loaded) Tj ET
+BT /F1 9 Tf 54 385 Td (14:05 | Stencil STN-TS4E-EN-C loaded, feeders verified, SPI and first article inspection passed) Tj ET
+BT /F1 9 Tf 54 373 Td (14:12 | Line released; production starts) Tj ET
+BT /F1 9 Tf 54 361 Td (21:30 | End-of-shift X-ray sample shows voiding above limits) Tj ET
+BT /F1 9 Tf 54 349 Td (21:45 | Line stopped; Beacon ticket in category MFG-OT raised; SEV2 declared) Tj ET
+BT /F1 9 Tf 54 337 Td (22:20 | Oven log confirms RP-HX-07 was active since 13:58) Tj ET
+BT /F1 9 Tf 54 325 Td (23:10 | All boards since 14:12 quarantined) Tj ET
+BT /F1 9 Tf 54 313 Td (04:00 \(12 March\) | Correct profile loaded, verified by two people, line restarted) Tj ET
+BT /F2 13 Tf 54 288 Td (Root causes) Tj ET
+BT /F1 10 Tf 54 266 Td (1. The oven recipe was selected manually and was not linked to the Atlas shop-floor work) Tj ET
+BT /F1 10 Tf 54 253 Td (   order.) Tj ET
+BT /F1 10 Tf 54 240 Td (2. The changeover runbook had no independent verification of the loaded reflow profile.) Tj ET
+BT /F1 10 Tf 54 227 Td (3. First article inspection checks paste and placement, but reflow defects under shielded) Tj ET
+BT /F1 10 Tf 54 214 Td (   modules are not visible to AOI.) Tj ET
+BT /F1 10 Tf 54 201 Td (4. The nitrogen supply was not required by an interlock, so running in air produced no alarm.) Tj ET
+BT /F2 13 Tf 54 185 Td (Action items) Tj ET
+BT /F2 9 Tf 54 164 Td (ID | Action | Owner | Due | Status) Tj ET
+BT /F1 9 Tf 54 152 Td (AI-1 | Add a two-person verification that the loaded reflow profile matches the traveller to) Tj ET
+BT /F1 9 Tf 54 140 Td (the Penang SMT Line Changeover Runbook \(added as step 19 in revision D, 7 April 2025\) | Penang) Tj ET
+BT /F1 9 Tf 54 128 Td (Manufacturing Engineering | 2025-04-07 | Done) Tj ET
+BT /F1 9 Tf 54 116 Td (AI-2 | Link oven recipe selection to the Atlas shop-floor work order barcode so the correct) Tj ET
+BT /F1 9 Tf 54 104 Td (profile loads automatically | IT Business Applications and Penang OT Support | 2025-09-30 | In) Tj ET
+BT /F1 9 Tf 54 92 Td (progress) Tj ET
+BT /F1 9 Tf 54 80 Td (AI-3 | Add a nitrogen interlock so RP-TS4E-03 cannot run with oxygen above 1000 ppm | Penang OT) Tj ET
+BT /F1 9 Tf 54 68 Td (Support | 2025-05-31 | Done) Tj ET
+BT /F1 9 Tf 54 56 Td (AI-4 | Add X-ray sampling of the first 5 boards after any changeover to TS4E-EN | Quality) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 472 >>
+stream
+BT /F1 9 Tf 54 730 Td (Engineering | 2025-04-15 | Done) Tj ET
+BT /F1 9 Tf 54 718 Td (AI-5 | Retrain all SMT line leads and operators on changeover verification | Nurul Aziz |) Tj ET
+BT /F1 9 Tf 54 706 Td (2025-04-30 | Done) Tj ET
+BT /F2 13 Tf 54 681 Td (Lessons) Tj ET
+BT /F1 10 Tf 54 659 Td (A human-selected recipe with no system check will eventually be wrong. Verification must be) Tj ET
+BT /F1 10 Tf 54 646 Td (independent of the person who made the selection.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004611 00000 n 
+0000004747 00000 n 
+0000005270 00000 n 
+0000005406 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5455
+%%EOF

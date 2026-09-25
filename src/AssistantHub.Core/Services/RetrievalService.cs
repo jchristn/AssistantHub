@@ -95,6 +95,7 @@ namespace AssistantHub.Core.Services
 
             if (searchOptions == null) searchOptions = new RetrievalSearchOptions();
             searchOptions.HybridFallbackRan = false;
+            searchOptions.EmbeddingFailed = false;
 
             List<RetrievalChunk> results = new List<RetrievalChunk>();
 
@@ -117,6 +118,8 @@ namespace AssistantHub.Core.Services
                     if (queryEmbeddings == null || queryEmbeddings.Count == 0)
                     {
                         _Logging.Warn(_Header + "failed to generate embeddings for query");
+                        searchOptions.EmbeddingFailed = true;
+                        op.SetTag("retrieval.embedding_failed", true);
                         return results;
                     }
 
@@ -156,6 +159,11 @@ namespace AssistantHub.Core.Services
                                 DocumentId = result.DocumentId,
                                 Score = Math.Round(result.Score, 6),
                                 TextScore = result.TextScore.HasValue ? Math.Round(result.TextScore.Value, 6) : null,
+                                VectorScore = result.VectorScore.HasValue
+                                    ? Math.Round(result.VectorScore.Value, 6)
+                                    : (mode == "vector" || searchOptions.HybridFallbackRan ? Math.Round(result.Score, 6) : null),
+                                VectorRank = result.VectorRank,
+                                TextRank = result.TextRank,
                                 Content = result.Content,
                                 Position = result.Position,
                                 Neighbors = result.Neighbors?.Select(n => new RetrievalChunk
@@ -442,14 +450,9 @@ namespace AssistantHub.Core.Services
             List<string> normalized = NormalizeDocumentIds(documentIds);
             if (normalized == null || normalized.Count < 1) return;
 
-            if (normalized.Count == 1)
-            {
-                body["DocumentId"] = normalized[0];
-            }
-            else
-            {
-                body["DocumentIds"] = normalized;
-            }
+            // RecallDB's search query only accepts the DocumentIds list; a singular DocumentId property is ignored,
+            // which silently searched the whole collection for single-document scopes.
+            body["DocumentIds"] = normalized;
         }
 
         /// <summary>
@@ -690,25 +693,59 @@ namespace AssistantHub.Core.Services
                 EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
             };
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
+            int maxAttempts = Math.Max(1, _ChunkingSettings.MaxRetries + 1);
 
-            using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
+            for (int attempt = 1; ; attempt++)
             {
-                string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
                 {
-                    _Logging.Warn(_Header + "embedding service returned " + (int)response.StatusCode + ": " + responseBody);
-                    return null;
-                }
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
 
-                ProcessResponse processResult = JsonSerializer.Deserialize<ProcessResponse>(responseBody, _JsonOptions);
-                if (processResult?.Chunks != null && processResult.Chunks.Count > 0)
-                {
-                    return processResult.Chunks[0].Embeddings;
-                }
+                    if (response.IsSuccessStatusCode)
+                    {
+                        ProcessResponse processResult = JsonSerializer.Deserialize<ProcessResponse>(responseBody, _JsonOptions);
+                        if (processResult?.Chunks != null && processResult.Chunks.Count > 0)
+                        {
+                            return processResult.Chunks[0].Embeddings;
+                        }
 
-                return null;
+                        return null;
+                    }
+
+                    int statusCode = (int)response.StatusCode;
+                    bool transient = IsTransientEmbeddingStatus(statusCode) || IngestionServiceBase.IsWrappedTransientPartioError(statusCode, responseBody);
+                    if (attempt >= maxAttempts || !transient || token.IsCancellationRequested)
+                    {
+                        _Logging.Warn(_Header + "embedding service returned " + statusCode + " after " + attempt + " attempt(s): " + responseBody);
+                        return null;
+                    }
+
+                    int delayMs = GetQueryEmbeddingRetryDelayMs(attempt);
+                    _Logging.Debug(_Header + "embedding service returned " + statusCode + " (transient); retrying in " + delayMs + "ms after attempt " + attempt + " of " + maxAttempts);
+                    if (delayMs > 0) await Task.Delay(delayMs, token).ConfigureAwait(false);
+                }
             }
+        }
+
+        /// <summary>
+        /// Whether an embedding status code is transient: request timeout (408), Partio's concurrency/queue rejection
+        /// (429), or gateway conditions (502/503/504). Matches the ingestion retry policy.
+        /// </summary>
+        private static bool IsTransientEmbeddingStatus(int statusCode)
+        {
+            return statusCode == 408 || statusCode == 429 || statusCode == 502 || statusCode == 503 || statusCode == 504;
+        }
+
+        /// <summary>
+        /// Backoff before the next query-embedding attempt. Queries are latency sensitive, so the base delay is capped at
+        /// 250 ms (doubling per attempt) with up to 50% jitter so concurrent queries do not retry in lockstep.
+        /// </summary>
+        private int GetQueryEmbeddingRetryDelayMs(int failedAttempt)
+        {
+            int baseDelayMs = Math.Min(_ChunkingSettings.RetryDelayMs, 250);
+            if (baseDelayMs <= 0) return 0;
+            int delay = baseDelayMs * (1 << Math.Min(Math.Max(0, failedAttempt - 1), 4));
+            return delay + Random.Shared.Next(0, delay / 2 + 1);
         }
 
         #endregion

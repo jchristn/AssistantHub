@@ -1,0 +1,422 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R] /Count 7 >>
+endobj
+4 0 obj
+<< /Length 4347 >>
+stream
+BT /F2 16 Tf 54 723 Td (Penang SMT Line Changeover Runbook) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: mfg-penang-smt-changeover-runbook. Owner: Penang Manufacturing Engineering) Tj ET
+BT /F1 10 Tf 54 688 Td (\(Factory Manager: Nurul Aziz\). Last reviewed: 2025-08-04. Form reference: MFG-F-112 \(SMT) Tj ET
+BT /F1 10 Tf 54 675 Td (Changeover Record\).) Tj ET
+BT /F1 10 Tf 54 653 Td (This runbook is controlled. Printed copies at the line are for reference only; the controlled) Tj ET
+BT /F1 10 Tf 54 640 Td (version is the one published in the Meridian Instruments engineering knowledge base. If a) Tj ET
+BT /F1 10 Tf 54 627 Td (printed copy and the published version disagree, the published version wins and the line lead) Tj ET
+BT /F1 10 Tf 54 614 Td (must replace the printed copy before the next shift.) Tj ET
+BT /F2 13 Tf 54 589 Td (1. Purpose) Tj ET
+BT /F1 10 Tf 54 567 Td (This runbook describes how a surface-mount technology \(SMT\) line at the Meridian Instruments) Tj ET
+BT /F1 10 Tf 54 554 Td (Penang factory in Bayan Lepas is changed over from one board family to another. It exists so) Tj ET
+BT /F1 10 Tf 54 541 Td (that every changeover is done the same way on every shift, so that the line comes back to) Tj ET
+BT /F1 10 Tf 54 528 Td (production quickly, and so that no board is released to volume production until the setup has) Tj ET
+BT /F1 10 Tf 54 515 Td (been proven by a first article inspection.) Tj ET
+BT /F1 10 Tf 54 493 Td (The runbook follows single-minute exchange of die \(SMED\) principles. Work that can be done) Tj ET
+BT /F1 10 Tf 54 480 Td (while the line is still running the previous job is treated as external work and must be) Tj ET
+BT /F1 10 Tf 54 467 Td (completed before the line is stopped. Only work that genuinely requires the line to be stopped) Tj ET
+BT /F1 10 Tf 54 454 Td (is treated as internal work.) Tj ET
+BT /F2 13 Tf 54 429 Td (2. Scope) Tj ET
+BT /F1 10 Tf 54 407 Td (This runbook applies to the four SMT lines in the Penang factory, SMT-1 to SMT-4, and to every) Tj ET
+BT /F1 10 Tf 54 394 Td (changeover between the board families listed in section 4. It applies to all shifts, including) Tj ET
+BT /F1 10 Tf 54 381 Td (weekend overtime shifts.) Tj ET
+BT /F1 10 Tf 54 359 Td (It does not cover:) Tj ET
+BT /F1 10 Tf 54 337 Td (- New product introduction \(NPI\) builds, which follow the NPI build procedure and require a) Tj ET
+BT /F1 10 Tf 54 324 Td (   manufacturing engineer to be present for the whole build.) Tj ET
+BT /F1 10 Tf 54 311 Td (- Changes of revision within the same board family where only the placement program changes;) Tj ET
+BT /F1 10 Tf 54 298 Td (   those are handled as a program-only change and recorded on MFG-F-112 with the changeover) Tj ET
+BT /F1 10 Tf 54 285 Td (   type set to "program only".) Tj ET
+BT /F1 10 Tf 54 272 Td (- Through-hole, selective solder, conformal coating and final assembly operations.) Tj ET
+BT /F1 10 Tf 54 259 Td (- Rework of boards after AOI; rework follows the rework station instruction.) Tj ET
+BT /F2 13 Tf 54 243 Td (3. Lines and equipment) Tj ET
+BT /F1 10 Tf 54 221 Td (Each of the four lines has the same equipment sequence. The lines are physically identical in) Tj ET
+BT /F1 10 Tf 54 208 Td (layout, but the placement machine feeder bank capacity differs between SMT-1/SMT-2 and) Tj ET
+BT /F1 10 Tf 54 195 Td (SMT-3/SMT-4, which affects which board families are normally scheduled on which line.) Tj ET
+BT /F2 9 Tf 54 174 Td (Line | Stencil printer | SPI | Placement machines | Reflow oven | AOI | Usual board families) Tj ET
+BT /F1 9 Tf 54 162 Td (SMT-1 | 1 | 1 | 2 | 10-zone | 1 | HX-MB, LF60-SB) Tj ET
+BT /F1 9 Tf 54 150 Td (SMT-2 | 1 | 1 | 2 | 10-zone | 1 | HX-MB, TS4E-EN) Tj ET
+BT /F1 9 Tf 54 138 Td (SMT-3 | 1 | 1 | 2 | 10-zone | 1 | TS4-GW, TS4E-EN) Tj ET
+BT /F1 9 Tf 54 126 Td (SMT-4 | 1 | 1 | 2 | 10-zone | 1 | TS4-GW, LF60-SB) Tj ET
+BT /F1 10 Tf 54 104 Td (Every line runs in this order: stencil printer, solder paste inspection \(SPI\), placement) Tj ET
+BT /F1 10 Tf 54 91 Td (machine 1, placement machine 2, 10-zone reflow oven, automated optical inspection \(AOI\). All) Tj ET
+BT /F1 10 Tf 54 78 Td (four ovens are nitrogen-capable, but nitrogen is only required for the TS4E-EN profile.) Tj ET
+BT /F1 10 Tf 54 56 Td (The line PC for each line is connected to the factory OT network. Faults with the line PC, the) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4479 >>
+stream
+BT /F1 10 Tf 54 729 Td (barcode scanners, or the connection to the Atlas shop-floor module are raised in Beacon under) Tj ET
+BT /F1 10 Tf 54 716 Td (the category MFG-OT. Do not raise these as generic hardware tickets; the MFG-OT queue is) Tj ET
+BT /F1 10 Tf 54 703 Td (staffed around the clock for the Penang factory and the generic queue is not.) Tj ET
+BT /F2 13 Tf 54 678 Td (4. Board families and process parameters) Tj ET
+BT /F1 10 Tf 54 656 Td (The Penang factory builds four board families on the SMT lines.) Tj ET
+BT /F1 10 Tf 54 634 Td (- HX-MB is the Halcyon main board. It is shared by the HX-200, HX-210 and HX-220 gas) Tj ET
+BT /F1 10 Tf 54 621 Td (   detectors; the variant is set later by the sensor module fitted in final assembly, not on) Tj ET
+BT /F1 10 Tf 54 608 Td (   the SMT line.) Tj ET
+BT /F1 10 Tf 54 595 Td (- TS4-GW is the Tessera TS-4 gateway board.) Tj ET
+BT /F1 10 Tf 54 582 Td (- TS4E-EN is the Tessera TS-4e edge node board. It has the finest pitch components in the) Tj ET
+BT /F1 10 Tf 54 569 Td (   factory and is the most sensitive to paste and stencil condition.) Tj ET
+BT /F1 10 Tf 54 556 Td (- LF60-SB is the Lumen sensor board. It is used on both the LF-60 and the LF-60P) Tj ET
+BT /F1 10 Tf 54 543 Td (   optical-flow meters.) Tj ET
+BT /F2 9 Tf 54 531 Td (Board family | Stencil ID format | Stencil thickness | Reflow profile | Profile peak |) Tj ET
+BT /F2 9 Tf 54 519 Td (Atmosphere | Under-stencil wipe | Solder paste) Tj ET
+BT /F1 9 Tf 54 507 Td (HX-MB | STN-HX-MB-rev | 0.12 mm | RP-HX-07 | 245 \260C | Air | Every 10 prints | SAC305 Type 4) Tj ET
+BT /F1 9 Tf 54 495 Td (TS4-GW | STN-TS4-GW-rev | 0.12 mm | RP-GW-04 | 243 \260C | Air | Every 10 prints | SAC305 Type 4) Tj ET
+BT /F1 9 Tf 54 483 Td (TS4E-EN | STN-TS4E-EN-rev | 0.10 mm | RP-TS4E-03 | 240 \260C | Nitrogen, O2 below 1000 ppm | Every) Tj ET
+BT /F1 9 Tf 54 471 Td (5 prints | SAC305 Type 4) Tj ET
+BT /F1 9 Tf 54 459 Td (LF60-SB | STN-LF60-SB-rev | 0.13 mm | RP-LF-02 | 238 \260C | Air | Every 10 prints | SAC305 Type 4) Tj ET
+BT /F1 10 Tf 54 437 Td (Stencil IDs follow the format STN-<board>-<rev>, for example STN-HX-MB-D or STN-TS4E-EN-B. The) Tj ET
+BT /F1 10 Tf 54 424 Td (revision letter on the stencil must match the stencil revision printed on the job traveller. A) Tj ET
+BT /F1 10 Tf 54 411 Td (stencil with a different revision letter must not be used, even if the board revision appears) Tj ET
+BT /F1 10 Tf 54 398 Td (compatible.) Tj ET
+BT /F1 10 Tf 54 376 Td (All board families use the same solder paste, SAC305 Type 4. Paste handling rules are in) Tj ET
+BT /F1 10 Tf 54 363 Td (section 6.4 and apply regardless of board family.) Tj ET
+BT /F2 13 Tf 54 338 Td (5. Roles) Tj ET
+BT /F2 9 Tf 54 317 Td (Role | Responsibility during changeover) Tj ET
+BT /F1 9 Tf 54 305 Td (Line operator | Performs the changeover steps, scans feeders, loads the stencil, completes the) Tj ET
+BT /F1 9 Tf 54 293 Td (operator sections of MFG-F-112.) Tj ET
+BT /F1 9 Tf 54 281 Td (Line lead \(setup technician\) | Owns the changeover end to end, checks programs and profiles,) Tj ET
+BT /F1 9 Tf 54 269 Td (performs the second check in step 19, calls the shift lead if the escalation threshold is) Tj ET
+BT /F1 9 Tf 54 257 Td (reached.) Tj ET
+BT /F1 9 Tf 54 245 Td (Material handler | Kits components and feeders for the next job, delivers thawed paste, returns) Tj ET
+BT /F1 9 Tf 54 233 Td (unused reels to stores.) Tj ET
+BT /F1 9 Tf 54 221 Td (QA inspector | Performs and signs the first article inspection \(FAI\), decides whether the line) Tj ET
+BT /F1 9 Tf 54 209 Td (can be released.) Tj ET
+BT /F1 9 Tf 54 197 Td (Shift lead | Receives escalations when a changeover exceeds 40 minutes, decides on) Tj ET
+BT /F1 9 Tf 54 185 Td (re-sequencing the schedule.) Tj ET
+BT /F1 9 Tf 54 173 Td (Process engineer \(on call\) | Supports AOI library tuning, profile issues and SPI failures that) Tj ET
+BT /F1 9 Tf 54 161 Td (the line lead cannot resolve.) Tj ET
+BT /F1 10 Tf 54 139 Td (Only the QA inspector can sign the FAI. The line lead cannot sign the FAI for a line they have) Tj ET
+BT /F1 10 Tf 54 126 Td (set up, even if they hold a QA inspection qualification.) Tj ET
+BT /F2 13 Tf 54 101 Td (6. Preparation \(external activities\)) Tj ET
+BT /F1 10 Tf 54 79 Td (Everything in this section is external work under SMED. It must be completed while the line is) Tj ET
+BT /F1 10 Tf 54 66 Td (still running the previous job. The changeover clock on MFG-F-112 does not start until the last) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 4441 >>
+stream
+BT /F1 10 Tf 54 729 Td (good board of the previous job has left the AOI, so time spent in preparation does not count) Tj ET
+BT /F1 10 Tf 54 716 Td (against the target, but poor preparation is the most common reason for missing the target.) Tj ET
+BT /F2 11 Tf 54 693 Td (6.1 Timing) Tj ET
+BT /F1 10 Tf 54 671 Td (The material handler starts preparation when the Atlas shop-floor module shows that the running) Tj ET
+BT /F1 10 Tf 54 658 Td (job has 60 minutes or less of remaining build time. The line lead confirms the next job on the) Tj ET
+BT /F1 10 Tf 54 645 Td (Atlas schedule at the same time. If the schedule has been changed by planning in the last 60) Tj ET
+BT /F1 10 Tf 54 632 Td (minutes, the line lead must confirm with the shift lead that the new job is correct before any) Tj ET
+BT /F1 10 Tf 54 619 Td (material is kitted.) Tj ET
+BT /F2 11 Tf 54 596 Td (6.2 Kitting) Tj ET
+BT /F1 10 Tf 54 574 Td (The material handler kits all component reels, trays and tubes for the next job against the) Tj ET
+BT /F1 10 Tf 54 561 Td (Atlas pick list. Each reel is scanned out of stores so that the Atlas inventory reflects the) Tj ET
+BT /F1 10 Tf 54 548 Td (move. Partial reels are preferred over new reels where the partial reel quantity covers the) Tj ET
+BT /F1 10 Tf 54 535 Td (job, to reduce the number of open reels on the floor.) Tj ET
+BT /F2 11 Tf 54 512 Td (6.3 Moisture sensitive components) Tj ET
+BT /F1 10 Tf 54 490 Td (Moisture sensitive devices \(MSDs\) must be handled according to mfg-msl-handling-procedure. For) Tj ET
+BT /F1 10 Tf 54 477 Td (the Penang lines the most common level is MSL 3, which has a floor life of 168 hours once the) Tj ET
+BT /F1 10 Tf 54 464 Td (dry pack is opened. Before an MSL 3 reel is kitted, the material handler checks the floor life) Tj ET
+BT /F1 10 Tf 54 451 Td (label. If the accumulated exposure exceeds 168 hours, the reel must be baked according to) Tj ET
+BT /F1 10 Tf 54 438 Td (mfg-msl-handling-procedure before it can be used. Do not kit an expired reel "to be baked) Tj ET
+BT /F1 10 Tf 54 425 Td (later"; baked reels are kitted as a separate delivery.) Tj ET
+BT /F2 11 Tf 54 402 Td (6.4 Solder paste) Tj ET
+BT /F1 10 Tf 54 380 Td (Solder paste is SAC305 Type 4. Unopened jars are stored in the paste refrigerator at 2\22610 \260C.) Tj ET
+BT /F1 10 Tf 54 367 Td (The material handler removes the paste required for the next job from the refrigerator and) Tj ET
+BT /F1 10 Tf 54 354 Td (allows it to thaw for at least 4 hours at room temperature before opening. Opening a jar before) Tj ET
+BT /F1 10 Tf 54 341 Td (it has thawed causes condensation in the paste and leads to solder balling.) Tj ET
+BT /F1 10 Tf 54 319 Td (Once a jar is opened on the line it may stay open for a maximum of 24 hours. The time the jar) Tj ET
+BT /F1 10 Tf 54 306 Td (was opened is written on the jar label. Paste that has been open for more than 24 hours must be) Tj ET
+BT /F1 10 Tf 54 293 Td (scrapped, not returned to the refrigerator. Paste left on the stencil at the end of a job may) Tj ET
+BT /F1 10 Tf 54 280 Td (be reused on the next job only if the next job is on the same line, the paste is within its) Tj ET
+BT /F1 10 Tf 54 267 Td (24-hour open time, and it has not been contaminated.) Tj ET
+BT /F2 11 Tf 54 244 Td (6.5 Pre-staging feeders offline) Tj ET
+BT /F1 10 Tf 54 222 Td (Feeders for the next job are loaded offline on the feeder cart at the pre-staging bench. Each) Tj ET
+BT /F1 10 Tf 54 209 Td (reel is loaded into a feeder, the feeder barcode and the reel barcode are scanned together at) Tj ET
+BT /F1 10 Tf 54 196 Td (the pre-staging bench, and the pairing is recorded in the Atlas shop-floor module. Pre-staged) Tj ET
+BT /F1 10 Tf 54 183 Td (carts are labelled with the line, the job number and the placement machine they are intended) Tj ET
+BT /F1 10 Tf 54 170 Td (for.) Tj ET
+BT /F2 11 Tf 54 147 Td (6.6 Stencil and program readiness) Tj ET
+BT /F1 10 Tf 54 125 Td (The line lead retrieves the stencil for the next job from the stencil store and checks:) Tj ET
+BT /F1 10 Tf 54 103 Td (- The stencil ID matches the traveller \(format STN-<board>-<rev>\).) Tj ET
+BT /F1 10 Tf 54 90 Td (- The stencil tension is at least 35 N/cm at all five measurement points. A stencil below 35) Tj ET
+BT /F1 10 Tf 54 77 Td (   N/cm at any point is quarantined and reported to the process engineer.) Tj ET
+BT /F1 10 Tf 54 64 Td (- The apertures are clean and undamaged when viewed on the light table.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 5347 >>
+stream
+BT /F1 10 Tf 54 729 Td (The line lead also confirms that the placement programs for both placement machines, the SPI) Tj ET
+BT /F1 10 Tf 54 716 Td (program, the AOI program and the reflow profile named on the traveller are available on the) Tj ET
+BT /F1 10 Tf 54 703 Td (line PC. The profile is not loaded yet.) Tj ET
+BT /F2 11 Tf 54 680 Td (6.7 ESD readiness) Tj ET
+BT /F1 10 Tf 54 658 Td (All personnel involved in the changeover must pass the wrist strap check at the station tester) Tj ET
+BT /F1 10 Tf 54 645 Td (before touching boards, feeders or stencils, per mfg-esd-control-standard. A failed wrist strap) Tj ET
+BT /F1 10 Tf 54 632 Td (check must be resolved before the person takes part in the changeover.) Tj ET
+BT /F2 13 Tf 54 607 Td (7. Changeover procedure \(internal activities\)) Tj ET
+BT /F1 10 Tf 54 585 Td (The changeover clock starts when the last good board of the previous job leaves the AOI. The) Tj ET
+BT /F1 10 Tf 54 572 Td (line operator writes the start time on MFG-F-112. The target for a full changeover, from the) Tj ET
+BT /F1 10 Tf 54 559 Td (last good board of the previous job to QA release of the new job, is 25 minutes. Steps are) Tj ET
+BT /F1 10 Tf 54 546 Td (numbered continuously and must be performed in order unless a step explicitly allows parallel) Tj ET
+BT /F1 10 Tf 54 533 Td (work.) Tj ET
+BT /F1 10 Tf 54 511 Td (1. Confirm on the Atlas shop-floor module that the previous job is complete and that the) Tj ET
+BT /F1 10 Tf 54 498 Td (   board count matches the job quantity. Record any shortfall on MFG-F-112.) Tj ET
+BT /F1 10 Tf 54 485 Td (2. Clear the line. Remove all boards of the previous job from the conveyors, the reflow oven) Tj ET
+BT /F1 10 Tf 54 472 Td (   exit, the AOI buffer and the rework shelf. No board from the previous job may remain on) Tj ET
+BT /F1 10 Tf 54 459 Td (   the line when the first board of the new job is loaded.) Tj ET
+BT /F1 10 Tf 54 446 Td (3. Remove the stencil from the printer. Remove remaining paste from the stencil with the) Tj ET
+BT /F1 10 Tf 54 433 Td (   paste knife. Decide whether paste can be reused according to section 6.4; if not, scrap it) Tj ET
+BT /F1 10 Tf 54 420 Td (   and record the quantity.) Tj ET
+BT /F1 10 Tf 54 407 Td (4. Send the used stencil to the stencil cleaner. The stencil is logged back into the stencil) Tj ET
+BT /F1 10 Tf 54 394 Td (   store only after it has been cleaned and inspected.) Tj ET
+BT /F1 10 Tf 54 381 Td (5. Load the stencil for the new job. Scan the stencil ID barcode on the printer. The printer) Tj ET
+BT /F1 10 Tf 54 368 Td (   software rejects a stencil whose ID does not match the loaded print program.) Tj ET
+BT /F1 10 Tf 54 355 Td (6. Load the print program for the new board family. Confirm the under-stencil wipe frequency) Tj ET
+BT /F1 10 Tf 54 342 Td (   in the program: every 5 prints for TS4E-EN, every 10 prints for HX-MB, TS4-GW and LF60-SB.) Tj ET
+BT /F1 10 Tf 54 329 Td (7. Apply fresh or reusable solder paste to the stencil. Confirm the open time written on the) Tj ET
+BT /F1 10 Tf 54 316 Td (   jar label is within 24 hours.) Tj ET
+BT /F1 10 Tf 54 303 Td (8. Remove the feeder carts of the previous job from both placement machines. At the same time) Tj ET
+BT /F1 10 Tf 54 290 Td (   \(parallel work\), the material handler brings the pre-staged carts for the new job to the) Tj ET
+BT /F1 10 Tf 54 277 Td (   line.) Tj ET
+BT /F1 10 Tf 54 264 Td (9. Dock the pre-staged feeder carts to placement machine 1 and placement machine 2 according) Tj ET
+BT /F1 10 Tf 54 251 Td (   to the cart labels.) Tj ET
+BT /F1 10 Tf 54 238 Td (10. Perform feeder verification. The line operator scans each feeder position against the) Tj ET
+BT /F1 10 Tf 54 225 Td (   setup sheet in the Atlas shop-floor module. Any mismatch between the scanned reel and the) Tj ET
+BT /F1 10 Tf 54 212 Td (   setup sheet locks the placement machine; the lock can only be released by correcting the) Tj ET
+BT /F1 10 Tf 54 199 Td (   feeder and rescanning, not by overriding on the machine.) Tj ET
+BT /F1 10 Tf 54 186 Td (11. Load the placement programs for both placement machines and the SPI and AOI programs for) Tj ET
+BT /F1 10 Tf 54 173 Td (   the new board family. Confirm the program names on the line PC match the traveller.) Tj ET
+BT /F1 10 Tf 54 160 Td (12. Load the reflow profile named on the traveller \(RP-HX-07, RP-GW-04, RP-TS4E-03 or) Tj ET
+BT /F1 10 Tf 54 147 Td (   RP-LF-02\). If the new profile is RP-TS4E-03, switch the oven to nitrogen and wait until) Tj ET
+BT /F1 10 Tf 54 134 Td (   the oven O2 reading is below 1000 ppm. Wait for all 10 zones to reach their set points and) Tj ET
+BT /F1 10 Tf 54 121 Td (   for the oven to report stable. Record the oven stable time on MFG-F-112.) Tj ET
+BT /F1 10 Tf 54 108 Td (13. Adjust the conveyor width on printer, SPI, both placement machines, oven and AOI for the) Tj ET
+BT /F1 10 Tf 54 95 Td (   new board. Run one bare board through the whole line to confirm transfer without jamming.) Tj ET
+BT /F1 10 Tf 54 82 Td (14. Perform the First Article Inspection \(FAI\). Print, place and reflow the first board of the) Tj ET
+BT /F1 10 Tf 54 69 Td (   new job and hold it at the AOI output. The SPI result for the first board must show paste) Tj ET
+BT /F1 10 Tf 54 56 Td (   volume within 75\226150% on every pad. The AOI false call rate for the new program is checked) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 5637 >>
+stream
+BT /F1 10 Tf 54 729 Td (   against the threshold of 500 ppm; if the false call rate is above 500 ppm, the AOI library) Tj ET
+BT /F1 10 Tf 54 716 Td (   must be re-tuned by the process engineer before release, and the FAI is repeated after) Tj ET
+BT /F1 10 Tf 54 703 Td (   re-tuning. The QA inspector performs the visual and dimensional checks listed in section) Tj ET
+BT /F1 10 Tf 54 690 Td (   8. The FAI must be signed by QA on MFG-F-112 before the line is released. Without a QA) Tj ET
+BT /F1 10 Tf 54 677 Td (   signature the line stays in FAI hold.) Tj ET
+BT /F1 10 Tf 54 664 Td (15. If the SPI result is outside 75\226150% on any pad, stop. Check stencil seating, paste) Tj ET
+BT /F1 10 Tf 54 651 Td (   condition and printer support pins, correct the cause, wash the board, and repeat step 14.) Tj ET
+BT /F1 10 Tf 54 638 Td (   Record each repeat on MFG-F-112.) Tj ET
+BT /F1 10 Tf 54 625 Td (16. If the AOI reports a real defect \(not a false call\) on the first article, the line lead) Tj ET
+BT /F1 10 Tf 54 612 Td (   and QA inspector decide whether the cause is setup \(feeder, program, placement offset\) or) Tj ET
+BT /F1 10 Tf 54 599 Td (   material. Setup causes are corrected and step 14 is repeated. Material causes are) Tj ET
+BT /F1 10 Tf 54 586 Td (   escalated to the process engineer.) Tj ET
+BT /F1 10 Tf 54 573 Td (17. The first article board is marked with the FAI label and retained at the line for the rest) Tj ET
+BT /F1 10 Tf 54 560 Td (   of the shift. It is sent to the FAI retention shelf at the end of the shift.) Tj ET
+BT /F1 10 Tf 54 547 Td (18. Load a second board and confirm SPI and AOI results remain within the step 14 criteria.) Tj ET
+BT /F1 10 Tf 54 534 Td (   This confirms the setup is stable and not only correct for one board.) Tj ET
+BT /F1 10 Tf 54 521 Td (19. Before releasing the line to volume production, perform the two-person reflow profile) Tj ET
+BT /F1 10 Tf 54 508 Td (   verification. The line lead and a second person \(the QA inspector or another qualified) Tj ET
+BT /F1 10 Tf 54 495 Td (   setup technician\) independently read the profile name loaded on the oven controller and) Tj ET
+BT /F1 10 Tf 54 482 Td (   compare it with the profile named on the job traveller. Both people initial MFG-F-112. If) Tj ET
+BT /F1 10 Tf 54 469 Td (   the names differ, the line must not be released; all boards processed since step 12 are) Tj ET
+BT /F1 10 Tf 54 456 Td (   quarantined and the line lead contacts the process engineer. This step was added as an) Tj ET
+BT /F1 10 Tf 54 443 Td (   action item of postmortem INC-2025-014, when SMT-2 ran TS4E-EN boards on the HX-MB profile) Tj ET
+BT /F1 10 Tf 54 430 Td (   \(RP-HX-07 instead of RP-TS4E-03\) in March 2025.) Tj ET
+BT /F1 10 Tf 54 417 Td (20. Release the line in the Atlas shop-floor module. The release transaction records the) Tj ET
+BT /F1 10 Tf 54 404 Td (   operator, line lead and QA inspector IDs.) Tj ET
+BT /F1 10 Tf 54 391 Td (21. Record the changeover end time on MFG-F-112. The changeover time is the elapsed time from) Tj ET
+BT /F1 10 Tf 54 378 Td (   the start time recorded before step 1 to the release in step 20.) Tj ET
+BT /F1 10 Tf 54 365 Td (22. If the changeover time exceeded 25 minutes, record the main cause of delay on MFG-F-112) Tj ET
+BT /F1 10 Tf 54 352 Td (   using the delay codes in section 10. If it exceeded 40 minutes, confirm the shift lead was) Tj ET
+BT /F1 10 Tf 54 339 Td (   contacted \(see section 9\).) Tj ET
+BT /F1 10 Tf 54 326 Td (23. Return unused reels from the previous job to stores. Each reel is scanned back into Atlas.) Tj ET
+BT /F1 10 Tf 54 313 Td (   MSL reels are returned with an updated floor life label or placed into dry storage) Tj ET
+BT /F1 10 Tf 54 300 Td (   according to mfg-msl-handling-procedure.) Tj ET
+BT /F1 10 Tf 54 287 Td (24. Return the feeder carts from the previous job to the pre-staging bench. Unload the feeders) Tj ET
+BT /F1 10 Tf 54 274 Td (   and clean them before they are reused.) Tj ET
+BT /F1 10 Tf 54 261 Td (25. Confirm that the paste jar in use is labelled with the line number and open time, and that) Tj ET
+BT /F1 10 Tf 54 248 Td (   the next paste required for the shift has been removed from the refrigerator in time to) Tj ET
+BT /F1 10 Tf 54 235 Td (   complete its 4-hour thaw.) Tj ET
+BT /F1 10 Tf 54 222 Td (26. Clean the work area around the printer and placement machines. Remove any dropped) Tj ET
+BT /F1 10 Tf 54 209 Td (   components; dropped components are scrapped, never reloaded.) Tj ET
+BT /F1 10 Tf 54 196 Td (27. Check the SPI trend for the first 20 boards. If paste volume is trending towards the 75%) Tj ET
+BT /F1 10 Tf 54 183 Td (   or 150% limits, notify the line lead before the limit is reached.) Tj ET
+BT /F1 10 Tf 54 170 Td (28. Check the AOI false call trend for the first 50 boards. If the false call rate trends) Tj ET
+BT /F1 10 Tf 54 157 Td (   above 500 ppm, notify the process engineer.) Tj ET
+BT /F1 10 Tf 54 144 Td (29. The line lead reviews MFG-F-112 for completeness: start time, stencil ID and tension) Tj ET
+BT /F1 10 Tf 54 131 Td (   reading, feeder verification result, profile and oven stable time, FAI signature, step 19) Tj ET
+BT /F1 10 Tf 54 118 Td (   initials, release time and delay codes.) Tj ET
+BT /F1 10 Tf 54 105 Td (30. The line lead submits MFG-F-112. Completed forms are scanned and attached to the job in) Tj ET
+BT /F1 10 Tf 54 92 Td (   the Atlas shop-floor module at the end of the shift.) Tj ET
+BT /F2 13 Tf 54 76 Td (8. First article inspection acceptance criteria) Tj ET
+BT /F1 10 Tf 54 54 Td (The QA inspector uses the following criteria for the FAI in step 14. All criteria must be met) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4278 >>
+stream
+BT /F1 10 Tf 54 729 Td (for the FAI to pass.) Tj ET
+BT /F2 9 Tf 54 708 Td (Check | Method | Acceptance criterion) Tj ET
+BT /F1 9 Tf 54 696 Td (Solder paste volume | SPI | 75\226150% of nominal on every pad) Tj ET
+BT /F1 9 Tf 54 684 Td (Paste offset | SPI | Within program tolerance, no bridging between pads) Tj ET
+BT /F1 9 Tf 54 672 Td (Component presence and polarity | AOI and visual | 100% correct against the placement program) Tj ET
+BT /F1 9 Tf 54 660 Td (AOI false call rate | AOI program statistics | At or below 500 ppm; above 500 ppm requires AOI) Tj ET
+BT /F1 9 Tf 54 648 Td (library re-tuning before release) Tj ET
+BT /F1 9 Tf 54 636 Td (Solder joint quality | AOI and visual under magnification | Meets IPC-A-610 Class 2 as a) Tj ET
+BT /F1 9 Tf 54 624 Td (minimum; Class 3 for TS4E-EN connector joints) Tj ET
+BT /F1 9 Tf 54 612 Td (Reflow profile | Oven controller | Profile named on the traveller, oven stable, nitrogen O2) Tj ET
+BT /F1 9 Tf 54 600 Td (below 1000 ppm for RP-TS4E-03) Tj ET
+BT /F1 9 Tf 54 588 Td (Board identification | Visual and scan | Serial label present and readable, matches Atlas job) Tj ET
+BT /F1 9 Tf 54 576 Td (Stencil | Printer record | Stencil ID matches traveller, tension at least 35 N/cm) Tj ET
+BT /F1 10 Tf 54 554 Td (If any criterion is not met, the line remains in FAI hold. The QA inspector records the failed) Tj ET
+BT /F1 10 Tf 54 541 Td (criterion on MFG-F-112 and the corrective action taken before the FAI is repeated.) Tj ET
+BT /F2 13 Tf 54 516 Td (9. Escalation) Tj ET
+BT /F1 10 Tf 54 494 Td (The changeover target is 25 minutes. The line lead is expected to monitor the clock and act) Tj ET
+BT /F1 10 Tf 54 481 Td (before the escalation threshold is reached.) Tj ET
+BT /F1 10 Tf 54 459 Td (- At 25 minutes, the changeover is over target. The line lead continues but must record a) Tj ET
+BT /F1 10 Tf 54 446 Td (   delay code on MFG-F-112.) Tj ET
+BT /F1 10 Tf 54 433 Td (- If the changeover exceeds 40 minutes, the line lead must escalate to the shift lead. The) Tj ET
+BT /F1 10 Tf 54 420 Td (   shift lead decides whether to continue, to bring in the on-call process engineer, or to) Tj ET
+BT /F1 10 Tf 54 407 Td (   re-sequence the schedule so that another line picks up the job.) Tj ET
+BT /F1 10 Tf 54 394 Td (- If the line is still in FAI hold 60 minutes after the start time, the shift lead informs) Tj ET
+BT /F1 10 Tf 54 381 Td (   the production planner so that the day's output plan can be adjusted in Atlas.) Tj ET
+BT /F1 10 Tf 54 368 Td (- Line PC, scanner or OT network faults are raised in Beacon under MFG-OT at any time; the) Tj ET
+BT /F1 10 Tf 54 355 Td (   line lead does not wait for the 40-minute threshold before raising them.) Tj ET
+BT /F1 10 Tf 54 342 Td (- Any suspected mix of boards between jobs, or any case where the reflow profile check in) Tj ET
+BT /F1 10 Tf 54 329 Td (   step 19 finds a mismatch, is escalated immediately to the shift lead and QA, regardless of) Tj ET
+BT /F1 10 Tf 54 316 Td (   elapsed time.) Tj ET
+BT /F1 10 Tf 54 303 Td (The Penang factory manager, Nurul Aziz, receives a weekly summary of changeover times by line) Tj ET
+BT /F1 10 Tf 54 290 Td (and delay code. Lines that miss the 25-minute target on more than a quarter of changeovers in a) Tj ET
+BT /F1 10 Tf 54 277 Td (week are reviewed in the weekly manufacturing engineering meeting.) Tj ET
+BT /F2 13 Tf 54 252 Td (10. Delay codes) Tj ET
+BT /F2 9 Tf 54 231 Td (Code | Meaning) Tj ET
+BT /F1 9 Tf 54 219 Td (D01 | Material not kitted or kitted incorrectly) Tj ET
+BT /F1 9 Tf 54 207 Td (D02 | Paste not thawed in time) Tj ET
+BT /F1 9 Tf 54 195 Td (D03 | Stencil not available, damaged or below tension) Tj ET
+BT /F1 9 Tf 54 183 Td (D04 | Feeder verification mismatch) Tj ET
+BT /F1 9 Tf 54 171 Td (D05 | Program not available on line PC) Tj ET
+BT /F1 9 Tf 54 159 Td (D06 | Oven not stable, nitrogen not within limit) Tj ET
+BT /F1 9 Tf 54 147 Td (D07 | FAI failure \(SPI\)) Tj ET
+BT /F1 9 Tf 54 135 Td (D08 | FAI failure \(AOI false calls or defects\)) Tj ET
+BT /F1 9 Tf 54 123 Td (D09 | QA inspector not available) Tj ET
+BT /F1 9 Tf 54 111 Td (D10 | Line PC, scanner or OT network fault \(Beacon MFG-OT\)) Tj ET
+BT /F1 9 Tf 54 99 Td (D11 | Other, describe on form) Tj ET
+BT /F2 13 Tf 54 74 Td (11. Common problems) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 4528 >>
+stream
+BT /F2 9 Tf 54 730 Td (Symptom | Likely cause | Action) Tj ET
+BT /F1 9 Tf 54 718 Td (Printer rejects stencil scan | Stencil ID does not match print program, or wrong revision) Tj ET
+BT /F1 9 Tf 54 706 Td (letter | Check traveller, retrieve correct STN-<board>-<rev> stencil; do not override) Tj ET
+BT /F1 9 Tf 54 694 Td (Placement machine locked after feeder scan | Reel in feeder does not match Atlas setup sheet |) Tj ET
+BT /F1 9 Tf 54 682 Td (Correct the feeder, rescan; do not bypass the lock) Tj ET
+BT /F1 9 Tf 54 670 Td (SPI shows low volume on fine-pitch pads | Stencil apertures blocked, wipe frequency wrong |) Tj ET
+BT /F1 9 Tf 54 658 Td (Clean stencil, confirm wipe every 5 prints for TS4E-EN) Tj ET
+BT /F1 9 Tf 54 646 Td (SPI shows high volume or bridging | Stencil not seated, worn gasket, low tension | Reseat) Tj ET
+BT /F1 9 Tf 54 634 Td (stencil, check tension at least 35 N/cm) Tj ET
+BT /F1 9 Tf 54 622 Td (Solder balling after reflow | Paste opened before 4-hour thaw, or paste open more than 24 hours) Tj ET
+BT /F1 9 Tf 54 610 Td (| Scrap paste, use correctly thawed paste, repeat FAI) Tj ET
+BT /F1 9 Tf 54 598 Td (Oven does not reach stable on RP-TS4E-03 | Nitrogen supply, O2 not below 1000 ppm | Check) Tj ET
+BT /F1 9 Tf 54 586 Td (nitrogen supply valve and flow, wait for O2 reading) Tj ET
+BT /F1 9 Tf 54 574 Td (AOI false call rate above 500 ppm | New component supplier, library not tuned | Call process) Tj ET
+BT /F1 9 Tf 54 562 Td (engineer to re-tune AOI library, repeat FAI) Tj ET
+BT /F1 9 Tf 54 550 Td (Dull or grainy joints on HX-MB | Wrong profile loaded \(lower peak than 245 \260C\) | Stop line,) Tj ET
+BT /F1 9 Tf 54 538 Td (perform step 19 check, quarantine boards) Tj ET
+BT /F1 9 Tf 54 526 Td (Voiding on TS4E-EN ground pads | Air atmosphere instead of nitrogen | Confirm RP-TS4E-03 and) Tj ET
+BT /F1 9 Tf 54 514 Td (nitrogen, quarantine affected boards) Tj ET
+BT /F1 9 Tf 54 502 Td (MSL reel floor life label expired | MSL 3 exposure over 168 hours | Remove reel, bake per) Tj ET
+BT /F1 9 Tf 54 490 Td (mfg-msl-handling-procedure) Tj ET
+BT /F1 9 Tf 54 478 Td (Line PC cannot reach Atlas | OT network or line PC fault | Raise Beacon ticket in category) Tj ET
+BT /F1 9 Tf 54 466 Td (MFG-OT) Tj ET
+BT /F2 13 Tf 54 441 Td (12. Records) Tj ET
+BT /F1 10 Tf 54 419 Td (The following records are produced by each changeover:) Tj ET
+BT /F1 10 Tf 54 397 Td (- MFG-F-112 SMT Changeover Record, scanned and attached to the job in the Atlas shop-floor) Tj ET
+BT /F1 10 Tf 54 384 Td (   module.) Tj ET
+BT /F1 10 Tf 54 371 Td (- Feeder verification log, stored automatically by the Atlas shop-floor module.) Tj ET
+BT /F1 10 Tf 54 358 Td (- SPI and AOI results for the first article and first production boards, stored on the line) Tj ET
+BT /F1 10 Tf 54 345 Td (   PC and archived nightly.) Tj ET
+BT /F1 10 Tf 54 332 Td (- FAI board, kept on the FAI retention shelf for 30 days.) Tj ET
+BT /F2 13 Tf 54 316 Td (13. Related documents) Tj ET
+BT /F1 10 Tf 54 294 Td (- mfg-msl-handling-procedure \(moisture sensitive device handling and baking\).) Tj ET
+BT /F1 10 Tf 54 281 Td (- mfg-esd-control-standard \(ESD controls, wrist strap checks\).) Tj ET
+BT /F1 10 Tf 54 268 Td (- mfg-penang-smt-line-throughput \(planned throughput by line and board family\).) Tj ET
+BT /F1 10 Tf 54 255 Td (- mfg-postmortem-inc-2025-014-penang-smt2-reflow \(postmortem that introduced step 19\).) Tj ET
+BT /F1 10 Tf 54 242 Td (- it-beacon-ticket-categories \(Beacon category MFG-OT\).) Tj ET
+BT /F2 13 Tf 54 226 Td (14. Revision history) Tj ET
+BT /F2 9 Tf 54 205 Td (Revision | Date | Author | Change) Tj ET
+BT /F1 9 Tf 54 193 Td (A | 2023-06-12 | Penang Manufacturing Engineering | First release for SMT-1 to SMT-3) Tj ET
+BT /F1 9 Tf 54 181 Td (B | 2024-02-19 | Penang Manufacturing Engineering | Added SMT-4; added TS4E-EN parameters and) Tj ET
+BT /F1 9 Tf 54 169 Td (nitrogen requirement) Tj ET
+BT /F1 9 Tf 54 157 Td (C | 2024-09-02 | Penang Manufacturing Engineering | Changeover target reduced from 35 to 25) Tj ET
+BT /F1 9 Tf 54 145 Td (minutes following SMED project; external and internal activities separated) Tj ET
+BT /F1 9 Tf 54 133 Td (D | 2025-04-07 | Penang Manufacturing Engineering | Added step 19 two-person reflow profile) Tj ET
+BT /F1 9 Tf 54 121 Td (verification \(INC-2025-014 action item\)) Tj ET
+BT /F1 9 Tf 54 109 Td (E | 2025-08-04 | Penang Manufacturing Engineering | Annual review; AOI false call threshold set) Tj ET
+BT /F1 9 Tf 54 97 Td (at 500 ppm; LF60-SB stencil thickness changed to 0.13 mm) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 19
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000305 00000 n 
+0000004704 00000 n 
+0000004840 00000 n 
+0000009371 00000 n 
+0000009507 00000 n 
+0000014000 00000 n 
+0000014136 00000 n 
+0000019536 00000 n 
+0000019674 00000 n 
+0000025364 00000 n 
+0000025502 00000 n 
+0000029833 00000 n 
+0000029971 00000 n 
+0000034552 00000 n 
+0000034690 00000 n 
+trailer
+<< /Size 19 /Root 18 0 R >>
+startxref
+34740
+%%EOF

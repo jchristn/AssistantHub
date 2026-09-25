@@ -111,6 +111,42 @@ namespace AssistantHub.Core.Models
         public bool DocumentFilterApplied { get; set; } = false;
 
         /// <summary>
+        /// Indicates whether a hybrid search returned nothing and was retried as vector-only.
+        /// </summary>
+        [JsonPropertyName("hybrid_fallback_ran")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool HybridFallbackRan { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether the query embedding failed after retries, so vector or hybrid search returned nothing
+        /// and the answer was generated without retrieved context.
+        /// </summary>
+        [JsonPropertyName("embedding_failed")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool EmbeddingFailed { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether the re-ranker's reply could not be parsed, so the original retrieval order was kept.
+        /// </summary>
+        [JsonPropertyName("rerank_parse_failed")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool RerankParseFailed { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether the answerability check's reply could not be parsed, so the default decision was used.
+        /// </summary>
+        [JsonPropertyName("answerability_parse_failed")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool AnswerabilityParseFailed { get; set; } = false;
+
+        /// <summary>
+        /// Number of search queries issued (more than one when query rewrite produced alternates).
+        /// </summary>
+        [JsonPropertyName("query_count")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int QueryCount { get; set; } = 0;
+
+        /// <summary>
         /// The retrieved context chunks with source identification.
         /// </summary>
         [JsonPropertyName("chunks")]

@@ -1,0 +1,41 @@
+{
+  "Webserver": {
+    "Hostname": "*",
+    "Port": 8600,
+    "Ssl": false
+  },
+  "Database": {
+    "Hostname": "postgres",
+    "Port": 5432,
+    "DatabaseName": "recalldb",
+    "Username": "recalldb_app",
+    "Password": "recalldb_password",
+    "Schema": "public",
+    "RequireEncryption": false,
+    "LogQueries": false
+  },
+  "Logging": {
+    "ConsoleLogging": true,
+    "EnableColors": false,
+    "MinimumSeverity": 0,
+    "LogDirectory": "./logs/",
+    "LogFilename": "recalldb.log",
+    "FileLogging": true,
+    "IncludeDateInFilename": true,
+    "Servers": [
+      {
+        "Hostname": "127.0.0.1",
+        "Port": 514
+      }
+    ]
+  },
+  "Debug": {
+    "Authentication": false,
+    "Exceptions": true,
+    "Requests": false,
+    "DatabaseQueries": false
+  },
+  "AdminApiKeys": [
+    "recalldbadmin"
+  ]
+}

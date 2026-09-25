@@ -1,0 +1,188 @@
+# Isolated benchmark stack for AssistantHub.
+#
+# Runs every AssistantHub dependency on its own ports (38xxx) with its own volumes, so benchmarks never touch the
+# development stack in docker/ or a live deployment. Ollama is NOT included: the stack uses the host's Ollama through
+# host.docker.internal:11434. AssistantHub itself runs from the working tree (benchmarks/start-bench-server.*).
+#
+#   docker compose -f benchmarks/docker/compose.yaml up -d
+#   docker compose -f benchmarks/docker/compose.yaml down -v      # discard all benchmark data
+#
+# Host ports:
+#   35432  PostgreSQL + pgvector (RecallDB, Partio, Less3 databases)
+#   38000  Less3 (S3-compatible object storage)
+#   38301  DocumentAtom (type detection and extraction)
+#   38321  Partio (chunking, embedding, completion endpoints)
+#   38401  RecallDB (vector and full-text store)
+#   38090  Verbex (inverted index; AssistantHub requires it at startup, benchmark ingestion does not index into it)
+#   38889  OpenTelemetry collector Prometheus exporter (AssistantHub metrics)
+#   34317  OpenTelemetry collector OTLP gRPC receiver
+
+name: assistanthub-bench
+
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: assistanthub-bench-postgres
+    command: ["postgres", "-c", "max_connections=300"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "127.0.0.1:35432:5432"
+    volumes:
+      - bench-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
+
+  postgres-init:
+    image: pgvector/pgvector:pg17
+    container_name: assistanthub-bench-postgres-init
+    environment:
+      POSTGRES_SUPERUSER: postgres
+      POSTGRES_SUPERPASS: password
+      ASSISTANTHUB_DB_NAME: assistanthub
+      ASSISTANTHUB_DB_USER: assistanthub_app
+      ASSISTANTHUB_DB_PASS: assistanthub_password
+      PARTIO_DB_NAME: partio
+      PARTIO_DB_USER: partio_app
+      PARTIO_DB_PASS: partio_password
+      LESS3_DB_NAME: less3
+      LESS3_DB_USER: less3_app
+      LESS3_DB_PASS: less3_password
+      RECALLDB_DB_NAME: recalldb
+      RECALLDB_DB_USER: recalldb_app
+      RECALLDB_DB_PASS: recalldb_password
+      VERBEX_DB_NAME: verbex
+      VERBEX_DB_USER: verbex_app
+      VERBEX_DB_PASS: verbex_password
+      PGPASSWORD: password
+    volumes:
+      - ../../docker/postgres/init.sh:/init/postgres-init.sh:ro
+    entrypoint: ["bash", "/init/postgres-init.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  less3:
+    image: jchristn77/less3:v4.0.0
+    container_name: assistanthub-bench-less3
+    ports:
+      - "127.0.0.1:38000:8000"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config/less3.json:/app/system.json
+      - bench-less3-disk:/app/disk/
+      - bench-less3-temp:/app/temp/
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: curl --fail http://localhost:8000
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  documentatom:
+    image: jchristn77/documentatom:v3.1.2
+    container_name: assistanthub-bench-documentatom
+    ports:
+      - "127.0.0.1:38301:8000"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config/documentatom.json:/app/documentatom.json
+    healthcheck:
+      test: curl --fail http://localhost:8000
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  partio:
+    image: jchristn77/partio-server:v0.5.0
+    container_name: assistanthub-bench-partio
+    ports:
+      - "127.0.0.1:38321:8400"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./config/partio.json:/app/partio.json:ro
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: curl --fail http://localhost:8400
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  recalldb:
+    image: jchristn77/recalldb-server:v0.2.1
+    container_name: assistanthub-bench-recalldb
+    ports:
+      - "127.0.0.1:38401:8600"
+    environment:
+      RECALLDB_DB_HOST: postgres
+      RECALLDB_DB_PORT: "5432"
+      RECALLDB_DB_NAME: recalldb
+      RECALLDB_DB_USER: recalldb_app
+      RECALLDB_DB_PASS: recalldb_password
+    volumes:
+      - ./config/recalldb.json:/app/recalldb.json:ro
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8600/"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  verbex:
+    image: jchristn77/verbex-server:v0.2.1
+    container_name: assistanthub-bench-verbex
+    ports:
+      - "127.0.0.1:38090:8080"
+    volumes:
+      - ./config/verbex.json:/app/verbex.json:ro
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    container_name: assistanthub-bench-otel
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "127.0.0.1:34317:4317"
+      - "127.0.0.1:38889:8889"
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    restart: unless-stopped
+
+volumes:
+  bench-postgres:
+  bench-less3-disk:
+  bench-less3-temp:

@@ -1875,6 +1875,60 @@
         }
       }
     },
+    "/v1.0/assistants/{assistantId}/retrieve": {
+      "post": {
+        "tags": [
+          "Assistant Settings"
+        ],
+        "summary": "Run the assistant retrieval pipeline without final inference",
+        "operationId": "post_v1_0_assistants_assistantid_retrieve",
+        "parameters": [
+          {
+            "name": "assistantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantRetrieveRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1.0/assistants/{assistantId}/settings/slack/verify": {
       "post": {
         "tags": [
@@ -14428,6 +14482,40 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "AssistantRetrieveRequest": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Conversation messages; the last user message is the retrieval query."
+          },
+          "query": {
+            "type": "string",
+            "description": "Single query text (shorthand for one user message)."
+          },
+          "metadata_filter": {
+            "type": "object",
+            "description": "Request-level metadata filter, merged with assistant defaults."
+          },
+          "attached_document_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "include_stages": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_answerability": {
+            "type": "boolean",
+            "default": true
           }
         }
       }

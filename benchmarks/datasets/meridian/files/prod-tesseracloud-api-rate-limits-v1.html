@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TesseraCloud API Rate Limits</title>
+</head>
+<body>
+<h1>TesseraCloud API Rate Limits</h1>
+<p>Document ID: prod-tesseracloud-api-rate-limits-v1 | Version: 1 | Effective: 2024-06-03 | Owner: TesseraCloud Platform Team</p>
+
+<h2>Overview</h2>
+<p>The TesseraCloud REST API (base URL https://api.tesseracloud.meridian-instruments.com) applies rate limits to protect service quality for all customers. Limits are applied per tenant, across all API keys belonging to that tenant. The same limits apply to every subscription plan.</p>
+
+<h2>Limits</h2>
+<table>
+<tr><th>Limit</th><th>Value</th></tr>
+<tr><td>Requests per tenant, all endpoints</td><td>600 requests per minute</td></tr>
+<tr><td>Burst allowance</td><td>100 requests per 10 seconds</td></tr>
+<tr><td>GET /v2/devices/{id}/readings</td><td>120 requests per minute per tenant</td></tr>
+<tr><td>Maximum page size (limit parameter)</td><td>1000 items</td></tr>
+<tr><td>Default page size</td><td>100 items</td></tr>
+</table>
+<p>Requests to the readings endpoint count towards both the endpoint-specific limit and the overall tenant limit.</p>
+
+<h2>When a limit is exceeded</h2>
+<p>The API returns HTTP 429 Too Many Requests with a Retry-After header giving the number of seconds to wait before retrying. Clients should wait at least the Retry-After value and should add random jitter to avoid synchronised retries from multiple workers.</p>
+
+<h2>Recommendations</h2>
+<ul>
+<li>Request readings for a time range with the from and to parameters rather than polling for the latest reading repeatedly.</li>
+<li>Use the maximum page size of 1000 when backfilling history.</li>
+<li>Subscribe to webhooks (/v2/webhooks) for alarm notifications instead of polling /v2/devices/{id}/alarms.</li>
+<li>Cache device metadata from /v2/devices; it changes rarely.</li>
+</ul>
+
+<h2>Requesting higher limits</h2>
+<p>Customers with a genuine need for higher throughput can request a temporary limit increase through a Meridian Support Centre ticket. Increases are granted for up to 30 days, for example for an initial historical migration.</p>
+</body>
+</html>

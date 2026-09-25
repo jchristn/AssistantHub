@@ -6182,6 +6182,168 @@
             Provider request identifier, when reported.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.AssistantRetrieveRequest">
+            <summary>
+            Request body for <c>POST /v1.0/assistants/{assistantId}/retrieve</c>: run an assistant's retrieval pipeline
+            (gate, rewrite, search, fusion, rerank, answerability) without final inference.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.Messages">
+            <summary>
+            Conversation messages, as for chat. The last user message is the retrieval query. Optional when
+            <see cref="P:AssistantHub.Core.Models.AssistantRetrieveRequest.Query"/> is set.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.Query">
+            <summary>
+            Single query text, shorthand for one user message.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.MetadataFilter">
+            <summary>
+            Optional request-level metadata filter, merged with the assistant's default filters as in chat.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.AttachedDocumentIds">
+            <summary>
+            Optional attached document identifiers that constrain retrieval, as in chat.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.IncludeStages">
+            <summary>
+            Include per-stage ranked lists in the response.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.IncludeAnswerability">
+            <summary>
+            Run the assistant's answerability check (when enabled in its settings) on the final chunks.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AssistantRetrieveResponse">
+            <summary>
+            Response body for <c>POST /v1.0/assistants/{assistantId}/retrieve</c>.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.AssistantId">
+            <summary>
+            Assistant identifier.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.CollectionId">
+            <summary>
+            Collection searched.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.SearchMode">
+            <summary>
+            Search mode from the assistant settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.Retrieved">
+            <summary>
+            Whether retrieval ran. False when RAG is disabled, no collection is configured, or the gate skipped it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.GateDecision">
+            <summary>
+            Retrieval gate decision (<c>RETRIEVE</c> or <c>SKIP</c>), null when the gate did not run.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.GateDurationMs">
+            <summary>
+            Retrieval gate duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.Queries">
+            <summary>
+            Queries issued to the store (the user message, or the rewritten alternates).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.QueryRewriteDurationMs">
+            <summary>
+            Query rewrite duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RetrievalDurationMs">
+            <summary>
+            Search and fusion duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.HybridFallbackRan">
+            <summary>
+            Whether a hybrid search returned nothing and was retried as vector-only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.EmbeddingFailed">
+            <summary>
+            Whether the query embedding failed after retries, so vector or hybrid search returned nothing.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankDurationMs">
+            <summary>
+            Re-rank duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankInputCount">
+            <summary>
+            Chunks sent to the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankOutputCount">
+            <summary>
+            Chunks kept by the re-ranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankParseFailed">
+            <summary>
+            Whether the re-ranker ran but its reply could not be parsed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.AnswerabilityDecision">
+            <summary>
+            Answerability decision, or <c>not_checked</c>.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.QueryClass">
+            <summary>
+            Query class from the answerability check.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.AnswerabilityReason">
+            <summary>
+            Answerability reason.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.AnswerabilityParseFailed">
+            <summary>
+            Whether the answerability check ran but its reply could not be parsed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.AnswerabilityDurationMs">
+            <summary>
+            Answerability check duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.DroppedCandidates">
+            <summary>
+            Candidates dropped per stage.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.Chunks">
+            <summary>
+            Final ranked chunks, as chat would inject them before prompt-budget trimming.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.Stages">
+            <summary>
+            Per-stage ranked lists, when requested.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.TotalDurationMs">
+            <summary>
+            Total server-side duration in milliseconds.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantSettings">
             <summary>
             Assistant settings record.
@@ -7893,6 +8055,32 @@
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.DocumentFilterApplied">
             <summary>
             Indicates whether retrieval was constrained by attached document identifiers.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.HybridFallbackRan">
+            <summary>
+            Indicates whether a hybrid search returned nothing and was retried as vector-only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.EmbeddingFailed">
+            <summary>
+            Indicates whether the query embedding failed after retries, so vector or hybrid search returned nothing
+            and the answer was generated without retrieved context.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankParseFailed">
+            <summary>
+            Indicates whether the re-ranker's reply could not be parsed, so the original retrieval order was kept.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AnswerabilityParseFailed">
+            <summary>
+            Indicates whether the answerability check's reply could not be parsed, so the default decision was used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.QueryCount">
+            <summary>
+            Number of search queries issued (more than one when query rewrite produced alternates).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Chunks">
@@ -11894,6 +12082,22 @@
             Full-text relevance score component (null in vector-only mode).
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.VectorScore">
+            <summary>
+            Raw vector similarity reported by the store (null when the vector leg did not score this chunk).
+            In hybrid mode <see cref="P:AssistantHub.Core.Models.RetrievalChunk.Score"/> is the fused score, so this is the only raw similarity available.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.VectorRank">
+            <summary>
+            1-based rank in the hybrid vector leg (null outside hybrid search or when absent from that leg).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.TextRank">
+            <summary>
+            1-based rank in the hybrid text leg (null outside hybrid search or when absent from that leg).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.Content">
             <summary>
             Text content of the matching chunk.
@@ -11916,6 +12120,13 @@
             Neighbors before the match are prepended; neighbors after are appended.
             Falls back to Content when no neighbors are present.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.RetrievalChunk.CloneForSnapshot">
+            <summary>
+            Copy the chunk's identity and scores (not its neighbors) so a pipeline stage can be snapshotted before a
+            later stage mutates or reorders the list.
+            </summary>
+            <returns>A shallow copy without neighbors.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.RetrievalSearchOptions">
             <summary>
@@ -11971,6 +12182,33 @@
         <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.HybridFallbackRan">
             <summary>
             Set by RetrievalService when a hybrid search falls back to vector-only retrieval.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.EmbeddingFailed">
+            <summary>
+            Set by the retrieval service when the query embedding could not be generated (after retries), so vector
+            and hybrid search returned nothing. Callers surface it instead of treating the turn as "no relevant context".
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.RetrievalStageSnapshot">
+            <summary>
+            The ranked chunk list as it stood after one stage of the retrieval pipeline.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalStageSnapshot.Stage">
+            <summary>
+            Stage name: <c>search</c> (one per issued query), <c>fused</c> (after multi-query fusion or merge),
+            <c>attachment_filter</c>, <c>rerank</c>.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalStageSnapshot.Query">
+            <summary>
+            The query issued, for <c>search</c> stages.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalStageSnapshot.Chunks">
+            <summary>
+            Ranked chunks, best first.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.SearchProviderOptions">
@@ -14443,6 +14681,13 @@
             conditions (502/503/504) introduced by Partio v0.5.0 per-endpoint queueing.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.IsWrappedTransientPartioError(System.Int32,System.String)">
+            <summary>
+            Whether a Partio HTTP 500 wraps a transient upstream failure. Partio v0.5.0 reports an embedding or completion
+            provider's own 429 (for example a load-shedding model proxy) as an InternalError whose message carries the
+            upstream status, so the status code alone would make a retryable condition permanent.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.GetPartioRetryDelayMs(System.Int32)">
             <summary>
             Compute the backoff delay before the next Partio retry using exponential growth capped at 60s.
@@ -14982,6 +15227,18 @@
             <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
             <returns>Embedding vector.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.IsTransientEmbeddingStatus(System.Int32)">
+            <summary>
+            Whether an embedding status code is transient: request timeout (408), Partio's concurrency/queue rejection
+            (429), or gateway conditions (502/503/504). Matches the ingestion retry policy.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.GetQueryEmbeddingRetryDelayMs(System.Int32)">
+            <summary>
+            Backoff before the next query-embedding attempt. Queries are latency sensitive, so the base delay is capped at
+            250 ms (doubling per attempt) with up to 50% jitter so concurrent queries do not retry in lockstep.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Services.SearchResponse">
             <summary>
             Search response from RecallDB.
@@ -15010,6 +15267,21 @@
         <member name="P:AssistantHub.Core.Services.SearchResult.TextScore">
             <summary>
             Full-text relevance score (null in vector-only mode).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.SearchResult.VectorScore">
+            <summary>
+            Raw vector similarity (null when the vector leg did not score this chunk).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.SearchResult.VectorRank">
+            <summary>
+            1-based rank in the hybrid vector leg (null outside hybrid search or when absent from that leg).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.SearchResult.TextRank">
+            <summary>
+            1-based rank in the hybrid text leg (null outside hybrid search or when absent from that leg).
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Services.SearchResult.Content">
@@ -15469,6 +15741,12 @@
             Base delay, in milliseconds, between transient-failure retries of a Partio call.
             The effective delay grows exponentially per attempt and is capped at 60,000 ms.
             Zero disables the delay (retries fire immediately).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.RequestTimeoutMs">
+            <summary>
+            Timeout, in milliseconds, for a single Partio request. Chunking and embedding a large document is one
+            request, so this bounds the largest document that can be ingested. Minimum 1,000 ms; default 900,000 ms.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">

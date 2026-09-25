@@ -1,0 +1,121 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4494 >>
+stream
+BT /F2 16 Tf 54 723 Td (Postmortem: INC-2024-031 TesseraCloud Ingestion Outage) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: eng-postmortem-inc-2024-031-tesseracloud-ingestion. Incident: INC-2024-031.) Tj ET
+BT /F1 10 Tf 54 688 Td (Severity: SEV1. Date of incident: 14 May 2024. Postmortem published: 24 May 2024. Author:) Tj ET
+BT /F1 10 Tf 54 675 Td (Hannah Osei \(Platform Engineering\). Review chaired by: Kofi Mensah-Bonsu \(Head of Platform) Tj ET
+BT /F1 10 Tf 54 662 Td (Engineering\).) Tj ET
+BT /F2 13 Tf 54 637 Td (Summary) Tj ET
+BT /F1 10 Tf 54 615 Td (On 14 May 2024, TesseraCloud stopped accepting telemetry from all TS-4 gateways for 3 hours 42) Tj ET
+BT /F1 10 Tf 54 602 Td (minutes \(09:18 to 13:00 UK time\). A deployment of the aggregation consumer \(tc-agg\) at 08:47) Tj ET
+BT /F1 10 Tf 54 589 Td (introduced a defect that stopped it acknowledging messages. Its queue tessera.agg grew to about) Tj ET
+BT /F1 10 Tf 54 576 Td (41 million messages, and RabbitMQ node rmq-prd-02 reached its memory high watermark) Tj ET
+BT /F1 10 Tf 54 563 Td (\(vm_memory_high_watermark set to 0.4\). RabbitMQ then blocked all publishing connections across) Tj ET
+BT /F1 10 Tf 54 550 Td (the cluster, so tc-ingest could not publish and began rejecting MQTT connections from gateways) Tj ET
+BT /F1 10 Tf 54 537 Td (on port 8883.) Tj ET
+BT /F2 13 Tf 54 512 Td (Customer impact) Tj ET
+BT /F1 10 Tf 54 490 Td (- All TesseraCloud customers \(about 10,400 gateways at the time\) saw no new data for up to 3) Tj ET
+BT /F1 10 Tf 54 477 Td (   hours 42 minutes.) Tj ET
+BT /F1 10 Tf 54 464 Td (- TS-4 gateways stored readings in their local store-and-forward buffer, so no telemetry was) Tj ET
+BT /F1 10 Tf 54 451 Td (   permanently lost. However, when ingestion recovered, all gateways \(on gateway firmware 4.x) Tj ET
+BT /F1 10 Tf 54 438 Td (   at the time\) reconnected at the same moment and replayed their buffers at full speed. The) Tj ET
+BT /F1 10 Tf 54 425 Td (   reconnect storm kept tc-ingest saturated and delayed full data catch-up until 16:40, 3) Tj ET
+BT /F1 10 Tf 54 412 Td (   hours 40 minutes after ingestion was restored.) Tj ET
+BT /F1 10 Tf 54 399 Td (- Alerts on vibration thresholds were not delivered during the outage. Two customers) Tj ET
+BT /F1 10 Tf 54 386 Td (   reported missed alerts on critical pumps; no equipment damage was reported.) Tj ET
+BT /F1 10 Tf 54 373 Td (- Service credits were issued under customer SLAs by Customer Success.) Tj ET
+BT /F2 13 Tf 54 357 Td (Timeline \(UK time\)) Tj ET
+BT /F2 9 Tf 54 336 Td (Time | Event) Tj ET
+BT /F1 9 Tf 54 324 Td (08:47 | tc-agg version 2.31.0 deployed via Forge to production) Tj ET
+BT /F1 9 Tf 54 312 Td (08:52 | tc-agg consumers stop acknowledging messages; queue tessera.agg starts growing) Tj ET
+BT /F1 9 Tf 54 300 Td (09:18 | rmq-prd-02 memory alarm; cluster blocks publishers; tc-ingest publish calls hang) Tj ET
+BT /F1 9 Tf 54 288 Td (09:21 | tc-ingest health checks fail; load balancer removes pods; gateways cannot connect) Tj ET
+BT /F1 9 Tf 54 276 Td (09:24 | Pager alert "ingest connections zero"; Platform on-call primary acknowledges at 09:36) Tj ET
+BT /F1 9 Tf 54 264 Td (\(12 minutes, within the then 15-minute SEV1 target\)) Tj ET
+BT /F1 9 Tf 54 252 Td (09:45 | SEV1 declared; Kofi Mensah-Bonsu joins as Incident Commander) Tj ET
+BT /F1 9 Tf 54 240 Td (10:05 | Status page status.tesseracloud.meridian-instruments.com updated \(first customer) Tj ET
+BT /F1 9 Tf 54 228 Td (update\)) Tj ET
+BT /F1 9 Tf 54 216 Td (10:30 | Regional failover considered and rejected: the DR region shared the same RabbitMQ) Tj ET
+BT /F1 9 Tf 54 204 Td (design and the fault would follow the data) Tj ET
+BT /F1 9 Tf 54 192 Td (11:10 | Root cause identified as tc-agg not acknowledging messages) Tj ET
+BT /F1 9 Tf 54 180 Td (11:25 | tc-agg rolled back to 2.30.4) Tj ET
+BT /F1 9 Tf 54 168 Td (11:40 | Queue drain begins; memory alarm still active) Tj ET
+BT /F1 9 Tf 54 156 Td (12:35 | Memory falls below watermark; publishers unblocked) Tj ET
+BT /F1 9 Tf 54 144 Td (13:00 | Ingestion restored; about 10,400 gateways reconnect simultaneously and start replaying) Tj ET
+BT /F1 9 Tf 54 132 Td (buffers) Tj ET
+BT /F1 9 Tf 54 120 Td (13:20 | tc-ingest CPU above 95%; connection attempts rejected and retried in a tight loop) Tj ET
+BT /F1 9 Tf 54 108 Td (16:40 | Buffer replay complete for all gateways; dashboards current) Tj ET
+BT /F1 9 Tf 54 96 Td (17:30 | Incident closed after monitoring) Tj ET
+BT /F2 13 Tf 54 71 Td (Root causes) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 2770 >>
+stream
+BT /F1 10 Tf 54 729 Td (1. A defect in tc-agg 2.31.0 caused consumers to stop acknowledging messages without) Tj ET
+BT /F1 10 Tf 54 716 Td (   crashing, so no health check failed.) Tj ET
+BT /F1 10 Tf 54 703 Td (2. The tessera.agg queue had no length limit or dead-letter policy, so one stalled consumer) Tj ET
+BT /F1 10 Tf 54 690 Td (   could consume broker memory without bound.) Tj ET
+BT /F1 10 Tf 54 677 Td (3. RabbitMQ memory alarms block publishers cluster-wide, coupling ingestion to the health of) Tj ET
+BT /F1 10 Tf 54 664 Td (   every downstream consumer.) Tj ET
+BT /F1 10 Tf 54 651 Td (4. Gateway firmware 4.x reconnected immediately and replayed buffers without pacing, turning) Tj ET
+BT /F1 10 Tf 54 638 Td (   recovery into a second overload.) Tj ET
+BT /F1 10 Tf 54 625 Td (5. The failover runbook had no check of broker queue depth, so responders spent time) Tj ET
+BT /F1 10 Tf 54 612 Td (   evaluating a failover that would not have helped.) Tj ET
+BT /F2 13 Tf 54 596 Td (Action items) Tj ET
+BT /F2 9 Tf 54 575 Td (ID | Action | Owner | Due | Status) Tj ET
+BT /F1 9 Tf 54 563 Td (AI-1 | Set x-max-length and a dead-letter exchange on all TesseraCloud queues | Hannah Osei |) Tj ET
+BT /F1 9 Tf 54 551 Td (2024-05-31 | Done) Tj ET
+BT /F1 9 Tf 54 539 Td (AI-2 | Add a broker queue-depth check to the TesseraCloud Regional Failover Runbook before any) Tj ET
+BT /F1 9 Tf 54 527 Td (failover decision \(added as step 9; converted to a Kafka consumer-lag check after ADR-019\) |) Tj ET
+BT /F1 9 Tf 54 515 Td (Piotr Zielinski | 2024-06-28 | Done) Tj ET
+BT /F1 9 Tf 54 503 Td (AI-3 | Add jittered reconnect backoff and paced buffer replay to the TS-4 gateway firmware so) Tj ET
+BT /F1 9 Tf 54 491 Td (gateways do not all reconnect at once after an outage | Tessera firmware team | 2024-09-30 |) Tj ET
+BT /F1 9 Tf 54 479 Td (Done \(gateway firmware 5.0.0 released 9 September 2024\)) Tj ET
+BT /F1 9 Tf 54 467 Td (AI-4 | Evaluate a broker that supports replay and does not block publishers when a consumer) Tj ET
+BT /F1 9 Tf 54 455 Td (stalls | Kofi Mensah-Bonsu | 2024-09-15 | Done \(resulted in ADR-019, Kafka\)) Tj ET
+BT /F1 9 Tf 54 443 Td (AI-5 | Alert when a consumer's acknowledgement rate drops to zero for 3 minutes | Ravi) Tj ET
+BT /F1 9 Tf 54 431 Td (Chandrasekar | 2024-06-14 | Done) Tj ET
+BT /F1 9 Tf 54 419 Td (AI-6 | Add a canary stage for tc-agg deployments in Forge \(10% of consumers for 15 minutes\) |) Tj ET
+BT /F1 9 Tf 54 407 Td (Ellie Brannigan | 2024-07-31 | Done) Tj ET
+BT /F2 13 Tf 54 382 Td (Lessons) Tj ET
+BT /F1 10 Tf 54 360 Td (A consumer that stops working silently is harder to detect than one that crashes. Back-pressure) Tj ET
+BT /F1 10 Tf 54 347 Td (design must prevent one consumer from stopping ingestion for every customer.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004817 00000 n 
+0000004953 00000 n 
+0000007775 00000 n 
+0000007911 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+7960
+%%EOF

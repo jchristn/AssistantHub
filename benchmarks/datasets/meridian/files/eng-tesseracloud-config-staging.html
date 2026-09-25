@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TesseraCloud Environment Configuration: Staging</title>
+</head>
+<body>
+<h1>TesseraCloud Environment Configuration: Staging (staging)</h1>
+<p>Document ID: eng-tesseracloud-config-staging. Owner: Platform Engineering. Last updated: 14 July 2025. This page describes the staging environment only. Development and production use different hosts, ports and settings; see their own configuration pages.</p>
+
+<h2>Environment summary</h2>
+<ul>
+<li>Environment name (TC_ENV): staging</li>
+<li>Region: euw1 only, no disaster-recovery replica.</li>
+<li>Forge environment: tesseracloud-staging. Every merge to main is deployed automatically after the integration test stage passes.</li>
+<li>Data: synthetic telemetry plus a fleet of 40 test TS-4 gateways and 25 TS-4e edge nodes in the Leeds engineering lab and the Austin demo room.</li>
+<li>Access: TesseraCloud engineers and QA; customer support staff have read-only access for release previews.</li>
+</ul>
+
+<h2>Endpoints and ports</h2>
+<table border="1">
+<thead><tr><th>Service</th><th>Host</th><th>Port</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Public API (tc-api)</td><td>api.staging.tesseracloud.meridian-instruments.com</td><td>443</td><td>Internet-facing, IP allow-list for Meridian sites</td></tr>
+<tr><td>Device ingestion (tc-ingest)</td><td>ingest.staging.tesseracloud.meridian-instruments.com</td><td>18883</td><td>MQTT over TLS</td></tr>
+<tr><td>tc-ingest health</td><td>tc-ingest pods</td><td>8081</td><td>/healthz</td></tr>
+<tr><td>TimescaleDB</td><td>tsdb-stg-01.tessera.meridian.internal</td><td>5433</td><td>Primary with one async standby</td></tr>
+<tr><td>Kafka</td><td>kafka-stg-01 to kafka-stg-03.tessera.meridian.internal</td><td>9094</td><td>TLS listener</td></tr>
+<tr><td>Redis</td><td>redis-stg-01.tessera.meridian.internal</td><td>6381</td><td>TLS</td></tr>
+</tbody>
+</table>
+
+<h2>Configuration keys</h2>
+<table border="1">
+<thead><tr><th>Key</th><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>TC_ENV</td><td>staging</td><td>Environment name used in logs and metrics</td></tr>
+<tr><td>TC_INGEST_BATCH_SIZE</td><td>2000</td><td>Messages per Kafka produce batch in tc-ingest</td></tr>
+<tr><td>TC_INGEST_MAX_CONNECTIONS</td><td>5000</td><td>Maximum concurrent MQTT connections per tc-ingest pod</td></tr>
+<tr><td>TC_RETENTION_RAW_DAYS</td><td>30</td><td>Raw telemetry retention in TimescaleDB</td></tr>
+<tr><td>TC_KAFKA_CONSUMER_GROUP</td><td>tc-stream-stg</td><td>Consumer group for tc-stream</td></tr>
+<tr><td>TC_API_RATE_LIMIT_RPM</td><td>150</td><td>Default API requests per minute per tenant (deliberately lower than production to surface client back-off bugs)</td></tr>
+<tr><td>TC_LOG_LEVEL</td><td>info</td><td>Log verbosity</td></tr>
+<tr><td>TC_FEATURE_ANOMALY_DETECTION</td><td>true</td><td>Anomaly-detection service enabled for testing</td></tr>
+</tbody>
+</table>
+
+<h2>Deployment</h2>
+<p>Staging deployments happen automatically on merge to main. A release candidate must run in staging for at least 48 hours without a SEV3 or higher defect before it can be promoted to production.</p>
+</body>
+</html>

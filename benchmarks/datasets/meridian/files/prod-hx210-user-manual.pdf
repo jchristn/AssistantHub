@@ -1,0 +1,446 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R] /Count 8 >>
+endobj
+4 0 obj
+<< /Length 4445 >>
+stream
+BT /F2 16 Tf 54 723 Td (Halcyon HX-210 User Manual) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-hx210-user-manual | Revision: F | Effective: 2025-06-16 | Owner: Halcyon) Tj ET
+BT /F1 10 Tf 54 688 Td (Product Engineering, Leeds | Applies to firmware 3.4.1) Tj ET
+BT /F2 13 Tf 54 663 Td (1. Safety information) Tj ET
+BT /F1 10 Tf 54 641 Td (Read this manual in full before using the Halcyon HX-210 portable four-gas detector. The HX-210) Tj ET
+BT /F1 10 Tf 54 628 Td (is personal protective equipment. It warns the wearer of hazardous concentrations of oxygen) Tj ET
+BT /F1 10 Tf 54 615 Td (deficiency or enrichment, flammable gas, carbon monoxide \(CO\) and hydrogen sulphide \(H2S\). It) Tj ET
+BT /F1 10 Tf 54 602 Td (does not remove any hazard, and it cannot warn of gases for which it has no sensor fitted.) Tj ET
+BT /F1 10 Tf 54 580 Td (The HX-210 is certified intrinsically safe with the marking II 1G Ex ia IIC T4 Ga. It may be) Tj ET
+BT /F1 10 Tf 54 567 Td (used in Zone 0, Zone 1 and Zone 2 hazardous areas for gas groups IIA, IIB and IIC with) Tj ET
+BT /F1 10 Tf 54 554 Td (temperature class T4. The ATEX certificate is Baseefa22ATEX0212X and the IECEx certificate is) Tj ET
+BT /F1 10 Tf 54 541 Td (IECEx BAS 22.0098X. The "X" suffix means special conditions of use apply; these are listed) Tj ET
+BT /F1 10 Tf 54 528 Td (below.) Tj ET
+BT /F1 10 Tf 54 506 Td (- Charge the instrument only in a safe \(non-hazardous\) area, using the HX-DOCK-4 docking) Tj ET
+BT /F1 10 Tf 54 493 Td (   station or the supplied single-unit charger.) Tj ET
+BT /F1 10 Tf 54 480 Td (- Replace the battery pack HX-BAT-210 only in a safe area. Do not use any other battery) Tj ET
+BT /F1 10 Tf 54 467 Td (   pack; the HX-BAT-220L pack from the HX-220 is not certified for the HX-210 and will not) Tj ET
+BT /F1 10 Tf 54 454 Td (   fit the housing.) Tj ET
+BT /F1 10 Tf 54 441 Td (- Do not open the housing in a hazardous area.) Tj ET
+BT /F1 10 Tf 54 428 Td (- Do not rub or clean the front label with a dry cloth in a hazardous area; the label may) Tj ET
+BT /F1 10 Tf 54 415 Td (   accumulate an electrostatic charge.) Tj ET
+BT /F1 10 Tf 54 402 Td (- Substitution of components may impair intrinsic safety.) Tj ET
+BT /F1 10 Tf 54 389 Td (- Perform a bump test before each day's use. Calibrate at least every 120 days, or sooner if) Tj ET
+BT /F1 10 Tf 54 376 Td (   a bump test fails.) Tj ET
+BT /F1 10 Tf 54 363 Td (- High off-scale readings of flammable gas may indicate an explosive concentration. Leave) Tj ET
+BT /F1 10 Tf 54 350 Td (   the area immediately.) Tj ET
+BT /F1 10 Tf 54 337 Td (- Oxygen-deficient atmospheres \(below approximately 10% vol O2\) can cause the catalytic LEL) Tj ET
+BT /F1 10 Tf 54 324 Td (   sensor to read low.) Tj ET
+BT /F1 10 Tf 54 311 Td (- Silicones, leaded petrol vapours, sulphur compounds and halogenated hydrocarbons can) Tj ET
+BT /F1 10 Tf 54 298 Td (   poison the catalytic LEL sensor. See section 11 and error code E-117.) Tj ET
+BT /F2 13 Tf 54 282 Td (2. Product overview) Tj ET
+BT /F1 10 Tf 54 260 Td (The Halcyon HX-210 is a compact portable detector that continuously monitors four gases at the) Tj ET
+BT /F1 10 Tf 54 247 Td (same time. It is the core model of the Halcyon family. The HX-200 is the single-gas H2S) Tj ET
+BT /F1 10 Tf 54 234 Td (sibling, and the HX-220 adds Bluetooth LE, GPS, a man-down alarm and a larger battery.) Tj ET
+BT /F1 10 Tf 54 212 Td (The HX-210 is fitted with four sensors:) Tj ET
+BT /F1 10 Tf 54 190 Td (- Oxygen \(O2\): electrochemical, part number HX-SNS-O2-01, range 0-30% vol, resolution 0.1%) Tj ET
+BT /F1 10 Tf 54 177 Td (   vol.) Tj ET
+BT /F1 10 Tf 54 164 Td (- Flammable gas \(LEL\): catalytic bead, part number HX-SNS-LEL-04, range 0-100% LEL,) Tj ET
+BT /F1 10 Tf 54 151 Td (   resolution 1% LEL, calibrated to methane \(CH4\).) Tj ET
+BT /F1 10 Tf 54 138 Td (- Carbon monoxide \(CO\): electrochemical, part number HX-SNS-CO-03, range 0-500 ppm,) Tj ET
+BT /F1 10 Tf 54 125 Td (   resolution 1 ppm.) Tj ET
+BT /F1 10 Tf 54 112 Td (- Hydrogen sulphide \(H2S\): electrochemical, part number HX-SNS-H2S-02, range 0-200 ppm,) Tj ET
+BT /F1 10 Tf 54 99 Td (   resolution 1 ppm.) Tj ET
+BT /F1 10 Tf 54 86 Td (The instrument is a diffusion instrument. Gas reaches the sensors through the sensor grille on) Tj ET
+BT /F1 10 Tf 54 73 Td (the front face. The HX-210 does not support the optional sampling pump HX-PMP-22; for remote) Tj ET
+BT /F1 10 Tf 54 60 Td (sampling use the HX-220.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 4045 >>
+stream
+BT /F1 10 Tf 54 720 Td (The housing is rated IP67 and weighs 330 g including the battery. Dimensions are 125 x 68 x 40) Tj ET
+BT /F1 10 Tf 54 707 Td (mm. The operating temperature range is -20 to +55 C.) Tj ET
+BT /F2 13 Tf 54 682 Td (3. Package contents) Tj ET
+BT /F1 10 Tf 54 660 Td (The HX-210 starter kit, part number HX-210-KIT-03, contains:) Tj ET
+BT /F1 10 Tf 54 638 Td (- 1 x HX-210 detector with four sensors fitted and calibrated at the factory) Tj ET
+BT /F1 10 Tf 54 625 Td (- 1 x HX-BAT-210 rechargeable Li-ion battery pack, 3,400 mAh \(fitted\)) Tj ET
+BT /F1 10 Tf 54 612 Td (- 1 x single-unit USB-C charger with UK, EU, US and Type G/Type M plug adapters) Tj ET
+BT /F1 10 Tf 54 599 Td (- 1 x calibration cap HX-CAP-210 with 1 m hose) Tj ET
+BT /F1 10 Tf 54 586 Td (- 1 x stainless steel belt clip with fixing screws) Tj ET
+BT /F1 10 Tf 54 573 Td (- 1 x printed quick-start guide \(see also prod-hx210-quick-start\)) Tj ET
+BT /F1 10 Tf 54 560 Td (- 1 x factory calibration certificate) Tj ET
+BT /F1 10 Tf 54 547 Td (Calibration gas and regulators are not included. The HX-210 requires calibration gas) Tj ET
+BT /F1 10 Tf 54 534 Td (MI-CAL-Q4-B and the 1.0 L/min regulator MI-REG-10. The older mix MI-CAL-Q4-A and the 0.5 L/min) Tj ET
+BT /F1 10 Tf 54 521 Td (regulator MI-REG-05 are no longer approved for HX-210 calibration; see section 9.) Tj ET
+BT /F2 13 Tf 54 496 Td (4. Controls and indicators) Tj ET
+BT /F1 10 Tf 54 474 Td (The HX-210 has one large push button on the front \(the ON/OK button\) and two smaller buttons) Tj ET
+BT /F1 10 Tf 54 461 Td (below the display \(UP and DOWN\).) Tj ET
+BT /F1 10 Tf 54 439 Td (- ON/OK: press and hold for 3 seconds to switch on. Press and hold for 5 seconds to switch) Tj ET
+BT /F1 10 Tf 54 426 Td (   off \(a countdown is shown\). Short press to confirm a menu selection or to acknowledge a) Tj ET
+BT /F1 10 Tf 54 413 Td (   latched alarm.) Tj ET
+BT /F1 10 Tf 54 400 Td (- UP: short press to scroll up or increase a value. Press and hold in measuring mode to) Tj ET
+BT /F1 10 Tf 54 387 Td (   display peak readings.) Tj ET
+BT /F1 10 Tf 54 374 Td (- DOWN: short press to scroll down or decrease a value. Press and hold in measuring mode to) Tj ET
+BT /F1 10 Tf 54 361 Td (   display STEL and TWA values.) Tj ET
+BT /F1 10 Tf 54 348 Td (Indicators:) Tj ET
+BT /F1 10 Tf 54 326 Td (- Two red high-intensity LEDs on the top edge flash during alarms.) Tj ET
+BT /F1 10 Tf 54 313 Td (- A green LED flashes once every 10 seconds to confirm correct operation \(the "heartbeat" or) Tj ET
+BT /F1 10 Tf 54 300 Td (   confidence signal\). The interval can be changed between 5, 10 and 30 seconds in the) Tj ET
+BT /F1 10 Tf 54 287 Td (   supervisor menu.) Tj ET
+BT /F1 10 Tf 54 274 Td (- A yellow LED lights when the calibration or bump test is overdue.) Tj ET
+BT /F1 10 Tf 54 261 Td (- The sounder produces 95 dB at 30 cm.) Tj ET
+BT /F1 10 Tf 54 248 Td (- A vibration motor operates in parallel with the sounder.) Tj ET
+BT /F2 13 Tf 54 232 Td (5. Charging and power-on) Tj ET
+BT /F1 10 Tf 54 210 Td (Charge the HX-210 fully before first use. A full charge from empty takes approximately 5 hours) Tj ET
+BT /F1 10 Tf 54 197 Td (at 20 C. A fully charged HX-BAT-210 pack gives a typical runtime of 14 hours at 20 C with no) Tj ET
+BT /F1 10 Tf 54 184 Td (alarms. Runtime is reduced at low temperature and during alarms; at -20 C expect approximately) Tj ET
+BT /F1 10 Tf 54 171 Td (9 hours.) Tj ET
+BT /F1 10 Tf 54 149 Td (To charge, place the instrument in the HX-DOCK-4 docking station or connect the single-unit) Tj ET
+BT /F1 10 Tf 54 136 Td (charger to the USB-C port on the base. The battery icon animates while charging and shows a) Tj ET
+BT /F1 10 Tf 54 123 Td (solid full symbol when charging is complete. Charge only between 0 and +40 C.) Tj ET
+BT /F1 10 Tf 54 101 Td (Power-on sequence:) Tj ET
+BT /F1 10 Tf 54 79 Td (1. Press and hold ON/OK for 3 seconds. All LEDs light, the sounder beeps and the motor) Tj ET
+BT /F1 10 Tf 54 66 Td (   vibrates. Confirm that you saw, heard and felt each alarm.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 4504 >>
+stream
+BT /F1 10 Tf 54 729 Td (2. The display shows the firmware version \(3.4.1 for instruments shipped from June 2025\), the) Tj ET
+BT /F1 10 Tf 54 716 Td (   serial number and the instrument name.) Tj ET
+BT /F1 10 Tf 54 703 Td (3. The display shows the alarm set points for each gas in turn.) Tj ET
+BT /F1 10 Tf 54 690 Td (4. The display shows the days remaining until the next calibration and the next bump test. If) Tj ET
+BT /F1 10 Tf 54 677 Td (   either is overdue, the yellow LED lights and "CAL DUE" or "BUMP DUE" is shown.) Tj ET
+BT /F1 10 Tf 54 664 Td (5. The sensors warm up for 45 seconds. The LEL sensor may read slightly negative during) Tj ET
+BT /F1 10 Tf 54 651 Td (   warm-up; this is normal.) Tj ET
+BT /F1 10 Tf 54 638 Td (6. The instrument enters measuring mode. Perform a fresh-air zero \(section 8\) if the readings) Tj ET
+BT /F1 10 Tf 54 625 Td (   are not zero in clean air.) Tj ET
+BT /F2 13 Tf 54 609 Td (6. Display and navigation) Tj ET
+BT /F1 10 Tf 54 587 Td (In measuring mode the display shows four readings in a two-by-two grid: O2 \(top left\), LEL \(top) Tj ET
+BT /F1 10 Tf 54 574 Td (right\), CO \(bottom left\) and H2S \(bottom right\). The status bar at the top shows battery level,) Tj ET
+BT /F1 10 Tf 54 561 Td (time, and icons for datalogging and docking.) Tj ET
+BT /F1 10 Tf 54 539 Td (To enter the user menu, press UP and DOWN together for 2 seconds. The user menu contains:) Tj ET
+BT /F1 10 Tf 54 517 Td (- Menu > Peak Readings: shows and clears peak readings since power-on.) Tj ET
+BT /F1 10 Tf 54 504 Td (- Menu > Bump Test: starts a manual bump test.) Tj ET
+BT /F1 10 Tf 54 491 Td (- Menu > Zero: performs a fresh-air zero of O2, LEL, CO and H2S.) Tj ET
+BT /F1 10 Tf 54 478 Td (- Menu > Instrument: shows serial number, firmware version, battery health and the Service) Tj ET
+BT /F1 10 Tf 54 465 Td (   submenu.) Tj ET
+BT /F1 10 Tf 54 452 Td (- Menu > Settings: display contrast, language, time format and backlight timeout \(default 15) Tj ET
+BT /F1 10 Tf 54 439 Td (   seconds\).) Tj ET
+BT /F1 10 Tf 54 426 Td (- Menu > Supervisor: protected by the supervisor passcode \(see section 12\).) Tj ET
+BT /F1 10 Tf 54 413 Td (The menu closes automatically after 30 seconds without a button press and returns to measuring) Tj ET
+BT /F1 10 Tf 54 400 Td (mode. The instrument continues to monitor gas and will alarm while any menu is open.) Tj ET
+BT /F2 13 Tf 54 375 Td (7. Alarms) Tj ET
+BT /F1 10 Tf 54 353 Td (The HX-210 has five types of gas alarm: low, high, STEL \(short-term exposure limit, 15-minute) Tj ET
+BT /F1 10 Tf 54 340 Td (rolling average\), TWA \(time-weighted average, 8-hour\) and over-range. O2 has low and high) Tj ET
+BT /F1 10 Tf 54 327 Td (alarms only, because oxygen is hazardous both when deficient and when enriched.) Tj ET
+BT /F1 10 Tf 54 305 Td (Factory default set points for the HX-210:) Tj ET
+BT /F2 9 Tf 54 284 Td (Gas | Low alarm | High alarm | STEL | TWA) Tj ET
+BT /F1 9 Tf 54 272 Td (H2S | 5 ppm | 10 ppm | 15 ppm | 5 ppm) Tj ET
+BT /F1 9 Tf 54 260 Td (CO | 30 ppm | 100 ppm | 200 ppm | 30 ppm) Tj ET
+BT /F1 9 Tf 54 248 Td (LEL \(CH4\) | 10% LEL | 20% LEL | n/a | n/a) Tj ET
+BT /F1 9 Tf 54 236 Td (O2 | 19.5% vol \(falling\) | 23.0% vol \(rising\) | n/a | n/a) Tj ET
+BT /F1 10 Tf 54 214 Td (Alarm behaviour:) Tj ET
+BT /F1 10 Tf 54 192 Td (- Low alarm: slow two-tone sound, slow red flash, pulsed vibration. Non-latching by default;) Tj ET
+BT /F1 10 Tf 54 179 Td (   the alarm clears when the reading falls below the set point.) Tj ET
+BT /F1 10 Tf 54 166 Td (- High alarm: fast sound, fast red flash, continuous vibration. Latching; the alarm) Tj ET
+BT /F1 10 Tf 54 153 Td (   continues after the gas clears until the user presses ON/OK in clean air.) Tj ET
+BT /F1 10 Tf 54 140 Td (- STEL and TWA alarms: latching, and cannot be acknowledged until the instrument is switched) Tj ET
+BT /F1 10 Tf 54 127 Td (   off. Leave the area and inform your supervisor.) Tj ET
+BT /F1 10 Tf 54 114 Td (- Over-range: the display shows "OR" and the high alarm operates. For LEL, an over-range) Tj ET
+BT /F1 10 Tf 54 101 Td (   reading latches the LEL channel out of service until the instrument is switched off and on) Tj ET
+BT /F1 10 Tf 54 88 Td (   in clean air, to protect the catalytic sensor.) Tj ET
+BT /F1 10 Tf 54 75 Td (Set points can be changed only in the supervisor menu \(Menu > Supervisor > Alarms > Set Points\)) Tj ET
+BT /F1 10 Tf 54 62 Td (or with Meridian Link. Do not set the O2 high alarm above 23.5% vol or the LEL high alarm above) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 4168 >>
+stream
+BT /F1 10 Tf 54 729 Td (60% LEL; the instrument will reject values outside the certified limits.) Tj ET
+BT /F1 10 Tf 54 707 Td (Low battery warning: at approximately 30 minutes of runtime remaining, the instrument beeps) Tj ET
+BT /F1 10 Tf 54 694 Td (once a minute and shows "BATT LOW". At approximately 5 minutes remaining it shows "BATT OFF") Tj ET
+BT /F1 10 Tf 54 681 Td (and switches itself off after a 60-second countdown.) Tj ET
+BT /F2 13 Tf 54 656 Td (8. Fresh-air zero and bump testing) Tj ET
+BT /F2 11 Tf 54 633 Td (8.1 Fresh-air zero) Tj ET
+BT /F1 10 Tf 54 611 Td (Perform a fresh-air zero whenever the instrument is switched on in clean air and readings are) Tj ET
+BT /F1 10 Tf 54 598 Td (not zero \(or 20.9% for O2\). Select Menu > Zero and confirm with ON/OK. The zero takes 30) Tj ET
+BT /F1 10 Tf 54 585 Td (seconds. Do not zero in an area where gas may be present.) Tj ET
+BT /F2 11 Tf 54 562 Td (8.2 Bump test) Tj ET
+BT /F1 10 Tf 54 540 Td (A bump test confirms that each sensor responds to gas and each alarm operates. Bump test the) Tj ET
+BT /F1 10 Tf 54 527 Td (HX-210 before each day's use.) Tj ET
+BT /F1 10 Tf 54 505 Td (The bump test can be performed in the HX-DOCK-4 \(automatic, recommended\) or manually:) Tj ET
+BT /F1 10 Tf 54 483 Td (1. Fit the calibration cap HX-CAP-210 and connect the hose to an MI-REG-10 regulator on a) Tj ET
+BT /F1 10 Tf 54 470 Td (   cylinder of MI-CAL-Q4-B.) Tj ET
+BT /F1 10 Tf 54 457 Td (2. Select Menu > Bump Test and confirm.) Tj ET
+BT /F1 10 Tf 54 444 Td (3. Open the regulator. Gas flows at 1.0 L/min.) Tj ET
+BT /F1 10 Tf 54 431 Td (4. The bump test passes if each sensor reaches at least 80% of the cylinder concentration) Tj ET
+BT /F1 10 Tf 54 418 Td (   within 45 seconds and the alarms operate. O2 must fall to 18.0% vol plus or minus 0.5.) Tj ET
+BT /F1 10 Tf 54 405 Td (5. Close the regulator, remove the cap and allow the readings to return to normal before use.) Tj ET
+BT /F1 10 Tf 54 392 Td (If any sensor fails the bump test, calibrate the instrument \(section 9\). If the sensor still) Tj ET
+BT /F1 10 Tf 54 379 Td (fails, replace it following sup-hx-sensor-replacement-procedure.) Tj ET
+BT /F2 13 Tf 54 354 Td (9. Calibration) Tj ET
+BT /F1 10 Tf 54 332 Td (The HX-210 must be calibrated at least every 120 days. This interval was reduced from 180 days) Tj ET
+BT /F1 10 Tf 54 319 Td (in May 2025 following analysis of field data showing LEL sensitivity drift. The instrument) Tj ET
+BT /F1 10 Tf 54 306 Td (counts down the days to the next calibration and displays "CAL DUE" when the interval expires.) Tj ET
+BT /F1 10 Tf 54 293 Td (The interval is set to 120 days at the factory from firmware 3.4.1.) Tj ET
+BT /F1 10 Tf 54 271 Td (Calibration uses MI-CAL-Q4-B \(1.1% vol CH4 equivalent to 25% LEL, 18.0% O2, 50 ppm CO and 15) Tj ET
+BT /F1 10 Tf 54 258 Td (ppm H2S, balance nitrogen\) at 1.0 L/min through the MI-REG-10 regulator. The full step-by-step) Tj ET
+BT /F1 10 Tf 54 245 Td (method, including the span stabilisation wait of 120 seconds, is in the controlled document) Tj ET
+BT /F1 10 Tf 54 232 Td (HX-210 Calibration Procedure, document ID prod-hx210-calibration-procedure-v2. Always follow) Tj ET
+BT /F1 10 Tf 54 219 Td (the current version of that procedure. Version 1 of the procedure \(180-day interval,) Tj ET
+BT /F1 10 Tf 54 206 Td (MI-CAL-Q4-A\) is withdrawn.) Tj ET
+BT /F1 10 Tf 54 184 Td (Calibration in the HX-DOCK-4 is recommended because it records the result automatically and) Tj ET
+BT /F1 10 Tf 54 171 Td (prints or exports a certificate. The dock must be running dock firmware D-2.1.0 or later to) Tj ET
+BT /F1 10 Tf 54 158 Td (calibrate instruments on firmware 3.4.1.) Tj ET
+BT /F1 10 Tf 54 136 Td (If calibration fails, the instrument shows E-104 \(span calibration failed\). See section 13 and) Tj ET
+BT /F1 10 Tf 54 123 Td (the Halcyon Error Code Reference.) Tj ET
+BT /F2 13 Tf 54 98 Td (10. Datalogging and Meridian Link) Tj ET
+BT /F1 10 Tf 54 76 Td (The HX-210 logs readings from all four sensors at a 1-minute interval by default. At a 1-minute) Tj ET
+BT /F1 10 Tf 54 63 Td (interval the datalog holds approximately 90 days of continuous operation, after which the) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 4103 >>
+stream
+BT /F1 10 Tf 54 729 Td (oldest data is overwritten. The interval can be set between 1 second and 15 minutes in the) Tj ET
+BT /F1 10 Tf 54 716 Td (supervisor menu \(Menu > Supervisor > Datalog > Interval\). If overwriting is disabled, the) Tj ET
+BT /F1 10 Tf 54 703 Td (instrument shows E-140 \(datalog memory full\) when the log is full.) Tj ET
+BT /F1 10 Tf 54 681 Td (The event log records the last 500 events, including alarms, bump tests, calibrations, faults) Tj ET
+BT /F1 10 Tf 54 668 Td (and power cycles, with a time stamp.) Tj ET
+BT /F1 10 Tf 54 646 Td (To download the datalog, dock the instrument in the HX-DOCK-4 or connect it by USB-C to a PC) Tj ET
+BT /F1 10 Tf 54 633 Td (running Meridian Link version 4.2 or later. In Meridian Link, select Instruments > Download) Tj ET
+BT /F1 10 Tf 54 620 Td (Logs. Data can be exported as CSV or as a PDF exposure report.) Tj ET
+BT /F1 10 Tf 54 598 Td (The real-time clock is set automatically when the instrument is docked. If the clock is lost) Tj ET
+BT /F1 10 Tf 54 585 Td (\(for example after the battery has been removed for more than 72 hours\), the instrument shows) Tj ET
+BT /F1 10 Tf 54 572 Td (E-126 and must be docked or connected to Meridian Link to set the time.) Tj ET
+BT /F2 13 Tf 54 547 Td (11. Maintenance) Tj ET
+BT /F2 11 Tf 54 524 Td (11.1 Cleaning) Tj ET
+BT /F1 10 Tf 54 502 Td (Clean the housing with a damp cloth and mild detergent only. Do not use solvents,) Tj ET
+BT /F1 10 Tf 54 489 Td (silicone-based polishes or alcohol wipes near the sensor grille; these can poison the LEL) Tj ET
+BT /F1 10 Tf 54 476 Td (sensor or damage the dust membrane. Do not immerse the instrument deliberately, although it is) Tj ET
+BT /F1 10 Tf 54 463 Td (rated IP67.) Tj ET
+BT /F2 11 Tf 54 440 Td (11.2 Dust membrane) Tj ET
+BT /F1 10 Tf 54 418 Td (The sensor grille is protected by a hydrophobic dust membrane, part number HX-MEM-210. Inspect) Tj ET
+BT /F1 10 Tf 54 405 Td (the membrane weekly. Replace it every 6 months, or immediately if it is visibly dirty, torn or) Tj ET
+BT /F1 10 Tf 54 392 Td (wet. A blocked membrane causes slow response and may cause a bump test failure.) Tj ET
+BT /F2 11 Tf 54 369 Td (11.3 Checking sensor life) Tj ET
+BT /F1 10 Tf 54 347 Td (The instrument estimates the remaining life of each sensor from its sensitivity at the last) Tj ET
+BT /F1 10 Tf 54 334 Td (calibration. To view it, select Menu > Instrument > Service > Sensor Life. Each sensor is shown) Tj ET
+BT /F1 10 Tf 54 321 Td (with a percentage. Plan to replace a sensor when its remaining life falls below 20%. The O2) Tj ET
+BT /F1 10 Tf 54 308 Td (sensor typically lasts 24 to 30 months; the LEL, CO and H2S sensors typically last 36 months in) Tj ET
+BT /F1 10 Tf 54 295 Td (normal use.) Tj ET
+BT /F2 11 Tf 54 272 Td (11.4 Opening the housing) Tj ET
+BT /F1 10 Tf 54 250 Td (The rear housing is held by six captive Torx T10 screws. Open the housing only in a safe area,) Tj ET
+BT /F1 10 Tf 54 237 Td (with the instrument switched off, to replace the battery pack or sensors.) Tj ET
+BT /F1 10 Tf 54 215 Td (When refitting the rear housing, tighten the six Torx T10 screws in a diagonal pattern to 0.45) Tj ET
+BT /F1 10 Tf 54 202 Td (N m. Do not exceed 0.5 N m; over-tightening can crack the screw bosses and invalidate the IP67) Tj ET
+BT /F1 10 Tf 54 189 Td (rating. Check that the rear gasket, part number HX-GSK-210, is seated in its groove and is not) Tj ET
+BT /F1 10 Tf 54 176 Td (twisted. Replace the gasket every time a sensor is replaced or if it shows any cut or) Tj ET
+BT /F1 10 Tf 54 163 Td (compression set.) Tj ET
+BT /F2 11 Tf 54 140 Td (11.5 Replacing the battery pack) Tj ET
+BT /F1 10 Tf 54 118 Td (1. Switch off the instrument and move to a safe area.) Tj ET
+BT /F1 10 Tf 54 105 Td (2. Remove the six rear housing screws and lift off the rear housing.) Tj ET
+BT /F1 10 Tf 54 92 Td (3. Disconnect the HX-BAT-210 connector by pulling the connector body, not the wires.) Tj ET
+BT /F1 10 Tf 54 79 Td (4. Fit the new HX-BAT-210, route the wires in the channel and refit the rear housing as) Tj ET
+BT /F1 10 Tf 54 66 Td (   described in 11.4.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 4246 >>
+stream
+BT /F1 10 Tf 54 729 Td (5. Charge the new pack fully before use. The real-time clock may need to be reset by docking.) Tj ET
+BT /F2 11 Tf 54 715 Td (11.6 Replacing sensors) Tj ET
+BT /F1 10 Tf 54 693 Td (Sensor replacement is described in the Halcyon Sensor Replacement Procedure) Tj ET
+BT /F1 10 Tf 54 680 Td (\(sup-hx-sensor-replacement-procedure\). A full calibration is required after any sensor is) Tj ET
+BT /F1 10 Tf 54 667 Td (replaced.) Tj ET
+BT /F2 13 Tf 54 642 Td (12. Supervisor settings) Tj ET
+BT /F1 10 Tf 54 620 Td (The supervisor menu is protected by a four-digit passcode. The factory default supervisor) Tj ET
+BT /F1 10 Tf 54 607 Td (passcode for the HX-210 is 2107. Change it on commissioning using Menu > Supervisor > Security) Tj ET
+BT /F1 10 Tf 54 594 Td (> Change Passcode. After five incorrect passcode entries the supervisor menu is locked for 10) Tj ET
+BT /F1 10 Tf 54 581 Td (minutes.) Tj ET
+BT /F1 10 Tf 54 559 Td (Supervisor settings include:) Tj ET
+BT /F1 10 Tf 54 537 Td (- Alarm set points and latching \(Menu > Supervisor > Alarms\)) Tj ET
+BT /F1 10 Tf 54 524 Td (- Calibration interval, 30 to 120 days \(Menu > Supervisor > Calibration > Interval\). From) Tj ET
+BT /F1 10 Tf 54 511 Td (   firmware 3.4.1 the HX-210 will not accept a calibration interval above 120 days.) Tj ET
+BT /F1 10 Tf 54 498 Td (- Bump test interval and "bump before use" enforcement \(Menu > Supervisor > Bump\)) Tj ET
+BT /F1 10 Tf 54 485 Td (- Datalog interval and overwrite \(Menu > Supervisor > Datalog\)) Tj ET
+BT /F1 10 Tf 54 472 Td (- Confidence beep and heartbeat LED interval \(Menu > Supervisor > Indicators\)) Tj ET
+BT /F1 10 Tf 54 459 Td (- Instrument name and user name, up to 16 characters \(Menu > Supervisor > Identity\)) Tj ET
+BT /F1 10 Tf 54 446 Td (- Stealth mode, which disables the confidence beep and heartbeat LED but never the alarm) Tj ET
+BT /F1 10 Tf 54 433 Td (   sounder) Tj ET
+BT /F1 10 Tf 54 420 Td (If the supervisor passcode is lost, it can be reset from Meridian Link \(Instruments > Security) Tj ET
+BT /F1 10 Tf 54 407 Td (> Reset Passcode\) by a user with the Fleet Administrator role. It cannot be reset from the) Tj ET
+BT /F1 10 Tf 54 394 Td (instrument itself.) Tj ET
+BT /F2 13 Tf 54 369 Td (13. Troubleshooting) Tj ET
+BT /F1 10 Tf 54 347 Td (When the HX-210 detects a fault it shows an error code in the form E-1nn and sounds a fault) Tj ET
+BT /F1 10 Tf 54 334 Td (tone \(three short beeps every 30 seconds\). The full list of codes, their meaning, the models) Tj ET
+BT /F1 10 Tf 54 321 Td (they apply to and the corrective action is in the Halcyon Error Code Reference \(document ID) Tj ET
+BT /F1 10 Tf 54 308 Td (sup-halcyon-error-codes\). The most common codes on the HX-210 are:) Tj ET
+BT /F1 10 Tf 54 286 Td (- E-101: sensor not detected. Reseat the sensor.) Tj ET
+BT /F1 10 Tf 54 273 Td (- E-104: span calibration failed. Check the cylinder and repeat calibration.) Tj ET
+BT /F1 10 Tf 54 260 Td (- E-108: calibration overdue.) Tj ET
+BT /F1 10 Tf 54 247 Td (- E-117: LEL sensor poisoned or bridge fault. Replace the LEL sensor; do not attempt to) Tj ET
+BT /F1 10 Tf 54 234 Td (   recalibrate.) Tj ET
+BT /F1 10 Tf 54 221 Td (- E-126: real-time clock lost.) Tj ET
+BT /F1 10 Tf 54 208 Td (Other symptoms:) Tj ET
+BT /F2 9 Tf 54 187 Td (Symptom | Likely cause | Action) Tj ET
+BT /F1 9 Tf 54 175 Td (Instrument will not switch on | Battery fully discharged | Charge for at least 30 minutes, then) Tj ET
+BT /F1 9 Tf 54 163 Td (try again) Tj ET
+BT /F1 9 Tf 54 151 Td (Slow response to bump gas | Blocked dust membrane | Replace HX-MEM-210 \(section 11.2\)) Tj ET
+BT /F1 9 Tf 54 139 Td (O2 reads below 20.9% in fresh air | O2 sensor ageing | Zero in fresh air; check sensor life) Tj ET
+BT /F1 9 Tf 54 127 Td (\(section 11.3\)) Tj ET
+BT /F1 9 Tf 54 115 Td (LEL reads negative in clean air | Temperature change since zero | Allow 10 minutes to) Tj ET
+BT /F1 9 Tf 54 103 Td (stabilise, then zero) Tj ET
+BT /F1 9 Tf 54 91 Td (Instrument does not communicate with dock | Dock firmware older than D-2.1.0 | Update dock) Tj ET
+BT /F1 9 Tf 54 79 Td (firmware \(see prod-halcyon-docking-station-guide\)) Tj ET
+BT /F1 10 Tf 54 57 Td (If a fault cannot be resolved, raise a ticket in the Meridian Support Centre) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 4021 >>
+stream
+BT /F1 10 Tf 54 729 Td (\(support.meridian-instruments.com\). Instruments returned for repair follow the current RMA) Tj ET
+BT /F1 10 Tf 54 716 Td (process.) Tj ET
+BT /F2 13 Tf 54 691 Td (14. Technical specifications) Tj ET
+BT /F2 9 Tf 54 670 Td (Parameter | Value) Tj ET
+BT /F1 9 Tf 54 658 Td (Model | Halcyon HX-210 portable four-gas detector) Tj ET
+BT /F1 9 Tf 54 646 Td (Gases and ranges | O2 0-30% vol; LEL 0-100% LEL \(CH4\); CO 0-500 ppm; H2S 0-200 ppm) Tj ET
+BT /F1 9 Tf 54 634 Td (Resolution | O2 0.1% vol; LEL 1% LEL; CO 1 ppm; H2S 1 ppm) Tj ET
+BT /F1 9 Tf 54 622 Td (Sensor part numbers | HX-SNS-O2-01, HX-SNS-LEL-04, HX-SNS-CO-03, HX-SNS-H2S-02) Tj ET
+BT /F1 9 Tf 54 610 Td (Sampling | Diffusion) Tj ET
+BT /F1 9 Tf 54 598 Td (Response time \(T90\) | O2 15 s; LEL 20 s; CO 25 s; H2S 30 s) Tj ET
+BT /F1 9 Tf 54 586 Td (Battery | HX-BAT-210, 3,400 mAh Li-ion, rechargeable) Tj ET
+BT /F1 9 Tf 54 574 Td (Runtime | 14 h typical at 20 C) Tj ET
+BT /F1 9 Tf 54 562 Td (Charge time | 5 h) Tj ET
+BT /F1 9 Tf 54 550 Td (Calibration interval | 120 days maximum) Tj ET
+BT /F1 9 Tf 54 538 Td (Calibration gas | MI-CAL-Q4-B at 1.0 L/min \(MI-REG-10\)) Tj ET
+BT /F1 9 Tf 54 526 Td (Certification | ATEX II 1G Ex ia IIC T4 Ga \(Baseefa22ATEX0212X\); IECEx Ex ia IIC T4 Ga \(IECEx) Tj ET
+BT /F1 9 Tf 54 514 Td (BAS 22.0098X\)) Tj ET
+BT /F1 9 Tf 54 502 Td (Hazardous area | Zone 0, 1 and 2) Tj ET
+BT /F1 9 Tf 54 490 Td (Ingress protection | IP67) Tj ET
+BT /F1 9 Tf 54 478 Td (Operating temperature | -20 to +55 C) Tj ET
+BT /F1 9 Tf 54 466 Td (Humidity | 10-95% RH non-condensing) Tj ET
+BT /F1 9 Tf 54 454 Td (Audible alarm | 95 dB at 30 cm) Tj ET
+BT /F1 9 Tf 54 442 Td (Datalog | 90 days at 1-minute interval; 500-event log) Tj ET
+BT /F1 9 Tf 54 430 Td (Dimensions | 125 x 68 x 40 mm) Tj ET
+BT /F1 9 Tf 54 418 Td (Weight | 330 g) Tj ET
+BT /F1 9 Tf 54 406 Td (Firmware | 3.4.1) Tj ET
+BT /F1 9 Tf 54 394 Td (Starter kit | HX-210-KIT-03) Tj ET
+BT /F1 10 Tf 54 372 Td (Warranty terms for the instrument, sensors and battery are set out in the current Meridian) Tj ET
+BT /F1 10 Tf 54 359 Td (warranty terms. Dispose of the instrument and battery in accordance with local WEEE and battery) Tj ET
+BT /F1 10 Tf 54 346 Td (regulations.) Tj ET
+BT /F2 13 Tf 54 321 Td (15. Storage, transport and disposal) Tj ET
+BT /F2 11 Tf 54 298 Td (15.1 Storage) Tj ET
+BT /F1 10 Tf 54 276 Td (Store the HX-210 switched off, in a clean, dry area between 0 and +30 C, away from solvents,) Tj ET
+BT /F1 10 Tf 54 263 Td (silicones and fuel vapours. For storage longer than 30 days, charge the HX-BAT-210 to between) Tj ET
+BT /F1 10 Tf 54 250 Td (40% and 60% and recharge it every 3 months. A pack stored fully discharged for more than 6) Tj ET
+BT /F1 10 Tf 54 237 Td (months may be permanently damaged and will show E-111 when next charged.) Tj ET
+BT /F1 10 Tf 54 215 Td (Electrochemical sensors continue to age while the instrument is switched off. An instrument) Tj ET
+BT /F1 10 Tf 54 202 Td (that has been stored for more than 120 days will show "CAL DUE" on power-on and must be) Tj ET
+BT /F1 10 Tf 54 189 Td (calibrated before use, because the calibration countdown continues during storage.) Tj ET
+BT /F2 11 Tf 54 166 Td (15.2 Transport) Tj ET
+BT /F1 10 Tf 54 144 Td (The HX-BAT-210 is a lithium-ion battery with a rating below 100 Wh. When the pack is installed) Tj ET
+BT /F1 10 Tf 54 131 Td (in the instrument it can be shipped as UN3481 \(lithium-ion batteries contained in equipment\)) Tj ET
+BT /F1 10 Tf 54 118 Td (under the applicable IATA packing instruction. Spare packs shipped separately must be protected) Tj ET
+BT /F1 10 Tf 54 105 Td (against short circuit and must not exceed 30% state of charge for air freight. Instruments) Tj ET
+BT /F1 10 Tf 54 92 Td (returned to Meridian must be accompanied by a completed decontamination declaration as) Tj ET
+BT /F1 10 Tf 54 79 Td (described in the current RMA process.) Tj ET
+BT /F1 10 Tf 54 57 Td (Calibration gas cylinders MI-CAL-Q4-B are classified as compressed gas, toxic, and must be) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Length 3013 >>
+stream
+BT /F1 10 Tf 54 729 Td (transported in accordance with ADR/DOT regulations. Do not send partly used cylinders with a) Tj ET
+BT /F1 10 Tf 54 716 Td (returned instrument.) Tj ET
+BT /F2 11 Tf 54 693 Td (15.3 Disposal) Tj ET
+BT /F1 10 Tf 54 671 Td (At the end of its life, the HX-210 must not be disposed of with general waste. Return it to) Tj ET
+BT /F1 10 Tf 54 658 Td (Meridian or to an approved WEEE collection point. Remove the battery pack and dispose of it) Tj ET
+BT /F1 10 Tf 54 645 Td (separately. Electrochemical sensors contain acid electrolyte and, in the case of the O2 sensor,) Tj ET
+BT /F1 10 Tf 54 632 Td (lead; treat them as hazardous waste.) Tj ET
+BT /F2 13 Tf 54 607 Td (16. Glossary) Tj ET
+BT /F1 10 Tf 54 585 Td (- Bump test: a brief exposure to a known gas to confirm that sensors respond and alarms) Tj ET
+BT /F1 10 Tf 54 572 Td (   operate. It does not adjust the instrument.) Tj ET
+BT /F1 10 Tf 54 559 Td (- Calibration: adjustment of the zero and span of each sensor using a certified gas mixture.) Tj ET
+BT /F1 10 Tf 54 546 Td (- %LEL: percentage of the lower explosive limit. For methane, 100% LEL corresponds to 4.4%) Tj ET
+BT /F1 10 Tf 54 533 Td (   vol under IEC 60079-20-1, which is the basis used by firmware 3.4.1 and later.) Tj ET
+BT /F1 10 Tf 54 520 Td (- STEL: short-term exposure limit, a 15-minute rolling average exposure.) Tj ET
+BT /F1 10 Tf 54 507 Td (- TWA: time-weighted average exposure over an 8-hour shift.) Tj ET
+BT /F1 10 Tf 54 494 Td (- Latching alarm: an alarm that continues after the gas clears until the user acknowledges) Tj ET
+BT /F1 10 Tf 54 481 Td (   it.) Tj ET
+BT /F1 10 Tf 54 468 Td (- Span: the sensitivity adjustment applied during calibration.) Tj ET
+BT /F1 10 Tf 54 455 Td (- Zone 0: an area in which an explosive gas atmosphere is present continuously or for long) Tj ET
+BT /F1 10 Tf 54 442 Td (   periods. The HX-210 is the only Halcyon model approved for Zone 0.) Tj ET
+BT /F1 10 Tf 54 429 Td (- Intrinsic safety \(Ex ia, Ex ib\): a protection concept that limits electrical and thermal) Tj ET
+BT /F1 10 Tf 54 416 Td (   energy below the level that could ignite a gas atmosphere. Ex ia allows use in Zone 0; Ex) Tj ET
+BT /F1 10 Tf 54 403 Td (   ib is limited to Zone 1 and Zone 2.) Tj ET
+BT /F1 10 Tf 54 390 Td (- Meridian Link: the Windows PC software used to configure Halcyon instruments and docking) Tj ET
+BT /F1 10 Tf 54 377 Td (   stations, download datalogs and manage instrument fleets.) Tj ET
+BT /F2 13 Tf 54 361 Td (17. Document history) Tj ET
+BT /F2 9 Tf 54 340 Td (Revision | Date | Changes) Tj ET
+BT /F1 9 Tf 54 328 Td (D | 2024-03-12 | Aligned with HX-210 Calibration Procedure version 1 \(180-day interval\)) Tj ET
+BT /F1 9 Tf 54 316 Td (E | 2024-11-04 | Updated for firmware 3.4.0: 500-event log, configurable confidence beep) Tj ET
+BT /F1 9 Tf 54 304 Td (F | 2025-06-16 | Updated for firmware 3.4.1: 120-day calibration interval, MI-CAL-Q4-B,) Tj ET
+BT /F1 9 Tf 54 292 Td (MI-REG-10, 4.4% vol LEL basis, dock firmware D-2.1.0) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 18 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+20 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000312 00000 n 
+0000004809 00000 n 
+0000004945 00000 n 
+0000009042 00000 n 
+0000009178 00000 n 
+0000013734 00000 n 
+0000013870 00000 n 
+0000018091 00000 n 
+0000018229 00000 n 
+0000022385 00000 n 
+0000022523 00000 n 
+0000026822 00000 n 
+0000026960 00000 n 
+0000031034 00000 n 
+0000031172 00000 n 
+0000034238 00000 n 
+0000034376 00000 n 
+trailer
+<< /Size 21 /Root 20 0 R >>
+startxref
+34426
+%%EOF

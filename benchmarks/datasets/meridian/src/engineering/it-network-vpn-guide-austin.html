@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Network and VPN Setup Guide: Austin</title>
+</head>
+<body>
+<h1>Network and VPN Setup Guide: Austin</h1>
+<p>Document ID: it-network-vpn-guide-austin. Site: Austin, Texas, United States (Americas sales and Tessera software engineering, site code AUS). Owner: IT Operations, Network team. Last updated: 7 April 2025.</p>
+
+<h2>Who this guide is for</h2>
+<p>New starters and visitors working at the Austin office, and Austin-based staff connecting from home. Other sites have their own guide; subnets, VPN endpoints and printer queues are different at each site.</p>
+
+<h2>Wi-Fi</h2>
+<ul>
+<li>Meridian-Corp: company laptops only, 802.1X certificate authentication.</li>
+<li>Meridian-Guest: visitors, sponsor approval by email, sessions last 12 hours.</li>
+<li>Meridian-Demo: customer demo room only, for TS-4 gateway and TS-4e edge node demonstrations; internet access only.</li>
+</ul>
+
+<h2>Site subnets</h2>
+<table border="1">
+<thead><tr><th>Network</th><th>VLAN</th><th>Subnet</th></tr></thead>
+<tbody>
+<tr><td>Site supernet</td><td>n/a</td><td>10.30.0.0/16</td></tr>
+<tr><td>Users (wired and Meridian-Corp)</td><td>310</td><td>10.30.16.0/22</td></tr>
+<tr><td>Voice</td><td>320</td><td>10.30.32.0/24</td></tr>
+<tr><td>Printers</td><td>330</td><td>10.30.40.0/24</td></tr>
+<tr><td>Demo room</td><td>350</td><td>10.30.60.0/25</td></tr>
+</tbody>
+</table>
+<p>DNS servers: 10.30.1.10 and 10.30.1.11. Internal domain: meridian.internal. Austin has no local servers; all services are reached over the site-to-site link to Leeds.</p>
+
+<h2>VPN (Meridian Connect)</h2>
+<ul>
+<li>Client: Meridian Connect, installed on every company laptop.</li>
+<li>Austin endpoint: vpn-aus.meridian-instruments.com</li>
+<li>Protocol and port: UDP 51820.</li>
+<li>Tunnel mode: split tunnel. Traffic to 10.0.0.0/8 and meridian.internal goes through the VPN.</li>
+<li>Authentication: directory account plus MFA (authenticator push with number matching, or FIDO2 key).</li>
+<li>Idle timeout: 10 hours (longer than the 8 hours used at the European sites, to cover the time-zone overlap with Leeds).</li>
+</ul>
+<p>If vpn-aus is unavailable, use vpn-lds.meridian-instruments.com as the fallback. Expect higher latency to Atlas when connected via Leeds.</p>
+
+<h2>Printers</h2>
+<p>Print server: prn-aus-01.meridian.internal. Queues:</p>
+<table border="1">
+<thead><tr><th>Queue</th><th>Location</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>AUS-MFP01</td><td>Main office</td><td>Colour multifunction</td></tr>
+<tr><td>AUS-ENG-PLOTTER</td><td>Engineering area</td><td>Large-format plotter</td></tr>
+</tbody>
+</table>
+<p>Jobs on AUS-MFP01 are held until you badge in at the device. Held jobs are deleted after 24 hours.</p>
+
+<h2>Getting help</h2>
+<p>Raise a Beacon ticket in category NET-VPN, NET-WIFI or PRN-QUEUE. Austin has a part-time on-site IT technician (Monday, Wednesday and Friday, 09:00 to 17:00 CT); the Leeds service desk covers other times.</p>
+</body>
+</html>

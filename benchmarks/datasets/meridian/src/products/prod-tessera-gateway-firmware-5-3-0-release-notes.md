@@ -1,0 +1,45 @@
+# TS-4 Gateway Firmware 5.3.0 Release Notes
+
+Document ID: prod-tessera-gateway-firmware-5-3-0-release-notes | Release date: 2025-08-18 | Owner: Tessera Firmware Team
+
+## Summary
+
+Firmware 5.3.0 is a feature release for the TS-4 gateway (TS4-GW-LTE and TS4-GW-ETH). It adds support for TS-4e node firmware 2.8.0 and the Zone 2 edge node TS4E-NODE-3AX-Z2, introduces the adaptive mesh channel plan, and fixes several connectivity issues. All customers on 5.1.x or 5.2.x should update. From 1 October 2025 TesseraCloud requires at least 5.2.0.
+
+Image file: ts4gw-5.3.0.tfw. Image size: 38.4 MB. SHA-256 is published on the partner portal.
+
+## New features
+
+- Support for node firmware 2.8.0 and the TS4E-NODE-3AX-Z2 Zone 2 edge node.
+- Adaptive channel plan: the gateway can move between up to four nominated IEEE 802.15.4 channels when interference is detected. Configure at Mesh > Radio > Channel Plan.
+- New event T-348 behaviour: the buffer near-capacity warning now also appears in TesseraCloud as a Degraded status.
+- Local UI: new System > Diagnostics > Bundle page that collects logs into one file for Meridian Support.
+
+## Improvements
+
+- LTE attach time on Cat-M1 networks reduced from about 75 seconds to about 30 seconds.
+- Ethernet-to-LTE failover time reduced from 180 seconds to 90 seconds.
+- Buffered reading upload rate increased to 2,000 readings per minute.
+
+## Fixes
+
+- Fixed: gateway occasionally reported T-312 clock drift after a daylight saving change when a custom NTP server was configured.
+- Fixed: nodes at hop 4 could drop out after a gateway reboot and required re-pairing.
+- Fixed: local UI session did not honour the 15-minute inactivity timeout.
+- Fixed: T-320 raised spuriously when the gateway was deliberately powered down.
+
+## Compatibility
+
+- Node firmware supported: 2.6.1 (deprecated), 2.7.0, 2.8.0.
+- Node firmware 2.8.0 requires this release; it is not supported on 5.1.x or 5.2.x.
+- Direct upgrade is supported from 5.1.2 and later. Gateways on 5.1.0 or 5.1.1 must first update to 5.1.2.
+- Downgrade from 5.3.0 to 5.2.x is supported but will unpair any nodes on 2.8.0.
+
+## Known issues
+
+- When the channel plan changes, sleeping nodes can take up to 3 minutes to follow; nodes asleep for longer will show T-301 and must be re-paired.
+- Channel 26 is hidden in the channel planner for units sold in regions where it is restricted.
+
+## Update instructions
+
+Schedule the update from TesseraCloud (Fleet > Gateways > [gateway] > Firmware > Schedule Update) or upload the image in the local UI at System > Firmware > Upload. The update takes approximately 6 minutes. Update the gateway before updating any nodes to 2.8.0.

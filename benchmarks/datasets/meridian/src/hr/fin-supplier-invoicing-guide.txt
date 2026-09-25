@@ -1,0 +1,65 @@
+SUPPLIER INVOICING GUIDE
+Meridian Instruments Ltd and subsidiaries
+Owner: Accounts Payable, Finance
+Effective: 1 May 2025
+
+1. PURPOSE
+
+This guide tells suppliers, and the Meridian employees who work with them, how to submit invoices so that they are paid on time. It applies to all Meridian Instruments entities: Meridian Instruments Ltd (Leeds, United Kingdom), Meridian Instruments B.V. (Rotterdam, Netherlands), Meridian Instruments Inc. (Austin, United States) and Meridian Instruments Sdn. Bhd. (Penang, Malaysia).
+
+Payment terms, supplier onboarding and purchasing rules are set out in the Procurement Manual (POL-FIN-012). This guide covers invoicing only.
+
+2. NO PO, NO PAY
+
+Meridian operates a "no PO, no pay" rule. Every invoice must quote a valid Meridian purchase order (PO) number issued from Atlas before the goods or services were supplied. Invoices without a valid PO number will be returned to the supplier unpaid.
+
+PO numbers have the format PO-45xxxxxxxx: the letters PO, a hyphen, and a 10-digit number that always starts with 45. For example: PO-4500123456.
+
+If you are a supplier and you have not received a PO, ask your Meridian contact to raise one. Meridian employees must not ask suppliers to start work without a PO, except in the emergency situations described in the Procurement Manual.
+
+3. WHAT AN INVOICE MUST SHOW
+
+- The correct Meridian legal entity name and address (as shown on the PO)
+- The PO number in the format PO-45xxxxxxxx
+- Your supplier name, address and, where applicable, VAT, BTW, sales tax or SST registration number
+- A unique invoice number and invoice date
+- A description of goods or services matching the PO lines
+- Quantity, unit price, tax and total, in the currency shown on the PO
+- Your bank details, which must match those held in Atlas
+
+One invoice may cover one PO only. Please do not combine several POs on one invoice.
+
+4. WHERE TO SEND INVOICES
+
+Send invoices as PDF attachments, one invoice per PDF, to the mailbox for the entity that issued the PO:
+
+  United Kingdom (Leeds)        ap-invoices@meridian-instruments.example
+  Netherlands (Rotterdam)       ap-nl@meridian-instruments.example
+  United States (Austin)        ap-us@meridian-instruments.example
+  Malaysia (Penang)             ap-my@meridian-instruments.example
+
+Paper invoices are not accepted. Invoices sent to individual employees are not treated as received until they reach the correct mailbox.
+
+5. PAYMENT RUNS
+
+Accounts Payable makes payment runs every Tuesday and Thursday. An invoice is paid in the first payment run on or after its due date, provided that it has been matched to the PO and the goods receipt in Atlas and has been approved.
+
+Invoices are due according to the payment terms agreed in the PO or contract. Standard terms are described in the Procurement Manual (POL-FIN-012), section 11.
+
+6. CHANGES TO BANK DETAILS
+
+Requests to change bank details must be made on company letterhead and sent to the AP mailbox for the entity. Meridian will verify every change by telephone before it is applied, using contact details already held on file, not those given in the request. Meridian will never ask a supplier to change bank details by email alone. If you receive such a request that appears to come from Meridian, please report it to procurement@meridian-instruments.example.
+
+7. QUERIES AND DISPUTES
+
+If an invoice does not match the PO or goods receipt, AP places it on hold and contacts the Meridian requester. Suppliers will be told of any dispute within 10 working days of receipt. To check the status of an invoice, email the AP mailbox for the entity with the invoice number and PO number.
+
+8. CREDIT NOTES
+
+Credit notes must reference the original invoice number and PO number and be sent to the same mailbox as the original invoice.
+
+9. INTERNAL NOTE FOR MERIDIAN EMPLOYEES
+
+- Record goods receipts in Atlas promptly; invoices cannot be paid until the goods receipt is posted.
+- Never pass invoices directly to Finance colleagues to "speed things up"; forward them to the AP mailbox.
+- Contact procurement@meridian-instruments.example for supplier set-up and PO questions.

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TesseraCloud API Rate Limits</title>
+</head>
+<body>
+<h1>TesseraCloud API Rate Limits</h1>
+<p>Document ID: prod-tesseracloud-api-rate-limits-v2 | Version: 2 | Effective: 2025-07-01 | Supersedes: prod-tesseracloud-api-rate-limits-v1 | Owner: TesseraCloud Platform Team</p>
+
+<h2>Overview</h2>
+<p>The TesseraCloud REST API (base URL https://api.tesseracloud.meridian-instruments.com) applies rate limits to protect service quality for all customers. From 1 July 2025 (TesseraCloud release 2025.2), limits depend on the tenant's subscription plan and the readings endpoint is limited per device rather than per tenant. Limits apply across all API keys belonging to a tenant.</p>
+
+<h2>Limits by plan</h2>
+<table>
+<tr><th>Limit</th><th>Standard (TC-SUB-STD)</th><th>Enterprise (TC-SUB-ENT)</th></tr>
+<tr><td>Requests per tenant, all endpoints</td><td>300 requests per minute</td><td>1,200 requests per minute</td></tr>
+<tr><td>Burst allowance</td><td>50 requests per 10 seconds</td><td>200 requests per 10 seconds</td></tr>
+<tr><td>GET /v2/devices/{id}/readings</td><td>30 requests per minute per device</td><td>30 requests per minute per device</td></tr>
+<tr><td>POST /v2/exports</td><td>10 export jobs per hour</td><td>10 export jobs per hour</td></tr>
+<tr><td>Maximum page size (limit parameter)</td><td>500 items</td><td>500 items</td></tr>
+<tr><td>Default page size</td><td>100 items</td><td>100 items</td></tr>
+</table>
+<p>Webhook deliveries from TesseraCloud to your endpoints do not count towards any rate limit.</p>
+
+<h2>Rate limit headers</h2>
+<p>Every API response includes the following headers:</p>
+<ul>
+<li>X-RateLimit-Limit: the per-minute limit that applies to the request.</li>
+<li>X-RateLimit-Remaining: requests remaining in the current window.</li>
+<li>X-RateLimit-Reset: Unix timestamp (seconds) at which the window resets.</li>
+</ul>
+
+<h2>When a limit is exceeded</h2>
+<p>The API returns HTTP 429 Too Many Requests with error code TC-ERR-429 and a Retry-After header in seconds. Clients must honour Retry-After and use exponential back-off with jitter. An API key that continues to receive 429 responses for 15 consecutive minutes is suspended for 10 minutes, and the Tenant Owners are notified by email.</p>
+
+<h2>Bulk data</h2>
+<p>For historical backfills and data-warehouse loads, use export jobs (POST /v2/exports) instead of paging through the readings endpoint. An export job covers up to 31 days of raw readings and produces a compressed CSV or Parquet file. Temporary limit increases for migrations are no longer granted; export jobs are the supported alternative.</p>
+
+<h2>What changed from version 1</h2>
+<table>
+<tr><th>Item</th><th>Version 1 (June 2024)</th><th>Version 2 (July 2025)</th></tr>
+<tr><td>Tenant limit</td><td>600 requests per minute, all plans</td><td>300 per minute Standard, 1,200 per minute Enterprise</td></tr>
+<tr><td>Burst</td><td>100 per 10 seconds</td><td>50 per 10 seconds Standard, 200 per 10 seconds Enterprise</td></tr>
+<tr><td>Readings endpoint</td><td>120 requests per minute per tenant</td><td>30 requests per minute per device</td></tr>
+<tr><td>Maximum page size</td><td>1000</td><td>500</td></tr>
+<tr><td>Rate limit headers</td><td>Retry-After only (on 429)</td><td>X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset on every response</td></tr>
+<tr><td>Temporary increases</td><td>Up to 30 days on request</td><td>Not granted; use POST /v2/exports</td></tr>
+<tr><td>Key suspension</td><td>None</td><td>10 minutes after 15 minutes of continuous 429s</td></tr>
+</table>
+
+<h2>Related documents</h2>
+<ul>
+<li>TesseraCloud REST API Reference (prod-tesseracloud-api-reference)</li>
+<li>TesseraCloud Administrator Guide (prod-tesseracloud-admin-guide), section 10, API keys and integrations</li>
+</ul>
+</body>
+</html>

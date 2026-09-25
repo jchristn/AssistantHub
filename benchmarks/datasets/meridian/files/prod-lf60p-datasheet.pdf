@@ -1,0 +1,106 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4063 >>
+stream
+BT /F2 16 Tf 54 723 Td (Lumen LF-60P Optical Flow Meter Datasheet) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-lf60p-datasheet | Version: 1 | Effective: 2025-02-03 | Owner: Lumen Product) Tj ET
+BT /F1 10 Tf 54 688 Td (Management, Rotterdam) Tj ET
+BT /F2 13 Tf 54 663 Td (Overview) Tj ET
+BT /F1 10 Tf 54 641 Td (The Lumen LF-60P is an inline optical-correlation flow meter for clean and lightly loaded) Tj ET
+BT /F1 10 Tf 54 628 Td (liquids in process industry, high-pressure water injection and hot water applications. A pulsed) Tj ET
+BT /F1 10 Tf 54 615 Td (LED light sheet passes through two sapphire windows in the measuring tube, and the electronics) Tj ET
+BT /F1 10 Tf 54 602 Td (cross-correlate the particle and micro-bubble patterns seen by two receivers to calculate flow) Tj ET
+BT /F1 10 Tf 54 589 Td (velocity. With no moving parts and no obstruction in the bore, the LF-60P produces negligible) Tj ET
+BT /F1 10 Tf 54 576 Td (pressure loss and needs no routine recalibration.) Tj ET
+BT /F1 10 Tf 54 554 Td (The LF-60P is the high-pressure member of the Lumen family. It is rated PN40 \(40 bar\) and suits) Tj ET
+BT /F1 10 Tf 54 541 Td (pipe sizes from DN25 to DN150. For low-pressure utility work, or for DN200 lines, the LF-60 is) Tj ET
+BT /F1 10 Tf 54 528 Td (usually the more economical choice.) Tj ET
+BT /F2 13 Tf 54 503 Td (Key features) Tj ET
+BT /F1 10 Tf 54 481 Td (- Optical correlation measurement with a \2610.75% of reading accuracy across 0.5 to 15 m/s) Tj ET
+BT /F1 10 Tf 54 468 Td (- Full bore design with no moving parts and no pressure drop worth measuring) Tj ET
+BT /F1 10 Tf 54 455 Td (- 4-20 mA with HART 7, scaled pulse and Modbus RTU \(RS-485\) outputs as standard) Tj ET
+BT /F1 10 Tf 54 442 Td (- 316 stainless steel electronics housing with a 316L measuring tube and sapphire windows) Tj ET
+BT /F1 10 Tf 54 429 Td (- Integrated process pressure sensor for pressure-compensated density and diagnostics) Tj ET
+BT /F1 10 Tf 54 416 Td (- Two-line backlit display with local totaliser and diagnostics) Tj ET
+BT /F1 10 Tf 54 403 Td (- Works in water with turbidity as low as 0.2 NTU) Tj ET
+BT /F2 13 Tf 54 387 Td (Technical specifications) Tj ET
+BT /F2 9 Tf 54 366 Td (Parameter | LF-60P value) Tj ET
+BT /F1 9 Tf 54 354 Td (Nominal sizes | DN25 to DN150) Tj ET
+BT /F1 9 Tf 54 342 Td (Pressure rating | PN40 \(40 bar\)) Tj ET
+BT /F1 9 Tf 54 330 Td (Accuracy | \2610.75% of reading \(0.5 to 15 m/s\); \2610.4 cm/s below 0.5 m/s) Tj ET
+BT /F1 9 Tf 54 318 Td (Velocity range | 0.1 to 15 m/s) Tj ET
+BT /F1 9 Tf 54 306 Td (Repeatability | \2610.15%) Tj ET
+BT /F1 9 Tf 54 294 Td (Fluid temperature | -20 to +120 \260C) Tj ET
+BT /F1 9 Tf 54 282 Td (Ambient temperature | -40 to +60 \260C) Tj ET
+BT /F1 9 Tf 54 270 Td (Outputs | 4-20 mA with HART 7, pulse \(max 2 kHz\), Modbus RTU) Tj ET
+BT /F1 9 Tf 54 258 Td (Power supply | 24 VDC \26110%, 5.5 W) Tj ET
+BT /F1 9 Tf 54 246 Td (Ingress protection | IP67) Tj ET
+BT /F1 9 Tf 54 234 Td (Housing material | 316 stainless steel) Tj ET
+BT /F1 9 Tf 54 222 Td (Wetted materials | 316L stainless steel \(Hastelloy C-276 option\), sapphire windows, FKM seals) Tj ET
+BT /F1 9 Tf 54 210 Td (Process connection | EN 1092-1 PN40 flanges \(ASME Class 300 on request\)) Tj ET
+BT /F1 9 Tf 54 198 Td (Weight \(DN50\) | 9.8 kg) Tj ET
+BT /F1 9 Tf 54 186 Td (Straight run required | 15D upstream, 5D downstream) Tj ET
+BT /F1 9 Tf 54 174 Td (Modbus defaults | Address 1, 19200 baud, 8E1) Tj ET
+BT /F1 9 Tf 54 162 Td (Current firmware | 1.9.0) Tj ET
+BT /F1 9 Tf 54 150 Td (Cable entries | 2 x M20 x 1.5) Tj ET
+BT /F2 13 Tf 54 125 Td (Ordering information) Tj ET
+BT /F1 10 Tf 54 103 Td (Order codes follow the pattern LF60P-{size}-PN40, where the size is the three-digit nominal) Tj ET
+BT /F1 10 Tf 54 90 Td (diameter. For example, LF60P-050-PN40 is the DN50 meter and LF60P-100-PN40 is the DN100 meter.) Tj ET
+BT /F1 10 Tf 54 77 Td (Add the suffix -HC for Hastelloy C-276 wetted parts \(for example LF60P-050-PN40-HC\). Prices are) Tj ET
+BT /F1 10 Tf 54 64 Td (published in the current regional price list.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1442 >>
+stream
+BT /F2 13 Tf 54 726 Td (Typical applications) Tj ET
+BT /F1 10 Tf 54 704 Td (- Boiler feed water and condensate return up to 120 \260C) Tj ET
+BT /F1 10 Tf 54 691 Td (- High-pressure water injection and reverse osmosis feed) Tj ET
+BT /F1 10 Tf 54 678 Td (- Process water in chemical and pharmaceutical plants) Tj ET
+BT /F1 10 Tf 54 665 Td (- Flooded valve chambers and outdoor pits where IP67 is required) Tj ET
+BT /F2 13 Tf 54 649 Td (Installation notes) Tj ET
+BT /F1 10 Tf 54 627 Td (Install the LF-60P with at least 15 pipe diameters of straight pipe upstream and 5 downstream) Tj ET
+BT /F1 10 Tf 54 614 Td (of the meter. The measuring tube must remain full; on vertical pipes, install with upward flow.) Tj ET
+BT /F1 10 Tf 54 601 Td (Grounding rings are mandatory on non-conductive or lined pipe. Full installation, wiring, HART) Tj ET
+BT /F1 10 Tf 54 588 Td (commissioning and flange bolting instructions are given in the Lumen LF-60P Installation Manual) Tj ET
+BT /F1 10 Tf 54 575 Td (\(prod-lf60p-installation-manual\).) Tj ET
+BT /F2 13 Tf 54 550 Td (Compliance) Tj ET
+BT /F1 10 Tf 54 528 Td (CE and UKCA marked. Pressure Equipment Directive 2014/68/EU, category I for DN25 to DN50,) Tj ET
+BT /F1 10 Tf 54 515 Td (category II for DN65 to DN150. EMC to EN 61326-1 industrial environment. HART registered with) Tj ET
+BT /F1 10 Tf 54 502 Td (FieldComm Group, device revision 3. The LF-60P is not certified for use in hazardous areas.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004386 00000 n 
+0000004522 00000 n 
+0000006016 00000 n 
+0000006152 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+6201
+%%EOF

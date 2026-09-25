@@ -2120,8 +2120,8 @@ namespace Test.Automated
                     }).ConfigureAwait(false);
 
                 AssertHelper.HasCount(vectorStore.Calls, 1, "RecallDB calls");
-                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentId\":\"adoc_one\"", "single document filter");
-                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("DocumentIds"), "single document IDs omitted");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentIds\":[\"adoc_one\"]", "single document filter");
+                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("\"DocumentId\":", StringComparison.Ordinal), "singular DocumentId (ignored by RecallDB) not sent");
             });
 
             await ExecuteTestAsync("RetrievalService.RetrieveAsync: includes multiple document filter in search body", async () =>
@@ -2178,10 +2178,10 @@ namespace Test.Automated
                     }).ConfigureAwait(false);
 
                 AssertHelper.HasCount(vectorStore.Calls, 2, "RecallDB fallback calls");
-                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentId\":\"adoc_one\"", "first fallback document filter");
-                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"DocumentId\":\"adoc_two\"", "second fallback document filter");
-                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("DocumentIds", StringComparison.Ordinal), "first fallback omits DocumentIds");
-                AssertHelper.IsFalse(vectorStore.Calls[1].Body.Contains("DocumentIds", StringComparison.Ordinal), "second fallback omits DocumentIds");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentIds\":[\"adoc_one\"]", "first fallback document filter");
+                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"DocumentIds\":[\"adoc_two\"]", "second fallback document filter");
+                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("adoc_two", StringComparison.Ordinal), "first fallback scoped to one document");
+                AssertHelper.IsFalse(vectorStore.Calls[1].Body.Contains("adoc_one", StringComparison.Ordinal), "second fallback scoped to one document");
                 AssertHelper.HasCount(chunks, 2, "fallback chunks");
                 AssertHelper.AreEqual("adoc_two", chunks[0].DocumentId, "fallback chunks sorted by score");
             });
@@ -2392,7 +2392,7 @@ namespace Test.Automated
                 AssertHelper.AreEqual("attached summary", result.Response.Choices[0].Message.Content, "final answer");
                 AssertHelper.AreEqual(2, handler.Requests.Count, "gate and final model calls");
                 AssertHelper.HasCount(vectorStore.Calls, 1, "RecallDB calls");
-                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentId\":\"adoc_attach_summary\"", "attached document filter");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentIds\":[\"adoc_attach_summary\"]", "attached document filter");
                 AssertHelper.IsNotNull(result.Response.Retrieval, "retrieval metadata");
                 AssertHelper.IsTrue(result.Response.Retrieval.DocumentFilterApplied, "document filter metadata");
                 AssertHelper.HasCount(result.Response.Retrieval.AttachedDocumentIds, 1, "attached document metadata ids");
@@ -2624,6 +2624,241 @@ namespace Test.Automated
                 AssertHelper.AreEqual(1, result.Response.Retrieval.RerankOutputCount, "rerank output count after attachment filter");
                 AssertHelper.HasCount(result.Response.Retrieval.Chunks, 1, "reranked retrieval chunks");
                 AssertHelper.AreEqual("adoc_rerank_selected", result.Response.Retrieval.Chunks[0].DocumentId, "reranked retrieval document");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteRetrievalOnlyAsync: returns stages and per-leg scores without inference", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                await database.Assistant.CreateAsync(assistant).ConfigureAwait(false);
+                AssistantSettings settings = CreateToolSettings(new AssistantToolPolicy());
+                settings.EnableRag = true;
+                settings.EnableReranking = false;
+                settings.EnableAnswerabilityCheck = false;
+                settings.InferenceEndpointId = "cep_retrieve_only";
+                await database.AssistantSettings.CreateAsync(settings).ConfigureAwait(false);
+
+                MockHttpMessageHandler handler = new MockHttpMessageHandler();
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(new InferenceSettings(), CreateSilentLogging(), httpClient);
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(
+                    HttpStatusCode.OK,
+                    "{\"Documents\":[" +
+                    "{\"DocumentId\":\"adoc_a\",\"Score\":1.0,\"VectorScore\":0.81,\"TextScore\":0.12,\"VectorRank\":1,\"TextRank\":1,\"Content\":\"alpha\",\"Position\":0}," +
+                    "{\"DocumentId\":\"adoc_b\",\"Score\":0.3,\"TextScore\":0.05,\"TextRank\":1,\"Content\":\"beta\",\"Position\":3}" +
+                    "]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+                AssistantChatService service = new AssistantChatService(database, CreateSilentLogging(), new AssistantHubSettings(), retrieval, inference);
+
+                AssistantRetrievalExecutionResult result = await service.ExecuteRetrievalOnlyAsync(
+                    assistant.Id,
+                    new AssistantRetrieveRequest { Query = "what is alpha?" }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "retrieve-only success");
+                AssertHelper.AreEqual(0, handler.Requests.Count, "retrieve-only must not call the model");
+                AssertHelper.IsTrue(result.Response.Retrieved, "retrieval ran");
+                AssertHelper.AreEqual("Hybrid", result.Response.SearchMode, "search mode");
+                AssertHelper.HasCount(result.Response.Queries, 1, "one query issued");
+                AssertHelper.HasCount(result.Response.Chunks, 2, "final chunks");
+                AssertHelper.AreEqual(0.81, result.Response.Chunks[0].VectorScore, "vector score passed through");
+                AssertHelper.AreEqual(1, result.Response.Chunks[0].VectorRank, "vector rank passed through");
+                AssertHelper.IsNull(result.Response.Chunks[1].VectorScore, "text-only hit has no vector score");
+                AssertHelper.AreEqual(1, result.Response.Chunks[1].TextRank, "text rank passed through");
+                AssertHelper.AreEqual("not_checked", result.Response.AnswerabilityDecision, "answerability not checked");
+                AssertHelper.IsNotNull(result.Response.Stages, "stages captured");
+                AssertHelper.AreEqual("search", result.Response.Stages[0].Stage, "first stage is search");
+                AssertHelper.AreEqual("what is alpha?", result.Response.Stages[0].Query, "search stage query");
+                AssertHelper.AreEqual("fused", result.Response.Stages[1].Stage, "second stage is fused");
+
+                AssistantRetrievalExecutionResult empty = await service.ExecuteRetrievalOnlyAsync(assistant.Id, new AssistantRetrieveRequest()).ConfigureAwait(false);
+                AssertHelper.IsFalse(empty.Success, "missing query rejected");
+                AssertHelper.AreEqual(400, empty.StatusCode, "missing query status");
+
+                AssistantRetrievalExecutionResult missing = await service.ExecuteRetrievalOnlyAsync("asst_missing", new AssistantRetrieveRequest { Query = "x" }).ConfigureAwait(false);
+                AssertHelper.AreEqual(404, missing.StatusCode, "missing assistant status");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteRetrievalOnlyAsync: flags an unparseable rerank reply and keeps retrieval order", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                await database.Assistant.CreateAsync(assistant).ConfigureAwait(false);
+                AssistantSettings settings = CreateToolSettings(new AssistantToolPolicy());
+                settings.EnableRag = true;
+                settings.EnableReranking = true;
+                settings.RerankerTopK = 5;
+                settings.RerankerScoreThreshold = 0;
+                settings.SearchMode = "FullText";
+                settings.InferenceEndpointId = "cep_rerank_bad";
+                await database.AssistantSettings.CreateAsync(settings).ConfigureAwait(false);
+
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request => new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(
+                            "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"I think chunk one is best.\"}}]," +
+                            "\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":6,\"total_tokens\":16}}",
+                            Encoding.UTF8,
+                            "application/json")
+                    });
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings { Provider = InferenceProviderEnum.OpenAI, Endpoint = "https://openai-compatible.test/v1", ApiKey = "k", DefaultModel = "qwen3" },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(
+                    HttpStatusCode.OK,
+                    "{\"Documents\":[" +
+                    "{\"DocumentId\":\"adoc_first\",\"Score\":0.9,\"Content\":\"first\",\"Position\":0}," +
+                    "{\"DocumentId\":\"adoc_second\",\"Score\":0.4,\"Content\":\"second\",\"Position\":0}" +
+                    "]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    retrieval,
+                    inference,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_rerank_bad",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "k",
+                        Model = "qwen3",
+                        Active = true,
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantRetrievalExecutionResult result = await service.ExecuteRetrievalOnlyAsync(
+                    assistant.Id,
+                    new AssistantRetrieveRequest { Query = "which is first?" }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "retrieve-only success");
+                AssertHelper.AreEqual(1, handler.Requests.Count, "only the rerank call is made");
+                AssertHelper.IsTrue(result.Response.RerankParseFailed, "unparseable rerank flagged");
+                AssertHelper.AreEqual(2, result.Response.RerankInputCount, "rerank input count");
+                AssertHelper.HasCount(result.Response.Chunks, 2, "chunks kept on rerank failure");
+                AssertHelper.AreEqual("adoc_first", result.Response.Chunks[0].DocumentId, "retrieval order kept");
+                AssertHelper.AreEqual("rerank", result.Response.Stages[result.Response.Stages.Count - 1].Stage, "rerank stage captured");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: retries a 429 from the embedding endpoint and flags exhausted retries", async () =>
+            {
+                RecordingChunkingService chunking = new RecordingChunkingService();
+                chunking.Enqueue(HttpStatusCode.TooManyRequests, "{\"Error\":\"TooManyRequests\"}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_r\",\"Score\":0.8,\"Content\":\"retried\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(
+                    new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 },
+                    new RecallDbSettings(),
+                    CreateSilentLogging(),
+                    vectorStore,
+                    chunking);
+
+                RetrievalSearchOptions options = new RetrievalSearchOptions { SearchMode = "Vector" };
+                List<RetrievalChunk> chunks = await retrieval.RetrieveAsync("tenant_r", "col_r", "query", 5, 0, default, null, options).ConfigureAwait(false);
+                AssertHelper.HasCount(chunks, 1, "results after retry");
+                AssertHelper.AreEqual(2, chunking.Calls.Count, "embedding attempted twice");
+                AssertHelper.IsFalse(options.EmbeddingFailed, "not flagged after a successful retry");
+
+                RecordingChunkingService failing = new RecordingChunkingService();
+                for (int i = 0; i < 4; i++) failing.Enqueue(HttpStatusCode.TooManyRequests, "{}");
+                RetrievalService exhausted = new RetrievalService(
+                    new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 },
+                    new RecallDbSettings(),
+                    CreateSilentLogging(),
+                    new RecordingVectorStoreService(),
+                    failing);
+                RetrievalSearchOptions failedOptions = new RetrievalSearchOptions { SearchMode = "Hybrid" };
+                List<RetrievalChunk> none = await exhausted.RetrieveAsync("tenant_r", "col_r", "query", 5, 0, default, null, failedOptions).ConfigureAwait(false);
+                AssertHelper.HasCount(none, 0, "no results when embedding fails");
+                AssertHelper.AreEqual(4, failing.Calls.Count, "one attempt plus three retries");
+                AssertHelper.IsTrue(failedOptions.EmbeddingFailed, "embedding failure flagged");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: retries a Partio 500 that wraps an upstream 429", async () =>
+            {
+                AssertHelper.IsTrue(IngestionServiceBase.IsWrappedTransientPartioError(500, "{\"Error\":\"InternalError\",\"Message\":\"HTTP 429: {\\\"Code\\\":\\\"TooManyRequests\\\"}\"}"), "wrapped 429 is transient");
+                AssertHelper.IsFalse(IngestionServiceBase.IsWrappedTransientPartioError(500, "{\"Error\":\"InternalError\",\"Message\":\"tokenizer failed\"}"), "other 500s are not transient");
+                AssertHelper.IsFalse(IngestionServiceBase.IsWrappedTransientPartioError(400, "HTTP 429"), "only 500 is unwrapped");
+
+                RecordingChunkingService chunking = new RecordingChunkingService();
+                chunking.Enqueue(HttpStatusCode.InternalServerError, "{\"Error\":\"InternalError\",\"Message\":\"HTTP 429: All eligible endpoints are at capacity.\"}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_w\",\"Score\":0.8,\"Content\":\"wrapped\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 }, new RecallDbSettings(), CreateSilentLogging(), vectorStore, chunking);
+                RetrievalSearchOptions options = new RetrievalSearchOptions { SearchMode = "Vector" };
+                List<RetrievalChunk> chunks = await retrieval.RetrieveAsync("tenant_w", "col_w", "query", 5, 0, default, null, options).ConfigureAwait(false);
+                AssertHelper.HasCount(chunks, 1, "results after retrying the wrapped 429");
+                AssertHelper.AreEqual(2, chunking.Calls.Count, "embedding retried once");
+            });
+
+            await ExecuteTestAsync("AssistantChatService.ExecuteNonStreamingAsync: reports hybrid fallback in retrieval metadata", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                Assistant assistant = CreateToolAssistant();
+                AssistantSettings settings = CreateToolSettings(new AssistantToolPolicy());
+                settings.EnableRag = true;
+                settings.EnableReranking = false;
+                settings.InferenceEndpointId = "cep_hybrid_fallback";
+
+                MockHttpMessageHandler handler = new MockHttpMessageHandler()
+                    .When("chat/completions", request => new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(
+                            "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"fallback answer\"}}]," +
+                            "\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":2,\"total_tokens\":12}}",
+                            Encoding.UTF8,
+                            "application/json")
+                    });
+                using HttpClient httpClient = handler.CreateClient();
+                InferenceService inference = new InferenceService(
+                    new InferenceSettings { Provider = InferenceProviderEnum.OpenAI, Endpoint = "https://openai-compatible.test/v1", ApiKey = "k", DefaultModel = "qwen3" },
+                    CreateSilentLogging(),
+                    httpClient);
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[]}");
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_vec\",\"Score\":0.66,\"Content\":\"vector only\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+                AssistantChatService service = new AssistantChatService(
+                    database,
+                    CreateSilentLogging(),
+                    new AssistantHubSettings(),
+                    retrieval,
+                    inference,
+                    inferenceEndpoints: new RecordingInferenceEndpointService(new PartioEndpointConfig
+                    {
+                        Id = "cep_hybrid_fallback",
+                        Endpoint = "https://openai-compatible.test/v1",
+                        ApiFormat = "OpenAI",
+                        ApiKey = "k",
+                        Model = "qwen3",
+                        Active = true,
+                        MaxConcurrentRequests = 1
+                    }));
+
+                AssistantChatExecutionResult result = await service.ExecuteNonStreamingAsync(
+                    new AssistantChatExecutionRequest
+                    {
+                        AssistantId = assistant.Id,
+                        Assistant = assistant,
+                        AssistantSettings = settings,
+                        Messages = new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "user", Content = "anything?" } }
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "chat success");
+                AssertHelper.IsTrue(result.Response.Retrieval.HybridFallbackRan, "hybrid fallback reported");
+                AssertHelper.AreEqual(1, result.Response.Retrieval.QueryCount, "query count reported");
+                AssertHelper.HasCount(result.Response.Retrieval.Chunks, 1, "fallback chunk returned");
+                AssertHelper.AreEqual(0.66, result.Response.Retrieval.Chunks[0].VectorScore, "fallback score is a vector score");
             });
 
             await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: Verbex search uses mapped index and filters documents", async () =>

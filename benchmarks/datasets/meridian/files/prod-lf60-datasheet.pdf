@@ -1,0 +1,103 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 3823 >>
+stream
+BT /F2 16 Tf 54 723 Td (Lumen LF-60 Optical Flow Meter Datasheet) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: prod-lf60-datasheet | Version: 1 | Effective: 2025-02-03 | Owner: Lumen Product) Tj ET
+BT /F1 10 Tf 54 688 Td (Management, Rotterdam) Tj ET
+BT /F2 13 Tf 54 663 Td (Overview) Tj ET
+BT /F1 10 Tf 54 641 Td (The Lumen LF-60 is an inline optical-correlation flow meter for clean and lightly loaded) Tj ET
+BT /F1 10 Tf 54 628 Td (liquids in general industrial, building services and water distribution applications. A pulsed) Tj ET
+BT /F1 10 Tf 54 615 Td (LED light sheet passes through two sapphire windows in the measuring tube, and the electronics) Tj ET
+BT /F1 10 Tf 54 602 Td (cross-correlate the particle and micro-bubble patterns seen by two receivers to calculate flow) Tj ET
+BT /F1 10 Tf 54 589 Td (velocity. With no moving parts and no obstruction in the bore, the LF-60 produces negligible) Tj ET
+BT /F1 10 Tf 54 576 Td (pressure loss and needs no routine recalibration.) Tj ET
+BT /F1 10 Tf 54 554 Td (The LF-60 is the standard-pressure member of the Lumen family. It is rated PN16 \(16 bar\) and) Tj ET
+BT /F1 10 Tf 54 541 Td (suits pipe sizes from DN25 to DN200. For higher pressures, higher fluid temperatures, HART) Tj ET
+BT /F1 10 Tf 54 528 Td (communication or IP67 installations, specify the LF-60P.) Tj ET
+BT /F2 13 Tf 54 503 Td (Key features) Tj ET
+BT /F1 10 Tf 54 481 Td (- Optical correlation measurement with a \2611.0% of reading accuracy across 0.5 to 12 m/s) Tj ET
+BT /F1 10 Tf 54 468 Td (- Full bore design with no moving parts and no pressure drop worth measuring) Tj ET
+BT /F1 10 Tf 54 455 Td (- 4-20 mA, scaled pulse and Modbus RTU \(RS-485\) outputs as standard) Tj ET
+BT /F1 10 Tf 54 442 Td (- Aluminium electronics housing with a 316L measuring tube and sapphire windows) Tj ET
+BT /F1 10 Tf 54 429 Td (- Two-line backlit display with local totaliser and diagnostics) Tj ET
+BT /F1 10 Tf 54 416 Td (- Works in water with turbidity as low as 0.2 NTU) Tj ET
+BT /F2 13 Tf 54 400 Td (Technical specifications) Tj ET
+BT /F2 9 Tf 54 379 Td (Parameter | LF-60 value) Tj ET
+BT /F1 9 Tf 54 367 Td (Nominal sizes | DN25 to DN200) Tj ET
+BT /F1 9 Tf 54 355 Td (Pressure rating | PN16 \(16 bar\)) Tj ET
+BT /F1 9 Tf 54 343 Td (Accuracy | \2611.0% of reading \(0.5 to 12 m/s\); \2610.5 cm/s below 0.5 m/s) Tj ET
+BT /F1 9 Tf 54 331 Td (Velocity range | 0.1 to 12 m/s) Tj ET
+BT /F1 9 Tf 54 319 Td (Repeatability | \2610.2%) Tj ET
+BT /F1 9 Tf 54 307 Td (Fluid temperature | -10 to +80 \260C) Tj ET
+BT /F1 9 Tf 54 295 Td (Ambient temperature | -20 to +60 \260C) Tj ET
+BT /F1 9 Tf 54 283 Td (Outputs | 4-20 mA, pulse \(max 1 kHz\), Modbus RTU) Tj ET
+BT /F1 9 Tf 54 271 Td (Power supply | 24 VDC \26110%, 4 W) Tj ET
+BT /F1 9 Tf 54 259 Td (Ingress protection | IP65) Tj ET
+BT /F1 9 Tf 54 247 Td (Housing material | Powder-coated aluminium) Tj ET
+BT /F1 9 Tf 54 235 Td (Wetted materials | 316L stainless steel, sapphire windows, EPDM seals) Tj ET
+BT /F1 9 Tf 54 223 Td (Process connection | EN 1092-1 PN16 flanges \(ASME Class 150 on request\)) Tj ET
+BT /F1 9 Tf 54 211 Td (Weight \(DN50\) | 6.2 kg) Tj ET
+BT /F1 9 Tf 54 199 Td (Straight run required | 10D upstream, 5D downstream) Tj ET
+BT /F1 9 Tf 54 187 Td (Modbus defaults | Address 1, 9600 baud, 8N1) Tj ET
+BT /F1 9 Tf 54 175 Td (Current firmware | 1.8.2) Tj ET
+BT /F1 9 Tf 54 163 Td (Cable entries | 2 x M20 x 1.5) Tj ET
+BT /F2 13 Tf 54 138 Td (Ordering information) Tj ET
+BT /F1 10 Tf 54 116 Td (Order codes follow the pattern LF60-{size}-PN16, where the size is the three-digit nominal) Tj ET
+BT /F1 10 Tf 54 103 Td (diameter. For example, LF60-050-PN16 is the DN50 meter and LF60-100-PN16 is the DN100 meter.) Tj ET
+BT /F1 10 Tf 54 90 Td (Prices are published in the current regional price list.) Tj ET
+BT /F2 13 Tf 54 65 Td (Typical applications) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1201 >>
+stream
+BT /F1 10 Tf 54 729 Td (- District heating and chilled water circuits below 80 \260C) Tj ET
+BT /F1 10 Tf 54 716 Td (- Potable water distribution and pumping stations) Tj ET
+BT /F1 10 Tf 54 703 Td (- Cooling water monitoring on process plant) Tj ET
+BT /F1 10 Tf 54 690 Td (- Irrigation and treated effluent at low pressure) Tj ET
+BT /F2 13 Tf 54 674 Td (Installation notes) Tj ET
+BT /F1 10 Tf 54 652 Td (Install the LF-60 with at least 10 pipe diameters of straight pipe upstream and 5 downstream of) Tj ET
+BT /F1 10 Tf 54 639 Td (the meter. The measuring tube must remain full; on vertical pipes, install with upward flow.) Tj ET
+BT /F1 10 Tf 54 626 Td (Full installation, wiring and flange bolting instructions are given in the Lumen LF-60) Tj ET
+BT /F1 10 Tf 54 613 Td (Installation Manual \(prod-lf60-installation-manual\).) Tj ET
+BT /F2 13 Tf 54 588 Td (Compliance) Tj ET
+BT /F1 10 Tf 54 566 Td (CE and UKCA marked. Pressure Equipment Directive 2014/68/EU, sound engineering practice for) Tj ET
+BT /F1 10 Tf 54 553 Td (DN25 to DN50, category I for DN65 to DN200. EMC to EN 61326-1 industrial environment. The LF-60) Tj ET
+BT /F1 10 Tf 54 540 Td (is not certified for use in hazardous areas.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004146 00000 n 
+0000004282 00000 n 
+0000005535 00000 n 
+0000005671 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5720
+%%EOF

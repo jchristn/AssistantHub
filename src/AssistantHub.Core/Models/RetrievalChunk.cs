@@ -42,6 +42,25 @@ namespace AssistantHub.Core.Models
         public double? TextScore { get; set; }
 
         /// <summary>
+        /// Raw vector similarity reported by the store (null when the vector leg did not score this chunk).
+        /// In hybrid mode <see cref="Score"/> is the fused score, so this is the only raw similarity available.
+        /// </summary>
+        [JsonPropertyName("vector_score")]
+        public double? VectorScore { get; set; } = null;
+
+        /// <summary>
+        /// 1-based rank in the hybrid vector leg (null outside hybrid search or when absent from that leg).
+        /// </summary>
+        [JsonPropertyName("vector_rank")]
+        public int? VectorRank { get; set; } = null;
+
+        /// <summary>
+        /// 1-based rank in the hybrid text leg (null outside hybrid search or when absent from that leg).
+        /// </summary>
+        [JsonPropertyName("text_rank")]
+        public int? TextRank { get; set; } = null;
+
+        /// <summary>
         /// Text content of the matching chunk.
         /// </summary>
         [JsonPropertyName("content")]
@@ -97,6 +116,28 @@ namespace AssistantHub.Core.Models
 
                 return sb.ToString();
             }
+        }
+
+        /// <summary>
+        /// Copy the chunk's identity and scores (not its neighbors) so a pipeline stage can be snapshotted before a
+        /// later stage mutates or reorders the list.
+        /// </summary>
+        /// <returns>A shallow copy without neighbors.</returns>
+        public RetrievalChunk CloneForSnapshot()
+        {
+            return new RetrievalChunk
+            {
+                DocumentId = DocumentId,
+                Score = Score,
+                RerankScore = RerankScore,
+                FusionScore = FusionScore,
+                TextScore = TextScore,
+                VectorScore = VectorScore,
+                VectorRank = VectorRank,
+                TextRank = TextRank,
+                Content = Content,
+                Position = Position
+            };
         }
     }
 }

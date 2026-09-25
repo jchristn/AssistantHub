@@ -1,0 +1,47 @@
+Lumen Firmware 1.9.0 Release Notes
+
+Document ID: prod-lumen-firmware-1-9-0-release-notes | Version: 1 | Released: 2025-03-03 | Owner: Lumen Engineering, Rotterdam
+
+Applicability
+
+Firmware 1.9.0 applies to the Lumen LF-60P only. It is not available for the LF-60, which remains on firmware 1.8.2 as its current release. Attempting to load a 1.9.0 image onto an LF-60 is blocked by Meridian Link with the message "Image not valid for this hardware (LF-60)".
+
+LF-60P meters must be on firmware 1.8.2 before upgrading to 1.9.0. Meters on 1.8.0 or 1.8.1 must first be updated to 1.8.2.
+
+New features
+
+- HART 7 device revision 3. Adds process pressure and fluid temperature as dynamic variables. New DD and DTM files are published on the Meridian Support Centre download page.
+
+- Pressure compensation. The integrated pressure sensor is now used to correct the correlation velocity for density changes at high line pressure, improving accuracy above 25 bar.
+
+- New Modbus input registers 30013 (process pressure) and 30025 (verification code).
+
+- In-situ verification report under Menu > Diagnostics > Verification, also available over HART device-specific command 140.
+
+- Fail-safe current can now be set to 21.0 mA as well as 3.6 mA.
+
+Fixes
+
+- Fixed false L-204 low signal quality warnings in aerated flows at velocities above 10 m/s.
+
+- Fixed a totaliser rounding error that could lose up to 0.001 m3 per day on DN25 meters at very low flow.
+
+- Fixed the display freezing for up to 4 seconds when scrolling to the pressure screen.
+
+- L-222 HART communication fault is now cleared automatically once communication recovers for 30 seconds.
+
+Known issues
+
+- On meters with the -HC Hastelloy option, the verification code may differ by one digit from the factory value after the upgrade. Record a new baseline code after upgrading.
+
+Upgrade procedure
+
+1. Connect Meridian Link 4.2 or later to the RS-485 service connection.
+
+2. Back up the meter configuration with File > Save Configuration.
+
+3. Select Device > Firmware Update and choose the image LF60P_1.9.0.mfw.
+
+4. The update takes about 6 minutes. The meter outputs the fail-safe current during the update.
+
+5. After restart, confirm the display shows 1.9.0 and restore the configuration if required.

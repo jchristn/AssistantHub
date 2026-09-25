@@ -1,0 +1,1071 @@
+[
+  {
+    "id": "hr-travel-expense-policy-v1",
+    "title": "Travel and Expense Policy (v1, 2024)",
+    "source": "hr/hr-travel-expense-policy-v1.md",
+    "format": "pdf",
+    "summary": "POL-FIN-007 v1: per-diem rates, hotel caps, approval thresholds and claim rules for business travel (superseded).",
+    "labels": [
+      "hr",
+      "finance",
+      "policy",
+      "travel",
+      "expenses"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-04-01",
+    "version": "1"
+  },
+  {
+    "id": "hr-travel-expense-policy-v2",
+    "title": "Travel and Expense Policy (v2, 2025)",
+    "source": "hr/hr-travel-expense-policy-v2.md",
+    "format": "pdf",
+    "summary": "POL-FIN-007 v2: revised per-diem rates, hotel caps, approval thresholds and claim deadlines for business travel.",
+    "labels": [
+      "hr",
+      "finance",
+      "policy",
+      "travel",
+      "expenses"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-04-01",
+    "version": "2",
+    "supersedes": "hr-travel-expense-policy-v1"
+  },
+  {
+    "id": "hr-remote-work-policy-v1",
+    "title": "Remote and Hybrid Working Policy (v1, 2023)",
+    "source": "hr/hr-remote-work-policy-v1.md",
+    "format": "docx",
+    "summary": "POL-HR-022 v1: hybrid attendance of two office days a week, home office allowance and work-from-abroad rules (superseded).",
+    "labels": [
+      "hr",
+      "policy",
+      "remote-work"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2023"
+    },
+    "date": "2023-09-01",
+    "version": "1"
+  },
+  {
+    "id": "hr-remote-work-policy-v2",
+    "title": "Remote and Hybrid Working Policy (v2, 2025)",
+    "source": "hr/hr-remote-work-policy-v2.md",
+    "format": "md",
+    "summary": "POL-HR-022 v2: three office days a week with anchor days, higher home office allowance and 20 days work from abroad.",
+    "labels": [
+      "hr",
+      "policy",
+      "remote-work"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-01-06",
+    "version": "2",
+    "supersedes": "hr-remote-work-policy-v1"
+  },
+  {
+    "id": "hr-parental-leave-policy-v1",
+    "title": "Parental Leave Policy (v1, 2023)",
+    "source": "hr/hr-parental-leave-policy-v1.md",
+    "format": "pdf",
+    "summary": "POL-HR-031 v1: enhanced maternity, adoption and partner leave pay with 26 weeks qualifying service (superseded).",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "family"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2023"
+    },
+    "date": "2023-04-01",
+    "version": "1"
+  },
+  {
+    "id": "hr-parental-leave-policy-v2",
+    "title": "Parental Leave Policy (v2, 2025)",
+    "source": "hr/hr-parental-leave-policy-v2.md",
+    "format": "pdf",
+    "summary": "POL-HR-031 v2: 20 weeks full pay for birth parents, 6 weeks partner leave, neonatal leave and day-one eligibility.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "family"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-06-01",
+    "version": "2",
+    "supersedes": "hr-parental-leave-policy-v1"
+  },
+  {
+    "id": "hr-sickness-absence-policy-v1",
+    "title": "Sickness Absence Policy (v1, 2022)",
+    "source": "hr/hr-sickness-absence-policy-v1.md",
+    "format": "docx",
+    "summary": "POL-HR-017 v1: reporting sickness, self-certification, company sick pay by service and Bradford factor triggers (superseded).",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "sickness"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2022"
+    },
+    "date": "2022-11-01",
+    "version": "1"
+  },
+  {
+    "id": "hr-sickness-absence-policy-v2",
+    "title": "Sickness Absence Policy (v2, 2025)",
+    "source": "hr/hr-sickness-absence-policy-v2.md",
+    "format": "md",
+    "summary": "POL-HR-017 v2: reporting sickness in Keel, extended company sick pay and new absence review triggers.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "sickness"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-03-01",
+    "version": "2",
+    "supersedes": "hr-sickness-absence-policy-v1"
+  },
+  {
+    "id": "fin-delegation-of-authority-v1",
+    "title": "Delegation of Authority and Approval Matrix (v1, 2024)",
+    "source": "hr/fin-delegation-of-authority-v1.md",
+    "format": "pdf",
+    "summary": "POL-FIN-003 v1: financial approval limits for spend commitments, capex and contracts (superseded).",
+    "labels": [
+      "finance",
+      "policy",
+      "approvals"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-04-01",
+    "version": "1"
+  },
+  {
+    "id": "fin-delegation-of-authority-v2",
+    "title": "Delegation of Authority and Approval Matrix (v2, 2025)",
+    "source": "hr/fin-delegation-of-authority-v2.md",
+    "format": "pdf",
+    "summary": "POL-FIN-003 v2: revised approval limits after removal of the Finance Director role.",
+    "labels": [
+      "finance",
+      "policy",
+      "approvals"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-04-01",
+    "version": "2",
+    "supersedes": "fin-delegation-of-authority-v1"
+  },
+  {
+    "id": "fin-corporate-card-policy-v1",
+    "title": "Corporate Card Policy (v1, 2023)",
+    "source": "hr/fin-corporate-card-policy-v1.md",
+    "format": "md",
+    "summary": "POL-FIN-009 v1: corporate card eligibility, transaction and monthly limits, reconciliation and cash rules (superseded).",
+    "labels": [
+      "finance",
+      "policy",
+      "expenses",
+      "corporate-card"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2023"
+    },
+    "date": "2023-10-01",
+    "version": "1"
+  },
+  {
+    "id": "fin-corporate-card-policy-v2",
+    "title": "Corporate Card Policy (v2, 2025)",
+    "source": "hr/fin-corporate-card-policy-v2.md",
+    "format": "docx",
+    "summary": "POL-FIN-009 v2: higher card limits, faster reconciliation deadline and a ban on cash withdrawals.",
+    "labels": [
+      "finance",
+      "policy",
+      "expenses",
+      "corporate-card"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-02-01",
+    "version": "2",
+    "supersedes": "fin-corporate-card-policy-v1"
+  },
+  {
+    "id": "corp-whistleblowing-policy-v1",
+    "title": "Whistleblowing Policy (v1, 2022)",
+    "source": "hr/corp-whistleblowing-policy-v1.md",
+    "format": "pdf",
+    "summary": "POL-CORP-004 v1: how to raise concerns via the ethics mailbox and the Clearline Ethics hotline (superseded).",
+    "labels": [
+      "corporate",
+      "policy",
+      "compliance",
+      "whistleblowing"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2022"
+    },
+    "date": "2022-06-01",
+    "version": "1"
+  },
+  {
+    "id": "corp-whistleblowing-policy-v2",
+    "title": "Speak Up Policy (v2, 2025)",
+    "source": "hr/corp-whistleblowing-policy-v2.md",
+    "format": "md",
+    "summary": "POL-CORP-004 v2: the Meridian Speak Up portal, regional hotline numbers, response times and protections.",
+    "labels": [
+      "corporate",
+      "policy",
+      "compliance",
+      "whistleblowing"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-09-01",
+    "version": "2",
+    "supersedes": "corp-whistleblowing-policy-v1"
+  },
+  {
+    "id": "hr-leave-entitlement-uk",
+    "title": "Holiday and Leave Entitlement - United Kingdom",
+    "source": "hr/hr-leave-entitlement-uk.md",
+    "format": "md",
+    "summary": "POL-HR-014: annual leave, bank holidays, carry-over and other leave for UK employees.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "uk"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "uk",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-leave-entitlement-nl",
+    "title": "Holiday and Leave Entitlement - Netherlands",
+    "source": "hr/hr-leave-entitlement-nl.md",
+    "format": "md",
+    "summary": "POL-HR-014-NL: annual leave, public holidays, holiday allowance and expiry rules for Rotterdam employees.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "nl"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "nl",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-01-01"
+  },
+  {
+    "id": "hr-leave-entitlement-us",
+    "title": "Holiday and Leave Entitlement - United States",
+    "source": "hr/hr-leave-entitlement-us.md",
+    "format": "md",
+    "summary": "POL-HR-014-US: PTO accrual, company holidays, floating holidays and sick time for Austin employees.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "us"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "us",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-leave-entitlement-my",
+    "title": "Holiday and Leave Entitlement - Malaysia",
+    "source": "hr/hr-leave-entitlement-my.md",
+    "format": "md",
+    "summary": "POL-HR-014-MY: annual leave by service, gazetted holidays, sick and hospitalisation leave for Penang employees.",
+    "labels": [
+      "hr",
+      "policy",
+      "leave",
+      "my"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "my",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-01-01"
+  },
+  {
+    "id": "fin-payroll-calendar-uk",
+    "title": "Payroll Calendar FY2025/26 - United Kingdom",
+    "source": "hr/fin-payroll-calendar-uk.txt",
+    "format": "txt",
+    "summary": "UK monthly pay dates, change cut-offs and expense cut-offs for FY2025/26.",
+    "labels": [
+      "finance",
+      "payroll",
+      "calendar",
+      "uk"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "uk",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-03-10"
+  },
+  {
+    "id": "fin-payroll-calendar-nl",
+    "title": "Payroll Calendar FY2025/26 - Netherlands",
+    "source": "hr/fin-payroll-calendar-nl.txt",
+    "format": "txt",
+    "summary": "NL monthly pay dates, cut-offs and holiday allowance timing for FY2025/26.",
+    "labels": [
+      "finance",
+      "payroll",
+      "calendar",
+      "nl"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "nl",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-03-10"
+  },
+  {
+    "id": "fin-payroll-calendar-us",
+    "title": "Payroll Calendar FY2025/26 - United States",
+    "source": "hr/fin-payroll-calendar-us.html",
+    "format": "html",
+    "summary": "US biweekly pay dates and cut-offs for FY2025/26.",
+    "labels": [
+      "finance",
+      "payroll",
+      "calendar",
+      "us"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "us",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-03-10"
+  },
+  {
+    "id": "fin-payroll-calendar-my",
+    "title": "Payroll Calendar FY2025/26 - Malaysia",
+    "source": "hr/fin-payroll-calendar-my.html",
+    "format": "html",
+    "summary": "Penang monthly pay dates, cut-offs and statutory remittance deadlines for FY2025/26.",
+    "labels": [
+      "finance",
+      "payroll",
+      "calendar",
+      "my"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "my",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-03-10"
+  },
+  {
+    "id": "hr-employee-handbook",
+    "title": "Employee Handbook (2025 Edition)",
+    "source": "hr/hr-employee-handbook.md",
+    "format": "pdf",
+    "summary": "HBK-HR-001: comprehensive guide to working at Meridian, from hours and pay to safety, conduct, security and leaving.",
+    "labels": [
+      "hr",
+      "handbook",
+      "onboarding"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "handbook",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "corp-code-of-conduct",
+    "title": "Code of Conduct (2025)",
+    "source": "hr/corp-code-of-conduct.md",
+    "format": "pdf",
+    "summary": "POL-CORP-001: ethical standards covering speaking up, conflicts, anti-bribery, gifts and hospitality, trade compliance and assets.",
+    "labels": [
+      "corporate",
+      "policy",
+      "compliance",
+      "ethics"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-01-15"
+  },
+  {
+    "id": "fin-procurement-manual",
+    "title": "Procurement Manual",
+    "source": "hr/fin-procurement-manual.md",
+    "format": "docx",
+    "summary": "POL-FIN-012: requisition-to-pay process, quotation and tender thresholds, supplier onboarding, exceptions and payment terms.",
+    "labels": [
+      "finance",
+      "procurement",
+      "manual",
+      "policy"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-05-01"
+  },
+  {
+    "id": "corp-data-protection-policy",
+    "title": "Data Protection Policy (Employee and Candidate Data)",
+    "source": "hr/corp-data-protection-policy.md",
+    "format": "docx",
+    "summary": "POL-CORP-006: lawful processing, subject access requests, breach reporting, transfers and retention of personal data.",
+    "labels": [
+      "corporate",
+      "policy",
+      "privacy",
+      "compliance"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-11-01"
+  },
+  {
+    "id": "hr-recruitment-manual",
+    "title": "Recruitment and Selection Manual",
+    "source": "hr/hr-recruitment-manual.md",
+    "format": "pdf",
+    "summary": "POL-HR-052: requisition approval, advertising, interviewing, offers, relocation, pre-employment checks and onboarding.",
+    "labels": [
+      "hr",
+      "recruitment",
+      "manual",
+      "policy"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-02-01"
+  },
+  {
+    "id": "hr-grade-structure-2025",
+    "title": "Grade Structure, Salary Ranges and Bonus Targets 2025",
+    "source": "hr/hr-grade-structure-2025.md",
+    "format": "md",
+    "summary": "Grades G1-G10, band names, salary ranges by site and Meridian Incentive Plan bonus targets.",
+    "labels": [
+      "hr",
+      "reward",
+      "table",
+      "pay"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-salary-review-timeline-2025",
+    "title": "Salary Review Timeline FY2025/26 by Grade Band",
+    "source": "hr/hr-salary-review-timeline-2025.md",
+    "format": "md",
+    "summary": "Deadlines for manager proposals, calibration and letters for each grade band in the 2025 salary review.",
+    "labels": [
+      "hr",
+      "reward",
+      "table",
+      "pay"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-04-14"
+  },
+  {
+    "id": "corp-pay-review-announcement-2025",
+    "title": "2025 Pay Review and Bonus Announcement",
+    "source": "hr/corp-pay-review-announcement-2025.html",
+    "format": "html",
+    "summary": "CEO announcement of 2025 pay review budgets by country and the FY2024/25 bonus payout factor.",
+    "labels": [
+      "corporate",
+      "announcement",
+      "reward",
+      "pay"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "announcement",
+      "year": "2025"
+    },
+    "date": "2025-04-28"
+  },
+  {
+    "id": "fin-cost-centre-directory",
+    "title": "Cost Centre Directory",
+    "source": "hr/fin-cost-centre-directory.md",
+    "format": "md",
+    "summary": "List of Meridian cost-centre codes, owners and sites used in Atlas.",
+    "labels": [
+      "finance",
+      "table",
+      "cost-centres"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-benefits-comparison-2025",
+    "title": "Benefits Comparison by Country 2025",
+    "source": "hr/hr-benefits-comparison-2025.md",
+    "format": "pdf",
+    "summary": "Side-by-side comparison of pension, life cover, medical, wellbeing and income protection across UK, NL, US and MY.",
+    "labels": [
+      "hr",
+      "benefits",
+      "table"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "table",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-keel-portal-guide",
+    "title": "Keel HR Portal User Guide",
+    "source": "hr/hr-keel-portal-guide.md",
+    "format": "md",
+    "summary": "Where to find common tasks in Keel: leave, sickness, payslips, bank details, benefits, requests and declarations.",
+    "labels": [
+      "hr",
+      "guide",
+      "keel",
+      "systems"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-02-17"
+  },
+  {
+    "id": "hr-uk-pension-guide",
+    "title": "UK Pension Scheme Guide",
+    "source": "hr/hr-uk-pension-guide.md",
+    "format": "docx",
+    "summary": "Meridian Group Personal Pension: contribution tiers, salary sacrifice and how to change contributions.",
+    "labels": [
+      "hr",
+      "benefits",
+      "pension",
+      "uk"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "uk",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "hr-us-401k-guide",
+    "title": "US 401(k) Retirement Plan Guide",
+    "source": "hr/hr-us-401k-guide.md",
+    "format": "pdf",
+    "summary": "Meridian 401(k) plan: company match, auto-enrolment, vesting and loans for Austin employees.",
+    "labels": [
+      "hr",
+      "benefits",
+      "pension",
+      "us"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "us",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-01-01"
+  },
+  {
+    "id": "hr-nl-pension-30-percent-faq",
+    "title": "Netherlands Pension and 30% Ruling FAQ",
+    "source": "hr/hr-nl-pension-30-percent-faq.md",
+    "format": "md",
+    "summary": "FAQ for Rotterdam staff on the Zeevaart Pensioen scheme and the 30% ruling for international hires.",
+    "labels": [
+      "hr",
+      "benefits",
+      "pension",
+      "tax",
+      "nl"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "nl",
+      "doc_type": "faq",
+      "year": "2025"
+    },
+    "date": "2025-01-15"
+  },
+  {
+    "id": "hr-my-statutory-contributions-guide",
+    "title": "Malaysia Statutory Contributions and Medical Benefits Guide",
+    "source": "hr/hr-my-statutory-contributions-guide.md",
+    "format": "docx",
+    "summary": "EPF, SOCSO, EIS, PCB and HRD Corp contributions plus outpatient medical benefits for Penang employees.",
+    "labels": [
+      "hr",
+      "benefits",
+      "payroll",
+      "my"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "my",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-01-01"
+  },
+  {
+    "id": "hr-employee-referral-scheme",
+    "title": "Employee Referral Scheme",
+    "source": "hr/hr-employee-referral-scheme.md",
+    "format": "md",
+    "summary": "POL-HR-044: referral bonus amounts by site and grade, eligibility and payment timing.",
+    "labels": [
+      "hr",
+      "policy",
+      "recruitment",
+      "reward"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2025"
+    },
+    "date": "2025-02-01"
+  },
+  {
+    "id": "hr-learning-development-policy",
+    "title": "Learning and Development Policy",
+    "source": "hr/hr-learning-development-policy.md",
+    "format": "pdf",
+    "summary": "POL-HR-035: training budgets, approval, study leave and fee repayment for professional qualifications.",
+    "labels": [
+      "hr",
+      "policy",
+      "learning"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-10-01"
+  },
+  {
+    "id": "hr-probation-policy",
+    "title": "Probation Policy",
+    "source": "hr/hr-probation-policy.md",
+    "format": "docx",
+    "summary": "POL-HR-011: probation lengths by country, review points, extensions and outcomes.",
+    "labels": [
+      "hr",
+      "policy",
+      "onboarding"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-06-01"
+  },
+  {
+    "id": "hr-disciplinary-grievance-procedure",
+    "title": "Disciplinary and Grievance Procedure",
+    "source": "hr/hr-disciplinary-grievance-procedure.md",
+    "format": "pdf",
+    "summary": "POL-HR-040: stages of disciplinary action, warning durations, grievance timelines and appeals.",
+    "labels": [
+      "hr",
+      "policy",
+      "employee-relations"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-09-01"
+  },
+  {
+    "id": "hr-new-starter-checklist-f101",
+    "title": "F-101 New Starter Checklist",
+    "source": "hr/hr-new-starter-checklist-f101.md",
+    "format": "docx",
+    "summary": "Form F-101: manager and People Operations tasks before and after a new employee starts.",
+    "labels": [
+      "hr",
+      "form",
+      "onboarding"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "form",
+      "year": "2025"
+    },
+    "date": "2025-02-01"
+  },
+  {
+    "id": "hr-leaver-checklist-f110",
+    "title": "F-110 Leaver Checklist",
+    "source": "hr/hr-leaver-checklist-f110.md",
+    "format": "docx",
+    "summary": "Form F-110: steps for managers and leavers covering equipment, access, final pay and handover.",
+    "labels": [
+      "hr",
+      "form",
+      "offboarding"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "form",
+      "year": "2025"
+    },
+    "date": "2025-02-01"
+  },
+  {
+    "id": "hr-eap-announcement-2025",
+    "title": "New Employee Assistance Programme Provider",
+    "source": "hr/hr-eap-announcement-2025.html",
+    "format": "html",
+    "summary": "Announcement of Harbour Wellbeing as Meridian's EAP provider from 1 June 2025.",
+    "labels": [
+      "hr",
+      "announcement",
+      "wellbeing",
+      "benefits"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "announcement",
+      "year": "2025"
+    },
+    "date": "2025-05-12"
+  },
+  {
+    "id": "corp-modern-slavery-statement-2025",
+    "title": "Modern Slavery and Human Trafficking Statement FY2024/25",
+    "source": "hr/corp-modern-slavery-statement-2025.html",
+    "format": "html",
+    "summary": "Annual statement on supply-chain due diligence, risk assessment and remediation for FY2024/25.",
+    "labels": [
+      "corporate",
+      "compliance",
+      "supply-chain",
+      "announcement"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "announcement",
+      "year": "2025"
+    },
+    "date": "2025-09-15"
+  },
+  {
+    "id": "corp-records-retention-schedule",
+    "title": "Records Retention Schedule (HR and Finance)",
+    "source": "hr/corp-records-retention-schedule.md",
+    "format": "md",
+    "summary": "POL-CORP-008: retention periods for personnel, payroll, recruitment, finance and compliance records.",
+    "labels": [
+      "corporate",
+      "policy",
+      "table",
+      "records"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "table",
+      "year": "2024"
+    },
+    "date": "2024-11-01"
+  },
+  {
+    "id": "corp-conflict-of-interest-form-f150",
+    "title": "F-150 Conflict of Interest Declaration",
+    "source": "hr/corp-conflict-of-interest-form-f150.md",
+    "format": "docx",
+    "summary": "Form F-150: annual and ad-hoc declaration of outside interests, relationships and shareholdings.",
+    "labels": [
+      "corporate",
+      "form",
+      "compliance"
+    ],
+    "tags": {
+      "department": "corporate",
+      "region": "global",
+      "doc_type": "form",
+      "year": "2025"
+    },
+    "date": "2025-01-15"
+  },
+  {
+    "id": "fin-budget-holder-guide",
+    "title": "Budget Holder Guide",
+    "source": "hr/fin-budget-holder-guide.md",
+    "format": "md",
+    "summary": "Responsibilities, monthly and quarterly deadlines and approval duties for Meridian budget holders.",
+    "labels": [
+      "finance",
+      "guide",
+      "budgeting"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "fin-company-car-policy",
+    "title": "Company Car and Car Allowance Policy (UK)",
+    "source": "hr/fin-company-car-policy.md",
+    "format": "pdf",
+    "summary": "POL-FIN-015: car allowance by grade, electric company car scheme and business mileage rules for UK staff.",
+    "labels": [
+      "finance",
+      "policy",
+      "travel",
+      "benefits",
+      "uk"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "uk",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-07-01"
+  },
+  {
+    "id": "hr-overtime-on-call-policy",
+    "title": "Overtime, On-Call and Shift Allowance Policy",
+    "source": "hr/hr-overtime-on-call-policy.md",
+    "format": "md",
+    "summary": "POL-HR-048: overtime eligibility and rates, on-call payments and Penang shift allowances.",
+    "labels": [
+      "hr",
+      "policy",
+      "pay"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "global",
+      "doc_type": "policy",
+      "year": "2024"
+    },
+    "date": "2024-08-01"
+  },
+  {
+    "id": "fin-travel-booking-guide",
+    "title": "Travel Booking Guide",
+    "source": "hr/fin-travel-booking-guide.md",
+    "format": "md",
+    "summary": "How to book travel through Atlas and Northwind Travel Management, including approvals and out-of-policy bookings.",
+    "labels": [
+      "finance",
+      "guide",
+      "travel"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-04-07"
+  },
+  {
+    "id": "fin-supplier-invoicing-guide",
+    "title": "Supplier Invoicing Guide",
+    "source": "hr/fin-supplier-invoicing-guide.txt",
+    "format": "txt",
+    "summary": "Invoice requirements, PO numbers, submission addresses and payment runs for Meridian suppliers.",
+    "labels": [
+      "finance",
+      "guide",
+      "procurement",
+      "accounts-payable"
+    ],
+    "tags": {
+      "department": "finance",
+      "region": "global",
+      "doc_type": "guide",
+      "year": "2025"
+    },
+    "date": "2025-05-01"
+  },
+  {
+    "id": "hr-flexible-benefits-faq-2025",
+    "title": "Flexible Benefits Enrolment FAQ 2025 (UK)",
+    "source": "hr/hr-flexible-benefits-faq-2025.md",
+    "format": "md",
+    "summary": "FAQ for the UK flexible benefits window: buying and selling leave, cycle to work and life-event changes.",
+    "labels": [
+      "hr",
+      "faq",
+      "benefits",
+      "uk"
+    ],
+    "tags": {
+      "department": "hr",
+      "region": "uk",
+      "doc_type": "faq",
+      "year": "2025"
+    },
+    "date": "2025-02-24"
+  }
+]

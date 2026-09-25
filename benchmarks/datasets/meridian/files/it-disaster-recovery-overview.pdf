@@ -1,0 +1,90 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+4 0 obj
+<< /Length 4014 >>
+stream
+BT /F2 16 Tf 54 723 Td (IT Disaster Recovery Overview) Tj ET
+BT /F1 10 Tf 54 701 Td (Document ID: it-disaster-recovery-overview. Owner: IT Operations and Platform Engineering.) Tj ET
+BT /F1 10 Tf 54 688 Td (Approved by: Lars Hedegaard, CTO. Effective date: 1 July 2025.) Tj ET
+BT /F2 13 Tf 54 663 Td (Purpose) Tj ET
+BT /F1 10 Tf 54 641 Td (This document summarises how Meridian Instruments recovers its critical IT services after a) Tj ET
+BT /F1 10 Tf 54 628 Td (major disruption, and the recovery objectives the business has agreed for each service.) Tj ET
+BT /F1 10 Tf 54 615 Td (Detailed technical procedures are held in the system runbooks referenced below.) Tj ET
+BT /F2 13 Tf 54 590 Td (Service tiers and recovery objectives) Tj ET
+BT /F2 9 Tf 54 569 Td (Service | Tier | Recovery time objective \(RTO\) | Recovery point objective \(RPO\) | Recovery site) Tj ET
+BT /F2 9 Tf 54 557 Td (| Detailed procedure) Tj ET
+BT /F1 9 Tf 54 545 Td (TesseraCloud \(customer SaaS\) | Tier 0 | 60 minutes | 5 minutes | euc1 \(Frankfurt\) |) Tj ET
+BT /F1 9 Tf 54 533 Td (TesseraCloud Regional Failover Runbook) Tj ET
+BT /F1 9 Tf 54 521 Td (Atlas ERP | Tier 1 | 8 hours | 15 minutes | Rotterdam server room using standby atlas-db-prd-02) Tj ET
+BT /F1 9 Tf 54 509 Td (replica copy | Atlas DR procedure \(IT Business Applications\)) Tj ET
+BT /F1 9 Tf 54 497 Td (Penang OT systems \(SMT line control, calibration stations\) | Tier 1 | 4 hours | 24 hours |) Tj ET
+BT /F1 9 Tf 54 485 Td (Local spares at Penang | Penang OT recovery plan) Tj ET
+BT /F1 9 Tf 54 473 Td (Forge CI/CD | Tier 2 | 24 hours | 24 hours | Rebuild from backup in Leeds | Forge rebuild) Tj ET
+BT /F1 9 Tf 54 461 Td (procedure) Tj ET
+BT /F1 9 Tf 54 449 Td (Beacon service desk | Tier 2 | 24 hours | 4 hours | Vendor-hosted | Vendor contract) Tj ET
+BT /F1 9 Tf 54 437 Td (Keel HR portal | Tier 2 | 48 hours | 24 hours | Vendor-hosted | Vendor contract) Tj ET
+BT /F1 9 Tf 54 425 Td (File shares | Tier 3 | 72 hours | 24 hours | Restore from Strata Backup | Backup and Retention) Tj ET
+BT /F1 9 Tf 54 413 Td (Standard v2) Tj ET
+BT /F2 13 Tf 54 388 Td (Invocation) Tj ET
+BT /F1 10 Tf 54 366 Td (A disaster is declared by the CTO, or in the CTO's absence by the Head of IT Operations or the) Tj ET
+BT /F1 10 Tf 54 353 Td (Head of Platform Engineering. For TesseraCloud, a regional failover can be invoked by the) Tj ET
+BT /F1 10 Tf 54 340 Td (Incident Commander with approval of the Head of Platform Engineering or the delegated duty) Tj ET
+BT /F1 10 Tf 54 327 Td (manager, without waiting for a full disaster declaration.) Tj ET
+BT /F2 13 Tf 54 302 Td (Dependencies) Tj ET
+BT /F1 10 Tf 54 280 Td (- Directory services are replicated to Rotterdam and Penang; sign-in continues if Leeds is) Tj ET
+BT /F1 10 Tf 54 267 Td (   lost.) Tj ET
+BT /F1 10 Tf 54 254 Td (- MFA is cloud-hosted and independent of the Leeds data centre.) Tj ET
+BT /F1 10 Tf 54 241 Td (- The privileged access vault has a warm standby in Rotterdam; break-glass credentials are) Tj ET
+BT /F1 10 Tf 54 228 Td (   also sealed in the Rotterdam site safe.) Tj ET
+BT /F2 13 Tf 54 212 Td (Testing) Tj ET
+BT /F2 9 Tf 54 191 Td (Test | Frequency | Last performed | Result) Tj ET
+BT /F1 9 Tf 54 179 Td (TesseraCloud regional failover drill | Twice a year \(April and October\) | 15 April 2025 | Pass,) Tj ET
+BT /F1 9 Tf 54 167 Td (38 minutes) Tj ET
+BT /F1 9 Tf 54 155 Td (Atlas restore to isolated host | Quarterly \(with restore testing\) | 8 July 2025 | Pass, 6 hours) Tj ET
+BT /F1 9 Tf 54 143 Td (20 minutes) Tj ET
+BT /F1 9 Tf 54 131 Td (Penang OT line PC rebuild from image | Annually | 11 February 2025 | Pass) Tj ET
+BT /F1 9 Tf 54 119 Td (Forge rebuild tabletop exercise | Annually | 3 December 2024 | Pass with actions) Tj ET
+BT /F2 13 Tf 54 94 Td (Communication) Tj ET
+BT /F1 10 Tf 54 72 Td (During a declared disaster, updates are issued on the SEV1 cadence in the Incident Severity) Tj ET
+BT /F1 10 Tf 54 59 Td (Definitions \(every 30 minutes\). Customer communication for TesseraCloud uses) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 76 >>
+stream
+BT /F1 10 Tf 54 729 Td (status.tesseracloud.meridian-instruments.com.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000271 00000 n 
+0000004337 00000 n 
+0000004473 00000 n 
+0000004599 00000 n 
+0000004735 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+4784
+%%EOF

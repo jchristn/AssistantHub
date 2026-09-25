@@ -1,0 +1,147 @@
+{
+  "Webserver": {
+    "Hostname": "localhost",
+    "Port": 38800,
+    "Ssl": false,
+    "Cors": {
+      "Enable": true,
+      "AllowOrigins": [
+        "*"
+      ],
+      "AllowMethods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "AllowHeaders": [
+        "*"
+      ],
+      "ExposeHeaders": [],
+      "AllowCredentials": false,
+      "MaxAgeSeconds": 86400
+    }
+  },
+  "Database": {
+    "Type": "Sqlite",
+    "Filename": "./assistanthub-bench.db",
+    "Hostname": "",
+    "Port": 0,
+    "DatabaseName": "",
+    "Username": "",
+    "Password": "",
+    "Schema": "",
+    "RequireEncryption": false,
+    "LogQueries": false
+  },
+  "S3": {
+    "Region": "USWest1",
+    "BucketName": "default",
+    "AccessKey": "default",
+    "SecretKey": "default",
+    "EndpointUrl": "http://127.0.0.1:38000",
+    "UseSsl": false,
+    "BaseUrl": "http://127.0.0.1:38000",
+    "DashboardUrl": ""
+  },
+  "DocumentAtom": {
+    "Endpoint": "http://127.0.0.1:38301",
+    "AccessKey": "default",
+    "DashboardUrl": ""
+  },
+  "Chunking": {
+    "Endpoint": "http://127.0.0.1:38321",
+    "AccessKey": "partioadmin",
+    "EndpointId": "default",
+    "DashboardUrl": "",
+    "MaxRetries": 3,
+    "RetryDelayMs": 1000
+  },
+  "Embeddings": {
+    "Endpoint": "http://127.0.0.1:38321",
+    "AccessKey": "partioadmin",
+    "EndpointId": "default"
+  },
+  "Inference": {
+    "Provider": "Ollama",
+    "Endpoint": "http://127.0.0.1:11434",
+    "ApiKey": "default",
+    "DefaultModel": "gemma3:4b",
+    "DashboardUrl": ""
+  },
+  "RecallDb": {
+    "Endpoint": "http://127.0.0.1:38401",
+    "AccessKey": "recalldbadmin",
+    "DashboardUrl": "",
+    "SupportsMultiDocumentFilter": true
+  },
+  "Verbex": {
+    "Endpoint": "http://127.0.0.1:38090",
+    "AccessKey": "verbexadmin",
+    "DashboardUrl": "",
+    "DefaultIndexId": "default",
+    "EnableIngestion": false,
+    "RequireIngestion": false,
+    "MaxContentCharacters": 0,
+    "MaxConcurrentIndexingRequests": 2,
+    "IndexingRetryCount": 3,
+    "IndexingRetryDelayMs": 2000
+  },
+  "ExternalSearch": {
+    "Enabled": false,
+    "AllowFallback": true,
+    "MaxResults": 10,
+    "TimeoutMs": 30000,
+    "SafeSearch": true,
+    "AllowRawContent": false,
+    "IncludeDomains": [],
+    "ExcludeDomains": [],
+    "Providers": [
+      {
+        "Name": "default",
+        "ProviderType": "Tavily",
+        "Endpoint": "https://api.tavily.com/search",
+        "ApiKey": "${TAVILY_API_KEY}",
+        "Enabled": false,
+        "IsDefault": true,
+        "TimeoutMs": 30000
+      }
+    ]
+  },
+  "AdminApiKeys": [
+    "benchadmin"
+  ],
+  "DefaultTenant": {
+    "Id": "default",
+    "Name": "Default"
+  },
+  "ProcessingLog": {
+    "Directory": "./processing-logs/",
+    "RetentionDays": 30
+  },
+  "Logging": {
+    "ConsoleLogging": false,
+    "EnableColors": false,
+    "FileLogging": true,
+    "LogDirectory": "./logs/",
+    "LogFilename": "assistanthub.log",
+    "IncludeDateInFilename": true,
+    "MinimumSeverity": 2,
+    "Servers": []
+  },
+  "Telemetry": {
+    "Enable": true,
+    "ServiceName": "assistanthub-bench",
+    "OtlpEndpoint": "http://127.0.0.1:34317",
+    "OtlpProtocol": "Grpc",
+    "SamplingRatio": 1.0,
+    "EnableRuntimeMetrics": true,
+    "ExportIntervalMs": 1000
+  },
+  "RequestHistory": {
+    "Enabled": false
+  }
+}

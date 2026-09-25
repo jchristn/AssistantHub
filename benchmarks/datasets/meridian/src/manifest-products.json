@@ -1,0 +1,1205 @@
+[
+  {
+    "id": "prod-halcyon-accessories-catalogue",
+    "title": "Halcyon Accessories and Spare Parts Catalogue",
+    "source": "products/prod-halcyon-accessories-catalogue.md",
+    "format": "md",
+    "summary": "Part numbers for Halcyon kits, sensors, batteries, docking, calibration gas, regulators and consumables (no prices).",
+    "labels": [
+      "product",
+      "halcyon",
+      "catalogue",
+      "parts"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "doc_type": "catalogue",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "prod-halcyon-docking-station-guide",
+    "title": "HX-DOCK-4 Docking Station Guide",
+    "source": "products/prod-halcyon-docking-station-guide.md",
+    "format": "pdf",
+    "summary": "Installation, gas configuration, operation, firmware compatibility matrix and maintenance for the HX-DOCK-4 four-bay docking station.",
+    "labels": [
+      "product",
+      "halcyon",
+      "guide",
+      "docking-station",
+      "compatibility"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-DOCK-4",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-20"
+  },
+  {
+    "id": "prod-halcyon-firmware-release-notes-3-4-0",
+    "title": "Halcyon Firmware 3.4.0 Release Notes",
+    "source": "products/prod-halcyon-firmware-release-notes-3-4-0.md",
+    "format": "md",
+    "summary": "Release notes for Halcyon firmware 3.4.0 for HX-210 and HX-220: features, fixes, known issues and compatibility.",
+    "labels": [
+      "product",
+      "halcyon",
+      "firmware",
+      "release-notes"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210,HX-220",
+      "doc_type": "release-notes",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-11-04",
+    "version": "1"
+  },
+  {
+    "id": "prod-halcyon-firmware-release-notes-3-4-1",
+    "title": "Halcyon Firmware 3.4.1 Release Notes",
+    "source": "products/prod-halcyon-firmware-release-notes-3-4-1.md",
+    "format": "md",
+    "summary": "Release notes for Halcyon firmware 3.4.1 (supersedes 3.4.0): 120-day HX-210 interval, MI-CAL-Q4-B presets, 4.4% vol LEL basis, dock D-2.1.0 requirement.",
+    "labels": [
+      "product",
+      "halcyon",
+      "firmware",
+      "release-notes"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210,HX-220",
+      "doc_type": "release-notes",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-02",
+    "version": "2",
+    "supersedes": "prod-halcyon-firmware-release-notes-3-4-0"
+  },
+  {
+    "id": "prod-hx200-quick-start",
+    "title": "Halcyon HX-200 Quick-Start Guide",
+    "source": "products/prod-hx200-quick-start.md",
+    "format": "md",
+    "summary": "Short getting-started steps for the HX-200: charging, switch-on, daily bump test and alarm set points.",
+    "labels": [
+      "product",
+      "halcyon",
+      "quick-start",
+      "hx-200"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-200",
+      "doc_type": "quick-start",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-01-20"
+  },
+  {
+    "id": "prod-hx200-spec-sheet",
+    "title": "Halcyon HX-200 Specification Sheet",
+    "source": "products/prod-hx200-spec-sheet.html",
+    "format": "html",
+    "summary": "Technical specification table and ordering information for the HX-200 H2S detector.",
+    "labels": [
+      "product",
+      "halcyon",
+      "spec-sheet",
+      "hx-200"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-200",
+      "doc_type": "spec-sheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-01-20"
+  },
+  {
+    "id": "prod-hx200-user-manual",
+    "title": "Halcyon HX-200 User Manual",
+    "source": "products/prod-hx200-user-manual.md",
+    "format": "pdf",
+    "summary": "Full user manual for the HX-200 single-gas H2S detector: safety, alarms, bump test, 180-day calibration, maintenance and specifications.",
+    "labels": [
+      "product",
+      "halcyon",
+      "manual",
+      "hx-200"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-200",
+      "doc_type": "manual",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-01-20"
+  },
+  {
+    "id": "prod-hx210-calibration-procedure-v1",
+    "title": "HX-210 Calibration Procedure",
+    "source": "products/prod-hx210-calibration-procedure-v1.md",
+    "format": "docx",
+    "summary": "Original HX-210 calibration procedure: 180-day interval, MI-CAL-Q4-A gas at 0.5 L/min, 90 s span wait.",
+    "labels": [
+      "product",
+      "halcyon",
+      "procedure",
+      "calibration",
+      "hx-210"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-03-12",
+    "version": "1"
+  },
+  {
+    "id": "prod-hx210-calibration-procedure-v2",
+    "title": "HX-210 Calibration Procedure",
+    "source": "products/prod-hx210-calibration-procedure-v2.md",
+    "format": "docx",
+    "summary": "Revised HX-210 calibration procedure: 120-day interval, MI-CAL-Q4-B gas at 1.0 L/min, 120 s span wait, E-104 troubleshooting.",
+    "labels": [
+      "product",
+      "halcyon",
+      "procedure",
+      "calibration",
+      "hx-210"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-05-19",
+    "version": "2",
+    "supersedes": "prod-hx210-calibration-procedure-v1"
+  },
+  {
+    "id": "prod-hx210-quick-start",
+    "title": "Halcyon HX-210 Quick-Start Guide",
+    "source": "products/prod-hx210-quick-start.md",
+    "format": "md",
+    "summary": "Short getting-started steps for the HX-210: charging, switch-on, daily bump test and alarm set points.",
+    "labels": [
+      "product",
+      "halcyon",
+      "quick-start",
+      "hx-210"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210",
+      "doc_type": "quick-start",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-16"
+  },
+  {
+    "id": "prod-hx210-spec-sheet",
+    "title": "Halcyon HX-210 Specification Sheet",
+    "source": "products/prod-hx210-spec-sheet.html",
+    "format": "html",
+    "summary": "Technical specification table and ordering information for the HX-210 four-gas detector.",
+    "labels": [
+      "product",
+      "halcyon",
+      "spec-sheet",
+      "hx-210"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210",
+      "doc_type": "spec-sheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-16"
+  },
+  {
+    "id": "prod-hx210-user-manual",
+    "title": "Halcyon HX-210 User Manual",
+    "source": "products/prod-hx210-user-manual.md",
+    "format": "pdf",
+    "summary": "Complete HX-210 four-gas detector manual covering operation, alarms, calibration, datalogging, maintenance, supervisor settings and specifications.",
+    "labels": [
+      "product",
+      "halcyon",
+      "manual",
+      "hx-210"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-210",
+      "doc_type": "manual",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-16"
+  },
+  {
+    "id": "prod-hx220-quick-start",
+    "title": "Halcyon HX-220 Quick-Start Guide",
+    "source": "products/prod-hx220-quick-start.md",
+    "format": "md",
+    "summary": "Short getting-started steps for the HX-220 including Bluetooth pairing, man-down and alarm set points.",
+    "labels": [
+      "product",
+      "halcyon",
+      "quick-start",
+      "hx-220"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-220",
+      "doc_type": "quick-start",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-09-01"
+  },
+  {
+    "id": "prod-hx220-spec-sheet",
+    "title": "Halcyon HX-220 Specification Sheet",
+    "source": "products/prod-hx220-spec-sheet.html",
+    "format": "html",
+    "summary": "Technical specification table and ordering information for the connected HX-220 four-gas detector.",
+    "labels": [
+      "product",
+      "halcyon",
+      "spec-sheet",
+      "hx-220"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-220",
+      "doc_type": "spec-sheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-09-01"
+  },
+  {
+    "id": "prod-hx220-user-manual",
+    "title": "Halcyon HX-220 User Manual",
+    "source": "products/prod-hx220-user-manual.md",
+    "format": "pdf",
+    "summary": "User manual for the connected HX-220 four-gas detector with Bluetooth, GPS, man-down and optional HX-PMP-22 pump.",
+    "labels": [
+      "product",
+      "halcyon",
+      "manual",
+      "hx-220"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "halcyon",
+      "model": "HX-220",
+      "doc_type": "manual",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-09-01"
+  },
+  {
+    "id": "prod-lf60-datasheet",
+    "title": "Lumen LF-60 Optical Flow Meter Datasheet",
+    "source": "products/prod-lf60-datasheet.md",
+    "format": "pdf",
+    "summary": "Specifications, features and ordering codes for the PN16 Lumen LF-60 optical flow meter.",
+    "labels": [
+      "product",
+      "lumen",
+      "datasheet",
+      "lf-60"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60",
+      "doc_type": "datasheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-02-03"
+  },
+  {
+    "id": "prod-lf60-installation-manual",
+    "title": "Lumen LF-60 Installation Manual",
+    "source": "products/prod-lf60-installation-manual.md",
+    "format": "pdf",
+    "summary": "Installation, wiring, grounding, flange bolting and commissioning of the Lumen LF-60.",
+    "labels": [
+      "product",
+      "lumen",
+      "manual",
+      "installation",
+      "lf-60"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60",
+      "doc_type": "manual",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-10-07"
+  },
+  {
+    "id": "prod-lf60p-datasheet",
+    "title": "Lumen LF-60P Optical Flow Meter Datasheet",
+    "source": "products/prod-lf60p-datasheet.md",
+    "format": "pdf",
+    "summary": "Specifications, features and ordering codes for the PN40 high-pressure Lumen LF-60P optical flow meter.",
+    "labels": [
+      "product",
+      "lumen",
+      "datasheet",
+      "lf-60p"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60P",
+      "doc_type": "datasheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-02-03"
+  },
+  {
+    "id": "prod-lf60p-installation-manual",
+    "title": "Lumen LF-60P Installation Manual",
+    "source": "products/prod-lf60p-installation-manual.md",
+    "format": "pdf",
+    "summary": "Full installation manual for the LF-60P covering site selection, grounding rings, HART commissioning, flange bolt torques and zero-point adjustment.",
+    "labels": [
+      "product",
+      "lumen",
+      "manual",
+      "installation",
+      "lf-60p"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60P",
+      "doc_type": "manual",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-03-17"
+  },
+  {
+    "id": "prod-lumen-firmware-1-9-0-release-notes",
+    "title": "Lumen Firmware 1.9.0 Release Notes",
+    "source": "products/prod-lumen-firmware-1-9-0-release-notes.md",
+    "format": "txt",
+    "summary": "Release notes for LF-60P firmware 1.9.0 (HART 7 device revision 3, pressure compensation); LF-60 stays on 1.8.2.",
+    "labels": [
+      "product",
+      "lumen",
+      "firmware",
+      "release-notes",
+      "lf-60p"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60P",
+      "doc_type": "release_notes",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-03-03"
+  },
+  {
+    "id": "prod-lumen-modbus-register-map",
+    "title": "Lumen Modbus Register Map (LF-60 and LF-60P)",
+    "source": "products/prod-lumen-modbus-register-map.md",
+    "format": "md",
+    "summary": "Modbus RTU input and holding registers, defaults and data formats for the LF-60 and LF-60P.",
+    "labels": [
+      "product",
+      "lumen",
+      "reference",
+      "modbus",
+      "lf-60",
+      "lf-60p"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "lumen",
+      "model": "LF-60, LF-60P",
+      "doc_type": "reference",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-03-17"
+  },
+  {
+    "id": "prod-portfolio-overview-fy26",
+    "title": "Meridian Product Portfolio Overview FY2025/26",
+    "source": "products/prod-portfolio-overview-fy26.md",
+    "format": "md",
+    "summary": "Overview of the Halcyon, Tessera and Lumen product lines, owners, manufacturing sites and FY2025/26 priorities.",
+    "labels": [
+      "product",
+      "portfolio",
+      "overview"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "all",
+      "doc_type": "overview",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "prod-tessera-alarm-configuration-guide",
+    "title": "Tessera Alarm Configuration Guide",
+    "source": "products/prod-tessera-alarm-configuration-guide.md",
+    "format": "docx",
+    "summary": "How TesseraCloud derives ISO 10816-3 velocity RMS alarm thresholds by machine group and foundation, and how to tune alarm profiles.",
+    "labels": [
+      "product",
+      "tessera",
+      "alarms",
+      "configuration"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TesseraCloud",
+      "doc_type": "configuration-guide",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-05-12"
+  },
+  {
+    "id": "prod-tessera-firmware-compatibility-matrix",
+    "title": "Tessera Firmware Compatibility Matrix",
+    "source": "products/prod-tessera-firmware-compatibility-matrix.md",
+    "format": "md",
+    "summary": "Which TS-4e node firmware versions work with which TS-4 gateway firmware, plus TesseraCloud minimum gateway firmware.",
+    "labels": [
+      "product",
+      "tessera",
+      "firmware",
+      "compatibility"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "compatibility-matrix",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-18"
+  },
+  {
+    "id": "prod-tessera-gateway-firmware-5-3-0-release-notes",
+    "title": "TS-4 Gateway Firmware 5.3.0 Release Notes",
+    "source": "products/prod-tessera-gateway-firmware-5-3-0-release-notes.md",
+    "format": "txt",
+    "summary": "Release notes for TS-4 gateway firmware 5.3.0: Zone 2 node support, adaptive channel plan, fixes and upgrade path.",
+    "labels": [
+      "product",
+      "tessera",
+      "firmware",
+      "release-notes"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "release-notes",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-18"
+  },
+  {
+    "id": "prod-tesseracloud-admin-guide",
+    "title": "TesseraCloud Administrator Guide",
+    "source": "products/prod-tesseracloud-admin-guide.md",
+    "format": "pdf",
+    "summary": "Administrator guide for TesseraCloud: tenancy, SSO, roles, sites, gateway fleet, alarms, notifications, retention, API keys, certificates, maintenance mode, audit, exports.",
+    "labels": [
+      "product",
+      "tessera",
+      "tesseracloud",
+      "admin-guide",
+      "saas"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TesseraCloud",
+      "doc_type": "admin-guide",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-07-14"
+  },
+  {
+    "id": "prod-tesseracloud-api-rate-limits-v1",
+    "title": "TesseraCloud API Rate Limits",
+    "source": "products/prod-tesseracloud-api-rate-limits-v1.html",
+    "format": "html",
+    "summary": "2024 TesseraCloud API rate limits: 600 requests per minute per tenant, readings endpoint 120 per minute, page size 1000.",
+    "labels": [
+      "product",
+      "tessera",
+      "tesseracloud",
+      "api",
+      "rate-limits"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TesseraCloud",
+      "doc_type": "api-policy",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-06-03",
+    "version": "1"
+  },
+  {
+    "id": "prod-tesseracloud-api-rate-limits-v2",
+    "title": "TesseraCloud API Rate Limits",
+    "source": "products/prod-tesseracloud-api-rate-limits-v2.html",
+    "format": "html",
+    "summary": "2025 plan-based TesseraCloud API rate limits (Standard 300, Enterprise 1,200 per minute), per-device readings limit, headers, and changes from v1.",
+    "labels": [
+      "product",
+      "tessera",
+      "tesseracloud",
+      "api",
+      "rate-limits"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TesseraCloud",
+      "doc_type": "api-policy",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-07-01",
+    "version": "2",
+    "supersedes": "prod-tesseracloud-api-rate-limits-v1"
+  },
+  {
+    "id": "prod-tesseracloud-api-reference",
+    "title": "TesseraCloud REST API Reference",
+    "source": "products/prod-tesseracloud-api-reference.md",
+    "format": "md",
+    "summary": "TesseraCloud /v2 REST API: authentication, endpoint table, readings parameters, pagination, exports, webhooks and error codes.",
+    "labels": [
+      "product",
+      "tessera",
+      "tesseracloud",
+      "api",
+      "reference"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TesseraCloud",
+      "doc_type": "api-reference",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-07-01"
+  },
+  {
+    "id": "prod-ts4-gateway-datasheet",
+    "title": "Tessera TS-4 Gateway Datasheet",
+    "source": "products/prod-ts4-gateway-datasheet.md",
+    "format": "pdf",
+    "summary": "Specification comparison of TS4-GW-LTE and TS4-GW-ETH gateways, security features, certifications and ordering codes.",
+    "labels": [
+      "product",
+      "tessera",
+      "datasheet",
+      "gateway"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "datasheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-25"
+  },
+  {
+    "id": "prod-ts4-gateway-installation-guide",
+    "title": "Tessera TS-4 Gateway Installation Guide",
+    "source": "products/prod-ts4-gateway-installation-guide.md",
+    "format": "pdf",
+    "summary": "Full installation guide for the TS-4 gateway: survey, mounting, antennas, power, backhaul, local UI, mesh commissioning, node pairing, firmware, factory reset.",
+    "labels": [
+      "product",
+      "tessera",
+      "installation",
+      "gateway"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "installation-guide",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-25"
+  },
+  {
+    "id": "prod-ts4e-edge-node-datasheet",
+    "title": "Tessera TS-4e Edge Node Datasheet",
+    "source": "products/prod-ts4e-edge-node-datasheet.html",
+    "format": "html",
+    "summary": "Specifications, battery life table, mounting guidance and SKUs for the TS-4e wireless vibration node and its Zone 2 variant.",
+    "labels": [
+      "product",
+      "tessera",
+      "datasheet",
+      "edge-node"
+    ],
+    "tags": {
+      "department": "products",
+      "product_line": "tessera",
+      "model": "TS-4e",
+      "doc_type": "datasheet",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-25"
+  },
+  {
+    "id": "sales-case-study-tank-terminal",
+    "title": "Customer Case Study: Tessera and Halcyon at a Rotterdam Tank Terminal",
+    "source": "products/sales-case-study-tank-terminal.html",
+    "format": "html",
+    "summary": "Case study of Oostkade Tank Storage BV deploying Tessera, HX-210, HX-220 and HX-DOCK-4 with measured outcomes.",
+    "labels": [
+      "sales",
+      "case-study",
+      "tessera",
+      "halcyon"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "case-study",
+      "region": "nl",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-08-12"
+  },
+  {
+    "id": "sales-competitive-battlecard-halcyon",
+    "title": "Competitive Battlecard: Halcyon vs Corvane GX4 and Brightline BL-Quad",
+    "source": "products/sales-competitive-battlecard-halcyon.md",
+    "format": "pdf",
+    "summary": "Internal battlecard comparing HX-210 and HX-220 with Corvane GX4 and Brightline BL-Quad, with landmines, Zone 0 guidance and objection handling.",
+    "labels": [
+      "sales",
+      "halcyon",
+      "competitive",
+      "battlecard"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "battlecard",
+      "region": "global",
+      "year": "2025",
+      "product_line": "halcyon"
+    },
+    "date": "2025-07-10"
+  },
+  {
+    "id": "sales-demo-kit-booking",
+    "title": "Demo Kit Booking Procedure",
+    "source": "products/sales-demo-kit-booking.md",
+    "format": "txt",
+    "summary": "Booking demo kits via Atlas order type ZDL, 21-day maximum loan, kit IDs by region and return inspection.",
+    "labels": [
+      "sales",
+      "procedure",
+      "demo"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-02-14"
+  },
+  {
+    "id": "sales-discount-approval-matrix",
+    "title": "Sales Discount Approval Matrix",
+    "source": "products/sales-discount-approval-matrix.md",
+    "format": "md",
+    "summary": "Discount bands and approvers, deal desk threshold of GBP 250,000 and rules for recording approvals in Atlas.",
+    "labels": [
+      "sales",
+      "policy",
+      "discount"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "policy",
+      "region": "global",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sales-lumen-water-utilities-playbook",
+    "title": "Lumen Sales Playbook: Water Utilities",
+    "source": "products/sales-lumen-water-utilities-playbook.md",
+    "format": "pdf",
+    "summary": "Qualification questions, LF-60 vs LF-60P selection rules and objection handling for selling Lumen to water utilities.",
+    "labels": [
+      "sales",
+      "lumen",
+      "playbook",
+      "water-utilities"
+    ],
+    "tags": {
+      "department": "sales",
+      "product_line": "lumen",
+      "doc_type": "playbook",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-05-06"
+  },
+  {
+    "id": "sales-partner-program-guide",
+    "title": "Meridian Partner Programme Guide",
+    "source": "products/sales-partner-program-guide.md",
+    "format": "docx",
+    "summary": "Registered, Silver and Gold partner tiers with discounts, requirements, 90-day deal registration and MDF rules.",
+    "labels": [
+      "sales",
+      "partner",
+      "channel",
+      "guide"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sales-price-list-fy25-26",
+    "title": "Hardware and Subscription Price List FY2025/26",
+    "source": "products/sales-price-list-fy25-26.md",
+    "format": "pdf",
+    "summary": "FY2025/26 list prices for Halcyon, Tessera, TesseraCloud and Lumen SKUs in GBP, EUR, USD and MYR, with volume breaks and commercial terms.",
+    "labels": [
+      "sales",
+      "pricing",
+      "price-list"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "price-list",
+      "region": "global",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sales-support-contract-price-list",
+    "title": "Support Contract Price List FY2025/26",
+    "source": "products/sales-support-contract-price-list.html",
+    "format": "html",
+    "summary": "Annual per-site prices for Essential, Professional and Premier support contracts in four currencies, with multi-site discounts; tier definitions live in sup-sla-tiers.",
+    "labels": [
+      "sales",
+      "pricing",
+      "support-contract"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "price-list",
+      "region": "global",
+      "year": "2025",
+      "product_line": "all"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sales-tessera-roi-guide",
+    "title": "Tessera ROI Calculator Guide",
+    "source": "products/sales-tessera-roi-guide.md",
+    "format": "docx",
+    "summary": "How to use the Tessera ROI calculator, with default assumptions and a worked UK example showing a 9-month payback.",
+    "labels": [
+      "sales",
+      "tessera",
+      "roi",
+      "guide"
+    ],
+    "tags": {
+      "department": "sales",
+      "doc_type": "guide",
+      "region": "global",
+      "year": "2025",
+      "product_line": "tessera"
+    },
+    "date": "2025-06-05"
+  },
+  {
+    "id": "sup-escalation-procedure",
+    "title": "Customer Support Escalation Procedure",
+    "source": "products/sup-escalation-procedure.md",
+    "format": "md",
+    "summary": "L1/L2/L3 escalation triggers by priority, regional hubs, duty manager rota and when Rosa Delgado and Lars Hedegaard are notified.",
+    "labels": [
+      "support",
+      "escalation",
+      "procedure"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-05-01"
+  },
+  {
+    "id": "sup-field-service-rates",
+    "title": "Field Service Visit Rates",
+    "source": "products/sup-field-service-rates.md",
+    "format": "md",
+    "summary": "FY2025/26 field service day rates in GBP, EUR, USD and MYR, travel charges, inclusions and cancellation terms.",
+    "labels": [
+      "support",
+      "field-service",
+      "pricing"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "rate-card",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sup-halcyon-error-codes",
+    "title": "Halcyon Error Code Reference",
+    "source": "products/sup-halcyon-error-codes.html",
+    "format": "html",
+    "summary": "Table of Halcyon E-codes (E-101 to E-140) with meaning, applicable models and corrective action.",
+    "labels": [
+      "support",
+      "halcyon",
+      "error-codes",
+      "troubleshooting"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "halcyon",
+      "doc_type": "reference",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-06-30"
+  },
+  {
+    "id": "sup-hx-sensor-replacement-procedure",
+    "title": "Halcyon Sensor Replacement Procedure",
+    "source": "products/sup-hx-sensor-replacement-procedure.md",
+    "format": "pdf",
+    "summary": "Step-by-step replacement of LEL, O2, CO and H2S sensors in Halcyon detectors, including torque values and warm-up times.",
+    "labels": [
+      "support",
+      "halcyon",
+      "procedure",
+      "maintenance"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "halcyon",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-03-10"
+  },
+  {
+    "id": "sup-kb-ts4-gateway-offline",
+    "title": "KB: TS-4 Gateway Shows Offline in TesseraCloud",
+    "source": "products/sup-kb-ts4-gateway-offline.md",
+    "format": "md",
+    "summary": "Knowledge-base article diagnosing a TS-4 gateway shown Offline in TesseraCloud: LED states, backhaul and certificate checks, common causes.",
+    "labels": [
+      "support",
+      "tessera",
+      "knowledge-base",
+      "troubleshooting"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "kb-article",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-09-08"
+  },
+  {
+    "id": "sup-lumen-error-codes",
+    "title": "Lumen Error Code Reference",
+    "source": "products/sup-lumen-error-codes.md",
+    "format": "pdf",
+    "summary": "Meaning, output behaviour and fixes for Lumen L-series error codes on LF-60 and LF-60P.",
+    "labels": [
+      "support",
+      "lumen",
+      "error-codes",
+      "troubleshooting"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "lumen",
+      "model": "LF-60, LF-60P",
+      "doc_type": "reference",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-03-20"
+  },
+  {
+    "id": "sup-rma-process-v1",
+    "title": "Return Material Authorisation (RMA) Process",
+    "source": "products/sup-rma-process-v1.md",
+    "format": "pdf",
+    "summary": "2024 RMA procedure: email requests, RMA-24 numbers valid 30 days, EMEA returns to Leeds, advance replacement for Premier only.",
+    "labels": [
+      "support",
+      "rma",
+      "procedure"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-02-01",
+    "version": "1"
+  },
+  {
+    "id": "sup-rma-process-v2",
+    "title": "Return Material Authorisation (RMA) Process",
+    "source": "products/sup-rma-process-v2.md",
+    "format": "pdf",
+    "summary": "2025 RMA procedure: portal requests linked to MSC tickets, 21-day validity, Rotterdam EU hub, mandatory MI-F-031 decontamination form, 10-day turnaround.",
+    "labels": [
+      "support",
+      "rma",
+      "procedure"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "procedure",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01",
+    "version": "2",
+    "supersedes": "sup-rma-process-v1"
+  },
+  {
+    "id": "sup-sla-tiers",
+    "title": "Customer Support SLA Tiers",
+    "source": "products/sup-sla-tiers.md",
+    "format": "pdf",
+    "summary": "Defines Essential, Professional and Premier support tiers: coverage hours, P1-P4 response targets, TesseraCloud uptime, service credits, on-site visits and TAM.",
+    "labels": [
+      "support",
+      "sla",
+      "policy"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "policy",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sup-tessera-error-codes",
+    "title": "Tessera Error Code Reference",
+    "source": "products/sup-tessera-error-codes.md",
+    "format": "md",
+    "summary": "Table of Tessera T-codes (T-301 to T-355) with causes and resolutions, linking to the admin guide and compatibility matrix.",
+    "labels": [
+      "support",
+      "tessera",
+      "error-codes",
+      "troubleshooting"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "tessera",
+      "model": "TS-4",
+      "doc_type": "error-code-reference",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-08-25"
+  },
+  {
+    "id": "sup-ticket-priority-codes",
+    "title": "Support Ticket Priority Codes",
+    "source": "products/sup-ticket-priority-codes.md",
+    "format": "md",
+    "summary": "Definitions and examples of P1-P4 ticket priorities, MSC ticket number format, and rules for setting, upgrading and downgrading priority.",
+    "labels": [
+      "support",
+      "tickets",
+      "policy"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "policy",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01"
+  },
+  {
+    "id": "sup-troubleshooting-compendium",
+    "title": "Meridian Field Troubleshooting Compendium",
+    "source": "products/sup-troubleshooting-compendium.md",
+    "format": "docx",
+    "summary": "Symptom, cause and fix guide for Halcyon, Tessera and Lumen field faults, including cold-weather derating, TesseraMesh RSSI thresholds and Lumen empty-pipe settings.",
+    "labels": [
+      "support",
+      "troubleshooting",
+      "halcyon",
+      "tessera",
+      "lumen"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "troubleshooting",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-09-15"
+  },
+  {
+    "id": "sup-warranty-terms-2024",
+    "title": "Meridian Limited Warranty Terms 2024",
+    "source": "products/sup-warranty-terms-2024.md",
+    "format": "docx",
+    "summary": "Warranty periods and exclusions for products shipped from 1 April 2024, including 24-month Halcyon and 12-month sensor cover.",
+    "labels": [
+      "support",
+      "warranty",
+      "policy"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "policy",
+      "region": "global",
+      "year": "2024"
+    },
+    "date": "2024-04-01",
+    "version": "1"
+  },
+  {
+    "id": "sup-warranty-terms-2025",
+    "title": "Meridian Limited Warranty Terms 2025",
+    "source": "products/sup-warranty-terms-2025.md",
+    "format": "docx",
+    "summary": "Warranty terms from 1 April 2025: 36-month Halcyon and TS-4 cover with registration, 24-month sensors, 18-month O2 sensor, 60-month LF-60P wetted parts.",
+    "labels": [
+      "support",
+      "warranty",
+      "policy"
+    ],
+    "tags": {
+      "department": "support",
+      "product_line": "all",
+      "doc_type": "policy",
+      "region": "global",
+      "year": "2025"
+    },
+    "date": "2025-04-01",
+    "version": "2",
+    "supersedes": "sup-warranty-terms-2024"
+  }
+]

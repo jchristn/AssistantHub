@@ -1,0 +1,1772 @@
+[
+  {
+    "id": "eng-q001",
+    "text": "After a big outage, how long have we got to hold the review meeting and write it up?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-incident-severity-definitions",
+      "it-glossary-internal-terms"
+    ],
+    "grades": {
+      "it-incident-severity-definitions": 2,
+      "it-glossary-internal-terms": 1
+    },
+    "evidence": [
+      "A SEV1 or SEV2 always requires a post-incident review (PIR) within 5 business days"
+    ],
+    "answer": "SEV1 and SEV2 incidents need a post-incident review within 5 business days, with a written postmortem in the engineering knowledge base."
+  },
+  {
+    "id": "eng-q002",
+    "text": "I clicked a link in a dodgy email and typed my password in before I realised. What do I do and who do I ring?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sec-phishing-reporting-guide"
+    ],
+    "grades": {
+      "sec-phishing-reporting-guide": 2
+    },
+    "evidence": [
+      "Change your password immediately from a company device.",
+      "Call the IT Service Desk on extension 4357 (HELP), or +44 113 496 0400 from outside the network."
+    ],
+    "answer": "Change your password immediately from a company device, then call the IT Service Desk on ext 4357 (or +44 113 496 0400 from outside); the desk raises a SEC-INCIDENT and IT Security revokes your sessions."
+  },
+  {
+    "id": "eng-q003",
+    "text": "Can a single backup admin wipe a backup set before it's due to expire?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sec-backup-retention-standard-v2"
+    ],
+    "grades": {
+      "sec-backup-retention-standard-v2": 2
+    },
+    "evidence": [
+      "Deletion of backup sets before expiry requires two approvers from IT Infrastructure and IT Security."
+    ],
+    "answer": "No. Deleting backup sets before expiry needs two approvers, from IT Infrastructure and IT Security."
+  },
+  {
+    "id": "eng-q004",
+    "text": "An equipment supplier wants to dial in and look at one of the reflow ovens in Penang. How long can their session run?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-ot-network-standard"
+    ],
+    "grades": {
+      "mfg-penang-ot-network-standard": 2
+    },
+    "evidence": [
+      "Equipment vendors: escorted sessions only, started by Penang OT Support through the privileged access vault, maximum 2 hours per session."
+    ],
+    "answer": "Maximum 2 hours per session, escorted, started by Penang OT Support through the privileged access vault; vendors never get standing credentials."
+  },
+  {
+    "id": "eng-q005",
+    "text": "I've just switched teams. How long do I keep the system access from my old job?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sec-access-review-procedure"
+    ],
+    "grades": {
+      "sec-access-review-procedure": 2
+    },
+    "evidence": [
+      "Movers keep old access for no more than 30 days after a role change."
+    ],
+    "answer": "No more than 30 days after the role change."
+  },
+  {
+    "id": "eng-q006",
+    "text": "Why do Lumen meters returned to the Rotterdam repair centre get shipped off to Malaysia instead of being checked locally?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-rotterdam-repair-centre-process"
+    ],
+    "grades": {
+      "mfg-rotterdam-repair-centre-process": 2
+    },
+    "evidence": [
+      "Lumen meters are sent to Penang for flow-rig verification because Rotterdam has no reference rig."
+    ],
+    "answer": "Rotterdam has no flow reference rig, so Lumen meters go to Penang for flow-rig verification."
+  },
+  {
+    "id": "eng-q007",
+    "text": "Can I just put a new placement program on a USB stick and load it on the SMT line PC?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-ot-network-standard"
+    ],
+    "grades": {
+      "mfg-penang-ot-network-standard": 2
+    },
+    "evidence": [
+      "USB storage is disabled on all OT PCs.",
+      "Recipe and program files are transferred only through the managed file transfer share on ot-jump-pen-01, where files are malware-scanned."
+    ],
+    "answer": "No. USB storage is disabled on OT PCs; program and recipe files go only through the malware-scanned managed file transfer share on ot-jump-pen-01."
+  },
+  {
+    "id": "eng-q008",
+    "text": "There's paste left on the stencil from the last job. Can we use it on the next board?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-smt-changeover-runbook"
+    ],
+    "grades": {
+      "mfg-penang-smt-changeover-runbook": 2
+    },
+    "evidence": [
+      "Paste left on the stencil at the end of a job may be reused on the next job only if the next job is on the same line",
+      "the paste is within its 24-hour open time, and it has not been contaminated"
+    ],
+    "answer": "Only if the next job is on the same line, the paste is still within its 24-hour open time and it is not contaminated; otherwise scrap it."
+  },
+  {
+    "id": "eng-q009",
+    "text": "A batch of gas detectors just arrived off a cold truck. Do they need to sit for a while before they go on the cal bench?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-halcyon-calibration-procedure"
+    ],
+    "grades": {
+      "mfg-halcyon-calibration-procedure": 2
+    },
+    "evidence": [
+      "Units that arrive from cold storage or from a shipping container must acclimatise at station conditions for at least 2 hours before calibration."
+    ],
+    "answer": "Yes, they must acclimatise at station conditions for at least 2 hours before calibration."
+  },
+  {
+    "id": "eng-q010",
+    "text": "With the new broker, what happens now if one downstream consumer gets stuck? Does ingestion still grind to a halt?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-adr-019-message-broker-kafka"
+    ],
+    "grades": {
+      "eng-adr-019-message-broker-kafka": 2
+    },
+    "evidence": [
+      "Broker back-pressure no longer blocks publishers; lag accumulates in the log instead."
+    ],
+    "answer": "No. On Kafka, back-pressure no longer blocks publishers; the stuck consumer just builds up lag in the log."
+  },
+  {
+    "id": "eng-q011",
+    "text": "Can I pull a customer's readings into the staging environment to reproduce a bug they reported?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "sec-data-classification-standard"
+    ],
+    "grades": {
+      "sec-data-classification-standard": 2
+    },
+    "evidence": [
+      "Customer data must not be copied from production TesseraCloud to dev or staging environments; synthetic data sets are used instead."
+    ],
+    "answer": "No. Customer telemetry must not be copied from production to dev or staging; use synthetic data sets."
+  },
+  {
+    "id": "eng-q012",
+    "text": "Once Finance signs off the month, what actually stops people from posting into the closed period in Atlas?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-atlas-month-end-close-runbook"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2
+    },
+    "evidence": [
+      "The job sets the configuration key atlas.period.lock=true for the closed period in all four entities."
+    ],
+    "answer": "The CLOSE-LOCK job sets atlas.period.lock=true for the closed period in all four entities. The lock is checked with a test posting, which must be rejected."
+  },
+  {
+    "id": "eng-q013",
+    "text": "After we've failed TesseraCloud over to Frankfurt, how much notice do customers get before we move it back?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2
+    },
+    "evidence": [
+      "Customers are notified at least 48 hours in advance through the status page",
+      "Failback is not started until TesseraCloud has run stably in euc1 for at least 24 hours"
+    ],
+    "answer": "At least 48 hours' notice through the status page (unless done via ECAB, when the Approver agrees the notice), and only after at least 24 hours of stable running in euc1."
+  },
+  {
+    "id": "eng-q014",
+    "text": "I set up the line for the changeover and I'm QA-qualified. Can I sign off the first article myself?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-smt-changeover-runbook"
+    ],
+    "grades": {
+      "mfg-penang-smt-changeover-runbook": 2
+    },
+    "evidence": [
+      "Only the QA inspector can sign the FAI.",
+      "The line lead cannot sign the FAI for a line they have set up, even if they hold a QA inspection qualification."
+    ],
+    "answer": "No. Only the QA inspector can sign the FAI, and a line lead cannot sign it for a line they set up, even with a QA qualification."
+  },
+  {
+    "id": "eng-q015",
+    "text": "How long does a laptop handed back by a leaver sit on the shelf before we can give it to someone else?",
+    "type": "paraphrase",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-laptop-provisioning-guide"
+    ],
+    "grades": {
+      "it-laptop-provisioning-guide": 2
+    },
+    "evidence": [
+      "kept in quarantine for 30 days before reissue"
+    ],
+    "answer": "It is wiped with the certified tool and quarantined for 30 days before reissue."
+  },
+  {
+    "id": "eng-q016",
+    "text": "When does FORGE_RUNNER_POOL_LOW fire?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-monitoring-alert-catalogue",
+      "eng-forge-runner-rotation-runbook",
+      "eng-adr-015-forge-runner-fleet"
+    ],
+    "grades": {
+      "eng-monitoring-alert-catalogue": 2,
+      "eng-forge-runner-rotation-runbook": 1,
+      "eng-adr-015-forge-runner-fleet": 1
+    },
+    "evidence": [
+      "Fewer than 5 Leeds Linux runners online for more than 30 minutes",
+      "the FORGE_RUNNER_POOL_LOW alert fires when fewer than 5 Leeds Linux runners are online"
+    ],
+    "answer": "When fewer than 5 Leeds Linux runners are online for more than 30 minutes (SEV3 to platform-primary)."
+  },
+  {
+    "id": "eng-q017",
+    "text": "what's listening on port 2224?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-port-service-matrix"
+    ],
+    "grades": {
+      "it-port-service-matrix": 2
+    },
+    "evidence": [
+      "Forge Git over SSH"
+    ],
+    "answer": "Forge Git over SSH on forge.meridian.internal, allowed from corporate networks and VPN."
+  },
+  {
+    "id": "eng-q018",
+    "text": "TC_MM2_REPLICATION_LAG paged me. What's the threshold and how serious is it?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-monitoring-alert-catalogue"
+    ],
+    "grades": {
+      "eng-monitoring-alert-catalogue": 2
+    },
+    "evidence": [
+      "MirrorMaker 2 replication-latency-ms-max above 30,000 ms for 15 minutes"
+    ],
+    "answer": "It fires when MirrorMaker 2 replication-latency-ms-max is above 30,000 ms for 15 minutes. It is SEV3, routed to platform-primary in business hours."
+  },
+  {
+    "id": "eng-q019",
+    "text": "Where in Vault is the runner token for forge-runner-lds-05 kept?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-forge-runner-rotation-runbook"
+    ],
+    "grades": {
+      "eng-forge-runner-rotation-runbook": 2
+    },
+    "evidence": [
+      "Runner tokens are never stored in configuration management; they are held in Vault at secret/forge/runners"
+    ],
+    "answer": "At secret/forge/runners/forge-runner-lds-05 (the path pattern is secret/forge/runners/<hostname>)."
+  },
+  {
+    "id": "eng-q020",
+    "text": "What happened in INC-2025-014?",
+    "type": "lexical",
+    "category": "citation_required",
+    "relevant": [
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow",
+      "mfg-penang-smt-changeover-runbook"
+    ],
+    "grades": {
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow": 2,
+      "mfg-penang-smt-changeover-runbook": 1
+    },
+    "evidence": [
+      "SMT-2 at the Penang factory ran 612 TS4E-EN boards (Tessera TS-4e edge node) through the reflow oven using profile RP-HX-07"
+    ],
+    "answer": "On 11 March 2025, Penang SMT-2 ran 612 TS4E-EN boards on the HX-MB reflow profile RP-HX-07 instead of RP-TS4E-03. That caused voiding, 540 boards were scrapped and 72 reworked, and it was a SEV2."
+  },
+  {
+    "id": "eng-q021",
+    "text": "what does tcctl failover promote --region euc1 --confirm actually do under the hood?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2
+    },
+    "evidence": [
+      "This command promotes tsdb-dr-01 to primary, switches the euc1 Kafka cluster from replica mode to active mode, stops MirrorMaker 2 and translates committed offsets for consumer group tc-stream-prd."
+    ],
+    "answer": "It promotes tsdb-dr-01 to primary, switches the euc1 Kafka cluster to active mode, stops MirrorMaker 2 and translates committed offsets for tc-stream-prd. It is idempotent, so re-run it if it times out."
+  },
+  {
+    "id": "eng-q022",
+    "text": "What is standard change SC-021?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-change-management-procedure-v2"
+    ],
+    "grades": {
+      "it-change-management-procedure-v2": 2
+    },
+    "evidence": [
+      "Printer queue creation at any site"
+    ],
+    "answer": "Printer queue creation at any site, owned by the IT Service Desk."
+  },
+  {
+    "id": "eng-q023",
+    "text": "Where does ATLAS_PAYX_FAILED get routed?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-monitoring-alert-catalogue",
+      "it-atlas-month-end-close-runbook",
+      "it-postmortem-inc-2025-007-atlas-payroll-export"
+    ],
+    "grades": {
+      "eng-monitoring-alert-catalogue": 2,
+      "it-atlas-month-end-close-runbook": 1,
+      "it-postmortem-inc-2025-007-atlas-payroll-export": 1
+    },
+    "evidence": [
+      "itops-primary and atlas-oncall@meridian-instruments.com; Beacon ATLAS-PAYX ticket"
+    ],
+    "answer": "SEV2 to itops-primary and atlas-oncall@meridian-instruments.com, plus an automatic Beacon ATLAS-PAYX ticket (never the old atlas-ops@ list)."
+  },
+  {
+    "id": "eng-q024",
+    "text": "A return turned up at Rotterdam without MI-F-031 in the box. What do we do with it?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-rotterdam-repair-centre-process"
+    ],
+    "grades": {
+      "mfg-rotterdam-repair-centre-process": 2
+    },
+    "evidence": [
+      "Units without MI-F-031 go to the quarantine shelf and Support is informed the same day; they are not opened."
+    ],
+    "answer": "Put it on the quarantine shelf unopened and tell Support the same day. MI-F-031 is the decontamination declaration."
+  },
+  {
+    "id": "eng-q025",
+    "text": "Which runners pick up jobs tagged large?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-forge-pipeline-standards",
+      "eng-forge-runner-rotation-runbook"
+    ],
+    "grades": {
+      "eng-forge-pipeline-standards": 2,
+      "eng-forge-runner-rotation-runbook": 1
+    },
+    "evidence": [
+      "forge-runner-lds-05, forge-runner-lds-06",
+      "Memory-heavy builds"
+    ],
+    "answer": "forge-runner-lds-05 and forge-runner-lds-06 (memory-heavy builds)."
+  },
+  {
+    "id": "eng-q026",
+    "text": "auto.create.topics.enable is false in prod, so how am I supposed to create a new Kafka topic?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-kafka-topic-conventions"
+    ],
+    "grades": {
+      "eng-kafka-topic-conventions": 2
+    },
+    "evidence": [
+      "Topics are created only through the Forge pipeline in the repository platform/kafka-topics.",
+      "Production topics require approval by a Platform Engineering maintainer."
+    ],
+    "answer": "Raise a merge request in the platform/kafka-topics repository and let its Forge pipeline create the topic. The MR states partitions, retention, replication factor 3 and the owning team, and production topics need a Platform Engineering maintainer's approval."
+  },
+  {
+    "id": "eng-q027",
+    "text": "What is form MFG-F-207 and how long is it kept?",
+    "type": "lexical",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-halcyon-calibration-procedure"
+    ],
+    "grades": {
+      "mfg-halcyon-calibration-procedure": 2
+    },
+    "evidence": [
+      "Calibration certificate form MFG-F-207 is generated for every unit that passes.",
+      "retained 10 years from the calibration date"
+    ],
+    "answer": "MFG-F-207 is the Halcyon calibration certificate, issued for every unit that passes. The electronic copy is kept in the Atlas quality module for 10 years."
+  },
+  {
+    "id": "eng-q028",
+    "text": "I'm on the platform rota. If a SEV2 page comes in, how long do I have to ack it before it goes to the secondary, and what's the ack target?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "it-oncall-policy-v2",
+      "it-incident-severity-definitions"
+    ],
+    "grades": {
+      "it-oncall-policy-v2": 2,
+      "it-incident-severity-definitions": 2
+    },
+    "evidence": [
+      "SEV2 pages within 15 minutes",
+      "15 minutes without acknowledgement",
+      "Paged responders must acknowledge within the Acknowledge time for the incident's severity in the Incident Severity Definitions"
+    ],
+    "answer": "The acknowledge target for SEV2 is 15 minutes, from the severity table. If there is no ack after 15 minutes it escalates to the secondary, and after 30 minutes to the manager."
+  },
+  {
+    "id": "eng-q029",
+    "text": "What check got added to the month-end close because of the January 2025 payroll export failure, and which step of the runbook is it?",
+    "type": "multi",
+    "category": "citation_required",
+    "relevant": [
+      "it-atlas-month-end-close-runbook",
+      "it-postmortem-inc-2025-007-atlas-payroll-export"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2,
+      "it-postmortem-inc-2025-007-atlas-payroll-export": 2
+    },
+    "evidence": [
+      "verify the bureau SFTP host key fingerprint against the vault entry payx/calderbrook/hostkey before releasing PAYX-MONTHLY (now step 22)",
+      "This step was added as action item AI-3 of postmortem INC-2025-007"
+    ],
+    "answer": "Step 22: before releasing PAYX-MONTHLY, compare the Calderbrook SFTP host key fingerprint (sftp.calderbrook-payroll.co.uk port 2222) with the vault entry payx/calderbrook/hostkey. This was INC-2025-007 action item AI-3."
+  },
+  {
+    "id": "eng-q030",
+    "text": "The broker check that was added to the failover runbook after the May 2024 ingestion outage: what does it check today, and why is it different from the original?",
+    "type": "multi",
+    "category": "citation_required",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook",
+      "eng-postmortem-inc-2024-031-tesseracloud-ingestion",
+      "eng-adr-019-message-broker-kafka"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2,
+      "eng-postmortem-inc-2024-031-tesseracloud-ingestion": 1,
+      "eng-adr-019-message-broker-kafka": 1
+    },
+    "evidence": [
+      "The Kafka lead checks the consumer lag of consumer group tc-stream-prd in euw1",
+      "Add a broker queue-depth check to the TesseraCloud Regional Failover Runbook before any failover decision",
+      "the RabbitMQ queue-depth check added after INC-2024-031 becomes a consumer-lag check"
+    ],
+    "answer": "Step 9 now checks Kafka consumer lag for tc-stream-prd in euw1. It began as a RabbitMQ queue-depth check (INC-2024-031 AI-2) and became a consumer-lag check when ADR-019 moved TesseraCloud to Kafka."
+  },
+  {
+    "id": "eng-q031",
+    "text": "After the Forge runner token outage, what alert was added, when does it fire, and how quickly does whoever's on call have to acknowledge it?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "eng-postmortem-inc-2024-052-forge-token-expiry",
+      "eng-monitoring-alert-catalogue",
+      "it-incident-severity-definitions",
+      "eng-forge-runner-rotation-runbook"
+    ],
+    "grades": {
+      "eng-postmortem-inc-2024-052-forge-token-expiry": 2,
+      "eng-monitoring-alert-catalogue": 2,
+      "it-incident-severity-definitions": 2,
+      "eng-forge-runner-rotation-runbook": 1
+    },
+    "evidence": [
+      "Add alert FORGE_RUNNER_TOKEN_EXPIRY_SOON, firing at 10 days remaining and paging Platform on-call as SEV3",
+      "Any runner token expires in 10 days or less",
+      "4 business hours"
+    ],
+    "answer": "FORGE_RUNNER_TOKEN_EXPIRY_SOON fires when any runner token has 10 days or less left and pages Platform on-call as a SEV3. A SEV3 must be acknowledged within 4 business hours."
+  },
+  {
+    "id": "eng-q032",
+    "text": "Is it OK to do a Forge runner token rotation wave on the second working day of the month?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "eng-forge-runner-rotation-runbook",
+      "it-atlas-month-end-close-runbook"
+    ],
+    "grades": {
+      "eng-forge-runner-rotation-runbook": 2,
+      "it-atlas-month-end-close-runbook": 1
+    },
+    "evidence": [
+      "The Atlas month-end close window, from BD-2 to BD+3",
+      "BD-1 is the last business day of the month and BD+1 is the first business day of the new month"
+    ],
+    "answer": "No. The second business day is BD+2, which falls inside the Atlas month-end close window (BD-2 to BD+3), and that window is a blackout for token rotation. Move the wave to the next available working day."
+  },
+  {
+    "id": "eng-q033",
+    "text": "Our backup standard says dailies are only kept 30 days. Does that mean the pre-close Atlas backup from four months ago is already gone?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "it-atlas-month-end-close-runbook",
+      "sec-backup-retention-standard-v2"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2,
+      "sec-backup-retention-standard-v2": 2
+    },
+    "evidence": [
+      "is retained for 13 months. This retention overrides the standard 30-day daily retention",
+      "Atlas month-end pre-close backup (tag MEC-YYYYMM)"
+    ],
+    "answer": "No. The MEC-YYYYMM pre-close backup taken at 22:00 on BD-3 is kept for 13 months, which overrides the 30-day daily retention."
+  },
+  {
+    "id": "eng-q034",
+    "text": "We were running a SEV2 on TesseraCloud and now we're going to fail over to Frankfurt. Does the severity change, and how soon do customers need a status page update?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook",
+      "it-incident-severity-definitions"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2,
+      "it-incident-severity-definitions": 2
+    },
+    "evidence": [
+      "A failover is always handled as a SEV1 incident",
+      "the Incident Commander raises it to SEV1 at the moment the failover decision is taken",
+      "SEV1 incidents affecting TesseraCloud customers require a status page update at status.tesseracloud.meridian-instruments.com within 30 minutes."
+    ],
+    "answer": "Yes. A failover is always SEV1, so the IC raises it to SEV1 at the decision. The first status page update is due within 30 minutes, then every 30 minutes."
+  },
+  {
+    "id": "eng-q035",
+    "text": "I'm a Penang engineer working from home and need to get onto an SMT line PC. What's the route and what do I need?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "mfg-penang-ot-network-standard",
+      "it-network-vpn-guide-penang",
+      "sec-password-mfa-standard-v2"
+    ],
+    "grades": {
+      "mfg-penang-ot-network-standard": 2,
+      "it-network-vpn-guide-penang": 2,
+      "sec-password-mfa-standard-v2": 1
+    },
+    "evidence": [
+      "then ot-jump-pen-01 with a FIDO2 key and an approved Beacon MFG-OT ticket",
+      "Protocol and port: UDP 443.",
+      "remote access to the Penang OT network"
+    ],
+    "answer": "Connect Meridian Connect to vpn-pen (UDP 443), then use the jump host ot-jump-pen-01. You need a FIDO2 key and an approved Beacon MFG-OT ticket. Sessions are recorded and capped at 4 hours."
+  },
+  {
+    "id": "eng-q036",
+    "text": "A customer HX-210 is in Rotterdam for recalibration. Which cal stations do we use, and where does the calibration certificate go?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "mfg-rotterdam-repair-centre-process",
+      "mfg-halcyon-calibration-procedure"
+    ],
+    "grades": {
+      "mfg-rotterdam-repair-centre-process": 2,
+      "mfg-halcyon-calibration-procedure": 2
+    },
+    "evidence": [
+      "Recalibrate Halcyon detectors on calibration stations CAL-RTM-01 or CAL-RTM-02",
+      "Print the calibration certificate on form MFG-F-207 and place it in the unit packaging (Penang) or the RMA return pack (Rotterdam)."
+    ],
+    "answer": "Use CAL-RTM-01 or CAL-RTM-02 and follow the Halcyon calibration procedure. Print the MFG-F-207 certificate and put it in the RMA return pack; the electronic copy goes to the Atlas quality module."
+  },
+  {
+    "id": "eng-q037",
+    "text": "We want to fail TesseraCloud back to Dublin before the next CAB. Who has to approve that?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "it-change-management-procedure-v2",
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "it-change-management-procedure-v2": 2,
+      "eng-tesseracloud-failover-runbook": 1
+    },
+    "evidence": [
+      "For TesseraCloud regional failover and failback, the Head of Platform Engineering may act as the second approver.",
+      "ECAB approval requires two members, one of whom must be the Head of IT Operations or the CTO.",
+      "or through ECAB if a business reason requires it sooner than the next CAB meeting"
+    ],
+    "answer": "It goes through ECAB, which needs two approvers. One must be the Head of IT Operations or the CTO, and the Head of Platform Engineering can be the second."
+  },
+  {
+    "id": "eng-q038",
+    "text": "Ravi is platform primary the week of the October 2025 failover drill. What on-call allowance does he get for the Saturday of that week?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "it-oncall-rotation-platform-q3-fy26",
+      "hr-overtime-on-call-policy"
+    ],
+    "grades": {
+      "it-oncall-rotation-platform-q3-fy26": 2,
+      "hr-overtime-on-call-policy": 2
+    },
+    "evidence": [
+      "The TesseraCloud failover drill scheduled for 14 October 2025 falls in the week of Ravi Chandrasekar (primary)",
+      "UK (all teams)",
+      "£60"
+    ],
+    "answer": "£60 for the weekend day. Ravi is a UK primary for the week starting 13 October 2025, and the UK rate is £60 per weekend or public-holiday day."
+  },
+  {
+    "id": "eng-q039",
+    "text": "What canary does a production tc-agg deployment go through, and which incident was that introduced after?",
+    "type": "multi",
+    "category": "multi_hop",
+    "relevant": [
+      "eng-tesseracloud-config-prod",
+      "eng-postmortem-inc-2024-031-tesseracloud-ingestion"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-prod": 2,
+      "eng-postmortem-inc-2024-031-tesseracloud-ingestion": 2
+    },
+    "evidence": [
+      "use a canary stage (10% of consumers for 15 minutes), introduced after INC-2024-031",
+      "Add a canary stage for tc-agg deployments in Forge (10% of consumers for 15 minutes)"
+    ],
+    "answer": "A canary stage of 10% of consumers for 15 minutes, added after INC-2024-031 (action item AI-6)."
+  },
+  {
+    "id": "eng-q040",
+    "text": "During month-end, what happens if one of the currencies has jumped a lot when the ECB rates come in?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-atlas-month-end-close-runbook"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2
+    },
+    "evidence": [
+      "If any currency has moved by more than 3% versus the previous business day, keep FXLOAD on hold",
+      "do not post the rates until Group Treasury has signed off the movement in the MEC Bridge"
+    ],
+    "answer": "If any currency moved more than 3% against the previous business day, keep FXLOAD on hold. Don't post the rates until Group Treasury signs off in the MEC Bridge."
+  },
+  {
+    "id": "eng-q041",
+    "text": "When is the DBA allowed to run the archive log purge during the Atlas close?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-atlas-month-end-close-runbook"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2
+    },
+    "evidence": [
+      "If usage has reached 85%, the DBA runs the archive log purge job ARCH-PURGE, but only after confirming that standby apply lag on atlas-db-prd-02.meridian.internal is under 5 minutes."
+    ],
+    "answer": "When /u02/arch on atlas-db-prd-01 reaches 85%, and only after confirming that standby apply lag on atlas-db-prd-02 is under 5 minutes."
+  },
+  {
+    "id": "eng-q042",
+    "text": "What time does the payroll bureau need the PAYX file by on BD+1?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-atlas-month-end-close-runbook",
+      "it-postmortem-inc-2025-007-atlas-payroll-export"
+    ],
+    "grades": {
+      "it-atlas-month-end-close-runbook": 2,
+      "it-postmortem-inc-2025-007-atlas-payroll-export": 1
+    },
+    "evidence": [
+      "because the payroll bureau cut-off is 17:00 UK time on BD+1"
+    ],
+    "answer": "17:00 UK time on BD+1. PAYX-MONTHLY is released at 14:00."
+  },
+  {
+    "id": "eng-q043",
+    "text": "Mid-failover, the MirrorMaker lag won't come down before we promote Frankfurt. What's acceptable and what do we do?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2
+    },
+    "evidence": [
+      "is below 30 seconds (30000 ms) for all replicated topics before promotion proceeds",
+      "If the lag is above 30 seconds, wait up to 10 minutes and re-check",
+      "the Incident Commander may decide to accept the resulting data loss, provided it stays within the 5-minute RPO"
+    ],
+    "answer": "The lag (replication-latency-ms-max) must be below 30 seconds. If it isn't, wait up to 10 minutes and re-check. After that the IC may accept the data loss if it stays within the 5-minute RPO, and must record the decision."
+  },
+  {
+    "id": "eng-q044",
+    "text": "After the DNS switch to euc1, at what point do we scale tc-ingest further and to how many replicas?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2
+    },
+    "evidence": [
+      "if tc-ingest CPU stays above 85 percent for 10 minutes, scale further with tcctl scale --region euc1 --component tc-ingest --replicas 24"
+    ],
+    "answer": "If tc-ingest CPU stays above 85% for 10 minutes, scale it to 24 replicas."
+  },
+  {
+    "id": "eng-q045",
+    "text": "What's the minimum tcctl version I need before running a regional failover?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-failover-runbook"
+    ],
+    "grades": {
+      "eng-tesseracloud-failover-runbook": 2
+    },
+    "evidence": [
+      "Access to the tcctl command line tool at version 2.14 or later, authenticated with a production break-glass role."
+    ],
+    "answer": "tcctl 2.14 or later, authenticated with a production break-glass role."
+  },
+  {
+    "id": "eng-q046",
+    "text": "I rotated a runner token and token-info says it expires in about a month. What's wrong?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-forge-runner-rotation-runbook",
+      "eng-postmortem-inc-2024-052-forge-token-expiry"
+    ],
+    "grades": {
+      "eng-forge-runner-rotation-runbook": 2,
+      "eng-postmortem-inc-2024-052-forge-token-expiry": 1
+    },
+    "evidence": [
+      "If token-info shows an expiry of around 30 days, the host still has the legacy FORGE_RUNNER_TOKEN_TTL override in /etc/forge-runner/env",
+      "Do not resume a host whose token expires in less than 59 days."
+    ],
+    "answer": "The host still has the legacy FORGE_RUNNER_TOKEN_TTL=720h override in /etc/forge-runner/env. Remove it or set it to 1440h, then repeat steps 11 to 14. The expiry must be at least 59 days out before you resume the host."
+  },
+  {
+    "id": "eng-q047",
+    "text": "Before draining one of the Penang HIL runners, what do I have to check on the box?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-forge-runner-rotation-runbook"
+    ],
+    "grades": {
+      "eng-forge-runner-rotation-runbook": 2
+    },
+    "evidence": [
+      "check for the lock file /var/lib/forge/hil.lock",
+      "Never interrupt a job holding the HIL lock"
+    ],
+    "answer": "SSH in and check for /var/lib/forge/hil.lock. If it exists, a HIL job holds a rig: never interrupt it. Wait for it to finish or reschedule the host."
+  },
+  {
+    "id": "eng-q048",
+    "text": "One runner still fails verify after I've rotated its token twice. Can I carry on with the rest of the wave?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-forge-runner-rotation-runbook"
+    ],
+    "grades": {
+      "eng-forge-runner-rotation-runbook": 2
+    },
+    "evidence": [
+      "leave the runner drained, raise a Beacon ticket under category FORGE-RUNNER with the verify output attached, and continue with the rest of the wave only if at least 6 Leeds Linux runners remain online"
+    ],
+    "answer": "Only if at least 6 Leeds Linux runners are still online. Leave the failed runner drained and raise a FORGE-RUNNER ticket with the verify output."
+  },
+  {
+    "id": "eng-q049",
+    "text": "For the first article after an SMT changeover, what solder paste volume does SPI have to show?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-smt-changeover-runbook"
+    ],
+    "grades": {
+      "mfg-penang-smt-changeover-runbook": 2
+    },
+    "evidence": [
+      "The SPI result for the first board must show paste volume within 75–150% on every pad."
+    ],
+    "answer": "75–150% of nominal on every pad. The AOI false call rate must also be at or below 500 ppm."
+  },
+  {
+    "id": "eng-q050",
+    "text": "How long do we have to keep the first article board after a changeover?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-smt-changeover-runbook"
+    ],
+    "grades": {
+      "mfg-penang-smt-changeover-runbook": 2
+    },
+    "evidence": [
+      "FAI board, kept on the FAI retention shelf for 30 days."
+    ],
+    "answer": "It stays at the line for the rest of the shift, then goes on the FAI retention shelf for 30 days."
+  },
+  {
+    "id": "eng-q051",
+    "text": "A CO sensor reads 15% low on the as-found span check. Do we adjust it, flag it or bin it?",
+    "type": "detail",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-halcyon-calibration-procedure"
+    ],
+    "grades": {
+      "mfg-halcyon-calibration-procedure": 2
+    },
+    "evidence": [
+      "If the pre-adjustment span reading deviates more than 10% from the applied gas, flag the sensor as \"drift\" in the Atlas quality module against the sensor serial number.",
+      "If the deviation exceeds 20%, replace the sensor instead of adjusting it"
+    ],
+    "answer": "Flag it as drift in the Atlas quality module (more than 10%), then adjust the span. Only deviations above 20% mean replacing the sensor."
+  },
+  {
+    "id": "eng-q052",
+    "text": "What's the minimum password length for a normal user account?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sec-password-mfa-standard-v2",
+      "it-laptop-provisioning-guide"
+    ],
+    "grades": {
+      "sec-password-mfa-standard-v2": 2,
+      "it-laptop-provisioning-guide": 1,
+      "sec-password-mfa-standard-v1": 0
+    },
+    "evidence": [
+      "Minimum length for standard users increased from 12 to 14 characters"
+    ],
+    "answer": "14 characters (up from 12 in v1)."
+  },
+  {
+    "id": "eng-q053",
+    "text": "Do I still have to change my password every 90 days?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sec-password-mfa-standard-v2"
+    ],
+    "grades": {
+      "sec-password-mfa-standard-v2": 2,
+      "sec-password-mfa-standard-v1": 0
+    },
+    "evidence": [
+      "Mandatory periodic rotation (previously every 90 days) is removed for user accounts.",
+      "Passwords are changed only on suspected compromise, or when the breached-password check flags them."
+    ],
+    "answer": "No. Periodic rotation is removed for user accounts. Change your password only on suspected compromise or when the breached-password check flags it. Penang shop-floor kiosk accounts still rotate every 90 days."
+  },
+  {
+    "id": "eng-q054",
+    "text": "I don't have a work smartphone. Can I keep getting my MFA codes by text message?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sec-password-mfa-standard-v2",
+      "it-laptop-provisioning-guide"
+    ],
+    "grades": {
+      "sec-password-mfa-standard-v2": 2,
+      "it-laptop-provisioning-guide": 1,
+      "sec-password-mfa-standard-v1": 0
+    },
+    "evidence": [
+      "SMS is no longer an accepted MFA method.",
+      "Users who cannot use a smartphone are issued a FIDO2 key by the local IT desk"
+    ],
+    "answer": "No. SMS is no longer accepted (enrolment closed 1 June 2025 and registrations were removed 30 September 2025). Ask for a FIDO2 key through Beacon ACC-MFA."
+  },
+  {
+    "id": "eng-q055",
+    "text": "How long do we hold on to the weekly full backups?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sec-backup-retention-standard-v2"
+    ],
+    "grades": {
+      "sec-backup-retention-standard-v2": 2,
+      "sec-backup-retention-standard-v1": 0
+    },
+    "evidence": [
+      "Weekly full retention increased from 8 weeks to 12 weeks."
+    ],
+    "answer": "12 weeks."
+  },
+  {
+    "id": "eng-q056",
+    "text": "How often do we have to run backup restore tests, and how bad is it if one fails?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "sec-backup-retention-standard-v2"
+    ],
+    "grades": {
+      "sec-backup-retention-standard-v2": 2,
+      "sec-backup-retention-standard-v1": 0
+    },
+    "evidence": [
+      "Restore tests are performed quarterly (in the first month of each fiscal quarter: April, July, October, January).",
+      "A failed restore test is treated as a SEV2 incident (previously SEV3)."
+    ],
+    "answer": "Quarterly (April, July, October, January). A failed restore test is a SEV2 incident."
+  },
+  {
+    "id": "eng-q057",
+    "text": "If I get paged at 3am, how much later can I start work the next morning?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "it-oncall-policy-v2"
+    ],
+    "grades": {
+      "it-oncall-policy-v2": 2,
+      "it-oncall-policy-v1": 0
+    },
+    "evidence": [
+      "after being paged between 00:00 and 06:00, the responder may start up to 5 hours later"
+    ],
+    "answer": "Up to 5 hours later (v1 allowed 4)."
+  },
+  {
+    "id": "eng-q058",
+    "text": "When does CAB meet, and what's the cut-off for getting a normal change on the agenda?",
+    "type": "superseded",
+    "category": "temporal",
+    "relevant": [
+      "it-change-management-procedure-v2",
+      "it-glossary-internal-terms"
+    ],
+    "grades": {
+      "it-change-management-procedure-v2": 2,
+      "it-glossary-internal-terms": 1,
+      "it-change-management-procedure-v1": 0
+    },
+    "evidence": [
+      "The CAB meets every Wednesday at 10:30 UK time on Teams.",
+      "at least 3 business days before implementation and before 16:00 UK time on the Monday preceding the CAB meeting"
+    ],
+    "answer": "Wednesdays at 10:30 UK on Teams. Submit in Beacon (CHG-NORMAL) by 16:00 UK on the preceding Monday, and at least 3 business days before implementation."
+  },
+  {
+    "id": "eng-q059",
+    "text": "Which ADR is the current decision for the TesseraCloud message broker, and when did RabbitMQ actually get switched off?",
+    "type": "superseded",
+    "category": "citation_required",
+    "relevant": [
+      "eng-adr-019-message-broker-kafka"
+    ],
+    "grades": {
+      "eng-adr-019-message-broker-kafka": 2,
+      "eng-adr-012-message-broker-rabbitmq": 0
+    },
+    "evidence": [
+      "Replace RabbitMQ with Apache Kafka for TesseraCloud.",
+      "RabbitMQ was decommissioned on 10 February 2025."
+    ],
+    "answer": "ADR-019 (Kafka), which supersedes ADR-012. RabbitMQ was decommissioned on 10 February 2025."
+  },
+  {
+    "id": "eng-q060",
+    "text": "What's the VPN idle timeout for the Austin office?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-network-vpn-guide-austin"
+    ],
+    "grades": {
+      "it-network-vpn-guide-austin": 2
+    },
+    "evidence": [
+      "Idle timeout: 10 hours (longer than the 8 hours used at the European sites, to cover the time-zone overlap with Leeds)."
+    ],
+    "answer": "10 hours."
+  },
+  {
+    "id": "eng-q061",
+    "text": "How long does a guest Wi-Fi session last at the Penang site?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-network-vpn-guide-penang"
+    ],
+    "grades": {
+      "it-network-vpn-guide-penang": 2
+    },
+    "evidence": [
+      "Meridian-Guest: visitors, sponsor approval by email, sessions last 8 hours."
+    ],
+    "answer": "8 hours."
+  },
+  {
+    "id": "eng-q062",
+    "text": "Which print queue is the finance team's printer at Leeds?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-network-vpn-guide-leeds"
+    ],
+    "grades": {
+      "it-network-vpn-guide-leeds": 2
+    },
+    "evidence": [
+      "First floor, finance area",
+      "LDS-FL2-MFP02"
+    ],
+    "answer": "LDS-FL2-MFP02, the colour multifunction on the first floor finance area (print server prn-lds-01)."
+  },
+  {
+    "id": "eng-q063",
+    "text": "What VLAN and subnet do user laptops land on in Rotterdam?",
+    "type": "confusable",
+    "category": "structured_data",
+    "relevant": [
+      "it-network-vpn-guide-rotterdam"
+    ],
+    "grades": {
+      "it-network-vpn-guide-rotterdam": 2
+    },
+    "evidence": [
+      "10.20.16.0/21"
+    ],
+    "answer": "VLAN 210, subnet 10.20.16.0/21."
+  },
+  {
+    "id": "eng-q064",
+    "text": "Which queue do I send large-format engineering drawings to in Austin?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-network-vpn-guide-austin"
+    ],
+    "grades": {
+      "it-network-vpn-guide-austin": 2
+    },
+    "evidence": [
+      "AUS-ENG-PLOTTER",
+      "Large-format plotter"
+    ],
+    "answer": "AUS-ENG-PLOTTER on prn-aus-01 (engineering area)."
+  },
+  {
+    "id": "eng-q065",
+    "text": "What are the Kafka broker hosts and port for TesseraCloud staging?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-staging"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-staging": 2
+    },
+    "evidence": [
+      "kafka-stg-01 to kafka-stg-03.tessera.meridian.internal"
+    ],
+    "answer": "kafka-stg-01 to kafka-stg-03.tessera.meridian.internal on port 9094 (TLS listener)."
+  },
+  {
+    "id": "eng-q066",
+    "text": "When does the TesseraCloud dev environment get wiped?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-dev"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-dev": 2
+    },
+    "evidence": [
+      "The dev environment is reset every Sunday at 03:00 UK time, which truncates all telemetry tables and reloads the synthetic data set."
+    ],
+    "answer": "Every Sunday at 03:00 UK time: telemetry tables are truncated and the synthetic data set is reloaded."
+  },
+  {
+    "id": "eng-q067",
+    "text": "What's TC_API_RATE_LIMIT_RPM set to in staging, and why?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-staging"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-staging": 2
+    },
+    "evidence": [
+      "deliberately lower than production to surface client back-off bugs"
+    ],
+    "answer": "150 requests per minute per tenant. It is deliberately lower than production (300) to surface client back-off bugs."
+  },
+  {
+    "id": "eng-q068",
+    "text": "What is TC_INGEST_MAX_CONNECTIONS in TesseraCloud production?",
+    "type": "confusable",
+    "category": "structured_data",
+    "relevant": [
+      "eng-tesseracloud-config-prod"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-prod": 2
+    },
+    "evidence": [
+      "60000"
+    ],
+    "answer": "60000 concurrent MQTT connections per tc-ingest pod."
+  },
+  {
+    "id": "eng-q069",
+    "text": "Which TimescaleDB host and port does TesseraCloud staging use?",
+    "type": "confusable",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-staging"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-staging": 2
+    },
+    "evidence": [
+      "tsdb-stg-01.tessera.meridian.internal",
+      "Primary with one async standby"
+    ],
+    "answer": "tsdb-stg-01.tessera.meridian.internal on port 5433 (primary with one async standby)."
+  },
+  {
+    "id": "eng-q070",
+    "text": "We've got a High CVSS finding on an internal-only server. What's the fix deadline?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sec-vulnerability-management-standard"
+    ],
+    "grades": {
+      "sec-vulnerability-management-standard": 2
+    },
+    "evidence": [
+      "7.0 to 8.9",
+      "30 days"
+    ],
+    "answer": "30 days (7 days if it were internet-facing)."
+  },
+  {
+    "id": "eng-q071",
+    "text": "What are Atlas's RTO and RPO, and where do we recover it?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "it-disaster-recovery-overview"
+    ],
+    "grades": {
+      "it-disaster-recovery-overview": 2
+    },
+    "evidence": [
+      "Rotterdam server room using standby atlas-db-prd-02 replica copy",
+      "8 hours",
+      "15 minutes"
+    ],
+    "answer": "Atlas is Tier 1: RTO 8 hours, RPO 15 minutes, recovered in the Rotterdam server room from the atlas-db-prd-02 replica copy."
+  },
+  {
+    "id": "eng-q072",
+    "text": "What default priority does a Beacon ticket for a lost authenticator get?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "it-beacon-ticket-categories"
+    ],
+    "grades": {
+      "it-beacon-ticket-categories": 2
+    },
+    "evidence": [
+      "MFA enrolment, lost authenticator, FIDO2 key request"
+    ],
+    "answer": "P2 (category ACC-MFA, resolved by the IT Service Desk)."
+  },
+  {
+    "id": "eng-q073",
+    "text": "How many partitions does tessera.alerts have, and how long is it retained?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "eng-kafka-topic-conventions",
+      "eng-adr-019-message-broker-kafka"
+    ],
+    "grades": {
+      "eng-kafka-topic-conventions": 2,
+      "eng-adr-019-message-broker-kafka": 1
+    },
+    "evidence": [
+      "tessera.alerts (12 partitions, 14-day retention)",
+      "tc-notify"
+    ],
+    "answer": "12 partitions, 14-day retention. Produced by tc-stream, consumed by tc-notify."
+  },
+  {
+    "id": "eng-q074",
+    "text": "What's SMT-3's rated and actual FY25 throughput on TS-4e edge node boards?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "mfg-penang-smt-line-throughput"
+    ],
+    "grades": {
+      "mfg-penang-smt-line-throughput": 2
+    },
+    "evidence": [
+      "514",
+      "436",
+      "80%"
+    ],
+    "answer": "Rated 514 boards per hour. FY25 actual average was 436 boards per hour, at 80% OEE."
+  },
+  {
+    "id": "eng-q075",
+    "text": "What's the floor life of an MSL 4 part once the dry pack is opened?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "mfg-msl-handling-procedure"
+    ],
+    "grades": {
+      "mfg-msl-handling-procedure": 2
+    },
+    "evidence": [
+      "Floor life after opening the dry pack",
+      "72 hours"
+    ],
+    "answer": "72 hours, at 30 °C or below and 60% RH or below."
+  },
+  {
+    "id": "eng-q076",
+    "text": "What's the target restoration time for a SEV3?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "it-incident-severity-definitions"
+    ],
+    "grades": {
+      "it-incident-severity-definitions": 2
+    },
+    "evidence": [
+      "Minor: limited impact with a workaround available",
+      "3 business days"
+    ],
+    "answer": "3 business days."
+  },
+  {
+    "id": "eng-q077",
+    "text": "What pressure and hold time is the hydrostatic test on an LF-60P?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "mfg-lumen-lf60-final-test-spec"
+    ],
+    "grades": {
+      "mfg-lumen-lf60-final-test-spec": 2
+    },
+    "evidence": [
+      "60 bar (1.5 x PN40) held 120 seconds"
+    ],
+    "answer": "60 bar (1.5 x PN40) held for 120 seconds. The LF-60 is 24 bar for 60 seconds."
+  },
+  {
+    "id": "eng-q078",
+    "text": "Who reviews Forge maintainer access in the access reviews, and how often?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "sec-access-review-procedure"
+    ],
+    "grades": {
+      "sec-access-review-procedure": 2
+    },
+    "evidence": [
+      "Maintainer and owner roles; production deploy rights",
+      "Head of Platform Engineering"
+    ],
+    "answer": "The Head of Platform Engineering, quarterly (May, August, November and February)."
+  },
+  {
+    "id": "eng-q079",
+    "text": "What port and protocol does the Penang OT jump host use?",
+    "type": "table",
+    "category": "structured_data",
+    "relevant": [
+      "it-port-service-matrix",
+      "mfg-penang-ot-network-standard"
+    ],
+    "grades": {
+      "it-port-service-matrix": 2,
+      "mfg-penang-ot-network-standard": 1
+    },
+    "evidence": [
+      "ot-jump-pen-01.meridian.internal",
+      "RDP (from VPN via vault proxy only)"
+    ],
+    "answer": "RDP on port 3389, reachable only from the VPN through the vault proxy. From the jump host into the OT zones, 3389 and 22 are allowed."
+  },
+  {
+    "id": "eng-q080",
+    "text": "Which of these incidents were SEV2?",
+    "type": "filter",
+    "category": "aggregation",
+    "relevant": [
+      "eng-postmortem-inc-2024-052-forge-token-expiry",
+      "it-postmortem-inc-2025-007-atlas-payroll-export",
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow"
+    ],
+    "grades": {
+      "eng-postmortem-inc-2024-052-forge-token-expiry": 2,
+      "it-postmortem-inc-2025-007-atlas-payroll-export": 2,
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow": 2
+    },
+    "evidence": [
+      "Incident: INC-2024-052. Severity: SEV2.",
+      "Incident: INC-2025-007. Severity: SEV2.",
+      "Incident: INC-2025-014. Severity: SEV2."
+    ],
+    "answer": "INC-2024-052 (Forge token expiry), INC-2025-007 (Atlas payroll export) and INC-2025-014 (Penang SMT-2 reflow). INC-2024-031 was SEV1.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "doc_type",
+          "condition": "Equals",
+          "value": "postmortem"
+        }
+      ]
+    }
+  },
+  {
+    "id": "eng-q081",
+    "text": "What hours is the local IT desk open?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "it-network-vpn-guide-penang"
+    ],
+    "grades": {
+      "it-network-vpn-guide-penang": 2
+    },
+    "evidence": [
+      "The Penang IT desk is in the administration building, open 07:30 to 17:30 MYT."
+    ],
+    "answer": "07:30 to 17:30 MYT, in the administration building (Penang).",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "my"
+        }
+      ]
+    }
+  },
+  {
+    "id": "eng-q082",
+    "text": "Which VPN endpoint should I connect to?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "it-network-vpn-guide-austin"
+    ],
+    "grades": {
+      "it-network-vpn-guide-austin": 2
+    },
+    "evidence": [
+      "Austin endpoint: vpn-aus.meridian-instruments.com"
+    ],
+    "answer": "vpn-aus.meridian-instruments.com (UDP 51820), with vpn-lds as the fallback.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "us"
+        }
+      ]
+    }
+  },
+  {
+    "id": "eng-q083",
+    "text": "What port does the device ingestion endpoint listen on?",
+    "type": "filter",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-staging"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-staging": 2
+    },
+    "evidence": [
+      "ingest.staging.tesseracloud.meridian-instruments.com",
+      "18883"
+    ],
+    "answer": "18883 (MQTT over TLS) on ingest.staging.tesseracloud.meridian-instruments.com.",
+    "attachedDocuments": [
+      "eng-tesseracloud-config-staging"
+    ]
+  },
+  {
+    "id": "eng-q084",
+    "text": "Which printer queue do we use for RMA and calibration labels?",
+    "type": "filter",
+    "category": "ambiguous_query",
+    "relevant": [
+      "it-network-vpn-guide-rotterdam",
+      "mfg-rotterdam-repair-centre-process"
+    ],
+    "grades": {
+      "it-network-vpn-guide-rotterdam": 2,
+      "mfg-rotterdam-repair-centre-process": 1
+    },
+    "evidence": [
+      "Label printer for RMA and calibration labels",
+      "RTM-REP-ZEBRA01"
+    ],
+    "answer": "RTM-REP-ZEBRA01 in the Repair Centre.",
+    "metadataFilter": {
+      "required_labels": [],
+      "excluded_labels": [],
+      "required_tags": [
+        {
+          "key": "region",
+          "condition": "Equals",
+          "value": "nl"
+        }
+      ]
+    }
+  },
+  {
+    "id": "eng-q085",
+    "text": "Under the old change procedure, when did CAB meet and how much lead time did a normal change need?",
+    "type": "filter",
+    "category": "temporal",
+    "relevant": [
+      "it-change-management-procedure-v1"
+    ],
+    "grades": {
+      "it-change-management-procedure-v1": 2
+    },
+    "evidence": [
+      "The CAB meets every Tuesday at 14:00 UK time in the Leeds boardroom and on Teams.",
+      "Normal changes must be submitted in Beacon at least 5 business days before the planned implementation date"
+    ],
+    "answer": "Tuesdays at 14:00 UK, with at least 5 business days' lead time and submission by 12:00 UK on the preceding Thursday. (This is superseded by v2.)",
+    "metadataFilter": {
+      "required_labels": [
+        "superseded"
+      ],
+      "excluded_labels": [],
+      "required_tags": []
+    }
+  },
+  {
+    "id": "eng-q086",
+    "text": "and if that endpoint is down?",
+    "type": "followup",
+    "category": "ambiguous_query",
+    "relevant": [
+      "it-network-vpn-guide-leeds"
+    ],
+    "grades": {
+      "it-network-vpn-guide-leeds": 2
+    },
+    "evidence": [
+      "If vpn-lds is unavailable, use vpn-rtm.meridian-instruments.com as the fallback."
+    ],
+    "answer": "Use vpn-rtm.meridian-instruments.com as the fallback.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Which VPN endpoint do Leeds staff use?"
+      },
+      {
+        "role": "assistant",
+        "content": "Leeds staff should connect Meridian Connect to vpn-lds.meridian-instruments.com on UDP 51820."
+      }
+    ]
+  },
+  {
+    "id": "eng-q087",
+    "text": "what about in staging?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "eng-tesseracloud-config-staging"
+    ],
+    "grades": {
+      "eng-tesseracloud-config-staging": 2
+    },
+    "evidence": [
+      "redis-stg-01.tessera.meridian.internal"
+    ],
+    "answer": "redis-stg-01.tessera.meridian.internal on port 6381 (TLS).",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "What's the Redis host and port for TesseraCloud prod?"
+      },
+      {
+        "role": "assistant",
+        "content": "Production uses redis-prd-01.tessera.meridian.internal on port 6380 with TLS."
+      }
+    ]
+  },
+  {
+    "id": "eng-q088",
+    "text": "And the edge node board?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "mfg-penang-smt-changeover-runbook",
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow"
+    ],
+    "grades": {
+      "mfg-penang-smt-changeover-runbook": 2,
+      "mfg-postmortem-inc-2025-014-penang-smt2-reflow": 1
+    },
+    "evidence": [
+      "Nitrogen, O2 below 1000 ppm",
+      "RP-TS4E-03 peaks at 240 °C and requires nitrogen with oxygen below 1000 ppm"
+    ],
+    "answer": "TS4E-EN uses RP-TS4E-03: 240 °C peak, in nitrogen with O2 below 1000 ppm.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Which reflow profile do we run for the Halcyon main board on the Penang SMT lines?"
+      },
+      {
+        "role": "assistant",
+        "content": "HX-MB uses profile RP-HX-07, peaking at 245 °C in air."
+      }
+    ]
+  },
+  {
+    "id": "eng-q089",
+    "text": "and the duty manager the week after?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-oncall-rotation-platform-q3-fy26"
+    ],
+    "grades": {
+      "it-oncall-rotation-platform-q3-fy26": 2
+    },
+    "evidence": [
+      "2025-10-13",
+      "Dominic Farrell"
+    ],
+    "answer": "Dominic Farrell (week starting 13 October 2025).",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Who is platform primary the week starting 6 October 2025?"
+      },
+      {
+        "role": "assistant",
+        "content": "Hannah Osei is primary that week, with Ravi Chandrasekar as secondary, Farah Iskandar on Penang follow-the-sun and Kofi Mensah-Bonsu as duty manager."
+      }
+    ]
+  },
+  {
+    "id": "eng-q090",
+    "text": "what about for a SEV1?",
+    "type": "followup",
+    "category": "factual_lookup",
+    "relevant": [
+      "it-oncall-policy-v2"
+    ],
+    "grades": {
+      "it-oncall-policy-v2": 2,
+      "it-oncall-policy-v1": 0
+    },
+    "evidence": [
+      "Escalation to the secondary now happens automatically after 5 minutes without acknowledgement for SEV1"
+    ],
+    "answer": "After 5 minutes without acknowledgement it goes to the secondary, and after 10 minutes to the manager.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "If the IT Ops primary doesn't ack a SEV2 page, when does it escalate?"
+      },
+      {
+        "role": "assistant",
+        "content": "For SEV2 it escalates to the secondary after 15 minutes without acknowledgement, and to the manager after 30 minutes."
+      }
+    ]
+  },
+  {
+    "id": "eng-q091",
+    "text": "Which Kubernetes version is TesseraCloud production running, and what's the procedure for upgrading the cluster?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q092",
+    "text": "When is our next SOC 2 or ISO 27001 audit, and did the last one raise any findings?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q093",
+    "text": "How do I enrol my personal phone in device management so I can get work email on it?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q094",
+    "text": "What were the critical findings from the last external penetration test of TesseraCloud?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q095",
+    "text": "What's the rated throughput of SMT-5 on TS4-GW boards?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q096",
+    "text": "How long can the Leeds data centre run on UPS and generator if we lose mains power?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q097",
+    "text": "When are we rolling out Wi-Fi 7 access points at the Leeds office?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q098",
+    "text": "What's the hostname and port of the CAD licence server?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q099",
+    "text": "Who is the vendor for Atlas ERP, and when is the next major version upgrade scheduled?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  },
+  {
+    "id": "eng-q100",
+    "text": "What JVM heap size are the production Kafka brokers configured with?",
+    "type": "negative",
+    "category": "unanswerable",
+    "relevant": [],
+    "evidence": [],
+    "answer": "NOT_IN_CORPUS"
+  }
+]

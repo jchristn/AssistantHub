@@ -32,6 +32,7 @@ AssistantHub also ships a standalone MCP server that maps the management surface
 - [Assistant Settings](#assistant-settings)
 - [Assistant Tool Calls (Admin Or Tenant Admin)](#assistant-tool-calls-admin-or-tenant-admin)
 - [Documents](#documents)
+- [Ingestion Analytics (Authenticated)](#ingestion-analytics-authenticated)
 - [Feedback (Authenticated)](#feedback-authenticated)
 - [History (Authenticated)](#history-authenticated)
 - [Threads (Authenticated)](#threads-authenticated)
@@ -3006,6 +3007,135 @@ Download the original document file from S3 storage.
 - `200 OK` -- File data with `Content-Type` from the document record and `Content-Disposition: attachment; filename="<original filename>"`.
 - `404 Not Found` -- Document does not exist.
 - `500 Internal Server Error` -- Failed to download from storage.
+
+### POST /v1.0/documents/{documentId}/reprocess
+
+Re-run the full ingestion pipeline (extraction, chunking, embedding, and indexing) for a document, provided its source object still exists in storage. The document status is reset to `Uploaded` and ingestion runs asynchronously; poll `GET /v1.0/documents/{documentId}` or the processing log for progress. No request body is required.
+
+**Auth:** Required (tenant-scoped; the document must belong to the caller's tenant)
+
+**Response (200 OK) -- reprocessing started:**
+
+```json
+{
+  "DocumentId": "adoc_abc123...",
+  "Success": true,
+  "SourceAvailable": true,
+  "Message": "Reprocessing started."
+}
+```
+
+**Response (200 OK) -- source object no longer stored:**
+
+```json
+{
+  "DocumentId": "adoc_abc123...",
+  "Success": false,
+  "SourceAvailable": false,
+  "Message": "The source object is not stored and must be uploaded again."
+}
+```
+
+**Error Responses:**
+- `400` -- Document ID is missing.
+- `401` -- Authentication failed.
+- `404` -- Document not found or owned by another tenant.
+- `503` -- S3 storage is not configured, so reprocessing is unavailable.
+
+### GET /v1.0/documents/{documentId}/performance
+
+Retrieve per-stage ingestion timing for a document (for example extraction, chunking, embedding, and indexing), ordered by sequence number, plus the total duration across stages.
+
+**Auth:** Required (tenant-scoped)
+
+**Response (200 OK):**
+
+```json
+{
+  "DocumentId": "adoc_abc123...",
+  "TotalMs": 2143.6,
+  "Stages": [
+    {
+      "Id": "dpe_abc123...",
+      "TenantId": "default",
+      "DocumentId": "adoc_abc123...",
+      "IngestionRuleId": "irule_abc123...",
+      "SequenceNumber": 1,
+      "Stage": "extraction",
+      "Detail": "DocumentAtom extracted 42 cells",
+      "StartedUtc": "2026-01-15T17:30:00Z",
+      "FinishedUtc": "2026-01-15T17:30:00.8Z",
+      "DurationMs": 812.4,
+      "Success": true,
+      "CreatedUtc": "2026-01-15T17:30:00.8Z"
+    },
+    {
+      "Id": "dpe_def456...",
+      "TenantId": "default",
+      "DocumentId": "adoc_abc123...",
+      "IngestionRuleId": "irule_abc123...",
+      "SequenceNumber": 2,
+      "Stage": "chunking",
+      "Detail": "Partio produced 18 chunks with embeddings",
+      "StartedUtc": "2026-01-15T17:30:00.8Z",
+      "FinishedUtc": "2026-01-15T17:30:02.1Z",
+      "DurationMs": 1331.2,
+      "Success": true,
+      "CreatedUtc": "2026-01-15T17:30:02.1Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `400` -- Document ID is missing.
+- `404` -- Document not found or owned by another tenant.
+
+---
+
+## Ingestion Analytics (Authenticated)
+
+### GET /v1.0/analytics/ingestion
+
+List ingestion performance events (one row per pipeline stage per document) for the caller's tenant within a trailing time window. Use it to chart ingestion throughput and stage latency.
+
+**Auth:** Required (the caller must be associated with a tenant)
+
+**Query Parameters:**
+
+| Parameter    | Type    | Default | Description |
+|--------------|---------|---------|-------------|
+| `hours`      | integer | 24      | Size of the trailing window in hours (maximum 2160, i.e. 90 days). |
+| `maxResults` | integer | 5000    | Maximum number of events to return (maximum 50000). |
+
+**Response (200 OK):**
+
+```json
+{
+  "WindowStartUtc": "2026-01-14T17:30:00Z",
+  "WindowEndUtc": "2026-01-15T17:30:00Z",
+  "TotalRecords": 1,
+  "Events": [
+    {
+      "Id": "dpe_abc123...",
+      "TenantId": "default",
+      "DocumentId": "adoc_abc123...",
+      "IngestionRuleId": "irule_abc123...",
+      "SequenceNumber": 1,
+      "Stage": "extraction",
+      "Detail": "DocumentAtom extracted 42 cells",
+      "StartedUtc": "2026-01-15T17:30:00Z",
+      "FinishedUtc": "2026-01-15T17:30:00.8Z",
+      "DurationMs": 812.4,
+      "Success": true,
+      "CreatedUtc": "2026-01-15T17:30:00.8Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `403` -- The caller is not associated with a tenant.
 
 ---
 

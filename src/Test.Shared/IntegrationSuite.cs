@@ -76,6 +76,20 @@ namespace Test.Automated
                     AssertHelper.StringContains(openApiBody, "\"/v1.0/tenants\"", "Runtime OpenAPI protected tenant route");
                     AssertHelper.StringContains(openApiBody, "\"BearerAuth\"", "Runtime OpenAPI protected route auth marker");
                     AssertHelper.IsTrue(securitySchemes.TryGetProperty("BearerAuth", out bearerAuth), "OpenAPI BearerAuth scheme");
+
+                    // Route metadata annotations flow into the runtime document.
+                    JsonElement runtimePaths = openApiDocument.RootElement.GetProperty("paths");
+                    JsonElement createTenant = runtimePaths.GetProperty("/v1.0/tenants").GetProperty("put");
+                    AssertHelper.AreEqual("Create tenant", createTenant.GetProperty("summary").GetString(), "Runtime OpenAPI annotated summary");
+                    AssertHelper.IsTrue(
+                        createTenant.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").TryGetProperty("example", out _),
+                        "Runtime OpenAPI request body example");
+                    AssertHelper.IsTrue(
+                        createTenant.GetProperty("responses").GetProperty("201").GetProperty("content").GetProperty("application/json").TryGetProperty("schema", out _),
+                        "Runtime OpenAPI response structure");
+                    AssertHelper.IsTrue(
+                        openApiDocument.RootElement.GetProperty("components").GetProperty("schemas").TryGetProperty("TenantMetadata", out _),
+                        "Runtime OpenAPI component schemas");
                 });
 
                 await ExecuteTestAsync("PublicAssistantDocuments.Disabled_Returns403", async () =>

@@ -2,11 +2,15 @@ namespace AssistantHub.Server.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text.Json;
     using System.Text.Json.Nodes;
     using AssistantHub.Core;
+    using AssistantHub.Core.Helpers;
+    using AssistantHub.Server.OpenApi;
     using WatsonWebserver;
     using WatsonWebserver.Core;
+    using WatsonWebserver.Core.OpenApi;
     using WatsonWebserver.Core.Routing;
 
     /// <summary>
@@ -80,6 +84,17 @@ namespace AssistantHub.Server.Services
             AddParameterRoutes(paths, server.Routes.PostAuthentication.Parameter.GetAll(), true);
 
             root["paths"] = paths;
+
+            // Named models referenced by route metadata are emitted once and referenced with $ref.
+            if (ApiSchema.Components.Count > 0)
+            {
+                JsonObject schemas = new JsonObject();
+                foreach (KeyValuePair<string, OpenApiSchemaMetadata> component in ApiSchema.Components.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                    schemas[component.Key] = SchemaToJson(component.Value);
+
+                root["components"]!["schemas"] = schemas;
+            }
+
             return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         }
 
@@ -89,7 +104,7 @@ namespace AssistantHub.Server.Services
             foreach (StaticRoute route in routes)
             {
                 if (route == null) continue;
-                AddOperation(paths, route.Path, route.Method.ToString(), authenticated);
+                AddOperation(paths, route.Path, route.Method.ToString(), authenticated, route.OpenApiMetadata);
             }
         }
 
@@ -99,12 +114,18 @@ namespace AssistantHub.Server.Services
             foreach (ParameterRoute route in routes)
             {
                 if (route == null) continue;
-                AddOperation(paths, route.Path, route.Method.ToString(), authenticated);
+                AddOperation(paths, route.Path, route.Method.ToString(), authenticated, route.OpenApiMetadata);
             }
         }
 
-        private void AddOperation(JsonObject paths, string path, string method, bool authenticated)
+        private void AddOperation(JsonObject paths, string path, string method, bool authenticated, OpenApiRouteMetadata metadata)
         {
+            if (metadata != null)
+            {
+                AddDocumentedOperation(paths, path, method, authenticated, metadata);
+                return;
+            }
+
             if (String.IsNullOrEmpty(path) || String.IsNullOrEmpty(method)) return;
             string normalizedPath = NormalizeRoutePath(path);
 
@@ -133,6 +154,234 @@ namespace AssistantHub.Server.Services
                 operation["requestBody"] = BuildGenericJsonRequestBody(normalizedPath);
 
             pathItem[normalizedMethod] = operation;
+        }
+
+        private void AddDocumentedOperation(JsonObject paths, string path, string method, bool authenticated, OpenApiRouteMetadata metadata)
+        {
+            if (String.IsNullOrEmpty(path) || String.IsNullOrEmpty(method)) return;
+            string normalizedPath = NormalizeRoutePath(path);
+
+            if (!(paths[normalizedPath] is JsonObject pathItem))
+            {
+                pathItem = new JsonObject();
+                paths[normalizedPath] = pathItem;
+            }
+
+            JsonArray tags = new JsonArray();
+            if (metadata.Tags != null && metadata.Tags.Count > 0)
+            {
+                foreach (string tag in metadata.Tags) tags.Add(tag);
+            }
+            else
+            {
+                tags.Add(GetTagForPath(normalizedPath));
+            }
+
+            JsonObject operation = new JsonObject
+            {
+                ["tags"] = tags,
+                ["summary"] = String.IsNullOrEmpty(metadata.Summary) ? BuildSummary(method, normalizedPath) : metadata.Summary
+            };
+
+            if (!String.IsNullOrEmpty(metadata.Description)) operation["description"] = metadata.Description;
+            operation["operationId"] = String.IsNullOrEmpty(metadata.OperationId) ? BuildOperationId(method, normalizedPath) : metadata.OperationId;
+            if (metadata.Deprecated) operation["deprecated"] = true;
+
+            // Path parameters come from the route template; documented parameters replace generated ones with the same name and location.
+            JsonArray generated = BuildOperationParameters(normalizedPath);
+            JsonArray parameters = new JsonArray();
+            HashSet<string> documented = new HashSet<string>(StringComparer.Ordinal);
+            if (metadata.Parameters != null)
+            {
+                foreach (OpenApiParameterMetadata parameter in metadata.Parameters)
+                    documented.Add(parameter.Name + "|" + ParameterLocationName(parameter.In));
+            }
+
+            foreach (JsonNode node in generated)
+            {
+                if (!(node is JsonObject parameter)) continue;
+                string key = parameter["name"]?.GetValue<string>() + "|" + parameter["in"]?.GetValue<string>();
+                if (documented.Contains(key)) continue;
+                parameters.Add(parameter.DeepClone());
+            }
+
+            if (metadata.Parameters != null)
+            {
+                foreach (OpenApiParameterMetadata parameter in metadata.Parameters)
+                    parameters.Add(ParameterToJson(parameter));
+            }
+
+            operation["parameters"] = parameters;
+            operation["security"] = authenticated
+                ? new JsonArray { new JsonObject { ["BearerAuth"] = new JsonArray() } }
+                : new JsonArray();
+
+            if (metadata.RequestBody != null)
+                operation["requestBody"] = RequestBodyToJson(metadata.RequestBody);
+
+            JsonObject responses = new JsonObject();
+            if (metadata.Responses != null)
+            {
+                foreach (KeyValuePair<string, OpenApiResponseMetadata> response in metadata.Responses.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                    responses[response.Key] = ResponseToJson(response.Value);
+            }
+
+            if (authenticated && responses["401"] == null)
+                responses["401"] = new JsonObject { ["description"] = "Authentication failed." };
+            if (responses["500"] == null)
+                responses["500"] = new JsonObject { ["description"] = "Internal server error." };
+
+            operation["responses"] = responses;
+            pathItem[method.ToLowerInvariant()] = operation;
+        }
+
+        private static string ParameterLocationName(ParameterLocation location)
+        {
+            return location.ToString().ToLowerInvariant();
+        }
+
+        private static JsonObject ParameterToJson(OpenApiParameterMetadata parameter)
+        {
+            JsonObject json = new JsonObject
+            {
+                ["name"] = parameter.Name,
+                ["in"] = ParameterLocationName(parameter.In),
+                ["required"] = parameter.In == ParameterLocation.Path || parameter.Required
+            };
+
+            if (!String.IsNullOrEmpty(parameter.Description)) json["description"] = parameter.Description;
+            if (parameter.Deprecated) json["deprecated"] = true;
+            json["schema"] = SchemaToJson(parameter.Schema ?? new OpenApiSchemaMetadata { Type = "string" });
+            if (parameter.Example != null) json["example"] = ValueToJson(parameter.Example);
+            return json;
+        }
+
+        private static JsonObject RequestBodyToJson(OpenApiRequestBodyMetadata body)
+        {
+            JsonObject json = new JsonObject { ["required"] = body.Required };
+            if (!String.IsNullOrEmpty(body.Description)) json["description"] = body.Description;
+            json["content"] = ContentToJson(body.Content);
+            return json;
+        }
+
+        private static JsonObject ResponseToJson(OpenApiResponseMetadata response)
+        {
+            JsonObject json = new JsonObject { ["description"] = response.Description ?? String.Empty };
+            if (response.Content != null && response.Content.Count > 0) json["content"] = ContentToJson(response.Content);
+
+            if (response.Headers != null && response.Headers.Count > 0)
+            {
+                JsonObject headers = new JsonObject();
+                foreach (KeyValuePair<string, OpenApiHeaderMetadata> header in response.Headers)
+                {
+                    JsonObject headerJson = new JsonObject();
+                    if (!String.IsNullOrEmpty(header.Value.Description)) headerJson["description"] = header.Value.Description;
+                    if (header.Value.Required) headerJson["required"] = true;
+                    headerJson["schema"] = SchemaToJson(header.Value.Schema ?? new OpenApiSchemaMetadata { Type = "string" });
+                    headers[header.Key] = headerJson;
+                }
+
+                json["headers"] = headers;
+            }
+
+            return json;
+        }
+
+        private static JsonObject ContentToJson(Dictionary<string, OpenApiMediaTypeMetadata> content)
+        {
+            JsonObject json = new JsonObject();
+            if (content == null) return json;
+
+            foreach (KeyValuePair<string, OpenApiMediaTypeMetadata> media in content)
+            {
+                JsonObject mediaJson = new JsonObject();
+                if (media.Value.Schema != null) mediaJson["schema"] = SchemaToJson(media.Value.Schema);
+                if (media.Value.Example != null) mediaJson["example"] = ValueToJson(media.Value.Example);
+
+                if (media.Value.Examples != null && media.Value.Examples.Count > 0)
+                {
+                    JsonObject examples = new JsonObject();
+                    foreach (KeyValuePair<string, OpenApiExampleMetadata> example in media.Value.Examples)
+                    {
+                        JsonObject exampleJson = new JsonObject();
+                        if (!String.IsNullOrEmpty(example.Value.Summary)) exampleJson["summary"] = example.Value.Summary;
+                        if (!String.IsNullOrEmpty(example.Value.Description)) exampleJson["description"] = example.Value.Description;
+                        if (example.Value.Value != null) exampleJson["value"] = ValueToJson(example.Value.Value);
+                        examples[example.Key] = exampleJson;
+                    }
+
+                    mediaJson["examples"] = examples;
+                }
+
+                json[media.Key] = mediaJson;
+            }
+
+            return json;
+        }
+
+        private static JsonObject SchemaToJson(OpenApiSchemaMetadata schema)
+        {
+            JsonObject json = new JsonObject();
+            if (schema == null) return json;
+
+            if (!String.IsNullOrEmpty(schema.Ref))
+            {
+                json["$ref"] = schema.Ref;
+                return json;
+            }
+
+            if (!String.IsNullOrEmpty(schema.Type)) json["type"] = schema.Type;
+            if (!String.IsNullOrEmpty(schema.Format)) json["format"] = schema.Format;
+            if (!String.IsNullOrEmpty(schema.Description)) json["description"] = schema.Description;
+            if (schema.Nullable) json["nullable"] = true;
+
+            if (schema.Enum != null && schema.Enum.Count > 0)
+            {
+                JsonArray values = new JsonArray();
+                foreach (object value in schema.Enum) values.Add(ValueToJson(value));
+                json["enum"] = values;
+            }
+
+            if (schema.Items != null) json["items"] = SchemaToJson(schema.Items);
+
+            if (schema.Properties != null && schema.Properties.Count > 0)
+            {
+                JsonObject properties = new JsonObject();
+                foreach (KeyValuePair<string, OpenApiSchemaMetadata> property in schema.Properties)
+                    properties[property.Key] = SchemaToJson(property.Value);
+                json["properties"] = properties;
+            }
+
+            if (schema.Required != null && schema.Required.Count > 0)
+            {
+                JsonArray required = new JsonArray();
+                foreach (string name in schema.Required) required.Add(name);
+                json["required"] = required;
+            }
+
+            if (schema.OneOf != null && schema.OneOf.Count > 0)
+            {
+                JsonArray oneOf = new JsonArray();
+                foreach (OpenApiSchemaMetadata option in schema.OneOf) oneOf.Add(SchemaToJson(option));
+                json["oneOf"] = oneOf;
+            }
+
+            if (schema.Minimum.HasValue) json["minimum"] = schema.Minimum.Value;
+            if (schema.Maximum.HasValue) json["maximum"] = schema.Maximum.Value;
+            if (schema.MinLength.HasValue) json["minLength"] = schema.MinLength.Value;
+            if (schema.MaxLength.HasValue) json["maxLength"] = schema.MaxLength.Value;
+            if (!String.IsNullOrEmpty(schema.Pattern)) json["pattern"] = schema.Pattern;
+            if (schema.Default != null) json["default"] = ValueToJson(schema.Default);
+            if (schema.Example != null) json["example"] = ValueToJson(schema.Example);
+            return json;
+        }
+
+        private static JsonNode ValueToJson(object value)
+        {
+            if (value == null) return null;
+            if (value is JsonNode node) return node.DeepClone();
+            if (value is string text) return JsonValue.Create(text);
+            return JsonNode.Parse(Serializer.SerializeJson(value, false));
         }
 
         private string NormalizeRoutePath(string path)

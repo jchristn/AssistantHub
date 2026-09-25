@@ -4237,6 +4237,87 @@
               ]
             }
           }
+        },
+        {
+          "name": "Reprocess Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/documents/:documentId/reprocess",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "documents",
+                ":documentId",
+                "reprocess"
+              ],
+              "variable": [
+                {
+                  "key": "documentId",
+                  "value": "adoc_example"
+                }
+              ]
+            },
+            "description": "Re-run the ingestion pipeline for a document whose source object is still stored. Returns SourceAvailable=false when the source must be uploaded again."
+          }
+        },
+        {
+          "name": "Get Document Ingestion Performance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/documents/:documentId/performance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "documents",
+                ":documentId",
+                "performance"
+              ],
+              "variable": [
+                {
+                  "key": "documentId",
+                  "value": "adoc_example"
+                }
+              ]
+            },
+            "description": "Per-stage ingestion timing for a document."
+          }
+        },
+        {
+          "name": "Get Ingestion Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/analytics/ingestion?hours=24&maxResults=5000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "analytics",
+                "ingestion"
+              ],
+              "query": [
+                {
+                  "key": "hours",
+                  "value": "24"
+                },
+                {
+                  "key": "maxResults",
+                  "value": "5000"
+                }
+              ]
+            },
+            "description": "Ingestion performance events for the caller's tenant within a trailing window (hours max 2160, maxResults max 50000)."
+          }
         }
       ]
     },

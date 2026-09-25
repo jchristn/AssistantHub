@@ -1841,6 +1841,1076 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="T:AssistantHub.Server.OpenApi.ApiDoc">
+            <summary>
+            Fluent builder for the OpenAPI metadata attached to each AssistantHub route registration.
+            Schemas are derived from the CLR types of the request and response models; examples are
+            real model instances serialized with the AssistantHub serializer conventions.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiDoc.Json">
+            <summary>
+            JSON media type.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Create(System.String,System.String)">
+            <summary>
+            Start documenting an operation.
+            </summary>
+            <param name="summary">Short operation summary.</param>
+            <param name="tag">OpenAPI tag used to group the operation.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Describe(System.String)">
+            <summary>
+            Set the long-form operation description.
+            </summary>
+            <param name="description">Description.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Query(System.String,System.String,System.String,System.Boolean,System.Object)">
+            <summary>
+            Add a query parameter.
+            </summary>
+            <param name="name">Parameter name.</param>
+            <param name="type">OpenAPI primitive type: string, integer, number, or boolean.</param>
+            <param name="description">Description.</param>
+            <param name="required">True if required.</param>
+            <param name="example">Optional example value.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Paged">
+            <summary>
+            Add the standard enumeration query parameters read by HandlerBase.BuildEnumerationQuery:
+            maxResults, continuationToken, and ordering.
+            </summary>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Header(System.String,System.String,System.Boolean,System.Object)">
+            <summary>
+            Add a request header parameter.
+            </summary>
+            <param name="name">Header name.</param>
+            <param name="description">Description.</param>
+            <param name="required">True if required.</param>
+            <param name="example">Optional example value.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Body``1(System.String,``0,System.Boolean)">
+            <summary>
+            Document a JSON request body. The schema is derived from <typeparamref name="T"/> (or from the runtime
+            type of <paramref name="example"/> when <typeparamref name="T"/> is <see cref="T:System.Object"/>).
+            </summary>
+            <typeparam name="T">Request model type.</typeparam>
+            <param name="description">Description.</param>
+            <param name="example">Example request body.</param>
+            <param name="required">True if the body is required.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.RawBody(System.String,System.String,WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata,System.Object,System.Boolean)">
+            <summary>
+            Document a non-JSON request body, such as a binary upload or plain text.
+            </summary>
+            <param name="contentType">Media type.</param>
+            <param name="description">Description.</param>
+            <param name="schema">Schema; defaults to a binary string.</param>
+            <param name="example">Optional example value.</param>
+            <param name="required">True if the body is required.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Returns``1(System.Int32,System.String,``0)">
+            <summary>
+            Document a JSON response. The schema is derived from <typeparamref name="T"/> (or from the runtime type of
+            <paramref name="example"/> when <typeparamref name="T"/> is <see cref="T:System.Object"/>, including anonymous types).
+            </summary>
+            <typeparam name="T">Response model type.</typeparam>
+            <param name="status">HTTP status code.</param>
+            <param name="description">Description.</param>
+            <param name="example">Example response body.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.ReturnsContent(System.Int32,System.String,System.String,WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata,System.Object)">
+            <summary>
+            Document a response with a non-JSON body, such as a file download, HTML page, or server-sent event stream.
+            </summary>
+            <param name="status">HTTP status code.</param>
+            <param name="description">Description.</param>
+            <param name="contentType">Media type.</param>
+            <param name="schema">Schema; defaults to a binary string.</param>
+            <param name="example">Optional example value.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.ReturnsNoContent(System.Int32,System.String)">
+            <summary>
+            Document a response without a body, such as 204 No Content or a HEAD existence check.
+            </summary>
+            <param name="status">HTTP status code.</param>
+            <param name="description">Description.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Errors(System.Int32[])">
+            <summary>
+            Document standard AssistantHub error responses (<see cref="T:AssistantHub.Core.Models.ApiErrorResponse"/>) for the given status codes.
+            Supported codes: 400, 401, 403, 404, 409, and 500.
+            </summary>
+            <param name="statuses">HTTP status codes.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Error(System.Int32,System.String,AssistantHub.Core.Models.ApiErrorResponse)">
+            <summary>
+            Document a non-standard error response with an <see cref="T:AssistantHub.Core.Models.ApiErrorResponse"/> body.
+            </summary>
+            <param name="status">HTTP status code.</param>
+            <param name="description">Description.</param>
+            <param name="example">Example error body; defaults to an internal error.</param>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Deprecated">
+            <summary>
+            Mark the operation deprecated.
+            </summary>
+            <returns>Builder.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.Build">
+            <summary>
+            Finish building.
+            </summary>
+            <returns>Route metadata.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiDoc.op_Implicit(AssistantHub.Server.OpenApi.ApiDoc)~WatsonWebserver.Core.OpenApi.OpenApiRouteMetadata">
+            <summary>
+            Implicitly finish building so docs can be passed directly as route metadata.
+            </summary>
+            <param name="doc">Builder.</param>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.ApiExamples">
+            <summary>
+            Shared, deterministic values for OpenAPI examples.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.Created">
+            <summary>
+            Example creation timestamp.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.Updated">
+            <summary>
+            Example last-update timestamp.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.TenantId">
+            <summary>Example tenant identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.UserId">
+            <summary>Example user identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.CredentialId">
+            <summary>Example credential identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.AssistantId">
+            <summary>Example assistant identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.DocumentId">
+            <summary>Example document identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.CollectionId">
+            <summary>Example collection identifier.</summary>
+        </member>
+        <member name="F:AssistantHub.Server.OpenApi.ApiExamples.ThreadId">
+            <summary>Example thread identifier.</summary>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiExamples.Page``1(``0[])">
+            <summary>
+            Wrap objects in a single-page enumeration result.
+            </summary>
+            <typeparam name="T">Object type.</typeparam>
+            <param name="objects">Objects.</param>
+            <returns>Enumeration result.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.ApiSchema">
+            <summary>
+            Builds OpenAPI schemas from CLR types by reflection, honoring the AssistantHub JSON conventions
+            (JsonPropertyName, JsonIgnore, string enums) and using XML documentation summaries as descriptions.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ApiSchema.Components">
+            <summary>
+            Component schemas generated so far, keyed by component name. Every named model referenced by
+            route metadata appears here and is emitted under components/schemas.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiSchema.FromType(System.Type)">
+            <summary>
+            Build a schema for a CLR type.
+            </summary>
+            <param name="type">Type.</param>
+            <returns>Schema.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiSchema.String(System.String,System.String)">
+            <summary>
+            Build a string schema.
+            </summary>
+            <param name="description">Description.</param>
+            <param name="format">Optional format.</param>
+            <returns>Schema.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.OpenApi.ApiSchema.Binary(System.String)">
+            <summary>
+            Build a binary string schema.
+            </summary>
+            <param name="description">Description.</param>
+            <returns>Schema.</returns>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs">
+            <summary>
+            OpenAPI metadata for assistant analytics routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.Overview">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/overview.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.TimeSeries">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/timeseries.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.Stages">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/stages.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.Endpoints">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/endpoints.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.Slowest">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/slowest.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantAnalyticsApiDocs.Feedback">
+            <summary>GET /v1.0/assistants/{assistantId}/analytics/feedback.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.AssistantApiDocs">
+            <summary>
+            OpenAPI metadata for assistant CRUD routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.Create">
+            <summary>PUT /v1.0/assistants.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.List">
+            <summary>GET /v1.0/assistants.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.Read">
+            <summary>GET /v1.0/assistants/{assistantId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.Update">
+            <summary>PUT /v1.0/assistants/{assistantId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.Delete">
+            <summary>DELETE /v1.0/assistants/{assistantId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantApiDocs.Exists">
+            <summary>HEAD /v1.0/assistants/{assistantId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs">
+            <summary>
+            OpenAPI metadata for assistant settings, tool policy, and retrieval diagnostic routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.Read">
+            <summary>GET /v1.0/assistants/{assistantId}/settings.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.Update">
+            <summary>PUT /v1.0/assistants/{assistantId}/settings.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.VerifySlack">
+            <summary>POST /v1.0/assistants/{assistantId}/settings/slack/verify.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.ValidateTools">
+            <summary>POST /v1.0/assistants/{assistantId}/settings/tools/validate.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.TestTools">
+            <summary>POST /v1.0/assistants/{assistantId}/settings/tools/test.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.Tools">
+            <summary>GET /v1.0/assistants/{assistantId}/tools.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantSettingsApiDocs.Retrieve">
+            <summary>POST /v1.0/assistants/{assistantId}/retrieve.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.AssistantToolCallApiDocs">
+            <summary>
+            OpenAPI metadata for assistant tool-call trace routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantToolCallApiDocs.List">
+            <summary>GET /v1.0/assistants/{assistantId}/tool-calls.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantToolCallApiDocs.DeleteMany">
+            <summary>DELETE /v1.0/assistants/{assistantId}/tool-calls.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantToolCallApiDocs.Read">
+            <summary>GET /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.AssistantToolCallApiDocs.Delete">
+            <summary>DELETE /v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.BucketApiDocs">
+            <summary>
+            OpenAPI metadata for S3 bucket and bucket object routes. Buckets live on the configured S3-compatible storage
+            server and are tenant-scoped by name: non-global-admin callers can only use buckets named "{tenantId}_...".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Create">
+            <summary>PUT /v1.0/buckets.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.List">
+            <summary>GET /v1.0/buckets.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Read">
+            <summary>GET /v1.0/buckets/{name}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Delete">
+            <summary>DELETE /v1.0/buckets/{name}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Exists">
+            <summary>HEAD /v1.0/buckets/{name}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.ListObjects">
+            <summary>GET /v1.0/buckets/{name}/objects.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.CreateObject">
+            <summary>PUT /v1.0/buckets/{name}/objects.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.DeleteObject">
+            <summary>DELETE /v1.0/buckets/{name}/objects.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.ReadObjectMetadata">
+            <summary>GET /v1.0/buckets/{name}/objects/metadata.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Download">
+            <summary>GET /v1.0/buckets/{name}/objects/download.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.BucketApiDocs.Upload">
+            <summary>POST /v1.0/buckets/{name}/objects/upload.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.CollectionApiDocs">
+            <summary>
+            OpenAPI metadata for collection, collection record, and collection search routes. These routes proxy to
+            RecallDB; request bodies are forwarded as-is and RecallDB response bodies and status codes are relayed verbatim.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Create">
+            <summary>PUT /v1.0/collections.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.List">
+            <summary>GET /v1.0/collections.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Read">
+            <summary>GET /v1.0/collections/{collectionId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Update">
+            <summary>PUT /v1.0/collections/{collectionId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Delete">
+            <summary>DELETE /v1.0/collections/{collectionId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Exists">
+            <summary>HEAD /v1.0/collections/{collectionId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.Search">
+            <summary>POST /v1.0/collections/{collectionId}/search.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.CreateRecord">
+            <summary>PUT /v1.0/collections/{collectionId}/records.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.ListRecords">
+            <summary>GET /v1.0/collections/{collectionId}/records.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.ReadRecord">
+            <summary>GET /v1.0/collections/{collectionId}/records/{recordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.DeleteRecord">
+            <summary>DELETE /v1.0/collections/{collectionId}/records/{recordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.DeleteRecords">
+            <summary>POST /v1.0/collections/{collectionId}/records/delete.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.DistinctLabels">
+            <summary>GET /v1.0/collections/{collectionId}/labels/distinct.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CollectionApiDocs.DistinctTags">
+            <summary>GET /v1.0/collections/{collectionId}/tags/distinct.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs">
+            <summary>
+            OpenAPI metadata for completion endpoint routes (proxied to Partio).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Create">
+            <summary>PUT /v1.0/endpoints/completion.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Enumerate">
+            <summary>POST /v1.0/endpoints/completion/enumerate.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.ListHealth">
+            <summary>GET /v1.0/endpoints/completion/health.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.ReadHealth">
+            <summary>GET /v1.0/endpoints/completion/{endpointId}/health.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Test">
+            <summary>POST /v1.0/endpoints/completion/{endpointId}/test.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Load">
+            <summary>POST /v1.0/endpoints/completion/{endpointId}/load.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Read">
+            <summary>GET /v1.0/endpoints/completion/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Update">
+            <summary>PUT /v1.0/endpoints/completion/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Delete">
+            <summary>DELETE /v1.0/endpoints/completion/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CompletionEndpointApiDocs.Exists">
+            <summary>HEAD /v1.0/endpoints/completion/{endpointId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.ConfigurationApiDocs">
+            <summary>
+            OpenAPI metadata for server configuration routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ConfigurationApiDocs.Read">
+            <summary>GET /v1.0/configuration.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ConfigurationApiDocs.ExternalSearchStatus">
+            <summary>GET /v1.0/configuration/external-search/status.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ConfigurationApiDocs.Update">
+            <summary>PUT /v1.0/configuration.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.CrawlApiDocs">
+            <summary>
+            OpenAPI metadata for crawl plan and crawl operation routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Create">
+            <summary>PUT /v1.0/crawlplans.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.List">
+            <summary>GET /v1.0/crawlplans.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.TestDraftConnectivity">
+            <summary>POST /v1.0/crawlplans/connectivity.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Read">
+            <summary>GET /v1.0/crawlplans/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Update">
+            <summary>PUT /v1.0/crawlplans/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Delete">
+            <summary>DELETE /v1.0/crawlplans/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Exists">
+            <summary>HEAD /v1.0/crawlplans/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Start">
+            <summary>POST /v1.0/crawlplans/{id}/start.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Stop">
+            <summary>POST /v1.0/crawlplans/{id}/stop.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.TestConnectivity">
+            <summary>POST /v1.0/crawlplans/{id}/connectivity.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.Enumerate">
+            <summary>GET /v1.0/crawlplans/{id}/enumerate.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.ListOperations">
+            <summary>GET /v1.0/crawlplans/{planId}/operations.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.PlanStatistics">
+            <summary>GET /v1.0/crawlplans/{planId}/operations/statistics.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.ReadOperation">
+            <summary>GET /v1.0/crawlplans/{planId}/operations/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.OperationStatistics">
+            <summary>GET /v1.0/crawlplans/{planId}/operations/{id}/statistics.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.DeleteOperation">
+            <summary>DELETE /v1.0/crawlplans/{planId}/operations/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CrawlApiDocs.ReadEnumeration">
+            <summary>GET /v1.0/crawlplans/{planId}/operations/{id}/enumeration.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.CredentialApiDocs">
+            <summary>
+            OpenAPI metadata for tenant-scoped credential (API key) routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.Create">
+            <summary>PUT /v1.0/tenants/{tenantId}/credentials.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.List">
+            <summary>GET /v1.0/tenants/{tenantId}/credentials.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.Read">
+            <summary>GET /v1.0/tenants/{tenantId}/credentials/{credentialId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.Update">
+            <summary>PUT /v1.0/tenants/{tenantId}/credentials/{credentialId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.Delete">
+            <summary>DELETE /v1.0/tenants/{tenantId}/credentials/{credentialId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.CredentialApiDocs.Exists">
+            <summary>HEAD /v1.0/tenants/{tenantId}/credentials/{credentialId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.DocumentApiDocs">
+            <summary>
+            OpenAPI metadata for document routes and ingestion analytics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Upload">
+            <summary>PUT /v1.0/documents.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.List">
+            <summary>GET /v1.0/documents.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Read">
+            <summary>GET /v1.0/documents/{documentId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Delete">
+            <summary>DELETE /v1.0/documents/{documentId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Exists">
+            <summary>HEAD /v1.0/documents/{documentId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.BulkDelete">
+            <summary>POST /v1.0/documents/delete.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.ReindexBatch">
+            <summary>POST /v1.0/documents/reindex.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Reindex">
+            <summary>POST /v1.0/documents/{documentId}/reindex.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Reprocess">
+            <summary>POST /v1.0/documents/{documentId}/reprocess.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.ProcessingLog">
+            <summary>GET /v1.0/documents/{documentId}/processing-log.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Performance">
+            <summary>GET /v1.0/documents/{documentId}/performance.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.IngestionAnalytics">
+            <summary>GET /v1.0/analytics/ingestion.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Download">
+            <summary>GET /v1.0/documents/{documentId}/download.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs">
+            <summary>
+            OpenAPI metadata for embedding endpoint routes (proxied to Partio).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Create">
+            <summary>PUT /v1.0/endpoints/embedding.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Enumerate">
+            <summary>POST /v1.0/endpoints/embedding/enumerate.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.ListHealth">
+            <summary>GET /v1.0/endpoints/embedding/health.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.ReadHealth">
+            <summary>GET /v1.0/endpoints/embedding/{endpointId}/health.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Test">
+            <summary>POST /v1.0/endpoints/embedding/{endpointId}/test.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Load">
+            <summary>POST /v1.0/endpoints/embedding/{endpointId}/load.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Read">
+            <summary>GET /v1.0/endpoints/embedding/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Update">
+            <summary>PUT /v1.0/endpoints/embedding/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Delete">
+            <summary>DELETE /v1.0/endpoints/embedding/{endpointId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EmbeddingEndpointApiDocs.Exists">
+            <summary>HEAD /v1.0/endpoints/embedding/{endpointId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.EvalApiDocs">
+            <summary>
+            OpenAPI metadata for RAG evaluation routes: facts, runs, results, and progress streaming.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.CreateFact">
+            <summary>PUT /v1.0/eval/facts.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ListFacts">
+            <summary>GET /v1.0/eval/facts.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ReadFact">
+            <summary>GET /v1.0/eval/facts/{factId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.UpdateFact">
+            <summary>PUT /v1.0/eval/facts/{factId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.DeleteFact">
+            <summary>DELETE /v1.0/eval/facts/{factId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.StartRun">
+            <summary>POST /v1.0/eval/runs.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ListRuns">
+            <summary>GET /v1.0/eval/runs.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ReadRun">
+            <summary>GET /v1.0/eval/runs/{runId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.DeleteRun">
+            <summary>DELETE /v1.0/eval/runs/{runId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ListRunResults">
+            <summary>GET /v1.0/eval/runs/{runId}/results.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.StreamRun">
+            <summary>GET /v1.0/eval/runs/{runId}/stream.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.ReadResult">
+            <summary>GET /v1.0/eval/results/{resultId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.EvalApiDocs.DefaultJudgePrompt">
+            <summary>GET /v1.0/eval/judge-prompt/default.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.FeedbackApiDocs">
+            <summary>
+            OpenAPI metadata for assistant feedback routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.FeedbackApiDocs.List">
+            <summary>GET /v1.0/feedback.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.FeedbackApiDocs.Read">
+            <summary>GET /v1.0/feedback/{feedbackId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.FeedbackApiDocs.Delete">
+            <summary>DELETE /v1.0/feedback/{feedbackId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.HistoryApiDocs">
+            <summary>
+            OpenAPI metadata for chat history and thread routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.HistoryApiDocs.List">
+            <summary>GET /v1.0/history.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.HistoryApiDocs.Read">
+            <summary>GET /v1.0/history/{historyId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.HistoryApiDocs.Delete">
+            <summary>DELETE /v1.0/history/{historyId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.HistoryApiDocs.Threads">
+            <summary>GET /v1.0/threads.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs">
+            <summary>
+            OpenAPI metadata for index, index record, and index search routes. These routes proxy to Verbex; request bodies
+            are forwarded to Verbex and Verbex response bodies (the Verbex response envelope) and status codes are relayed verbatim.
+            AssistantHub "records" map to Verbex "documents" and AssistantHub "custom-metadata" maps to Verbex "customMetadata".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.List">
+            <summary>GET /v1.0/indices.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Create">
+            <summary>PUT /v1.0/indices.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Read">
+            <summary>GET /v1.0/indices/{indexId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Update">
+            <summary>PUT /v1.0/indices/{indexId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Delete">
+            <summary>DELETE /v1.0/indices/{indexId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Exists">
+            <summary>HEAD /v1.0/indices/{indexId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateLabels">
+            <summary>PUT /v1.0/indices/{indexId}/labels.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateTags">
+            <summary>PUT /v1.0/indices/{indexId}/tags.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateCustomMetadata">
+            <summary>PUT /v1.0/indices/{indexId}/custom-metadata.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.TopTerms">
+            <summary>GET /v1.0/indices/{indexId}/terms/top.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.ListRecords">
+            <summary>GET /v1.0/indices/{indexId}/records.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.CreateRecord">
+            <summary>PUT /v1.0/indices/{indexId}/records.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.CreateRecordBatch">
+            <summary>POST /v1.0/indices/{indexId}/records/batch.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.RecordsExist">
+            <summary>POST /v1.0/indices/{indexId}/records/exists.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.DeleteRecords">
+            <summary>POST /v1.0/indices/{indexId}/records/delete.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.ReadRecord">
+            <summary>GET /v1.0/indices/{indexId}/records/{recordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.DeleteRecord">
+            <summary>DELETE /v1.0/indices/{indexId}/records/{recordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.RecordExists">
+            <summary>HEAD /v1.0/indices/{indexId}/records/{recordId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateRecordLabels">
+            <summary>PUT /v1.0/indices/{indexId}/records/{recordId}/labels.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateRecordTags">
+            <summary>PUT /v1.0/indices/{indexId}/records/{recordId}/tags.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.UpdateRecordCustomMetadata">
+            <summary>PUT /v1.0/indices/{indexId}/records/{recordId}/custom-metadata.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.Search">
+            <summary>POST /v1.0/indices/{indexId}/search.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex">
+            <summary>
+            Verbex index metadata as returned by the Verbex index enumeration.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Identifier">
+            <summary>Index identifier.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.TenantId">
+            <summary>Verbex tenant identifier that owns the index.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Name">
+            <summary>Index name, unique within the tenant.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Description">
+            <summary>Index description.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Enabled">
+            <summary>True if the index is enabled.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.InMemory">
+            <summary>True if the index is held in memory only.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.CreatedUtc">
+            <summary>Creation timestamp, UTC.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Labels">
+            <summary>Index labels.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexIndex.Tags">
+            <summary>Index tags.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument">
+            <summary>
+            Verbex document (AssistantHub index record) metadata.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.DocumentId">
+            <summary>Record identifier. Records created by AssistantHub ingestion use the AssistantHub document ID.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.DocumentPath">
+            <summary>Document path or name recorded by Verbex.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.DocumentLength">
+            <summary>Length of the indexed content in characters.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.IndexedDate">
+            <summary>Timestamp when the record was indexed, UTC.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.LastModified">
+            <summary>Timestamp when the record was last modified, UTC.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.ContentSha256">
+            <summary>SHA-256 hash of the indexed content.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.IndexingRuntimeMs">
+            <summary>Time spent indexing the record, in milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.Terms">
+            <summary>Distinct terms extracted from the content.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.IsDeleted">
+            <summary>True if the record is marked deleted.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.CustomMetadata">
+            <summary>Arbitrary JSON custom metadata.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.Tags">
+            <summary>Record tags.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexDocument.Labels">
+            <summary>Record labels.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexBatchAddResult">
+            <summary>
+            Per-record outcome of a Verbex batch add.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexBatchAddResult.DocumentId">
+            <summary>Record identifier.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexBatchAddResult.Name">
+            <summary>Record name.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexBatchAddResult.Success">
+            <summary>True if the record was added.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexBatchAddResult.ErrorMessage">
+            <summary>Error message when the record could not be added.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexTimestamp">
+            <summary>
+            Verbex enumeration timestamp.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexTimestamp.Start">
+            <summary>Start of the operation, UTC.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexTimestamp.End">
+            <summary>End of the operation, UTC.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexTimestamp.TotalMs">
+            <summary>Total elapsed time in milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexTimestamp.Messages">
+            <summary>Timestamped messages.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1">
+            <summary>
+            Verbex enumeration result.
+            </summary>
+            <typeparam name="T">Object type.</typeparam>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.Success">
+            <summary>True for successful requests.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.Timestamp">
+            <summary>When the result was generated.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.MaxResults">
+            <summary>Maximum results requested.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.Skip">
+            <summary>Number of records skipped.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.IterationsRequired">
+            <summary>Iterations required to build the page.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.ContinuationToken">
+            <summary>Continuation token for the next page; omitted on the last page.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.EndOfResults">
+            <summary>True when this is the last page.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.TotalRecords">
+            <summary>Total number of matching records.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.RecordsRemaining">
+            <summary>Records remaining after this page.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IndexApiDocs.VerbexPage`1.Objects">
+            <summary>Records in this page.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.IngestionRuleApiDocs">
+            <summary>
+            OpenAPI metadata for ingestion rule routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.Create">
+            <summary>PUT /v1.0/ingestion-rules.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.List">
+            <summary>GET /v1.0/ingestion-rules.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.Read">
+            <summary>GET /v1.0/ingestion-rules/{ruleId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.Update">
+            <summary>PUT /v1.0/ingestion-rules/{ruleId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.Delete">
+            <summary>DELETE /v1.0/ingestion-rules/{ruleId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.IngestionRuleApiDocs.Exists">
+            <summary>HEAD /v1.0/ingestion-rules/{ruleId}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.ModelApiDocs">
+            <summary>
+            OpenAPI metadata for inference model routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ModelApiDocs.List">
+            <summary>GET /v1.0/models.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ModelApiDocs.Pull">
+            <summary>POST /v1.0/models/pull.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ModelApiDocs.PullStatus">
+            <summary>GET /v1.0/models/pull/status.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.ModelApiDocs.Delete">
+            <summary>DELETE /v1.0/models/{modelName}.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.PublicAssistantApiDocs">
+            <summary>
+            OpenAPI metadata for unauthenticated, public assistant routes (chat, feedback, threads, documents, and filters).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.GetPublicInfo">
+            <summary>GET /v1.0/assistants/{assistantId}/public.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.ChatOpen">
+            <summary>POST /v1.0/assistants/{assistantId}/chat/open.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.Chat">
+            <summary>POST /v1.0/assistants/{assistantId}/chat.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.SubmitFeedback">
+            <summary>POST /v1.0/assistants/{assistantId}/feedback.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.Compact">
+            <summary>POST /v1.0/assistants/{assistantId}/compact.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.Generate">
+            <summary>POST /v1.0/assistants/{assistantId}/generate.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.CreateThread">
+            <summary>POST /v1.0/assistants/{assistantId}/threads.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.GetThreadHistory">
+            <summary>GET /v1.0/assistants/{assistantId}/threads/{threadId}/history.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.ListDocuments">
+            <summary>GET /v1.0/assistants/{assistantId}/documents.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.DownloadDocument">
+            <summary>GET /v1.0/assistants/{assistantId}/documents/{documentId}/download.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.GetDistinctLabels">
+            <summary>GET /v1.0/assistants/{assistantId}/labels/distinct.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.PublicAssistantApiDocs.GetDistinctTags">
+            <summary>GET /v1.0/assistants/{assistantId}/tags/distinct.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.RequestHistoryApiDocs">
+            <summary>
+            OpenAPI metadata for request-history (HTTP audit log) routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.List">
+            <summary>GET /v1.0/requesthistory.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.Summary">
+            <summary>GET /v1.0/requesthistory/summary.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.Read">
+            <summary>GET /v1.0/requesthistory/{requestId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.ReadDetail">
+            <summary>GET /v1.0/requesthistory/{requestId}/detail.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.Delete">
+            <summary>DELETE /v1.0/requesthistory/{requestId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.DeleteBulk">
+            <summary>DELETE /v1.0/requesthistory/bulk.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.SystemApiDocs">
+            <summary>
+            OpenAPI metadata for unauthenticated system routes: health, OpenAPI document, Swagger UI, and authentication.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.GetRoot">
+            <summary>GET /.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.HeadRoot">
+            <summary>HEAD /.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.GetOpenApi">
+            <summary>GET /openapi.json.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.GetOpenApiVersioned">
+            <summary>GET /v1.0/openapi.json.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.GetSwagger">
+            <summary>GET /swagger.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.SystemApiDocs.Authenticate">
+            <summary>POST /v1.0/authenticate.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.TenantApiDocs">
+            <summary>
+            OpenAPI metadata for tenant and identity routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.Create">
+            <summary>PUT /v1.0/tenants.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.List">
+            <summary>GET /v1.0/tenants.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.Read">
+            <summary>GET /v1.0/tenants/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.Update">
+            <summary>PUT /v1.0/tenants/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.Delete">
+            <summary>DELETE /v1.0/tenants/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.Exists">
+            <summary>HEAD /v1.0/tenants/{id}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.TenantApiDocs.WhoAmI">
+            <summary>GET /v1.0/whoami.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.OpenApi.UserApiDocs">
+            <summary>
+            OpenAPI metadata for tenant-scoped user routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.Create">
+            <summary>PUT /v1.0/tenants/{tenantId}/users.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.List">
+            <summary>GET /v1.0/tenants/{tenantId}/users.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.Read">
+            <summary>GET /v1.0/tenants/{tenantId}/users/{userId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.Update">
+            <summary>PUT /v1.0/tenants/{tenantId}/users/{userId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.Delete">
+            <summary>DELETE /v1.0/tenants/{tenantId}/users/{userId}.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.UserApiDocs.Exists">
+            <summary>HEAD /v1.0/tenants/{tenantId}/users/{userId}.</summary>
+        </member>
         <member name="T:AssistantHub.Server.Services.AssistantAttachmentPromptBuilder">
             <summary>
             Builds short prompt context for chat turns scoped to selected assistant documents.

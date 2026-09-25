@@ -18,6 +18,7 @@ namespace AssistantHub.Server
     using AssistantHub.Core.Settings;
     using AssistantHub.Core.Telemetry;
     using AssistantHub.Server.Handlers;
+    using AssistantHub.Server.OpenApi;
     using AssistantHub.Server.Services;
     using SyslogLogging;
     using WatsonWebserver;
@@ -683,257 +684,257 @@ namespace AssistantHub.Server
             EvalHandler evalHandler = new EvalHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, evalService);
 
             // Unauthenticated routes
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/", rootHandler.GetRootAsync);
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/", rootHandler.HeadRootAsync);
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/openapi.json", openApiHandler.GetOpenApiAsync);
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/openapi.json", openApiHandler.GetOpenApiAsync);
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/swagger", openApiHandler.GetSwaggerAsync);
-            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/authenticate", authenticateHandler.PostAuthenticateAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/public", chatHandler.GetAssistantPublicAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat/open", chatHandler.PostChatOpenAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat", chatHandler.PostChatAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/feedback", chatHandler.PostFeedbackAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/compact", chatHandler.PostCompactAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/generate", chatHandler.PostGenerateAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/threads", chatHandler.PostCreateThreadAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/threads/{threadId}/history", chatHandler.GetThreadHistoryAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents", chatHandler.GetAssistantDocumentsAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents/{documentId}/download", chatHandler.GetPublicDocumentDownloadAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/labels/distinct", chatHandler.GetAssistantDistinctLabelsAsync);
-            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tags/distinct", chatHandler.GetAssistantDistinctTagsAsync);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/", rootHandler.GetRootAsync, openApiMetadata: SystemApiDocs.GetRoot);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/", rootHandler.HeadRootAsync, openApiMetadata: SystemApiDocs.HeadRoot);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/openapi.json", openApiHandler.GetOpenApiAsync, openApiMetadata: SystemApiDocs.GetOpenApi);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/openapi.json", openApiHandler.GetOpenApiAsync, openApiMetadata: SystemApiDocs.GetOpenApiVersioned);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/swagger", openApiHandler.GetSwaggerAsync, openApiMetadata: SystemApiDocs.GetSwagger);
+            _Server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/authenticate", authenticateHandler.PostAuthenticateAsync, openApiMetadata: SystemApiDocs.Authenticate);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/public", chatHandler.GetAssistantPublicAsync, openApiMetadata: PublicAssistantApiDocs.GetPublicInfo);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat/open", chatHandler.PostChatOpenAsync, openApiMetadata: PublicAssistantApiDocs.ChatOpen);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/chat", chatHandler.PostChatAsync, openApiMetadata: PublicAssistantApiDocs.Chat);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/feedback", chatHandler.PostFeedbackAsync, openApiMetadata: PublicAssistantApiDocs.SubmitFeedback);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/compact", chatHandler.PostCompactAsync, openApiMetadata: PublicAssistantApiDocs.Compact);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/generate", chatHandler.PostGenerateAsync, openApiMetadata: PublicAssistantApiDocs.Generate);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/threads", chatHandler.PostCreateThreadAsync, openApiMetadata: PublicAssistantApiDocs.CreateThread);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/threads/{threadId}/history", chatHandler.GetThreadHistoryAsync, openApiMetadata: PublicAssistantApiDocs.GetThreadHistory);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents", chatHandler.GetAssistantDocumentsAsync, openApiMetadata: PublicAssistantApiDocs.ListDocuments);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/documents/{documentId}/download", chatHandler.GetPublicDocumentDownloadAsync, openApiMetadata: PublicAssistantApiDocs.DownloadDocument);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/labels/distinct", chatHandler.GetAssistantDistinctLabelsAsync, openApiMetadata: PublicAssistantApiDocs.GetDistinctLabels);
+            _Server.Routes.PreAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tags/distinct", chatHandler.GetAssistantDistinctTagsAsync, openApiMetadata: PublicAssistantApiDocs.GetDistinctTags);
 
             // Authentication handler
             _Server.Routes.AuthenticateRequest = authHandler.HandleAuthenticateRequestAsync;
 
             // Authenticated routes - Tenants
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants", tenantHandler.PutTenantAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants", tenantHandler.GetTenantsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{id}", tenantHandler.GetTenantAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{id}", tenantHandler.PutTenantByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{id}", tenantHandler.DeleteTenantAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{id}", tenantHandler.HeadTenantAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants", tenantHandler.PutTenantAsync, openApiMetadata: TenantApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants", tenantHandler.GetTenantsAsync, openApiMetadata: TenantApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{id}", tenantHandler.GetTenantAsync, openApiMetadata: TenantApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{id}", tenantHandler.PutTenantByIdAsync, openApiMetadata: TenantApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{id}", tenantHandler.DeleteTenantAsync, openApiMetadata: TenantApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{id}", tenantHandler.HeadTenantAsync, openApiMetadata: TenantApiDocs.Exists);
 
             // Authenticated routes - WhoAmI
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/whoami", tenantHandler.GetWhoAmIAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/whoami", tenantHandler.GetWhoAmIAsync, openApiMetadata: TenantApiDocs.WhoAmI);
 
             // Authenticated routes - Users (under tenant path)
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users", userHandler.PutUserAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users", userHandler.GetUsersAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.GetUserAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.PutUserByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.DeleteUserAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.HeadUserAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users", userHandler.PutUserAsync, openApiMetadata: UserApiDocs.Create);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users", userHandler.GetUsersAsync, openApiMetadata: UserApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.GetUserAsync, openApiMetadata: UserApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.PutUserByIdAsync, openApiMetadata: UserApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.DeleteUserAsync, openApiMetadata: UserApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/users/{userId}", userHandler.HeadUserAsync, openApiMetadata: UserApiDocs.Exists);
 
             // Authenticated routes - Credentials (under tenant path)
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.PutCredentialAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.GetCredentialsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.GetCredentialAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.PutCredentialByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.DeleteCredentialAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.HeadCredentialAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.PutCredentialAsync, openApiMetadata: CredentialApiDocs.Create);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials", credentialHandler.GetCredentialsAsync, openApiMetadata: CredentialApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.GetCredentialAsync, openApiMetadata: CredentialApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.PutCredentialByIdAsync, openApiMetadata: CredentialApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.DeleteCredentialAsync, openApiMetadata: CredentialApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{tenantId}/credentials/{credentialId}", credentialHandler.HeadCredentialAsync, openApiMetadata: CredentialApiDocs.Exists);
 
             // Authenticated routes - Collections (admin only)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections", collectionHandler.PutCollectionAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections", collectionHandler.GetCollectionsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}", collectionHandler.GetCollectionAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}", collectionHandler.PutCollectionByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}", collectionHandler.DeleteCollectionAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/collections/{collectionId}", collectionHandler.HeadCollectionAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/search", collectionHandler.SearchCollectionAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections", collectionHandler.PutCollectionAsync, openApiMetadata: CollectionApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections", collectionHandler.GetCollectionsAsync, openApiMetadata: CollectionApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}", collectionHandler.GetCollectionAsync, openApiMetadata: CollectionApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}", collectionHandler.PutCollectionByIdAsync, openApiMetadata: CollectionApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}", collectionHandler.DeleteCollectionAsync, openApiMetadata: CollectionApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/collections/{collectionId}", collectionHandler.HeadCollectionAsync, openApiMetadata: CollectionApiDocs.Exists);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/search", collectionHandler.SearchCollectionAsync, openApiMetadata: CollectionApiDocs.Search);
 
             // Authenticated routes - Collection Records (admin only)
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}/records", collectionHandler.PutRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/records", collectionHandler.GetRecordsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.GetRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.DeleteRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/records/delete", collectionHandler.BatchDeleteRecordsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/labels/distinct", collectionHandler.GetDistinctLabelsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/tags/distinct", collectionHandler.GetDistinctTagsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/collections/{collectionId}/records", collectionHandler.PutRecordAsync, openApiMetadata: CollectionApiDocs.CreateRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/records", collectionHandler.GetRecordsAsync, openApiMetadata: CollectionApiDocs.ListRecords);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.GetRecordAsync, openApiMetadata: CollectionApiDocs.ReadRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/collections/{collectionId}/records/{recordId}", collectionHandler.DeleteRecordAsync, openApiMetadata: CollectionApiDocs.DeleteRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/collections/{collectionId}/records/delete", collectionHandler.BatchDeleteRecordsAsync, openApiMetadata: CollectionApiDocs.DeleteRecords);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/labels/distinct", collectionHandler.GetDistinctLabelsAsync, openApiMetadata: CollectionApiDocs.DistinctLabels);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/collections/{collectionId}/tags/distinct", collectionHandler.GetDistinctTagsAsync, openApiMetadata: CollectionApiDocs.DistinctTags);
 
             // Authenticated routes - Indices (admin only, proxied to Verbex)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices", indexHandler.GetIndicesAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices", indexHandler.PutIndexAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}", indexHandler.GetIndexAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}", indexHandler.PutIndexByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}", indexHandler.DeleteIndexAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}", indexHandler.HeadIndexAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/labels", indexHandler.PutIndexLabelsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/tags", indexHandler.PutIndexTagsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/custom-metadata", indexHandler.PutIndexCustomMetadataAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/terms/top", indexHandler.GetTopTermsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/search", indexHandler.PostSearchAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices", indexHandler.GetIndicesAsync, openApiMetadata: IndexApiDocs.List);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices", indexHandler.PutIndexAsync, openApiMetadata: IndexApiDocs.Create);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}", indexHandler.GetIndexAsync, openApiMetadata: IndexApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}", indexHandler.PutIndexByIdAsync, openApiMetadata: IndexApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}", indexHandler.DeleteIndexAsync, openApiMetadata: IndexApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}", indexHandler.HeadIndexAsync, openApiMetadata: IndexApiDocs.Exists);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/labels", indexHandler.PutIndexLabelsAsync, openApiMetadata: IndexApiDocs.UpdateLabels);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/tags", indexHandler.PutIndexTagsAsync, openApiMetadata: IndexApiDocs.UpdateTags);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/custom-metadata", indexHandler.PutIndexCustomMetadataAsync, openApiMetadata: IndexApiDocs.UpdateCustomMetadata);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/terms/top", indexHandler.GetTopTermsAsync, openApiMetadata: IndexApiDocs.TopTerms);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/search", indexHandler.PostSearchAsync, openApiMetadata: IndexApiDocs.Search);
 
             // Authenticated routes - Index Records (admin only, proxied to Verbex)
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records", indexHandler.GetRecordsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records", indexHandler.PutRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/delete", indexHandler.DeleteRecordsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/batch", indexHandler.PostRecordBatchAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/exists", indexHandler.PostRecordExistsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.GetRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.DeleteRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.HeadRecordAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/labels", indexHandler.PutRecordLabelsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/tags", indexHandler.PutRecordTagsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/custom-metadata", indexHandler.PutRecordCustomMetadataAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records", indexHandler.GetRecordsAsync, openApiMetadata: IndexApiDocs.ListRecords);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records", indexHandler.PutRecordAsync, openApiMetadata: IndexApiDocs.CreateRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/delete", indexHandler.DeleteRecordsAsync, openApiMetadata: IndexApiDocs.DeleteRecords);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/batch", indexHandler.PostRecordBatchAsync, openApiMetadata: IndexApiDocs.CreateRecordBatch);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/indices/{indexId}/records/exists", indexHandler.PostRecordExistsAsync, openApiMetadata: IndexApiDocs.RecordsExist);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.GetRecordAsync, openApiMetadata: IndexApiDocs.ReadRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.DeleteRecordAsync, openApiMetadata: IndexApiDocs.DeleteRecord);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/indices/{indexId}/records/{recordId}", indexHandler.HeadRecordAsync, openApiMetadata: IndexApiDocs.RecordExists);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/labels", indexHandler.PutRecordLabelsAsync, openApiMetadata: IndexApiDocs.UpdateRecordLabels);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/tags", indexHandler.PutRecordTagsAsync, openApiMetadata: IndexApiDocs.UpdateRecordTags);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/indices/{indexId}/records/{recordId}/custom-metadata", indexHandler.PutRecordCustomMetadataAsync, openApiMetadata: IndexApiDocs.UpdateRecordCustomMetadata);
 
             // Authenticated routes - Buckets (admin only)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets", bucketHandler.PutBucketAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets", bucketHandler.GetBucketsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}", bucketHandler.GetBucketAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/buckets/{name}", bucketHandler.DeleteBucketAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/buckets/{name}", bucketHandler.HeadBucketAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets", bucketHandler.PutBucketAsync, openApiMetadata: BucketApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets", bucketHandler.GetBucketsAsync, openApiMetadata: BucketApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}", bucketHandler.GetBucketAsync, openApiMetadata: BucketApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/buckets/{name}", bucketHandler.DeleteBucketAsync, openApiMetadata: BucketApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/buckets/{name}", bucketHandler.HeadBucketAsync, openApiMetadata: BucketApiDocs.Exists);
 
             // Authenticated routes - Bucket Objects (admin only)
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets/{name}/objects", bucketHandler.PutObjectAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects", bucketHandler.GetObjectsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/buckets/{name}/objects", bucketHandler.DeleteObjectAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects/metadata", bucketHandler.GetObjectMetadataAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects/download", bucketHandler.DownloadObjectAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/buckets/{name}/objects/upload", bucketHandler.UploadObjectAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/buckets/{name}/objects", bucketHandler.PutObjectAsync, openApiMetadata: BucketApiDocs.CreateObject);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects", bucketHandler.GetObjectsAsync, openApiMetadata: BucketApiDocs.ListObjects);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/buckets/{name}/objects", bucketHandler.DeleteObjectAsync, openApiMetadata: BucketApiDocs.DeleteObject);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects/metadata", bucketHandler.GetObjectMetadataAsync, openApiMetadata: BucketApiDocs.ReadObjectMetadata);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/buckets/{name}/objects/download", bucketHandler.DownloadObjectAsync, openApiMetadata: BucketApiDocs.Download);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/buckets/{name}/objects/upload", bucketHandler.UploadObjectAsync, openApiMetadata: BucketApiDocs.Upload);
 
             // Authenticated routes - Assistants
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants", assistantHandler.PutAssistantAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants", assistantHandler.GetAssistantsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}", assistantHandler.GetAssistantAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}", assistantHandler.PutAssistantByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}", assistantHandler.DeleteAssistantAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/assistants/{assistantId}", assistantHandler.HeadAssistantAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants", assistantHandler.PutAssistantAsync, openApiMetadata: AssistantApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants", assistantHandler.GetAssistantsAsync, openApiMetadata: AssistantApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}", assistantHandler.GetAssistantAsync, openApiMetadata: AssistantApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}", assistantHandler.PutAssistantByIdAsync, openApiMetadata: AssistantApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}", assistantHandler.DeleteAssistantAsync, openApiMetadata: AssistantApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/assistants/{assistantId}", assistantHandler.HeadAssistantAsync, openApiMetadata: AssistantApiDocs.Exists);
 
             // Authenticated routes - Assistant Settings
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/slack/verify", assistantSettingsHandler.VerifySlackSettingsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/validate", assistantSettingsHandler.ValidateToolsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/test", assistantSettingsHandler.TestToolsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/retrieve", assistantRetrieveHandler.PostRetrieveAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tools", assistantSettingsHandler.GetToolsAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.GetSettingsAsync, openApiMetadata: AssistantSettingsApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/assistants/{assistantId}/settings", assistantSettingsHandler.PutSettingsAsync, openApiMetadata: AssistantSettingsApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/slack/verify", assistantSettingsHandler.VerifySlackSettingsAsync, openApiMetadata: AssistantSettingsApiDocs.VerifySlack);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/validate", assistantSettingsHandler.ValidateToolsAsync, openApiMetadata: AssistantSettingsApiDocs.ValidateTools);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/settings/tools/test", assistantSettingsHandler.TestToolsAsync, openApiMetadata: AssistantSettingsApiDocs.TestTools);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/assistants/{assistantId}/retrieve", assistantRetrieveHandler.PostRetrieveAsync, openApiMetadata: AssistantSettingsApiDocs.Retrieve);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tools", assistantSettingsHandler.GetToolsAsync, openApiMetadata: AssistantSettingsApiDocs.Tools);
 
             // Authenticated routes - Assistant Analytics
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/overview", assistantAnalyticsHandler.GetOverviewAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/timeseries", assistantAnalyticsHandler.GetTimeSeriesAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/stages", assistantAnalyticsHandler.GetStagesAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/endpoints", assistantAnalyticsHandler.GetEndpointsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/slowest", assistantAnalyticsHandler.GetSlowestAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/feedback", assistantAnalyticsHandler.GetFeedbackAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/overview", assistantAnalyticsHandler.GetOverviewAsync, openApiMetadata: AssistantAnalyticsApiDocs.Overview);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/timeseries", assistantAnalyticsHandler.GetTimeSeriesAsync, openApiMetadata: AssistantAnalyticsApiDocs.TimeSeries);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/stages", assistantAnalyticsHandler.GetStagesAsync, openApiMetadata: AssistantAnalyticsApiDocs.Stages);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/endpoints", assistantAnalyticsHandler.GetEndpointsAsync, openApiMetadata: AssistantAnalyticsApiDocs.Endpoints);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/slowest", assistantAnalyticsHandler.GetSlowestAsync, openApiMetadata: AssistantAnalyticsApiDocs.Slowest);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/analytics/feedback", assistantAnalyticsHandler.GetFeedbackAsync, openApiMetadata: AssistantAnalyticsApiDocs.Feedback);
 
             // Authenticated routes - Assistant Tool Calls
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.GetAssistantToolCallsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.DeleteAssistantToolCallsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.GetAssistantToolCallAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.DeleteAssistantToolCallAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.GetAssistantToolCallsAsync, openApiMetadata: AssistantToolCallApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls", assistantToolCallHandler.DeleteAssistantToolCallsAsync, openApiMetadata: AssistantToolCallApiDocs.DeleteMany);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.GetAssistantToolCallAsync, openApiMetadata: AssistantToolCallApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/assistants/{assistantId}/tool-calls/{toolCallRecordId}", assistantToolCallHandler.DeleteAssistantToolCallAsync, openApiMetadata: AssistantToolCallApiDocs.Delete);
 
             // Authenticated routes - Ingestion Rules
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules", ingestionRuleHandler.GetIngestionRulesAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.GetIngestionRuleAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.PutIngestionRuleByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.DeleteIngestionRuleAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.HeadIngestionRuleAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules", ingestionRuleHandler.PutIngestionRuleAsync, openApiMetadata: IngestionRuleApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules", ingestionRuleHandler.GetIngestionRulesAsync, openApiMetadata: IngestionRuleApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.GetIngestionRuleAsync, openApiMetadata: IngestionRuleApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.PutIngestionRuleByIdAsync, openApiMetadata: IngestionRuleApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.DeleteIngestionRuleAsync, openApiMetadata: IngestionRuleApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/ingestion-rules/{ruleId}", ingestionRuleHandler.HeadIngestionRuleAsync, openApiMetadata: IngestionRuleApiDocs.Exists);
 
             // Authenticated routes - Embedding Endpoints (admin only, proxied to Partio)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding", embeddingEndpointHandler.CreateEmbeddingEndpointAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/enumerate", embeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/health", embeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/test", embeddingEndpointHandler.TestEmbeddingEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/load", embeddingEndpointHandler.LoadEmbeddingEndpointModelAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.DeleteEmbeddingEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.HeadEmbeddingEndpointAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding", embeddingEndpointHandler.CreateEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/enumerate", embeddingEndpointHandler.EnumerateEmbeddingEndpointsAsync, openApiMetadata: EmbeddingEndpointApiDocs.Enumerate);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/health", embeddingEndpointHandler.GetAllEmbeddingEndpointHealthAsync, openApiMetadata: EmbeddingEndpointApiDocs.ListHealth);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}/health", embeddingEndpointHandler.GetEmbeddingEndpointHealthAsync, openApiMetadata: EmbeddingEndpointApiDocs.ReadHealth);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/test", embeddingEndpointHandler.TestEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Test);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/embedding/{endpointId}/load", embeddingEndpointHandler.LoadEmbeddingEndpointModelAsync, openApiMetadata: EmbeddingEndpointApiDocs.Load);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.GetEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.UpdateEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.DeleteEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/embedding/{endpointId}", embeddingEndpointHandler.HeadEmbeddingEndpointAsync, openApiMetadata: EmbeddingEndpointApiDocs.Exists);
 
             // Authenticated routes - Completion Endpoints (admin only, proxied to Partio)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion", completionEndpointHandler.CreateCompletionEndpointAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/enumerate", completionEndpointHandler.EnumerateCompletionEndpointsAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/health", completionEndpointHandler.GetAllCompletionEndpointHealthAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/test", completionEndpointHandler.TestCompletionEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/load", completionEndpointHandler.LoadCompletionEndpointModelAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.DeleteCompletionEndpointAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.HeadCompletionEndpointAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion", completionEndpointHandler.CreateCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/enumerate", completionEndpointHandler.EnumerateCompletionEndpointsAsync, openApiMetadata: CompletionEndpointApiDocs.Enumerate);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/health", completionEndpointHandler.GetAllCompletionEndpointHealthAsync, openApiMetadata: CompletionEndpointApiDocs.ListHealth);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}/health", completionEndpointHandler.GetCompletionEndpointHealthAsync, openApiMetadata: CompletionEndpointApiDocs.ReadHealth);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/test", completionEndpointHandler.TestCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Test);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/endpoints/completion/{endpointId}/load", completionEndpointHandler.LoadCompletionEndpointModelAsync, openApiMetadata: CompletionEndpointApiDocs.Load);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.GetCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.UpdateCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.DeleteCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/endpoints/completion/{endpointId}", completionEndpointHandler.HeadCompletionEndpointAsync, openApiMetadata: CompletionEndpointApiDocs.Exists);
 
             // Authenticated routes - Documents
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents", documentHandler.PutDocumentAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents", documentHandler.GetDocumentsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}", documentHandler.GetDocumentAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/documents/{documentId}", documentHandler.DeleteDocumentAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/documents/{documentId}", documentHandler.HeadDocumentAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/delete", documentHandler.BulkDeleteDocumentsAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/reindex", documentHandler.ReindexDocumentsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reindex", documentHandler.ReindexDocumentAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reprocess", documentHandler.ReprocessDocumentAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/processing-log", documentHandler.GetDocumentProcessingLogAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/performance", documentHandler.GetDocumentPerformanceAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/analytics/ingestion", documentHandler.GetIngestionAnalyticsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/download", documentHandler.DownloadDocumentAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents", documentHandler.PutDocumentAsync, openApiMetadata: DocumentApiDocs.Upload);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents", documentHandler.GetDocumentsAsync, openApiMetadata: DocumentApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}", documentHandler.GetDocumentAsync, openApiMetadata: DocumentApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/documents/{documentId}", documentHandler.DeleteDocumentAsync, openApiMetadata: DocumentApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/documents/{documentId}", documentHandler.HeadDocumentAsync, openApiMetadata: DocumentApiDocs.Exists);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/delete", documentHandler.BulkDeleteDocumentsAsync, openApiMetadata: DocumentApiDocs.BulkDelete);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/reindex", documentHandler.ReindexDocumentsAsync, openApiMetadata: DocumentApiDocs.ReindexBatch);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reindex", documentHandler.ReindexDocumentAsync, openApiMetadata: DocumentApiDocs.Reindex);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/{documentId}/reprocess", documentHandler.ReprocessDocumentAsync, openApiMetadata: DocumentApiDocs.Reprocess);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/processing-log", documentHandler.GetDocumentProcessingLogAsync, openApiMetadata: DocumentApiDocs.ProcessingLog);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/performance", documentHandler.GetDocumentPerformanceAsync, openApiMetadata: DocumentApiDocs.Performance);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/analytics/ingestion", documentHandler.GetIngestionAnalyticsAsync, openApiMetadata: DocumentApiDocs.IngestionAnalytics);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}/download", documentHandler.DownloadDocumentAsync, openApiMetadata: DocumentApiDocs.Download);
 
             // Authenticated routes - Feedback
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/feedback", feedbackHandler.GetFeedbackListAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/feedback/{feedbackId}", feedbackHandler.GetFeedbackAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/feedback/{feedbackId}", feedbackHandler.DeleteFeedbackAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/feedback", feedbackHandler.GetFeedbackListAsync, openApiMetadata: FeedbackApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/feedback/{feedbackId}", feedbackHandler.GetFeedbackAsync, openApiMetadata: FeedbackApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/feedback/{feedbackId}", feedbackHandler.DeleteFeedbackAsync, openApiMetadata: FeedbackApiDocs.Delete);
 
             // Authenticated routes - History
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/history", historyHandler.GetHistoryListAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/history/{historyId}", historyHandler.GetHistoryAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/history/{historyId}", historyHandler.DeleteHistoryAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/threads", historyHandler.GetThreadsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/history", historyHandler.GetHistoryListAsync, openApiMetadata: HistoryApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/history/{historyId}", historyHandler.GetHistoryAsync, openApiMetadata: HistoryApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/history/{historyId}", historyHandler.DeleteHistoryAsync, openApiMetadata: HistoryApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/threads", historyHandler.GetThreadsAsync, openApiMetadata: HistoryApiDocs.Threads);
 
             // Authenticated routes - Request History (admin or tenant admin)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory", requestHistoryHandler.GetRequestHistoryAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/summary", requestHistoryHandler.GetRequestHistorySummaryAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.GetRequestHistoryEntryAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}/detail", requestHistoryHandler.GetRequestHistoryEntryDetailAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.DeleteRequestHistoryEntryAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/bulk", requestHistoryHandler.DeleteRequestHistoryBulkAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory", requestHistoryHandler.GetRequestHistoryAsync, openApiMetadata: RequestHistoryApiDocs.List);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/summary", requestHistoryHandler.GetRequestHistorySummaryAsync, openApiMetadata: RequestHistoryApiDocs.Summary);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.GetRequestHistoryEntryAsync, openApiMetadata: RequestHistoryApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/requesthistory/{requestId}/detail", requestHistoryHandler.GetRequestHistoryEntryDetailAsync, openApiMetadata: RequestHistoryApiDocs.ReadDetail);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/{requestId}", requestHistoryHandler.DeleteRequestHistoryEntryAsync, openApiMetadata: RequestHistoryApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/requesthistory/bulk", requestHistoryHandler.DeleteRequestHistoryBulkAsync, openApiMetadata: RequestHistoryApiDocs.DeleteBulk);
 
             // Authenticated routes - Configuration (admin only)
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration", configurationHandler.GetConfigurationAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration/external-search/status", configurationHandler.GetExternalSearchStatusAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/configuration", configurationHandler.PutConfigurationAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration", configurationHandler.GetConfigurationAsync, openApiMetadata: ConfigurationApiDocs.Read);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration/external-search/status", configurationHandler.GetExternalSearchStatusAsync, openApiMetadata: ConfigurationApiDocs.ExternalSearchStatus);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/configuration", configurationHandler.PutConfigurationAsync, openApiMetadata: ConfigurationApiDocs.Update);
 
             // Authenticated routes - Models
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models", inferenceHandler.GetModelsAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/models/pull", inferenceHandler.PostPullModelAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models/pull/status", inferenceHandler.GetPullStatusAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/models/{modelName}", inferenceHandler.DeleteModelAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models", inferenceHandler.GetModelsAsync, openApiMetadata: ModelApiDocs.List);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/models/pull", inferenceHandler.PostPullModelAsync, openApiMetadata: ModelApiDocs.Pull);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/models/pull/status", inferenceHandler.GetPullStatusAsync, openApiMetadata: ModelApiDocs.PullStatus);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/models/{modelName}", inferenceHandler.DeleteModelAsync, openApiMetadata: ModelApiDocs.Delete);
 
             // Authenticated routes - Crawl Plans
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans", crawlPlanHandler.PutCrawlPlanAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans", crawlPlanHandler.GetCrawlPlansAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/connectivity", crawlPlanHandler.TestDraftConnectivityAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}", crawlPlanHandler.GetCrawlPlanAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans/{id}", crawlPlanHandler.PutCrawlPlanByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{id}", crawlPlanHandler.DeleteCrawlPlanAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/crawlplans/{id}", crawlPlanHandler.HeadCrawlPlanAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/start", crawlPlanHandler.StartCrawlAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/stop", crawlPlanHandler.StopCrawlAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/connectivity", crawlPlanHandler.TestConnectivityAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}/enumerate", crawlPlanHandler.EnumerateContentsAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans", crawlPlanHandler.PutCrawlPlanAsync, openApiMetadata: CrawlApiDocs.Create);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans", crawlPlanHandler.GetCrawlPlansAsync, openApiMetadata: CrawlApiDocs.List);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/connectivity", crawlPlanHandler.TestDraftConnectivityAsync, openApiMetadata: CrawlApiDocs.TestDraftConnectivity);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}", crawlPlanHandler.GetCrawlPlanAsync, openApiMetadata: CrawlApiDocs.Read);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/crawlplans/{id}", crawlPlanHandler.PutCrawlPlanByIdAsync, openApiMetadata: CrawlApiDocs.Update);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{id}", crawlPlanHandler.DeleteCrawlPlanAsync, openApiMetadata: CrawlApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/crawlplans/{id}", crawlPlanHandler.HeadCrawlPlanAsync, openApiMetadata: CrawlApiDocs.Exists);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/start", crawlPlanHandler.StartCrawlAsync, openApiMetadata: CrawlApiDocs.Start);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/stop", crawlPlanHandler.StopCrawlAsync, openApiMetadata: CrawlApiDocs.Stop);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/crawlplans/{id}/connectivity", crawlPlanHandler.TestConnectivityAsync, openApiMetadata: CrawlApiDocs.TestConnectivity);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{id}/enumerate", crawlPlanHandler.EnumerateContentsAsync, openApiMetadata: CrawlApiDocs.Enumerate);
 
             // Authenticated routes - Crawl Operations
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations", crawlOperationHandler.GetOperationsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/statistics", crawlOperationHandler.GetStatisticsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.GetOperationAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/statistics", crawlOperationHandler.GetOperationStatisticsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.DeleteOperationAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/enumeration", crawlOperationHandler.GetEnumerationAsync);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations", crawlOperationHandler.GetOperationsAsync, openApiMetadata: CrawlApiDocs.ListOperations);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/statistics", crawlOperationHandler.GetStatisticsAsync, openApiMetadata: CrawlApiDocs.PlanStatistics);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.GetOperationAsync, openApiMetadata: CrawlApiDocs.ReadOperation);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/statistics", crawlOperationHandler.GetOperationStatisticsAsync, openApiMetadata: CrawlApiDocs.OperationStatistics);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.DeleteOperationAsync, openApiMetadata: CrawlApiDocs.DeleteOperation);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}/enumeration", crawlOperationHandler.GetEnumerationAsync, openApiMetadata: CrawlApiDocs.ReadEnumeration);
 
             // Authenticated routes - Evaluation
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/eval/facts", evalHandler.PutFactAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/facts", evalHandler.GetFactsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/facts/{factId}", evalHandler.GetFactAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/eval/facts/{factId}", evalHandler.PutFactByIdAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/eval/facts/{factId}", evalHandler.DeleteFactAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/eval/runs", evalHandler.PostRunAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs", evalHandler.GetRunsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}", evalHandler.GetRunAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/eval/runs/{runId}", evalHandler.DeleteRunAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}/results", evalHandler.GetRunResultsAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}/stream", evalHandler.GetRunStreamAsync);
-            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/results/{resultId}", evalHandler.GetResultAsync);
-            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/judge-prompt/default", evalHandler.GetDefaultJudgePromptAsync);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/eval/facts", evalHandler.PutFactAsync, openApiMetadata: EvalApiDocs.CreateFact);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/facts", evalHandler.GetFactsAsync, openApiMetadata: EvalApiDocs.ListFacts);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/facts/{factId}", evalHandler.GetFactAsync, openApiMetadata: EvalApiDocs.ReadFact);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/eval/facts/{factId}", evalHandler.PutFactByIdAsync, openApiMetadata: EvalApiDocs.UpdateFact);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/eval/facts/{factId}", evalHandler.DeleteFactAsync, openApiMetadata: EvalApiDocs.DeleteFact);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/eval/runs", evalHandler.PostRunAsync, openApiMetadata: EvalApiDocs.StartRun);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs", evalHandler.GetRunsAsync, openApiMetadata: EvalApiDocs.ListRuns);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}", evalHandler.GetRunAsync, openApiMetadata: EvalApiDocs.ReadRun);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/eval/runs/{runId}", evalHandler.DeleteRunAsync, openApiMetadata: EvalApiDocs.DeleteRun);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}/results", evalHandler.GetRunResultsAsync, openApiMetadata: EvalApiDocs.ListRunResults);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/runs/{runId}/stream", evalHandler.GetRunStreamAsync, openApiMetadata: EvalApiDocs.StreamRun);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/results/{resultId}", evalHandler.GetResultAsync, openApiMetadata: EvalApiDocs.ReadResult);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/eval/judge-prompt/default", evalHandler.GetDefaultJudgePromptAsync, openApiMetadata: EvalApiDocs.DefaultJudgePrompt);
 
             // Preflight - Watson invokes this exclusively for OPTIONS (CORS preflight) requests
             _Server.Routes.Preflight = async (ctx) =>

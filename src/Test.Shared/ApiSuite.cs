@@ -13,8 +13,11 @@ namespace Test.Automated
     using AssistantHub.Core.Services;
     using AssistantHub.Core.Settings;
     using AssistantHub.Server.Handlers;
+    using AssistantHub.Server.OpenApi;
+    using AssistantHub.Server.Services;
     using SyslogLogging;
     using Test.Shared;
+    using OpenApiRouteMetadata = WatsonWebserver.Core.OpenApi.OpenApiRouteMetadata;
 
     public class ApiSuite : SuiteBase
     {
@@ -550,6 +553,205 @@ namespace Test.Automated
                 }
             });
 
+            await ExecuteTestAsync("OpenAPI metadata: every backend route registration passes an ApiDocs annotation", async () =>
+            {
+                string root = GetRepositoryRoot();
+                List<RouteAnnotation> annotations = ExtractRouteAnnotations(root);
+                SortedSet<string> backendRoutes = ExtractBackendRoutes(root);
+
+                AssertHelper.AreEqual(backendRoutes.Count, annotations.Count, "parsed route registration count");
+                List<string> unannotated = annotations.Where(a => a.DocsMember == null).Select(a => a.Route).ToList();
+                AssertHelper.IsTrue(unannotated.Count == 0, "routes registered without openApiMetadata: " + String.Join(", ", unannotated.Take(20)));
+                await Task.CompletedTask;
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("OpenAPI metadata: every route documents summary, examples, and response structures", async () =>
+            {
+                string root = GetRepositoryRoot();
+                List<string> problems = new List<string>();
+
+                foreach (RouteAnnotation annotation in ExtractRouteAnnotations(root))
+                {
+                    OpenApiRouteMetadata metadata = ResolveRouteMetadata(annotation, problems);
+                    if (metadata == null) continue;
+                    problems.AddRange(ValidateRouteMetadata(annotation, metadata));
+                }
+
+                AssertHelper.IsTrue(problems.Count == 0, problems.Count + " OpenAPI metadata problem(s): " + String.Join(" | ", problems.Take(25)));
+                await Task.CompletedTask;
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("OpenAPI metadata: builder rejects incomplete operations", async () =>
+            {
+                bool noSuccessRejected = false;
+                try { ApiDoc.Create("Incomplete", "Misc").Errors(404).Build(); }
+                catch (InvalidOperationException) { noSuccessRejected = true; }
+                AssertHelper.IsTrue(noSuccessRejected, "operation without a 2xx response must be rejected");
+
+                bool unknownErrorRejected = false;
+                try { ApiDoc.Create("Teapot", "Misc").Errors(418); }
+                catch (ArgumentOutOfRangeException) { unknownErrorRejected = true; }
+                AssertHelper.IsTrue(unknownErrorRejected, "unsupported standard error status must be rejected");
+
+                bool nullBodyRejected = false;
+                try { ApiDoc.Create("Null body", "Misc").Body<TenantMetadata>("body", null); }
+                catch (ArgumentNullException) { nullBodyRejected = true; }
+                AssertHelper.IsTrue(nullBodyRejected, "request body without an example must be rejected");
+
+                bool nullResponseRejected = false;
+                try { ApiDoc.Create("Null response", "Misc").Returns<TenantMetadata>(200, "ok", null); }
+                catch (ArgumentNullException) { nullResponseRejected = true; }
+                AssertHelper.IsTrue(nullResponseRejected, "JSON response without an example must be rejected");
+
+                bool missingTagRejected = false;
+                try { ApiDoc.Create("No tag", " "); }
+                catch (ArgumentNullException) { missingTagRejected = true; }
+                AssertHelper.IsTrue(missingTagRejected, "operation without a tag must be rejected");
+                await Task.CompletedTask;
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("OpenAPI metadata: schemas follow serializer conventions", async () =>
+            {
+                WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata tenantRef = ApiSchema.FromType(typeof(TenantMetadata));
+                AssertHelper.AreEqual("#/components/schemas/TenantMetadata", tenantRef.Ref, "named models are emitted as component references");
+                AssertHelper.IsTrue(ApiSchema.Components.TryGetValue("TenantMetadata", out WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata tenantSchema), "TenantMetadata component");
+                AssertHelper.IsTrue(tenantSchema.Properties.ContainsKey("Name"), "TenantMetadata.Name property");
+                AssertHelper.AreEqual("date-time", tenantSchema.Properties["CreatedUtc"].Format, "DateTime properties use date-time format");
+                AssertHelper.AreEqual("array", tenantSchema.Properties["Labels"].Type, "List properties are arrays");
+
+                ApiSchema.FromType(typeof(ChatMetadataFilter));
+                AssertHelper.IsFalse(ApiSchema.Components["ChatMetadataFilter"].Properties.ContainsKey("IsEmpty"), "[JsonIgnore] properties are excluded");
+
+                WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata enumSchema = ApiSchema.FromType(typeof(AssistantHub.Core.Enums.ApiErrorEnum));
+                AssertHelper.AreEqual("string", enumSchema.Type, "enums serialize as strings");
+                AssertHelper.IsTrue(enumSchema.Enum.Contains("NotFound"), "enum schema lists member names");
+
+                WatsonWebserver.Core.OpenApi.OpenApiSchemaMetadata anonymous = ApiSchema.FromType(new { Count = 1, Tenant = new TenantMetadata() }.GetType());
+                AssertHelper.IsNull(anonymous.Ref, "anonymous types are inlined");
+                AssertHelper.AreEqual("#/components/schemas/TenantMetadata", anonymous.Properties["Tenant"].Ref, "nested named models inside anonymous types are referenced");
+                await Task.CompletedTask;
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("OpenAPI runtime: annotated routes render examples and schemas; unannotated routes fall back", async () =>
+            {
+                int port = GetFreeTcpPort();
+                WatsonWebserver.Webserver server = null;
+                server = new WatsonWebserver.Webserver(
+                    new WatsonWebserver.Core.WebserverSettings("127.0.0.1", port, false),
+                    async ctx => { ctx.Response.StatusCode = 404; await ctx.Response.Send().ConfigureAwait(false); });
+
+                OpenApiDocumentService documentService = new OpenApiDocumentService(() => server);
+                Func<WatsonWebserver.Core.HttpContextBase, Task> noop = async ctx => { ctx.Response.StatusCode = 204; await ctx.Response.Send().ConfigureAwait(false); };
+
+                server.Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/openapi.json", async ctx =>
+                {
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(documentService.BuildDocument(ctx)).ConfigureAwait(false);
+                });
+                server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/tenants", noop, openApiMetadata: TenantApiDocs.Create);
+                server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/tenants/{id}", noop, openApiMetadata: TenantApiDocs.Exists);
+                server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/undocumented", noop);
+
+                try
+                {
+                    server.Start();
+                    using System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
+                    string json = await client.GetStringAsync("http://127.0.0.1:" + port + "/openapi.json").ConfigureAwait(false);
+                    using JsonDocument document = JsonDocument.Parse(json);
+                    JsonElement paths = document.RootElement.GetProperty("paths");
+
+                    JsonElement create = paths.GetProperty("/v1.0/tenants").GetProperty("put");
+                    AssertHelper.AreEqual("Create tenant", create.GetProperty("summary").GetString(), "annotated summary");
+                    AssertHelper.AreEqual("Tenants", create.GetProperty("tags")[0].GetString(), "annotated tag");
+                    JsonElement body = create.GetProperty("requestBody").GetProperty("content").GetProperty("application/json");
+                    AssertHelper.AreEqual("#/components/schemas/TenantMetadata", body.GetProperty("schema").GetProperty("$ref").GetString(), "request body schema reference");
+                    AssertHelper.AreEqual("Acme Corporation", body.GetProperty("example").GetProperty("Name").GetString(), "request body example");
+                    JsonElement created = create.GetProperty("responses").GetProperty("201").GetProperty("content").GetProperty("application/json");
+                    AssertHelper.IsTrue(created.GetProperty("schema").GetProperty("properties").TryGetProperty("Provisioning", out _), "201 response structure");
+                    AssertHelper.StartsWith(created.GetProperty("example").GetProperty("Tenant").GetProperty("Id").GetString(), "ten_", "201 response example");
+                    AssertHelper.IsTrue(create.GetProperty("responses").TryGetProperty("401", out _), "authenticated routes document 401");
+                    AssertHelper.AreEqual(1, create.GetProperty("security").GetArrayLength(), "authenticated routes require BearerAuth");
+
+                    JsonElement exists = paths.GetProperty("/v1.0/tenants/{id}").GetProperty("head");
+                    AssertHelper.IsFalse(exists.TryGetProperty("requestBody", out _), "HEAD routes have no request body");
+                    AssertHelper.IsFalse(exists.GetProperty("responses").GetProperty("200").TryGetProperty("content", out _), "HEAD 200 has no body");
+                    AssertHelper.IsTrue(HasParameter(exists, "id", "path"), "path parameters are generated for annotated routes");
+
+                    JsonElement schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+                    AssertHelper.IsTrue(schemas.GetProperty("TenantMetadata").GetProperty("properties").TryGetProperty("Name", out _), "component schema emitted");
+                    AssertHelper.IsTrue(schemas.TryGetProperty("ApiErrorResponse", out _), "error component schema emitted");
+
+                    JsonElement undocumented = paths.GetProperty("/v1.0/undocumented").GetProperty("post");
+                    AssertHelper.AreEqual("POST /v1.0/undocumented", undocumented.GetProperty("summary").GetString(), "unannotated routes keep the generated summary");
+                    AssertHelper.IsTrue(undocumented.TryGetProperty("requestBody", out _), "unannotated POST keeps the generic request body");
+                }
+                finally
+                {
+                    server.Stop();
+                    server.Dispose();
+                }
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("OpenAPI document: openapi.json documents every route with examples and response structures", async () =>
+            {
+                string root = GetRepositoryRoot();
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "openapi.json")));
+                JsonElement paths = document.RootElement.GetProperty("paths");
+                List<string> problems = new List<string>();
+
+                foreach (RouteAnnotation annotation in ExtractRouteAnnotations(root))
+                {
+                    if (!paths.TryGetProperty(annotation.Path, out JsonElement pathItem)
+                        || !pathItem.TryGetProperty(annotation.Method.ToLowerInvariant(), out JsonElement operation))
+                    {
+                        problems.Add(annotation.Route + ": missing");
+                        continue;
+                    }
+
+                    OpenApiRouteMetadata metadata = ResolveRouteMetadata(annotation, problems);
+                    if (metadata?.RequestBody != null && !operation.TryGetProperty("requestBody", out _))
+                        problems.Add(annotation.Route + ": request body missing");
+
+                    if (operation.TryGetProperty("requestBody", out JsonElement requestBody)
+                        && requestBody.TryGetProperty("content", out JsonElement requestContent)
+                        && requestContent.TryGetProperty("application/json", out JsonElement requestJson)
+                        && !HasExample(requestJson))
+                        problems.Add(annotation.Route + ": request body example missing");
+
+                    bool hasSuccess = false;
+                    foreach (JsonProperty response in operation.GetProperty("responses").EnumerateObject())
+                    {
+                        if (!response.Name.StartsWith("2", StringComparison.Ordinal)) continue;
+                        hasSuccess = true;
+
+                        bool expectsBody = annotation.Method != "HEAD" && response.Name != "204"
+                            && metadata?.Responses != null
+                            && metadata.Responses.TryGetValue(response.Name, out WatsonWebserver.Core.OpenApi.OpenApiResponseMetadata documented)
+                            && documented.Content != null && documented.Content.Count > 0;
+                        if (!expectsBody) continue;
+
+                        if (!response.Value.TryGetProperty("content", out JsonElement content))
+                        {
+                            problems.Add(annotation.Route + " " + response.Name + ": response structure missing");
+                            continue;
+                        }
+
+                        foreach (JsonProperty media in content.EnumerateObject())
+                        {
+                            if (!media.Value.TryGetProperty("schema", out _))
+                                problems.Add(annotation.Route + " " + response.Name + " " + media.Name + ": schema missing");
+                            if (media.Name.Contains("json", StringComparison.Ordinal) && !HasExample(media.Value))
+                                problems.Add(annotation.Route + " " + response.Name + ": response example missing");
+                        }
+                    }
+
+                    if (!hasSuccess) problems.Add(annotation.Route + ": no 2xx response");
+                }
+
+                AssertHelper.IsTrue(problems.Count == 0, problems.Count + " openapi.json problem(s): " + String.Join(" | ", problems.Take(25)));
+                await Task.CompletedTask;
+            }).ConfigureAwait(false);
+
             await ExecuteTestAsync("API route contracts: backend, OpenAPI, Postman, REST docs, and explorer stay aligned", async () =>
             {
                 string root = GetRepositoryRoot();
@@ -614,7 +816,7 @@ namespace Test.Automated
                 string jsSdkSource = File.ReadAllText(Path.Combine(root, "sdk", "js", "src", "client.ts"));
                 string pythonSdkSource = File.ReadAllText(Path.Combine(root, "sdk", "python", "assistanthub_sdk", "client.py"));
                 string mcpDocs = File.ReadAllText(Path.Combine(root, "MCP_API.md"));
-                AssertHelper.StringContains(serverSource, "Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, \"/swagger\", openApiHandler.GetSwaggerAsync)", "Swagger UI pre-auth route");
+                AssertHelper.StringContains(serverSource, "Routes.PreAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, \"/swagger\", openApiHandler.GetSwaggerAsync", "Swagger UI pre-auth route");
                 AssertHelper.StringContains(serverSource, "/v1.0/configuration/external-search/status", "external-search status backend route");
                 AssertHelper.StringContains(File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "ConfigurationHandler.cs")), "GetExternalSearchStatusAsync", "external-search status handler");
                 AssertHelper.StringContains(explorerSource, "operation.tags?.[0] === 'Assistant Public APIs'", "API Explorer public assistant OpenAPI merge");
@@ -945,6 +1147,128 @@ namespace Test.Automated
             }
 
             return routes;
+        }
+
+        private static List<RouteAnnotation> ExtractRouteAnnotations(string root)
+        {
+            string source = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "AssistantHubServer.cs"));
+            Regex regex = new Regex(
+                "Routes\\.(?:PreAuthentication|PostAuthentication)\\.(?:Static|Parameter)\\.Add\\(WatsonWebserver\\.Core\\.HttpMethod\\.(\\w+),\\s*\"([^\"]+)\",\\s*[\\w\\.]+(?:,\\s*openApiMetadata:\\s*(\\w+)\\.(\\w+))?\\s*\\)");
+            List<RouteAnnotation> annotations = new List<RouteAnnotation>();
+
+            foreach (Match match in regex.Matches(source))
+            {
+                annotations.Add(new RouteAnnotation
+                {
+                    Method = match.Groups[1].Value.ToUpperInvariant(),
+                    Path = match.Groups[2].Value,
+                    DocsClass = match.Groups[3].Success ? match.Groups[3].Value : null,
+                    DocsMember = match.Groups[4].Success ? match.Groups[4].Value : null
+                });
+            }
+
+            return annotations;
+        }
+
+        private static OpenApiRouteMetadata ResolveRouteMetadata(RouteAnnotation annotation, List<string> problems)
+        {
+            if (annotation.DocsClass == null || annotation.DocsMember == null)
+            {
+                problems.Add(annotation.Route + ": no OpenAPI metadata");
+                return null;
+            }
+
+            Type docsType = typeof(OpenApiDocumentService).Assembly.GetType("AssistantHub.Server.OpenApi." + annotation.DocsClass);
+            PropertyInfo property = docsType?.GetProperty(annotation.DocsMember, BindingFlags.Public | BindingFlags.Static);
+            if (property == null)
+            {
+                problems.Add(annotation.Route + ": " + annotation.DocsClass + "." + annotation.DocsMember + " not found");
+                return null;
+            }
+
+            try
+            {
+                return (OpenApiRouteMetadata)property.GetValue(null);
+            }
+            catch (TargetInvocationException e)
+            {
+                problems.Add(annotation.Route + ": " + annotation.DocsClass + "." + annotation.DocsMember + " threw " + e.InnerException?.Message);
+                return null;
+            }
+        }
+
+        private static List<string> ValidateRouteMetadata(RouteAnnotation annotation, OpenApiRouteMetadata metadata)
+        {
+            List<string> problems = new List<string>();
+            string route = annotation.Route;
+
+            if (String.IsNullOrWhiteSpace(metadata.Summary)) problems.Add(route + ": summary missing");
+            if (String.IsNullOrWhiteSpace(metadata.Description)) problems.Add(route + ": description missing");
+            if (metadata.Tags == null || metadata.Tags.Count < 1) problems.Add(route + ": tag missing");
+
+            if (metadata.RequestBody != null)
+            {
+                if (annotation.Method == "GET" || annotation.Method == "HEAD" || annotation.Method == "DELETE")
+                    problems.Add(route + ": " + annotation.Method + " must not document a request body");
+
+                if (metadata.RequestBody.Content == null || metadata.RequestBody.Content.Count < 1)
+                    problems.Add(route + ": request body has no content");
+                else
+                {
+                    foreach (KeyValuePair<string, WatsonWebserver.Core.OpenApi.OpenApiMediaTypeMetadata> media in metadata.RequestBody.Content)
+                    {
+                        if (media.Value.Schema == null) problems.Add(route + ": request " + media.Key + " schema missing");
+                        if (media.Key.Contains("json", StringComparison.Ordinal) && media.Value.Example == null)
+                            problems.Add(route + ": request example missing");
+                    }
+                }
+            }
+
+            bool hasSuccess = false;
+            bool hasSuccessBody = false;
+            foreach (KeyValuePair<string, WatsonWebserver.Core.OpenApi.OpenApiResponseMetadata> response in metadata.Responses ?? new Dictionary<string, WatsonWebserver.Core.OpenApi.OpenApiResponseMetadata>())
+            {
+                if (String.IsNullOrWhiteSpace(response.Value.Description)) problems.Add(route + " " + response.Key + ": description missing");
+                if (response.Value.Content == null || response.Value.Content.Count < 1)
+                {
+                    if (response.Key.StartsWith("2", StringComparison.Ordinal)) hasSuccess = true;
+                    continue;
+                }
+
+                if (response.Key.StartsWith("2", StringComparison.Ordinal))
+                {
+                    hasSuccess = true;
+                    hasSuccessBody = true;
+                    if (annotation.Method == "HEAD") problems.Add(route + ": HEAD responses must not have a body");
+                }
+
+                foreach (KeyValuePair<string, WatsonWebserver.Core.OpenApi.OpenApiMediaTypeMetadata> media in response.Value.Content)
+                {
+                    if (media.Value.Schema == null) problems.Add(route + " " + response.Key + ": " + media.Key + " schema missing");
+                    if (media.Key.Contains("json", StringComparison.Ordinal) && media.Value.Example == null)
+                        problems.Add(route + " " + response.Key + ": response example missing");
+                }
+            }
+
+            if (!hasSuccess) problems.Add(route + ": no 2xx response");
+            if (annotation.Method == "GET" && !hasSuccessBody) problems.Add(route + ": GET must document a 2xx response body");
+            return problems;
+        }
+
+        private static bool HasExample(JsonElement media)
+        {
+            if (media.TryGetProperty("example", out _)) return true;
+            if (media.TryGetProperty("examples", out _)) return true;
+            return media.TryGetProperty("schema", out JsonElement schema) && schema.TryGetProperty("example", out _);
+        }
+
+        private static int GetFreeTcpPort()
+        {
+            System.Net.Sockets.TcpListener listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            return port;
         }
 
         private static SortedSet<string> ExtractOpenApiRoutes(string root)

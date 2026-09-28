@@ -464,6 +464,30 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                // Validate conversation rewrite prompt placeholder
+                if (!String.IsNullOrEmpty(updated.ConversationRewritePrompt) && !updated.ConversationRewritePrompt.Contains("{question}"))
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "ConversationRewritePrompt must contain the {question} placeholder."))).ConfigureAwait(false);
+                    return;
+                }
+
+                // A cross-encoder reranker must reference a reranker configured in server settings
+                if (updated.EnableReranking && String.Equals(updated.RerankerType, "CrossEncoder", StringComparison.OrdinalIgnoreCase))
+                {
+                    bool known = !String.IsNullOrWhiteSpace(updated.RerankEndpointId)
+                        && (Settings.Rerankers ?? new List<RerankerSettings>()).Any(r => r != null && String.Equals(r.Id, updated.RerankEndpointId, StringComparison.OrdinalIgnoreCase));
+                    if (!known)
+                    {
+                        ctx.Response.StatusCode = 400;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null,
+                            "RerankEndpointId must name a reranker configured in server settings (GET /v1.0/rerankers) when RerankerType is CrossEncoder."))).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
                 string[] validSearchTypes = { "TsRank", "TsRankCd" };
                 if (!String.IsNullOrEmpty(updated.FullTextSearchType) &&
                     !validSearchTypes.Contains(updated.FullTextSearchType, StringComparer.OrdinalIgnoreCase))
@@ -500,6 +524,13 @@ namespace AssistantHub.Server.Handlers
                 {
                     _ = AssistantHubServer.SlackConnectionManager.RefreshAssistantAsync(assistantId, CancellationToken.None);
                 }
+            }
+            catch (ArgumentException e)
+            {
+                // Settings setters reject out-of-range values (for example RrfK or FusionStrategy) while the body is read.
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, e.Message))).ConfigureAwait(false);
             }
             catch (Exception e)
             {

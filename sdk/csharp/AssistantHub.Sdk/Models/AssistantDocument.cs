@@ -136,6 +136,30 @@ namespace AssistantHub.Sdk.Models
         public string SourceUrl { get; set; }
 
         /// <summary>
+        /// Identifiers of documents this document supersedes (JSON array).
+        /// </summary>
+        [JsonPropertyName("Supersedes")]
+        public string Supersedes { get; set; }
+
+        /// <summary>
+        /// Identifier of the document that supersedes this document.
+        /// </summary>
+        [JsonPropertyName("SupersededBy")]
+        public string SupersededBy { get; set; }
+
+        /// <summary>
+        /// SHA-256 hash of the document content.
+        /// </summary>
+        [JsonPropertyName("ContentSha256")]
+        public string ContentSha256 { get; set; }
+
+        /// <summary>
+        /// Near-duplicate documents detected at ingestion (JSON array of objects with DocumentId, Score, and optional Exact).
+        /// </summary>
+        [JsonPropertyName("NearDuplicates")]
+        public string NearDuplicates { get; set; }
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         [JsonPropertyName("CreatedUtc")]

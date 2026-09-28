@@ -53,6 +53,8 @@ namespace Test.Benchmark
                         return await StubAsync(arguments, cts.Token).ConfigureAwait(false);
                     case "compare":
                         return ResultComparer.Compare(arguments);
+                    case "history":
+                        return RunHistory.Show(arguments, new BenchmarkContext(arguments).ResultsDirectory);
                     case "eval-import":
                         return await EvalImportAsync(arguments, cts.Token).ConfigureAwait(false);
                     case "eval-export":
@@ -124,7 +126,7 @@ namespace Test.Benchmark
                 report.Reachability = await ReachabilityAnalyzer.AnalyzeAsync(provisioner, collections, token).ConfigureAwait(false);
 
             string basePath = context.ReportBasePath("ingest", dataset.Name);
-            ReportWriter.WriteJson(report, basePath);
+            RecordHistory(context, ReportWriter.WriteJson(report, basePath));
             Console.WriteLine("Report: " + ReportWriter.WriteMarkdown(ReportWriter.RenderIngest(report), basePath));
             return report.Ingest.Failures == 0 ? 0 : 3;
         }
@@ -137,7 +139,7 @@ namespace Test.Benchmark
 
             RetrievalReport report = await new RetrievalRunner(context).RunAsync(dataset, token).ConfigureAwait(false);
             string basePath = context.ReportBasePath("retrieval", dataset.Name);
-            ReportWriter.WriteJson(report, basePath);
+            RecordHistory(context, ReportWriter.WriteJson(report, basePath));
             Console.WriteLine("Report: " + ReportWriter.WriteMarkdown(ReportWriter.RenderRetrieval(report), basePath));
             return 0;
         }
@@ -150,7 +152,7 @@ namespace Test.Benchmark
 
             ChatReport report = await new ChatRunner(context).RunAsync(dataset, token).ConfigureAwait(false);
             string basePath = context.ReportBasePath("chat", dataset.Name);
-            ReportWriter.WriteJson(report, basePath);
+            RecordHistory(context, ReportWriter.WriteJson(report, basePath));
             Console.WriteLine("Report: " + ReportWriter.WriteMarkdown(ReportWriter.RenderChat(report), basePath));
             return 0;
         }
@@ -162,7 +164,7 @@ namespace Test.Benchmark
 
             LoadReport report = await new LoadRunner(context).RunAsync(token).ConfigureAwait(false);
             string basePath = context.ReportBasePath("load", report.Scenario + "-" + report.Dataset);
-            ReportWriter.WriteJson(report, basePath);
+            RecordHistory(context, ReportWriter.WriteJson(report, basePath));
             Console.WriteLine("Report: " + ReportWriter.WriteMarkdown(ReportWriter.RenderLoad(report), basePath));
             return 0;
         }
@@ -200,7 +202,7 @@ namespace Test.Benchmark
 
             EvalAgreementReport report = await bridge.RunAsync(dataset, token).ConfigureAwait(false);
             string basePath = context.ReportBasePath("eval", dataset.Name);
-            ReportWriter.WriteJson(report, basePath);
+            RecordHistory(context, ReportWriter.WriteJson(report, basePath));
             Console.WriteLine("Report: " + ReportWriter.WriteMarkdown(ReportWriter.RenderEval(report), basePath));
             return 0;
         }
@@ -215,6 +217,14 @@ namespace Test.Benchmark
             return 0;
         }
 
+        private static void RecordHistory(BenchmarkContext context, string reportPath)
+        {
+            if (context.Arguments.GetFlag("no-history")) return;
+            string ledger = RunHistory.LedgerPath(context.ResultsDirectory);
+            int entries = RunHistory.Record(reportPath, ledger);
+            Console.WriteLine("History: " + entries + " entr" + (entries == 1 ? "y" : "ies") + " recorded in " + ledger);
+        }
+
         private static void PrintUsage()
         {
             Console.WriteLine("AssistantHub benchmark harness (see benchmarks/README.md)");
@@ -225,14 +235,15 @@ namespace Test.Benchmark
             Console.WriteLine("  retrieval    --dataset <file.json> [--modes Vector,FullText,Hybrid] [--sweep param=v1,v2] [--reachability] [assistant options]");
             Console.WriteLine("  chat         --dataset <file.json> [--judge-model m] [--repeats n] [--limit n] [--hand-labels file] [--assistant-id id] [assistant options]");
             Console.WriteLine("  load         --dataset <file.json> [--scenario retrieve|chat|mixed] [--concurrency 1,4,16] [--duration 30] [--stub]");
-            Console.WriteLine("  compare      --baseline <report.json> --candidate <report.json> [--tolerance 0.01] [--alpha 0.05] [--latency-tolerance 0.25]");
+            Console.WriteLine("  compare      --baseline <report.json>|previous --candidate <report.json> [--tolerance 0.01] [--alpha 0.05] [--latency-tolerance 0.25]");
+            Console.WriteLine("  history      [--dataset d] [--kind retrieval|chat|load|ingest|eval] [--configuration c] [--label l] [--metric m] [--last n] [--rebuild]");
             Console.WriteLine("  eval-export  --dataset <file.json>        create in-product EvalFacts on a benchmark assistant");
             Console.WriteLine("  eval-run     --dataset <file.json>        run in-product Eval and measure its agreement with the independent judge");
             Console.WriteLine("  eval-import  --assistant-id <id> --output <file.json>   turn an assistant's EvalFacts into a dataset (run with chat --assistant-id)");
             Console.WriteLine("  label-sample --report <chat.json> --count 50 --output <labels.json>");
             Console.WriteLine("  stub         [--stub-port 38950] [--dimensions 384] [--stub-latency-ms 5]");
             Console.WriteLine();
-            Console.WriteLine("Common:     --url http://127.0.0.1:38800 --token default --metrics-url http://127.0.0.1:38889/metrics|none --label <text> --output-dir <dir>");
+            Console.WriteLine("Common:     --url http://127.0.0.1:38800 --token default --metrics-url http://127.0.0.1:38889/metrics|none --label <text> --output-dir <dir> --no-history");
             Console.WriteLine("Ingestion:  --chunk-strategy FixedTokenCount --chunk-tokens 256 --chunk-overlap 0 --context-prefix <text> --summarize-endpoint <id>");
             Console.WriteLine("            --embedding-endpoint default --dimensions 384 --l2-normalize --scope-suffix <text> --reingest --ingest-concurrency 4");
             Console.WriteLine("Assistant:  --k 10 --threshold 0.3 --text-weight 0.3 --fulltext-type TsRank --neighbors 0 --rewrite --rerank --rerank-k 5");

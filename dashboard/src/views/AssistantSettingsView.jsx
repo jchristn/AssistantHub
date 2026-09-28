@@ -8,6 +8,32 @@ import JsonViewModal from '../components/modals/JsonViewModal';
 import PasswordInput from '../components/PasswordInput';
 import { LabelConstraintInput, TagConstraintInput, getIndexId } from '../utils/artifactSearch.jsx';
 
+// Parameter count in billions from a model name such as "gemma3:4b" or "qwen2.5-7b-instruct".
+function isSmallModel(modelName) {
+  const match = /(\d+(?:\.\d+)?)\s*b(?![a-z])/i.exec(modelName || '');
+  return !!match && parseFloat(match[1]) <= 8;
+}
+
+function formatInspectorScore(chunk) {
+  const score = chunk.rerank_score ?? chunk.score;
+  return typeof score === 'number' ? score.toFixed(3) : '';
+}
+
+function buildInspectorFlags(result) {
+  const flags = [];
+  if (result.search_mode) flags.push(result.search_mode);
+  if (result.conversation_rewrite) flags.push(`standalone: "${result.conversation_rewrite}"`);
+  if (result.queries && result.queries.length > 1) flags.push(`${result.queries.length} queries`);
+  if (result.reranker) flags.push(`reranker: ${result.reranker}`);
+  if (result.rerank_skipped) flags.push('rerank skipped');
+  if (result.no_relevant_context) flags.push('nothing relevant');
+  if (result.superseded_chunks) flags.push(`${result.superseded_chunks} outdated`);
+  if (result.keyword_fallback_ran) flags.push('keyword fallback');
+  if (result.embedding_failed) flags.push('embedding failed');
+  if (typeof result.total_duration_ms === 'number') flags.push(`${Math.round(result.total_duration_ms)} ms`);
+  return flags;
+}
+
 const DEFAULT_TOOL_POLICY = {
   EnableToolCalls: false,
   EnableToolFeedbackEvents: true,
@@ -301,6 +327,11 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
   const [validatingTools, setValidatingTools] = useState(false);
   const [testingTools, setTestingTools] = useState(false);
   const [externalSearchStatus, setExternalSearchStatus] = useState(null);
+  const [rerankers, setRerankers] = useState([]);
+  const [inspectQuery, setInspectQuery] = useState('');
+  const [inspecting, setInspecting] = useState(false);
+  const [inspectResult, setInspectResult] = useState(null);
+  const [inspectError, setInspectError] = useState(null);
 
   const loadCollections = useCallback(async () => {
     try {
@@ -403,6 +434,7 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
 
   const loadExternalSearchStatus = useCallback(async () => {
     try {
+      api.getRerankers().then(list => setRerankers(Array.isArray(list) ? list : [])).catch(() => setRerankers([]));
       const result = await api.getExternalSearchStatus();
       setExternalSearchStatus(result || null);
     } catch (err) {
@@ -468,9 +500,16 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
         CollectionId: result?.CollectionId || '',
         RetrievalTopK: result?.RetrievalTopK || 5,
         RetrievalScoreThreshold: result?.RetrievalScoreThreshold ?? 0.7,
-        RetrievalIncludeNeighbors: result?.RetrievalIncludeNeighbors ?? 0,
-        SearchMode: result?.SearchMode || 'Vector',
-        TextWeight: result?.TextWeight ?? 0.3,
+        RetrievalIncludeNeighbors: result?.RetrievalIncludeNeighbors ?? 1,
+        SearchMode: result?.SearchMode || 'Hybrid',
+        TextWeight: result?.TextWeight ?? 0.5,
+        EmbeddingTaskPrefixes: result?.EmbeddingTaskPrefixes ?? false,
+        SupersessionMode: result?.SupersessionMode || 'Demote',
+        FusionStrategy: result?.FusionStrategy || 'Rrf',
+        RrfK: result?.RrfK ?? 60,
+        FusionCandidatePool: result?.FusionCandidatePool ?? '',
+        RecencyWeight: result?.RecencyWeight ?? 0,
+        ContextOrder: result?.ContextOrder || 'Score',
         FullTextSearchType: result?.FullTextSearchType || 'TsRank',
         FullTextLanguage: result?.FullTextLanguage || 'english',
         FullTextNormalization: result?.FullTextNormalization ?? 32,
@@ -481,6 +520,7 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
         QueryRewriteInferenceEndpointId: result?.QueryRewriteInferenceEndpointId || '',
         RerankInferenceEndpointId: result?.RerankInferenceEndpointId || '',
         AnswerabilityInferenceEndpointId: result?.AnswerabilityInferenceEndpointId || '',
+        EvalJudgeInferenceEndpointId: result?.EvalJudgeInferenceEndpointId || '',
         EmbeddingEndpointId: result?.EmbeddingEndpointId || '',
         LoadModelsOnChatOpen: result?.LoadModelsOnChatOpen ?? false,
         ExposeThinking: result?.ExposeThinking ?? false,
@@ -490,8 +530,14 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
         Streaming: result?.Streaming ?? true,
         EnableQueryRewrite: result?.EnableQueryRewrite ?? false,
         QueryRewritePrompt: result?.QueryRewritePrompt || '',
+        EnableConversationRewrite: result?.EnableConversationRewrite ?? false,
+        ConversationRewritePrompt: result?.ConversationRewritePrompt || '',
         EnableReranking: result?.EnableReranking ?? false,
-        RerankerTopK: result?.RerankerTopK ?? 5,
+        RerankerType: result?.RerankerType || 'Llm',
+        RerankEndpointId: result?.RerankEndpointId || '',
+        RerankCandidateCount: result?.RerankCandidateCount ?? 20,
+        RerankMinScore: result?.RerankMinScore ?? '',
+        RerankerTopK: result?.RerankerTopK ?? 10,
         RerankerScoreThreshold: result?.RerankerScoreThreshold ?? 3.0,
         RerankPrompt: result?.RerankPrompt || '',
         EnableAnswerabilityCheck: result?.EnableAnswerabilityCheck ?? false,
@@ -592,6 +638,59 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
     setDirty(true);
   };
 
+  const handleInspect = async () => {
+    if (!selectedId || !settings || !inspectQuery.trim()) return;
+    setInspecting(true);
+    setInspectError(null);
+    try {
+      const result = await api.retrieveForAssistant(selectedId, {
+        query: inspectQuery.trim(),
+        include_stages: true,
+        include_answerability: false,
+        settings_override: buildSettingsPayload(settings.ToolPolicyJson?.trim() || '')
+      });
+      setInspectResult(result);
+    } catch (err) {
+      setInspectResult(null);
+      setInspectError(err.message || 'Retrieval failed');
+    } finally {
+      setInspecting(false);
+    }
+  };
+
+  const buildSettingsPayload = (toolPolicyJson) => {
+    return {
+      ...settings,
+      TextWeight: Number.isNaN(parseFloat(settings.TextWeight)) ? 0.5 : parseFloat(settings.TextWeight),
+      RrfK: parseInt(settings.RrfK) || 60,
+      FusionCandidatePool: settings.FusionCandidatePool === '' || settings.FusionCandidatePool === null
+        ? null
+        : parseInt(settings.FusionCandidatePool),
+      RecencyWeight: parseFloat(settings.RecencyWeight) || 0,
+      FullTextNormalization: parseInt(settings.FullTextNormalization) || 32,
+      FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
+        ? null
+        : parseFloat(settings.FullTextMinimumScore),
+      ToolRoutingInferenceEndpointId: settings.ToolRoutingInferenceEndpointId || null,
+      RetrievalGateInferenceEndpointId: settings.RetrievalGateInferenceEndpointId || null,
+      QueryRewriteInferenceEndpointId: settings.QueryRewriteInferenceEndpointId || null,
+      RerankInferenceEndpointId: settings.RerankInferenceEndpointId || null,
+      AnswerabilityInferenceEndpointId: settings.AnswerabilityInferenceEndpointId || null,
+      EvalJudgeInferenceEndpointId: settings.EvalJudgeInferenceEndpointId || null,
+      EmbeddingEndpointId: settings.EmbeddingEndpointId || null,
+      RerankerTopK: parseInt(settings.RerankerTopK) || 10,
+      RerankEndpointId: settings.RerankEndpointId || null,
+      RerankCandidateCount: Math.min(200, Math.max(1, parseInt(settings.RerankCandidateCount) || 20)),
+      RerankMinScore: settings.RerankMinScore === '' || settings.RerankMinScore === null
+        ? null
+        : parseFloat(settings.RerankMinScore),
+      ConversationRewritePrompt: settings.ConversationRewritePrompt || null,
+      RerankerScoreThreshold: parseFloat(settings.RerankerScoreThreshold) || 3.0,
+      DocumentAttachmentMaxCount: Math.min(100, Math.max(1, parseInt(settings.DocumentAttachmentMaxCount) || 10)),
+      ToolPolicyJson: toolPolicyJson || null
+    };
+  };
+
   const handleSave = async () => {
     if (!selectedId || !settings) return;
     setSaving(true);
@@ -601,24 +700,7 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
         JSON.parse(toolPolicyJson);
       }
 
-      const payload = {
-        ...settings,
-        TextWeight: parseFloat(settings.TextWeight) || 0.3,
-        FullTextNormalization: parseInt(settings.FullTextNormalization) || 32,
-        FullTextMinimumScore: settings.FullTextMinimumScore === '' || settings.FullTextMinimumScore === null
-          ? null
-          : parseFloat(settings.FullTextMinimumScore),
-        ToolRoutingInferenceEndpointId: settings.ToolRoutingInferenceEndpointId || null,
-        RetrievalGateInferenceEndpointId: settings.RetrievalGateInferenceEndpointId || null,
-        QueryRewriteInferenceEndpointId: settings.QueryRewriteInferenceEndpointId || null,
-        RerankInferenceEndpointId: settings.RerankInferenceEndpointId || null,
-        AnswerabilityInferenceEndpointId: settings.AnswerabilityInferenceEndpointId || null,
-        EmbeddingEndpointId: settings.EmbeddingEndpointId || null,
-        RerankerTopK: parseInt(settings.RerankerTopK) || 5,
-        RerankerScoreThreshold: parseFloat(settings.RerankerScoreThreshold) || 3.0,
-        DocumentAttachmentMaxCount: Math.min(100, Math.max(1, parseInt(settings.DocumentAttachmentMaxCount) || 10)),
-        ToolPolicyJson: toolPolicyJson || null
-      };
+      const payload = buildSettingsPayload(toolPolicyJson);
       await api.updateAssistantSettings(selectedId, payload);
       await loadAssistantTools(selectedId);
       setDirty(false);
@@ -777,6 +859,8 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
     </>
   );
   const toolPolicy = parseToolPolicyJson(settings?.ToolPolicyJson || '');
+  const rerankEndpoint = (inferenceEndpoints || []).find(ep => getEndpointId(ep) === (settings?.RerankInferenceEndpointId || settings?.InferenceEndpointId));
+  const rerankModelName = rerankEndpoint ? (rerankEndpoint.Model || rerankEndpoint.model || rerankEndpoint.Name || rerankEndpoint.name || '') : '';
   const retrievalLabelFilterRows = parseRetrievalLabelFilterRows(settings?.RetrievalLabelFilter || '');
   const retrievalTagFilterRows = parseRetrievalTagFilterRows(settings?.RetrievalTagFilter || '');
   const selectedAllowedIndexIds = Array.isArray(toolPolicy.AllowedVerbexIndexIds) ? toolPolicy.AllowedVerbexIndexIds : [];
@@ -933,6 +1017,12 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                     {renderInferenceEndpointOptions('-- Use response endpoint --')}
                   </select>
                 </div>
+                <div className="form-group">
+                  <label className="form-label"><Tooltip text="Inference endpoint that judges answers in Eval runs. Use a different (ideally larger) model than the response endpoint so the assistant does not grade itself. Leave blank to use the response endpoint.">Eval Judge Endpoint</Tooltip></label>
+                  <select className="form-input" value={settings.EvalJudgeInferenceEndpointId} onChange={(e) => handleChange('EvalJudgeInferenceEndpointId', e.target.value)}>
+                    {renderInferenceEndpointOptions('-- Use response endpoint --')}
+                  </select>
+                </div>
               </div>
               <div className="form-group form-toggle">
                 <label>
@@ -1020,6 +1110,25 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                   )}
                   <div className="form-group form-toggle">
                     <label>
+                      <input type="checkbox" checked={settings.EnableConversationRewrite} onChange={(e) => handleChange('EnableConversationRewrite', e.target.checked)} />
+                      <Tooltip text="Before retrieval, rewrite a follow-up question (for example 'and for the 220?') into a standalone question using the recent conversation. Both the original and the rewritten question are searched. Uses the Query Rewrite endpoint and skips the first turn.">Rewrite follow-up questions</Tooltip>
+                    </label>
+                  </div>
+                  {settings.EnableConversationRewrite && (
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="Prompt used to make a follow-up question standalone. Must contain {question}; {conversation} is replaced with the recent turns. The model must reply with JSON {&quot;query&quot;: &quot;...&quot;}.">Conversation Rewrite Prompt</Tooltip></label>
+                      <textarea
+                        className="form-input"
+                        title="Prompt used to make a follow-up question standalone. Must contain {question}."
+                        value={settings.ConversationRewritePrompt}
+                        onChange={(e) => handleChange('ConversationRewritePrompt', e.target.value)}
+                        rows={5}
+                        placeholder="Leave empty to use the built-in default prompt. Custom prompts must include {question}."
+                      />
+                    </div>
+                  )}
+                  <div className="form-group form-toggle">
+                    <label>
                       <input type="checkbox" checked={settings.EnableQueryRewrite} onChange={(e) => handleChange('EnableQueryRewrite', e.target.checked)} />
                       <Tooltip text="When enabled, the user's prompt is rewritten into multiple semantically varied queries before retrieval, improving recall by capturing synonyms and alternate phrasing">Enable Query Rewrite</Tooltip>
                     </label>
@@ -1045,10 +1154,52 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                   </div>
                   {settings.EnableReranking && (
                     <>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Cross-encoder: a dedicated rerank model (configured by the operator under Rerankers in the server settings) scores each candidate; fast and calibrated. LLM: the Re-Rank inference endpoint scores candidates from a prompt; slow, and small models often make ranking worse.">Re-Ranker</Tooltip></label>
+                          <select className="form-input" value={settings.RerankerType} onChange={(e) => handleChange('RerankerType', e.target.value)}>
+                            <option value="CrossEncoder">Cross-encoder</option>
+                            <option value="Llm">LLM</option>
+                          </select>
+                        </div>
+                        {settings.RerankerType === 'CrossEncoder' && (
+                          <div className="form-group">
+                            <label className="form-label"><Tooltip text="Reranker configured in the server settings. Ask the operator to add one if the list is empty.">Cross-Encoder</Tooltip></label>
+                            <select className="form-input" value={settings.RerankEndpointId} onChange={(e) => handleChange('RerankEndpointId', e.target.value)}>
+                              <option value="">-- Select a reranker --</option>
+                              {rerankers.map(r => (
+                                <option key={r.Id} value={r.Id}>{r.Name || r.Id}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Candidates retrieved and scored by the reranker (1-200) before the best Re-Ranker Top K are kept. Larger pools find more evidence but take longer.">Candidates</Tooltip></label>
+                          <input className="form-input" type="number" title="Candidates retrieved and scored by the reranker (1-200)." min="1" max="200" value={settings.RerankCandidateCount} onChange={(e) => handleChange('RerankCandidateCount', e.target.value)} />
+                        </div>
+                      </div>
+                      {settings.RerankerType === 'CrossEncoder' && rerankers.length === 0 && (
+                        <div className="tool-policy-warning danger">
+                          No rerankers are configured on this server. Add one under Rerankers in the server settings, or use the LLM re-ranker.
+                        </div>
+                      )}
+                      {settings.RerankerType !== 'CrossEncoder' && isSmallModel(rerankModelName) && (
+                        <div className="tool-policy-warning">
+                          The re-rank model ({rerankModelName}) looks small. In benchmarks, LLM re-ranking with a 4B model lowered retrieval quality (nDCG@10 0.789 to 0.694) and added about 5 s per question. Prefer a cross-encoder, or a larger re-rank model.
+                        </div>
+                      )}
+                      {settings.RerankerType === 'CrossEncoder' && (
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Optional. When the best cross-encoder score is below this value (0-1), the assistant is told that nothing relevant was found and asked to say so. Leave empty to turn it off.">Minimum Relevance</Tooltip></label>
+                          <input className="form-input" type="number" title="Minimum cross-encoder score (0-1). Leave empty to turn it off." min="0" max="1" step="0.01" value={settings.RerankMinScore} onChange={(e) => handleChange('RerankMinScore', e.target.value)} placeholder="Off" />
+                        </div>
+                      )}
                       <div className="form-group">
                         <label className="form-label"><Tooltip text="Maximum number of chunks to keep after re-ranking. Should be less than or equal to Retrieval Top K.">Re-Ranker Top K</Tooltip></label>
                         <input className="form-input" type="number" title="Maximum number of chunks to keep after re-ranking. Should be less than or equal to Retrieval Top K." min="1" value={settings.RerankerTopK} onChange={(e) => handleChange('RerankerTopK', e.target.value)} />
                       </div>
+                      {settings.RerankerType !== 'CrossEncoder' && (
+                      <>
                       <div className="form-group">
                         <label className="form-label"><Tooltip text="Minimum re-rank score (0-10) for a chunk to be included. Higher values mean stricter filtering.">Re-Ranker Score Threshold</Tooltip> <span className="range-value">{settings.RerankerScoreThreshold}</span></label>
                         <input type="range" min="0" max="10" step="0.5" value={settings.RerankerScoreThreshold} onChange={(e) => handleChange('RerankerScoreThreshold', parseFloat(e.target.value))} />
@@ -1064,6 +1215,8 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                           placeholder="Leave blank to use built-in default re-rank prompt"
                         />
                       </div>
+                      </>
+                      )}
                     </>
                   )}
                   <div className="form-group form-toggle">
@@ -1129,12 +1282,35 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                       <input className="form-input" type="number" title="Number of most relevant document chunks to retrieve per query" value={settings.RetrievalTopK} onChange={(e) => handleChange('RetrievalTopK', parseInt(e.target.value) || 1)} min="1" />
                     </div>
                     <div className="form-group">
-                      <label className="form-label"><Tooltip text="Minimum similarity score for retrieved chunks to be included (0-1)">Score Threshold</Tooltip> <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
+                      <label className="form-label"><Tooltip text="Minimum vector similarity for retrieved chunks to be included (0-1). In Hybrid mode it only drops chunks found by vector search alone; chunks keyword search found are kept. FullText results are filtered by Minimum Text Score instead.">Score Threshold</Tooltip> <span className="range-value">{settings.RetrievalScoreThreshold}</span></label>
                       <input type="range" min="0" max="1" step="0.05" value={settings.RetrievalScoreThreshold} onChange={(e) => handleChange('RetrievalScoreThreshold', parseFloat(e.target.value))} />
                     </div>
                     <div className="form-group">
                       <label className="form-label"><Tooltip text="Number of neighboring chunks to retrieve before and after each matched chunk (0-10). Provides surrounding context for each match. 0 means no neighbors.">Include Neighbors</Tooltip></label>
                       <input className="form-input" type="number" title="Number of neighboring chunks to retrieve before and after each matched chunk (0-10)." min="0" max="10" value={settings.RetrievalIncludeNeighbors} onChange={(e) => handleChange('RetrievalIncludeNeighbors', parseInt(e.target.value) || 0)} placeholder="0" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="Order of retrieved context in the prompt. Score: most relevant first. Reading Order: chunks grouped by document (best document first), in document order, with adjacent chunks merged. Does not change which chunks are retrieved.">Context Order</Tooltip></label>
+                      <select className="form-input" value={settings.ContextOrder} onChange={(e) => handleChange('ContextOrder', e.target.value)}>
+                        <option value="Score">Score</option>
+                        <option value="ReadingOrder">Reading Order</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label"><Tooltip text="How chunks from documents that a newer document supersedes are handled. Demote: each outdated chunk is replaced where it ranked by the best matching chunk of the newest version, even if search missed it. Hide: outdated chunks are removed. Include: outdated chunks are kept and marked as outdated in the prompt.">Superseded Documents</Tooltip></label>
+                      <select className="form-input" value={settings.SupersessionMode} onChange={(e) => handleChange('SupersessionMode', e.target.value)}>
+                        <option value="Demote">Demote</option>
+                        <option value="Hide">Hide</option>
+                        <option value="Include">Include</option>
+                      </select>
+                    </div>
+                    <div className="form-group form-toggle">
+                      <label>
+                        <input type="checkbox" checked={settings.EmbeddingTaskPrefixes} onChange={(e) => handleChange('EmbeddingTaskPrefixes', e.target.checked)} />
+                        <Tooltip text="Add the query prefix the embedding model expects (for example 'search_query: ' for nomic-embed-text, 'query: ' for e5). Only enable it when the collection was ingested with document prefixes (ingestion rule setting), or scores get worse.">Embedding task prefixes</Tooltip>
+                      </label>
                     </div>
                   </div>
                   <div className="form-group">
@@ -1146,10 +1322,37 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                     </select>
                   </div>
                   {settings.SearchMode === 'Hybrid' && (
-                    <div className="form-group">
-                      <label className="form-label"><Tooltip text="Balance between vector and text scoring in hybrid mode. 0.0 = pure vector, 1.0 = pure text. Recommended: 0.3 for quality embeddings">Text Weight</Tooltip> <span className="range-value">{settings.TextWeight}</span></label>
-                      <input type="range" min="0" max="1" step="0.05" value={settings.TextWeight} onChange={(e) => handleChange('TextWeight', parseFloat(e.target.value))} />
-                    </div>
+                    <>
+                      <div className="form-group">
+                        <label className="form-label"><Tooltip text="Share of the keyword (full-text) results in hybrid fusion; the vector results get the rest. 0.0 = vector only, 1.0 = keyword only.">Text Weight</Tooltip> <span className="range-value">{settings.TextWeight}</span></label>
+                        <input type="range" min="0" max="1" step="0.05" value={settings.TextWeight} onChange={(e) => handleChange('TextWeight', parseFloat(e.target.value))} />
+                      </div>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="How the vector and keyword results are combined. RRF (reciprocal rank fusion) combines their rankings; Linear blends their normalized scores.">Fusion</Tooltip></label>
+                          <select className="form-input" value={settings.FusionStrategy} onChange={(e) => handleChange('FusionStrategy', e.target.value)}>
+                            <option value="Rrf">RRF</option>
+                            <option value="Linear">Linear</option>
+                          </select>
+                        </div>
+                        {settings.FusionStrategy !== 'Linear' && (
+                          <div className="form-group">
+                            <label className="form-label"><Tooltip text="The RRF constant k (1-100000). Smaller values reward top-ranked results more strongly. Default 60.">RRF k</Tooltip></label>
+                            <input className="form-input" type="number" title="The RRF constant k (1-100000)." min="1" max="100000" value={settings.RrfK} onChange={(e) => handleChange('RrfK', parseInt(e.target.value) || 1)} placeholder="60" />
+                          </div>
+                        )}
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Candidates each leg retrieves before fusion (1-10000). Leave empty for the store's default (4x Top K, at least 100).">Candidate Pool</Tooltip></label>
+                          <input className="form-input" type="number" title="Candidates each leg retrieves before fusion. Leave empty for the default." min="1" max="10000" value={settings.FusionCandidatePool} onChange={(e) => handleChange('FusionCandidatePool', e.target.value)} placeholder="Default" />
+                        </div>
+                      </div>
+                      {settings.FusionStrategy !== 'Linear' && (
+                        <div className="form-group">
+                          <label className="form-label"><Tooltip text="Weight of a recency signal in fusion (0-1). Newer documents rank higher among otherwise similar results. 0 turns it off.">Recency Weight</Tooltip> <span className="range-value">{settings.RecencyWeight}</span></label>
+                          <input type="range" min="0" max="1" step="0.05" value={settings.RecencyWeight} onChange={(e) => handleChange('RecencyWeight', parseFloat(e.target.value))} />
+                        </div>
+                      )}
+                    </>
                   )}
                   {(settings.SearchMode === 'FullText' || settings.SearchMode === 'Hybrid') && (
                     <>
@@ -1239,6 +1442,50 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                 </>
               )}
             </div>
+
+            {settings.EnableRag && (
+              <div className="settings-section">
+                <h3 className="settings-section-title">Retrieval Inspector</h3>
+                <p className="settings-help">Runs retrieval with the settings on this page (saved or not) and shows what each stage returned. No answer is generated.</p>
+                <div className="form-row">
+                  <div className="form-group" style={{ flex: 3 }}>
+                    <input className="form-input" type="text" title="Question to run through retrieval." value={inspectQuery} onChange={(e) => setInspectQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleInspect(); }} placeholder="Ask a question to see what retrieval finds" />
+                  </div>
+                  <div className="form-group" style={{ flex: 0 }}>
+                    <button className="btn btn-secondary" onClick={handleInspect} disabled={inspecting || !inspectQuery.trim()}>{inspecting ? 'Running...' : 'Inspect'}</button>
+                  </div>
+                </div>
+                {inspectError && <div className="tool-policy-warning danger">{inspectError}</div>}
+                {inspectResult && (
+                  <div className="retrieval-inspector">
+                    <div className="retrieval-inspector-flags">
+                      {buildInspectorFlags(inspectResult).map(flag => (
+                        <span key={flag} className="status-badge">{flag}</span>
+                      ))}
+                    </div>
+                    {(inspectResult.stages || []).map((stage, i) => (
+                      <details key={i} open={i === (inspectResult.stages || []).length - 1}>
+                        <summary>{stage.stage} - {(stage.chunks || []).length} chunks{stage.query ? ` - "${stage.query}"` : ''}</summary>
+                        <table className="data-table">
+                          <thead><tr><th>#</th><th>Document</th><th>Score</th><th>Source</th><th>Content</th></tr></thead>
+                          <tbody>
+                            {(stage.chunks || []).map((c, j) => (
+                              <tr key={j}>
+                                <td>{j + 1}</td>
+                                <td title={c.document_id}>{(c.document_id || '').slice(-8)}</td>
+                                <td>{formatInspectorScore(c)}</td>
+                                <td>{[c.page_start ? `p. ${c.page_start}${c.page_end && c.page_end !== c.page_start ? '-' + c.page_end : ''}` : null, c.sheet, c.section, c.superseded_by ? 'outdated' : null].filter(Boolean).join(' · ')}</td>
+                                <td style={{ maxWidth: '32rem', whiteSpace: 'normal' }}>{(c.content || '').slice(0, 240)}{(c.content || '').length > 240 ? '...' : ''}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </details>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="settings-section">
               <h3 className="settings-section-title">Tool Calls</h3>

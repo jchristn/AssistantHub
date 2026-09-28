@@ -34,6 +34,9 @@ namespace AssistantHub.Core.Services
         private IVectorStoreService _VectorStore = null;
         private LoggingModule _Logging = null;
         private HttpClient _HttpClient = null;
+        private QueryEmbeddingCache _EmbeddingCache = null;
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Prefix, DateTime ExpiresUtc)> _QueryPrefixes =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, (string Prefix, DateTime ExpiresUtc)>(StringComparer.Ordinal);
 
         private JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -62,6 +65,7 @@ namespace AssistantHub.Core.Services
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
             _VectorStore = vectorStore ?? new RecallDbVectorStoreService(_RecallDbSettings, _Logging);
             _HttpClient = new HttpClient();
+            _EmbeddingCache = new QueryEmbeddingCache(_ChunkingSettings.QueryEmbeddingCacheSize);
         }
 
         #endregion
@@ -96,6 +100,7 @@ namespace AssistantHub.Core.Services
             if (searchOptions == null) searchOptions = new RetrievalSearchOptions();
             searchOptions.HybridFallbackRan = false;
             searchOptions.EmbeddingFailed = false;
+            searchOptions.KeywordFallbackRan = false;
 
             List<RetrievalChunk> results = new List<RetrievalChunk>();
 
@@ -111,19 +116,38 @@ namespace AssistantHub.Core.Services
                 {
                     // Step 1: Embed the query (skip for FullText-only mode)
                 List<double> queryEmbeddings = null;
+                RetrievalSearchOptions effectiveOptions = searchOptions;
 
                 if (!searchOptions.SearchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase))
                 {
-                    queryEmbeddings = await EmbedQueryAsync(query, token, embeddingEndpointId).ConfigureAwait(false);
+                    string embeddingText = query;
+                    if (searchOptions.EmbeddingTaskPrefixes)
+                    {
+                        string queryPrefix = await ResolveQueryPrefixAsync(embeddingEndpointId, token).ConfigureAwait(false);
+                        if (!String.IsNullOrEmpty(queryPrefix)) embeddingText = queryPrefix + query;
+                    }
+
+                    queryEmbeddings = await EmbedQueryAsync(embeddingText, token, embeddingEndpointId).ConfigureAwait(false);
                     if (queryEmbeddings == null || queryEmbeddings.Count == 0)
                     {
                         _Logging.Warn(_Header + "failed to generate embeddings for query");
                         searchOptions.EmbeddingFailed = true;
                         op.SetTag("retrieval.embedding_failed", true);
-                        return results;
-                    }
+                        if (mode != "hybrid") return results;
 
-                    _Logging.Debug(_Header + "generated " + queryEmbeddings.Count + "-dimensional embedding for query");
+                        // Hybrid still has a full-text leg that needs no embedding; run it alone rather than
+                        // returning no context for the turn.
+                        _Logging.Info(_Header + "hybrid search could not embed the query, falling back to full-text only");
+                        searchOptions.KeywordFallbackRan = true;
+                        op.SetTag("retrieval.keyword_fallback", true);
+                        effectiveOptions = CloneSearchOptions(searchOptions, "FullText", searchOptions.DocumentIds);
+                        mode = "keyword";
+                        queryEmbeddings = null;
+                    }
+                    else
+                    {
+                        _Logging.Debug(_Header + "generated " + queryEmbeddings.Count + "-dimensional embedding for query");
+                    }
                 }
                 else
                 {
@@ -136,7 +160,7 @@ namespace AssistantHub.Core.Services
                     query,
                     queryEmbeddings,
                     topK,
-                    searchOptions,
+                    effectiveOptions,
                     token).ConfigureAwait(false);
 
                 if (searchResults == null || searchResults.Count == 0)
@@ -150,11 +174,11 @@ namespace AssistantHub.Core.Services
                 // Step 4: Filter by score threshold and collect results with source info
                 foreach (SearchResult result in searchResults)
                 {
-                    if (result.Score >= scoreThreshold)
+                    if (PassesScoreThreshold(result.Score, result.VectorScore, result.TextRank, mode, searchOptions.HybridFallbackRan, scoreThreshold, searchOptions.ApplyThresholdToFullText))
                     {
                         if (!String.IsNullOrEmpty(result.Content))
                         {
-                            results.Add(new RetrievalChunk
+                            RetrievalChunk retrievalChunk = new RetrievalChunk
                             {
                                 DocumentId = result.DocumentId,
                                 Score = Math.Round(result.Score, 6),
@@ -172,7 +196,9 @@ namespace AssistantHub.Core.Services
                                     Content = n.Content,
                                     Position = n.Position
                                 }).ToList()
-                            });
+                            };
+                            ProvenanceTags.Apply(retrievalChunk, result.Tags);
+                            results.Add(retrievalChunk);
                         }
                     }
                 }
@@ -197,6 +223,35 @@ namespace AssistantHub.Core.Services
             if (searchMode.Equals("FullText", StringComparison.OrdinalIgnoreCase)) return "keyword";
             if (searchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase)) return "hybrid";
             return "vector";
+        }
+
+        /// <summary>
+        /// Apply the retrieval score threshold on a scale that means the same thing in every mode: vector similarity.
+        /// Full-text scores (ts_rank) sit far below any similarity threshold, so keyword search is not thresholded here;
+        /// FullText.MinimumScore is its cutoff. In hybrid mode the fused score caps a chunk found only by the text leg
+        /// at TextWeight, so the threshold is applied to vector similarity instead, and only to chunks the vector leg
+        /// found on its own: a chunk the text leg also found is kept whatever its similarity, since strong keyword
+        /// matches often have low embedding similarity.
+        /// </summary>
+        /// <param name="score">Score reported by the store (similarity, ts_rank or fused, depending on mode).</param>
+        /// <param name="vectorScore">Vector-leg similarity reported for a hybrid result, when present.</param>
+        /// <param name="textRank">Text-leg rank reported for a hybrid result, when present.</param>
+        /// <param name="mode">Retrieval mode that produced the result (vector, keyword or hybrid).</param>
+        /// <param name="hybridFallbackRan">Whether a hybrid search fell back to vector-only.</param>
+        /// <param name="scoreThreshold">Minimum similarity.</param>
+        /// <param name="applyToFullText">Also threshold keyword-only results on their full-text score.</param>
+        /// <returns>True when the result is kept.</returns>
+        public static bool PassesScoreThreshold(double score, double? vectorScore, int? textRank, string mode, bool hybridFallbackRan, double scoreThreshold, bool applyToFullText = false)
+        {
+            if (mode == "keyword") return !applyToFullText || score >= scoreThreshold;
+
+            if (mode == "hybrid" && !hybridFallbackRan)
+            {
+                if (textRank.HasValue) return true;
+                if (vectorScore.HasValue) return vectorScore.Value >= scoreThreshold;
+            }
+
+            return score >= scoreThreshold;
         }
 
         /// <summary>
@@ -273,7 +328,7 @@ namespace AssistantHub.Core.Services
             }
             else if (options.SearchMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase))
             {
-                body["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings };
+                body["Vector"] = BuildVectorQuery(embeddings, options);
                 body["FullText"] = new
                 {
                     Query = query,
@@ -283,11 +338,12 @@ namespace AssistantHub.Core.Services
                     TextWeight = options.TextWeight,
                     MinimumScore = options.FullTextMinimumScore
                 };
+                body["Hybrid"] = BuildHybridOptions(options);
             }
             else
             {
                 // Vector mode (default)
-                body["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings };
+                body["Vector"] = BuildVectorQuery(embeddings, options);
             }
 
             body["MaxResults"] = topK;
@@ -301,6 +357,53 @@ namespace AssistantHub.Core.Services
             }
 
             return body;
+        }
+
+        /// <summary>
+        /// Build the RecallDB vector query. A label, tag or document filter is applied after pgvector's HNSW scan,
+        /// so filtered searches raise ef_search to keep enough candidates for the filter to leave a full page.
+        /// </summary>
+        private Dictionary<string, object> BuildVectorQuery(List<double> embeddings, RetrievalSearchOptions options)
+        {
+            Dictionary<string, object> vector = new Dictionary<string, object>
+            {
+                ["SearchType"] = "CosineSimilarity",
+                ["Embeddings"] = embeddings
+            };
+
+            if (_RecallDbSettings.FilteredEfSearch > 0 && HasSearchFilters(options))
+                vector["EfSearch"] = _RecallDbSettings.FilteredEfSearch;
+
+            return vector;
+        }
+
+        private static bool HasSearchFilters(RetrievalSearchOptions options)
+        {
+            if (options == null) return false;
+            if (NormalizeDocumentIds(options.DocumentIds) != null) return true;
+            return options.MetadataFilter != null && !options.MetadataFilter.IsEmpty;
+        }
+
+        /// <summary>
+        /// Build RecallDB's hybrid fusion options. They are sent explicitly so the fusion that runs is the one the
+        /// assistant is configured for, not whatever the store defaults to.
+        /// </summary>
+        private static Dictionary<string, object> BuildHybridOptions(RetrievalSearchOptions options)
+        {
+            bool linear = String.Equals(options.FusionStrategy, "Linear", StringComparison.OrdinalIgnoreCase);
+            Dictionary<string, object> hybrid = new Dictionary<string, object>
+            {
+                ["Strategy"] = linear ? "Linear" : "Rrf"
+            };
+
+            if (!linear)
+            {
+                hybrid["RrfK"] = Math.Clamp(options.RrfK, 1, 100000);
+                if (options.RecencyWeight > 0) hybrid["RecencyWeight"] = Math.Clamp(options.RecencyWeight, 0.0, 1.0);
+            }
+
+            if (options.FusionCandidatePool.HasValue) hybrid["CandidatePool"] = Math.Clamp(options.FusionCandidatePool.Value, 1, 10000);
+            return hybrid;
         }
 
         private async Task<List<SearchResult>> ExecuteSearchWithDocumentFilterAsync(
@@ -362,7 +465,7 @@ namespace AssistantHub.Core.Services
             {
                 token.ThrowIfCancellationRequested();
 
-                RetrievalSearchOptions perDocumentOptions = CloneSearchOptionsForDocument(options, documentId);
+                RetrievalSearchOptions perDocumentOptions = CloneSearchOptions(options, options.SearchMode, new List<string> { documentId });
                 List<SearchResult> results = await ExecuteNativeSearchAsync(tenantId, collectionId, query, embeddings, topK, perDocumentOptions, token).ConfigureAwait(false);
                 if (perDocumentOptions.HybridFallbackRan) options.HybridFallbackRan = true;
 
@@ -394,19 +497,25 @@ namespace AssistantHub.Core.Services
                 .ToList();
         }
 
-        private static RetrievalSearchOptions CloneSearchOptionsForDocument(RetrievalSearchOptions options, string documentId)
+        private static RetrievalSearchOptions CloneSearchOptions(RetrievalSearchOptions options, string searchMode, List<string> documentIds)
         {
             return new RetrievalSearchOptions
             {
-                SearchMode = options.SearchMode,
+                SearchMode = searchMode,
                 TextWeight = options.TextWeight,
+                FusionStrategy = options.FusionStrategy,
+                RrfK = options.RrfK,
+                FusionCandidatePool = options.FusionCandidatePool,
+                RecencyWeight = options.RecencyWeight,
                 FullTextSearchType = options.FullTextSearchType,
                 FullTextLanguage = options.FullTextLanguage,
                 FullTextNormalization = options.FullTextNormalization,
                 FullTextMinimumScore = options.FullTextMinimumScore,
+                ApplyThresholdToFullText = options.ApplyThresholdToFullText,
+                EmbeddingTaskPrefixes = options.EmbeddingTaskPrefixes,
                 IncludeNeighbors = options.IncludeNeighbors,
                 MetadataFilter = options.MetadataFilter,
-                DocumentIds = new List<string> { documentId }
+                DocumentIds = documentIds
             };
         }
 
@@ -421,7 +530,7 @@ namespace AssistantHub.Core.Services
         {
             Dictionary<string, object> vectorOnlyBody = new Dictionary<string, object>
             {
-                ["Vector"] = new { SearchType = "CosineSimilarity", Embeddings = embeddings },
+                ["Vector"] = BuildVectorQuery(embeddings, options),
                 ["MaxResults"] = topK
             };
             if (options.IncludeNeighbors > 0) vectorOnlyBody["IncludeNeighbors"] = options.IncludeNeighbors;
@@ -548,8 +657,13 @@ namespace AssistantHub.Core.Services
                     if (!String.IsNullOrWhiteSpace(vectorSearchType)) vectorSummary["SearchType"] = vectorSearchType;
                     if (TryGetPropertyIgnoreCase(vector, "Embeddings", out JsonElement embeddings) && embeddings.ValueKind == JsonValueKind.Array)
                         vectorSummary["EmbeddingDimensions"] = embeddings.GetArrayLength();
+                    if (TryGetPropertyIgnoreCase(vector, "EfSearch", out JsonElement efSearch) && efSearch.ValueKind == JsonValueKind.Number)
+                        vectorSummary["EfSearch"] = efSearch.GetRawText();
                     summary["Vector"] = vectorSummary;
                 }
+
+                if (TryGetPropertyIgnoreCase(root, "Hybrid", out JsonElement hybrid) && hybrid.ValueKind == JsonValueKind.Object)
+                    summary["Hybrid"] = hybrid.Clone();
 
                 if (TryGetPropertyIgnoreCase(root, "FullText", out JsonElement fullText) && fullText.ValueKind == JsonValueKind.Object)
                 {
@@ -677,53 +791,136 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
-        /// Embed a query string using the Partio chunking service.
+        /// Embed a query string with Partio's standalone embedding route.
         /// </summary>
+        /// <remarks>
+        /// Queries go to <c>/v1.0/embed</c>, which embeds the text as given. The chunking route (<c>/v1.0/process</c>)
+        /// would split a long query at the default chunk size and keep only the first chunk. Each attempt is bounded by
+        /// <see cref="ChunkingSettings.QueryEmbeddingTimeoutMs"/> rather than the ingestion timeout, and a timed-out
+        /// attempt is not retried. Successful embeddings are cached per endpoint and query text.
+        /// </remarks>
         /// <param name="query">Query text.</param>
         /// <param name="token">Cancellation token.</param>
         /// <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
-        /// <returns>Embedding vector.</returns>
+        /// <returns>Embedding vector, or null when it could not be generated.</returns>
         private async Task<List<double>> EmbedQueryAsync(string query, CancellationToken token, string embeddingEndpointId = null)
         {
             string effectiveEndpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
-            object requestBody = new
+            string cacheKey = QueryEmbeddingCache.BuildKey(effectiveEndpointId, query);
+            if (_EmbeddingCache.Capacity > 0)
             {
-                Type = "Text",
-                Text = query,
-                EmbeddingConfiguration = new { EmbeddingEndpointId = effectiveEndpointId }
+                bool hit = _EmbeddingCache.TryGet(cacheKey, out List<double> cached);
+                AssistantHubTelemetry.RecordQueryEmbeddingCache(hit);
+                if (hit) return cached;
+            }
+
+            Dictionary<string, object> requestBody = new Dictionary<string, object>
+            {
+                ["EndpointId"] = effectiveEndpointId,
+                ["Input"] = new List<string> { query }
             };
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
             int maxAttempts = Math.Max(1, _ChunkingSettings.MaxRetries + 1);
 
             for (int attempt = 1; ; attempt++)
             {
-                using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/process", json, token).ConfigureAwait(false))
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                int statusCode;
+                string responseBody;
 
+                using (CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+                {
+                    timeout.CancelAfter(_ChunkingSettings.QueryEmbeddingTimeoutMs);
+                    try
+                    {
+                        using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/embed", json, timeout.Token).ConfigureAwait(false))
+                        {
+                            statusCode = (int)response.StatusCode;
+                            responseBody = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception e) when (!token.IsCancellationRequested && (e is OperationCanceledException || e is TimeoutException))
+                    {
+                        _Logging.Warn(_Header + "query embedding did not complete within " + _ChunkingSettings.QueryEmbeddingTimeoutMs + " ms (Chunking.QueryEmbeddingTimeoutMs); not retrying");
+                        return null;
+                    }
+                }
+
+                if (statusCode >= 200 && statusCode < 300)
+                {
+                    List<double> embedding = ParseQueryEmbedding(responseBody);
+                    if (embedding == null)
+                    {
+                        _Logging.Warn(_Header + "embedding service returned no embedding for the query");
+                        return null;
+                    }
+
+                    _EmbeddingCache.Set(cacheKey, embedding);
+                    return embedding;
+                }
+
+                bool transient = IsTransientEmbeddingStatus(statusCode) || IngestionServiceBase.IsWrappedTransientPartioError(statusCode, responseBody);
+                if (attempt >= maxAttempts || !transient || token.IsCancellationRequested)
+                {
+                    _Logging.Warn(_Header + "embedding service returned " + statusCode + " after " + attempt + " attempt(s): " + responseBody);
+                    return null;
+                }
+
+                int delayMs = GetQueryEmbeddingRetryDelayMs(attempt);
+                _Logging.Debug(_Header + "embedding service returned " + statusCode + " (transient); retrying in " + delayMs + "ms after attempt " + attempt + " of " + maxAttempts);
+                if (delayMs > 0) await Task.Delay(delayMs, token).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Resolve the query task prefix for an embedding endpoint's model (cached for five minutes).
+        /// </summary>
+        private async Task<string> ResolveQueryPrefixAsync(string embeddingEndpointId, CancellationToken token)
+        {
+            string endpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
+            if (_QueryPrefixes.TryGetValue(endpointId, out (string Prefix, DateTime ExpiresUtc) cached) && cached.ExpiresUtc > DateTime.UtcNow)
+                return cached.Prefix;
+
+            string prefix = "";
+            try
+            {
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Get, "/v1.0/endpoints/embedding/" + Uri.EscapeDataString(endpointId), null, token).ConfigureAwait(false))
+                {
+                    string body = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
                     if (response.IsSuccessStatusCode)
                     {
-                        ProcessResponse processResult = JsonSerializer.Deserialize<ProcessResponse>(responseBody, _JsonOptions);
-                        if (processResult?.Chunks != null && processResult.Chunks.Count > 0)
-                        {
-                            return processResult.Chunks[0].Embeddings;
-                        }
-
-                        return null;
+                        using JsonDocument document = JsonDocument.Parse(body);
+                        string model = GetStringAny(document.RootElement, "Model");
+                        prefix = EmbeddingModelProfiles.Resolve(model).QueryPrefix;
                     }
-
-                    int statusCode = (int)response.StatusCode;
-                    bool transient = IsTransientEmbeddingStatus(statusCode) || IngestionServiceBase.IsWrappedTransientPartioError(statusCode, responseBody);
-                    if (attempt >= maxAttempts || !transient || token.IsCancellationRequested)
+                    else
                     {
-                        _Logging.Warn(_Header + "embedding service returned " + statusCode + " after " + attempt + " attempt(s): " + responseBody);
-                        return null;
+                        _Logging.Warn(_Header + "could not read embedding endpoint " + endpointId + " for task prefixes: " + (int)response.StatusCode);
                     }
-
-                    int delayMs = GetQueryEmbeddingRetryDelayMs(attempt);
-                    _Logging.Debug(_Header + "embedding service returned " + statusCode + " (transient); retrying in " + delayMs + "ms after attempt " + attempt + " of " + maxAttempts);
-                    if (delayMs > 0) await Task.Delay(delayMs, token).ConfigureAwait(false);
                 }
+            }
+            catch (Exception e) when (!token.IsCancellationRequested)
+            {
+                _Logging.Warn(_Header + "could not resolve task prefix for embedding endpoint " + endpointId + ": " + e.Message);
+            }
+
+            _QueryPrefixes[endpointId] = (prefix, DateTime.UtcNow.AddMinutes(5));
+            return prefix;
+        }
+
+        private List<double> ParseQueryEmbedding(string responseBody)
+        {
+            if (String.IsNullOrWhiteSpace(responseBody)) return null;
+
+            try
+            {
+                PartioEmbedResponse embedResponse = JsonSerializer.Deserialize<PartioEmbedResponse>(responseBody, _JsonOptions);
+                List<float> vector = embedResponse?.Embeddings != null && embedResponse.Embeddings.Count > 0 ? embedResponse.Embeddings[0] : null;
+                if (vector == null || vector.Count == 0) return null;
+                return vector.Select(value => (double)value).ToList();
+            }
+            catch (JsonException)
+            {
+                return null;
             }
         }
 

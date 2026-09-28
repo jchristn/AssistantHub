@@ -74,6 +74,29 @@ namespace AssistantHub.Core.Settings
             set => _RequestTimeoutMs = value < 1000 ? 1000 : value;
         }
 
+        /// <summary>
+        /// Timeout, in milliseconds, for a single query-embedding request made at retrieval time. Kept separate from
+        /// <see cref="RequestTimeoutMs"/>, which is sized for ingesting large documents, so a stalled embedding model
+        /// cannot hold a chat request for minutes. A timed-out query embedding is not retried. Minimum 1,000 ms;
+        /// default 30,000 ms.
+        /// </summary>
+        public int QueryEmbeddingTimeoutMs
+        {
+            get => _QueryEmbeddingTimeoutMs;
+            set => _QueryEmbeddingTimeoutMs = value < 1000 ? 1000 : value;
+        }
+
+        /// <summary>
+        /// Maximum number of query embeddings kept in the in-process cache, keyed by embedding endpoint and query text.
+        /// Repeated questions and multi-stage retrieval reuse a cached vector instead of calling the model again.
+        /// Zero disables the cache. Default 10,000.
+        /// </summary>
+        public int QueryEmbeddingCacheSize
+        {
+            get => _QueryEmbeddingCacheSize;
+            set => _QueryEmbeddingCacheSize = value < 0 ? 0 : value;
+        }
+
         #endregion
 
         #region Private-Members
@@ -84,6 +107,8 @@ namespace AssistantHub.Core.Settings
         private int _MaxRetries = 3;
         private int _RetryDelayMs = 1000;
         private int _RequestTimeoutMs = 900000;
+        private int _QueryEmbeddingTimeoutMs = 30000;
+        private int _QueryEmbeddingCacheSize = 10000;
 
         #endregion
 

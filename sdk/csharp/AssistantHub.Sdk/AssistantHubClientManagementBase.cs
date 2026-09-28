@@ -242,6 +242,37 @@ namespace AssistantHub.Sdk
 
         #endregion
 
+        #region Rerankers
+
+        /// <summary>
+        /// List the cross-encoder rerankers configured in server settings (API keys omitted).
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>List of reranker summaries.</returns>
+        public async Task<List<RerankerSummary>> ListRerankersAsync(CancellationToken cancellationToken = default)
+        {
+            return await SendAsync<List<RerankerSummary>>(HttpMethod.Get, "/v1.0/rerankers", cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Score passages against a query with a configured reranker.
+        /// </summary>
+        /// <param name="rerankerId">Reranker identifier.</param>
+        /// <param name="request">Test request containing the query and documents.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Reranker test result.</returns>
+        public async Task<RerankerTestResult> TestRerankerAsync(string rerankerId, RerankerTestRequest request, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(rerankerId))
+                throw new ArgumentNullException(nameof(rerankerId));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            return await SendAsync<RerankerTestResult>(HttpMethod.Post, "/v1.0/rerankers/" + Uri.EscapeDataString(rerankerId) + "/test", request, cancellationToken).ConfigureAwait(false);
+        }
+
+        #endregion
+
         #region Health
 
         /// <summary>

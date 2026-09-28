@@ -71,10 +71,10 @@ namespace AssistantHub.Sdk.Models
         public Dictionary<string, string> Tags { get; set; }
 
         /// <summary>
-        /// Atomization setting.
+        /// Extraction configuration (OCR, CSV/Excel parsing, duplicate detection).
         /// </summary>
-        [JsonPropertyName("Atomization")]
-        public string Atomization { get; set; }
+        [JsonPropertyName("Extraction")]
+        public IngestionExtractionConfig Extraction { get; set; }
 
         /// <summary>
         /// Summarization configuration.

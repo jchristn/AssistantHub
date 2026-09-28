@@ -51,7 +51,8 @@
       "Endpoint": "http://host.docker.internal:11434",
       "ApiFormat": "Ollama",
       "ApiKey": null,
-      "MaxConcurrentRequests": 2,
+      "MaxConcurrentRequests": 4,
+      "MaxQueueDepth": 16,
       "Tokenization": {
         "TokenizerKind": "BertWordPiece",
         "TokenizerModel": "bert-base-uncased",
@@ -70,6 +71,7 @@
       "Endpoint": "http://host.docker.internal:11434",
       "ApiFormat": "Ollama",
       "MaxConcurrentRequests": 2,
+      "MaxQueueDepth": 16,
       "Labels": [
         "assistanthub:tool-calling"
       ],

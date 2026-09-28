@@ -46,7 +46,9 @@
     "EndpointId": "default",
     "DashboardUrl": "http://localhost:8322",
     "MaxRetries": 3,
-    "RetryDelayMs": 1000
+    "RetryDelayMs": 1000,
+    "QueryEmbeddingTimeoutMs": 30000,
+    "QueryEmbeddingCacheSize": 10000
   },
   "Embeddings": {
     "Endpoint": "http://partio-server:8400",
@@ -64,7 +66,8 @@
     "Endpoint": "http://recalldb-server:8600",
     "AccessKey": "recalldbadmin",
     "DashboardUrl": "http://localhost:8402",
-    "SupportsMultiDocumentFilter": true
+    "SupportsMultiDocumentFilter": true,
+    "FilteredEfSearch": 400
   },
   "Verbex": {
     "Endpoint": "http://verbex-server:8080",
@@ -76,8 +79,13 @@
     "MaxContentCharacters": 0,
     "MaxConcurrentIndexingRequests": 2,
     "IndexingRetryCount": 3,
-    "IndexingRetryDelayMs": 2000
+    "IndexingRetryDelayMs": 2000,
+    "EnableLemmatizer": false,
+    "EnableStopWordRemover": false,
+    "MinTokenLength": 0,
+    "MaxTokenLength": 0
   },
+  "Rerankers": [],
   "ExternalSearch": {
     "Enabled": false,
     "AllowFallback": true,

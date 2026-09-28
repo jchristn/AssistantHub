@@ -300,6 +300,20 @@ export interface AssistantSettings {
   RetrievalScoreThreshold?: number;
   SearchMode?: string;
   TextWeight?: number;
+  FusionStrategy?: 'Rrf' | 'Linear';
+  RrfK?: number;
+  FusionCandidatePool?: number | null;
+  RecencyWeight?: number;
+  ContextOrder?: 'Score' | 'ReadingOrder';
+  EmbeddingTaskPrefixes?: boolean;
+  EnableConversationRewrite?: boolean;
+  ConversationRewritePrompt?: string | null;
+  RerankerType?: 'Llm' | 'CrossEncoder';
+  RerankEndpointId?: string | null;
+  RerankCandidateCount?: number;
+  RerankMinScore?: number | null;
+  SupersessionMode?: 'Demote' | 'Hide' | 'Include';
+  EvalJudgeInferenceEndpointId?: string | null;
   FullTextSearchType?: string;
   FullTextLanguage?: string;
   FullTextNormalization?: number;
@@ -574,6 +588,7 @@ export interface DocumentUploadRequest {
   ContentType?: string;
   Labels?: string[];
   Tags?: Record<string, string>;
+  SupersedesDocumentIds?: string[];
 }
 
 /** Document resource. */
@@ -599,8 +614,26 @@ export interface AssistantDocument {
   CrawlPlanId?: string;
   CrawlOperationId?: string;
   SourceUrl?: string;
+  /** JSON array of document IDs this document supersedes. */
+  Supersedes?: string | null;
+  SupersededBy?: string | null;
+  ContentSha256?: string | null;
+  /** JSON array of { DocumentId, Score, Exact? } near-duplicate matches. */
+  NearDuplicates?: string | null;
   CreatedUtc?: string;
   LastUpdateUtc?: string;
+}
+
+/** Near-duplicate match entry stored (as JSON) in AssistantDocument.NearDuplicates. */
+export interface DocumentNearDuplicate {
+  DocumentId: string;
+  Score: number;
+  Exact?: boolean;
+}
+
+/** Request body for setting the documents a document supersedes. */
+export interface DocumentSupersedesRequest {
+  SupersedesDocumentIds: string[];
 }
 
 /** Safe public metadata for documents selectable in assistant chat. */
@@ -662,7 +695,7 @@ export interface IngestionRule {
   VerbexIndexId?: string;
   Labels?: string[];
   Tags?: Record<string, string>;
-  Atomization?: Record<string, unknown>;
+  Extraction?: IngestionExtractionConfig;
   Summarization?: IngestionSummarizationConfig;
   Chunking?: IngestionChunkingConfig;
   Embedding?: IngestionEmbeddingConfig;
@@ -680,12 +713,27 @@ export interface IngestionChunkingConfig {
   RowGroupSize?: number;
   ContextPrefix?: string;
   RegexPattern?: string;
+  CellMode?: 'Flat' | 'Structured';
+  TableStrategy?: 'Row' | 'RowWithHeaders' | 'RowGroupWithHeaders' | 'KeyValuePairs' | 'WholeTable';
+  ListStrategy?: 'WholeList' | 'ListEntry';
+  ContextHeader?: 'None' | 'Title' | 'TitleAndHeadings';
+}
+
+/** Extraction configuration for ingestion (OCR, CSV/Excel parsing, duplicate detection). */
+export interface IngestionExtractionConfig {
+  OcrEmbeddedImages?: boolean | null;
+  CsvHasHeaderRow?: boolean | null;
+  CsvRowsPerAtom?: number | null;
+  ExcelHeaderRowScoreThreshold?: number | null;
+  DuplicatePolicy?: 'Allow' | 'Warn' | 'Reject';
+  NearDuplicateThreshold?: number;
 }
 
 /** Embedding configuration for ingestion. */
 export interface IngestionEmbeddingConfig {
   EmbeddingEndpointId?: string;
   L2Normalization?: boolean;
+  TaskPrefixes?: boolean;
 }
 
 /** Summarization configuration for ingestion. */
@@ -821,6 +869,12 @@ export interface ChatCompletionRetrieval {
   dropped_candidate_count?: number;
   dropped_candidates?: RetrievalCandidateDropSummary[];
   final_citation_count?: number;
+  conversation_rewrite?: string | null;
+  reranker?: string | null;
+  rerank_skipped?: boolean;
+  no_relevant_context?: boolean;
+  superseded_chunks?: number;
+  answer_regenerated?: boolean;
   chunks?: RetrievalChunk[];
 }
 
@@ -851,6 +905,10 @@ export interface CitationSource {
   rerank_score?: number;
   excerpt?: string;
   download_url?: string;
+  page_start?: number | null;
+  page_end?: number | null;
+  sheet?: string | null;
+  superseded_by?: string | null;
 }
 
 /** A retrieved chunk from vector search. */
@@ -863,6 +921,11 @@ export interface RetrievalChunk {
   content?: string;
   position?: number;
   neighbors?: RetrievalChunk[];
+  page_start?: number | null;
+  page_end?: number | null;
+  sheet?: string | null;
+  section?: string | null;
+  superseded_by?: string | null;
 }
 
 /** Streaming chunk from SSE. */
@@ -1324,6 +1387,33 @@ export interface BucketObjectMetadata {
 // ============================================================================
 // Crawl
 // ============================================================================
+
+/** Cross-encoder reranker configured in server settings (API key omitted). */
+export interface RerankerSummary {
+  Id?: string;
+  Name?: string;
+  Format?: 'Tei' | 'Cohere' | string;
+  Endpoint?: string;
+  Model?: string | null;
+  TimeoutMs?: number;
+  HasApiKey?: boolean;
+}
+
+/** Request to score passages against a query with a configured reranker. */
+export interface RerankerTestRequest {
+  Query: string;
+  Documents: string[];
+}
+
+/** Result of testing a configured reranker. */
+export interface RerankerTestResult {
+  RerankerId?: string;
+  Success?: boolean;
+  /** One score per document, in request order. */
+  Scores?: number[] | null;
+  ErrorMessage?: string | null;
+  DurationMs?: number;
+}
 
 /** AssistantHub server configuration (partial -- includes common fields). */
 export interface AssistantHubSettings {

@@ -51,8 +51,11 @@ AssistantHub also ships a standalone MCP server that maps the management surface
 - [Crawl Plans (Admin Only)](#crawl-plans-admin-only)
 - [Crawl Operations](#crawl-operations)
 - [Eval (Authenticated)](#eval-authenticated)
+- [Rerankers (Admin Or Tenant Admin)](#rerankers-admin-or-tenant-admin)
 - [Configuration (Admin Only)](#configuration-admin-only)
 - [Configuration: ExternalSearch Settings](#configuration-externalsearch-settings)
+- [Configuration: Inference Settings](#configuration-inference-settings)
+- [Configuration: Rerankers Settings](#configuration-rerankers-settings)
 - [Configuration: ChatHistory Settings](#configuration-chathistory-settings)
 
 ---
@@ -78,6 +81,8 @@ GET /v1.0/assistants?token=<token>
 | **Global Admin** | Admin API key (from `AdminApiKeys` config), or any user with `IsAdmin=true` | All tenants — can manage tenants, users, and all resources |
 | **Tenant Admin** | User with `IsTenantAdmin=true` | Single tenant — can manage users, credentials, assistants, ingestion rules within their tenant |
 | **Tenant User** | Standard user | Single tenant — can create/manage own assistants and documents |
+
+An admin API key has no tenant of its own. On tenant-scoped list and create routes (for example `GET /v1.0/documents`, `PUT /v1.0/assistants` and `PUT /v1.0/ingestion-rules`) and on the collection routes, it acts on the tenant named by the `tenantId` query parameter, or on the default tenant when the parameter is omitted. Tenant-scoped callers always act on their own tenant and the parameter is ignored.
 
 ### POST /v1.0/authenticate
 
@@ -1364,19 +1369,32 @@ Create a new ingestion rule.
     "MaxRetries": 9,
     "TimeoutMs": 300000
   },
+  "Extraction": {
+    "OcrEmbeddedImages": null,
+    "CsvHasHeaderRow": null,
+    "CsvRowsPerAtom": null,
+    "ExcelHeaderRowScoreThreshold": null,
+    "DuplicatePolicy": "Warn",
+    "NearDuplicateThreshold": 0.85
+  },
   "Chunking": {
-    "Strategy": "FixedTokenCount",
+    "Strategy": "ParagraphBased",
     "FixedTokenCount": 256,
     "OverlapCount": 32,
     "OverlapPercentage": null,
     "OverlapStrategy": null,
     "RowGroupSize": 5,
     "ContextPrefix": null,
-    "RegexPattern": null
+    "RegexPattern": null,
+    "CellMode": "Structured",
+    "TableStrategy": "RowGroupWithHeaders",
+    "ListStrategy": "WholeList",
+    "ContextHeader": "TitleAndHeadings"
   },
   "Embedding": {
     "EmbeddingEndpointId": null,
-    "L2Normalization": false
+    "L2Normalization": false,
+    "TaskPrefixes": false
   }
 }
 ```
@@ -1401,7 +1419,7 @@ Create a new ingestion rule.
 
 | Field               | Type    | Default         | Description                                                                                                  |
 |---------------------|---------|-----------------|--------------------------------------------------------------------------------------------------------------|
-| `Strategy`          | string  | FixedTokenCount | Chunking strategy: `None`, `FixedTokenCount`, `SentenceBased`, `ParagraphBased`, `RegexBased`, `WholeList`, `ListEntry`, `Row`, `RowWithHeaders`, `RowGroupWithHeaders`, `KeyValuePairs`, `WholeTable`. When set to `None`, chunking is skipped and the entire document is treated as a single chunk. |
+| `Strategy`          | string  | ParagraphBased  | Chunking strategy: `None`, `FixedTokenCount`, `SentenceBased`, `ParagraphBased`, `RegexBased`, `WholeList`, `ListEntry`, `Row`, `RowWithHeaders`, `RowGroupWithHeaders`, `KeyValuePairs`, `WholeTable`. When set to `None`, chunking is skipped and the entire document is treated as a single chunk. In `Structured` cell mode it applies to text sections. |
 | `FixedTokenCount`   | int     | 256             | Tokens per chunk (FixedTokenCount strategy). Minimum: 1.                                                     |
 | `OverlapCount`      | int     | 0               | Number of overlapping tokens between consecutive chunks.                                                     |
 | `OverlapPercentage` | double? | null            | Overlap as a fraction of chunk size (0.0–1.0). Alternative to OverlapCount.                                  |
@@ -1409,6 +1427,33 @@ Create a new ingestion rule.
 | `RowGroupSize`      | int     | 5               | Rows per group for `RowGroupWithHeaders` strategy. Minimum: 1.                                               |
 | `ContextPrefix`     | string  | null            | Optional text prepended to each chunk for additional context.                                                |
 | `RegexPattern`      | string  | null            | Regex pattern for the `RegexBased` strategy.                                                                 |
+| `CellMode`          | string  | Flat            | How extracted content is sent to Partio. `Flat` sends the whole document as one text cell and `Strategy` applies to all of it. `Structured` sends each section's text, each table and each list as its own cell (one `/v1.0/process/batch` call), so tables use `TableStrategy`, lists use `ListStrategy`, chunks never span sections, and every chunk carries page, sheet and section tags that retrieval returns as `page_start`, `page_end`, `sheet` and `section`. |
+| `TableStrategy`     | string  | RowGroupWithHeaders | Strategy for tables in `Structured` mode: `Row`, `RowWithHeaders`, `RowGroupWithHeaders` (`RowGroupSize` rows per chunk, header repeated), `KeyValuePairs`, or `WholeTable`. |
+| `ListStrategy`      | string  | WholeList       | Strategy for lists in `Structured` mode: `WholeList` or `ListEntry`.                                         |
+| `ContextHeader`     | string  | None            | Context embedded with each chunk without changing the stored chunk text: `None`, `Title` (the document name) or `TitleAndHeadings` (the document name and the section's heading path, for example `Guide > Setup > Networking`). Heading paths need `Structured` mode; in `Flat` mode `TitleAndHeadings` behaves like `Title`. The header is capped to a share of the chunk budget. |
+
+**Extraction Configuration (optional):**
+
+Options passed to DocumentAtom when a document is extracted, and how duplicate uploads are handled. Replaces the former unused `Atomization` field; it is stored in the same column.
+
+| Field                          | Type    | Default | Description                                                                                  |
+|--------------------------------|---------|---------|----------------------------------------------------------------------------------------------|
+| `OcrEmbeddedImages`            | bool?   | null    | Run OCR on images embedded in PDF, Word, PowerPoint, Excel and RTF documents. Null uses DocumentAtom's default (on). |
+| `CsvHasHeaderRow`              | bool?   | null    | Treat the first row of a CSV or TSV file as its header row. Null uses DocumentAtom's default (`true`). |
+| `CsvRowsPerAtom`               | int?    | null    | CSV or TSV rows per extracted table. `0` or null keeps the whole file as one table. Minimum: 0. |
+| `ExcelHeaderRowScoreThreshold` | int?    | null    | Score a spreadsheet row must reach to be detected as a header row. Null uses DocumentAtom's default (`3`). Minimum: 0. |
+| `DuplicatePolicy`              | string  | Allow   | What to do when an upload's bytes exactly match (SHA-256) a document already in the rule's collection that has not failed: `Allow` (ingest it), `Warn` (ingest it and record the match in `NearDuplicates` with `"Exact": true`), or `Reject` (refuse the upload with `409 Conflict`). |
+| `NearDuplicateThreshold`       | double  | 0.85    | Similarity (0.0 to 1.0) at which another document in the collection is recorded as a near-duplicate after ingestion, found by searching the collection with the new document's first chunk embedding (up to three matches). `0` disables the check. |
+
+TSV files are extracted as tab-delimited tables. Legacy binary Office files (`.doc`, `.xls`, `.ppt`) are not supported: their ingestion fails with a status message asking for the file to be saved as `.docx`, `.xlsx` or `.pptx` and uploaded again.
+
+**Embedding Configuration (optional):**
+
+| Field                 | Type    | Default | Description                                                                                  |
+|-----------------------|---------|---------|----------------------------------------------------------------------------------------------|
+| `EmbeddingEndpointId` | string  | null    | Embedding endpoint ID. Null uses the default embedding endpoint.                              |
+| `L2Normalization`     | bool    | false   | Normalize embeddings to unit length.                                                          |
+| `TaskPrefixes`        | bool    | false   | Prepend the embedding model's document task prefix when embedding chunks, for example `search_document: ` for `nomic-embed-text` or `passage: ` for E5 models. The prefix is chosen from the embedding endpoint's model name; models without a document prefix (BGE, mxbai, Arctic Embed and unrecognized models) get none. The stored chunk text is unchanged. Assistants searching the collection should set `EmbeddingTaskPrefixes` so queries get the matching query prefix. |
 
 **Response (201 Created):**
 
@@ -1433,19 +1478,32 @@ Create a new ingestion rule.
     "MaxRetries": 9,
     "TimeoutMs": 300000
   },
+  "Extraction": {
+    "OcrEmbeddedImages": null,
+    "CsvHasHeaderRow": null,
+    "CsvRowsPerAtom": null,
+    "ExcelHeaderRowScoreThreshold": null,
+    "DuplicatePolicy": "Warn",
+    "NearDuplicateThreshold": 0.85
+  },
   "Chunking": {
-    "Strategy": "FixedTokenCount",
+    "Strategy": "ParagraphBased",
     "FixedTokenCount": 256,
     "OverlapCount": 32,
     "OverlapPercentage": null,
     "OverlapStrategy": null,
     "RowGroupSize": 5,
     "ContextPrefix": null,
-    "RegexPattern": null
+    "RegexPattern": null,
+    "CellMode": "Structured",
+    "TableStrategy": "RowGroupWithHeaders",
+    "ListStrategy": "WholeList",
+    "ContextHeader": "TitleAndHeadings"
   },
   "Embedding": {
     "EmbeddingEndpointId": null,
-    "L2Normalization": false
+    "L2Normalization": false,
+    "TaskPrefixes": false
   },
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
@@ -2114,7 +2172,7 @@ Retrieve settings for an assistant.
   "EnableQueryRewrite": false,
   "QueryRewritePrompt": null,
   "EnableReranking": false,
-  "RerankerTopK": 5,
+  "RerankerTopK": 10,
   "RerankerScoreThreshold": 3.0,
   "RerankPrompt": null,
   "EnableCitations": false,
@@ -2123,12 +2181,25 @@ Retrieve settings for an assistant.
   "RetrievalTopK": 5,
   "RetrievalScoreThreshold": 0.7,
   "SearchMode": "Hybrid",
-  "TextWeight": 0.3,
+  "TextWeight": 0.5,
+  "FusionStrategy": "Rrf",
+  "RrfK": 60,
+  "FusionCandidatePool": null,
+  "RecencyWeight": 0.0,
+  "ContextOrder": "Score",
+  "EmbeddingTaskPrefixes": false,
+  "EnableConversationRewrite": false,
+  "ConversationRewritePrompt": null,
+  "RerankerType": "Llm",
+  "RerankEndpointId": null,
+  "RerankCandidateCount": 20,
+  "RerankMinScore": null,
+  "SupersessionMode": "Demote",
   "FullTextSearchType": "TsRank",
   "FullTextLanguage": "english",
   "FullTextNormalization": 32,
   "FullTextMinimumScore": null,
-  "RetrievalIncludeNeighbors": 0,
+  "RetrievalIncludeNeighbors": 1,
   "InferenceEndpointId": "ep_abc123...",
   "ToolRoutingInferenceEndpointId": null,
   "RetrievalGateInferenceEndpointId": null,
@@ -2143,6 +2214,7 @@ Retrieve settings for an assistant.
   "RetrievalLabelFilter": null,
   "RetrievalTagFilter": null,
   "EvalJudgePrompt": null,
+  "EvalJudgeInferenceEndpointId": null,
   "Streaming": true,
   "EnableSlack": false,
   "SlackAppToken": "xapp-***",
@@ -2176,11 +2248,17 @@ Retrieve settings for an assistant.
 | `ContextWindow`            | int     | Context window size in tokens.                                              |
 | `EnableRag`                | bool    | Enable RAG retrieval for chat. Default `false`.                             |
 | `EnableRetrievalGate`      | bool    | Enable LLM-based retrieval gate. When enabled, an LLM call classifies whether each user message requires new document retrieval (`RETRIEVE`) or can be answered from existing conversation context (`SKIP`). Only applies when `EnableRag` is `true`. Default `false`. |
-| `EnableQueryRewrite`       | bool    | Whether LLM-based query rewrite is enabled. When enabled, the user's prompt is rewritten into multiple semantically varied queries before retrieval to improve recall. Default `false`. |
+| `EnableQueryRewrite`       | bool    | Whether LLM-based query rewrite is enabled. When enabled, the utility model rewrites the user's prompt (or the conversation rewrite, when one ran) into up to three semantically varied queries. The rewrite is additive: the original query is always searched at full weight, and the variants are fused with it at weight 0.5, so they re-rank results rather than displace them. Default `false`. |
 | `QueryRewritePrompt`       | string? | The prompt template used for query rewriting. Must contain the `{prompt}` placeholder which is replaced with the user's message. When null or empty, a built-in default prompt is used. |
-| `EnableReranking`          | bool    | Enable LLM-based re-ranking of retrieved chunks. Default `false`. |
-| `RerankerTopK`             | int     | Maximum chunks to keep after re-ranking (min 1). Default `5`. |
-| `RerankerScoreThreshold`   | double  | Minimum LLM relevance score (0-10) to retain a chunk. Default `3.0`. |
+| `EnableConversationRewrite`| bool    | Rewrite a follow-up question into a standalone question from the recent conversation (the last six turns, each capped at 1,000 characters) and search the rewrite alongside the original message, both at full weight. Runs only when there is earlier conversation and retrieval is going to run. Uses `QueryRewriteInferenceEndpointId`. The rewrite is returned as `conversation_rewrite`. Default `false`. |
+| `ConversationRewritePrompt`| string? | Custom conversation rewrite prompt. Must contain the `{question}` placeholder (the latest user message); `{conversation}` (the recent turns) is optional. The model must reply with a JSON object `{"query": "..."}`; a bare line is also accepted. Null uses the built-in prompt. |
+| `EnableReranking`          | bool    | Enable re-ranking of retrieved chunks with the reranker selected by `RerankerType`. Default `false`. |
+| `RerankerType`             | string  | Reranker used when `EnableReranking` is `true`: `Llm` (the rerank completion endpoint scores each candidate 0-10) or `CrossEncoder` (a cross-encoder service from the server's `Rerankers` settings scores each candidate 0-1). Default `Llm`. |
+| `RerankEndpointId`         | string? | ID of a reranker configured in the server's `Rerankers` settings (see `GET /v1.0/rerankers`). Required when `EnableReranking` is `true` and `RerankerType` is `CrossEncoder`; saving settings with a missing or unknown ID returns `400`. |
+| `RerankCandidateCount`     | int     | Candidates retrieved and scored when re-ranking is on (1 to 200). Retrieval fetches `max(RetrievalTopK, RerankCandidateCount)` candidates and the reranker keeps `RerankerTopK` of them. When re-ranking does not produce scores, only the top `RetrievalTopK` candidates are injected. Default `20`. |
+| `RerankerTopK`             | int     | Maximum chunks to keep after re-ranking (min 1). Default `10` for new assistants. |
+| `RerankerScoreThreshold`   | double  | Minimum LLM relevance score (0-10) to retain a chunk. Applies to `Llm` re-ranking. Default `3.0`. |
+| `RerankMinScore`           | double? | Minimum cross-encoder score (0.0 to 1.0) for a candidate to count as relevant. Applies to `CrossEncoder` re-ranking. When every candidate scores below it, no context is injected, the prompt tells the answer model that nothing relevant was found and to say so instead of guessing, and retrieval reports `no_relevant_context`. Null disables it. |
 | `RerankPrompt`             | string? | Custom re-ranking prompt template (must contain `{query}` and `{chunks}` placeholders). Default `null`. |
 | `EnableAnswerabilityCheck` | bool    | Run an LLM answerability check after retrieval and before final generation. Default `false`. |
 | `AnswerabilityInferenceEndpointId` | string? | Optional managed completion endpoint ID for answerability calls. Null or empty falls back to `InferenceEndpointId`. |
@@ -2190,14 +2268,21 @@ Retrieve settings for an assistant.
 | `CitationLinkMode`         | string  | Controls document download linking in citation cards. `None` (display-only), `Authenticated` (requires bearer token via `/v1.0/documents/{id}/download`), `Public` (unauthenticated server-proxied download via `/v1.0/assistants/{assistantId}/documents/{id}/download`). Default `None`. |
 | `CollectionId`             | string  | RecallDb collection ID for document retrieval.                              |
 | `RetrievalTopK`            | int     | Number of top document chunks to retrieve.                                  |
-| `RetrievalScoreThreshold`  | double  | Minimum similarity score threshold (0.0 to 1.0).                           |
-| `SearchMode`               | string  | Search mode for RAG retrieval: `Vector` (semantic similarity), `FullText` (keyword matching), or `Hybrid` (both combined). Default `Vector`. |
-| `TextWeight`               | double  | Weight of full-text score in hybrid mode (0.0 to 1.0). Formula: `Score = (1 - TextWeight) * vectorScore + TextWeight * textScore`. Default `0.3`. |
+| `RetrievalScoreThreshold`  | double  | Minimum vector similarity (0.0 to 1.0). In `Vector` mode it applies to the similarity score. In `Hybrid` mode it drops only chunks that the vector leg found on its own with a similarity below it; chunks the full-text leg found are kept. `FullText` results are not held to it; use `FullTextMinimumScore`. |
+| `SearchMode`               | string  | Search mode for RAG retrieval: `Vector` (semantic similarity), `FullText` (keyword matching), or `Hybrid` (both combined). Default `Hybrid` for new assistants. |
+| `TextWeight`               | double  | Share of the full-text leg in hybrid fusion (0.0 to 1.0); the vector leg gets `1 - TextWeight`. With `Rrf` fusion the fused score is `((1 - w) / (k + vectorRank) + w / (k + textRank)) * (k + 1)`, so a chunk ranked first by both legs scores 1.0 and a chunk found only by the full-text leg scores at most `w`. With `Linear` fusion it weights the legs' normalized scores. Default `0.5` for new assistants. |
+| `FusionStrategy`           | string  | How hybrid search combines its legs: `Rrf` (weighted reciprocal rank fusion) or `Linear` (blend of normalized scores). Sent to RecallDB explicitly. Default `Rrf`. |
+| `RrfK`                     | int     | RRF constant k (1 to 100,000). Smaller values reward top ranks more strongly. Applies to `Rrf` fusion. Default `60`. |
+| `FusionCandidatePool`      | int?    | Candidates each hybrid leg retrieves before fusion (1 to 10,000). Null uses RecallDB's default, `max(RetrievalTopK x 4, 100)` capped at 1,000. |
+| `RecencyWeight`            | double  | Weight of a recency signal in `Rrf` fusion (0.0 to 1.0): newer documents rank higher among otherwise similar candidates. `0` disables it. Default `0`. |
+| `ContextOrder`             | string  | Order of retrieved context in the prompt: `Score` (most relevant first) or `ReadingOrder` (chunks grouped by document, documents ordered by their best chunk, chunks in document order, touching chunks merged with repeated overlap text removed). Does not change which chunks are retrieved. Default `Score`. |
+| `EmbeddingTaskPrefixes`    | bool    | Prepend the embedding model's query task prefix to queries, for example `search_query: ` for `nomic-embed-text` or `query: ` for E5 models. Turn it on only for collections whose ingestion rule sets `Embedding.TaskPrefixes`, so queries and documents match. Default `false`. |
+| `SupersessionMode`         | string  | How retrieval treats chunks from a document that another document supersedes (see `PUT /v1.0/documents/{documentId}/supersedes`). `Demote`: each such chunk is dropped and replaced, at the position it ranked, by the best-matching chunk of the newest document in the supersedes chain, found with a search scoped to that document (so it works even when the search missed the replacement); at most one chunk per replacement document, and none when the replacement is already in the results or is not `Completed`. `Hide`: the chunks are removed. `Include`: the chunks are kept, carry `superseded_by`, and are marked `[outdated: superseded by "..."]` in the prompt. Chains are followed up to 5 hops. Default `Demote`. |
 | `FullTextSearchType`       | string  | Full-text ranking function: `TsRank` (term frequency) or `TsRankCd` (cover density, rewards term proximity). Default `TsRank`. |
 | `FullTextLanguage`         | string  | PostgreSQL text search language for stemming and stop words. Values: `english`, `simple`, `spanish`, `french`, `german`. Default `english`. |
 | `FullTextNormalization`    | int     | Score normalization bitmask. `32` = normalized 0-1 (recommended). `0` = raw scores. Default `32`. |
 | `FullTextMinimumScore`     | double? | Minimum full-text relevance threshold. Documents below this TextScore are excluded. Null = no threshold. |
-| `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `0` (no neighbors). |
+| `RetrievalIncludeNeighbors`| int     | Number of neighboring chunks to retrieve before and after each matched chunk (0–10). Provides surrounding document context for each search match. Neighbors are merged with the matched chunk to form a seamless context block for the LLM. Does not affect scoring, citation count, or top-K limits. Default `1` for new assistants (`0` means no neighbors). |
 | `InferenceEndpointId`      | string  | Managed completion endpoint ID for assistant responses. Required for assistant settings. |
 | `ToolRoutingInferenceEndpointId` | string? | Optional managed completion endpoint ID used only for model tool-routing checks. Null or empty falls back to `InferenceEndpointId`; when set, this endpoint must explicitly support tool calling. Final answers still use `InferenceEndpointId`. |
 | `RetrievalGateInferenceEndpointId` | string? | Optional managed completion endpoint ID for retrieval gate calls. Null or empty falls back to `InferenceEndpointId`. |
@@ -2212,6 +2297,7 @@ Retrieve settings for an assistant.
 | `RetrievalLabelFilter`     | string  | JSON-serialized label filter applied to all RAG retrievals for this assistant. Merged with per-request metadata filters. Null = no default label filter. |
 | `RetrievalTagFilter`       | string  | JSON-serialized tag filter applied to all RAG retrievals for this assistant. Merged with per-request metadata filters. Null = no default tag filter. |
 | `EvalJudgePrompt`          | string  | Custom judge prompt for evaluation runs on this assistant. Null uses the system default judge prompt. |
+| `EvalJudgeInferenceEndpointId` | string? | Optional completion endpoint ID used to judge eval runs on this assistant. Null or empty uses `InferenceEndpointId`, so the assistant grades its own answers. |
 | `Streaming`                | bool    | Enable SSE streaming for chat responses. Default `true`.                    |
 | `EnableSlack`              | bool    | Enable a per-assistant Slack Socket Mode worker. Default `false`.           |
 | `SlackAppToken`            | string  | Slack app token for Socket Mode. Must start with `xapp-` when present.      |
@@ -2245,7 +2331,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "EnableQueryRewrite": false,
   "QueryRewritePrompt": null,
   "EnableReranking": false,
-  "RerankerTopK": 5,
+  "RerankerTopK": 10,
   "RerankerScoreThreshold": 3.0,
   "RerankPrompt": null,
   "EnableCitations": false,
@@ -2254,7 +2340,20 @@ Create or update settings for an assistant. If settings already exist, they are 
   "RetrievalTopK": 10,
   "RetrievalScoreThreshold": 0.6,
   "SearchMode": "Hybrid",
-  "TextWeight": 0.3,
+  "TextWeight": 0.5,
+  "FusionStrategy": "Rrf",
+  "RrfK": 60,
+  "FusionCandidatePool": null,
+  "RecencyWeight": 0.0,
+  "ContextOrder": "Score",
+  "EmbeddingTaskPrefixes": false,
+  "EnableConversationRewrite": false,
+  "ConversationRewritePrompt": null,
+  "RerankerType": "Llm",
+  "RerankEndpointId": null,
+  "RerankCandidateCount": 20,
+  "RerankMinScore": null,
+  "SupersessionMode": "Demote",
   "FullTextSearchType": "TsRank",
   "FullTextLanguage": "english",
   "FullTextNormalization": 32,
@@ -2274,6 +2373,7 @@ Create or update settings for an assistant. If settings already exist, they are 
   "RetrievalLabelFilter": null,
   "RetrievalTagFilter": null,
   "EvalJudgePrompt": null,
+  "EvalJudgeInferenceEndpointId": null,
   "Streaming": true,
   "EnableSlack": true,
   "SlackAppToken": "xapp-***",
@@ -2288,7 +2388,12 @@ Create or update settings for an assistant. If settings already exist, they are 
 
 `InferenceEndpointId` is required and remains the source of truth for final assistant responses. `ToolRoutingInferenceEndpointId`, retrieval gate, query rewrite, and re-ranking can each use their own completion endpoint via the optional endpoint ID fields above; when those fields are null or empty, AssistantHub uses `InferenceEndpointId`. A configured tool-routing endpoint is used only for tool-decision turns and must explicitly advertise tool-call support; final answers still use `InferenceEndpointId`.
 
+New assistants default to `SearchMode` `Hybrid`, `TextWeight` `0.5`, `RetrievalIncludeNeighbors` `1` and `RerankerTopK` `10`. Settings already stored keep their values.
+
+The utility steps (retrieval gate, conversation rewrite, query rewrite and LLM re-ranking) run at temperature 0, are bounded by the server's `Inference.UtilityTimeoutMs`, and share a circuit breaker per step and endpoint (`Inference.CircuitBreakerFailures`, `Inference.CircuitBreakerOpenMs`). A step that times out, fails or is skipped by an open breaker falls back to its default behavior: retrieve, search the original query only, or keep the retrieval order.
+
 **Error Responses:**
+- `400` -- A value is out of range or not one of the allowed values (for example `RerankCandidateCount` 0 or an unknown `SupersessionMode`); `ConversationRewritePrompt` does not contain `{question}`; or `RerankerType` is `CrossEncoder` with re-ranking enabled and `RerankEndpointId` does not name a configured reranker.
 - `403` -- Not the owner and not an admin.
 - `404` -- Assistant not found.
 
@@ -2459,7 +2564,7 @@ Current diagnostic-only `ErrorCodes` include `completion_endpoint_missing`, `too
 
 ### POST /v1.0/assistants/{assistantId}/retrieve
 
-Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, query rewrite, search with multi-query fusion, attached-document filtering, re-ranking and (when enabled) the answerability check — without final inference and without writing chat history. It shares its stage code with chat, so it is the route the benchmark harness (`benchmarks/`) uses to measure retrieval quality, and a quick way for administrators to diagnose why an answer missed. Utility model calls (gate, rewrite, rerank, answerability) still run when they are enabled in the assistant settings.
+Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, conversation rewrite, query rewrite, search with multi-query fusion, attached-document filtering, supersession, re-ranking and (when enabled) the answerability check — without final inference and without writing chat history. It shares its stage code with chat, so it is the route the benchmark harness (`benchmarks/`) uses to measure retrieval quality, and a quick way for administrators to diagnose why an answer missed. Utility model calls (gate, rewrites, rerank, answerability) and cross-encoder re-ranking still run when they are enabled in the assistant settings.
 
 **Auth:** Required (global admin or tenant admin)
 
@@ -2472,11 +2577,14 @@ Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, 
   "metadata_filter": { "required_labels": ["policy"] },
   "attached_document_ids": null,
   "include_stages": true,
-  "include_answerability": true
+  "include_answerability": true,
+  "settings_override": null
 }
 ```
 
 Either `query` or `messages` is required. When both are given, `query` is appended as the last user message. `metadata_filter` and `attached_document_ids` behave as they do on the chat route.
+
+`settings_override` is an optional full `AssistantSettings` object (the same shape as `PUT /v1.0/assistants/{assistantId}/settings`) used for this call instead of the saved settings, so changes can be tried before they are saved. When it has no `CollectionId` or `InferenceEndpointId`, the saved values are used. Nothing is persisted. The dashboard's Retrieval Inspector uses it. An out-of-range value in the override returns `400`.
 
 **Response (200 OK):**
 
@@ -2493,9 +2601,11 @@ Either `query` or `messages` is required. When both are given, `query` is append
   "retrieval_duration_ms": 41.2,
   "hybrid_fallback_ran": false,
   "embedding_failed": false,
-  "rerank_duration_ms": 0,
-  "rerank_input_count": 0,
-  "rerank_output_count": 0,
+  "keyword_fallback_ran": false,
+  "reranker": "cross_encoder",
+  "rerank_duration_ms": 18.4,
+  "rerank_input_count": 20,
+  "rerank_output_count": 10,
   "rerank_parse_failed": false,
   "answerability_decision": "not_checked",
   "query_class": null,
@@ -2511,8 +2621,12 @@ Either `query` or `messages` is required. When both are given, `query` is append
       "text_score": 0.08,
       "vector_rank": 1,
       "text_rank": 1,
+      "rerank_score": 0.94,
       "content": "Rotterdam: EUR 185 per night ...",
-      "position": 4
+      "position": 4,
+      "page_start": 3,
+      "page_end": 3,
+      "section": "Travel Policy > Per Diem Rates"
     }
   ],
   "stages": [
@@ -2523,7 +2637,21 @@ Either `query` or `messages` is required. When both are given, `query` is append
 }
 ```
 
-`chunks` is the final list chat would inject, before prompt-budget trimming. `stages` (when `include_stages` is true) holds the ranked list after each stage: one `search` entry per issued query, `fused`, `attachment_filter` (only when attached documents are supplied), `rerank_scored` (every re-rank input with its score) and `rerank`. In hybrid mode `score` is the fused score. `vector_score`, `text_score`, `vector_rank` and `text_rank` carry each leg's evidence when the store reports it. `rerank_parse_failed` is true when re-ranking was enabled but produced no usable scores, in which case the retrieval order is kept. `embedding_failed` is true when the query embedding could not be generated after retries, so vector and hybrid search returned nothing. Chat reports the same flags, plus `query_count` and `answerability_parse_failed`, in its `retrieval` block.
+`chunks` is the final list chat would inject, before prompt-budget trimming. `stages` (when `include_stages` is true) holds the ranked list after each stage: one `search` entry per issued query, `fused`, `attachment_filter` (only when attached documents are supplied), `rerank_scored` (every re-rank input with its score) and `rerank`. In hybrid mode `score` is the fused score. `vector_score`, `text_score`, `vector_rank` and `text_rank` carry each leg's evidence when the store reports it. `rerank_parse_failed` is true when re-ranking was enabled but produced no usable scores, in which case the retrieval order is kept. `embedding_failed` is true when the query embedding could not be generated after retries (each attempt is bounded by `Chunking.QueryEmbeddingTimeoutMs`); vector search then returns nothing, and hybrid search runs its full-text leg alone and sets `keyword_fallback_ran`. Chat reports the same flags, plus `query_count` and `answerability_parse_failed`, in its `retrieval` block.
+
+When re-ranking is on, `search` and `fused` hold up to `max(RetrievalTopK, RerankCandidateCount)` candidates. A `supersession` stage is recorded when any candidate came from a superseded document.
+
+The following fields are omitted when they are null, false or zero:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `conversation_rewrite` | string | Standalone rewrite of a follow-up question, searched alongside the original message, when `EnableConversationRewrite` ran and produced a different query. It also appears in `queries`. |
+| `reranker` | string | Reranker that ran: `llm` or `cross_encoder`. |
+| `rerank_skipped` | bool | Re-ranking was skipped because its circuit breaker was open or no matching cross-encoder is configured; the retrieval order is kept. |
+| `no_relevant_context` | bool | The cross-encoder scored every candidate below `RerankMinScore`, so `chunks` is empty and chat tells the answer model nothing relevant was found. |
+| `superseded_chunks` | int | Number of candidates that came from superseded documents (see `SupersessionMode`). |
+
+Each chunk can also carry `page_start`, `page_end` (first and last page or slide), `sheet` (spreadsheet sheet) and `section` (heading path) when the document was ingested with `Structured` cell mode, and `superseded_by` (the replacing document ID) when `SupersessionMode` is `Include` and the chunk comes from a superseded document.
 
 **Error Responses:**
 - `400` -- Missing query, or malformed JSON.
@@ -2765,7 +2893,8 @@ Upload a new document using an ingestion rule.
   "ContentType": "application/pdf",
   "Labels": ["user-guide", "v2"],
   "Tags": { "version": "2.0" },
-  "Base64Content": "JVBERi0xLjQK..."
+  "Base64Content": "JVBERi0xLjQK...",
+  "SupersedesDocumentIds": ["adoc_old123..."]
 }
 ```
 
@@ -2778,6 +2907,9 @@ Upload a new document using an ingestion rule.
 | `Labels`           | string[]           | No       | Per-document labels (merged with rule labels on ingestion).|
 | `Tags`             | object             | No       | Per-document tags (merged with rule tags on ingestion).    |
 | `Base64Content`    | string             | Yes      | Base64-encoded file content.                               |
+| `SupersedesDocumentIds` | string[]      | No       | Documents this upload replaces. Each must exist in the same tenant. See `PUT /v1.0/documents/{documentId}/supersedes`. |
+
+The upload computes the SHA-256 of the file and applies the ingestion rule's `Extraction.DuplicatePolicy` against documents in the rule's collection that have not failed: `Allow` (the default) ingests it, `Warn` ingests it and records each exact match in `NearDuplicates` with `"Exact": true`, and `Reject` returns `409 Conflict` naming the existing documents. After ingestion, other documents similar to the new one (at or above `Extraction.NearDuplicateThreshold`) are added to `NearDuplicates`.
 
 **Response (201 Created):**
 
@@ -2803,10 +2935,23 @@ Upload a new document using an ingestion rule.
   "CrawlPlanId": null,
   "CrawlOperationId": null,
   "SourceUrl": null,
+  "Supersedes": "[\"adoc_old123...\"]",
+  "SupersededBy": null,
+  "ContentSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+  "NearDuplicates": null,
   "CreatedUtc": "2025-01-01T00:00:00Z",
   "LastUpdateUtc": "2025-01-01T00:00:00Z"
 }
 ```
+
+**Supersession and Duplicate Fields:**
+
+| Field            | Type   | Description                                                                                  |
+|------------------|--------|----------------------------------------------------------------------------------------------|
+| `Supersedes`     | string | JSON array of the IDs of documents this document replaces, or null.                          |
+| `SupersededBy`   | string | ID of the document that replaces this one, or null. Retrieval treats the document as outdated according to the assistant's `SupersessionMode`. |
+| `ContentSha256`  | string | SHA-256 of the uploaded bytes (lowercase hex), used to detect exact duplicates.              |
+| `NearDuplicates` | string | JSON array of `{"DocumentId", "Score", "Exact"}` objects for documents in the same collection with identical content (`Exact: true`, `Score` 1.0, recorded at upload under the `Warn` policy) or similar content (`Score` at or above `NearDuplicateThreshold`, recorded after ingestion), or null. |
 
 **Document Status Values:**
 
@@ -2827,8 +2972,9 @@ Upload a new document using an ingestion rule.
 | `Failed`                | Processing failed (see `StatusMessage`).          |
 
 **Error Responses:**
-- `400` -- `IngestionRuleId` is required; or `Base64Content` is missing/invalid.
+- `400` -- `IngestionRuleId` is required; `Base64Content` is missing/invalid; or a `SupersedesDocumentIds` entry does not exist in the tenant.
 - `404` -- Ingestion rule not found.
+- `409` -- The rule's `DuplicatePolicy` is `Reject` and a document with identical content already exists in the collection.
 - `503` -- S3 storage is not configured.
 
 ### GET /v1.0/documents
@@ -2857,9 +3003,29 @@ Retrieve a single document record by ID.
 **Error Responses:**
 - `404` -- Document not found.
 
+### PUT /v1.0/documents/{documentId}/supersedes
+
+Set the documents a document supersedes (replaces). Each listed document records this document as its `SupersededBy`, and documents this document no longer lists are released. An empty list clears the links. Retrieval then treats the superseded documents according to each assistant's `SupersessionMode`.
+
+**Auth:** Required (tenant-scoped; the document must belong to the caller's tenant)
+
+**Request Body:**
+
+```json
+{
+  "SupersedesDocumentIds": ["adoc_old123...", "adoc_old456..."]
+}
+```
+
+**Response (200 OK):** The updated `AssistantDocument` object, with `Supersedes` set.
+
+**Error Responses:**
+- `400` -- Missing body or malformed JSON; a listed document does not exist in the document's tenant; a document lists itself; or a listed document is the one that supersedes this document (a cycle).
+- `404` -- Document not found or owned by another tenant.
+
 ### DELETE /v1.0/documents/{documentId}
 
-Delete a document, its S3 object, all associated RecallDB embeddings, and its Verbex text-search record. Missing subordinate records are treated as successful cleanup; subordinate cleanup failures are logged and document deletion continues.
+Delete a document, its S3 object, all associated RecallDB embeddings, and its Verbex text-search record. Missing subordinate records are treated as successful cleanup; subordinate cleanup failures are logged and document deletion continues. The document's supersession links are released first: documents it superseded become current again, and the document that superseded it stops listing it.
 
 **Auth:** Required
 
@@ -2870,7 +3036,7 @@ Delete a document, its S3 object, all associated RecallDB embeddings, and its Ve
 
 ### POST /v1.0/documents/delete
 
-Bulk delete multiple documents, their S3 objects, all associated RecallDB embeddings, and associated Verbex text-search records.
+Bulk delete multiple documents, their S3 objects, all associated RecallDB embeddings, and associated Verbex text-search records. Each document's supersession links are released as for a single delete.
 
 **Auth:** Required
 
@@ -3010,7 +3176,7 @@ Download the original document file from S3 storage.
 
 ### POST /v1.0/documents/{documentId}/reprocess
 
-Re-run the full ingestion pipeline (extraction, chunking, embedding, and indexing) for a document, provided its source object still exists in storage. The document status is reset to `Uploaded` and ingestion runs asynchronously; poll `GET /v1.0/documents/{documentId}` or the processing log for progress. No request body is required.
+Re-run the full ingestion pipeline (extraction, chunking, embedding, and indexing) for a document, provided its source object still exists in storage. The document status is reset to `Uploaded` and ingestion runs asynchronously; poll `GET /v1.0/documents/{documentId}` or the processing log for progress. Once the new chunk records are stored, the chunk records written by the previous ingestion are deleted. No request body is required.
 
 **Auth:** Required (tenant-scoped; the document must belong to the caller's tenant)
 
@@ -4082,9 +4248,15 @@ The response may also include `retrieval` (when RAG is enabled) and `citations` 
 | `retrieval.dropped_candidate_count` | int \| null | Number of retrieved candidate chunks removed by attachment filters, rerank filtering, or prompt-budget trimming before final generation. |
 | `retrieval.dropped_candidates` | array \| null | Aggregated dropped-candidate summaries with `stage`, `reason`, and `count`. |
 | `retrieval.final_citation_count` | int \| null | Number of citation sources available to the final answer after filtering and citation extraction. |
-| `retrieval.chunks` | array | Retrieved context chunks with source identification. |
+| `retrieval.chunks` | array | Retrieved context chunks with source identification. Chunks can carry `page_start`, `page_end`, `sheet`, `section` and `superseded_by`, as described for the retrieve route. |
+| `retrieval.conversation_rewrite` | string \| null | Standalone rewrite of a follow-up question that was searched alongside the original message. Present only when `EnableConversationRewrite` ran and produced a different query. |
+| `retrieval.reranker` | string \| null | Reranker that ran: `llm` or `cross_encoder`. Omitted when re-ranking is off. |
+| `retrieval.rerank_skipped` | bool | Present and `true` when re-ranking was skipped because its circuit breaker was open or no matching cross-encoder is configured. |
+| `retrieval.no_relevant_context` | bool | Present and `true` when the cross-encoder scored every candidate below `RerankMinScore`. No context is injected, and the system prompt tells the model it found nothing relevant and should say so instead of guessing. |
+| `retrieval.superseded_chunks` | int | Present when retrieved candidates came from superseded documents; the number of such candidates (see `SupersessionMode`). |
+| `retrieval.answer_regenerated` | bool | Present and `true` when a non-streaming cited answer was degenerate (fewer than four words once citation markers are removed, or only a lead-in such as "According to the sources") and was regenerated once without the citation instructions. |
 | `citations` | object \| null | Citation metadata when `EnableCitations` is true and RAG or model-directed tools provide citation-capable evidence. |
-| `citations.sources` | array | Source evidence provided to the model, each with `index`, optional `source_type`, `document_id`, `url`, `document_name`, `content_type`, `score`, `excerpt`, and `download_url`. |
+| `citations.sources` | array | Source evidence provided to the model, each with `index`, optional `source_type`, `document_id`, `url`, `document_name`, `content_type`, `score`, `excerpt`, and `download_url`, plus `page_start`, `page_end`, `sheet` and `superseded_by` when known. |
 | `citations.referenced_indices` | array of int | 1-based indices from `sources` that the model actually cited in its response |
 | `tool_calls` | array \| null | Optional safe tool trace metadata included only when assistant policy `ExposeToolTraceToUser` is true. |
 | `tool_calls[].tool_name` | string | Stable model-facing tool name. |
@@ -4163,7 +4335,7 @@ Possible tool lifecycle event names are `assistant.tool_iteration.started`, `ass
 
 When `EnableCitations` is `true` and RAG or model-directed tools provide citation-capable evidence, the system:
 
-1. Labels each retrieved context chunk with a bracket index `[1]`, `[2]`, etc. and its source document name
+1. Labels each retrieved context chunk with a bracket index `[1]`, `[2]`, etc., its source document name, its pages or sheet when known (for example `(Source: "guide.pdf", pp. 3-4)`), and an `outdated: superseded by "..."` note for a chunk kept from a superseded document
 2. Adds `CitationIndex` and `CitationReference` fields to model-visible tool results that expose `CitationHandle` values or web result URLs
 3. Instructs the model to cite sources using bracket notation
 4. After inference, scans the response for bracket references and validates them against the source manifest
@@ -4182,7 +4354,9 @@ When `EnableCitations` is `true` and RAG or model-directed tools provide citatio
         "content_type": "application/pdf",
         "score": 0.87,
         "excerpt": "Revenue grew 15% year-over-year to $4.2B...",
-        "download_url": "/v1.0/assistants/asst_abc123/documents/adoc_abc123/download"
+        "download_url": "/v1.0/assistants/asst_abc123/documents/adoc_abc123/download",
+        "page_start": 3,
+        "page_end": 4
       }
     ],
     "referenced_indices": [1]
@@ -4207,6 +4381,8 @@ Web-search tool evidence uses `source_type: "web"` and includes `url`:
 - Invalid references (e.g., `[99]` when only 3 sources exist) are silently dropped
 - `sources` contains all RAG and tool-derived citation sources provided to the model, not just the ones that were cited
 - `download_url` is populated based on `CitationLinkMode`: `null` for `None`, `/v1.0/documents/{id}/download` (authenticated) for `Authenticated`, or `/v1.0/assistants/{assistantId}/documents/{id}/download` (unauthenticated, server-proxied) for `Public`
+- `page_start`, `page_end` (first and last page or slide) and `sheet` are present when the document was ingested with `Structured` cell mode; `superseded_by` is present when an outdated source was cited (`SupersessionMode` `Include`)
+- When the answer model returns a transient failure (`408`, `429`, `502`, `503` or `504`), the call is retried up to `Inference.MaxRetries` times with jittered exponential backoff; a streaming answer is retried only before any token has been sent
 
 **Security Notes:**
 - `attached_document_ids` narrows retrieval scope only; it does not grant direct object storage access.
@@ -5006,6 +5182,83 @@ Retrieve the default judge prompt template used for evaluation scoring.
 
 ---
 
+## Rerankers (Admin Or Tenant Admin)
+
+Cross-encoder rerank services are configured by the server operator in the `Rerankers` section of the server settings (see [Configuration: Rerankers Settings](#configuration-rerankers-settings)), so their API keys stay on the server. Assistants use one with `RerankerType` `CrossEncoder` and `RerankEndpointId` set to the reranker's `Id`. These routes list the configured rerankers and test one.
+
+### GET /v1.0/rerankers
+
+List the configured rerankers. API keys are never returned; `HasApiKey` reports whether one is configured.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "Id": "cross-encoder",
+    "Name": "MiniLM cross-encoder",
+    "Format": "Tei",
+    "Endpoint": "http://reranker:80",
+    "Model": null,
+    "TimeoutMs": 10000,
+    "HasApiKey": false
+  }
+]
+```
+
+An empty array means no reranker is configured. `Name` falls back to `Id` when it is not set.
+
+**Error Responses:**
+- `401` -- Authentication failed.
+- `403` -- Not a global admin or tenant admin.
+
+### POST /v1.0/rerankers/{rerankerId}/test
+
+Score passages against a query with a configured reranker and return one score per passage, in request order. Use it to check that the service is reachable and scores sensibly before pointing assistants at it.
+
+**Auth:** Required (global admin or tenant admin)
+
+**Request Body:**
+
+```json
+{
+  "Query": "What is the engine's rated speed?",
+  "Documents": [
+    "The engine is rated at 3000 rpm under continuous load.",
+    "Bananas are rich in potassium."
+  ]
+}
+```
+
+| Field       | Type     | Required | Description                                                             |
+|-------------|----------|----------|-------------------------------------------------------------------------|
+| `Query`     | string   | Yes      | Query text.                                                             |
+| `Documents` | string[] | Yes      | Passages to score, 1 to 100. Each is cut to the reranker's `MaxPassageCharacters`. |
+
+**Response (200 OK):**
+
+```json
+{
+  "RerankerId": "cross-encoder",
+  "Success": true,
+  "Scores": [0.969249, 0.000013],
+  "ErrorMessage": null,
+  "DurationMs": 12.4
+}
+```
+
+Cross-encoder scores are 0 to 1, rounded to six decimal places. When the reranker fails, times out or cannot be reached, the route still returns `200 OK`, with `Success` set to `false`, `Scores` null, and the error in `ErrorMessage`.
+
+**Error Responses:**
+- `400` -- Missing `Query`, no `Documents`, more than 100 documents, or malformed JSON.
+- `401` -- Authentication failed.
+- `403` -- Not a global admin or tenant admin.
+- `404` -- No reranker with this ID is configured.
+
+---
+
 ## Configuration (Admin Only)
 
 Manage server configuration at runtime. Changes are persisted to the `assistanthub.json` settings file on disk.
@@ -5016,7 +5269,7 @@ Retrieve the current server configuration.
 
 **Auth:** Required (admin only)
 
-**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `Verbex`, `ExternalSearch`, `ProcessingLog`, `ChatHistory`, `RequestHistory`, `Crawl`, and `Logging`. `ExternalSearch.Providers[].ApiKey` is redacted in responses.
+**Response (200 OK):** Returns the full `AssistantHubSettings` object including all sections: `Webserver`, `Database`, `S3`, `DocumentAtom`, `Chunking`, `Inference`, `RecallDb`, `Verbex`, `Rerankers`, `ExternalSearch`, `ProcessingLog`, `ChatHistory`, `RequestHistory`, `Crawl`, and `Logging`. `ExternalSearch.Providers[].ApiKey` and `Rerankers[].ApiKey` are redacted in responses.
 
 `RecallDb.SupportsMultiDocumentFilter` defaults to `true`. Set it to `false` only when the backing RecallDB deployment cannot accept native `DocumentIds` search filters; AssistantHub then loops over single-document `DocumentId` searches for attached-document retrieval and logs a fallback warning.
 
@@ -5043,9 +5296,9 @@ Update the server configuration. The updated settings are saved to disk.
 
 **Auth:** Required (admin only)
 
-**Request Body:** A full `AssistantHubSettings` object. See the [Configuration](#configuration) section in the README for the complete schema. If a previously returned `ExternalSearch.Providers[].ApiKey` value is submitted as `[REDACTED]`, the existing configured provider key is preserved.
+**Request Body:** A full `AssistantHubSettings` object. See the [Configuration](#configuration) section in the README for the complete schema. If a previously returned `ExternalSearch.Providers[].ApiKey` value is submitted as `[REDACTED]`, the existing configured provider key is preserved. A `Rerankers[].ApiKey` submitted as `[REDACTED]` likewise keeps the configured key of the reranker with the same `Id`.
 
-**Response (200 OK):** The updated `AssistantHubSettings` object with `ExternalSearch.Providers[].ApiKey` redacted.
+**Response (200 OK):** The updated `AssistantHubSettings` object with `ExternalSearch.Providers[].ApiKey` and `Rerankers[].ApiKey` redacted.
 
 **Error Responses:**
 - `400` -- Invalid request body.
@@ -5126,6 +5379,74 @@ External web search is disabled by default and configured under the `ExternalSea
 | `Providers[].Enabled` | bool | `false` | Enables this provider when global external search is enabled. |
 | `Providers[].IsDefault` | bool | `true` | Marks the provider as the default Tavily provider. |
 | `Providers[].TimeoutMs` | int | `30000` | Provider HTTP timeout in milliseconds. |
+
+---
+
+## Configuration: Inference Settings
+
+The `Inference` section also bounds and retries the chat model calls:
+
+```json
+{
+  "Inference": {
+    "Provider": "Ollama",
+    "Endpoint": "http://ollama:11434",
+    "ApiKey": "default",
+    "DefaultModel": "gemma3:4b",
+    "RequestTimeoutMs": 300000,
+    "UtilityTimeoutMs": 30000,
+    "MaxRetries": 2,
+    "RetryDelayMs": 500,
+    "CircuitBreakerFailures": 3,
+    "CircuitBreakerOpenMs": 30000
+  }
+}
+```
+
+| Field                    | Type | Default | Description |
+|--------------------------|------|---------|-------------|
+| `RequestTimeoutMs`       | int  | 300000  | Timeout for an answer-model request, in milliseconds (1,000 to 3,600,000). |
+| `UtilityTimeoutMs`       | int  | 30000   | Timeout for a utility-model step (retrieval gate, conversation rewrite, query rewrite, LLM re-rank), in milliseconds (1,000 to 600,000). A timed-out step falls back to its default behavior. |
+| `MaxRetries`             | int  | 2       | Retries of the answer model after a transient failure (`408`, `429`, `502`, `503` or `504`), from 0 to 5. A streaming answer is retried only before any token has been sent. |
+| `RetryDelayMs`           | int  | 500     | Base delay before an answer-model retry, in milliseconds (0 to 30,000). It doubles per attempt, with jitter. |
+| `CircuitBreakerFailures` | int  | 3       | Consecutive failures of a utility step on one endpoint (or of one cross-encoder reranker) that open its circuit breaker (1 to 100). While open, the step is skipped and falls back to its default behavior. |
+| `CircuitBreakerOpenMs`   | int  | 30000   | How long an open circuit breaker skips its step before trying again, in milliseconds (1,000 to 3,600,000). |
+
+---
+
+## Configuration: Rerankers Settings
+
+Cross-encoder rerank services available to assistants with `RerankerType` `CrossEncoder` are listed under `Rerankers`. The list is empty by default. Any service that speaks the HuggingFace text-embeddings-inference (TEI) or Cohere rerank API works, for example TEI serving `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+
+```json
+{
+  "Rerankers": [
+    {
+      "Id": "cross-encoder",
+      "Name": "MiniLM cross-encoder",
+      "Format": "Tei",
+      "Endpoint": "http://reranker:80",
+      "Model": null,
+      "ApiKey": null,
+      "TimeoutMs": 10000,
+      "MaxPassageCharacters": 2000
+    }
+  ]
+}
+```
+
+| Field                  | Type   | Default | Description |
+|------------------------|--------|---------|-------------|
+| `Id`                   | string | null    | Identifier that assistants reference in `RerankEndpointId`. |
+| `Name`                 | string | null    | Display name. |
+| `Format`               | string | `Tei`   | Request format: `Tei` (`POST {Endpoint}/rerank`) or `Cohere` (`POST {Endpoint}/v1/rerank` with `model` and `top_n`). |
+| `Endpoint`             | string | null    | Base URL of the rerank service. |
+| `Model`                | string | null    | Model name sent with `Cohere`-format requests. |
+| `ApiKey`               | string | null    | Optional bearer token. Treat this as a secret. Configuration responses redact this field as `[REDACTED]`, and `GET /v1.0/rerankers` never returns it. |
+| `TimeoutMs`            | int    | `10000` | Timeout for one rerank request, in milliseconds (1,000 to 120,000). |
+| `MaxPassageCharacters` | int    | `2000`  | Characters of each passage sent to the reranker (200 to 20,000). |
+
+A failed or timed-out rerank keeps the retrieval order and counts toward the reranker's circuit breaker (`Inference.CircuitBreakerFailures`, `Inference.CircuitBreakerOpenMs`).
 
 ---
 

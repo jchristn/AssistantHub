@@ -124,6 +124,13 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.StatusCode = 200;
                 await ctx.Response.Send(Serializer.SerializeJson(result.Response)).ConfigureAwait(false);
             }
+            catch (ArgumentException e)
+            {
+                // An out-of-range value in settings_override.
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, e.Message))).ConfigureAwait(false);
+            }
             catch (JsonException e)
             {
                 ctx.Response.StatusCode = 400;

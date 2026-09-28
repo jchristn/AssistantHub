@@ -325,7 +325,14 @@ namespace AssistantHub.Core.Services
                 currentStep = "Atom extraction";
                 Stopwatch extractSw = _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Atom extraction").ConfigureAwait(false) : null;
 
-                string extractedContent = await ProcessDocumentContentAsync(documentId, fileBytes, detectedType, document.OriginalFilename, token).ConfigureAwait(false);
+                AtomExtractionResult extraction = await ExtractDocumentAsync(documentId, fileBytes, detectedType, document.OriginalFilename, rule?.Extraction, token).ConfigureAwait(false);
+                string extractedContent = extraction?.Text;
+                if (String.IsNullOrEmpty(extractedContent) && !String.IsNullOrEmpty(extraction?.ErrorMessage))
+                {
+                    await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Failed, extraction.ErrorMessage, token).ConfigureAwait(false);
+                    return;
+                }
+
                 if (String.IsNullOrEmpty(extractedContent))
                 {
                     if (_ProcessingLog != null)
@@ -431,7 +438,9 @@ namespace AssistantHub.Core.Services
                 Stopwatch summarizeSw = hasSummarization && _ProcessingLog != null ? await _ProcessingLog.LogStepStartAsync(documentId, "Summarization").ConfigureAwait(false) : null;
                 Stopwatch chunkSw = Stopwatch.StartNew();
 
-                List<ChunkResult> chunks = await ChunkAndEmbedContentAsync(documentId, extractedContent, rule, mergedLabels, mergedTags, token).ConfigureAwait(false);
+                List<ChunkResult> chunks = await ChunkAndEmbedContentAsync(
+                    documentId, extractedContent, rule, mergedLabels, mergedTags, token,
+                    extraction?.Blocks, document.Name ?? document.OriginalFilename).ConfigureAwait(false);
                 if (chunks == null || chunks.Count == 0)
                 {
                     chunkSw.Stop();
@@ -508,7 +517,27 @@ namespace AssistantHub.Core.Services
                 {
                     string chunkRecordIdsJson = JsonSerializer.Serialize(chunkRecordIds, _JsonOptions);
                     await _Database.AssistantDocument.UpdateChunkRecordIdsAsync(documentId, chunkRecordIdsJson, token).ConfigureAwait(false);
+
+                    // Reprocessing: the new records are stored, so remove the ones the previous run wrote.
+                    List<string> previousChunkIds = ParseChunkRecordIds(document.ChunkRecordIds)
+                        .Where(id => !chunkRecordIds.Contains(id, StringComparer.Ordinal))
+                        .ToList();
+                    if (previousChunkIds.Count > 0)
+                    {
+                        await DeleteEmbeddingBatchAsync(document.TenantId, collectionId, previousChunkIds, token).ConfigureAwait(false);
+                        if (_ProcessingLog != null)
+                            await _ProcessingLog.LogAsync(documentId, "INFO", "Removed " + previousChunkIds.Count + " chunk records from the previous ingestion").ConfigureAwait(false);
+                    }
                 }
+
+                // Step 14b: Content hash and near-duplicate check
+                string contentSha256 = !String.IsNullOrEmpty(document.ContentSha256) ? document.ContentSha256 : ComputeContentSha256(fileBytes);
+                double nearDuplicateThreshold = rule?.Extraction?.NearDuplicateThreshold ?? 0.85;
+                string nearDuplicates = await FindNearDuplicatesAsync(document.TenantId, collectionId, documentId, chunks[0].Embeddings, nearDuplicateThreshold, token).ConfigureAwait(false);
+                nearDuplicates = MergeExactDuplicates(document.NearDuplicates, nearDuplicates);
+                await _Database.AssistantDocument.UpdateContentHashAsync(documentId, contentSha256, nearDuplicates, token).ConfigureAwait(false);
+                if (!String.IsNullOrEmpty(nearDuplicates) && _ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Possible duplicates in the collection: " + nearDuplicates).ConfigureAwait(false);
 
                 // Step 15: Update status to Completed
                 await UpdateDocumentStatusAsync(documentId, DocumentStatusEnum.Completed, "Ingestion complete. " + storedCount + " chunks stored.", token).ConfigureAwait(false);

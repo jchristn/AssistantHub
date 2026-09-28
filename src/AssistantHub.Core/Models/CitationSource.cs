@@ -81,5 +81,33 @@ namespace AssistantHub.Core.Models
         [JsonPropertyName("download_url")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string DownloadUrl { get; set; } = null;
+
+        /// <summary>
+        /// First page (or slide) of the cited passage, when known.
+        /// </summary>
+        [JsonPropertyName("page_start")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? PageStart { get; set; } = null;
+
+        /// <summary>
+        /// Last page (or slide) of the cited passage, when known.
+        /// </summary>
+        [JsonPropertyName("page_end")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? PageEnd { get; set; } = null;
+
+        /// <summary>
+        /// Spreadsheet sheet of the cited passage, when known.
+        /// </summary>
+        [JsonPropertyName("sheet")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Sheet { get; set; } = null;
+
+        /// <summary>
+        /// Identifier of the document that supersedes the cited document, when an outdated source was cited.
+        /// </summary>
+        [JsonPropertyName("superseded_by")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string SupersededBy { get; set; } = null;
     }
 }

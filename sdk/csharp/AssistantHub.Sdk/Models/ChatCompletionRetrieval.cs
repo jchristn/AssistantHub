@@ -99,6 +99,42 @@ namespace AssistantHub.Sdk.Models
         public int? FinalCitationCount { get; set; }
 
         /// <summary>
+        /// Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation rewrite ran.
+        /// </summary>
+        [JsonPropertyName("conversation_rewrite")]
+        public string ConversationRewrite { get; set; }
+
+        /// <summary>
+        /// Reranker that ran: "llm" or "cross_encoder"; null when reranking is off.
+        /// </summary>
+        [JsonPropertyName("reranker")]
+        public string Reranker { get; set; }
+
+        /// <summary>
+        /// Indicates whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured.
+        /// </summary>
+        [JsonPropertyName("rerank_skipped")]
+        public bool RerankSkipped { get; set; }
+
+        /// <summary>
+        /// Indicates whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected.
+        /// </summary>
+        [JsonPropertyName("no_relevant_context")]
+        public bool NoRelevantContext { get; set; }
+
+        /// <summary>
+        /// Number of retrieved chunks that came from superseded documents.
+        /// </summary>
+        [JsonPropertyName("superseded_chunks")]
+        public int SupersededChunks { get; set; }
+
+        /// <summary>
+        /// Indicates whether a degenerate cited answer was regenerated without the citation instructions.
+        /// </summary>
+        [JsonPropertyName("answer_regenerated")]
+        public bool AnswerRegenerated { get; set; }
+
+        /// <summary>
         /// The retrieved context chunks.
         /// </summary>
         [JsonPropertyName("chunks")]

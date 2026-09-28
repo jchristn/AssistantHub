@@ -479,20 +479,11 @@ namespace AssistantHub.Server.Handlers
                         settings.RetrievalTopK, settings.RetrievalScoreThreshold,
                         default,
                         settings.EmbeddingEndpointId,
-                        new RetrievalSearchOptions
-                        {
-                            SearchMode = settings.SearchMode,
-                            TextWeight = settings.TextWeight,
-                            FullTextSearchType = settings.FullTextSearchType,
-                            FullTextLanguage = settings.FullTextLanguage,
-                            FullTextNormalization = settings.FullTextNormalization,
-                            FullTextMinimumScore = settings.FullTextMinimumScore,
-                            IncludeNeighbors = settings.RetrievalIncludeNeighbors
-                        }).ConfigureAwait(false);
+                        RetrievalSearchOptions.FromAssistantSettings(settings)).ConfigureAwait(false);
                     if (retrievedChunks != null)
                     {
-                        retrievalChunks.AddRange(retrievedChunks);
-                        contextChunks.AddRange(retrievedChunks.Select(c => c.MergedContent));
+                        retrievalChunks.AddRange(RetrievalContextOrder.Apply(retrievedChunks, settings.ContextOrder));
+                        contextChunks.AddRange(retrievalChunks.Select(c => c.MergedContent));
                     }
                 }
 

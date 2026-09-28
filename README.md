@@ -459,7 +459,13 @@ The server reads configuration from `assistanthub.json` in the working directory
     "Provider": "Ollama",
     "Endpoint": "http://ollama:11434",
     "ApiKey": "default",
-    "DefaultModel": "gemma3:4b"
+    "DefaultModel": "gemma3:4b",
+    "RequestTimeoutMs": 300000,
+    "UtilityTimeoutMs": 30000,
+    "MaxRetries": 2,
+    "RetryDelayMs": 500,
+    "CircuitBreakerFailures": 3,
+    "CircuitBreakerOpenMs": 30000
   },
   "RecallDb": {
     "Endpoint": "http://recalldb-server:8600",
@@ -475,6 +481,7 @@ The server reads configuration from `assistanthub.json` in the working directory
     "RequireIngestion": true,
     "MaxContentCharacters": 0
   },
+  "Rerankers": [],
   "ExternalSearch": {
     "Enabled": false,
     "AllowFallback": true,
@@ -534,11 +541,12 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `Database` | Database type (`Sqlite`, `Postgresql`, `SqlServer`, `Mysql`) and connection details. |
 | `S3` | S3-compatible object storage (Less3) for uploaded documents. |
 | `DocumentAtom` | Endpoint and access key for the DocumentAtom document-processing service. |
-| `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking service. |
+| `Chunking` | Endpoint, access key, and default endpoint ID for the Partio chunking service, plus retry and timeout settings. `RequestTimeoutMs` (default 900000) bounds one ingestion call. `QueryEmbeddingTimeoutMs` (default 30000) bounds each query embedding at retrieval time, separately, and a timed-out query embedding is not retried. `QueryEmbeddingCacheSize` (default 10000, 0 disables) caches query embeddings in process by endpoint and query text. |
 | `Embeddings` | Endpoint, access key, and default endpoint ID for the Partio embeddings service. |
-| `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model. |
-| `RecallDb` | Endpoint, access key, dashboard URL, and capability flags for the RecallDB vector database service. `SupportsMultiDocumentFilter` defaults to `true`; set it to `false` only for RecallDB deployments that do not accept native `DocumentIds` search filters, which makes AssistantHub loop over single-document searches and log a fallback warning. |
-| `Verbex` | Endpoint, access key, dashboard URL, default index ID, and ingestion failure policy for Verbex text search. |
+| `Inference` | LLM provider (`Ollama`, `OpenAI`, or `Gemini`), endpoint, API key, and default model, plus timeouts and retries for chat model calls. `RequestTimeoutMs` (default 300000) bounds an answer-model request. `UtilityTimeoutMs` (default 30000) bounds each utility step (retrieval gate, conversation and query rewrite, LLM rerank); a timed-out step falls back to its default behavior. `MaxRetries` (default 2) and `RetryDelayMs` (default 500, doubled per attempt with jitter) retry the answer model on transient `408`/`429`/`502`/`503`/`504` failures; a streaming answer is retried only before any token is sent. `CircuitBreakerFailures` (default 3) consecutive failures of a utility step on one endpoint, or of a cross-encoder reranker, skip it for `CircuitBreakerOpenMs` (default 30000). |
+| `RecallDb` | Endpoint, access key, dashboard URL, and capability flags for the RecallDB vector database service. `SupportsMultiDocumentFilter` defaults to `true`; set it to `false` only for RecallDB deployments that do not accept native `DocumentIds` search filters, which makes AssistantHub loop over single-document searches and log a fallback warning. `FilteredEfSearch` (default 400, range 0 to 1000, 0 leaves RecallDB's default) raises HNSW `ef_search` for vector and hybrid searches that carry a label, tag or document filter, because pgvector applies those filters after the index scan. |
+| `Rerankers` | Cross-encoder rerank services that assistants can use with `RerankerType: "CrossEncoder"` and `RerankEndpointId` set to the reranker's `Id`. Each entry has `Id`, `Name`, `Format` (`Tei` or `Cohere`), `Endpoint`, `Model` (sent with `Cohere` requests), `ApiKey` (optional bearer token; redacted by `GET /v1.0/configuration` and preserved when `PUT` sends it back redacted), `TimeoutMs` (default 10000) and `MaxPassageCharacters` (default 2000). Empty by default. See [Cross-Encoder Reranking](#cross-encoder-reranking). |
+| `Verbex` | Endpoint, access key, dashboard URL, default index ID, and ingestion failure policy for Verbex text search. `EnableLemmatizer`, `EnableStopWordRemover`, `MinTokenLength` and `MaxTokenLength` (all off by default) are applied to indexes AssistantHub creates; Verbex fixes them when an index is created. |
 | `ExternalSearch` | Disabled-by-default external web-search providers. Tavily uses `ProviderType: "Tavily"` and can read `ApiKey` from `${TAVILY_API_KEY}` when globally enabled and exposed through assistant tool policy. Both factory and runtime Docker server JSON files include the disabled Tavily provider placeholder. Admins can check redacted readiness counts with `GET /v1.0/configuration/external-search/status`. |
 | `AdminApiKeys` | List of API keys that grant global admin access (not tied to any tenant). Users with `IsAdmin=true` also receive global admin privileges. |
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
@@ -546,6 +554,35 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `ChatHistory` | Retention period in days for chat history records (0 = keep indefinitely). Background cleanup runs hourly. |
 | `Crawl` | Directory for storing crawl enumeration files (delta snapshots used for change detection between crawl runs). |
 | `Logging` | Console/file logging toggles, severity level, log directory, and optional syslog servers. |
+
+### Cross-Encoder Reranking
+
+A cross-encoder scores each retrieved chunk against the query directly, without an LLM call. AssistantHub does not ship a reranker; run one next to it, for example HuggingFace text-embeddings-inference (TEI) serving `cross-encoder/ms-marco-MiniLM-L-6-v2`:
+
+```bash
+docker run -d --name reranker -p 8087:80 -v reranker-models:/data \
+  ghcr.io/huggingface/text-embeddings-inference:cpu-1.8 \
+  --model-id cross-encoder/ms-marco-MiniLM-L-6-v2 --auto-truncate
+```
+
+Add it to `assistanthub.json` (use the container name as the host when it runs on the same Docker network):
+
+```json
+"Rerankers": [
+  {
+    "Id": "cross-encoder",
+    "Name": "MiniLM cross-encoder",
+    "Format": "Tei",
+    "Endpoint": "http://reranker:80",
+    "Model": null,
+    "ApiKey": null,
+    "TimeoutMs": 10000,
+    "MaxPassageCharacters": 2000
+  }
+]
+```
+
+Check it with `POST /v1.0/rerankers/cross-encoder/test`, then set the assistant's `EnableReranking` to `true`, `RerankerType` to `CrossEncoder` and `RerankEndpointId` to `cross-encoder`. `RerankCandidateCount` (default 20) sets how many candidates are scored and `RerankerTopK` how many are kept; `RerankMinScore` (0 to 1, optional) makes the assistant say it found nothing relevant when every candidate scores below it. The benchmark stack in `benchmarks/docker/compose.yaml` runs the same reranker.
 
 ---
 
@@ -608,7 +645,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Assistant Analytics | `GET /v1.0/assistants/{id}/analytics/{overview,timeseries,stages,endpoints,slowest,feedback}` | Assistant-scoped performance, endpoint, retrieval, slow request, and feedback analytics |
 | Crawl Plans | `PUT/GET /v1.0/crawlplans`, `POST /v1.0/crawlplans/connectivity`, `GET/PUT/DELETE/HEAD /v1.0/crawlplans/{id}`, `POST .../start`, `POST .../stop`, `POST .../connectivity`, `GET .../enumerate` | Crawler management with schedule control, draft/saved connectivity testing, and content preview |
 | Crawl Operations | `GET /v1.0/crawlplans/{id}/operations`, `GET .../statistics`, `GET/DELETE .../operations/{id}`, `GET .../statistics`, `GET .../enumeration` | Crawl execution history, statistics, and enumeration file access |
-| Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `GET .../processing-log` | Document upload, management, and processing log access |
+| Documents | `PUT/GET /v1.0/documents`, `GET/DELETE/HEAD /v1.0/documents/{id}`, `PUT .../supersedes`, `GET .../processing-log` | Document upload, supersession links, management, and processing log access |
 | Feedback | `GET /v1.0/feedback`, `GET/DELETE /v1.0/feedback/{id}` | View and manage user feedback |
 | History | `GET /v1.0/history`, `GET/DELETE /v1.0/history/{id}` | View and manage chat history with timing metrics |
 | Threads | `GET /v1.0/threads` | List conversation threads |
@@ -618,6 +655,7 @@ For complete endpoint documentation including request/response schemas and examp
 | Eval Results | `GET /v1.0/eval/results/{resultId}` | Retrieve individual evaluation result details |
 | Eval Judge Prompt | `GET /v1.0/eval/judge-prompt/default` | Retrieve the default judge prompt template |
 | Configuration | `GET/PUT /v1.0/configuration`, `GET /v1.0/configuration/external-search/status` | View/update server configuration and inspect safe external-search readiness counts (admin only) |
+| Rerankers | `GET /v1.0/rerankers`, `POST /v1.0/rerankers/{rerankerId}/test` | List the configured cross-encoder rerankers and score test passages with one (admin or tenant admin) |
 | Public Assistant Documents | `GET /v1.0/assistants/{id}/documents` | Completed documents from the assistant collection that may be selected for attached-document chat (unauthenticated when enabled) |
 | Public Chat | `POST /v1.0/assistants/{id}/chat` | Chat completion with RAG, optional metadata filtering, and optional `attached_document_ids` (unauthenticated, SSE or JSON) |
 | Public Generate | `POST /v1.0/assistants/{id}/generate` | Lightweight inference without RAG (unauthenticated) |

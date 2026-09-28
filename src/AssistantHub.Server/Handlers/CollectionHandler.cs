@@ -72,7 +72,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(auth.TenantId, null), body).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(ResolveTenantId(ctx, auth), null), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -110,7 +110,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(auth.TenantId, "enumerate"), enumerateBody).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(ResolveTenantId(ctx, auth), "enumerate"), enumerateBody).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -154,7 +154,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -199,7 +199,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(auth.TenantId, collectionId), body).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -243,7 +243,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -292,7 +292,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Head, BuildRecallDbPath(auth.TenantId, collectionId)).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Head, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 await ctx.Response.Send().ConfigureAwait(false);
@@ -334,7 +334,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = NormalizeCollectionSearchBody(ctx.Request.DataAsString);
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(auth.TenantId, collectionId + "/search"), body).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId + "/search"), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -426,7 +426,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 string enumerateBody = BuildEnumerateRequestBody(query);
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(auth.TenantId, collectionId, "enumerate"), enumerateBody).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(ResolveTenantId(ctx, auth), collectionId, "enumerate"), enumerateBody).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -471,7 +471,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentPath(auth.TenantId, collectionId, recordId)).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbDocumentPath(ResolveTenantId(ctx, auth), collectionId, recordId)).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -516,7 +516,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentPath(auth.TenantId, collectionId, recordId)).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Delete, BuildRecallDbDocumentPath(ResolveTenantId(ctx, auth), collectionId, recordId)).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -577,7 +577,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = Serializer.SerializeJson(recordIds, false);
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(auth.TenantId, collectionId, "batch/delete"), body).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Post, BuildRecallDbDocumentPath(ResolveTenantId(ctx, auth), collectionId, "batch/delete"), body).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 if (ctx.Response.StatusCode == 204)
@@ -629,7 +629,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 string body = ctx.Request.DataAsString;
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentPath(auth.TenantId, collectionId, null), body).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Put, BuildRecallDbDocumentPath(ResolveTenantId(ctx, auth), collectionId, null), body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -671,7 +671,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId + "/labels/distinct")).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId + "/labels/distinct")).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
@@ -713,7 +713,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(auth.TenantId, collectionId + "/tags/distinct")).ConfigureAwait(false);
+                HttpResponseMessage resp = await _VectorStore.SendAsync(System.Net.Http.HttpMethod.Get, BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId + "/tags/distinct")).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;

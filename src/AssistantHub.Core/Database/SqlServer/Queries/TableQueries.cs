@@ -97,6 +97,20 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 retrieval_score_threshold FLOAT NOT NULL DEFAULT 0.3,
                 search_mode NVARCHAR(MAX) NULL DEFAULT 'Vector',
                 text_weight FLOAT NULL DEFAULT 0.3,
+                fusion_strategy NVARCHAR(32) NULL DEFAULT 'Rrf',
+                rrf_k INT NOT NULL DEFAULT 60,
+                fusion_candidate_pool INT NULL,
+                recency_weight FLOAT NOT NULL DEFAULT 0,
+                context_order NVARCHAR(32) NULL DEFAULT 'Score',
+                eval_judge_inference_endpoint_id NVARCHAR(MAX) NULL,
+                embedding_task_prefixes BIT NOT NULL DEFAULT 0,
+                enable_conversation_rewrite BIT NOT NULL DEFAULT 0,
+                conversation_rewrite_prompt NVARCHAR(MAX) NULL,
+                reranker_type NVARCHAR(32) NULL DEFAULT 'Llm',
+                rerank_endpoint_id NVARCHAR(MAX) NULL,
+                rerank_candidate_count INT NOT NULL DEFAULT 20,
+                rerank_min_score FLOAT NULL,
+                supersession_mode NVARCHAR(32) NULL DEFAULT 'Demote',
                 fulltext_search_type NVARCHAR(MAX) NULL DEFAULT 'TsRank',
                 fulltext_language NVARCHAR(MAX) NULL DEFAULT 'english',
                 fulltext_normalization INT NULL DEFAULT 32,
@@ -187,6 +201,62 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
             @"IF COL_LENGTH('assistant_settings', 'expose_document_source_urls') IS NULL
             ALTER TABLE assistant_settings ADD expose_document_source_urls BIT NOT NULL DEFAULT 0;";
 
+        internal static readonly string AddAssistantSettingsFusionStrategyColumn =
+            @"IF COL_LENGTH('assistant_settings', 'fusion_strategy') IS NULL
+            ALTER TABLE assistant_settings ADD fusion_strategy NVARCHAR(32) NULL DEFAULT 'Rrf';";
+
+        internal static readonly string AddAssistantSettingsRrfKColumn =
+            @"IF COL_LENGTH('assistant_settings', 'rrf_k') IS NULL
+            ALTER TABLE assistant_settings ADD rrf_k INT NOT NULL DEFAULT 60;";
+
+        internal static readonly string AddAssistantSettingsFusionCandidatePoolColumn =
+            @"IF COL_LENGTH('assistant_settings', 'fusion_candidate_pool') IS NULL
+            ALTER TABLE assistant_settings ADD fusion_candidate_pool INT NULL;";
+
+        internal static readonly string AddAssistantSettingsRecencyWeightColumn =
+            @"IF COL_LENGTH('assistant_settings', 'recency_weight') IS NULL
+            ALTER TABLE assistant_settings ADD recency_weight FLOAT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsContextOrderColumn =
+            @"IF COL_LENGTH('assistant_settings', 'context_order') IS NULL
+            ALTER TABLE assistant_settings ADD context_order NVARCHAR(32) NULL DEFAULT 'Score';";
+
+        internal static readonly string AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'eval_judge_inference_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD eval_judge_inference_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsEmbeddingTaskPrefixesColumn =
+            @"IF COL_LENGTH('assistant_settings', 'embedding_task_prefixes') IS NULL
+            ALTER TABLE assistant_settings ADD embedding_task_prefixes BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsEnableConversationRewriteColumn =
+            @"IF COL_LENGTH('assistant_settings', 'enable_conversation_rewrite') IS NULL
+            ALTER TABLE assistant_settings ADD enable_conversation_rewrite BIT NOT NULL DEFAULT 0;";
+
+        internal static readonly string AddAssistantSettingsConversationRewritePromptColumn =
+            @"IF COL_LENGTH('assistant_settings', 'conversation_rewrite_prompt') IS NULL
+            ALTER TABLE assistant_settings ADD conversation_rewrite_prompt NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsRerankerTypeColumn =
+            @"IF COL_LENGTH('assistant_settings', 'reranker_type') IS NULL
+            ALTER TABLE assistant_settings ADD reranker_type NVARCHAR(32) NULL DEFAULT 'Llm';";
+
+        internal static readonly string AddAssistantSettingsRerankEndpointIdColumn =
+            @"IF COL_LENGTH('assistant_settings', 'rerank_endpoint_id') IS NULL
+            ALTER TABLE assistant_settings ADD rerank_endpoint_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantSettingsRerankCandidateCountColumn =
+            @"IF COL_LENGTH('assistant_settings', 'rerank_candidate_count') IS NULL
+            ALTER TABLE assistant_settings ADD rerank_candidate_count INT NOT NULL DEFAULT 20;";
+
+        internal static readonly string AddAssistantSettingsRerankMinScoreColumn =
+            @"IF COL_LENGTH('assistant_settings', 'rerank_min_score') IS NULL
+            ALTER TABLE assistant_settings ADD rerank_min_score FLOAT NULL;";
+
+        internal static readonly string AddAssistantSettingsSupersessionModeColumn =
+            @"IF COL_LENGTH('assistant_settings', 'supersession_mode') IS NULL
+            ALTER TABLE assistant_settings ADD supersession_mode NVARCHAR(32) NULL DEFAULT 'Demote';";
+
         internal static readonly string CreateAssistantDocumentsTable =
             @"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'assistant_documents')
             CREATE TABLE assistant_documents (
@@ -211,6 +281,10 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
                 crawl_plan_id NVARCHAR(256) NULL,
                 crawl_operation_id NVARCHAR(256) NULL,
                 source_url NVARCHAR(MAX) NULL,
+                supersedes_json NVARCHAR(MAX) NULL,
+                superseded_by NVARCHAR(MAX) NULL,
+                content_sha256 NVARCHAR(MAX) NULL,
+                near_duplicates_json NVARCHAR(MAX) NULL,
                 created_utc NVARCHAR(64) NOT NULL,
                 last_update_utc NVARCHAR(64) NOT NULL,
                 CONSTRAINT pk_assistant_documents PRIMARY KEY (id)
@@ -265,6 +339,22 @@ namespace AssistantHub.Core.Database.SqlServer.Queries
         internal static readonly string AddAssistantDocumentsVerbexRecordIdColumn =
             @"IF COL_LENGTH('assistant_documents', 'verbex_record_id') IS NULL
             ALTER TABLE assistant_documents ADD verbex_record_id NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsSupersedesJsonColumn =
+            @"IF COL_LENGTH('assistant_documents', 'supersedes_json') IS NULL
+            ALTER TABLE assistant_documents ADD supersedes_json NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsSupersededByColumn =
+            @"IF COL_LENGTH('assistant_documents', 'superseded_by') IS NULL
+            ALTER TABLE assistant_documents ADD superseded_by NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsContentSha256Column =
+            @"IF COL_LENGTH('assistant_documents', 'content_sha256') IS NULL
+            ALTER TABLE assistant_documents ADD content_sha256 NVARCHAR(MAX) NULL;";
+
+        internal static readonly string AddAssistantDocumentsNearDuplicatesJsonColumn =
+            @"IF COL_LENGTH('assistant_documents', 'near_duplicates_json') IS NULL
+            ALTER TABLE assistant_documents ADD near_duplicates_json NVARCHAR(MAX) NULL;";
 
         internal static readonly string AddIngestionRulesVerbexIndexIdColumn =
             @"IF COL_LENGTH('ingestion_rules', 'verbex_index_id') IS NULL

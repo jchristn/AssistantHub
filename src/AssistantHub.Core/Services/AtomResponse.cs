@@ -29,6 +29,21 @@ namespace AssistantHub.Core.Services
         public string Text { get; set; } = null;
 
         /// <summary>
+        /// Heading level (1 = top level) when the atom is a heading; null otherwise.
+        /// </summary>
+        public int? HeaderLevel { get; set; } = null;
+
+        /// <summary>
+        /// Page, slide or sheet number, when the extractor reports it.
+        /// </summary>
+        public int? PageNumber { get; set; } = null;
+
+        /// <summary>
+        /// Spreadsheet sheet name, when the extractor reports it.
+        /// </summary>
+        public string SheetName { get; set; } = null;
+
+        /// <summary>
         /// Ordered list content.
         /// </summary>
         public List<string> OrderedList { get; set; } = null;

@@ -200,7 +200,10 @@ namespace AssistantHub.Core.Services.Crawlers
             settings.Crawl.StartUrl = _WebSettings.StartUrl;
             settings.Crawl.UserAgent = _WebSettings.UserAgent;
             settings.Crawl.FollowLinks = _WebSettings.FollowLinks;
-            settings.Crawl.FollowRedirects = _WebSettings.FollowRedirects;
+            // CrawlSharp's own redirect following loops forever on a redirect cycle (A -> B -> A), so it stays off. The
+            // HTTP client still follows ordinary redirects: the page is listed under the linking address with the
+            // target's content, and a cycle ends as an error page.
+            settings.Crawl.FollowRedirects = false;
             settings.Crawl.IncludeSitemap = _WebSettings.ExtractSitemapLinks;
             settings.Crawl.RestrictToChildUrls = _WebSettings.RestrictToChildUrls;
             settings.Crawl.RestrictToSameSubdomain = _WebSettings.RestrictToSubdomain;
@@ -209,20 +212,26 @@ namespace AssistantHub.Core.Services.Crawlers
             settings.Crawl.MaxCrawlDepth = _WebSettings.MaxDepth;
             settings.Crawl.MaxParallelTasks = _WebSettings.MaxParallelTasks;
             settings.Crawl.UseHeadlessBrowser = _WebSettings.UseHeadlessBrowser;
-            settings.Crawl.ThrottleMs = _WebSettings.CrawlDelayMs;
+            // RequestDelayMs is the delay between requests (CrawlSharp defaults it to 2,500 ms); ThrottleMs is only the
+            // backoff after a 429 response, so it keeps CrawlSharp's default.
+            settings.Crawl.RequestDelayMs = _WebSettings.CrawlDelayMs;
 
-            // Authentication
+            // Authentication. CrawlSharp sends credentials only when Authentication.Type is set, so the type is
+            // set with the credentials; without it the crawl silently runs unauthenticated.
             switch (_WebSettings.AuthenticationType)
             {
                 case Enums.WebAuthTypeEnum.Basic:
+                    settings.Authentication.Type = AuthenticationTypeEnum.Basic;
                     settings.Authentication.Username = _WebSettings.Username;
                     settings.Authentication.Password = _WebSettings.Password;
                     break;
                 case Enums.WebAuthTypeEnum.ApiKey:
+                    settings.Authentication.Type = AuthenticationTypeEnum.ApiKey;
                     settings.Authentication.ApiKeyHeader = _WebSettings.ApiKeyHeader;
                     settings.Authentication.ApiKey = _WebSettings.ApiKeyValue;
                     break;
                 case Enums.WebAuthTypeEnum.BearerToken:
+                    settings.Authentication.Type = AuthenticationTypeEnum.BearerToken;
                     settings.Authentication.BearerToken = _WebSettings.BearerToken;
                     break;
             }

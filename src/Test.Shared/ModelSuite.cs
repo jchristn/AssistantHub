@@ -488,6 +488,80 @@ namespace Test.Automated
                 await Task.CompletedTask;
             });
 
+            await ExecuteTestAsync("ChunkingSettings: query-embedding timeout and cache defaults and bounds", async () =>
+            {
+                AssistantHub.Core.Settings.ChunkingSettings settings = new AssistantHub.Core.Settings.ChunkingSettings();
+                AssertHelper.AreEqual(30000, settings.QueryEmbeddingTimeoutMs, "QueryEmbeddingTimeoutMs default");
+                AssertHelper.AreEqual(10000, settings.QueryEmbeddingCacheSize, "QueryEmbeddingCacheSize default");
+                settings.QueryEmbeddingTimeoutMs = 5;
+                AssertHelper.AreEqual(1000, settings.QueryEmbeddingTimeoutMs, "QueryEmbeddingTimeoutMs clamps to 1000");
+                settings.QueryEmbeddingCacheSize = -1;
+                AssertHelper.AreEqual(0, settings.QueryEmbeddingCacheSize, "QueryEmbeddingCacheSize clamps to 0");
+
+                AssistantHub.Core.Settings.RecallDbSettings recallDb = new AssistantHub.Core.Settings.RecallDbSettings();
+                AssertHelper.AreEqual(400, recallDb.FilteredEfSearch, "FilteredEfSearch default");
+                recallDb.FilteredEfSearch = 5000;
+                AssertHelper.AreEqual(1000, recallDb.FilteredEfSearch, "FilteredEfSearch clamps to pgvector's maximum");
+
+                AssistantHub.Core.Settings.VerbexSettings verbex = new AssistantHub.Core.Settings.VerbexSettings();
+                AssertHelper.IsFalse(verbex.EnableLemmatizer, "lemmatizer off by default");
+                AssertHelper.IsFalse(verbex.EnableStopWordRemover, "stop-word removal off by default");
+                AssertHelper.AreEqual(0, verbex.MinTokenLength, "min token length disabled by default");
+                await Task.CompletedTask;
+            });
+
+            await ExecuteTestAsync("AssistantSettings: fusion, recency and context order defaults and validation", async () =>
+            {
+                AssistantSettings settings = new AssistantSettings();
+                AssertHelper.AreEqual("Rrf", settings.FusionStrategy, "FusionStrategy default");
+                AssertHelper.AreEqual(60, settings.RrfK, "RrfK default");
+                AssertHelper.IsNull(settings.FusionCandidatePool, "FusionCandidatePool default");
+                AssertHelper.AreEqual(0.0, settings.RecencyWeight, "RecencyWeight default");
+                AssertHelper.AreEqual("Score", settings.ContextOrder, "ContextOrder default");
+
+                settings.FusionStrategy = "linear";
+                AssertHelper.AreEqual("Linear", settings.FusionStrategy, "FusionStrategy normalized");
+                settings.FusionStrategy = null;
+                AssertHelper.AreEqual("Rrf", settings.FusionStrategy, "null FusionStrategy resets to Rrf");
+                settings.ContextOrder = "readingorder";
+                AssertHelper.AreEqual("ReadingOrder", settings.ContextOrder, "ContextOrder normalized");
+
+                AssertHelper.ThrowsAsync<ArgumentOutOfRangeException>(() => { settings.FusionStrategy = "Weighted"; return Task.CompletedTask; }, "invalid FusionStrategy rejected");
+                AssertHelper.ThrowsAsync<ArgumentOutOfRangeException>(() => { settings.ContextOrder = "Random"; return Task.CompletedTask; }, "invalid ContextOrder rejected");
+                AssertHelper.ThrowsAsync<ArgumentOutOfRangeException>(() => { settings.RrfK = 0; return Task.CompletedTask; }, "RrfK below 1 rejected");
+                AssertHelper.ThrowsAsync<ArgumentOutOfRangeException>(() => { settings.FusionCandidatePool = 20000; return Task.CompletedTask; }, "FusionCandidatePool above 10000 rejected");
+                AssertHelper.ThrowsAsync<ArgumentOutOfRangeException>(() => { settings.RecencyWeight = 1.5; return Task.CompletedTask; }, "RecencyWeight above 1 rejected");
+
+                bool badBodyRejected = false;
+                try
+                {
+                    System.Text.Json.JsonSerializer.Deserialize<AssistantSettings>("{\"RrfK\":0}");
+                }
+                catch (ArgumentException)
+                {
+                    badBodyRejected = true;
+                }
+                AssertHelper.IsTrue(badBodyRejected, "an out-of-range value in a settings body surfaces as ArgumentException (mapped to 400)");
+
+                AssistantSettings roundTrip = System.Text.Json.JsonSerializer.Deserialize<AssistantSettings>(
+                    System.Text.Json.JsonSerializer.Serialize(new AssistantSettings { FusionStrategy = "Linear", RrfK = 20, FusionCandidatePool = 50, RecencyWeight = 0.1, ContextOrder = "ReadingOrder" }));
+                AssertHelper.AreEqual("Linear", roundTrip.FusionStrategy, "FusionStrategy round-trips");
+                AssertHelper.AreEqual(20, roundTrip.RrfK, "RrfK round-trips");
+                AssertHelper.AreEqual(50, roundTrip.FusionCandidatePool, "FusionCandidatePool round-trips");
+                AssertHelper.AreEqual(0.1, roundTrip.RecencyWeight, "RecencyWeight round-trips");
+                AssertHelper.AreEqual("ReadingOrder", roundTrip.ContextOrder, "ContextOrder round-trips");
+                await Task.CompletedTask;
+            });
+
+            await ExecuteTestAsync("ChatCompletionRetrieval: keyword_fallback_ran is serialized only when set", async () =>
+            {
+                string unset = System.Text.Json.JsonSerializer.Serialize(new ChatCompletionRetrieval());
+                AssertHelper.IsFalse(unset.Contains("keyword_fallback_ran", StringComparison.Ordinal), "omitted when false");
+                string set = System.Text.Json.JsonSerializer.Serialize(new ChatCompletionRetrieval { EmbeddingFailed = true, KeywordFallbackRan = true });
+                AssertHelper.StringContains(set, "\"keyword_fallback_ran\":true", "serialized when true");
+                await Task.CompletedTask;
+            });
+
             // ===== RerankingModelTests =====
 
             await ExecuteTestAsync("AssistantSettings.EnableReranking: defaults to false", async () =>
@@ -496,10 +570,10 @@ namespace Test.Automated
                 AssertHelper.AreEqual(false, s.EnableReranking, "EnableReranking default");
             });
 
-            await ExecuteTestAsync("AssistantSettings.RerankerTopK: defaults to 5", async () =>
+            await ExecuteTestAsync("AssistantSettings.RerankerTopK: defaults to 10", async () =>
             {
                 AssistantSettings s = new AssistantSettings();
-                AssertHelper.AreEqual(5, s.RerankerTopK, "RerankerTopK default");
+                AssertHelper.AreEqual(10, s.RerankerTopK, "RerankerTopK default");
             });
 
             await ExecuteTestAsync("AssistantSettings.RerankerTopK: setter clamps below 1", async () =>

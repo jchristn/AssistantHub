@@ -176,7 +176,9 @@ namespace AssistantHub.Core.Models
         }
 
         /// <summary>
-        /// Minimum score threshold for retrieval results (0.0 to 1.0).
+        /// Minimum vector similarity for retrieval results (0.0 to 1.0). In Hybrid mode it drops only chunks that the
+        /// vector leg found on its own with a similarity below it; chunks the full-text leg found are kept. FullText
+        /// results are not held to it; FullTextMinimumScore is their cutoff.
         /// </summary>
         public double RetrievalScoreThreshold
         {
@@ -187,14 +189,136 @@ namespace AssistantHub.Core.Models
         /// <summary>
         /// Search mode for retrieval: Vector, FullText, or Hybrid.
         /// </summary>
-        public string SearchMode { get; set; } = "Vector";
+        public string SearchMode { get; set; } = "Hybrid";
 
         /// <summary>
-        /// Weight of full-text score in hybrid mode (0.0 to 1.0).
-        /// Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
-        /// Only applies when SearchMode is "Hybrid".
+        /// Share of the full-text leg in hybrid mode (0.0 to 1.0); the vector leg gets 1.0 - TextWeight.
+        /// With the default Rrf fusion the fused score is ((1 - w) / (k + vectorRank) + w / (k + textRank)) * (k + 1),
+        /// so a chunk ranked first by both legs scores 1.0 and a chunk found only by the text leg scores at most w.
+        /// With Linear fusion the score is a blend of the two legs' normalized scores. Only applies when SearchMode is "Hybrid".
         /// </summary>
-        public double TextWeight { get; set; } = 0.3;
+        public double TextWeight { get; set; } = 0.5;
+
+        /// <summary>
+        /// How hybrid search combines its vector and full-text legs: "Rrf" (weighted reciprocal rank fusion, the
+        /// default) or "Linear" (blend of the legs' normalized scores). Only applies when SearchMode is "Hybrid".
+        /// </summary>
+        public string FusionStrategy
+        {
+            get => _FusionStrategy;
+            set => _FusionStrategy = NormalizeFusionStrategy(value);
+        }
+
+        /// <summary>
+        /// The RRF constant k (1 to 100,000). Smaller values reward top ranks more strongly; larger values flatten
+        /// the difference between adjacent ranks. Only applies to Rrf fusion. Default 60.
+        /// </summary>
+        public int RrfK
+        {
+            get => _RrfK;
+            set => _RrfK = (value >= 1 && value <= 100000) ? value : throw new ArgumentOutOfRangeException(nameof(RrfK));
+        }
+
+        /// <summary>
+        /// Number of candidates each hybrid leg retrieves before fusion (1 to 10,000). Null uses RecallDB's default,
+        /// max(RetrievalTopK x 4, 100) capped at 1,000.
+        /// </summary>
+        public int? FusionCandidatePool
+        {
+            get => _FusionCandidatePool;
+            set => _FusionCandidatePool = (value == null || (value.Value >= 1 && value.Value <= 10000)) ? value : throw new ArgumentOutOfRangeException(nameof(FusionCandidatePool));
+        }
+
+        /// <summary>
+        /// Weight of a recency signal added to Rrf fusion (0.0 to 1.0): newer documents rank higher among otherwise
+        /// similar candidates. 0 disables it. Only applies to Rrf fusion in hybrid mode.
+        /// </summary>
+        public double RecencyWeight
+        {
+            get => _RecencyWeight;
+            set => _RecencyWeight = (value >= 0.0 && value <= 1.0) ? value : throw new ArgumentOutOfRangeException(nameof(RecencyWeight));
+        }
+
+        /// <summary>
+        /// Order of retrieved context in the prompt: "Score" (most relevant first, the default) or "ReadingOrder"
+        /// (chunks grouped by document, documents ordered by their best chunk, chunks in document order, with
+        /// adjacent chunks merged). Does not change which chunks are retrieved or how they are ranked.
+        /// </summary>
+        public string ContextOrder
+        {
+            get => _ContextOrder;
+            set => _ContextOrder = NormalizeContextOrder(value);
+        }
+
+        /// <summary>
+        /// Prepend the embedding model's task prefix (for example "search_query: " for nomic-embed-text) to queries.
+        /// Turn it on only for collections whose ingestion rule also uses task prefixes, so queries and documents match.
+        /// </summary>
+        public bool EmbeddingTaskPrefixes { get; set; } = false;
+
+        /// <summary>
+        /// Rewrite a follow-up question into a standalone question from the recent conversation, and search the
+        /// rewrite alongside the original message. Runs only when there is earlier conversation.
+        /// </summary>
+        public bool EnableConversationRewrite { get; set; } = false;
+
+        /// <summary>
+        /// Optional prompt for the conversation rewrite. Must contain {question}; {conversation} is replaced with the recent turns. Null uses the
+        /// built-in prompt.
+        /// </summary>
+        public string ConversationRewritePrompt { get; set; } = null;
+
+        /// <summary>
+        /// Reranker used when EnableReranking is true: "Llm" (the rerank inference endpoint scores candidates 0-10)
+        /// or "CrossEncoder" (a cross-encoder rerank service from server settings, scores 0-1).
+        /// </summary>
+        public string RerankerType
+        {
+            get => _RerankerType;
+            set => _RerankerType = NormalizeRerankerType(value);
+        }
+
+        /// <summary>
+        /// Identifier of the cross-encoder reranker (from the server's Rerankers settings) used when RerankerType is
+        /// "CrossEncoder". Null uses the first configured reranker.
+        /// </summary>
+        public string RerankEndpointId { get; set; } = null;
+
+        /// <summary>
+        /// Number of candidates retrieved for reranking (1 to 200). Retrieval fetches max(RetrievalTopK, this value)
+        /// candidates when reranking is on, and the reranker keeps RerankerTopK of them. Default 20.
+        /// </summary>
+        public int RerankCandidateCount
+        {
+            get => _RerankCandidateCount;
+            set => _RerankCandidateCount = (value >= 1 && value <= 200) ? value : throw new ArgumentOutOfRangeException(nameof(RerankCandidateCount));
+        }
+
+        /// <summary>
+        /// Minimum cross-encoder score (0.0 to 1.0) for a candidate to count as relevant. When every candidate scores
+        /// below it, no context is injected and the answer model is told nothing relevant was found. Null disables it.
+        /// </summary>
+        public double? RerankMinScore
+        {
+            get => _RerankMinScore;
+            set => _RerankMinScore = (value == null || (value.Value >= 0.0 && value.Value <= 1.0)) ? value : throw new ArgumentOutOfRangeException(nameof(RerankMinScore));
+        }
+
+        /// <summary>
+        /// How retrieval treats a document that another document supersedes: "Demote" (drop it and put its
+        /// replacement in its place, the default), "Hide" (drop it) or "Include" (keep it, marked as outdated).
+        /// </summary>
+        public string SupersessionMode
+        {
+            get => _SupersessionMode;
+            set => _SupersessionMode = NormalizeSupersessionMode(value);
+        }
+
+        /// <summary>
+        /// Optional completion endpoint used to judge in-product Eval runs. Null or empty uses InferenceEndpointId,
+        /// so the assistant grades its own answers.
+        /// </summary>
+        public string EvalJudgeInferenceEndpointId { get; set; } = null;
 
         /// <summary>
         /// Full-text ranking function: "TsRank" (term frequency) or "TsRankCd" (cover density, rewards proximity).
@@ -419,9 +543,18 @@ namespace AssistantHub.Core.Models
         private int _ContextWindow = 8192;
         private int _RetrievalTopK = 10;
         private double _RetrievalScoreThreshold = 0.3;
-        private int _RerankerTopK = 5;
+        private int _RerankerTopK = 10;
         private double _RerankerScoreThreshold = 3.0;
-        private int _RetrievalIncludeNeighbors = 0;
+        private int _RetrievalIncludeNeighbors = 1;
+        private string _FusionStrategy = "Rrf";
+        private int _RrfK = 60;
+        private int? _FusionCandidatePool = null;
+        private double _RecencyWeight = 0.0;
+        private string _ContextOrder = "Score";
+        private string _RerankerType = "Llm";
+        private int _RerankCandidateCount = 20;
+        private double? _RerankMinScore = null;
+        private string _SupersessionMode = "Demote";
         private int _DocumentAttachmentMaxCount = 10;
         private string _ToolPolicyJson = null;
         private AssistantToolPolicy _ToolPolicy = null;
@@ -475,6 +608,22 @@ namespace AssistantHub.Core.Models
             obj.RetrievalScoreThreshold = DataTableHelper.GetDoubleValue(row, "retrieval_score_threshold", 0.3);
             obj.SearchMode = DataTableHelper.GetStringValue(row, "search_mode") ?? "Vector";
             obj.TextWeight = DataTableHelper.GetDoubleValue(row, "text_weight", 0.3);
+            obj.FusionStrategy = DataTableHelper.GetStringValue(row, "fusion_strategy");
+            obj.RrfK = Math.Clamp(DataTableHelper.GetIntValue(row, "rrf_k", 60), 1, 100000);
+            int? fusionCandidatePool = DataTableHelper.GetNullableIntValue(row, "fusion_candidate_pool");
+            obj.FusionCandidatePool = fusionCandidatePool.HasValue ? Math.Clamp(fusionCandidatePool.Value, 1, 10000) : null;
+            obj.RecencyWeight = Math.Clamp(DataTableHelper.GetDoubleValue(row, "recency_weight", 0.0), 0.0, 1.0);
+            obj.ContextOrder = DataTableHelper.GetStringValue(row, "context_order");
+            obj.EvalJudgeInferenceEndpointId = DataTableHelper.GetStringValue(row, "eval_judge_inference_endpoint_id");
+            obj.EmbeddingTaskPrefixes = DataTableHelper.GetBooleanValue(row, "embedding_task_prefixes", false);
+            obj.EnableConversationRewrite = DataTableHelper.GetBooleanValue(row, "enable_conversation_rewrite", false);
+            obj.ConversationRewritePrompt = DataTableHelper.GetStringValue(row, "conversation_rewrite_prompt");
+            obj.RerankerType = DataTableHelper.GetStringValue(row, "reranker_type");
+            obj.RerankEndpointId = DataTableHelper.GetStringValue(row, "rerank_endpoint_id");
+            obj.RerankCandidateCount = Math.Clamp(DataTableHelper.GetIntValue(row, "rerank_candidate_count", 20), 1, 200);
+            double? rerankMinScore = DataTableHelper.GetNullableDoubleValue(row, "rerank_min_score");
+            obj.RerankMinScore = rerankMinScore;
+            obj.SupersessionMode = DataTableHelper.GetStringValue(row, "supersession_mode");
             obj.FullTextSearchType = DataTableHelper.GetStringValue(row, "fulltext_search_type") ?? "TsRank";
             obj.FullTextLanguage = DataTableHelper.GetStringValue(row, "fulltext_language") ?? "english";
             obj.FullTextNormalization = DataTableHelper.GetIntValue(row, "fulltext_normalization", 32);
@@ -508,6 +657,40 @@ namespace AssistantHub.Core.Models
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;
+        }
+
+        private static string NormalizeFusionStrategy(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "Rrf";
+            if (value.Trim().Equals("Rrf", StringComparison.OrdinalIgnoreCase)) return "Rrf";
+            if (value.Trim().Equals("Linear", StringComparison.OrdinalIgnoreCase)) return "Linear";
+            throw new ArgumentOutOfRangeException(nameof(FusionStrategy), "FusionStrategy must be Rrf or Linear.");
+        }
+
+        private static string NormalizeRerankerType(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "Llm";
+            if (value.Trim().Equals("Llm", StringComparison.OrdinalIgnoreCase)) return "Llm";
+            if (value.Trim().Equals("CrossEncoder", StringComparison.OrdinalIgnoreCase)) return "CrossEncoder";
+            throw new ArgumentOutOfRangeException(nameof(RerankerType), "RerankerType must be Llm or CrossEncoder.");
+        }
+
+        private static string NormalizeSupersessionMode(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "Demote";
+            foreach (string mode in new[] { "Demote", "Hide", "Include" })
+            {
+                if (value.Trim().Equals(mode, StringComparison.OrdinalIgnoreCase)) return mode;
+            }
+            throw new ArgumentOutOfRangeException(nameof(SupersessionMode), "SupersessionMode must be Demote, Hide or Include.");
+        }
+
+        private static string NormalizeContextOrder(string value)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return "Score";
+            if (value.Trim().Equals("Score", StringComparison.OrdinalIgnoreCase)) return "Score";
+            if (value.Trim().Equals("ReadingOrder", StringComparison.OrdinalIgnoreCase)) return "ReadingOrder";
+            throw new ArgumentOutOfRangeException(nameof(ContextOrder), "ContextOrder must be Score or ReadingOrder.");
         }
 
         private static AssistantToolPolicy ParseToolPolicyJson(string json)

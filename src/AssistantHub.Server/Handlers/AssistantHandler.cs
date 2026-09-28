@@ -77,7 +77,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 assistant.Id = IdGenerator.NewAssistantId();
-                assistant.TenantId = auth.TenantId;
+                assistant.TenantId = ResolveTenantId(ctx, auth);
                 assistant.UserId = auth.UserId;
                 assistant.CreatedUtc = DateTime.UtcNow;
                 assistant.LastUpdateUtc = DateTime.UtcNow;
@@ -200,7 +200,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<Assistant> result = await Database.Assistant.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<Assistant> result = await Database.Assistant.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 // Non-admin users can only see their own assistants
                 if (!auth.IsGlobalAdmin && !auth.IsTenantAdmin && result != null && result.Objects != null)

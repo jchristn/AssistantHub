@@ -244,6 +244,48 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(columns, "expose_document_source_urls"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantSettingsExposeDocumentSourceUrlsColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "fusion_strategy"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsFusionStrategyColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "rrf_k"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRrfKColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "fusion_candidate_pool"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsFusionCandidatePoolColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "recency_weight"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRecencyWeightColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "context_order"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsContextOrderColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "eval_judge_inference_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "embedding_task_prefixes"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsEmbeddingTaskPrefixesColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "enable_conversation_rewrite"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsEnableConversationRewriteColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "conversation_rewrite_prompt"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsConversationRewritePromptColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "reranker_type"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankerTypeColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "rerank_endpoint_id"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankEndpointIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "rerank_candidate_count"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankCandidateCountColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "rerank_min_score"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsRerankMinScoreColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(columns, "supersession_mode"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantSettingsSupersessionModeColumn, true, token).ConfigureAwait(false);
         }
 
         private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
@@ -258,6 +300,18 @@ namespace AssistantHub.Core.Database.Sqlite
 
             if (!HasColumn(documentColumns, "verbex_record_id"))
                 await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsVerbexRecordIdColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "supersedes_json"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsSupersedesJsonColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "superseded_by"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsSupersededByColumn, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "content_sha256"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsContentSha256Column, true, token).ConfigureAwait(false);
+
+            if (!HasColumn(documentColumns, "near_duplicates_json"))
+                await ExecuteQueryAsync(TableQueries.AddAssistantDocumentsNearDuplicatesJsonColumn, true, token).ConfigureAwait(false);
 
             DataTable ruleColumns = await ExecuteQueryAsync("PRAGMA table_info(ingestion_rules);", false, token).ConfigureAwait(false);
 

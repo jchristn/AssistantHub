@@ -71,9 +71,45 @@ namespace AssistantHub.Server.Services
         public bool HybridFallbackRan { get; set; } = false;
 
         /// <summary>
-        /// Whether any query embedding failed after retries, so vector or hybrid search returned nothing.
+        /// Whether any query embedding failed after retries. Vector search then returns nothing; hybrid search falls
+        /// back to its full-text leg.
         /// </summary>
         public bool EmbeddingFailed { get; set; } = false;
+
+        /// <summary>
+        /// Whether any hybrid search ran its full-text leg alone because the query embedding failed.
+        /// </summary>
+        public bool KeywordFallbackRan { get; set; } = false;
+
+        /// <summary>
+        /// Standalone rewrite of a follow-up question, searched alongside the original message, or null.
+        /// </summary>
+        public string ConversationRewrite { get; set; } = null;
+
+        /// <summary>
+        /// Conversation rewrite duration in milliseconds.
+        /// </summary>
+        public double ConversationRewriteDurationMs { get; set; } = 0;
+
+        /// <summary>
+        /// Reranker that ran: "llm", "cross_encoder", or null when reranking is off.
+        /// </summary>
+        public string Reranker { get; set; } = null;
+
+        /// <summary>
+        /// Whether reranking was skipped (circuit breaker open, or no cross-encoder configured).
+        /// </summary>
+        public bool RerankSkipped { get; set; } = false;
+
+        /// <summary>
+        /// Whether the cross-encoder scored every candidate below RerankMinScore, so no context is injected.
+        /// </summary>
+        public bool NoRelevantContext { get; set; } = false;
+
+        /// <summary>
+        /// Number of retrieved chunks that came from superseded documents.
+        /// </summary>
+        public int SupersededChunks { get; set; } = 0;
 
         /// <summary>
         /// Candidates dropped per stage.

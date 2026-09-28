@@ -312,7 +312,7 @@ namespace Test.Automated
                 AssertHelper.StringContains(serverSource, "/v1.0/collections/{collectionId}/search", "collection search route");
                 AssertHelper.StringContains(serverSource, "collectionHandler.SearchCollectionAsync", "collection search handler registration");
                 AssertHelper.StringContains(collectionHandlerSource, "SearchCollectionAsync(HttpContextBase ctx)", "collection search handler");
-                AssertHelper.StringContains(collectionHandlerSource, "BuildRecallDbPath(auth.TenantId, collectionId + \"/search\"), body", "collection search proxy body forwarding");
+                AssertHelper.StringContains(collectionHandlerSource, "BuildRecallDbPath(ResolveTenantId(ctx, auth), collectionId + \"/search\"), body", "collection search proxy body forwarding");
             });
 
             await ExecuteTestAsync("OpenAPI: search artifact routes and request bodies are documented", async () =>
@@ -760,7 +760,7 @@ namespace Test.Automated
                 SortedSet<string> postmanRoutes = ExtractPostmanRoutes(root);
                 SortedSet<string> restRoutes = ExtractRestApiRoutes(root);
 
-                AssertHelper.AreEqual(196, backendRoutes.Count, "backend route count");
+                AssertHelper.AreEqual(199, backendRoutes.Count, "backend route count");
                 AssertRouteSetsEqual(backendRoutes, openApiRoutes, "OpenAPI");
                 AssertRouteSetsEqual(backendRoutes, postmanRoutes, "Postman");
                 AssertRouteSetsEqual(backendRoutes, restRoutes, "REST_API.md");

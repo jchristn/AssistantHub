@@ -73,6 +73,7 @@ is shown in the right column.
 | `assistanthub.operation.duration` | Histogram | s | `domain`, `operation`, `outcome` | `assistanthub_operation_duration_seconds_*` |
 | `inference.tokens` | Counter | {token} | `provider`, `model`, `token.type` | `inference_tokens_total` |
 | `retrieval.results` | Histogram | {result} | `mode` | `retrieval_results_{bucket,count,sum}` |
+| `retrieval.query_embedding.cache` | Counter | {lookup} | `result` (`hit` or `miss`) | `retrieval_query_embedding_cache_total` |
 | `ingestion.documents` | Counter | {document} | `outcome` | `ingestion_documents_total` |
 | `ingestion.chunks` | Counter | {chunk} | — | `ingestion_chunks_total` |
 

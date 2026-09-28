@@ -85,7 +85,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 EvalFact fact = Serializer.DeserializeJson<EvalFact>(body);
-                fact.TenantId = auth.TenantId;
+                fact.TenantId = ResolveTenantId(ctx, auth);
 
                 if (String.IsNullOrEmpty(fact.AssistantId) || fact.AssistantId == "asst_placeholder")
                 {
@@ -120,7 +120,7 @@ namespace AssistantHub.Server.Handlers
             {
                 AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<EvalFact> result = await Database.EvalFact.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<EvalFact> result = await Database.EvalFact.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -307,7 +307,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                EvalRun run = await _EvalService.StartRunAsync(auth.TenantId, assistantId, judgePromptOverride, executionMode, categories).ConfigureAwait(false);
+                EvalRun run = await _EvalService.StartRunAsync(ResolveTenantId(ctx, auth), assistantId, judgePromptOverride, executionMode, categories).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 201;
                 ctx.Response.ContentType = "application/json";
@@ -338,7 +338,7 @@ namespace AssistantHub.Server.Handlers
             {
                 AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<EvalRun> result = await Database.EvalRun.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<EvalRun> result = await Database.EvalRun.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";

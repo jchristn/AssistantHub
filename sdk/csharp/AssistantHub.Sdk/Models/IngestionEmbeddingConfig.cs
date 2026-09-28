@@ -21,5 +21,11 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("L2Normalization")]
         public bool L2Normalization { get; set; }
+
+        /// <summary>
+        /// Whether to apply embedding task prefixes (query/document) when embedding chunks.
+        /// </summary>
+        [JsonPropertyName("TaskPrefixes")]
+        public bool TaskPrefixes { get; set; }
     }
 }

@@ -8,12 +8,33 @@ import DocumentUploadModal from '../components/modals/DocumentUploadModal';
 import JsonViewModal from '../components/modals/JsonViewModal';
 import ProcessingLogModal from '../components/modals/ProcessingLogModal';
 import IngestionPerformanceModal from '../components/modals/IngestionPerformanceModal';
+import DocumentSupersedesModal from '../components/modals/DocumentSupersedesModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AlertModal from '../components/AlertModal';
 import DropRuleModal from '../components/DropRuleModal';
 import { useUploadQueue } from '../hooks/useUploadQueue';
 import { extractFilesFromDrop } from '../utils/fileDropUtils';
 import Tooltip from '../components/Tooltip';
+
+function parseJsonList(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function countJsonList(value) {
+  return parseJsonList(value).length;
+}
+
+function formatDuplicates(value) {
+  return 'Similar to: ' + parseJsonList(value)
+    .map(d => `${d.DocumentId || d.documentId}${d.Exact || d.exact ? ' (identical)' : ` (${Math.round((d.Score ?? d.score ?? 0) * 100)}%)`}`)
+    .join(', ');
+}
 
 function formatFileSize(bytes) {
   if (bytes == null) return '';
@@ -57,6 +78,7 @@ function DocumentsView() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [reprocessBlocked, setReprocessBlocked] = useState(null);
+  const [supersedesTarget, setSupersedesTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [alert, setAlert] = useState(null);
   const [refresh, setRefresh] = useState(0);
@@ -142,6 +164,9 @@ function DocumentsView() {
       <>
         <span className={`status-badge ${getStatusBadgeClass(row.Status)}`}>{row.Status || 'Unknown'}</span>
         {row.CrawlPlanId && <span className="status-badge badge-crawled" style={{ marginLeft: '0.25rem' }}>Crawled</span>}
+        {row.SupersededBy && <span className="status-badge pending" style={{ marginLeft: '0.25rem' }} title={`Replaced by ${row.SupersededBy}`}>Superseded</span>}
+        {countJsonList(row.Supersedes) > 0 && <span className="status-badge info" style={{ marginLeft: '0.25rem' }} title={`Replaces ${countJsonList(row.Supersedes)} document(s)`}>Supersedes</span>}
+        {countJsonList(row.NearDuplicates) > 0 && <span className="status-badge pending" style={{ marginLeft: '0.25rem' }} title={formatDuplicates(row.NearDuplicates)}>Duplicate</span>}
       </>
     )},
     { key: 'CreatedUtc', label: 'Created', tooltip: 'Date and time the document was uploaded', render: (row) => row.CreatedUtc ? new Date(row.CreatedUtc).toLocaleString() : '' },
@@ -191,6 +216,7 @@ function DocumentsView() {
       { label: 'View Processing Logs', onClick: () => setShowLogs(row) },
       { label: 'View Ingestion Performance', onClick: () => setShowPerformance(row) },
       { label: 'Reprocess', onClick: () => handleReprocess(row) },
+      { label: 'Set Superseded Documents', onClick: () => setSupersedesTarget(row) },
     ];
     if ((isAdmin || isTenantAdmin) && canReindexDocument(row)) {
       actions.push({ label: 'Reindex into Verbex', onClick: () => handleReindex(row) });
@@ -337,6 +363,11 @@ function DocumentsView() {
       {showPerformance && <IngestionPerformanceModal api={api} doc={showPerformance} onClose={() => setShowPerformance(null)} />}
       {deleteTarget && <ConfirmModal title="Delete Document" message={`Are you sure you want to delete document "${deleteTarget.Name || deleteTarget.OriginalFilename}"? This will delete the document from its bucket and remove all embeddings from its collection.`} confirmLabel="Delete" danger onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {cancelTarget && <ConfirmModal title="Cancel Ingestion" message="This document will be deleted. Are you sure you wish to cancel ingestion?" confirmLabel="Cancel Ingestion" loadingLabel="Cancelling..." isLoading={cancelling} danger onConfirm={handleCancelIngestion} onClose={() => setCancelTarget(null)} />}
+      {supersedesTarget && <DocumentSupersedesModal doc={supersedesTarget} onClose={() => setSupersedesTarget(null)} onSave={async (ids) => {
+        await api.setDocumentSupersedes(supersedesTarget.Id, ids);
+        setSupersedesTarget(null);
+        setRefresh(r => r + 1);
+      }} />}
       {reprocessBlocked && <ConfirmModal title="Source Object Not Available" message={`The source object for "${reprocessBlocked.Name || reprocessBlocked.OriginalFilename}" is not stored and must be uploaded again before it can be reprocessed.`} confirmLabel="Upload Document" onConfirm={() => { setReprocessBlocked(null); setShowUpload(true); }} onClose={() => setReprocessBlocked(null)} />}
       {alert && <AlertModal title={alert.title} message={alert.message} onClose={() => setAlert(null)} />}
       {pendingDropFiles && (

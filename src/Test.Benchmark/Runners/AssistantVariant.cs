@@ -28,6 +28,21 @@ namespace Test.Benchmark.Runners
         /// <summary>Hybrid text weight.</summary>
         public double TextWeight { get; set; } = 0.3;
 
+        /// <summary>Hybrid fusion strategy (Rrf or Linear).</summary>
+        public string FusionStrategy { get; set; } = "Rrf";
+
+        /// <summary>RRF constant k.</summary>
+        public int RrfK { get; set; } = 60;
+
+        /// <summary>Candidates per hybrid leg before fusion (null: store default).</summary>
+        public int? CandidatePool { get; set; } = null;
+
+        /// <summary>Recency weight in RRF fusion.</summary>
+        public double RecencyWeight { get; set; } = 0;
+
+        /// <summary>Prompt context order (Score or ReadingOrder).</summary>
+        public string ContextOrder { get; set; } = "Score";
+
         /// <summary>Full-text ranking function.</summary>
         public string FullTextSearchType { get; set; } = "TsRank";
 
@@ -70,6 +85,27 @@ namespace Test.Benchmark.Runners
         /// <summary>Answer temperature.</summary>
         public double Temperature { get; set; } = 0.0;
 
+        /// <summary>Reranker type: Llm or CrossEncoder.</summary>
+        public string RerankerType { get; set; } = "Llm";
+
+        /// <summary>Cross-encoder reranker id from the server's Rerankers settings, or null for the first one.</summary>
+        public string? RerankEndpointId { get; set; } = null;
+
+        /// <summary>Candidates retrieved and scored when rerank is on.</summary>
+        public int RerankCandidates { get; set; } = 20;
+
+        /// <summary>Cross-encoder minimum score (0–1), or null for none.</summary>
+        public double? RerankMinScore { get; set; } = null;
+
+        /// <summary>Rewrite follow-up questions into standalone questions before retrieval.</summary>
+        public bool ConversationRewrite { get; set; } = false;
+
+        /// <summary>Supersession mode: Demote, Hide or Include.</summary>
+        public string Supersession { get; set; } = "Demote";
+
+        /// <summary>Send the embedding model's query prefix.</summary>
+        public bool TaskPrefixes { get; set; } = false;
+
         #endregion
 
         #region Constructors-and-Factories
@@ -88,6 +124,11 @@ namespace Test.Benchmark.Runners
                 TopK = args.GetInt("k", 10),
                 ScoreThreshold = args.GetDouble("threshold", 0.3),
                 TextWeight = args.GetDouble("text-weight", 0.3),
+                FusionStrategy = args.Get("fusion", "Rrf"),
+                RrfK = args.GetInt("rrf-k", 60),
+                CandidatePool = args.GetOptional("candidate-pool") == null ? null : args.GetInt("candidate-pool", 0),
+                RecencyWeight = args.GetDouble("recency-weight", 0),
+                ContextOrder = args.Get("context-order", "Score"),
                 FullTextSearchType = args.Get("fulltext-type", "TsRank"),
                 IncludeNeighbors = args.GetInt("neighbors", 0),
                 QueryRewrite = args.GetFlag("rewrite"),
@@ -101,7 +142,14 @@ namespace Test.Benchmark.Runners
                 InferenceEndpointId = args.Get("inference-endpoint", "default"),
                 UtilityEndpointId = args.GetOptional("utility-endpoint"),
                 EmbeddingEndpointId = args.Get("embedding-endpoint", "default"),
-                Temperature = args.GetDouble("temperature", 0.0)
+                Temperature = args.GetDouble("temperature", 0.0),
+                RerankerType = args.Get("rerank-type", "Llm"),
+                RerankEndpointId = args.GetOptional("rerank-endpoint"),
+                RerankCandidates = args.GetInt("rerank-candidates", 20),
+                RerankMinScore = args.GetOptional("rerank-min-score") == null ? null : args.GetDouble("rerank-min-score", 0),
+                ConversationRewrite = args.GetFlag("conversation-rewrite"),
+                Supersession = args.Get("supersession", "Demote"),
+                TaskPrefixes = args.GetFlag("task-prefixes")
             };
         }
 
@@ -136,7 +184,7 @@ namespace Test.Benchmark.Runners
         /// <returns>Name to value.</returns>
         public SortedDictionary<string, string> Describe()
         {
-            return new SortedDictionary<string, string>(StringComparer.Ordinal)
+            SortedDictionary<string, string> d = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 ["searchMode"] = SearchMode,
                 ["topK"] = TopK.ToString(CultureInfo.InvariantCulture),
@@ -154,6 +202,21 @@ namespace Test.Benchmark.Runners
                 ["embeddingEndpoint"] = EmbeddingEndpointId,
                 ["temperature"] = Temperature.ToString(CultureInfo.InvariantCulture)
             };
+
+            // Settings added after the run ledger started appear only when they differ from the product default, so
+            // default configurations keep the fingerprint (and assistant name) they had before the settings existed.
+            if (!String.Equals(FusionStrategy, "Rrf", StringComparison.OrdinalIgnoreCase)) d["fusionStrategy"] = FusionStrategy;
+            if (RrfK != 60) d["rrfK"] = RrfK.ToString(CultureInfo.InvariantCulture);
+            if (CandidatePool.HasValue) d["candidatePool"] = CandidatePool.Value.ToString(CultureInfo.InvariantCulture);
+            if (RecencyWeight != 0) d["recencyWeight"] = RecencyWeight.ToString(CultureInfo.InvariantCulture);
+            if (!String.Equals(ContextOrder, "Score", StringComparison.OrdinalIgnoreCase)) d["contextOrder"] = ContextOrder;
+            if (Rerank && !String.Equals(RerankerType, "Llm", StringComparison.OrdinalIgnoreCase)) d["rerankType"] = RerankerType + (RerankEndpointId != null ? " (" + RerankEndpointId + ")" : "");
+            if (Rerank && RerankCandidates != 20) d["rerankCandidates"] = RerankCandidates.ToString(CultureInfo.InvariantCulture);
+            if (Rerank && RerankMinScore.HasValue) d["rerankMinScore"] = RerankMinScore.Value.ToString(CultureInfo.InvariantCulture);
+            if (ConversationRewrite) d["conversationRewrite"] = "on";
+            if (!String.Equals(Supersession, "Demote", StringComparison.OrdinalIgnoreCase)) d["supersession"] = Supersession;
+            if (TaskPrefixes) d["taskPrefixes"] = "on";
+            return d;
         }
 
         /// <summary>
@@ -169,6 +232,11 @@ namespace Test.Benchmark.Runners
             settings["RetrievalTopK"] = TopK;
             settings["RetrievalScoreThreshold"] = ScoreThreshold;
             settings["TextWeight"] = TextWeight;
+            settings["FusionStrategy"] = FusionStrategy;
+            settings["RrfK"] = RrfK;
+            settings["FusionCandidatePool"] = CandidatePool;
+            settings["RecencyWeight"] = RecencyWeight;
+            settings["ContextOrder"] = ContextOrder;
             settings["FullTextSearchType"] = FullTextSearchType;
             settings["RetrievalIncludeNeighbors"] = IncludeNeighbors;
             settings["EnableQueryRewrite"] = QueryRewrite;
@@ -182,6 +250,13 @@ namespace Test.Benchmark.Runners
             settings["InferenceEndpointId"] = InferenceEndpointId;
             settings["EmbeddingEndpointId"] = EmbeddingEndpointId;
             settings["Temperature"] = Temperature;
+            settings["RerankerType"] = RerankerType;
+            settings["RerankEndpointId"] = RerankEndpointId;
+            settings["RerankCandidateCount"] = RerankCandidates;
+            settings["RerankMinScore"] = RerankMinScore;
+            settings["EnableConversationRewrite"] = ConversationRewrite;
+            settings["SupersessionMode"] = Supersession;
+            settings["EmbeddingTaskPrefixes"] = TaskPrefixes;
             settings["Streaming"] = false;
             settings["EnableDocumentAttachments"] = true;
             settings["DocumentAttachmentMaxCount"] = 20;

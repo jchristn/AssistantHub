@@ -2,7 +2,7 @@
 
 This page records what the suite in this directory measured, round by round, and what changed in AssistantHub between
 rounds. How to run it is in [README.md](README.md). The plan is [BENCHMARKING.md](../BENCHMARKING.md), and the ranked
-fixes these numbers point to are in [RETRIEVAL_IMPROVEMENTS.md](../RETRIEVAL_IMPROVEMENTS.md). Per-run reports are
+fixes these numbers point to are in [RETRIEVAL_IMPROVEMENTS.md](../archive/RETRIEVAL_IMPROVEMENTS_2026-09.md). Per-run reports are
 written to the git-ignored `results/` directory.
 
 **The short version.** The first run found that retrieval was silently failing, not just ranking poorly:
@@ -29,6 +29,20 @@ questions, yet a 4B answer model got 0.47–0.67 of answers right. Its citation 
 Meridian, 0.472 with citations and 0.633 without. A 20B answer model reached 0.741. On this 4B-class setup, the LLM
 reranker (0.789 → 0.694) and the answerability check (0 of 12 unanswerable questions caught) make things worse or add
 nothing. In-product Eval agrees with an independent judge (κ 0.83).
+
+**Round 4 update.** The `RetrievalScoreThreshold` fix makes FullText usable at the default threshold: it now scores
+0.79 on AssistantHub-docs and Meridian, and 0.68 on MultiHop-RAG, where it scored 0.000 before. Hybrid is unchanged.
+Query embedding no longer hangs: the BEIR runs that stalled for 50 minutes on a slow model proxy now finish, with
+4–6% of queries falling back to keyword search. The query-embedding cache and the standalone embed route lift stub
+throughput from 10–40 to 47–289 ops/s. Paragraph chunking now works; it reaches 99–100% evidence reachability and
+the best evidence@10 measured (0.756 / 0.773). Two knobs did not transfer from Isis: a smaller RRF k is never better
+here, and reading-order context lowered chat accuracy. See [Round 4](#round-4-the-simplicity-8-items).
+
+**Round 5 update.** A cross-encoder reranker adds 0.03 nDCG@10 on every dataset (Meridian 0.784 → 0.816,
+AssistantHub-docs 0.834 → 0.866, MultiHop-RAG 0.631 → 0.664), where the LLM reranker lost 0.095. Rewriting follow-ups
+into standalone questions lifts them from 0.52 to 0.78. Supersession links lift superseded-document questions from 0.72
+to 0.91 (hit@1 0.42 → 0.92). Structured cells with heading headers are mixed and stay opt-in. See
+[Round 5](#round-5-rerank-rewrite-supersession-and-structure).
 
 ## Setup
 
@@ -80,6 +94,143 @@ rate is also a matching artifact.
 | 0 | First full run. Two ingest fixes found by the smoke run were already in: the Partio 100 s timeout and platform newlines. |
 | 1 | Query embedding retries transient `429`/`5xx` and reports `embedding_failed`. |
 | 2 | Single-document scoping sends `DocumentIds`. Defaults unchanged. |
+| 3 | Restart: round 2's configurations rerun on unchanged code, recorded in the run ledger (`benchmarks/history/runs.jsonl`) so later rounds compare against it. |
+| 4 | The simplicity ≥ 8 items from [INGEST_AND_RETRIEVAL_IMPROVEMENTS.md](../archive/INGEST_AND_RETRIEVAL_IMPROVEMENTS.md): standalone query embedding with its own timeout and cache, keyword fallback, explicit fusion options, a mode-aware threshold, filtered `ef_search`, recency, reading-order context, blank-line and heading extraction, Verbex fixes. The first run (label `r4`) had a hybrid threshold bug; `r4b` is the corrected run. |
+| 5 | The rest of both plans: cross-encoder rerank, conversation rewrite, additive query rewrite, utility timeouts and circuit breakers, answer retry and regeneration, document supersession, structured cells and context headers, provenance, extraction settings and duplicate detection. New assistants default to Hybrid, text weight 0.5, one neighbor and rerank top K 10. `r5c` is the corrected supersession run. |
+
+## Round 4: the simplicity ≥ 8 items
+
+Round 3 reran round 2's configurations on unchanged code; its retrieval numbers matched round 2 within noise
+(AssistantHub-docs Hybrid 0.853, Meridian 0.788, MultiHop-RAG 0.637, Qasper 1.000). Round 4 changed the items below.
+Collections were reused (`--pipeline 1`) except where stated, so each run shares a fingerprint with its round 3 twin
+and `history` shows the change directly.
+
+**Default threshold (0.3), round 3 → round 4b, nDCG@10:**
+
+| Dataset | FullText r3 | FullText r4b | Hybrid r3 | Hybrid r4b |
+|---|---|---|---|---|
+| AssistantHub-docs | 0.000 | 0.787 | 0.853 | 0.853 |
+| Meridian | 0.000 | 0.790 | 0.788 | 0.788 |
+| MultiHop-RAG | 0.000 | 0.680 | 0.634 | 0.637 |
+| Qasper | 0.000 | 0.987 | 1.000 | 0.987 |
+
+- The threshold is now a vector-similarity threshold. FullText is no longer held to it, and in Hybrid it only drops
+  chunks the vector leg found on its own. Qasper loses one question to that rule: its only in-paper chunk was a
+  weak vector-only match.
+- The first version (`r4`) applied the threshold to every hybrid chunk with a vector score, which dropped strong
+  keyword matches with low embedding similarity: AssistantHub-docs Hybrid 0.853 → 0.827, evidence@10 0.721 → 0.644.
+  It was corrected before `r4b`.
+- Threshold-0 runs are unchanged from round 3, so the explicit `Hybrid` fusion block (RRF, k 60, the store's pool)
+  reproduces what RecallDB ran by default.
+
+**Query embedding (nomic on the GB10, threshold 0).** In round 3, SciFact and NFCorpus Hybrid stalled for 50 minutes
+and were killed. They now finish. On SciFact 6.3% of queries, and on NFCorpus 4.3%, hit the 30 s
+`QueryEmbeddingTimeoutMs` on the loaded model proxy and fell back to keyword search:
+
+| Dataset | Hybrid (earlier nomic run) | Hybrid r4b | Queries on keyword fallback |
+|---|---|---|---|
+| SciFact | 0.715 | 0.704 | 6.3% |
+| NFCorpus | 0.321 | 0.328 | 4.3% |
+
+The SciFact gap is the fallback queries, which score at keyword level (0.59). Median latency was 6.9–7.0 s per
+query, all of it the model proxy.
+
+**Fusion sweeps (Hybrid, default threshold), nDCG@10:**
+
+| Setting | AssistantHub-docs | Meridian | MultiHop-RAG | Mean |
+|---|---|---|---|---|
+| RRF k 10 | 0.826 | 0.777 | 0.618 | 0.740 |
+| RRF k 20 | 0.833 | 0.784 | 0.622 | 0.746 |
+| RRF k 40 | 0.845 | 0.788 | 0.631 | 0.755 |
+| RRF k 60 (default) | **0.853** | **0.788** | **0.637** | 0.759 |
+| Text weight 0.5 | 0.840 | 0.797 | 0.665 | 0.767 |
+| Text weight 0.7 | 0.833 | **0.812** | **0.699** | **0.781** |
+
+- A smaller RRF k never helps here, unlike Isis (k 20); keep 60.
+- A higher text weight helps Meridian and MultiHop-RAG, where Hybrid at 0.7 beats keyword-only search (0.699 vs
+  0.680), and costs AssistantHub-docs 0.02. It is the best mean. The best weight depends on the corpus.
+- Recency weight 0.05 or 0.1 on Meridian: 0.790 (vs 0.788). The benchmark ingests every document at once, so creation
+  time carries no signal; a date-ordered ingest (`--date-order`) is needed to measure it.
+
+**Reading-order context (chat, Meridian, Hybrid, threshold 0, neighbors 1, 60 questions).** Against round 3's
+score-order run of the same configuration, accuracy fell from 0.660 to 0.500 (paired p = 0.048), and the evidence
+that reached the prompt fell from 0.940 to 0.880. Prompt-budget trimming drops chunks from the end of the list,
+which in reading order is the tail of the lowest-ranked document, and the 4B answer model may do better with the most
+relevant passage first. `ContextOrder` stays `Score` by default.
+
+**Extraction with blank-line blocks and markdown headings (re-ingested, `--pipeline 2`):**
+
+| Corpus and chunking | Reachability | Evidence@10 | Hybrid nDCG@10 |
+|---|---|---|---|
+| AssistantHub-docs, FixedTokenCount 256, before | 89.9% (round 2) | 0.721 | 0.853 |
+| AssistantHub-docs, FixedTokenCount 256, after | 88.0% | 0.706 | 0.837 (p = 0.12 vs before) |
+| AssistantHub-docs, ParagraphBased, after | **100%** | **0.756** | 0.830 |
+| Meridian, FixedTokenCount 256, before | 96.2% (round 2) | 0.725 | 0.788 |
+| Meridian, FixedTokenCount 256, after | 96.4% | 0.712 | 0.784 |
+| Meridian, ParagraphBased, after | **99.4%** | **0.773** | **0.800** |
+
+(ParagraphBased runs use threshold 0; the others use the default 0.3, which no longer matters for Hybrid.)
+Fixed-token chunking is unaffected, as expected. ParagraphBased, which saw each extracted document as one paragraph
+before, now keeps nearly every evidence passage intact. On AssistantHub-docs it produces 71 tiny chunks (headings
+and short items), which contextual chunk headers (IR-06) would attach to the following text.
+
+## Round 5: rerank, rewrite, supersession and structure
+
+Round 5 measured the remaining retrieval-plan items. All runs use the harness defaults (Hybrid, threshold 0.3, text
+weight 0.3, no neighbors) and the pipeline 2 collections, so each compares directly with the `r5-baseline` run on
+the same code. The baseline matched round 4b exactly (Meridian 0.784, before and after the supersession runs), so
+nothing regressed underneath.
+
+**Cross-encoder rerank** (`cross-encoder/ms-marco-MiniLM-L-6-v2` on the CPU TEI container, 30 candidates, keep 10):
+
+| Dataset | Hybrid nDCG@10 | + cross-encoder | Recall@10 | Evidence@10 |
+|---|---|---|---|---|
+| Meridian | 0.784 | **0.816** | 0.895 → 0.928 | 0.712 → 0.778 |
+| AssistantHub-docs | 0.834 | **0.866** | 0.938 → 0.935 | 0.705 → 0.697 |
+| MultiHop-RAG | 0.631 | **0.664** | 0.698 → 0.708 | 0.434 → 0.420 |
+
+- It gains 0.03 on every dataset. The LLM reranker (`gemma3:4b`) lost 0.095 on the same Meridian questions.
+- On Meridian it lifts lexical (0.784 → 0.841), table (0.800 → 0.855) and detail (0.892 → 0.929) questions most.
+- Cost on the CPU container, concurrency 1, 40 Meridian questions: p50 1.25 s at 30 candidates (nDCG 0.837) and 0.46 s
+  at 10 (0.827). At concurrency 4 the container saturates and p50 reaches 4–6 s. Use a GPU TEI image, or 10–20
+  candidates, for interactive use.
+- The rerank score does not separate unanswerable questions better than the fused score (AUROC 0.769 vs 0.771), so
+  `RerankMinScore` stays off by default.
+
+**Conversation rewrite** (`gemma3:4b` on the GB10, Meridian): follow-up questions go from **0.519 to 0.783** nDCG@10
+(hit@1 0.33 → 0.53, evidence@10 0.40 → 0.77). Every other question type is identical, because the step only runs when
+there is earlier conversation. Overall 0.784 → 0.799, with no latency change for single-turn questions.
+
+**Document supersession** (the 18 Meridian `supersedes` links set with `--link-supersedes`):
+
+| Mode | Overall | Superseded questions | Superseded hit@1 | Filter questions |
+|---|---|---|---|---|
+| No links | 0.784 | 0.722 | 0.42 | 0.971 |
+| Demote | **0.814** | **0.908** | **0.92** | 0.971 |
+| Hide | 0.812 | 0.898 | 0.92 | 0.971 |
+| Demote + cross-encoder | **0.831** | 0.849 | 0.81 | 0.983 |
+
+- The first run (`r5-supersede-*`) replaced old versions even when the question scoped to them, by attaching the old
+  document or filtering on its `superseded` label. That dropped filter questions from 0.971 to 0.749. An explicit
+  scope now wins: the old chunk is kept and marked outdated. `r5c-*` is the corrected run.
+- With the cross-encoder, superseded questions score lower than with Demote alone (0.849 vs 0.908), because rerank can
+  push the inserted replacement chunk down. The combination is still the best overall.
+
+**Structured cells with title and heading headers** (ParagraphBased text cells, threshold 0, compared with flat
+ParagraphBased from round 4b):
+
+| Dataset | Flat nDCG@10 | Structured | Evidence@10 | Reachability |
+|---|---|---|---|---|
+| Meridian | 0.800 | 0.800 | 0.773 → 0.776 | 99.4% → 99.6% |
+| AssistantHub-docs | 0.830 | 0.815 | 0.756 → 0.686 | 100% → 100% |
+
+The result is mixed. Confusable (0.798 → 0.845), detail and paraphrase questions improve. Follow-up (0.556 → 0.381),
+lexical and table questions get worse. On AssistantHub-docs, section cells leave 76 tiny chunks and 18 duplicates.
+`CellMode` stays `Flat` and `ContextHeader` stays `None` by default. Both are available per ingestion rule.
+
+**Not measured here:** answer retry and degenerate-answer regeneration (unit-tested; a chat round against the loaded
+model proxy is the next check), utility timeouts under load, extraction settings (no scanned or spreadsheet fixture in
+the datasets), and near-duplicate detection (Meridian has no duplicates).
 
 ## Retrieval (defaults, Hybrid shown next to the default Vector)
 
@@ -342,6 +493,19 @@ ceiling. The dip at c=16 coincided with other workloads on the machine.
 With the real `all-minilm` (Hybrid, threshold 0), throughput was 5.5 / 6.0 / 11.6 ops/s at c=1/4/8, with p95 of 336 /
 1,645 / 2,651 ms and no errors, thanks to the round-1 retry.
 
+**Round 4b, same stub configuration**, with queries embedded through `/v1.0/embed` and cached in process:
+
+| Concurrency | Ops/s | Error rate | p50 ms | p95 ms |
+|---|---|---|---|---|
+| 1 | 47.0 | 0% | 18 | 56 |
+| 4 | 147.7 | 0% | 26 | 35 |
+| 16 | 250.8 | 0% | 62 | 90 |
+| 32 | 288.5 | 0% | 110 | 153 |
+
+The load runner repeats a fixed question set, so after the first pass nearly every query embedding is a cache hit
+and the Partio round trip, the old ceiling, drops out. Real traffic repeats less, so expect a smaller gain in
+production, in proportion to how often questions recur.
+
 ## Defects found by the benchmarks
 
 | Found in | Defect | Symptom | Status |
@@ -355,4 +519,8 @@ With the real `all-minilm` (Hybrid, threshold 0), throughput was 5.5 / 6.0 / 11.
 | Round 1 | Utility inference uses a fixed 100 s timeout | Rerank calls time out on a slow model server | Open |
 | GB10 runs | Partio reports an upstream model proxy's `429` as `500 InternalError`, and ingestion did not retry 500 | 5–6% of documents failed ingestion against a load-shedding model proxy | Fixed in AssistantHub (a wrapped 429/5xx is treated as transient); Partio should propagate the status |
 | Chat runs | The answer-model call is not retried on a transient 429/502 | Against a load-shedding model proxy, most chat requests in a burst failed | Open (the harness retries and counts) |
-| Phase 0 | API route-contract test out of date | Three earlier routes are missing from OpenAPI, Postman and REST docs | Open |
+| Phase 0 | API route-contract test out of date | Three earlier routes are missing from OpenAPI, Postman and REST docs | Fixed (the API suite passes) |
+| Round 3 | Query embedding used the 15-minute ingestion timeout | SciFact and NFCorpus Hybrid runs stalled for 50 minutes against a slow model proxy | Fixed: `Chunking.QueryEmbeddingTimeoutMs` (30 s, no retry on timeout) and keyword fallback in Hybrid |
+| Round 3 audit | Queries were embedded through Partio's chunking route and only the first chunk was used | Queries longer than 256 tokens silently truncated | Fixed: `/v1.0/embed` |
+| Round 3 audit | The Verbex tool sent `RequiredTerms`/`ExcludedTerms`, which Verbex does not have | Both silently ignored | Fixed: resolved by side queries |
+| Round 4 | First version of the hybrid threshold rule thresholded every chunk with a vector score | AssistantHub-docs Hybrid 0.853 → 0.827 | Fixed before round 4b |

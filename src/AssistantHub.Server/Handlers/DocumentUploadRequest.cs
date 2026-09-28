@@ -24,5 +24,17 @@ namespace AssistantHub.Server.Handlers
         public List<string> Labels { get; set; } = null;
         public Dictionary<string, string> Tags { get; set; } = null;
         public string Base64Content { get; set; } = null;
+        public List<string> SupersedesDocumentIds { get; set; } = null;
+    }
+
+    /// <summary>
+    /// Request to set the documents a document supersedes.
+    /// </summary>
+    public class DocumentSupersedesRequest
+    {
+        /// <summary>
+        /// Identifiers of the documents this document replaces. An empty list clears the links.
+        /// </summary>
+        public List<string> SupersedesDocumentIds { get; set; } = new List<string>();
     }
 }

@@ -38,12 +38,25 @@ namespace AssistantHub.Core.Settings
         /// </summary>
         public bool SupportsMultiDocumentFilter { get; set; } = true;
 
+        /// <summary>
+        /// HNSW <c>ef_search</c> sent with vector and hybrid searches that carry a label, tag or document filter.
+        /// pgvector applies filters after the index scan, so a restrictive filter can leave fewer than the requested
+        /// number of rows at RecallDB's default, which only covers the page. Zero leaves RecallDB's default in place.
+        /// Range 0 to 1,000; default 400.
+        /// </summary>
+        public int FilteredEfSearch
+        {
+            get => _FilteredEfSearch;
+            set => _FilteredEfSearch = Math.Clamp(value, 0, 1000);
+        }
+
         #endregion
 
         #region Private-Members
 
         private string _Endpoint = "http://localhost:8401";
         private string _DashboardUrl = "";
+        private int _FilteredEfSearch = 400;
 
         #endregion
 

@@ -219,6 +219,27 @@ namespace AssistantHub.Core.Services
                     }
                 }
 
+                // The judge uses its own endpoint when one is configured, so the assistant does not grade itself.
+                InferenceProviderEnum judgeProvider = provider;
+                string judgeEndpoint = endpoint;
+                string judgeApiKey = apiKey;
+                string judgeModel = model;
+                if (!String.IsNullOrEmpty(settings.EvalJudgeInferenceEndpointId))
+                {
+                    ResolvedEndpoint? judgeResolved = await ResolveCompletionEndpointAsync(settings.EvalJudgeInferenceEndpointId).ConfigureAwait(false);
+                    if (judgeResolved != null)
+                    {
+                        judgeProvider = judgeResolved.Value.Provider;
+                        judgeEndpoint = judgeResolved.Value.Endpoint;
+                        judgeApiKey = judgeResolved.Value.ApiKey;
+                        judgeModel = !String.IsNullOrEmpty(judgeResolved.Value.Model) ? judgeResolved.Value.Model : _Settings.Inference.DefaultModel;
+                    }
+                    else
+                    {
+                        _Logging.Warn(_Header + "eval judge endpoint " + settings.EvalJudgeInferenceEndpointId + " could not be resolved; judging with the assistant endpoint");
+                    }
+                }
+
                 int maxTokens = settings.MaxTokens;
                 double temperature = settings.Temperature;
                 double topP = settings.TopP;
@@ -302,8 +323,8 @@ namespace AssistantHub.Core.Services
                             };
 
                             InferenceResult judgeResult = await _Inference.GenerateResponseAsync(
-                                judgeMessages, model, 512, 0.0, 1.0,
-                                provider, endpoint, apiKey).ConfigureAwait(false);
+                                judgeMessages, judgeModel, 512, 0.0, 1.0,
+                                judgeProvider, judgeEndpoint, judgeApiKey).ConfigureAwait(false);
 
                             string judgeResponse = judgeResult?.Content ?? String.Empty;
 

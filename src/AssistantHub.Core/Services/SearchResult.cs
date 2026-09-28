@@ -64,5 +64,10 @@ namespace AssistantHub.Core.Services
         /// Populated when IncludeNeighbors is specified on the search query.
         /// </summary>
         public List<SearchResult> Neighbors { get; set; } = null;
+
+        /// <summary>
+        /// Tags stored on the chunk record (including AssistantHub's page, sheet and section provenance tags).
+        /// </summary>
+        public Dictionary<string, string> Tags { get; set; } = null;
     }
 }

@@ -246,6 +246,15 @@ namespace AssistantHub.Server.OpenApi
             })
             .Errors(400, 401, 403, 404, 500);
 
+        /// <summary>PUT /v1.0/documents/{documentId}/supersedes.</summary>
+        public static OpenApiRouteMetadata Supersedes => ApiDoc.Create("Set superseded documents", _Tag)
+            .Describe("Sets the documents this document replaces (for example the previous version of a policy). Each listed document records this "
+                + "document as its replacement, and retrieval then treats it as outdated according to the assistant's SupersessionMode "
+                + "(Demote, Hide or Include). Documents no longer listed are released. An empty list clears the links. " + _Tenancy)
+            .Body("Documents this document supersedes.", new DocumentSupersedesRequest { SupersedesDocumentIds = new List<string> { "adoc_01JH3Z8Q2R4S6T8V0W2X4Y6Z7Z" } })
+            .Returns(200, "The updated document.", ExampleCompletedDocument())
+            .Errors(400, 401, 404, 500);
+
         /// <summary>POST /v1.0/documents/{documentId}/reprocess.</summary>
         public static OpenApiRouteMetadata Reprocess => ApiDoc.Create("Reprocess document", _Tag)
             .Describe("Re-runs the full ingestion pipeline for a document when its source object still exists in storage. The status is reset to Uploaded and ingestion runs asynchronously; poll the document or its processing log for progress. "

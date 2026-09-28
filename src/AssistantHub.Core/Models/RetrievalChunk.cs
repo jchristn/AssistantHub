@@ -80,6 +80,57 @@ namespace AssistantHub.Core.Models
         public List<RetrievalChunk> Neighbors { get; set; } = null;
 
         /// <summary>
+        /// First page (or slide) of the source document this chunk came from, when known.
+        /// </summary>
+        [JsonPropertyName("page_start")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? PageStart { get; set; } = null;
+
+        /// <summary>
+        /// Last page (or slide) of the source document this chunk came from, when known.
+        /// </summary>
+        [JsonPropertyName("page_end")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? PageEnd { get; set; } = null;
+
+        /// <summary>
+        /// Spreadsheet sheet this chunk came from, when known.
+        /// </summary>
+        [JsonPropertyName("sheet")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Sheet { get; set; } = null;
+
+        /// <summary>
+        /// Heading path of the section this chunk came from, when known.
+        /// </summary>
+        [JsonPropertyName("section")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Section { get; set; } = null;
+
+        /// <summary>
+        /// Identifier of the document that supersedes this chunk's document, when the chunk is kept as outdated.
+        /// </summary>
+        [JsonPropertyName("superseded_by")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string SupersededBy { get; set; } = null;
+
+        /// <summary>
+        /// Build a short provenance label such as "p. 3", "pp. 3-4" or "sheet Q1", or null when none is known.
+        /// </summary>
+        /// <returns>Label or null.</returns>
+        public string ProvenanceLabel()
+        {
+            List<string> parts = new List<string>();
+            if (PageStart.HasValue)
+            {
+                if (PageEnd.HasValue && PageEnd.Value != PageStart.Value) parts.Add("pp. " + PageStart.Value + "-" + PageEnd.Value);
+                else parts.Add("p. " + PageStart.Value);
+            }
+            if (!System.String.IsNullOrEmpty(Sheet)) parts.Add("sheet " + Sheet);
+            return parts.Count > 0 ? System.String.Join(", ", parts) : null;
+        }
+
+        /// <summary>
         /// Returns the matched chunk's content with neighbor content merged in positional order.
         /// Neighbors before the match are prepended; neighbors after are appended.
         /// Falls back to Content when no neighbors are present.
@@ -136,7 +187,12 @@ namespace AssistantHub.Core.Models
                 VectorRank = VectorRank,
                 TextRank = TextRank,
                 Content = Content,
-                Position = Position
+                Position = Position,
+                PageStart = PageStart,
+                PageEnd = PageEnd,
+                Sheet = Sheet,
+                Section = Section,
+                SupersededBy = SupersededBy
             };
         }
     }

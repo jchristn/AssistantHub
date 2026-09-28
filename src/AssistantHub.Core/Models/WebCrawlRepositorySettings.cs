@@ -74,7 +74,9 @@ namespace AssistantHub.Core.Models
         public bool FollowLinks { get; set; } = true;
 
         /// <summary>
-        /// Follow HTTP redirects.
+        /// Follow HTTP redirects. Currently informational: ordinary redirects are always followed by the HTTP client
+        /// (the page is listed under the linking address), and CrawlSharp's own redirect following stays off because it
+        /// never ends on a redirect cycle.
         /// Default: true.
         /// </summary>
         public bool FollowRedirects { get; set; } = true;

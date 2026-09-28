@@ -16,7 +16,7 @@ namespace AssistantHub.Server.Services
             ["collection_search"] = Set("query", "queries", "max_results", "top_k", "include_neighbors", "strategy", "search_mode", "score_threshold", "document_ids", "labels", "required_labels", "excluded_labels", "tags", "required_tags", "excluded_tags", "source_url_contains", "fulltext_search_type", "fulltext_language", "fulltext_normalization", "fulltext_minimum_score"),
             ["collection_read_chunks"] = Set("document_id", "positions", "ranges", "max_chunks", "neighbor_window"),
             ["collection_enumerate_documents"] = Set("max_results", "continuation_token", "query", "content_type", "status", "labels", "required_labels", "excluded_labels", "tags", "required_tags", "excluded_tags", "source_url_contains"),
-            ["verbex_full_text_search"] = Set("query", "index_id", "record_ids", "max_results", "use_and_logic", "required_terms", "excluded_terms"),
+            ["verbex_full_text_search"] = Set("query", "index_id", "record_ids", "max_results", "use_and_logic", "required_terms", "excluded_terms", "labels"),
             ["index_enumerate_records"] = Set("index_id", "record_ids", "max_results", "continuation_token", "query", "record_id_prefix"),
             ["s3_object_read"] = Set("document_id", "bucket", "bucket_name", "object_key", "range_start", "range_length", "text_start", "text_length", "content_mode"),
             ["document_atom_extract"] = Set("document_id", "local_attachment_id", "document_type", "text_start", "text_length"),
@@ -257,6 +257,9 @@ namespace AssistantHub.Server.Services
 
             [JsonPropertyName("excluded_terms")]
             public List<string> ExcludedTerms { get; set; }
+
+            [JsonPropertyName("labels")]
+            public List<string> Labels { get; set; }
         }
 
         private sealed class IndexEnumerateRecordsArguments

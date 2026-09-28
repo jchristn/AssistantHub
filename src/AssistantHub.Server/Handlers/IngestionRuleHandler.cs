@@ -99,7 +99,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 rule.Id = IdGenerator.NewIngestionRuleId();
-                rule.TenantId = auth.TenantId;
+                rule.TenantId = ResolveTenantId(ctx, auth);
                 rule.CreatedUtc = DateTime.UtcNow;
                 rule.LastUpdateUtc = DateTime.UtcNow;
 
@@ -116,6 +116,13 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.StatusCode = 201;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(rule)).ConfigureAwait(false);
+            }
+            catch (ArgumentException e)
+            {
+                // An invalid enumerated value (for example Chunking.CellMode) is a client error.
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, e.Message))).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -138,7 +145,7 @@ namespace AssistantHub.Server.Handlers
             {
                 AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<IngestionRule> result = await Database.IngestionRule.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<IngestionRule> result = await Database.IngestionRule.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -285,6 +292,13 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(updated)).ConfigureAwait(false);
+            }
+            catch (ArgumentException e)
+            {
+                // An invalid enumerated value (for example Chunking.CellMode) is a client error.
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, e.Message))).ConfigureAwait(false);
             }
             catch (Exception e)
             {

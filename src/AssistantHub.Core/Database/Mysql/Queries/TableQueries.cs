@@ -92,6 +92,20 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `retrieval_score_threshold` DOUBLE NOT NULL DEFAULT 0.3, " +
             "  `search_mode` VARCHAR(32) DEFAULT 'Vector', " +
             "  `text_weight` DOUBLE DEFAULT 0.3, " +
+            "  `fusion_strategy` VARCHAR(32) DEFAULT 'Rrf', " +
+            "  `rrf_k` INT NOT NULL DEFAULT 60, " +
+            "  `fusion_candidate_pool` INT NULL, " +
+            "  `recency_weight` DOUBLE NOT NULL DEFAULT 0, " +
+            "  `context_order` VARCHAR(32) DEFAULT 'Score', " +
+            "  `eval_judge_inference_endpoint_id` TEXT, " +
+            "  `embedding_task_prefixes` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `enable_conversation_rewrite` TINYINT(1) NOT NULL DEFAULT 0, " +
+            "  `conversation_rewrite_prompt` TEXT, " +
+            "  `reranker_type` VARCHAR(32) DEFAULT 'Llm', " +
+            "  `rerank_endpoint_id` TEXT, " +
+            "  `rerank_candidate_count` INT NOT NULL DEFAULT 20, " +
+            "  `rerank_min_score` DOUBLE NULL, " +
+            "  `supersession_mode` VARCHAR(32) DEFAULT 'Demote', " +
             "  `fulltext_search_type` VARCHAR(32) DEFAULT 'TsRank', " +
             "  `fulltext_language` VARCHAR(32) DEFAULT 'english', " +
             "  `fulltext_normalization` INT DEFAULT 32, " +
@@ -168,6 +182,48 @@ namespace AssistantHub.Core.Database.Mysql.Queries
         internal static string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
             "ALTER TABLE `assistant_settings` ADD COLUMN `expose_document_source_urls` TINYINT(1) NOT NULL DEFAULT 0";
 
+        internal static string AddAssistantSettingsFusionStrategyColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `fusion_strategy` VARCHAR(32) DEFAULT 'Rrf'";
+
+        internal static string AddAssistantSettingsRrfKColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `rrf_k` INT NOT NULL DEFAULT 60";
+
+        internal static string AddAssistantSettingsFusionCandidatePoolColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `fusion_candidate_pool` INT NULL";
+
+        internal static string AddAssistantSettingsRecencyWeightColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `recency_weight` DOUBLE NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsContextOrderColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `context_order` VARCHAR(32) DEFAULT 'Score'";
+
+        internal static string AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `eval_judge_inference_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsEmbeddingTaskPrefixesColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `embedding_task_prefixes` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsEnableConversationRewriteColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `enable_conversation_rewrite` TINYINT(1) NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsConversationRewritePromptColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `conversation_rewrite_prompt` TEXT";
+
+        internal static string AddAssistantSettingsRerankerTypeColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `reranker_type` VARCHAR(32) DEFAULT 'Llm'";
+
+        internal static string AddAssistantSettingsRerankEndpointIdColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_endpoint_id` TEXT";
+
+        internal static string AddAssistantSettingsRerankCandidateCountColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_candidate_count` INT NOT NULL DEFAULT 20";
+
+        internal static string AddAssistantSettingsRerankMinScoreColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `rerank_min_score` DOUBLE NULL";
+
+        internal static string AddAssistantSettingsSupersessionModeColumn =
+            "ALTER TABLE `assistant_settings` ADD COLUMN `supersession_mode` VARCHAR(32) DEFAULT 'Demote'";
+
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS `assistant_documents` (" +
             "  `id` VARCHAR(256) NOT NULL, " +
@@ -191,6 +247,10 @@ namespace AssistantHub.Core.Database.Mysql.Queries
             "  `crawl_plan_id` TEXT, " +
             "  `crawl_operation_id` TEXT, " +
             "  `source_url` TEXT, " +
+            "  `supersedes_json` TEXT, " +
+            "  `superseded_by` TEXT, " +
+            "  `content_sha256` TEXT, " +
+            "  `near_duplicates_json` TEXT, " +
             "  `created_utc` TEXT NOT NULL, " +
             "  `last_update_utc` TEXT NOT NULL, " +
             "  PRIMARY KEY (`id`)" +
@@ -240,6 +300,18 @@ namespace AssistantHub.Core.Database.Mysql.Queries
 
         internal static string AddAssistantDocumentsVerbexRecordIdColumn =
             "ALTER TABLE `assistant_documents` ADD COLUMN `verbex_record_id` TEXT";
+
+        internal static string AddAssistantDocumentsSupersedesJsonColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `supersedes_json` TEXT";
+
+        internal static string AddAssistantDocumentsSupersededByColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `superseded_by` TEXT";
+
+        internal static string AddAssistantDocumentsContentSha256Column =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `content_sha256` TEXT";
+
+        internal static string AddAssistantDocumentsNearDuplicatesJsonColumn =
+            "ALTER TABLE `assistant_documents` ADD COLUMN `near_duplicates_json` TEXT";
 
         internal static string AddIngestionRulesVerbexIndexIdColumn =
             "ALTER TABLE `ingestion_rules` ADD COLUMN `verbex_index_id` TEXT";

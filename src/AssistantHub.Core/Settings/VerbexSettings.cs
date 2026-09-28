@@ -88,6 +88,37 @@ namespace AssistantHub.Core.Settings
             set => _IndexingRetryDelayMs = Math.Clamp(value, 0, 60000);
         }
 
+        /// <summary>
+        /// Enable lemmatization on Verbex indexes that AssistantHub creates, so inflected forms ("running", "ran")
+        /// match their base form. Applies to new indexes only; Verbex fixes the option when the index is created.
+        /// </summary>
+        public bool EnableLemmatizer { get; set; } = false;
+
+        /// <summary>
+        /// Enable stop-word removal on Verbex indexes that AssistantHub creates. Applies to new indexes only.
+        /// </summary>
+        public bool EnableStopWordRemover { get; set; } = false;
+
+        /// <summary>
+        /// Minimum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit).
+        /// Applies to new indexes only.
+        /// </summary>
+        public int MinTokenLength
+        {
+            get => _MinTokenLength;
+            set => _MinTokenLength = Math.Clamp(value, 0, 1024);
+        }
+
+        /// <summary>
+        /// Maximum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit).
+        /// Applies to new indexes only.
+        /// </summary>
+        public int MaxTokenLength
+        {
+            get => _MaxTokenLength;
+            set => _MaxTokenLength = Math.Clamp(value, 0, 1024);
+        }
+
         #endregion
 
         #region Private-Members
@@ -99,6 +130,8 @@ namespace AssistantHub.Core.Settings
         private int _MaxConcurrentIndexingRequests = 2;
         private int _IndexingRetryCount = 2;
         private int _IndexingRetryDelayMs = 2000;
+        private int _MinTokenLength = 0;
+        private int _MaxTokenLength = 0;
 
         #endregion
 

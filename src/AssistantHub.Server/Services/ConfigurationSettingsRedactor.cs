@@ -1,6 +1,7 @@
 namespace AssistantHub.Server.Services
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Services;
@@ -20,6 +21,12 @@ namespace AssistantHub.Server.Services
 
             AssistantHubSettings clone = Serializer.DeserializeJson<AssistantHubSettings>(Serializer.SerializeJson(settings));
             RedactExternalSearchProviderApiKeys(clone);
+            foreach (RerankerSettings reranker in clone.Rerankers ?? new List<RerankerSettings>())
+            {
+                if (reranker != null && !String.IsNullOrWhiteSpace(reranker.ApiKey))
+                    reranker.ApiKey = ExternalSearchConfigurationHelper.RedactedSecret;
+            }
+
             return clone;
         }
 
@@ -28,6 +35,14 @@ namespace AssistantHub.Server.Services
         /// </summary>
         public static void PreserveRedactedExternalSearchSecrets(AssistantHubSettings updated, AssistantHubSettings current)
         {
+            // Reranker keys are redacted the same way; restore them by reranker Id.
+            foreach (RerankerSettings reranker in updated?.Rerankers ?? new List<RerankerSettings>())
+            {
+                if (reranker == null || !IsRedacted(reranker.ApiKey)) continue;
+                RerankerSettings existing = current?.Rerankers?.FirstOrDefault(r => r != null && String.Equals(r.Id, reranker.Id, StringComparison.OrdinalIgnoreCase));
+                reranker.ApiKey = existing?.ApiKey;
+            }
+
             if (updated?.ExternalSearch?.Providers == null || current?.ExternalSearch?.Providers == null)
                 return;
 

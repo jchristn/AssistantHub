@@ -163,7 +163,7 @@ class AssistantSettings(BaseModel):
     enable_query_rewrite: bool = Field(False, alias="enableQueryRewrite")
     query_rewrite_prompt: Optional[str] = Field(None, alias="queryRewritePrompt")
     enable_reranking: bool = Field(False, alias="enableReranking")
-    reranker_top_k: int = Field(5, alias="rerankerTopK")
+    reranker_top_k: int = Field(10, alias="rerankerTopK")
     reranker_score_threshold: float = Field(0.0, alias="rerankerScoreThreshold")
     rerank_prompt: Optional[str] = Field(None, alias="rerankPrompt")
     enable_citations: bool = Field(False, alias="enableCitations")
@@ -174,13 +174,27 @@ class AssistantSettings(BaseModel):
     collection_id: Optional[str] = Field(None, alias="collectionId")
     retrieval_top_k: int = Field(10, alias="retrievalTopK")
     retrieval_score_threshold: float = Field(0.0, alias="retrievalScoreThreshold")
-    search_mode: Optional[str] = Field(None, alias="searchMode")
+    search_mode: Optional[str] = Field("Hybrid", alias="searchMode")
     text_weight: float = Field(0.5, alias="textWeight")
+    fusion_strategy: str = Field("Rrf", alias="fusionStrategy")
+    rrf_k: int = Field(60, alias="rrfK")
+    fusion_candidate_pool: Optional[int] = Field(None, alias="fusionCandidatePool")
+    recency_weight: float = Field(0.0, alias="recencyWeight")
+    context_order: str = Field("Score", alias="contextOrder")
+    embedding_task_prefixes: bool = Field(False, alias="embeddingTaskPrefixes")
+    enable_conversation_rewrite: bool = Field(False, alias="enableConversationRewrite")
+    conversation_rewrite_prompt: Optional[str] = Field(None, alias="conversationRewritePrompt")
+    reranker_type: str = Field("Llm", alias="rerankerType")
+    rerank_endpoint_id: Optional[str] = Field(None, alias="rerankEndpointId")
+    rerank_candidate_count: int = Field(20, alias="rerankCandidateCount")
+    rerank_min_score: Optional[float] = Field(None, alias="rerankMinScore")
+    supersession_mode: str = Field("Demote", alias="supersessionMode")
+    eval_judge_inference_endpoint_id: Optional[str] = Field(None, alias="evalJudgeInferenceEndpointId")
     full_text_search_type: Optional[str] = Field(None, alias="fullTextSearchType")
     full_text_language: Optional[str] = Field(None, alias="fullTextLanguage")
     full_text_normalization: int = Field(0, alias="fullTextNormalization")
     full_text_minimum_score: Optional[float] = Field(None, alias="fullTextMinimumScore")
-    retrieval_include_neighbors: int = Field(0, alias="retrievalIncludeNeighbors")
+    retrieval_include_neighbors: int = Field(1, alias="retrievalIncludeNeighbors")
     inference_endpoint_id: Optional[str] = Field(
         None,
         alias="inferenceEndpointId",
@@ -529,8 +543,26 @@ class AssistantDocument(BaseModel):
     crawl_plan_id: Optional[str] = Field(None, alias="crawlPlanId")
     crawl_operation_id: Optional[str] = Field(None, alias="crawlOperationId")
     source_url: Optional[str] = Field(None, alias="sourceUrl")
+    supersedes: Optional[str] = None
+    """JSON array of document IDs this document supersedes."""
+    superseded_by: Optional[str] = Field(None, alias="supersededBy")
+    content_sha256: Optional[str] = Field(None, alias="contentSha256")
+    near_duplicates: Optional[str] = Field(None, alias="nearDuplicates")
+    """JSON array of ``{DocumentId, Score, Exact?}`` near-duplicate matches."""
     created_utc: Optional[datetime] = Field(None, alias="createdUtc")
     last_update_utc: Optional[datetime] = Field(None, alias="lastUpdateUtc")
+
+
+class DocumentSupersedesRequest(BaseModel):
+    """Request body for setting the documents a document supersedes."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    supersedes_document_ids: list[str] = Field(
+        default_factory=list,
+        alias="SupersedesDocumentIds",
+        validation_alias=AliasChoices("SupersedesDocumentIds", "supersedesDocumentIds", "supersedes_document_ids"),
+    )
 
 
 class AssistantDocumentSelectionItem(BaseModel):
@@ -686,6 +718,11 @@ class RetrievalChunk(BaseModel):
     content: Optional[str] = None
     position: Optional[int] = None
     neighbors: Optional[list[RetrievalChunk]] = None
+    page_start: Optional[int] = Field(None, alias="page_start")
+    page_end: Optional[int] = Field(None, alias="page_end")
+    sheet: Optional[str] = None
+    section: Optional[str] = None
+    superseded_by: Optional[str] = Field(None, alias="superseded_by")
 
 
 class CitationSource(BaseModel):
@@ -702,6 +739,10 @@ class CitationSource(BaseModel):
     rerank_score: Optional[float] = Field(None, alias="rerank_score")
     excerpt: Optional[str] = None
     download_url: Optional[str] = Field(None, alias="download_url")
+    page_start: Optional[int] = Field(None, alias="page_start")
+    page_end: Optional[int] = Field(None, alias="page_end")
+    sheet: Optional[str] = None
+    superseded_by: Optional[str] = Field(None, alias="superseded_by")
 
 
 class RetrievalCandidateDropSummary(BaseModel):
@@ -738,6 +779,12 @@ class ChatCompletionRetrieval(BaseModel):
         None, alias="dropped_candidates"
     )
     final_citation_count: Optional[int] = Field(None, alias="final_citation_count")
+    conversation_rewrite: Optional[str] = Field(None, alias="conversation_rewrite")
+    reranker: Optional[str] = None
+    rerank_skipped: bool = Field(False, alias="rerank_skipped")
+    no_relevant_context: bool = Field(False, alias="no_relevant_context")
+    superseded_chunks: int = Field(0, alias="superseded_chunks")
+    answer_regenerated: bool = Field(False, alias="answer_regenerated")
     chunks: Optional[list[RetrievalChunk]] = None
 
 
@@ -1592,6 +1639,21 @@ class IngestionChunkingConfig(BaseModel):
     row_group_size: int = Field(100, alias="rowGroupSize")
     context_prefix: Optional[str] = Field(None, alias="contextPrefix")
     regex_pattern: Optional[str] = Field(None, alias="regexPattern")
+    cell_mode: str = Field("Flat", alias="cellMode")
+    table_strategy: str = Field("RowGroupWithHeaders", alias="tableStrategy")
+    list_strategy: str = Field("WholeList", alias="listStrategy")
+    context_header: str = Field("None", alias="contextHeader")
+
+
+class IngestionExtractionConfig(BaseModel):
+    """Extraction configuration for ingestion rules (OCR, CSV/Excel parsing, duplicate detection)."""
+
+    ocr_embedded_images: Optional[bool] = Field(None, alias="ocrEmbeddedImages")
+    csv_has_header_row: Optional[bool] = Field(None, alias="csvHasHeaderRow")
+    csv_rows_per_atom: Optional[int] = Field(None, alias="csvRowsPerAtom")
+    excel_header_row_score_threshold: Optional[int] = Field(None, alias="excelHeaderRowScoreThreshold")
+    duplicate_policy: str = Field("Allow", alias="duplicatePolicy")
+    near_duplicate_threshold: float = Field(0.85, alias="nearDuplicateThreshold")
 
 
 class IngestionEmbeddingConfig(BaseModel):
@@ -1599,6 +1661,7 @@ class IngestionEmbeddingConfig(BaseModel):
 
     embedding_endpoint_id: Optional[str] = Field(None, alias="embeddingEndpointId")
     l2_normalization: bool = Field(False, alias="l2Normalization")
+    task_prefixes: bool = Field(False, alias="taskPrefixes")
 
 
 class IngestionSummarizationConfig(BaseModel):
@@ -1630,7 +1693,7 @@ class IngestionRule(BaseModel):
     verbex_index_id: Optional[str] = Field(None, alias="verbexIndexId")
     labels: Optional[list[str]] = None
     tags: Optional[dict[str, str]] = None
-    atomization: Optional[dict[str, Any]] = None
+    extraction: Optional[IngestionExtractionConfig] = None
     summarization: Optional[IngestionSummarizationConfig] = None
     chunking: Optional[IngestionChunkingConfig] = None
     embedding: Optional[IngestionEmbeddingConfig] = None
@@ -2036,6 +2099,46 @@ class ExternalSearchConfigurationStatus(BaseModel):
     enabled_providers: int = Field(0, alias="EnabledProviders", validation_alias=AliasChoices("EnabledProviders", "enabledProviders", "enabled_providers"))
     configured_providers: int = Field(0, alias="ConfiguredProviders", validation_alias=AliasChoices("ConfiguredProviders", "configuredProviders", "configured_providers"))
     misconfigured_providers: int = Field(0, alias="MisconfiguredProviders", validation_alias=AliasChoices("MisconfiguredProviders", "misconfiguredProviders", "misconfigured_providers"))
+
+
+# ---------------------------------------------------------------------------
+# Rerankers
+# ---------------------------------------------------------------------------
+
+
+class RerankerSummary(BaseModel):
+    """Cross-encoder reranker configured in server settings (API key omitted)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: Optional[str] = Field(None, alias="Id", validation_alias=AliasChoices("Id", "id"))
+    name: Optional[str] = Field(None, alias="Name", validation_alias=AliasChoices("Name", "name"))
+    format: Optional[str] = Field(None, alias="Format", validation_alias=AliasChoices("Format", "format"))
+    endpoint: Optional[str] = Field(None, alias="Endpoint", validation_alias=AliasChoices("Endpoint", "endpoint"))
+    model: Optional[str] = Field(None, alias="Model", validation_alias=AliasChoices("Model", "model"))
+    timeout_ms: int = Field(0, alias="TimeoutMs", validation_alias=AliasChoices("TimeoutMs", "timeoutMs", "timeout_ms"))
+    has_api_key: bool = Field(False, alias="HasApiKey", validation_alias=AliasChoices("HasApiKey", "hasApiKey", "has_api_key"))
+
+
+class RerankerTestRequest(BaseModel):
+    """Request to score passages against a query with a configured reranker."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    query: str = Field(alias="Query", validation_alias=AliasChoices("Query", "query"))
+    documents: list[str] = Field(alias="Documents", validation_alias=AliasChoices("Documents", "documents"))
+
+
+class RerankerTestResult(BaseModel):
+    """Result of testing a configured reranker."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    reranker_id: Optional[str] = Field(None, alias="RerankerId", validation_alias=AliasChoices("RerankerId", "rerankerId", "reranker_id"))
+    success: bool = Field(False, alias="Success", validation_alias=AliasChoices("Success", "success"))
+    scores: Optional[list[float]] = Field(None, alias="Scores", validation_alias=AliasChoices("Scores", "scores"))
+    error_message: Optional[str] = Field(None, alias="ErrorMessage", validation_alias=AliasChoices("ErrorMessage", "errorMessage", "error_message"))
+    duration_ms: float = Field(0.0, alias="DurationMs", validation_alias=AliasChoices("DurationMs", "durationMs", "duration_ms"))
 
 
 # ---------------------------------------------------------------------------

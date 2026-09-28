@@ -90,6 +90,18 @@
     "IndexingRetryCount": 3,
     "IndexingRetryDelayMs": 2000
   },
+  "Rerankers": [
+    {
+      "Id": "bench-cross-encoder",
+      "Name": "MiniLM cross-encoder (bench)",
+      "Format": "Tei",
+      "Endpoint": "http://127.0.0.1:38087",
+      "Model": null,
+      "ApiKey": null,
+      "TimeoutMs": 10000,
+      "MaxPassageCharacters": 2000
+    }
+  ],
   "ExternalSearch": {
     "Enabled": false,
     "AllowFallback": true,

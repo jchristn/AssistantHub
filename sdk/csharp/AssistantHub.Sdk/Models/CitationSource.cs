@@ -73,5 +73,29 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("download_url")]
         public string DownloadUrl { get; set; }
+
+        /// <summary>
+        /// First page of the cited chunk, when known.
+        /// </summary>
+        [JsonPropertyName("page_start")]
+        public int? PageStart { get; set; }
+
+        /// <summary>
+        /// Last page of the cited chunk, when known.
+        /// </summary>
+        [JsonPropertyName("page_end")]
+        public int? PageEnd { get; set; }
+
+        /// <summary>
+        /// Spreadsheet sheet name of the cited chunk, when known.
+        /// </summary>
+        [JsonPropertyName("sheet")]
+        public string Sheet { get; set; }
+
+        /// <summary>
+        /// Identifier of the document that supersedes the cited document, when applicable.
+        /// </summary>
+        [JsonPropertyName("superseded_by")]
+        public string SupersededBy { get; set; }
     }
 }

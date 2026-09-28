@@ -2,6 +2,7 @@ namespace AssistantHub.Core.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -9,6 +10,7 @@ namespace AssistantHub.Core.Services
     using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+    using AssistantHub.Core.Models;
     using AssistantHub.Core.Settings;
     using SyslogLogging;
 
@@ -89,6 +91,28 @@ namespace AssistantHub.Core.Services
         /// <inheritdoc />
         public async Task<string> ExtractTextAsync(string documentId, byte[] fileBytes, string documentType, string filename, CancellationToken token = default)
         {
+            AtomExtractionResult result = await ExtractAsync(documentId, fileBytes, documentType, filename, null, token).ConfigureAwait(false);
+            return result?.Text;
+        }
+
+        /// <inheritdoc />
+        public async Task<AtomExtractionResult> ExtractAsync(
+            string documentId,
+            byte[] fileBytes,
+            string documentType,
+            string filename,
+            IngestionExtractionConfig extraction,
+            CancellationToken token = default)
+        {
+            if (IsLegacyBinaryOfficeType(documentType))
+            {
+                string message = "Legacy binary Office documents (" + documentType + ") are not supported; save the file as docx, xlsx or pptx and upload it again.";
+                _Logging.Warn(_Header + message);
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "ERROR", message).ConfigureAwait(false);
+                return new AtomExtractionResult { ErrorMessage = message };
+            }
+
             string atomPath = GetAtomPath(documentType);
             if (String.IsNullOrEmpty(atomPath))
             {
@@ -99,12 +123,18 @@ namespace AssistantHub.Core.Services
             }
 
             string url = _Settings.Endpoint.TrimEnd('/') + atomPath;
+            Dictionary<string, object> processorSettings = extraction?.ToDocumentAtomSettings(documentType);
+            if (String.Equals(documentType, "tsv", StringComparison.OrdinalIgnoreCase))
+            {
+                processorSettings ??= new Dictionary<string, object>();
+                processorSettings["ColumnDelimiter"] = "\t";
+            }
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url))
             {
                 object atomRequest = new
                 {
-                    Settings = (object)null,
+                    Settings = (object)processorSettings,
                     Data = Convert.ToBase64String(fileBytes)
                 };
 
@@ -140,10 +170,63 @@ namespace AssistantHub.Core.Services
                 foreach (AtomResponse atom in atoms)
                     AppendReadableContent(atom, sb);
 
-                if (_ProcessingLog != null)
-                    await _ProcessingLog.LogAsync(documentId, "INFO", "Readable content extracted: " + sb.Length + " character(s)").ConfigureAwait(false);
+                List<ExtractedBlock> blocks = new List<ExtractedBlock>();
+                foreach (AtomResponse atom in atoms)
+                    AppendBlocks(atom, blocks, null, null);
 
-                return sb.Length > 0 ? sb.ToString() : null;
+                if (_ProcessingLog != null)
+                    await _ProcessingLog.LogAsync(documentId, "INFO", "Readable content extracted: " + sb.Length + " character(s), " + blocks.Count + " block(s)").ConfigureAwait(false);
+
+                return sb.Length > 0 ? new AtomExtractionResult { Text = sb.ToString(), Blocks = blocks } : null;
+            }
+        }
+
+        /// <summary>
+        /// Whether a document type is a legacy binary Office format that DocumentAtom's OpenXML processors cannot read.
+        /// </summary>
+        /// <param name="documentType">Detected document type.</param>
+        /// <returns>True for doc, xls and ppt.</returns>
+        public static bool IsLegacyBinaryOfficeType(string documentType)
+        {
+            if (String.IsNullOrEmpty(documentType)) return false;
+            string t = documentType.ToLowerInvariant();
+            return t == "doc" || t == "xls" || t == "ppt";
+        }
+
+        /// <summary>
+        /// Map a detected document type to its DocumentAtom route.
+        /// </summary>
+        /// <param name="documentType">Detected document type.</param>
+        /// <returns>Route, or null when the type is not supported.</returns>
+        public static string GetAtomPath(string documentType)
+        {
+            if (String.IsNullOrEmpty(documentType)) return null;
+
+            switch (documentType.ToLowerInvariant())
+            {
+                case "csv":
+                case "tsv": return "/atom/csv";
+                case "xlsx": return "/atom/excel";
+                case "html": return "/atom/html";
+                case "json": return "/atom/json";
+                case "markdown": return "/atom/markdown";
+                case "pdf": return "/atom/pdf";
+                case "png":
+                case "jpeg":
+                case "jpg":
+                case "gif":
+                case "tiff":
+                case "bmp":
+                case "webp":
+                case "ico": return "/atom/png";
+                case "pptx": return "/atom/powerpoint";
+                case "rtf": return "/atom/rtf";
+                case "text": return "/atom/text";
+                case "docx": return "/atom/word";
+                case "xml":
+                case "svg":
+                case "gpx": return "/atom/xml";
+                default: return null;
             }
         }
 
@@ -151,38 +234,77 @@ namespace AssistantHub.Core.Services
 
         #region Private-Methods
 
-        private static string GetAtomPath(string documentType)
+        /// <summary>
+        /// Walk an atom and its children into structural blocks, carrying the page and sheet down to children that
+        /// do not report their own.
+        /// </summary>
+        private static void AppendBlocks(AtomResponse atom, List<ExtractedBlock> blocks, int? parentPage, string parentSheet)
         {
-            if (String.IsNullOrEmpty(documentType)) return null;
+            if (atom == null) return;
+            int? page = atom.PageNumber ?? parentPage;
+            string sheet = !String.IsNullOrWhiteSpace(atom.SheetName) ? atom.SheetName : parentSheet;
 
-            switch (documentType.ToLowerInvariant())
+            List<List<string>> tableRows = TableRows(atom.Table);
+            if (tableRows != null)
             {
-                case "csv": return "/atom/csv";
-                case "xlsx":
-                case "xls": return "/atom/excel";
-                case "html": return "/atom/html";
-                case "json": return "/atom/json";
-                case "markdown": return "/atom/markdown";
-                case "pdf": return "/atom/pdf";
-                case "png":
-                case "jpeg":
-                case "gif":
-                case "tiff":
-                case "bmp":
-                case "webp":
-                case "ico": return "/atom/png";
-                case "pptx":
-                case "ppt": return "/atom/powerpoint";
-                case "rtf": return "/atom/rtf";
-                case "text":
-                case "tsv": return "/atom/text";
-                case "docx":
-                case "doc": return "/atom/word";
-                case "xml":
-                case "svg":
-                case "gpx": return "/atom/xml";
-                default: return null;
+                blocks.Add(new ExtractedBlock { Kind = "Table", Text = RenderTable(atom.Table), TableRows = tableRows, PageNumber = page, SheetName = sheet });
             }
+            else if (atom.OrderedList != null && atom.OrderedList.Any(i => !String.IsNullOrWhiteSpace(i)))
+            {
+                blocks.Add(new ExtractedBlock { Kind = "List", Text = RenderList(atom.OrderedList, true), ListItems = atom.OrderedList.Where(i => !String.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToList(), Ordered = true, PageNumber = page, SheetName = sheet });
+            }
+            else if (atom.UnorderedList != null && atom.UnorderedList.Any(i => !String.IsNullOrWhiteSpace(i)))
+            {
+                blocks.Add(new ExtractedBlock { Kind = "List", Text = RenderList(atom.UnorderedList, false), ListItems = atom.UnorderedList.Where(i => !String.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToList(), Ordered = false, PageNumber = page, SheetName = sheet });
+            }
+            else if (atom.HeaderLevel.HasValue && atom.HeaderLevel.Value > 0 && !String.IsNullOrWhiteSpace(atom.Text))
+            {
+                blocks.Add(new ExtractedBlock { Kind = "Heading", Text = atom.Text.Trim().TrimStart('#').Trim(), HeaderLevel = Math.Min(atom.HeaderLevel.Value, 6), PageNumber = page, SheetName = sheet });
+            }
+            else
+            {
+                string content = RenderAtomContent(atom);
+                if (String.IsNullOrWhiteSpace(content) && atom.Chunks != null)
+                    content = String.Join("\n\n", atom.Chunks.Where(c => !String.IsNullOrWhiteSpace(c?.Text)).Select(c => c.Text.Trim()));
+                if (!String.IsNullOrWhiteSpace(content))
+                    blocks.Add(new ExtractedBlock { Kind = "Text", Text = content.Trim(), PageNumber = page, SheetName = sheet });
+            }
+
+            if (atom.Quarks != null)
+            {
+                foreach (AtomResponse quark in atom.Quarks)
+                    AppendBlocks(quark, blocks, page, sheet);
+            }
+        }
+
+        /// <summary>
+        /// Convert a DocumentAtom table to rows with the header row first, or null when it has no data rows.
+        /// </summary>
+        private static List<List<string>> TableRows(JsonElement table)
+        {
+            if (table.ValueKind != JsonValueKind.Object) return null;
+            if (!TryGetProperty(table, "Columns", out JsonElement columnsElement) || columnsElement.ValueKind != JsonValueKind.Array)
+                columnsElement = default;
+            if (!TryGetProperty(table, "Rows", out JsonElement rowsElement) || rowsElement.ValueKind != JsonValueKind.Array)
+                rowsElement = default;
+
+            List<string> columns = ExtractColumnNames(columnsElement);
+            List<List<string>> rows = ExtractRows(rowsElement, columns);
+            if (rows.Count == 0) return null;
+            if (columns.Count == 0)
+            {
+                int width = rows.Max(r => r.Count);
+                for (int i = 0; i < width; i++) columns.Add("Column" + (i + 1));
+            }
+
+            List<List<string>> result = new List<List<string>> { columns };
+            foreach (List<string> row in rows)
+            {
+                while (row.Count < columns.Count) row.Add(String.Empty);
+                result.Add(row);
+            }
+
+            return result;
         }
 
         private static void AppendReadableContent(AtomResponse atom, StringBuilder sb)
@@ -221,6 +343,9 @@ namespace AssistantHub.Core.Services
 
                 if (IsAtomType(atom, "Code"))
                     return "```" + "\n" + atom.Text + "\n" + "```";
+
+                if (atom.HeaderLevel.HasValue && atom.HeaderLevel.Value > 0)
+                    return RenderHeading(atom.Text, atom.HeaderLevel.Value);
 
                 return atom.Text;
             }
@@ -463,10 +588,25 @@ namespace AssistantHub.Core.Services
                 .Trim();
         }
 
+        /// <summary>
+        /// Render a heading as a markdown heading so its level survives into the chunk text. Markdown sources already
+        /// carry their own marker and are left as they are.
+        /// </summary>
+        private static string RenderHeading(string text, int level)
+        {
+            string trimmed = text.Trim();
+            if (trimmed.Length == 0 || trimmed.StartsWith("#", StringComparison.Ordinal)) return trimmed;
+            return new string('#', Math.Min(level, 6)) + " " + trimmed;
+        }
+
+        /// <summary>
+        /// Append an extracted block, separated from the previous one by a blank line so paragraph-based chunking
+        /// can find block boundaries.
+        /// </summary>
         private static void AppendBlock(StringBuilder sb, string text)
         {
             if (String.IsNullOrWhiteSpace(text)) return;
-            if (sb.Length > 0) sb.Append("\n");
+            if (sb.Length > 0) sb.Append("\n\n");
             sb.Append(text.Trim());
         }
 

@@ -970,6 +970,12 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.DocumentHandler.PutDocumentSupersedesAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            PUT /v1.0/documents/{documentId}/supersedes - Set the documents a document supersedes.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+        </member>
         <member name="M:AssistantHub.Server.Handlers.DocumentHandler.DownloadDocumentAsync(WatsonWebserver.Core.HttpContextBase)">
             <summary>
             GET /v1.0/documents/{documentId}/download - Download document content from S3.
@@ -1029,6 +1035,16 @@
             <summary>
             GET /v1.0/analytics/ingestion - Ingestion performance events for the caller's tenant within a
             time window. Query params: hours (default 24, max 2160), maxResults (default 5000, max 50000).
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.DocumentSupersedesRequest">
+            <summary>
+            Request to set the documents a document supersedes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.DocumentSupersedesRequest.SupersedesDocumentIds">
+            <summary>
+            Identifiers of the documents this document replaces. An empty list clears the links.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.EmbeddingEndpointHandler">
@@ -1341,6 +1357,15 @@
             <param name="auth">Auth context.</param>
             <param name="tenantId">Tenant ID to check.</param>
             <returns>True if access is allowed.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.HandlerBase.ResolveTenantId(WatsonWebserver.Core.HttpContextBase,AssistantHub.Core.Models.AuthContext)">
+            <summary>
+            Resolve the tenant a request acts on. Tenant-scoped callers always use their own tenant; the
+            administrator API key (which has no tenant) uses the tenantId query parameter, else the default tenant.
+            </summary>
+            <param name="ctx">HTTP context.</param>
+            <param name="auth">Auth context.</param>
+            <returns>Tenant identifier.</returns>
         </member>
         <member name="M:AssistantHub.Server.Handlers.HandlerBase.EnforceTenantOwnership(AssistantHub.Core.Models.AuthContext,System.String)">
             <summary>
@@ -1696,6 +1721,86 @@
             <summary>
             DELETE /v1.0/requesthistory/bulk - delete request-history entries matching the current filter.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RerankerHandler">
+            <summary>
+            Routes for the cross-encoder rerank services configured in server settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RerankerHandler.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.AuthenticationService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.CrossEncoderRerankClient)">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RerankerHandler.GetRerankersAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            GET /v1.0/rerankers - List the configured rerankers (without API keys).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RerankerHandler.TestRerankerAsync(WatsonWebserver.Core.HttpContextBase)">
+            <summary>
+            POST /v1.0/rerankers/{rerankerId}/test - Score passages against a query with a configured reranker.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RerankerSummary">
+            <summary>
+            A configured reranker, as listed by the API (the API key is never returned).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.Id">
+            <summary>Identifier referenced by assistant settings (RerankEndpointId).</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.Name">
+            <summary>Display name.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.Format">
+            <summary>Request format: Tei or Cohere.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.Endpoint">
+            <summary>Service base URL.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.Model">
+            <summary>Model name (Cohere format).</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.TimeoutMs">
+            <summary>Request timeout in milliseconds.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerSummary.HasApiKey">
+            <summary>Whether an API key is configured.</summary>
+        </member>
+        <member name="M:AssistantHub.Server.Handlers.RerankerSummary.From(AssistantHub.Core.Settings.RerankerSettings)">
+            <summary>Build a summary from settings.</summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RerankerTestRequest">
+            <summary>
+            Request to score passages with a reranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestRequest.Query">
+            <summary>Query text.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestRequest.Documents">
+            <summary>Passages to score (at most 100).</summary>
+        </member>
+        <member name="T:AssistantHub.Server.Handlers.RerankerTestResult">
+            <summary>
+            Result of a reranker test.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestResult.RerankerId">
+            <summary>Reranker identifier.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestResult.Success">
+            <summary>Whether the reranker returned scores.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestResult.Scores">
+            <summary>One score per document, in request order (0 to 1 for cross-encoders).</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestResult.ErrorMessage">
+            <summary>Error when the reranker failed.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.Handlers.RerankerTestResult.DurationMs">
+            <summary>Round-trip duration in milliseconds.</summary>
         </member>
         <member name="T:AssistantHub.Server.Handlers.RootHandler">
             <summary>
@@ -2394,6 +2499,9 @@
         <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Reindex">
             <summary>POST /v1.0/documents/{documentId}/reindex.</summary>
         </member>
+        <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Supersedes">
+            <summary>PUT /v1.0/documents/{documentId}/supersedes.</summary>
+        </member>
         <member name="P:AssistantHub.Server.OpenApi.DocumentApiDocs.Reprocess">
             <summary>POST /v1.0/documents/{documentId}/reprocess.</summary>
         </member>
@@ -2839,6 +2947,17 @@
         <member name="P:AssistantHub.Server.OpenApi.RequestHistoryApiDocs.DeleteBulk">
             <summary>DELETE /v1.0/requesthistory/bulk.</summary>
         </member>
+        <member name="T:AssistantHub.Server.OpenApi.RerankerApiDocs">
+            <summary>
+            OpenAPI metadata for reranker routes.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RerankerApiDocs.List">
+            <summary>GET /v1.0/rerankers.</summary>
+        </member>
+        <member name="P:AssistantHub.Server.OpenApi.RerankerApiDocs.Test">
+            <summary>POST /v1.0/rerankers/{rerankerId}/test.</summary>
+        </member>
         <member name="T:AssistantHub.Server.OpenApi.SystemApiDocs">
             <summary>
             OpenAPI metadata for unauthenticated system routes: health, OpenAPI document, Swagger UI, and authentication.
@@ -3129,7 +3248,7 @@
             Shared non-streaming assistant chat execution service.
             </summary>
         </member>
-        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,System.Net.Http.HttpClient,AssistantHub.Server.Services.IAssistantToolExecutor,AssistantHub.Core.Services.IInferenceEndpointService)">
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.#ctor(AssistantHub.Core.Database.DatabaseDriverBase,SyslogLogging.LoggingModule,AssistantHub.Core.Settings.AssistantHubSettings,AssistantHub.Core.Services.RetrievalService,AssistantHub.Core.Services.InferenceService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.IInvertedIndexService,System.Net.Http.HttpClient,AssistantHub.Server.Services.IAssistantToolExecutor,AssistantHub.Core.Services.IInferenceEndpointService,AssistantHub.Core.Services.CrossEncoderRerankClient)">
             <summary>
             Instantiate the shared assistant chat execution service.
             </summary>
@@ -3143,6 +3262,7 @@
             <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
             <param name="toolExecutor">Optional tool executor override for tests.</param>
             <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
+            <param name="rerankClient">Optional cross-encoder rerank client override for tests.</param>
         </member>
         <member name="M:AssistantHub.Server.Services.AssistantChatService.ExecuteNonStreamingAsync(AssistantHub.Server.Services.AssistantChatExecutionRequest,System.Threading.CancellationToken)">
             <summary>
@@ -3163,6 +3283,22 @@
             <param name="token">Cancellation token.</param>
             <returns>Execution result.</returns>
         </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.BuildPromptContextAsync(AssistantHub.Core.Models.Assistant,AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,AssistantHub.Core.Models.ChatMetadataFilter,System.Collections.Generic.List{System.String},System.Collections.Generic.List{AssistantHub.Core.Models.AssistantDocumentSelectionItem},System.Threading.CancellationToken)">
+            <summary>
+            Run the retrieval stages for a chat turn and prepare the retrieved context for the prompt: order the chunks
+            (ContextOrder), build citation labels and sources (with pages and outdated-source markers), and a note for
+            the system prompt when nothing relevant was found. Shared by every chat path.
+            </summary>
+            <param name="assistant">Assistant.</param>
+            <param name="settings">Assistant settings.</param>
+            <param name="conversation">Conversation messages.</param>
+            <param name="lastUserMessage">Latest user message.</param>
+            <param name="effectiveMetadataFilter">Merged metadata filter.</param>
+            <param name="attachedDocumentIds">Validated attached document identifiers, or null.</param>
+            <param name="attachedDocuments">Attached document metadata, or null.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Prompt context.</returns>
+        </member>
         <member name="M:AssistantHub.Server.Services.AssistantChatService.RunRetrievalStagesAsync(System.String,AssistantHub.Core.Models.AssistantSettings,System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.String,AssistantHub.Core.Models.ChatMetadataFilter,System.Collections.Generic.List{System.String},System.Collections.Generic.List{AssistantHub.Core.Models.AssistantDocumentSelectionItem},System.Boolean,System.Threading.CancellationToken)">
             <summary>
             Run the retrieval stages of the chat rail: retrieval gate, query rewrite, search (with multi-query fusion),
@@ -3179,6 +3315,25 @@
             <param name="captureStages">Record the ranked list after each stage.</param>
             <param name="token">Cancellation token.</param>
             <returns>Stage outcome.</returns>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.ParseConversationRewrite(System.String)">
+            <summary>
+            Parse the conversation rewrite reply: a JSON object with "query", or a bare line when the model ignored the
+            format. Returns null when nothing usable came back.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.ApplySupersessionAsync(System.String,AssistantHub.Core.Models.AssistantSettings,System.String,System.Collections.Generic.List{AssistantHub.Core.Models.RetrievalChunk},AssistantHub.Core.Models.RetrievalSearchOptions,AssistantHub.Server.Services.AssistantRetrievalStagesResult,System.Threading.CancellationToken)">
+            <summary>
+            Apply document supersession to the fused candidates, according to the assistant's SupersessionMode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatService.IsDegenerateCitedAnswer(System.String)">
+            <summary>
+            Whether an answer to a cited prompt is a degenerate fragment: after removing citation markers it has fewer
+            than four words, or it is only a lead-in such as "According to the sources".
+            </summary>
+            <param name="content">Answer text.</param>
+            <returns>True when degenerate.</returns>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantChatServiceBase">
             <summary>
@@ -3199,6 +3354,28 @@
             <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
             <param name="toolExecutor">Optional tool executor override for tests.</param>
             <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantChatServiceBase.UtilityStepResult">
+            <summary>
+            Result of an optional utility-model step.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.RunUtilityStepAsync(System.String,System.String,System.Collections.Generic.List{AssistantHub.Core.Models.ChatCompletionMessage},System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Run an optional utility-model step (gate, rewrite, rerank, answerability) with the utility timeout and a
+            circuit breaker keyed by step and endpoint. A skipped or failed step lets the caller fall back.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.IsTransientInferenceFailure(AssistantHub.Core.Models.InferenceResult)">
+            <summary>
+            Whether an answer-model failure is transient (HTTP 408, 429, 502, 503 or 504) and worth retrying.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantChatServiceBase.GenerateAnswerWithRetryAsync(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{AssistantHub.Core.Models.InferenceResult}},System.Threading.CancellationToken)">
+            <summary>
+            Call the answer model, retrying transient failures with jittered exponential backoff
+            (Inference.MaxRetries, Inference.RetryDelayMs).
+            </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantDocumentAttachmentResolution">
             <summary>
@@ -3254,6 +3431,42 @@
         <member name="T:AssistantHub.Server.Services.AssistantDocumentPolicyFilter">
             <summary>
             Applies assistant document visibility filters to document-backed surfaces.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Server.Services.AssistantPromptContext">
+            <summary>
+            Retrieved context for one chat turn, ready to inject into the prompt: the retrieval stage outcome, the chunks
+            in prompt order, their text, citation labels and sources, and any note for the system prompt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.Stages">
+            <summary>
+            Outcome of the retrieval stages.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.Chunks">
+            <summary>
+            Chunks in prompt order (after ContextOrder).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.ContextChunks">
+            <summary>
+            Text injected for each chunk.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.ChunkLabels">
+            <summary>
+            Citation label per chunk when citations are enabled, otherwise null.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.CitationSources">
+            <summary>
+            Citation source per chunk when citations are enabled, otherwise null.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantPromptContext.PromptNote">
+            <summary>
+            Text to append to the system prompt for this turn (for example, that nothing relevant was found), or null.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantRetrievalExecutionResult">
@@ -3349,7 +3562,43 @@
         </member>
         <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.EmbeddingFailed">
             <summary>
-            Whether any query embedding failed after retries, so vector or hybrid search returned nothing.
+            Whether any query embedding failed after retries. Vector search then returns nothing; hybrid search falls
+            back to its full-text leg.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.KeywordFallbackRan">
+            <summary>
+            Whether any hybrid search ran its full-text leg alone because the query embedding failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.ConversationRewrite">
+            <summary>
+            Standalone rewrite of a follow-up question, searched alongside the original message, or null.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.ConversationRewriteDurationMs">
+            <summary>
+            Conversation rewrite duration in milliseconds.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.Reranker">
+            <summary>
+            Reranker that ran: "llm", "cross_encoder", or null when reranking is off.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.RerankSkipped">
+            <summary>
+            Whether reranking was skipped (circuit breaker open, or no cross-encoder configured).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.NoRelevantContext">
+            <summary>
+            Whether the cross-encoder scored every candidate below RerankMinScore, so no context is injected.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.SupersededChunks">
+            <summary>
+            Number of retrieved chunks that came from superseded documents.
             </summary>
         </member>
         <member name="P:AssistantHub.Server.Services.AssistantRetrievalStagesResult.DroppedCandidates">
@@ -3492,6 +3741,13 @@
         <member name="M:AssistantHub.Server.Services.AssistantToolExecutor.ExecuteAsync(AssistantHub.Server.Services.AssistantToolExecutionContext,AssistantHub.Core.Models.AssistantToolExecutionRequest,System.Threading.CancellationToken)">
             <summary>
             Execute a server-side assistant tool if policy and prerequisites allow it.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Server.Services.AssistantToolExecutor.QueryVerbexRecordIdsAsync(AssistantHub.Core.Services.IInvertedIndexService,System.String,System.Collections.Generic.List{System.String},System.Boolean,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Record IDs in a Verbex index that contain the given terms (all of them when <paramref name="allTerms"/> is
+            true, any of them otherwise), used to apply required and excluded terms that Verbex cannot filter itself.
+            Bounded by <see cref="F:AssistantHub.Server.Services.AssistantToolExecutor.VerbexTermFilterRecordLimit"/> records.
             </summary>
         </member>
         <member name="T:AssistantHub.Server.Services.AssistantToolFunctionDefinition">

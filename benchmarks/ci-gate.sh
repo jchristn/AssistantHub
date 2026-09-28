@@ -28,7 +28,7 @@ for gate in "${GATES[@]}"; do
   OPTIONS="${gate#*|}"
   NAME="$(basename "$DATASET" .json)"
   rm -f "$OUT"/*-retrieval-"$NAME"-ci.json
-  $B retrieval --dataset "$DATASET" $OPTIONS --label ci --output-dir "$OUT" --metrics-url none >/dev/null || { STATUS=1; continue; }
+  $B retrieval --dataset "$DATASET" $OPTIONS --label ci --output-dir "$OUT" --metrics-url none --no-history >/dev/null || { STATUS=1; continue; }
   CANDIDATE="$(ls -t "$OUT"/*-retrieval-"$NAME"-ci.json | head -1)"
   BASELINE="benchmarks/baselines/retrieval-$NAME.json"
   if [ "$UPDATE" = "1" ] || [ ! -f "$BASELINE" ]; then

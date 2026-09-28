@@ -302,6 +302,20 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("assistant_settings", "enable_document_attachments", TableQueries.AddAssistantSettingsEnableDocumentAttachmentsColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "document_attachment_max_count", TableQueries.AddAssistantSettingsDocumentAttachmentMaxCountColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_settings", "expose_document_source_urls", TableQueries.AddAssistantSettingsExposeDocumentSourceUrlsColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "fusion_strategy", TableQueries.AddAssistantSettingsFusionStrategyColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "rrf_k", TableQueries.AddAssistantSettingsRrfKColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "fusion_candidate_pool", TableQueries.AddAssistantSettingsFusionCandidatePoolColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "recency_weight", TableQueries.AddAssistantSettingsRecencyWeightColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "context_order", TableQueries.AddAssistantSettingsContextOrderColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "eval_judge_inference_endpoint_id", TableQueries.AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "embedding_task_prefixes", TableQueries.AddAssistantSettingsEmbeddingTaskPrefixesColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "enable_conversation_rewrite", TableQueries.AddAssistantSettingsEnableConversationRewriteColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "conversation_rewrite_prompt", TableQueries.AddAssistantSettingsConversationRewritePromptColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "reranker_type", TableQueries.AddAssistantSettingsRerankerTypeColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "rerank_endpoint_id", TableQueries.AddAssistantSettingsRerankEndpointIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "rerank_candidate_count", TableQueries.AddAssistantSettingsRerankCandidateCountColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "rerank_min_score", TableQueries.AddAssistantSettingsRerankMinScoreColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_settings", "supersession_mode", TableQueries.AddAssistantSettingsSupersessionModeColumn, token).ConfigureAwait(false);
         }
 
         private async Task EnsureSearchIndexColumnsAsync(CancellationToken token)
@@ -309,6 +323,10 @@ namespace AssistantHub.Core.Database.Mysql
             await EnsureColumnAsync("assistant_documents", "verbex_tenant_id", TableQueries.AddAssistantDocumentsVerbexTenantIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_documents", "verbex_index_id", TableQueries.AddAssistantDocumentsVerbexIndexIdColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("assistant_documents", "verbex_record_id", TableQueries.AddAssistantDocumentsVerbexRecordIdColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "supersedes_json", TableQueries.AddAssistantDocumentsSupersedesJsonColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "superseded_by", TableQueries.AddAssistantDocumentsSupersededByColumn, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "content_sha256", TableQueries.AddAssistantDocumentsContentSha256Column, token).ConfigureAwait(false);
+            await EnsureColumnAsync("assistant_documents", "near_duplicates_json", TableQueries.AddAssistantDocumentsNearDuplicatesJsonColumn, token).ConfigureAwait(false);
             await EnsureColumnAsync("ingestion_rules", "verbex_index_id", TableQueries.AddIngestionRulesVerbexIndexIdColumn, token).ConfigureAwait(false);
         }
 

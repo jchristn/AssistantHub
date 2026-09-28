@@ -55,7 +55,7 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "enable_rag, enable_retrieval_gate, enable_query_rewrite, query_rewrite_prompt, " +
                 "enable_reranking, reranker_top_k, reranker_score_threshold, rerank_prompt, " +
                 "enable_citations, citation_link_mode, enable_document_attachments, document_attachment_max_count, expose_document_source_urls, collection_id, retrieval_top_k, retrieval_score_threshold, " +
-                "search_mode, text_weight, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
+                "search_mode, text_weight, fusion_strategy, rrf_k, fusion_candidate_pool, recency_weight, context_order, eval_judge_inference_endpoint_id, embedding_task_prefixes, enable_conversation_rewrite, conversation_rewrite_prompt, reranker_type, rerank_endpoint_id, rerank_candidate_count, rerank_min_score, supersession_mode, fulltext_search_type, fulltext_language, fulltext_normalization, fulltext_minimum_score, " +
                 "retrieval_include_neighbors, " +
                 "inference_endpoint_id, tool_routing_inference_endpoint_id, retrieval_gate_inference_endpoint_id, query_rewrite_inference_endpoint_id, rerank_inference_endpoint_id, enable_answerability_check, answerability_inference_endpoint_id, answerability_mode, answerability_prompt, embedding_endpoint_id, load_models_on_chat_open, expose_thinking, title, logo_url, favicon_url, retrieval_label_filter, retrieval_tag_filter, streaming, enable_slack, slack_app_token, slack_bot_token, slack_channel_id, slack_message_prefix, tool_policy_json, created_utc, last_update_utc) " +
                 "VALUES (" +
@@ -84,6 +84,20 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
                 _Driver.FormatNullableString(assistantSettings.SearchMode) + ", " +
                 _Driver.FormatDouble(assistantSettings.TextWeight) + ", " +
+                _Driver.FormatNullableString(assistantSettings.FusionStrategy) + ", " +
+                assistantSettings.RrfK + ", " +
+                (assistantSettings.FusionCandidatePool.HasValue ? assistantSettings.FusionCandidatePool.Value.ToString() : "NULL") + ", " +
+                _Driver.FormatDouble(assistantSettings.RecencyWeight) + ", " +
+                _Driver.FormatNullableString(assistantSettings.ContextOrder) + ", " +
+                _Driver.FormatNullableString(assistantSettings.EvalJudgeInferenceEndpointId) + ", " +
+                FormatBooleanColumn(assistantSettings.EmbeddingTaskPrefixes) + ", " +
+                FormatBooleanColumn(assistantSettings.EnableConversationRewrite) + ", " +
+                _Driver.FormatNullableString(assistantSettings.ConversationRewritePrompt) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RerankerType) + ", " +
+                _Driver.FormatNullableString(assistantSettings.RerankEndpointId) + ", " +
+                assistantSettings.RerankCandidateCount + ", " +
+                (assistantSettings.RerankMinScore.HasValue ? _Driver.FormatDouble(assistantSettings.RerankMinScore.Value) : "NULL") + ", " +
+                _Driver.FormatNullableString(assistantSettings.SupersessionMode) + ", " +
                 _Driver.FormatNullableString(assistantSettings.FullTextSearchType) + ", " +
                 _Driver.FormatNullableString(assistantSettings.FullTextLanguage) + ", " +
                 assistantSettings.FullTextNormalization + ", " +
@@ -178,6 +192,20 @@ namespace AssistantHub.Core.Database.Postgresql.Implementations
                 "retrieval_score_threshold = " + _Driver.FormatDouble(assistantSettings.RetrievalScoreThreshold) + ", " +
                 "search_mode = " + _Driver.FormatNullableString(assistantSettings.SearchMode) + ", " +
                 "text_weight = " + _Driver.FormatDouble(assistantSettings.TextWeight) + ", " +
+                "fusion_strategy = " + _Driver.FormatNullableString(assistantSettings.FusionStrategy) + ", " +
+                "rrf_k = " + assistantSettings.RrfK + ", " +
+                "fusion_candidate_pool = " + (assistantSettings.FusionCandidatePool.HasValue ? assistantSettings.FusionCandidatePool.Value.ToString() : "NULL") + ", " +
+                "recency_weight = " + _Driver.FormatDouble(assistantSettings.RecencyWeight) + ", " +
+                "context_order = " + _Driver.FormatNullableString(assistantSettings.ContextOrder) + ", " +
+                "eval_judge_inference_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.EvalJudgeInferenceEndpointId) + ", " +
+                "embedding_task_prefixes = " + FormatBooleanColumn(assistantSettings.EmbeddingTaskPrefixes) + ", " +
+                "enable_conversation_rewrite = " + FormatBooleanColumn(assistantSettings.EnableConversationRewrite) + ", " +
+                "conversation_rewrite_prompt = " + _Driver.FormatNullableString(assistantSettings.ConversationRewritePrompt) + ", " +
+                "reranker_type = " + _Driver.FormatNullableString(assistantSettings.RerankerType) + ", " +
+                "rerank_endpoint_id = " + _Driver.FormatNullableString(assistantSettings.RerankEndpointId) + ", " +
+                "rerank_candidate_count = " + assistantSettings.RerankCandidateCount + ", " +
+                "rerank_min_score = " + (assistantSettings.RerankMinScore.HasValue ? _Driver.FormatDouble(assistantSettings.RerankMinScore.Value) : "NULL") + ", " +
+                "supersession_mode = " + _Driver.FormatNullableString(assistantSettings.SupersessionMode) + ", " +
                 "fulltext_search_type = " + _Driver.FormatNullableString(assistantSettings.FullTextSearchType) + ", " +
                 "fulltext_language = " + _Driver.FormatNullableString(assistantSettings.FullTextLanguage) + ", " +
                 "fulltext_normalization = " + assistantSettings.FullTextNormalization + ", " +

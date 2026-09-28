@@ -10,7 +10,7 @@ questions:
 
 The plan behind it is [BENCHMARKING.md](../BENCHMARKING.md). The numbers that matter, round by round, are in
 [RESULTS.md](RESULTS.md). The ranked list of fixes those numbers point to is in
-[RETRIEVAL_IMPROVEMENTS.md](../RETRIEVAL_IMPROVEMENTS.md).
+[RETRIEVAL_IMPROVEMENTS.md](../archive/RETRIEVAL_IMPROVEMENTS_2026-09.md).
 
 The harness (`src/Test.Benchmark`) is black-box. It talks to AssistantHub only over REST, and it calls model endpoints
 directly for the independent judge. It never references AssistantHub assemblies, so the same commands can measure a
@@ -22,6 +22,7 @@ working tree or a deployment.
 | `retrieval` | Each query through `POST /v1.0/assistants/{id}/retrieve`, the chat rail's retrieval stages without final inference. Scores document-level Hit@1, Recall@1/5/10, All@5/10, MRR@10 and nDCG@10 (BEIR-compatible), chunk-level evidence recall, and per-stage lift (search → fusion → rerank). Also reports score AUROC on unanswerable questions, answerability-classifier precision and recall, filter precision, pipeline flag rates and latency. Headline metrics carry 95% bootstrap CIs. |
 | `chat` | End-to-end answers via `POST /v1.0/assistants/{id}/chat`, graded by an independent LLM judge called directly. Reports accuracy, abstention, faithfulness to the injected context, citation precision and recall, and accuracy split by whether the evidence reached the prompt. Supports repeats (variance) and hand labels (judge κ). |
 | `load` | Closed-loop throughput and latency per concurrency level for retrieve, chat or mixed workloads, optionally against an in-process stub model server so AssistantHub, Partio and RecallDB are measured without the model. |
+| `history` | Lists the run ledger (`benchmarks/history/runs.jsonl`) with each metric's change against the previous run of the same configuration. |
 | `compare` | Diffs two retrieval or chat reports. It flags a regression only when a metric drops by more than a tolerance *and* a paired bootstrap test over shared queries gives p < α, and exits non-zero so it can gate CI. |
 | `eval-export` / `eval-run` / `eval-import` | Turns a dataset into in-product EvalFacts. `eval-run` also runs AssistantHub's Eval and measures its agreement with the independent judge. `eval-import` turns an assistant's existing EvalFacts into a dataset that `chat --assistant-id` can run against that assistant, graded by the independent judge. |
 | `prepare`, `validate`, `label-sample`, `stub` | Convert public datasets, check a dataset's labels against its source text, sample answers for hand labelling, and run the stub model server on its own. |
@@ -127,7 +128,26 @@ $B chat --dataset benchmarks/data/eval-mine.json --assistant-id <asst_id>
 
 # Regression gate
 $B compare --baseline benchmarks/results/<old>.json --candidate benchmarks/results/<new>.json --tolerance 0.01 --alpha 0.05 --latency-tolerance 0.25
+
+# Against the previous run with the same configuration fingerprint, taken from the ledger
+$B compare --baseline previous --candidate benchmarks/results/<new>.json
+
+# Run history: every run, with Δ against the previous run of the same fingerprint
+$B history --dataset meridian --kind retrieval --configuration Hybrid --metric ndcg@10
+$B history --kind chat --metric accuracy --last 20
+$B history --rebuild      # regenerate the ledger from benchmarks/results/*.json
 ```
+
+### Run history
+
+Every command that writes a report also appends a summary line to `benchmarks/history/runs.jsonl`, one line per
+configuration (a retrieval mode, a chat run, a load level). Each line carries the run id, commit, dataset hash, label,
+settings, headline metrics and a **fingerprint**: a hash of the kind, dataset, mode and every setting that changes the
+result (ingestion and assistant configuration, `--limit`, `--repeats`), but not the label. Runs with the same
+fingerprint are repeats of one experiment, so `history` shows Δ against the previous one and
+`compare --baseline previous` finds its report. The ledger is small and committed; the full reports it points to stay
+in the git-ignored `results/` directory, so report paths only resolve on the machine that ran them. Pass
+`--no-history` to keep a run out of the ledger (the CI gate does this).
 
 Each run writes `benchmarks/results/<utc-stamp>-<kind>-<name>[-label].json` for machines and a `.md` for people. The
 directory is git-ignored because reports are machine-specific; RESULTS.md carries the numbers that matter.
@@ -147,6 +167,10 @@ after changing extraction or chunking code, since the configuration hash cannot 
 
 ### Options
 
+Assistant defaults below are the product defaults the ledger started with (Vector, text weight 0.3, no neighbors,
+rerank top K 5), not the current defaults for new assistants (Hybrid, 0.5, 1 neighbor, 10). They are kept so earlier
+runs stay comparable; pass the options to measure the current defaults.
+
 | Option | Default | Meaning |
 |---|---|---|
 | `--url`, `--token` | `http://127.0.0.1:38800`, `default` | AssistantHub and a tenant-admin bearer token |
@@ -154,11 +178,17 @@ after changing extraction or chunking code, since the configuration hash cannot 
 | `--modes` | `Vector,FullText,Hybrid` | Search modes (retrieval) |
 | `--mode` | `Vector` | Search mode (chat, load, eval) |
 | `--k`, `--threshold`, `--text-weight`, `--fulltext-type`, `--neighbors` | 10, 0.3, 0.3, TsRank, 0 | Assistant retrieval settings |
+| `--fusion`, `--rrf-k`, `--candidate-pool`, `--recency-weight`, `--context-order` | Rrf, 60, store default, 0, Score | Hybrid fusion and prompt context order. Non-default values join the configuration fingerprint; defaults do not, so runs from before these settings existed stay comparable |
 | `--rewrite`, `--rerank`, `--rerank-k`, `--rerank-threshold`, `--gate`, `--answerability`, `--answerability-mode`, `--citations` | off, off, 5, 3, off, off, LogOnly, off (chat: on) | Pipeline stages |
 | `--inference-endpoint`, `--utility-endpoint`, `--embedding-endpoint` | `default` | Completion endpoint for answers, for utility calls, and embedding endpoint |
-| `--sweep name=v1,v2` | | Vary one of threshold, k, text-weight, neighbors, rerank-k, rerank-threshold, fulltext-type |
+| `--rerank-type`, `--rerank-endpoint`, `--rerank-candidates`, `--rerank-min-score` | Llm, first configured, 20, none | Reranker: `CrossEncoder` uses a reranker from the server's `Rerankers` settings (the bench stack configures `bench-cross-encoder`, a TEI MiniLM cross-encoder on port 38087). Candidates are retrieved and scored before `--rerank-k` are kept |
+| `--conversation-rewrite`, `--supersession`, `--task-prefixes` | off, Demote, off | Rewrite follow-ups into standalone questions (uses the utility endpoint), how superseded documents are treated, and the embedding model's query prefix |
+| `--sweep name=v1,v2` | | Vary one of threshold, k, text-weight, neighbors, rerank-k, rerank-threshold, fulltext-type, rrf-k, candidate-pool, recency-weight, fusion |
 | `--chunk-strategy`, `--chunk-tokens`, `--chunk-overlap`, `--context-prefix`, `--summarize-endpoint`, `--dimensions`, `--l2-normalize`, `--scope-suffix` | FixedTokenCount, 256, 0 | Ingestion rule (dashboard defaults) |
+| `--pipeline` | 2 | Extraction pipeline version the collection must carry. Uploads are tagged `bench_pipeline`; documents from another version are re-ingested into the same collection, so the fingerprint does not change and the ledger compares runs across the change. Pass the older version to reuse its collections; anything the harness uploads is still tagged with the version the server runs |
 | `--ingest-concurrency`, `--date-order`, `--reingest` | 4, off, off | Upload window, date-ordered ingest, rebuild |
+| `--cell-mode`, `--table-strategy`, `--list-strategy`, `--context-header` | Flat, RowGroupWithHeaders, WholeList, None | Structured cells (one Partio cell per section, table and list) and the context header embedded with each chunk. Non-default values join the collection hash |
+| `--link-supersedes` | off | Record each dataset document's `supersedes` link through `PUT /v1.0/documents/{id}/supersedes` after ingest. Without it the links are cleared, so a shared collection only carries links for runs that ask for them |
 | `--limit`, `--concurrency`, `--repeats` | all, 4 (chat 1), 1 | Stratified subset, parallel requests, chat repeats |
 | `--judge-format`, `--judge-url`, `--judge-model`, `--judge-api-key` | Ollama, `http://127.0.0.1:11434`, `gemma3:4b` | Independent judge (`--judge-format OpenAI` for any OpenAI-compatible endpoint, `none` to skip) |
 | `--label`, `--output-dir` | | Report name suffix and directory |

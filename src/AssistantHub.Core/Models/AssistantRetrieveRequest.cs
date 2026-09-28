@@ -45,5 +45,12 @@ namespace AssistantHub.Core.Models
         /// </summary>
         [JsonPropertyName("include_answerability")]
         public bool IncludeAnswerability { get; set; } = true;
+
+        /// <summary>
+        /// Optional assistant settings to use for this call instead of the saved ones, for trying changes before
+        /// saving them. The assistant's saved collection is used when the override has none. Nothing is persisted.
+        /// </summary>
+        [JsonPropertyName("settings_override")]
+        public AssistantSettings SettingsOverride { get; set; } = null;
     }
 }

@@ -42,6 +42,7 @@ namespace AssistantHub.Server.Services
         /// <param name="tavilyHttpClient">Optional Tavily HTTP client for web-search tools.</param>
         /// <param name="toolExecutor">Optional tool executor override for tests.</param>
         /// <param name="inferenceEndpoints">Optional endpoint resolver override for tests.</param>
+        /// <param name="rerankClient">Optional cross-encoder rerank client override for tests.</param>
         public AssistantChatService(
             DatabaseDriverBase database,
             LoggingModule logging,
@@ -52,10 +53,14 @@ namespace AssistantHub.Server.Services
             IInvertedIndexService invertedIndex = null,
             HttpClient tavilyHttpClient = null,
             IAssistantToolExecutor toolExecutor = null,
-            IInferenceEndpointService inferenceEndpoints = null)
+            IInferenceEndpointService inferenceEndpoints = null,
+            CrossEncoderRerankClient rerankClient = null)
             : base(database, logging, settings, retrieval, inference, storage, invertedIndex, tavilyHttpClient, toolExecutor, inferenceEndpoints)
         {
+            _RerankClient = rerankClient ?? new CrossEncoderRerankClient();
         }
+
+        private readonly CrossEncoderRerankClient _RerankClient;
 
         /// <summary>
         /// Execute a non-streaming chat completion using the shared AssistantHub chat rail.
@@ -149,16 +154,16 @@ namespace AssistantHub.Server.Services
             if (localAttachmentResolution.Attachments.Count > 0)
                 _Logging.Info(_Header + "local chat attachments active: count=" + localAttachmentResolution.Attachments.Count);
 
-            AssistantRetrievalStagesResult retrievalStages = await RunRetrievalStagesAsync(
-                assistant.TenantId,
+            AssistantPromptContext promptContext = await BuildPromptContextAsync(
+                assistant,
                 settings,
                 request.Messages,
                 lastUserMessage,
                 effectiveMetadataFilter,
                 attachedDocumentIds,
                 attachedDocuments,
-                false,
                 token).ConfigureAwait(false);
+            AssistantRetrievalStagesResult retrievalStages = promptContext.Stages;
 
             string retrievalGateDecision = retrievalStages.GateDecision;
             double retrievalGateDurationMs = retrievalStages.GateDurationMs;
@@ -168,7 +173,7 @@ namespace AssistantHub.Server.Services
             double queryRewriteDurationMs = retrievalStages.QueryRewriteDurationMs;
             AssistantPerformanceStage queryRewriteTelemetry = retrievalStages.QueryRewriteTelemetry;
             List<string> retrievalQueries = retrievalStages.Queries;
-            List<RetrievalChunk> retrievalChunks = retrievalStages.Chunks;
+            List<RetrievalChunk> retrievalChunks = promptContext.Chunks;
             DateTime? retrievalStartUtc = retrievalStages.RetrievalStartUtc;
             double retrievalDurationMs = retrievalStages.RetrievalDurationMs;
             List<RetrievalCandidateDropSummary> droppedCandidates = retrievalStages.DroppedCandidates;
@@ -183,57 +188,11 @@ namespace AssistantHub.Server.Services
             int rerankOutputCount = retrievalStages.RerankOutputCount;
             AssistantPerformanceStage rerankTelemetry = retrievalStages.RerankTelemetry;
 
-            List<string> contextChunks = retrievalChunks.Select(c => c.MergedContent).ToList();
-            List<string> chunkLabels = null;
-            List<CitationSource> citationSources = null;
-
-            if (settings.EnableCitations && settings.EnableRag && retrievalChunks.Count > 0)
-            {
-                chunkLabels = new List<string>();
-                citationSources = new List<CitationSource>();
-                int citationIndex = 1;
-
-                foreach (RetrievalChunk chunk in retrievalChunks)
-                {
-                    string docName = "Unknown Document";
-                    string contentType = null;
-                    AssistantDocument doc = null;
-
-                    if (!String.IsNullOrEmpty(chunk.DocumentId))
-                    {
-                        doc = await _Database.AssistantDocument.ReadAsync(chunk.DocumentId, token).ConfigureAwait(false);
-                        if (doc != null)
-                        {
-                            docName = doc.Name ?? doc.OriginalFilename ?? "Unknown Document";
-                            contentType = doc.ContentType;
-                        }
-                    }
-
-                    chunkLabels.Add("(Source: \"" + docName + "\")");
-
-                    string downloadUrl = null;
-                    if (!String.IsNullOrEmpty(chunk.DocumentId))
-                    {
-                        if (String.Equals(settings.CitationLinkMode, "Authenticated", StringComparison.OrdinalIgnoreCase))
-                            downloadUrl = "/v1.0/documents/" + chunk.DocumentId + "/download";
-                        else if (String.Equals(settings.CitationLinkMode, "Public", StringComparison.OrdinalIgnoreCase))
-                            downloadUrl = "/v1.0/assistants/" + assistant.Id + "/documents/" + chunk.DocumentId + "/download";
-                    }
-
-                    citationSources.Add(new CitationSource
-                    {
-                        Index = citationIndex++,
-                        DocumentId = chunk.DocumentId,
-                        DocumentName = docName,
-                        ContentType = contentType,
-                        Score = chunk.Score,
-                        FusionScore = chunk.FusionScore,
-                        RerankScore = chunk.RerankScore,
-                        Excerpt = chunk.Content?.Length > 200 ? chunk.Content.Substring(0, 200) + "..." : chunk.Content,
-                        DownloadUrl = downloadUrl
-                    });
-                }
-            }
+            List<string> contextChunks = promptContext.ContextChunks;
+            List<string> chunkLabels = promptContext.ChunkLabels;
+            List<CitationSource> citationSources = promptContext.CitationSources;
+            if (!String.IsNullOrEmpty(promptContext.PromptNote))
+                localAttachmentContext = String.IsNullOrWhiteSpace(localAttachmentContext) ? promptContext.PromptNote : localAttachmentContext + "\n\n" + promptContext.PromptNote;
 
             List<ChatCompletionMessage> messages = new List<ChatCompletionMessage>(request.Messages);
             string baseSystemPrompt = null;
@@ -411,6 +370,7 @@ namespace AssistantHub.Server.Services
             }
 
             InferenceResult inferenceResult;
+            bool answerRegenerated = false;
             List<ChatCompletionToolTrace> toolTraces = new List<ChatCompletionToolTrace>();
             List<AssistantPerformanceStage> toolModelStages = new List<AssistantPerformanceStage>();
             bool toolLimitReached = false;
@@ -504,10 +464,33 @@ namespace AssistantHub.Server.Services
             }
             else
             {
-                inferenceResult = await GenerateWithCompletionEndpointLimitAsync(
+                inferenceResult = await GenerateAnswerWithRetryAsync(ct => GenerateWithCompletionEndpointLimitAsync(
                     messages, model, maxTokens, temperature, topP,
                     inferenceProvider, inferenceEndpoint, inferenceApiKey,
-                    inferenceEndpointId, inferenceMaxConcurrentRequests, token).ConfigureAwait(false);
+                    inferenceEndpointId, inferenceMaxConcurrentRequests, ct), token).ConfigureAwait(false);
+
+                // Small models sometimes answer a citation-heavy prompt with a fragment such as "According to sources".
+                // Regenerate once with the same context but without the citation instructions.
+                if (settings.EnableCitations && citationSources != null && citationSources.Count > 0 && systemMessageIndex >= 0
+                    && inferenceResult != null && inferenceResult.Success && IsDegenerateCitedAnswer(inferenceResult.Content))
+                {
+                    List<ChatCompletionMessage> plainMessages = new List<ChatCompletionMessage>(messages);
+                    plainMessages[systemMessageIndex] = new ChatCompletionMessage
+                    {
+                        Role = "system",
+                        Content = _Inference.BuildSystemMessage(baseSystemPrompt, retrievalChunks.Select(c => c.MergedContent).ToList(), false, null)
+                    };
+                    InferenceResult regenerated = await GenerateAnswerWithRetryAsync(ct => GenerateWithCompletionEndpointLimitAsync(
+                        plainMessages, model, maxTokens, temperature, topP,
+                        inferenceProvider, inferenceEndpoint, inferenceApiKey,
+                        inferenceEndpointId, inferenceMaxConcurrentRequests, ct), token).ConfigureAwait(false);
+                    if (regenerated != null && regenerated.Success && !IsDegenerateCitedAnswer(regenerated.Content))
+                    {
+                        _Logging.Info(_Header + "regenerated a degenerate cited answer without citation instructions");
+                        inferenceResult = regenerated;
+                        answerRegenerated = true;
+                    }
+                }
             }
 
             inferenceSw.Stop();
@@ -650,6 +633,13 @@ namespace AssistantHub.Server.Services
                     DocumentFilterApplied = attachedDocumentIds != null && attachedDocumentIds.Count > 0,
                     HybridFallbackRan = retrievalStages.HybridFallbackRan,
                     EmbeddingFailed = retrievalStages.EmbeddingFailed,
+                    KeywordFallbackRan = retrievalStages.KeywordFallbackRan,
+                    ConversationRewrite = retrievalStages.ConversationRewrite,
+                    Reranker = retrievalStages.Reranker,
+                    RerankSkipped = retrievalStages.RerankSkipped,
+                    NoRelevantContext = retrievalStages.NoRelevantContext,
+                    SupersededChunks = retrievalStages.SupersededChunks,
+                    AnswerRegenerated = answerRegenerated,
                     RerankParseFailed = retrievalStages.RerankParseFailed,
                     AnswerabilityParseFailed = answerabilityParseFailed,
                     QueryCount = retrievalQueries.Count,
@@ -780,6 +770,15 @@ namespace AssistantHub.Server.Services
                 if (settings == null)
                     return new AssistantRetrievalExecutionResult { StatusCode = 404, ErrorMessage = "Assistant settings not configured." };
 
+                if (request.SettingsOverride != null)
+                {
+                    AssistantSettings trial = request.SettingsOverride;
+                    trial.AssistantId = assistantId;
+                    if (String.IsNullOrEmpty(trial.CollectionId)) trial.CollectionId = settings.CollectionId;
+                    if (String.IsNullOrEmpty(trial.InferenceEndpointId)) trial.InferenceEndpointId = settings.InferenceEndpointId;
+                    settings = trial;
+                }
+
                 ChatMetadataFilter effectiveMetadataFilter = BuildEffectiveMetadataFilter(settings, request.MetadataFilter);
 
                 AssistantDocumentAttachmentResolver attachmentResolver = new AssistantDocumentAttachmentResolver(_Database);
@@ -821,6 +820,12 @@ namespace AssistantHub.Server.Services
                     RetrievalDurationMs = stages.RetrievalDurationMs,
                     HybridFallbackRan = stages.HybridFallbackRan,
                     EmbeddingFailed = stages.EmbeddingFailed,
+                    KeywordFallbackRan = stages.KeywordFallbackRan,
+                    ConversationRewrite = stages.ConversationRewrite,
+                    Reranker = stages.Reranker,
+                    RerankSkipped = stages.RerankSkipped,
+                    NoRelevantContext = stages.NoRelevantContext,
+                    SupersededChunks = stages.SupersededChunks,
                     RerankDurationMs = stages.RerankDurationMs,
                     RerankInputCount = stages.RerankInputCount,
                     RerankOutputCount = stages.RerankOutputCount,
@@ -847,6 +852,116 @@ namespace AssistantHub.Server.Services
                 op.SetTag("retrieval.result_count", response.Chunks.Count);
                 return new AssistantRetrievalExecutionResult { Success = true, StatusCode = 200, Response = response };
             }
+        }
+
+        /// <summary>
+        /// Run the retrieval stages for a chat turn and prepare the retrieved context for the prompt: order the chunks
+        /// (ContextOrder), build citation labels and sources (with pages and outdated-source markers), and a note for
+        /// the system prompt when nothing relevant was found. Shared by every chat path.
+        /// </summary>
+        /// <param name="assistant">Assistant.</param>
+        /// <param name="settings">Assistant settings.</param>
+        /// <param name="conversation">Conversation messages.</param>
+        /// <param name="lastUserMessage">Latest user message.</param>
+        /// <param name="effectiveMetadataFilter">Merged metadata filter.</param>
+        /// <param name="attachedDocumentIds">Validated attached document identifiers, or null.</param>
+        /// <param name="attachedDocuments">Attached document metadata, or null.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Prompt context.</returns>
+        public async Task<AssistantPromptContext> BuildPromptContextAsync(
+            Assistant assistant,
+            AssistantSettings settings,
+            List<ChatCompletionMessage> conversation,
+            string lastUserMessage,
+            ChatMetadataFilter effectiveMetadataFilter,
+            List<string> attachedDocumentIds,
+            List<AssistantDocumentSelectionItem> attachedDocuments,
+            CancellationToken token = default)
+        {
+            AssistantPromptContext context = new AssistantPromptContext();
+            context.Stages = await RunRetrievalStagesAsync(
+                assistant.TenantId,
+                settings,
+                conversation,
+                lastUserMessage,
+                effectiveMetadataFilter,
+                attachedDocumentIds,
+                attachedDocuments,
+                false,
+                token).ConfigureAwait(false);
+
+            context.Chunks = RetrievalContextOrder.Apply(context.Stages.Chunks ?? new List<RetrievalChunk>(), settings.ContextOrder);
+            if (context.Stages.NoRelevantContext) context.PromptNote = _NoRelevantContextNote;
+
+            Dictionary<string, AssistantDocument> documents = new Dictionary<string, AssistantDocument>(StringComparer.Ordinal);
+            async Task<AssistantDocument> ReadDocumentAsync(string id)
+            {
+                if (String.IsNullOrEmpty(id)) return null;
+                if (documents.TryGetValue(id, out AssistantDocument cached)) return cached;
+                AssistantDocument document = await _Database.AssistantDocument.ReadAsync(id, token).ConfigureAwait(false);
+                documents[id] = document;
+                return document;
+            }
+
+            bool citations = settings.EnableCitations && settings.EnableRag && context.Chunks.Count > 0;
+            if (citations)
+            {
+                context.ChunkLabels = new List<string>();
+                context.CitationSources = new List<CitationSource>();
+            }
+
+            int citationIndex = 1;
+            foreach (RetrievalChunk chunk in context.Chunks)
+            {
+                string outdatedNote = null;
+                if (!String.IsNullOrEmpty(chunk.SupersededBy))
+                {
+                    AssistantDocument replacement = await ReadDocumentAsync(chunk.SupersededBy).ConfigureAwait(false);
+                    outdatedNote = "outdated: superseded by \"" + (replacement?.Name ?? replacement?.OriginalFilename ?? chunk.SupersededBy) + "\"";
+                }
+
+                if (outdatedNote != null && (chunk.Content == null || !chunk.Content.StartsWith("[outdated:", StringComparison.Ordinal)))
+                    chunk.Content = "[" + outdatedNote + "]\n" + (chunk.Content ?? "");
+                context.ContextChunks.Add(chunk.MergedContent ?? "");
+                if (!citations) continue;
+
+                AssistantDocument doc = await ReadDocumentAsync(chunk.DocumentId).ConfigureAwait(false);
+                string docName = doc?.Name ?? doc?.OriginalFilename ?? "Unknown Document";
+
+                List<string> labelParts = new List<string> { "Source: \"" + docName + "\"" };
+                string provenance = chunk.ProvenanceLabel();
+                if (!String.IsNullOrEmpty(provenance)) labelParts.Add(provenance);
+                if (outdatedNote != null) labelParts.Add(outdatedNote);
+                context.ChunkLabels.Add("(" + String.Join(", ", labelParts) + ")");
+
+                string downloadUrl = null;
+                if (!String.IsNullOrEmpty(chunk.DocumentId))
+                {
+                    if (String.Equals(settings.CitationLinkMode, "Authenticated", StringComparison.OrdinalIgnoreCase))
+                        downloadUrl = "/v1.0/documents/" + chunk.DocumentId + "/download";
+                    else if (String.Equals(settings.CitationLinkMode, "Public", StringComparison.OrdinalIgnoreCase))
+                        downloadUrl = "/v1.0/assistants/" + assistant.Id + "/documents/" + chunk.DocumentId + "/download";
+                }
+
+                context.CitationSources.Add(new CitationSource
+                {
+                    Index = citationIndex++,
+                    DocumentId = chunk.DocumentId,
+                    DocumentName = docName,
+                    ContentType = doc?.ContentType,
+                    Score = chunk.Score,
+                    FusionScore = chunk.FusionScore,
+                    RerankScore = chunk.RerankScore,
+                    Excerpt = chunk.Content?.Length > 200 ? chunk.Content.Substring(0, 200) + "..." : chunk.Content,
+                    DownloadUrl = downloadUrl,
+                    PageStart = chunk.PageStart,
+                    PageEnd = chunk.PageEnd,
+                    Sheet = chunk.Sheet,
+                    SupersededBy = chunk.SupersededBy
+                });
+            }
+
+            return context;
         }
 
         /// <summary>
@@ -878,8 +993,10 @@ namespace AssistantHub.Server.Services
             AssistantRetrievalStagesResult ret = new AssistantRetrievalStagesResult();
             if (captureStages) ret.Stages = new List<RetrievalStageSnapshot>();
 
-            if (settings.EnableRag && settings.EnableRetrievalGate
-                && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+            bool canRetrieve = settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage);
+
+            // Retrieval gate
+            if (canRetrieve && settings.EnableRetrievalGate)
             {
                 int userMessageCount = conversation?.Count(m =>
                     String.Equals(m.Role, "user", StringComparison.OrdinalIgnoreCase)) ?? 0;
@@ -888,53 +1005,25 @@ namespace AssistantHub.Server.Services
                 {
                     string gatePrompt = BuildRetrievalGatePrompt(conversation, lastUserMessage, attachedDocuments);
                     string gateEndpointId = ResolveUtilityInferenceEndpointId(settings.RetrievalGateInferenceEndpointId, settings.InferenceEndpointId);
-                    ResolvedEndpoint gateEndpoint = await ResolveCompletionEndpointOrFallbackAsync(gateEndpointId, token).ConfigureAwait(false);
-                    string gateModel = !String.IsNullOrEmpty(gateEndpoint.Model) ? gateEndpoint.Model : _Settings.Inference.DefaultModel;
-
                     Stopwatch gateSw = Stopwatch.StartNew();
-                    try
+                    UtilityStepResult gate = await RunUtilityStepAsync(
+                        "retrieval_gate",
+                        gateEndpointId,
+                        new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = gatePrompt } },
+                        3,
+                        token).ConfigureAwait(false);
+                    gateSw.Stop();
+                    ret.GateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
+                    ret.GateTelemetry = gate.Result?.Telemetry;
+
+                    if (gate.Succeeded && gate.Result.Content.Trim().ToUpperInvariant().Contains("SKIP"))
                     {
-                        InferenceResult gateResult = await GenerateWithCompletionEndpointLimitAsync(
-                            new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = gatePrompt } },
-                            gateModel,
-                            3,
-                            0.0,
-                            1.0,
-                            gateEndpoint.Provider,
-                            gateEndpoint.Endpoint,
-                            gateEndpoint.ApiKey,
-                            gateEndpoint.EndpointId,
-                            gateEndpoint.MaxConcurrentRequests,
-                            token).ConfigureAwait(false);
-                        ret.GateTelemetry = gateResult?.Telemetry;
-
-                        gateSw.Stop();
-                        ret.GateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
-
-                        if (gateResult != null && gateResult.Success && !String.IsNullOrEmpty(gateResult.Content))
-                        {
-                            string decision = gateResult.Content.Trim().ToUpperInvariant();
-                            if (decision.Contains("SKIP"))
-                            {
-                                ret.GateDecision = "SKIP";
-                                ret.ShouldRetrieve = false;
-                            }
-                            else
-                            {
-                                ret.GateDecision = "RETRIEVE";
-                            }
-                        }
-                        else
-                        {
-                            ret.GateDecision = "RETRIEVE";
-                        }
+                        ret.GateDecision = "SKIP";
+                        ret.ShouldRetrieve = false;
                     }
-                    catch (Exception gateEx)
+                    else
                     {
-                        gateSw.Stop();
-                        ret.GateDurationMs = Math.Round(gateSw.Elapsed.TotalMilliseconds, 2);
                         ret.GateDecision = "RETRIEVE";
-                        _Logging.Warn(_Header + "retrieval gate failed, defaulting to RETRIEVE: " + gateEx.Message);
                     }
                 }
             }
@@ -949,149 +1038,123 @@ namespace AssistantHub.Server.Services
                 _Logging.Info(_Header + "retrieval gate overridden to RETRIEVE because the latest message references attached documents");
             }
 
+            // The original message is always searched at full weight. A conversation rewrite is searched alongside it
+            // at full weight; query-rewrite variants are fused at half weight so they re-rank rather than displace.
             List<string> retrievalQueries = !String.IsNullOrEmpty(lastUserMessage) ? new List<string> { lastUserMessage } : new List<string>();
+            List<double> queryWeights = new List<double> { 1.0 };
 
-            if (settings.EnableRag && settings.EnableQueryRewrite && ret.ShouldRetrieve
-                && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage))
+            if (canRetrieve && ret.ShouldRetrieve && settings.EnableConversationRewrite && HasPriorConversation(conversation))
             {
                 string rewriteEndpointId = ResolveUtilityInferenceEndpointId(settings.QueryRewriteInferenceEndpointId, settings.InferenceEndpointId);
-                ResolvedEndpoint rewriteEndpoint = await ResolveCompletionEndpointOrFallbackAsync(rewriteEndpointId, token).ConfigureAwait(false);
-                string rewriteModel = !String.IsNullOrEmpty(rewriteEndpoint.Model) ? rewriteEndpoint.Model : _Settings.Inference.DefaultModel;
-                string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt)
-                    ? settings.QueryRewritePrompt
-                    : _DefaultQueryRewritePrompt;
+                Stopwatch conversationSw = Stopwatch.StartNew();
+                UtilityStepResult rewrite = await RunUtilityStepAsync(
+                    "conversation_rewrite",
+                    rewriteEndpointId,
+                    new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = BuildConversationRewritePrompt(settings, conversation, lastUserMessage) } },
+                    200,
+                    token).ConfigureAwait(false);
+                conversationSw.Stop();
+                ret.ConversationRewriteDurationMs = Math.Round(conversationSw.Elapsed.TotalMilliseconds, 2);
 
-                string rewritePrompt = rewritePromptTemplate.Replace("{prompt}", lastUserMessage);
-                rewritePrompt = AssistantAttachmentPromptBuilder.AddQueryRewriteContext(rewritePrompt, attachedDocuments);
-                Stopwatch rewriteSw = Stopwatch.StartNew();
-
-                try
+                string standalone = rewrite.Succeeded ? ParseConversationRewrite(rewrite.Result.Content) : null;
+                if (!String.IsNullOrWhiteSpace(standalone) && !String.Equals(standalone.Trim(), lastUserMessage.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
-                    InferenceResult rewriteResult = await GenerateWithCompletionEndpointLimitAsync(
-                        new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rewritePrompt } },
-                        rewriteModel,
-                        512,
-                        0.7,
-                        1.0,
-                        rewriteEndpoint.Provider,
-                        rewriteEndpoint.Endpoint,
-                        rewriteEndpoint.ApiKey,
-                        rewriteEndpoint.EndpointId,
-                        rewriteEndpoint.MaxConcurrentRequests,
-                        token).ConfigureAwait(false);
-                    ret.QueryRewriteTelemetry = rewriteResult?.Telemetry;
+                    ret.ConversationRewrite = standalone.Trim();
+                    retrievalQueries.Add(ret.ConversationRewrite);
+                    queryWeights.Add(1.0);
+                }
+            }
 
-                    rewriteSw.Stop();
-                    ret.QueryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
+            if (canRetrieve && ret.ShouldRetrieve && settings.EnableQueryRewrite)
+            {
+                string rewriteEndpointId = ResolveUtilityInferenceEndpointId(settings.QueryRewriteInferenceEndpointId, settings.InferenceEndpointId);
+                string rewritePromptTemplate = !String.IsNullOrEmpty(settings.QueryRewritePrompt) ? settings.QueryRewritePrompt : _DefaultQueryRewritePrompt;
+                string rewritePrompt = rewritePromptTemplate.Replace("{prompt}", ret.ConversationRewrite ?? lastUserMessage);
+                rewritePrompt = AssistantAttachmentPromptBuilder.AddQueryRewriteContext(rewritePrompt, attachedDocuments);
 
-                    if (rewriteResult != null && rewriteResult.Success && !String.IsNullOrEmpty(rewriteResult.Content))
+                Stopwatch rewriteSw = Stopwatch.StartNew();
+                UtilityStepResult rewrite = await RunUtilityStepAsync(
+                    "query_rewrite",
+                    rewriteEndpointId,
+                    new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rewritePrompt } },
+                    512,
+                    token).ConfigureAwait(false);
+                rewriteSw.Stop();
+                ret.QueryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
+                ret.QueryRewriteTelemetry = rewrite.Result?.Telemetry;
+
+                if (rewrite.Succeeded)
+                {
+                    ret.QueryRewriteResult = rewrite.Result.Content.Trim();
+                    List<string> variants = rewrite.Result.Content
+                        .Split('\n')
+                        .Select(q => q.Trim().Trim('"'))
+                        .Where(q => !String.IsNullOrWhiteSpace(q))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Where(q => !retrievalQueries.Contains(q, StringComparer.OrdinalIgnoreCase))
+                        .Take(3)
+                        .ToList();
+                    foreach (string variant in variants)
                     {
-                        ret.QueryRewriteResult = rewriteResult.Content.Trim();
-                        List<string> rewrittenQueries = rewriteResult.Content
-                            .Split('\n')
-                            .Select(q => q.Trim().Trim('"'))
-                            .Where(q => !String.IsNullOrWhiteSpace(q))
-                            .Distinct(StringComparer.OrdinalIgnoreCase)
-                            .ToList();
-
-                        if (rewrittenQueries.Count > 0)
-                            retrievalQueries = rewrittenQueries;
+                        retrievalQueries.Add(variant);
+                        queryWeights.Add(0.5);
                     }
                 }
-                catch (Exception rewriteEx)
+                else
                 {
-                    rewriteSw.Stop();
-                    ret.QueryRewriteDurationMs = Math.Round(rewriteSw.Elapsed.TotalMilliseconds, 2);
-                    _Logging.Warn(_Header + "query rewrite failed, using original query: " + rewriteEx.Message);
+                    _Logging.Warn(_Header + "query rewrite unavailable, using the original query" + (rewrite.Skipped ? " (circuit breaker open)" : ""));
                 }
             }
 
             ret.Queries = retrievalQueries;
             List<RetrievalChunk> retrievalChunks = new List<RetrievalChunk>();
+            bool rerank = settings.EnableRag && settings.EnableReranking;
+            int candidateCount = rerank ? Math.Max(settings.RetrievalTopK, settings.RerankCandidateCount) : settings.RetrievalTopK;
+            RetrievalSearchOptions searchOptions = RetrievalSearchOptions.FromAssistantSettings(settings, effectiveMetadataFilter, attachedDocumentIds);
 
-            if (settings.EnableRag && !String.IsNullOrEmpty(settings.CollectionId) && !String.IsNullOrEmpty(lastUserMessage) && ret.ShouldRetrieve)
+            if (canRetrieve && ret.ShouldRetrieve)
             {
                 ret.RetrievalStartUtc = DateTime.UtcNow;
                 Stopwatch retrievalSw = Stopwatch.StartNew();
 
-                RetrievalSearchOptions searchOptions = new RetrievalSearchOptions
-                {
-                    SearchMode = settings.SearchMode,
-                    TextWeight = settings.TextWeight,
-                    FullTextSearchType = settings.FullTextSearchType,
-                    FullTextLanguage = settings.FullTextLanguage,
-                    FullTextNormalization = settings.FullTextNormalization,
-                    FullTextMinimumScore = settings.FullTextMinimumScore,
-                    IncludeNeighbors = settings.RetrievalIncludeNeighbors,
-                    MetadataFilter = effectiveMetadataFilter,
-                    DocumentIds = attachedDocumentIds
-                };
-
                 if (retrievalQueries.Count > 1)
                 {
                     List<IReadOnlyList<RetrievalChunk>> rankedResults = new List<IReadOnlyList<RetrievalChunk>>();
+                    List<double> rankedWeights = new List<double>();
 
-                    foreach (string query in retrievalQueries)
+                    for (int q = 0; q < retrievalQueries.Count; q++)
                     {
-                        List<RetrievalChunk> retrieved = await _Retrieval.RetrieveAsync(
-                            tenantId,
-                            settings.CollectionId,
-                            query,
-                            settings.RetrievalTopK,
-                            settings.RetrievalScoreThreshold,
-                            default,
-                            settings.EmbeddingEndpointId,
-                            searchOptions).ConfigureAwait(false);
-                        if (searchOptions.HybridFallbackRan) ret.HybridFallbackRan = true;
-                        if (searchOptions.EmbeddingFailed) ret.EmbeddingFailed = true;
-
-                        if (retrieved != null)
-                        {
-                            rankedResults.Add(retrieved);
-                            CaptureStage(ret, "search", query, retrieved);
-                        }
+                        List<RetrievalChunk> retrieved = await RetrieveForStagesAsync(tenantId, settings, retrievalQueries[q], candidateCount, searchOptions, ret, token).ConfigureAwait(false);
+                        if (retrieved == null) continue;
+                        rankedResults.Add(retrieved);
+                        rankedWeights.Add(queryWeights[q]);
+                        CaptureStage(ret, "search", retrievalQueries[q], retrieved);
                     }
 
-                    retrievalChunks = RetrievalFusionHelper.FuseByReciprocalRank(rankedResults, settings.RetrievalTopK);
+                    retrievalChunks = RetrievalFusionHelper.FuseByReciprocalRank(rankedResults, candidateCount, 60.0, rankedWeights);
                 }
-                else
+                else if (retrievalQueries.Count == 1)
                 {
-                    HashSet<string> seenChunks = new HashSet<string>();
-
-                    foreach (string query in retrievalQueries)
+                    List<RetrievalChunk> retrieved = await RetrieveForStagesAsync(tenantId, settings, retrievalQueries[0], candidateCount, searchOptions, ret, token).ConfigureAwait(false);
+                    if (retrieved != null)
                     {
-                        List<RetrievalChunk> retrieved = await _Retrieval.RetrieveAsync(
-                            tenantId,
-                            settings.CollectionId,
-                            query,
-                            settings.RetrievalTopK,
-                            settings.RetrievalScoreThreshold,
-                            default,
-                            settings.EmbeddingEndpointId,
-                            searchOptions).ConfigureAwait(false);
-                        if (searchOptions.HybridFallbackRan) ret.HybridFallbackRan = true;
-                        if (searchOptions.EmbeddingFailed) ret.EmbeddingFailed = true;
-
-                        if (retrieved == null) continue;
-                        CaptureStage(ret, "search", query, retrieved);
-
+                        CaptureStage(ret, "search", retrievalQueries[0], retrieved);
+                        HashSet<string> seenChunks = new HashSet<string>();
                         foreach (RetrievalChunk chunk in retrieved)
                         {
-                            string dedupeKey = (chunk.DocumentId ?? "") + ":" + chunk.Position;
-                            if (seenChunks.Add(dedupeKey))
+                            if (seenChunks.Add((chunk.DocumentId ?? "") + ":" + chunk.Position))
                                 retrievalChunks.Add(chunk);
                         }
                     }
 
                     retrievalChunks = retrievalChunks
                         .OrderByDescending(c => c.Score)
-                        .Take(settings.RetrievalTopK)
+                        .Take(candidateCount)
                         .ToList();
                 }
 
                 CaptureStage(ret, "fused", null, retrievalChunks);
 
-                retrievalSw.Stop();
                 int preFilterChunkCount = retrievalChunks.Count;
                 retrievalChunks = AssistantAttachmentPromptBuilder.FilterChunksByAttachedDocuments(retrievalChunks, attachedDocumentIds);
                 if (retrievalChunks.Count != preFilterChunkCount)
@@ -1102,101 +1165,394 @@ namespace AssistantHub.Server.Services
 
                 if (attachedDocumentIds != null && attachedDocumentIds.Count > 0)
                     CaptureStage(ret, "attachment_filter", null, retrievalChunks);
+
+                int preSupersessionCount = retrievalChunks.Count;
+                retrievalChunks = await ApplySupersessionAsync(tenantId, settings, ret.ConversationRewrite ?? lastUserMessage, retrievalChunks, searchOptions, ret, token).ConfigureAwait(false);
+                if (ret.SupersededChunks > 0)
+                {
+                    CaptureStage(ret, "supersession", null, retrievalChunks);
+                    if (retrievalChunks.Count < preSupersessionCount)
+                        AddDropSummary(ret.DroppedCandidates, "supersession", "superseded_document", preSupersessionCount - retrievalChunks.Count);
+                }
+
+                retrievalSw.Stop();
                 ret.RetrievalDurationMs = Math.Round(retrievalSw.Elapsed.TotalMilliseconds, 2);
             }
 
-            if (settings.EnableRag && settings.EnableReranking && ret.ShouldRetrieve && retrievalChunks.Count > 0)
+            bool rerankApplied = false;
+            if (rerank && ret.ShouldRetrieve && retrievalChunks.Count > 0)
             {
                 ret.RerankInputCount = retrievalChunks.Count;
                 Stopwatch rerankSw = Stopwatch.StartNew();
-                bool rerankApplied = false;
 
-                try
-                {
-                    string rerankEndpointId = ResolveUtilityInferenceEndpointId(settings.RerankInferenceEndpointId, settings.InferenceEndpointId);
-                    ResolvedEndpoint rerankEndpoint = await ResolveCompletionEndpointOrFallbackAsync(rerankEndpointId, token).ConfigureAwait(false);
-                    string rerankModel = !String.IsNullOrEmpty(rerankEndpoint.Model) ? rerankEndpoint.Model : _Settings.Inference.DefaultModel;
-                    string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt)
-                        ? settings.RerankPrompt
-                        : _DefaultRerankPrompt;
-
-                    StringBuilder chunksBuilder = new StringBuilder();
-                    for (int i = 0; i < retrievalChunks.Count; i++)
-                    {
-                        string chunkText = retrievalChunks[i].Content ?? "";
-                        if (chunkText.Length > 500) chunkText = chunkText.Substring(0, 500);
-                        chunksBuilder.AppendLine("[" + (i + 1) + "] " + chunkText);
-                    }
-
-                    string rerankPrompt = rerankPromptTemplate
-                        .Replace("{query}", lastUserMessage)
-                        .Replace("{chunks}", chunksBuilder.ToString());
-
-                    InferenceResult rerankResult = await GenerateWithCompletionEndpointLimitAsync(
-                        new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rerankPrompt } },
-                        rerankModel,
-                        512,
-                        0.0,
-                        1.0,
-                        rerankEndpoint.Provider,
-                        rerankEndpoint.Endpoint,
-                        rerankEndpoint.ApiKey,
-                        rerankEndpoint.EndpointId,
-                        rerankEndpoint.MaxConcurrentRequests,
-                        token).ConfigureAwait(false);
-                    ret.RerankTelemetry = rerankResult?.Telemetry;
-
-                    if (rerankResult != null && rerankResult.Success && !String.IsNullOrEmpty(rerankResult.Content))
-                    {
-                        string rerankContent = rerankResult.Content.Trim();
-                        if (rerankContent.StartsWith("```json")) rerankContent = rerankContent.Substring(7);
-                        else if (rerankContent.StartsWith("```")) rerankContent = rerankContent.Substring(3);
-                        if (rerankContent.EndsWith("```")) rerankContent = rerankContent.Substring(0, rerankContent.Length - 3);
-                        rerankContent = rerankContent.Trim();
-
-                        int firstBracket = rerankContent.IndexOf('[');
-                        int lastBracket = rerankContent.LastIndexOf(']');
-                        if (firstBracket >= 0 && lastBracket > firstBracket)
-                            rerankContent = rerankContent.Substring(firstBracket, lastBracket - firstBracket + 1);
-
-                        List<RerankResult> scores = JsonSerializer.Deserialize<List<RerankResult>>(rerankContent,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                        if (scores != null)
-                        {
-                            foreach (RerankResult score in scores)
-                            {
-                                int idx = score.Index - 1;
-                                if (idx >= 0 && idx < retrievalChunks.Count)
-                                    retrievalChunks[idx].RerankScore = score.Score;
-                            }
-
-                            CaptureStage(ret, "rerank_scored", null, retrievalChunks);
-
-                            retrievalChunks = retrievalChunks
-                                .Where(c => c.RerankScore.HasValue && c.RerankScore.Value >= settings.RerankerScoreThreshold)
-                                .OrderByDescending(c => c.RerankScore!.Value)
-                                .Take(settings.RerankerTopK)
-                                .ToList();
-                            AddDropSummary(ret.DroppedCandidates, "rerank", "below_threshold_or_top_k", ret.RerankInputCount - retrievalChunks.Count);
-                            rerankApplied = true;
-                        }
-                    }
-                }
-                catch (Exception rerankEx)
-                {
-                    _Logging.Warn(_Header + "re-ranking failed, using original retrieval ordering: " + rerankEx.Message);
-                }
+                if (String.Equals(settings.RerankerType, "CrossEncoder", StringComparison.OrdinalIgnoreCase))
+                    (retrievalChunks, rerankApplied) = await RerankWithCrossEncoderAsync(settings, lastUserMessage, retrievalChunks, ret, token).ConfigureAwait(false);
+                else
+                    (retrievalChunks, rerankApplied) = await RerankWithLlmAsync(settings, lastUserMessage, retrievalChunks, ret, token).ConfigureAwait(false);
 
                 rerankSw.Stop();
-                ret.RerankParseFailed = !rerankApplied;
+                ret.RerankParseFailed = !rerankApplied && !ret.RerankSkipped;
                 ret.RerankDurationMs = Math.Round(rerankSw.Elapsed.TotalMilliseconds, 2);
+            }
+
+            // Without a usable rerank, the extra candidates fetched for it are not injected.
+            if (!rerankApplied && retrievalChunks.Count > settings.RetrievalTopK)
+                retrievalChunks = retrievalChunks.Take(settings.RetrievalTopK).ToList();
+
+            if (rerank && ret.RerankInputCount > 0)
+            {
                 ret.RerankOutputCount = retrievalChunks.Count;
                 CaptureStage(ret, "rerank", null, retrievalChunks);
             }
 
             ret.Chunks = retrievalChunks;
             return ret;
+        }
+
+        private async Task<List<RetrievalChunk>> RetrieveForStagesAsync(
+            string tenantId,
+            AssistantSettings settings,
+            string query,
+            int topK,
+            RetrievalSearchOptions searchOptions,
+            AssistantRetrievalStagesResult ret,
+            CancellationToken token)
+        {
+            List<RetrievalChunk> retrieved = await _Retrieval.RetrieveAsync(
+                tenantId,
+                settings.CollectionId,
+                query,
+                topK,
+                settings.RetrievalScoreThreshold,
+                token,
+                settings.EmbeddingEndpointId,
+                searchOptions).ConfigureAwait(false);
+            if (searchOptions.HybridFallbackRan) ret.HybridFallbackRan = true;
+            if (searchOptions.EmbeddingFailed) ret.EmbeddingFailed = true;
+            if (searchOptions.KeywordFallbackRan) ret.KeywordFallbackRan = true;
+            return retrieved;
+        }
+
+        private static bool HasPriorConversation(List<ChatCompletionMessage> conversation)
+        {
+            if (conversation == null) return false;
+            int turns = conversation.Count(m =>
+                String.Equals(m.Role, "user", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(m.Role, "assistant", StringComparison.OrdinalIgnoreCase));
+            return turns > 1;
+        }
+
+        private static string BuildConversationRewritePrompt(AssistantSettings settings, List<ChatCompletionMessage> conversation, string lastUserMessage)
+        {
+            // The last six turns before the latest user message, each capped at 1,000 characters.
+            List<ChatCompletionMessage> turns = conversation
+                .Where(m => String.Equals(m.Role, "user", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(m.Role, "assistant", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            int lastUserIndex = turns.FindLastIndex(m => String.Equals(m.Role, "user", StringComparison.OrdinalIgnoreCase));
+            if (lastUserIndex >= 0) turns = turns.Take(lastUserIndex).ToList();
+            turns = turns.Skip(Math.Max(0, turns.Count - 6)).ToList();
+
+            StringBuilder history = new StringBuilder();
+            foreach (ChatCompletionMessage turn in turns)
+            {
+                string content = turn.Content ?? "";
+                if (content.Length > 1000) content = content.Substring(0, 1000);
+                history.Append(turn.Role.ToLowerInvariant()).Append(": ").Append(content).Append('\n');
+            }
+
+            string template = !String.IsNullOrWhiteSpace(settings.ConversationRewritePrompt) ? settings.ConversationRewritePrompt : _DefaultConversationRewritePrompt;
+            return template.Replace("{conversation}", history.ToString().TrimEnd()).Replace("{question}", lastUserMessage);
+        }
+
+        /// <summary>
+        /// Parse the conversation rewrite reply: a JSON object with "query", or a bare line when the model ignored the
+        /// format. Returns null when nothing usable came back.
+        /// </summary>
+        public static string ParseConversationRewrite(string content)
+        {
+            if (String.IsNullOrWhiteSpace(content)) return null;
+            string text = System.Text.RegularExpressions.Regex.Replace(content, "<think>[\\s\\S]*?</think>", "").Trim();
+            int start = text.IndexOf('{');
+            int end = text.LastIndexOf('}');
+            if (start >= 0 && end > start)
+            {
+                try
+                {
+                    using JsonDocument document = JsonDocument.Parse(text.Substring(start, end - start + 1));
+                    if (document.RootElement.TryGetProperty("query", out JsonElement query) && query.ValueKind == JsonValueKind.String)
+                        return String.IsNullOrWhiteSpace(query.GetString()) ? null : query.GetString().Trim();
+                }
+                catch (JsonException)
+                {
+                }
+
+                return null;
+            }
+
+            string line = text.Split('\n').Select(l => l.Trim().Trim('"')).FirstOrDefault(l => l.Length > 0);
+            return line != null && line.Length <= 500 ? line : null;
+        }
+
+        /// <summary>
+        /// Apply document supersession to the fused candidates, according to the assistant's SupersessionMode.
+        /// </summary>
+        private async Task<List<RetrievalChunk>> ApplySupersessionAsync(
+            string tenantId,
+            AssistantSettings settings,
+            string query,
+            List<RetrievalChunk> chunks,
+            RetrievalSearchOptions searchOptions,
+            AssistantRetrievalStagesResult ret,
+            CancellationToken token)
+        {
+            if (chunks == null || chunks.Count == 0) return chunks;
+
+            Dictionary<string, AssistantDocument> documents = new Dictionary<string, AssistantDocument>(StringComparer.Ordinal);
+            async Task<AssistantDocument> ReadDocumentAsync(string id)
+            {
+                if (String.IsNullOrEmpty(id)) return null;
+                if (documents.TryGetValue(id, out AssistantDocument cached)) return cached;
+                AssistantDocument document = await _Database.AssistantDocument.ReadAsync(id, token).ConfigureAwait(false);
+                documents[id] = document;
+                return document;
+            }
+
+            foreach (string id in chunks.Select(c => c.DocumentId).Where(id => !String.IsNullOrEmpty(id)).Distinct(StringComparer.Ordinal))
+                await ReadDocumentAsync(id).ConfigureAwait(false);
+            if (!documents.Values.Any(d => d != null && !String.IsNullOrEmpty(d.SupersededBy))) return chunks;
+
+            HashSet<string> presentDocuments = new HashSet<string>(chunks.Select(c => c.DocumentId ?? ""), StringComparer.Ordinal);
+            HashSet<string> insertedReplacements = new HashSet<string>(StringComparer.Ordinal);
+            Dictionary<string, RetrievalChunk> replacementChunkByDocument = new Dictionary<string, RetrievalChunk>(StringComparer.Ordinal);
+            bool explicitDocumentScope = searchOptions.DocumentIds != null && searchOptions.DocumentIds.Count > 0;
+            bool filtered = searchOptions.MetadataFilter != null && !searchOptions.MetadataFilter.IsEmpty;
+            List<RetrievalChunk> result = new List<RetrievalChunk>();
+
+            foreach (RetrievalChunk chunk in chunks)
+            {
+                AssistantDocument document = await ReadDocumentAsync(chunk.DocumentId).ConfigureAwait(false);
+                if (document == null || String.IsNullOrEmpty(document.SupersededBy))
+                {
+                    result.Add(chunk);
+                    continue;
+                }
+
+                // Follow the chain to the newest replacement (bounded, and stopping at a missing document).
+                string replacementId = document.SupersededBy;
+                for (int hop = 0; hop < 5; hop++)
+                {
+                    AssistantDocument replacement = await ReadDocumentAsync(replacementId).ConfigureAwait(false);
+                    if (replacement == null || String.IsNullOrEmpty(replacement.SupersededBy)) break;
+                    replacementId = replacement.SupersededBy;
+                }
+
+                ret.SupersededChunks++;
+
+                // An explicit scope wins over supersession: when the request is limited to attached documents that do
+                // not include the replacement, or its metadata filter excludes the replacement, the user asked about
+                // this version. The chunk is kept and marked outdated instead of being replaced or hidden.
+                if (String.Equals(settings.SupersessionMode, "Include", StringComparison.Ordinal)
+                    || (explicitDocumentScope && !searchOptions.DocumentIds.Contains(replacementId, StringComparer.Ordinal)))
+                {
+                    chunk.SupersededBy = replacementId;
+                    result.Add(chunk);
+                    continue;
+                }
+
+                if (presentDocuments.Contains(replacementId))
+                    continue;
+
+                if (!replacementChunkByDocument.TryGetValue(replacementId, out RetrievalChunk replacementChunk))
+                {
+                    replacementChunk = null;
+                    AssistantDocument replacementDocument = await ReadDocumentAsync(replacementId).ConfigureAwait(false);
+                    bool needSearch = String.Equals(settings.SupersessionMode, "Demote", StringComparison.Ordinal) || filtered;
+                    if (replacementDocument != null && replacementDocument.Status == Core.Enums.DocumentStatusEnum.Completed && needSearch)
+                    {
+                        RetrievalSearchOptions scoped = RetrievalSearchOptions.FromAssistantSettings(settings, searchOptions.MetadataFilter, new List<string> { replacementId });
+                        List<RetrievalChunk> replacementChunks = await _Retrieval.RetrieveAsync(
+                            tenantId, settings.CollectionId, query, 1, 0, token, settings.EmbeddingEndpointId, scoped).ConfigureAwait(false);
+                        if (replacementChunks != null && replacementChunks.Count > 0) replacementChunk = replacementChunks[0];
+                    }
+                    else if (replacementDocument != null && replacementDocument.Status == Core.Enums.DocumentStatusEnum.Completed)
+                    {
+                        // Hide without a metadata filter: the replacement is in scope, so no search is needed.
+                        replacementChunk = new RetrievalChunk { DocumentId = replacementId };
+                    }
+
+                    replacementChunkByDocument[replacementId] = replacementChunk;
+                }
+
+                if (replacementChunk == null)
+                {
+                    // The replacement is outside the current scope or not ingested yet: keep this version, marked.
+                    chunk.SupersededBy = replacementId;
+                    result.Add(chunk);
+                    continue;
+                }
+
+                if (String.Equals(settings.SupersessionMode, "Demote", StringComparison.Ordinal) && insertedReplacements.Add(replacementId))
+                    result.Add(replacementChunk);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Whether an answer to a cited prompt is a degenerate fragment: after removing citation markers it has fewer
+        /// than four words, or it is only a lead-in such as "According to the sources".
+        /// </summary>
+        /// <param name="content">Answer text.</param>
+        /// <returns>True when degenerate.</returns>
+        public static bool IsDegenerateCitedAnswer(string content)
+        {
+            if (String.IsNullOrWhiteSpace(content)) return true;
+            string text = System.Text.RegularExpressions.Regex.Replace(content, "\\[\\d+\\]", " ");
+            text = System.Text.RegularExpressions.Regex.Replace(text, "[^\\p{L}\\p{N}\\s]", " ").Trim();
+            string[] words = text.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length < 4) return true;
+            return words.Length <= 8 && System.Text.RegularExpressions.Regex.IsMatch(text,
+                "^(according to|based on|from)( the)? (provided )?(sources?|context|documents?)( provided| above| below)?$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
+        private RerankerSettings ResolveReranker(string rerankerId)
+        {
+            List<RerankerSettings> rerankers = _Settings.Rerankers ?? new List<RerankerSettings>();
+            if (rerankers.Count == 0) return null;
+            if (String.IsNullOrWhiteSpace(rerankerId)) return rerankers[0];
+            return rerankers.FirstOrDefault(r => String.Equals(r.Id, rerankerId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private async Task<(List<RetrievalChunk> Chunks, bool Applied)> RerankWithCrossEncoderAsync(
+            AssistantSettings settings,
+            string query,
+            List<RetrievalChunk> chunks,
+            AssistantRetrievalStagesResult ret,
+            CancellationToken token)
+        {
+            ret.Reranker = "cross_encoder";
+            RerankerSettings reranker = ResolveReranker(settings.RerankEndpointId);
+            if (reranker == null)
+            {
+                _Logging.Warn(_Header + "cross-encoder reranking requested but reranker '" + (settings.RerankEndpointId ?? "(default)") + "' is not configured; keeping retrieval order");
+                ret.RerankSkipped = true;
+                return (chunks, false);
+            }
+
+            string breakerKey = "rerank:" + reranker.Id;
+            if (UtilityCircuitBreaker.IsOpen(breakerKey))
+            {
+                ret.RerankSkipped = true;
+                return (chunks, false);
+            }
+
+            try
+            {
+                List<double> scores = await _RerankClient.ScoreAsync(reranker, query, chunks.Select(c => c.Content ?? "").ToList(), token).ConfigureAwait(false);
+                UtilityCircuitBreaker.RecordSuccess(breakerKey);
+                for (int i = 0; i < chunks.Count && i < scores.Count; i++)
+                    chunks[i].RerankScore = Math.Round(scores[i], 6);
+                CaptureStage(ret, "rerank_scored", null, chunks);
+
+                List<RetrievalChunk> ordered = chunks.OrderByDescending(c => c.RerankScore ?? 0).ToList();
+                if (settings.RerankMinScore.HasValue)
+                {
+                    ordered = ordered.Where(c => (c.RerankScore ?? 0) >= settings.RerankMinScore.Value).ToList();
+                    if (ordered.Count == 0) ret.NoRelevantContext = true;
+                }
+
+                ordered = ordered.Take(settings.RerankerTopK).ToList();
+                AddDropSummary(ret.DroppedCandidates, "rerank", "below_min_score_or_top_k", chunks.Count - ordered.Count);
+                return (ordered, true);
+            }
+            catch (Exception e) when (!token.IsCancellationRequested)
+            {
+                _Logging.Warn(_Header + "cross-encoder reranking failed, keeping retrieval order: " + e.Message);
+                if (UtilityCircuitBreaker.RecordFailure(breakerKey, _Settings.Inference.CircuitBreakerFailures, _Settings.Inference.CircuitBreakerOpenMs))
+                    _Logging.Warn(_Header + "reranker circuit breaker opened for " + reranker.Id);
+                return (chunks, false);
+            }
+        }
+
+        private async Task<(List<RetrievalChunk> Chunks, bool Applied)> RerankWithLlmAsync(
+            AssistantSettings settings,
+            string query,
+            List<RetrievalChunk> chunks,
+            AssistantRetrievalStagesResult ret,
+            CancellationToken token)
+        {
+            ret.Reranker = "llm";
+            string rerankEndpointId = ResolveUtilityInferenceEndpointId(settings.RerankInferenceEndpointId, settings.InferenceEndpointId);
+            string rerankPromptTemplate = !String.IsNullOrEmpty(settings.RerankPrompt) ? settings.RerankPrompt : _DefaultRerankPrompt;
+
+            StringBuilder chunksBuilder = new StringBuilder();
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                string chunkText = chunks[i].Content ?? "";
+                if (chunkText.Length > 500) chunkText = chunkText.Substring(0, 500);
+                chunksBuilder.AppendLine("[" + (i + 1) + "] " + chunkText);
+            }
+
+            string rerankPrompt = rerankPromptTemplate
+                .Replace("{query}", query)
+                .Replace("{chunks}", chunksBuilder.ToString());
+
+            UtilityStepResult step = await RunUtilityStepAsync(
+                "rerank",
+                rerankEndpointId,
+                new List<ChatCompletionMessage> { new ChatCompletionMessage { Role = "system", Content = rerankPrompt } },
+                512,
+                token).ConfigureAwait(false);
+            ret.RerankTelemetry = step.Result?.Telemetry;
+            if (step.Skipped)
+            {
+                ret.RerankSkipped = true;
+                return (chunks, false);
+            }
+
+            if (!step.Succeeded) return (chunks, false);
+
+            try
+            {
+                string rerankContent = step.Result.Content.Trim();
+                if (rerankContent.StartsWith("```json")) rerankContent = rerankContent.Substring(7);
+                else if (rerankContent.StartsWith("```")) rerankContent = rerankContent.Substring(3);
+                if (rerankContent.EndsWith("```")) rerankContent = rerankContent.Substring(0, rerankContent.Length - 3);
+                rerankContent = rerankContent.Trim();
+
+                int firstBracket = rerankContent.IndexOf('[');
+                int lastBracket = rerankContent.LastIndexOf(']');
+                if (firstBracket >= 0 && lastBracket > firstBracket)
+                    rerankContent = rerankContent.Substring(firstBracket, lastBracket - firstBracket + 1);
+
+                List<RerankResult> scores = JsonSerializer.Deserialize<List<RerankResult>>(rerankContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (scores == null) return (chunks, false);
+
+                foreach (RerankResult score in scores)
+                {
+                    int idx = score.Index - 1;
+                    if (idx >= 0 && idx < chunks.Count)
+                        chunks[idx].RerankScore = score.Score;
+                }
+
+                CaptureStage(ret, "rerank_scored", null, chunks);
+
+                List<RetrievalChunk> ordered = chunks
+                    .Where(c => c.RerankScore.HasValue && c.RerankScore.Value >= settings.RerankerScoreThreshold)
+                    .OrderByDescending(c => c.RerankScore!.Value)
+                    .Take(settings.RerankerTopK)
+                    .ToList();
+                AddDropSummary(ret.DroppedCandidates, "rerank", "below_threshold_or_top_k", chunks.Count - ordered.Count);
+                return (ordered, true);
+            }
+            catch (Exception rerankEx)
+            {
+                _Logging.Warn(_Header + "re-ranking reply could not be parsed, using original retrieval ordering: " + rerankEx.Message);
+                return (chunks, false);
+            }
         }
 
         private static void CaptureStage(AssistantRetrievalStagesResult result, string stage, string query, IEnumerable<RetrievalChunk> chunks)
@@ -1478,7 +1834,7 @@ namespace AssistantHub.Server.Services
                         Summary = "Checking whether tools are needed."
                     }).ConfigureAwait(false);
 
-                InferenceResult modelResult = await GenerateWithToolsAndCompletionEndpointLimitAsync(
+                InferenceResult modelResult = await GenerateAnswerWithRetryAsync(ct => GenerateWithToolsAndCompletionEndpointLimitAsync(
                     conversation,
                     toolRoutingModel,
                     maxTokens,
@@ -1491,7 +1847,7 @@ namespace AssistantHub.Server.Services
                     toolRoutingMaxConcurrentRequests,
                     tools,
                     ResolveProviderToolChoice(policy),
-                    token).ConfigureAwait(false);
+                    ct), token).ConfigureAwait(false);
 
                 if (modelResult == null || !modelResult.Success)
                 {
@@ -2203,7 +2559,7 @@ namespace AssistantHub.Server.Services
                     finalStreaming.OnDelta,
                     finalStreaming.OnThinkingDelta,
                     token).ConfigureAwait(false)
-                : await GenerateWithCompletionEndpointLimitAsync(
+                : await GenerateAnswerWithRetryAsync(ct => GenerateWithCompletionEndpointLimitAsync(
                     conversation,
                     model,
                     maxTokens,
@@ -2214,7 +2570,7 @@ namespace AssistantHub.Server.Services
                     apiKey,
                     endpointId,
                     maxConcurrentRequests,
-                    token).ConfigureAwait(false);
+                    ct), token).ConfigureAwait(false);
 
             AnnotateFinalAfterToolRoutingStage(result, separateToolRoutingEndpoint);
             return result;
@@ -2270,7 +2626,7 @@ namespace AssistantHub.Server.Services
                     finalStreaming.OnDelta,
                     finalStreaming.OnThinkingDelta,
                     token).ConfigureAwait(false)
-                : await GenerateWithCompletionEndpointLimitAsync(
+                : await GenerateAnswerWithRetryAsync(ct => GenerateWithCompletionEndpointLimitAsync(
                     conversation,
                     model,
                     maxTokens,
@@ -2281,7 +2637,7 @@ namespace AssistantHub.Server.Services
                     apiKey,
                     endpointId,
                     maxConcurrentRequests,
-                    token).ConfigureAwait(false);
+                    ct), token).ConfigureAwait(false);
 
             AnnotateToolLoopStopFinalStage(result, stopReason);
             return result;

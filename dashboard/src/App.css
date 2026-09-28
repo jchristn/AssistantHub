@@ -5979,3 +5979,32 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.settings-help {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.retrieval-inspector details {
+  margin-bottom: 0.75rem;
+}
+
+.retrieval-inspector summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.retrieval-inspector .data-table {
+  display: block;
+  overflow-x: auto;
+}
+
+.retrieval-inspector-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}

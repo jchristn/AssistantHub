@@ -57,5 +57,29 @@ namespace AssistantHub.Sdk.Models
         /// </summary>
         [JsonPropertyName("RegexPattern")]
         public string RegexPattern { get; set; }
+
+        /// <summary>
+        /// Cell mode: "Flat" or "Structured".
+        /// </summary>
+        [JsonPropertyName("CellMode")]
+        public string CellMode { get; set; }
+
+        /// <summary>
+        /// Table strategy: "Row", "RowWithHeaders", "RowGroupWithHeaders", "KeyValuePairs", or "WholeTable".
+        /// </summary>
+        [JsonPropertyName("TableStrategy")]
+        public string TableStrategy { get; set; }
+
+        /// <summary>
+        /// List strategy: "WholeList" or "ListEntry".
+        /// </summary>
+        [JsonPropertyName("ListStrategy")]
+        public string ListStrategy { get; set; }
+
+        /// <summary>
+        /// Context header prepended to chunks: "None", "Title", or "TitleAndHeadings".
+        /// </summary>
+        [JsonPropertyName("ContextHeader")]
+        public string ContextHeader { get; set; }
     }
 }

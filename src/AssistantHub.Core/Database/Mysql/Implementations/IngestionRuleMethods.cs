@@ -72,7 +72,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
-                _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
+                _Driver.FormatNullableString(Serializer.SerializeJson(rule.Extraction)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Summarization)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Chunking)) + ", " +
                 _Driver.FormatNullableString(Serializer.SerializeJson(rule.Embedding)) + ", " +
@@ -127,7 +127,7 @@ namespace AssistantHub.Core.Database.Mysql.Implementations
                 "verbex_index_id = " + _Driver.FormatNullableString(rule.VerbexIndexId) + ", " +
                 "labels_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Labels)) + ", " +
                 "tags_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Tags)) + ", " +
-                "atomization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Atomization)) + ", " +
+                "atomization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Extraction)) + ", " +
                 "summarization_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Summarization)) + ", " +
                 "chunking_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Chunking)) + ", " +
                 "embedding_json = " + _Driver.FormatNullableString(Serializer.SerializeJson(rule.Embedding)) + ", " +

@@ -60,7 +60,7 @@ namespace AssistantHub.Server.Handlers
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 AuthContext auth = GetAuthContext(ctx);
-                EnumerationResult<AssistantFeedback> result = await Database.AssistantFeedback.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<AssistantFeedback> result = await Database.AssistantFeedback.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 // Non-admin users: filter to only their assistants' feedback
                 if (!isAdmin && result != null && result.Objects != null)

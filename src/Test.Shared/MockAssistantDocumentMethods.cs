@@ -83,5 +83,41 @@ namespace Test.Shared
             }
             return Task.CompletedTask;
         }
+
+        public Task UpdateSupersessionAsync(string id, string supersedesJson, string supersededBy, CancellationToken token = default)
+        {
+            if (Store.TryGetValue(id, out AssistantDocument? d))
+            {
+                d.Supersedes = supersedesJson;
+                d.SupersededBy = supersededBy;
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateContentHashAsync(string id, string contentSha256, string nearDuplicatesJson, CancellationToken token = default)
+        {
+            if (Store.TryGetValue(id, out AssistantDocument? d))
+            {
+                d.ContentSha256 = contentSha256;
+                d.NearDuplicates = nearDuplicatesJson;
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task<List<AssistantDocument>> ReadByContentHashAsync(string tenantId, string collectionId, string contentSha256, CancellationToken token = default)
+        {
+            return Task.FromResult(Store.Values
+                .Where(d => String.Equals(d.TenantId, tenantId, StringComparison.Ordinal)
+                    && String.Equals(d.ContentSha256, contentSha256, StringComparison.OrdinalIgnoreCase)
+                    && (String.IsNullOrEmpty(collectionId) || String.Equals(d.CollectionId, collectionId, StringComparison.Ordinal)))
+                .ToList());
+        }
+
+        public Task<List<AssistantDocument>> ReadSupersededByAsync(string tenantId, string replacementId, CancellationToken token = default)
+        {
+            return Task.FromResult(Store.Values
+                .Where(d => String.Equals(d.TenantId, tenantId, StringComparison.Ordinal) && String.Equals(d.SupersededBy, replacementId, StringComparison.Ordinal))
+                .ToList());
+        }
     }
 }

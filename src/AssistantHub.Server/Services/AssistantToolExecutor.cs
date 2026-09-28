@@ -27,6 +27,12 @@ namespace AssistantHub.Server.Services
     {
         private static readonly string _Header = "[AssistantToolExecutor] ";
 
+        // Verbex cannot filter by required or excluded terms, so the tool over-fetches and filters against side
+        // queries: the main search asks for up to this many results, and each side query for up to
+        // VerbexTermFilterRecordLimit records.
+        private const int VerbexTermFilterPoolSize = 100;
+        private const int VerbexTermFilterRecordLimit = 1000;
+
         private readonly DatabaseDriverBase _Database;
         private readonly LoggingModule _Logging;
         private readonly AssistantHubSettings _Settings;
@@ -317,10 +323,15 @@ namespace AssistantHub.Server.Services
                 {
                     SearchMode = pass.Mode,
                     TextWeight = context.Settings.TextWeight,
+                    FusionStrategy = context.Settings.FusionStrategy,
+                    RrfK = context.Settings.RrfK,
+                    FusionCandidatePool = context.Settings.FusionCandidatePool,
+                    RecencyWeight = context.Settings.RecencyWeight,
                     FullTextSearchType = fullTextSearchType,
                     FullTextLanguage = fullTextLanguage,
                     FullTextNormalization = fullTextNormalization,
                     FullTextMinimumScore = fullTextMinimumScore,
+                    ApplyThresholdToFullText = requestedScoreThreshold.HasValue,
                     IncludeNeighbors = includeNeighbors,
                     MetadataFilter = metadataFilter,
                     DocumentIds = documentIds
@@ -671,21 +682,30 @@ namespace AssistantHub.Server.Services
             int maxVerbexResults = MinLimit(policy.MaxSearchResultsPerCall, policy.MaxVerbexResults, policy.MaxToolResultItems);
             int maxResults = Math.Clamp(GetInt(arguments, "max_results", maxVerbexResults), 1, maxVerbexResults);
 
+            // Verbex's search request has no required or excluded terms, so they are resolved here: a side query per
+            // list finds the records that contain them, and the main results are filtered against those records.
+            List<string> requiredTerms = GetStringList(arguments, "required_terms").Where(t => !String.IsNullOrWhiteSpace(t)).ToList();
+            List<string> excludedTerms = GetStringList(arguments, "excluded_terms").Where(t => !String.IsNullOrWhiteSpace(t)).ToList();
+            List<string> labels = GetStringList(arguments, "labels").Where(l => !String.IsNullOrWhiteSpace(l)).ToList();
+            bool termFilters = requiredTerms.Count > 0 || excludedTerms.Count > 0;
+
             Dictionary<string, object> body = new Dictionary<string, object>
             {
                 ["Query"] = query,
-                ["MaxResults"] = maxResults,
+                ["MaxResults"] = termFilters ? Math.Max(maxResults, Math.Min(maxResults * 4, VerbexTermFilterPoolSize)) : maxResults,
                 ["UseAndLogic"] = GetBool(arguments, "use_and_logic", false),
                 ["IncludeMatchedTerms"] = true,
                 ["IncludeTermDetails"] = false,
                 ["IncludeDocumentTermStats"] = false
             };
+            if (labels.Count > 0) body["Labels"] = labels;
 
-            List<string> requiredTerms = GetStringList(arguments, "required_terms");
-            if (requiredTerms.Count > 0) body["RequiredTerms"] = requiredTerms;
-
-            List<string> excludedTerms = GetStringList(arguments, "excluded_terms");
-            if (excludedTerms.Count > 0) body["ExcludedTerms"] = excludedTerms;
+            HashSet<string> requiredRecordIds = requiredTerms.Count > 0
+                ? await QueryVerbexRecordIdsAsync(invertedIndex, indexId, requiredTerms, true, labels, token).ConfigureAwait(false)
+                : null;
+            HashSet<string> excludedRecordIds = excludedTerms.Count > 0
+                ? await QueryVerbexRecordIdsAsync(invertedIndex, indexId, excludedTerms, false, labels, token).ConfigureAwait(false)
+                : null;
 
             string requestJson = JsonSerializer.Serialize(body, _JsonOptions);
             string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/search";
@@ -711,7 +731,9 @@ namespace AssistantHub.Server.Services
                 GetFirstArray(document.RootElement, "Results", "Documents", "Objects"),
                 recordIdFilters,
                 maxResults,
-                token).ConfigureAwait(false);
+                token,
+                requiredRecordIds,
+                excludedRecordIds).ConfigureAwait(false);
             _Logging.Debug(_Header + "Verbex search response trace " + traceId + " index " + indexId + " status " + (int)response.StatusCode + " resultCount " + results.Count + " durationMs " + verbexSw.ElapsedMilliseconds);
 
             return new
@@ -2034,13 +2056,61 @@ namespace AssistantHub.Server.Services
             return expanded;
         }
 
+        /// <summary>
+        /// Record IDs in a Verbex index that contain the given terms (all of them when <paramref name="allTerms"/> is
+        /// true, any of them otherwise), used to apply required and excluded terms that Verbex cannot filter itself.
+        /// Bounded by <see cref="VerbexTermFilterRecordLimit"/> records.
+        /// </summary>
+        private async Task<HashSet<string>> QueryVerbexRecordIdsAsync(
+            IInvertedIndexService invertedIndex,
+            string indexId,
+            List<string> terms,
+            bool allTerms,
+            List<string> labels,
+            CancellationToken token)
+        {
+            Dictionary<string, object> body = new Dictionary<string, object>
+            {
+                ["Query"] = String.Join(" ", terms),
+                ["MaxResults"] = VerbexTermFilterRecordLimit,
+                ["UseAndLogic"] = allTerms,
+                ["IncludeMatchedTerms"] = false,
+                ["IncludeTermDetails"] = false,
+                ["IncludeDocumentTermStats"] = false
+            };
+            if (labels != null && labels.Count > 0) body["Labels"] = labels;
+
+            token.ThrowIfCancellationRequested();
+            string path = "/v1.0/indices/" + Uri.EscapeDataString(indexId) + "/search";
+            using HttpResponseMessage response = await invertedIndex.SendAsync(HttpMethod.Post, path, JsonSerializer.Serialize(body, _JsonOptions)).ConfigureAwait(false);
+            string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException("Verbex term filter search failed with status code " + (int)response.StatusCode + ".");
+
+            HashSet<string> recordIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using JsonDocument document = JsonDocument.Parse(responseBody);
+            JsonElement? results = GetFirstArray(document.RootElement, "Results", "Documents", "Objects");
+            if (!results.HasValue || results.Value.ValueKind != JsonValueKind.Array) return recordIds;
+
+            foreach (JsonElement item in results.Value.EnumerateArray())
+            {
+                JsonElement record = GetObjectOrSelf(item, "Document", "Record", "Data");
+                string recordId = GetStringAny(item, "Id", "RecordId", "DocumentId") ?? GetStringAny(record, "Id", "RecordId", "DocumentId");
+                if (!String.IsNullOrWhiteSpace(recordId)) recordIds.Add(recordId);
+            }
+
+            return recordIds;
+        }
+
         private async Task<List<object>> NormalizeVerbexSearchResultsAsync(
             AssistantToolExecutionContext context,
             string indexId,
             JsonElement? resultsElement,
             List<string> recordIdFilters,
             int maxResults,
-            CancellationToken token)
+            CancellationToken token,
+            HashSet<string> requiredRecordIds = null,
+            HashSet<string> excludedRecordIds = null)
         {
             List<object> results = new List<object>();
             if (!resultsElement.HasValue || resultsElement.Value.ValueKind != JsonValueKind.Array)
@@ -2062,6 +2132,10 @@ namespace AssistantHub.Server.Services
                 if (recordIdFilters != null
                     && (String.IsNullOrWhiteSpace(recordId)
                         || !recordIdFilters.Contains(recordId, StringComparer.OrdinalIgnoreCase)))
+                    continue;
+                if (requiredRecordIds != null && (String.IsNullOrWhiteSpace(recordId) || !requiredRecordIds.Contains(recordId)))
+                    continue;
+                if (excludedRecordIds != null && !String.IsNullOrWhiteSpace(recordId) && excludedRecordIds.Contains(recordId))
                     continue;
 
                 AssistantDocument assistantDocument = await ResolveVerbexMappedDocumentAsync(

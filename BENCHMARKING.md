@@ -9,7 +9,7 @@ reference points, broken down finely enough to show where effort will improve re
 > `src/Test.Benchmark`, the isolated stack and datasets in `benchmarks/`, and the CI gate script. Round 0 has been run.
 > How to run it is in [benchmarks/README.md](benchmarks/README.md). The numbers are in
 > [benchmarks/RESULTS.md](benchmarks/RESULTS.md), and the ranked fixes are in
-> [RETRIEVAL_IMPROVEMENTS.md](RETRIEVAL_IMPROVEMENTS.md). Phase 6 (agent-in-the-loop) remains optional and unbuilt.
+> [RETRIEVAL_IMPROVEMENTS.md](archive/RETRIEVAL_IMPROVEMENTS_2026-09.md). Phase 6 (agent-in-the-loop) remains optional and unbuilt.
 
 The plan covers:
 
@@ -42,7 +42,7 @@ properties, and they are what AssistantHub should copy:
 | **Stage breakdown** | Prometheus histograms are scraped before and after each phase to get server-side time per stage. |
 | **Regression gate** | `compare` diffs two reports and exits non-zero on regression, so it can gate CI. |
 | **Reproducibility** | Deterministic scope names allow reuse of ingested data (`--reingest` forces a rebuild). Each report records the git commit (`-dirty` when uncommitted), machine, endpoints and config. Stratified sampling uses a fixed seed. |
-| **Rounds and ablations** | `RESULTS.md` records numbers round by round. `RETRIEVAL_IMPROVEMENTS.md` scores every candidate fix for value and simplicity and records the measured result. Sweeps (recency weight, chunk overlap) reuse ingested scopes. |
+| **Rounds and ablations** | `RESULTS.md` records numbers round by round. `RETRIEVAL_IMPROVEMENTS.md` (now `archive/RETRIEVAL_IMPROVEMENTS_2026-09.md`) scores every candidate fix for value and simplicity and records the measured result. Sweeps (recency weight, chunk overlap) reuse ingested scopes. |
 
 Only the Isis methodology carries over. Its results measure a different system on different data, so this plan does not
 use them as baselines, targets or evidence. AssistantHub's own round 0 sets its baseline. Expect that first run to be a
@@ -108,7 +108,7 @@ benchmarks/
   run-baseline.sh / .bat    the standard suite
   start-bench-server.sh / .bat
 src/Test.Benchmark/         black-box harness (no AssistantHub assembly references)
-RETRIEVAL_IMPROVEMENTS.md   ranked fixes with value/simplicity scores and measured results (after round 0)
+archive/RETRIEVAL_IMPROVEMENTS_2026-09.md   ranked fixes with value/simplicity scores and measured results (after round 0; archived after round 5)
 ```
 
 The isolated stack runs pgvector, RecallDB, Partio, DocumentAtom and Less3 on non-default ports. It uses the host's

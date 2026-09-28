@@ -4415,6 +4415,10 @@
                   "RetrievalScoreThreshold": 0.3,
                   "SearchMode": "Hybrid",
                   "TextWeight": 0.3,
+                  "FusionStrategy": "Rrf",
+                  "RrfK": 60,
+                  "RecencyWeight": 0.0,
+                  "ContextOrder": "Score",
                   "FullTextSearchType": "TsRank",
                   "FullTextLanguage": "english",
                   "FullTextNormalization": 32,
@@ -4655,6 +4659,10 @@
                   "RetrievalScoreThreshold": 0.3,
                   "SearchMode": "Hybrid",
                   "TextWeight": 0.3,
+                  "FusionStrategy": "Rrf",
+                  "RrfK": 60,
+                  "RecencyWeight": 0.0,
+                  "ContextOrder": "Score",
                   "FullTextSearchType": "TsRank",
                   "FullTextLanguage": "english",
                   "FullTextNormalization": 32,
@@ -4876,6 +4884,10 @@
                 "RetrievalScoreThreshold": 0.3,
                 "SearchMode": "Hybrid",
                 "TextWeight": 0.3,
+                "FusionStrategy": "Rrf",
+                "RrfK": 60,
+                "RecencyWeight": 0.0,
+                "ContextOrder": "Score",
                 "FullTextSearchType": "TsRank",
                 "FullTextLanguage": "english",
                 "FullTextNormalization": 32,
@@ -5852,6 +5864,7 @@
                   "retrieval_duration_ms": 41.2,
                   "hybrid_fallback_ran": false,
                   "embedding_failed": false,
+                  "keyword_fallback_ran": false,
                   "rerank_duration_ms": 0,
                   "rerank_input_count": 0,
                   "rerank_output_count": 0,
@@ -29781,6 +29794,366 @@
           }
         }
       }
+    },
+    "/v1.0/documents/{documentId}/supersedes": {
+      "put": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Set superseded documents",
+        "description": "Sets the documents this document replaces (for example the previous version of a policy). Each listed document records this document as its replacement, and retrieval then treats it as outdated according to the assistant's SupersessionMode (Demote, Hide or Include). Documents no longer listed are released. An empty list clears the links. Documents are tenant-scoped: a document owned by another tenant is reported as not found, except to global administrators. ",
+        "operationId": "PUT_v1_0_documents_documentId_supersedes",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Documents this document supersedes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentSupersedesRequest"
+              },
+              "example": {
+                "SupersedesDocumentIds": [
+                  "adoc_01JH3Z8Q2R4S6T8V0W2X4Y6Z7Z"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantDocument"
+                },
+                "example": {
+                  "Id": "adoc_01JH3Z8Q2R4S6T8V0W2X4Y6Z8A",
+                  "TenantId": "ten_01JH3Z6Q9V4T8K2M5N7P1R3S6W",
+                  "Name": "employee-handbook.pdf",
+                  "OriginalFilename": "employee-handbook.pdf",
+                  "ContentType": "application/pdf",
+                  "SizeBytes": 1048576,
+                  "S3Key": "irule_01JH3ZD1A3B5C7D9E1F3G5H7J9/adoc_01JH3Z8Q2R4S6T8V0W2X4Y6Z8A/employee-handbook.pdf",
+                  "Status": "Completed",
+                  "StatusMessage": "Document processing completed.",
+                  "IngestionRuleId": "irule_01JH3ZD1A3B5C7D9E1F3G5H7J9",
+                  "BucketName": "ten_01JH3Z6Q9V4T8K2M5N7P1R3S6W_kb-documents",
+                  "CollectionId": "col_01JH3Z9C3D5E7F9G1H3J5K7M9N",
+                  "VerbexTenantId": "ten_01JH3Z6Q9V4T8K2M5N7P1R3S6W",
+                  "VerbexIndexId": "default",
+                  "VerbexRecordId": "adoc_01JH3Z8Q2R4S6T8V0W2X4Y6Z8A",
+                  "Labels": "[\"handbook\",\"hr\"]",
+                  "Tags": "{\"version\":\"2.0\"}",
+                  "ChunkRecordIds": "[\"doc_01JH3ZF1A2B3C4D5E6F7G8H9J0\",\"doc_01JH3ZF2B3C4D5E6F7G8H9J0K1\"]",
+                  "CreatedUtc": "2026-01-15T17:30:00Z",
+                  "LastUpdateUtc": "2026-01-16T09:45:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/rerankers": {
+      "get": {
+        "tags": [
+          "Rerankers"
+        ],
+        "summary": "List rerankers",
+        "description": "Lists the cross-encoder rerank services an assistant can use with RerankerType CrossEncoder and RerankEndpointId. Rerankers are configured in the server settings (Rerankers) by the operator; API keys are never returned. Requires a global or tenant administrator. ",
+        "operationId": "GET_v1_0_rerankers",
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured rerankers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RerankerSummary"
+                  }
+                },
+                "example": [
+                  {
+                    "Id": "cross-encoder",
+                    "Name": "MiniLM cross-encoder",
+                    "Format": "Tei",
+                    "Endpoint": "http://reranker:80",
+                    "TimeoutMs": 10000,
+                    "HasApiKey": false
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1.0/rerankers/{rerankerId}/test": {
+      "post": {
+        "tags": [
+          "Rerankers"
+        ],
+        "summary": "Test a reranker",
+        "description": "Scores up to 100 passages against a query with a configured reranker and returns one score per passage, in request order. A reranker that fails or times out returns 200 with Success false and the error. Rerankers are configured in the server settings (Rerankers) by the operator; API keys are never returned. Requires a global or tenant administrator. ",
+        "operationId": "POST_v1_0_rerankers_rerankerId_test",
+        "parameters": [
+          {
+            "name": "rerankerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Query and passages to score.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RerankerTestRequest"
+              },
+              "example": {
+                "Query": "What is the engine's rated speed?",
+                "Documents": [
+                  "The engine is rated at 3000 rpm under continuous load.",
+                  "Bananas are rich in potassium."
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scores, or the reranker's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RerankerTestResult"
+                },
+                "example": {
+                  "RerankerId": "cross-encoder",
+                  "Success": true,
+                  "Scores": [
+                    0.969249,
+                    1.3e-05
+                  ],
+                  "DurationMs": 12.4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request. Please check your request and try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "BadRequest",
+                  "Message": "Bad request. Please check your request and try again.",
+                  "StatusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed. Please check your credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthenticationFailed",
+                  "Message": "Authentication failed. Please check your credentials.",
+                  "StatusCode": 401
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization failed. You do not have permission to perform this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "AuthorizationFailed",
+                  "Message": "Authorization failed. You do not have permission to perform this action.",
+                  "StatusCode": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "NotFound",
+                  "Message": "The requested resource was not found.",
+                  "StatusCode": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An internal error occurred. Please try again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "Error": "InternalError",
+                  "Message": "An internal error occurred. Please try again later.",
+                  "StatusCode": 500
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -30815,6 +31188,22 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp when the record was last updated in UTC."
+          },
+          "Supersedes": {
+            "type": "string",
+            "description": "Identifiers of documents this document replaces (JSON array). Retrieval treats the replaced documents as outdated according to the assistant's SupersessionMode."
+          },
+          "SupersededBy": {
+            "type": "string",
+            "description": "Identifier of the document that replaces this one, if any."
+          },
+          "ContentSha256": {
+            "type": "string",
+            "description": "SHA-256 of the uploaded bytes (lowercase hex), used to detect exact duplicates."
+          },
+          "NearDuplicates": {
+            "type": "string",
+            "description": "Near-duplicate documents in the same collection found after ingestion (JSON array of objects with DocumentId and Score)."
           }
         }
       },
@@ -30967,6 +31356,13 @@
           },
           "Telemetry": {
             "$ref": "#/components/schemas/TelemetrySettings"
+          },
+          "Rerankers": {
+            "type": "array",
+            "description": "Cross-encoder rerank services available to assistants (RerankerType \"CrossEncoder\").",
+            "items": {
+              "$ref": "#/components/schemas/RerankerSettings"
+            }
           }
         }
       },
@@ -31032,6 +31428,9 @@
           "include_answerability": {
             "type": "boolean",
             "default": true
+          },
+          "settings_override": {
+            "$ref": "#/components/schemas/AssistantSettings"
           }
         }
       },
@@ -31087,7 +31486,11 @@
           },
           "embedding_failed": {
             "type": "boolean",
-            "description": "Whether the query embedding failed after retries, so vector or hybrid search returned nothing."
+            "description": "Whether the query embedding failed after retries. Vector search then returns nothing; hybrid search falls back to its full-text leg."
+          },
+          "keyword_fallback_ran": {
+            "type": "boolean",
+            "description": "Whether a hybrid search ran its full-text leg alone because the query embedding failed."
           },
           "rerank_duration_ms": {
             "type": "number",
@@ -31154,6 +31557,27 @@
             "type": "number",
             "format": "double",
             "description": "Total server-side duration in milliseconds."
+          },
+          "conversation_rewrite": {
+            "type": "string",
+            "description": "Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation rewrite ran."
+          },
+          "reranker": {
+            "type": "string",
+            "description": "Reranker that ran: \"llm\" or \"cross_encoder\"; null when reranking is off."
+          },
+          "rerank_skipped": {
+            "type": "boolean",
+            "description": "Whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured."
+          },
+          "no_relevant_context": {
+            "type": "boolean",
+            "description": "Whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected."
+          },
+          "superseded_chunks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of retrieved chunks that came from superseded documents."
           }
         }
       },
@@ -31260,7 +31684,7 @@
           "RetrievalScoreThreshold": {
             "type": "number",
             "format": "double",
-            "description": "Minimum score threshold for retrieval results (0.0 to 1.0)."
+            "description": "Minimum vector similarity for retrieval results (0.0 to 1.0). In Hybrid mode it drops only chunks that the vector leg found on its own with a similarity below it; chunks the full-text leg found are kept. FullText results are not held to it; FullTextMinimumScore is their cutoff."
           },
           "SearchMode": {
             "type": "string",
@@ -31269,7 +31693,31 @@
           "TextWeight": {
             "type": "number",
             "format": "double",
-            "description": "Weight of full-text score in hybrid mode (0.0 to 1.0). Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore. Only applies when SearchMode is \"Hybrid\"."
+            "description": "Share of the full-text leg in hybrid mode (0.0 to 1.0); the vector leg gets 1.0 - TextWeight. With the default Rrf fusion the fused score is ((1 - w) / (k + vectorRank) + w / (k + textRank)) * (k + 1), so a chunk ranked first by both legs scores 1.0 and a chunk found only by the text leg scores at most w. With Linear fusion the score is a blend of the two legs' normalized scores. Only applies when SearchMode is \"Hybrid\"."
+          },
+          "FusionStrategy": {
+            "type": "string",
+            "description": "How hybrid search combines its vector and full-text legs: \"Rrf\" (weighted reciprocal rank fusion, the default) or \"Linear\" (blend of the legs' normalized scores). Only applies when SearchMode is \"Hybrid\"."
+          },
+          "RrfK": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The RRF constant k (1 to 100,000). Smaller values reward top ranks more strongly; larger values flatten the difference between adjacent ranks. Only applies to Rrf fusion. Default 60."
+          },
+          "FusionCandidatePool": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Number of candidates each hybrid leg retrieves before fusion (1 to 10,000). Null uses RecallDB's default, max(RetrievalTopK x 4, 100) capped at 1,000."
+          },
+          "RecencyWeight": {
+            "type": "number",
+            "format": "double",
+            "description": "Weight of a recency signal added to Rrf fusion (0.0 to 1.0): newer documents rank higher among otherwise similar candidates. 0 disables it. Only applies to Rrf fusion in hybrid mode."
+          },
+          "ContextOrder": {
+            "type": "string",
+            "description": "Order of retrieved context in the prompt: \"Score\" (most relevant first, the default) or \"ReadingOrder\" (chunks grouped by document, documents ordered by their best chunk, chunks in document order, with adjacent chunks merged). Does not change which chunks are retrieved or how they are ranked."
           },
           "FullTextSearchType": {
             "type": "string",
@@ -31412,6 +31860,45 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp when the record was last updated in UTC."
+          },
+          "EmbeddingTaskPrefixes": {
+            "type": "boolean",
+            "description": "Prepend the embedding model's task prefix (for example \"search_query: \" for nomic-embed-text) to queries. Turn it on only for collections whose ingestion rule also uses task prefixes, so queries and documents match."
+          },
+          "EnableConversationRewrite": {
+            "type": "boolean",
+            "description": "Rewrite a follow-up question into a standalone question from the recent conversation, and search the rewrite alongside the original message. Runs only when there is earlier conversation."
+          },
+          "ConversationRewritePrompt": {
+            "type": "string",
+            "description": "Optional prompt for the conversation rewrite. Must contain {conversation} and {question}. Null uses the built-in prompt."
+          },
+          "RerankerType": {
+            "type": "string",
+            "description": "Reranker used when EnableReranking is true: \"Llm\" (the rerank inference endpoint scores candidates 0-10) or \"CrossEncoder\" (a cross-encoder rerank service from server settings, scores 0-1)."
+          },
+          "RerankEndpointId": {
+            "type": "string",
+            "description": "Identifier of the cross-encoder reranker (from the server's Rerankers settings) used when RerankerType is \"CrossEncoder\". Null uses the first configured reranker."
+          },
+          "RerankCandidateCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of candidates retrieved for reranking (1 to 200). Retrieval fetches max(RetrievalTopK, this value) candidates when reranking is on, and the reranker keeps RerankerTopK of them. Default 20."
+          },
+          "RerankMinScore": {
+            "type": "number",
+            "format": "double",
+            "description": "Minimum cross-encoder score (0.0 to 1.0) for a candidate to count as relevant. When every candidate scores below it, no context is injected and the answer model is told nothing relevant was found. Null disables it.",
+            "nullable": true
+          },
+          "SupersessionMode": {
+            "type": "string",
+            "description": "How retrieval treats a document that another document supersedes: \"Demote\" (drop it and put its replacement in its place, the default), \"Hide\" (drop it) or \"Include\" (keep it, marked as outdated)."
+          },
+          "EvalJudgeInferenceEndpointId": {
+            "type": "string",
+            "description": "Optional completion endpoint used to judge in-product Eval runs. Null or empty uses InferenceEndpointId, so the assistant grades its own answers."
           }
         }
       },
@@ -32503,7 +32990,11 @@
           },
           "embedding_failed": {
             "type": "boolean",
-            "description": "Indicates whether the query embedding failed after retries, so vector or hybrid search returned nothing and the answer was generated without retrieved context."
+            "description": "Indicates whether the query embedding failed after retries. Vector search then returns nothing; hybrid search falls back to its full-text leg (see KeywordFallbackRan)."
+          },
+          "keyword_fallback_ran": {
+            "type": "boolean",
+            "description": "Whether a hybrid search ran its full-text leg alone because the query embedding failed."
           },
           "rerank_parse_failed": {
             "type": "boolean",
@@ -32524,6 +33015,31 @@
             "items": {
               "$ref": "#/components/schemas/RetrievalChunk"
             }
+          },
+          "conversation_rewrite": {
+            "type": "string",
+            "description": "Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation rewrite ran."
+          },
+          "reranker": {
+            "type": "string",
+            "description": "Reranker that ran: \"llm\" or \"cross_encoder\"; null when reranking is off."
+          },
+          "rerank_skipped": {
+            "type": "boolean",
+            "description": "Whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured."
+          },
+          "no_relevant_context": {
+            "type": "boolean",
+            "description": "Whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected."
+          },
+          "superseded_chunks": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of retrieved chunks that came from superseded documents."
+          },
+          "answer_regenerated": {
+            "type": "boolean",
+            "description": "Whether a degenerate cited answer (only a few words or only citation markers) was regenerated without the citation instructions."
           }
         }
       },
@@ -33066,6 +33582,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Timeout, in milliseconds, for a single Partio request. Chunking and embedding a large document is one request, so this bounds the largest document that can be ingested. Minimum 1,000 ms; default 900,000 ms."
+          },
+          "QueryEmbeddingTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout, in milliseconds, for a single query-embedding request made at retrieval time. Kept separate from RequestTimeoutMs , which is sized for ingesting large documents, so a stalled embedding model cannot hold a chat request for minutes. A timed-out query embedding is not retried. Minimum 1,000 ms; default 30,000 ms."
+          },
+          "QueryEmbeddingCacheSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum number of query embeddings kept in the in-process cache, keyed by embedding endpoint and query text. Repeated questions and multi-stage retrieval reuse a cached vector instead of calling the model again. Zero disables the cache. Default 10,000."
           }
         }
       },
@@ -33154,6 +33680,26 @@
           "download_url": {
             "type": "string",
             "description": "Download URL for the source document. Populated based on CitationLinkMode: null for \"None\", relative path for \"Authenticated\", unauthenticated server-proxied path for \"Public\"."
+          },
+          "page_start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "First page (or slide) of the cited passage, when known.",
+            "nullable": true
+          },
+          "page_end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Last page (or slide) of the cited passage, when known.",
+            "nullable": true
+          },
+          "sheet": {
+            "type": "string",
+            "description": "Spreadsheet sheet of the cited passage, when known."
+          },
+          "superseded_by": {
+            "type": "string",
+            "description": "Identifier of the document that supersedes the cited document, when an outdated source was cited."
           }
         }
       },
@@ -33699,6 +34245,17 @@
             "CIFS": "#/components/schemas/CifsCrawlRepositorySettings",
             "NFS": "#/components/schemas/NfsCrawlRepositorySettings"
           }
+        },
+        "properties": {
+          "RepositoryType": {
+            "type": "string",
+            "description": "Repository type.",
+            "enum": [
+              "Web",
+              "CIFS",
+              "NFS"
+            ]
+          }
         }
       },
       "CrawlScheduleSettings": {
@@ -34125,6 +34682,12 @@
           "Tags": {
             "type": "object",
             "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "SupersedesDocumentIds": {
+            "type": "array",
+            "items": {
               "type": "string"
             }
           }
@@ -35699,6 +36262,36 @@
           "DashboardUrl": {
             "type": "string",
             "description": "Browser URL for the inference provider dashboard."
+          },
+          "RequestTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout, in milliseconds, for an answer-model request (1,000 to 3,600,000). Default 300,000."
+          },
+          "UtilityTimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout, in milliseconds, for a utility-model step (retrieval gate, query or conversation rewrite, LLM rerank, answerability check), from 1,000 to 600,000. A timed-out step falls back to its default behavior. Default 30,000."
+          },
+          "MaxRetries": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of times the answer model is retried after a transient failure (HTTP 408, 429, 502, 503 or 504) before any output was sent, from 0 to 5. Default 2."
+          },
+          "RetryDelayMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Base delay, in milliseconds, before retrying the answer model (0 to 30,000). It doubles per attempt, with jitter. Default 500."
+          },
+          "CircuitBreakerFailures": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Consecutive failures of a utility step on one endpoint that open its circuit breaker (1 to 100). While open, the step is skipped and falls back to its default behavior. Default 3."
+          },
+          "CircuitBreakerOpenMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How long, in milliseconds, an open circuit breaker skips its step before trying again (1,000 to 3,600,000). Default 30,000."
           }
         }
       },
@@ -35742,6 +36335,22 @@
           "RegexPattern": {
             "type": "string",
             "description": "Regex pattern for regex-based chunking."
+          },
+          "CellMode": {
+            "type": "string",
+            "description": "How extracted content is sent for chunking. \"Flat\" sends the whole document as one text cell (the Strategy applies to all of it). \"Structured\" sends each section's text, each table and each list as its own cell, so tables and lists use TableStrategy and ListStrategy, chunks never span sections, and every chunk carries page and sheet tags."
+          },
+          "TableStrategy": {
+            "type": "string",
+            "description": "Chunking strategy for tables in Structured mode: Row, RowWithHeaders, RowGroupWithHeaders (the default; RowGroupSize rows per chunk, header repeated), KeyValuePairs or WholeTable."
+          },
+          "ListStrategy": {
+            "type": "string",
+            "description": "Chunking strategy for lists in Structured mode: WholeList (the default) or ListEntry."
+          },
+          "ContextHeader": {
+            "type": "string",
+            "description": "Context embedded with each chunk in Structured mode, without changing the stored chunk text: \"None\", \"Title\" (the document name) or \"TitleAndHeadings\" (the document name and the section's heading path)."
           }
         }
       },
@@ -35756,6 +36365,10 @@
           "L2Normalization": {
             "type": "boolean",
             "description": "Whether to apply L2 normalization to embeddings."
+          },
+          "TaskPrefixes": {
+            "type": "boolean",
+            "description": "Prepend the embedding model's document task prefix (for example \"search_document: \" for nomic-embed-text) when embedding chunks. The stored chunk text is unchanged. Assistants searching the collection should turn on EmbeddingTaskPrefixes so queries get the matching query prefix."
           }
         }
       },
@@ -35806,10 +36419,6 @@
             "type": "object",
             "description": "Tags to apply to ingested documents."
           },
-          "Atomization": {
-            "type": "object",
-            "description": "Atomization configuration (placeholder)."
-          },
           "Summarization": {
             "$ref": "#/components/schemas/IngestionSummarizationConfig"
           },
@@ -35828,6 +36437,9 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp when the record was last updated in UTC."
+          },
+          "Extraction": {
+            "$ref": "#/components/schemas/IngestionExtractionConfig"
           }
         }
       },
@@ -36322,6 +36934,11 @@
           "SupportsMultiDocumentFilter": {
             "type": "boolean",
             "description": "Indicates whether RecallDB accepts a native multi-document DocumentIds search filter. When false, AssistantHub loops over single DocumentId searches and merges results server-side."
+          },
+          "FilteredEfSearch": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HNSW ef_search sent with vector and hybrid searches that carry a label, tag or document filter. pgvector applies filters after the index scan, so a restrictive filter can leave fewer than the requested number of rows at RecallDB's default, which only covers the page. Zero leaves RecallDB's default in place. Range 0 to 1,000; default 400."
           }
         }
       },
@@ -36710,6 +37327,30 @@
             "items": {
               "$ref": "#/components/schemas/RetrievalChunk"
             }
+          },
+          "page_start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "First page (or slide) of the source document this chunk came from, when known.",
+            "nullable": true
+          },
+          "page_end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Last page (or slide) of the source document this chunk came from, when known.",
+            "nullable": true
+          },
+          "sheet": {
+            "type": "string",
+            "description": "Spreadsheet sheet this chunk came from, when known."
+          },
+          "section": {
+            "type": "string",
+            "description": "Heading path of the section this chunk came from, when known."
+          },
+          "superseded_by": {
+            "type": "string",
+            "description": "Identifier of the document that supersedes this chunk's document, when the chunk is kept as outdated."
           }
         }
       },
@@ -37428,6 +38069,24 @@
             "type": "integer",
             "format": "int32",
             "description": "Base delay in milliseconds before retrying a transient Verbex indexing failure."
+          },
+          "EnableLemmatizer": {
+            "type": "boolean",
+            "description": "Enable lemmatization on Verbex indexes that AssistantHub creates, so inflected forms (\"running\", \"ran\") match their base form. Applies to new indexes only; Verbex fixes the option when the index is created."
+          },
+          "EnableStopWordRemover": {
+            "type": "boolean",
+            "description": "Enable stop-word removal on Verbex indexes that AssistantHub creates. Applies to new indexes only."
+          },
+          "MinTokenLength": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Minimum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit). Applies to new indexes only."
+          },
+          "MaxTokenLength": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit). Applies to new indexes only."
           }
         }
       },
@@ -37578,6 +38237,179 @@
           },
           "Cors": {
             "$ref": "#/components/schemas/CorsSettings"
+          }
+        }
+      },
+      "DocumentSupersedesRequest": {
+        "type": "object",
+        "description": "Request to set the documents a document supersedes.",
+        "properties": {
+          "SupersedesDocumentIds": {
+            "type": "array",
+            "description": "Identifiers of the documents this document replaces. An empty list clears the links.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "IngestionExtractionConfig": {
+        "type": "object",
+        "description": "Extraction and intake settings for an ingestion rule: options passed to DocumentAtom when a document is extracted, and how duplicate uploads are handled.",
+        "properties": {
+          "OcrEmbeddedImages": {
+            "type": "boolean",
+            "description": "Run OCR on images embedded in PDF, Word, PowerPoint, Excel and RTF documents. Null uses DocumentAtom's default (on).",
+            "nullable": true
+          },
+          "CsvHasHeaderRow": {
+            "type": "boolean",
+            "description": "Treat the first row of a CSV or TSV file as its header row. Null uses DocumentAtom's default (true).",
+            "nullable": true
+          },
+          "CsvRowsPerAtom": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of CSV or TSV rows per extracted table (0 or null keeps the whole file as one table).",
+            "nullable": true
+          },
+          "ExcelHeaderRowScoreThreshold": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Score a spreadsheet row must reach to be detected as a header row. Null uses DocumentAtom's default (3).",
+            "nullable": true
+          },
+          "DuplicatePolicy": {
+            "type": "string",
+            "description": "What to do when an upload's content exactly matches a document already in the rule's collection: \"Allow\" (ingest it), \"Warn\" (ingest it and record the match) or \"Reject\" (refuse the upload with 409)."
+          },
+          "NearDuplicateThreshold": {
+            "type": "number",
+            "format": "double",
+            "description": "Similarity (0 to 1) at which another document in the collection is recorded as a near-duplicate after ingestion, using the new document's first chunk. 0 disables the check. Default 0.85."
+          }
+        }
+      },
+      "RerankerSettings": {
+        "type": "object",
+        "description": "A cross-encoder rerank service that assistants can use with RerankerType \"CrossEncoder\". Rerankers are configured by the server operator, so API keys stay in server settings and are never returned by the API.",
+        "properties": {
+          "Id": {
+            "type": "string",
+            "description": "Identifier that assistants reference in RerankEndpointId."
+          },
+          "Name": {
+            "type": "string",
+            "description": "Display name."
+          },
+          "Format": {
+            "type": "string",
+            "description": "Request format: \"Tei\" (HuggingFace text-embeddings-inference, POST {Endpoint}/rerank) or \"Cohere\" (Cohere-compatible, POST {Endpoint}/v1/rerank with a model and top_n)."
+          },
+          "Endpoint": {
+            "type": "string",
+            "description": "Base URL of the rerank service, for example http://reranker:80."
+          },
+          "Model": {
+            "type": "string",
+            "description": "Model name sent with Cohere-format requests."
+          },
+          "ApiKey": {
+            "type": "string",
+            "description": "Optional bearer token."
+          },
+          "TimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Timeout for one rerank request, in milliseconds (1,000 to 120,000). Default 10,000."
+          },
+          "MaxPassageCharacters": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Characters of each passage sent to the reranker (200 to 20,000). Default 2,000."
+          }
+        }
+      },
+      "RerankerSummary": {
+        "type": "object",
+        "description": "A configured reranker, as listed by the API (the API key is never returned).",
+        "properties": {
+          "Id": {
+            "type": "string",
+            "description": "Identifier referenced by assistant settings (RerankEndpointId)."
+          },
+          "Name": {
+            "type": "string",
+            "description": "Display name."
+          },
+          "Format": {
+            "type": "string",
+            "description": "Request format: Tei or Cohere."
+          },
+          "Endpoint": {
+            "type": "string",
+            "description": "Service base URL."
+          },
+          "Model": {
+            "type": "string",
+            "description": "Model name (Cohere format)."
+          },
+          "TimeoutMs": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Request timeout in milliseconds."
+          },
+          "HasApiKey": {
+            "type": "boolean",
+            "description": "Whether an API key is configured."
+          }
+        }
+      },
+      "RerankerTestRequest": {
+        "type": "object",
+        "description": "Request to score passages with a reranker.",
+        "properties": {
+          "Query": {
+            "type": "string",
+            "description": "Query text."
+          },
+          "Documents": {
+            "type": "array",
+            "description": "Passages to score (at most 100).",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RerankerTestResult": {
+        "type": "object",
+        "description": "Result of a reranker test.",
+        "properties": {
+          "RerankerId": {
+            "type": "string",
+            "description": "Reranker identifier."
+          },
+          "Success": {
+            "type": "boolean",
+            "description": "Whether the reranker returned scores."
+          },
+          "Scores": {
+            "type": "array",
+            "description": "One score per document, in request order (0 to 1 for cross-encoders).",
+            "items": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "ErrorMessage": {
+            "type": "string",
+            "description": "Error when the reranker failed."
+          },
+          "DurationMs": {
+            "type": "number",
+            "format": "double",
+            "description": "Round-trip duration in milliseconds."
           }
         }
       }

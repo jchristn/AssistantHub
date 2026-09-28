@@ -1015,17 +1015,59 @@ namespace AssistantHub.Server.Handlers
                         ", waitedMs=" + waitSw.ElapsedMilliseconds);
                 }
 
-                await Inference.GenerateResponseStreamingAsync(
-                    messages, model, maxTokens, temperature, topP,
-                    provider, endpoint, apiKey,
-                    onDelta, onComplete, onError, onConnectionEstablished,
-                    telemetry =>
-                    {
-                        AttachEndpointTelemetry(telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
-                        onTelemetry?.Invoke(telemetry);
-                    },
-                    onThinkingDelta: onThinkingDelta).ConfigureAwait(false);
+                // A transient failure (408, 429, 502, 503, 504) is retried only while nothing has been streamed yet.
+                int maxAttempts = Math.Max(1, Settings.Inference.MaxRetries + 1);
+                for (int attempt = 1; ; attempt++)
+                {
+                    bool streamed = false;
+                    string transientError = null;
+                    int currentAttempt = attempt;
+
+                    await Inference.GenerateResponseStreamingAsync(
+                        messages, model, maxTokens, temperature, topP,
+                        provider, endpoint, apiKey,
+                        async delta =>
+                        {
+                            streamed = true;
+                            if (onDelta != null) await onDelta(delta).ConfigureAwait(false);
+                        },
+                        onComplete,
+                        async error =>
+                        {
+                            if (!streamed && currentAttempt < maxAttempts && IsTransientStreamingError(error))
+                            {
+                                transientError = error;
+                                return;
+                            }
+
+                            if (onError != null) await onError(error).ConfigureAwait(false);
+                        },
+                        onConnectionEstablished,
+                        telemetry =>
+                        {
+                            AttachEndpointTelemetry(telemetry, endpointId, endpoint, provider, model, max, waitSw.Elapsed.TotalMilliseconds);
+                            onTelemetry?.Invoke(telemetry);
+                        },
+                        onThinkingDelta: onThinkingDelta == null ? null : async delta =>
+                        {
+                            streamed = true;
+                            await onThinkingDelta(delta).ConfigureAwait(false);
+                        }).ConfigureAwait(false);
+
+                    if (transientError == null) break;
+
+                    int baseDelay = Settings.Inference.RetryDelayMs * (1 << Math.Min(attempt - 1, 4));
+                    int delay = baseDelay + Random.Shared.Next(0, baseDelay / 2 + 1);
+                    Logging.Warn(_Header + "streaming answer model returned a transient failure (" + transientError + "); retrying in " + delay + " ms");
+                    if (delay > 0) await Task.Delay(delay).ConfigureAwait(false);
+                }
             }
+        }
+
+        private protected static bool IsTransientStreamingError(string error)
+        {
+            return !String.IsNullOrEmpty(error)
+                && System.Text.RegularExpressions.Regex.IsMatch(error, @"\b(408|429|502|503|504)\b");
         }
 
         private protected static void AttachEndpointTelemetry(

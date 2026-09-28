@@ -542,6 +542,45 @@
             <param name="token">Cancellation token.</param>
             <returns>Task.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateSupersessionAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update a document's supersession links.
+            </summary>
+            <param name="id">Document identifier.</param>
+            <param name="supersedesJson">JSON array of document identifiers this document replaces, or null.</param>
+            <param name="supersededBy">Identifier of the document that replaces this one, or null.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.UpdateContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Update a document's content hash and near-duplicate matches.
+            </summary>
+            <param name="id">Document identifier.</param>
+            <param name="contentSha256">SHA-256 of the uploaded bytes (hex), or null.</param>
+            <param name="nearDuplicatesJson">JSON array of near-duplicate matches, or null.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.ReadByContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read the documents in a tenant (optionally one collection) with a given content hash.
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="collectionId">Optional collection identifier.</param>
+            <param name="contentSha256">SHA-256 of the content (hex).</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Matching documents.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Database.Interfaces.IAssistantDocumentMethods.ReadSupersededByAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read the documents that a given document supersedes (their SupersededBy is that document).
+            </summary>
+            <param name="tenantId">Tenant identifier.</param>
+            <param name="replacementId">Identifier of the replacing document.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Superseded documents.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Database.Interfaces.IAssistantFeedbackMethods">
             <summary>
             Assistant feedback database methods interface.
@@ -1487,6 +1526,18 @@
         <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateSupersessionAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.UpdateContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.ReadByContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Mysql.Implementations.AssistantDocumentMethods.ReadSupersededByAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Database.Mysql.Implementations.AssistantFeedbackMethods">
             <summary>
             MySQL assistant feedback methods implementation.
@@ -2027,6 +2078,18 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateSupersessionAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.UpdateContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.ReadByContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Postgresql.Implementations.AssistantDocumentMethods.ReadSupersededByAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Postgresql.Implementations.AssistantFeedbackMethods">
@@ -2575,6 +2638,18 @@
             <returns>Task.</returns>
         </member>
         <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateSupersessionAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.UpdateContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.ReadByContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.Sqlite.Implementations.AssistantDocumentMethods.ReadSupersededByAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.Sqlite.Implementations.AssistantFeedbackMethods">
@@ -3211,6 +3286,76 @@
             Add the document source URL exposure column.
             </summary>
         </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsFusionStrategyColumn">
+            <summary>
+            Add the assistant hybrid fusion strategy column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRrfKColumn">
+            <summary>
+            Add the assistant RRF constant column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsFusionCandidatePoolColumn">
+            <summary>
+            Add the assistant hybrid candidate pool column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRecencyWeightColumn">
+            <summary>
+            Add the assistant recency weight column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsContextOrderColumn">
+            <summary>
+            Add the assistant context order column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn">
+            <summary>
+            Add the assistant_settings eval_judge_inference_endpoint_id column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsEmbeddingTaskPrefixesColumn">
+            <summary>
+            Add the assistant_settings embedding_task_prefixes column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsEnableConversationRewriteColumn">
+            <summary>
+            Add the assistant_settings enable_conversation_rewrite column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsConversationRewritePromptColumn">
+            <summary>
+            Add the assistant_settings conversation_rewrite_prompt column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankerTypeColumn">
+            <summary>
+            Add the assistant_settings reranker_type column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankEndpointIdColumn">
+            <summary>
+            Add the assistant_settings rerank_endpoint_id column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankCandidateCountColumn">
+            <summary>
+            Add the assistant_settings rerank_candidate_count column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsRerankMinScoreColumn">
+            <summary>
+            Add the assistant_settings rerank_min_score column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantSettingsSupersessionModeColumn">
+            <summary>
+            Add the assistant_settings supersession_mode column.
+            </summary>
+        </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexTenantIdColumn">
             <summary>
             Add the Verbex tenant ID column to assistant documents.
@@ -3224,6 +3369,26 @@
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsVerbexRecordIdColumn">
             <summary>
             Add the Verbex record ID column to assistant documents.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsSupersedesJsonColumn">
+            <summary>
+            Add the assistant_documents supersedes_json column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsSupersededByColumn">
+            <summary>
+            Add the assistant_documents superseded_by column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsContentSha256Column">
+            <summary>
+            Add the assistant_documents content_sha256 column.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddAssistantDocumentsNearDuplicatesJsonColumn">
+            <summary>
+            Add the assistant_documents near_duplicates_json column.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Database.Sqlite.Queries.TableQueries.AddIngestionRulesVerbexIndexIdColumn">
@@ -3492,6 +3657,18 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateVerbexIndexMetadataAsync(System.String,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateSupersessionAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.UpdateContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.ReadByContentHashAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Database.SqlServer.Implementations.AssistantDocumentMethods.ReadSupersededByAsync(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Database.SqlServer.Implementations.AssistantFeedbackMethods">
@@ -5725,6 +5902,28 @@
             Original URL or key from the crawl source.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.Supersedes">
+            <summary>
+            Identifiers of documents this document replaces (JSON array). Retrieval treats the replaced documents as
+            outdated according to the assistant's SupersessionMode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.SupersededBy">
+            <summary>
+            Identifier of the document that replaces this one, if any.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.ContentSha256">
+            <summary>
+            SHA-256 of the uploaded bytes (lowercase hex), used to detect exact duplicates.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantDocument.NearDuplicates">
+            <summary>
+            Near-duplicate documents in the same collection found after ingestion (JSON array of objects with
+            DocumentId and Score).
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.AssistantDocument.CreatedUtc">
             <summary>
             Timestamp when the record was created in UTC.
@@ -6219,6 +6418,12 @@
             Run the assistant's answerability check (when enabled in its settings) on the final chunks.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveRequest.SettingsOverride">
+            <summary>
+            Optional assistant settings to use for this call instead of the saved ones, for trying changes before
+            saving them. The assistant's saved collection is used when the override has none. Nothing is persisted.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.AssistantRetrieveResponse">
             <summary>
             Response body for <c>POST /v1.0/assistants/{assistantId}/retrieve</c>.
@@ -6276,7 +6481,39 @@
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.EmbeddingFailed">
             <summary>
-            Whether the query embedding failed after retries, so vector or hybrid search returned nothing.
+            Whether the query embedding failed after retries. Vector search then returns nothing; hybrid search falls
+            back to its full-text leg.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.KeywordFallbackRan">
+            <summary>
+            Whether a hybrid search ran its full-text leg alone because the query embedding failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.ConversationRewrite">
+            <summary>
+            Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation
+            rewrite ran.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.Reranker">
+            <summary>
+            Reranker that ran: "llm" or "cross_encoder"; null when reranking is off.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankSkipped">
+            <summary>
+            Whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.NoRelevantContext">
+            <summary>
+            Whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.SupersededChunks">
+            <summary>
+            Number of retrieved chunks that came from superseded documents.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantRetrieveResponse.RerankDurationMs">
@@ -6474,7 +6711,9 @@
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.RetrievalScoreThreshold">
             <summary>
-            Minimum score threshold for retrieval results (0.0 to 1.0).
+            Minimum vector similarity for retrieval results (0.0 to 1.0). In Hybrid mode it drops only chunks that the
+            vector leg found on its own with a similarity below it; chunks the full-text leg found are kept. FullText
+            results are not held to it; FullTextMinimumScore is their cutoff.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.SearchMode">
@@ -6484,9 +6723,95 @@
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.TextWeight">
             <summary>
-            Weight of full-text score in hybrid mode (0.0 to 1.0).
-            Formula: Score = (1.0 - TextWeight) * vectorScore + TextWeight * textScore.
-            Only applies when SearchMode is "Hybrid".
+            Share of the full-text leg in hybrid mode (0.0 to 1.0); the vector leg gets 1.0 - TextWeight.
+            With the default Rrf fusion the fused score is ((1 - w) / (k + vectorRank) + w / (k + textRank)) * (k + 1),
+            so a chunk ranked first by both legs scores 1.0 and a chunk found only by the text leg scores at most w.
+            With Linear fusion the score is a blend of the two legs' normalized scores. Only applies when SearchMode is "Hybrid".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FusionStrategy">
+            <summary>
+            How hybrid search combines its vector and full-text legs: "Rrf" (weighted reciprocal rank fusion, the
+            default) or "Linear" (blend of the legs' normalized scores). Only applies when SearchMode is "Hybrid".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RrfK">
+            <summary>
+            The RRF constant k (1 to 100,000). Smaller values reward top ranks more strongly; larger values flatten
+            the difference between adjacent ranks. Only applies to Rrf fusion. Default 60.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.FusionCandidatePool">
+            <summary>
+            Number of candidates each hybrid leg retrieves before fusion (1 to 10,000). Null uses RecallDB's default,
+            max(RetrievalTopK x 4, 100) capped at 1,000.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RecencyWeight">
+            <summary>
+            Weight of a recency signal added to Rrf fusion (0.0 to 1.0): newer documents rank higher among otherwise
+            similar candidates. 0 disables it. Only applies to Rrf fusion in hybrid mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ContextOrder">
+            <summary>
+            Order of retrieved context in the prompt: "Score" (most relevant first, the default) or "ReadingOrder"
+            (chunks grouped by document, documents ordered by their best chunk, chunks in document order, with
+            adjacent chunks merged). Does not change which chunks are retrieved or how they are ranked.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EmbeddingTaskPrefixes">
+            <summary>
+            Prepend the embedding model's task prefix (for example "search_query: " for nomic-embed-text) to queries.
+            Turn it on only for collections whose ingestion rule also uses task prefixes, so queries and documents match.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EnableConversationRewrite">
+            <summary>
+            Rewrite a follow-up question into a standalone question from the recent conversation, and search the
+            rewrite alongside the original message. Runs only when there is earlier conversation.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.ConversationRewritePrompt">
+            <summary>
+            Optional prompt for the conversation rewrite. Must contain {question}; {conversation} is replaced with the recent turns. Null uses the
+            built-in prompt.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankerType">
+            <summary>
+            Reranker used when EnableReranking is true: "Llm" (the rerank inference endpoint scores candidates 0-10)
+            or "CrossEncoder" (a cross-encoder rerank service from server settings, scores 0-1).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankEndpointId">
+            <summary>
+            Identifier of the cross-encoder reranker (from the server's Rerankers settings) used when RerankerType is
+            "CrossEncoder". Null uses the first configured reranker.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankCandidateCount">
+            <summary>
+            Number of candidates retrieved for reranking (1 to 200). Retrieval fetches max(RetrievalTopK, this value)
+            candidates when reranking is on, and the reranker keeps RerankerTopK of them. Default 20.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.RerankMinScore">
+            <summary>
+            Minimum cross-encoder score (0.0 to 1.0) for a candidate to count as relevant. When every candidate scores
+            below it, no context is injected and the answer model is told nothing relevant was found. Null disables it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.SupersessionMode">
+            <summary>
+            How retrieval treats a document that another document supersedes: "Demote" (drop it and put its
+            replacement in its place, the default), "Hide" (drop it) or "Include" (keep it, marked as outdated).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AssistantSettings.EvalJudgeInferenceEndpointId">
+            <summary>
+            Optional completion endpoint used to judge in-product Eval runs. Null or empty uses InferenceEndpointId,
+            so the assistant grades its own answers.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.AssistantSettings.FullTextSearchType">
@@ -8064,8 +8389,45 @@
         </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.EmbeddingFailed">
             <summary>
-            Indicates whether the query embedding failed after retries, so vector or hybrid search returned nothing
-            and the answer was generated without retrieved context.
+            Indicates whether the query embedding failed after retries. Vector search then returns nothing; hybrid
+            search falls back to its full-text leg (see <see cref="P:AssistantHub.Core.Models.ChatCompletionRetrieval.KeywordFallbackRan"/>).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.KeywordFallbackRan">
+            <summary>
+            Indicates whether a hybrid search ran its full-text leg alone because the query embedding failed.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.ConversationRewrite">
+            <summary>
+            Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation
+            rewrite ran.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.Reranker">
+            <summary>
+            Reranker that ran: "llm" or "cross_encoder"; null when reranking is off.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankSkipped">
+            <summary>
+            Whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.NoRelevantContext">
+            <summary>
+            Whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.SupersededChunks">
+            <summary>
+            Number of retrieved chunks that came from superseded documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.AnswerRegenerated">
+            <summary>
+            Whether a degenerate cited answer (only a few words or only citation markers) was regenerated without the
+            citation instructions.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.ChatCompletionRetrieval.RerankParseFailed">
@@ -8997,6 +9359,26 @@
             Download URL for the source document.
             Populated based on CitationLinkMode: null for "None",
             relative path for "Authenticated", unauthenticated server-proxied path for "Public".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.PageStart">
+            <summary>
+            First page (or slide) of the cited passage, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.PageEnd">
+            <summary>
+            Last page (or slide) of the cited passage, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.Sheet">
+            <summary>
+            Spreadsheet sheet of the cited passage, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CitationSource.SupersededBy">
+            <summary>
+            Identifier of the document that supersedes the cited document, when an outdated source was cited.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Models.CompletionCallDetail">
@@ -10500,6 +10882,72 @@
             Empty or null means all categories.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.ExtractedBlock">
+            <summary>
+            One structural block of an extracted document: a heading, a run of text, a table or a list, with the page or
+            sheet it came from.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.Kind">
+            <summary>
+            Block kind: "Heading", "Text", "Table" or "List".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.Text">
+            <summary>
+            Readable text of the block (markdown for tables and lists).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.HeaderLevel">
+            <summary>
+            Heading level (1 = top level) for headings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.PageNumber">
+            <summary>
+            Page, slide or sheet number reported by the extractor, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.SheetName">
+            <summary>
+            Spreadsheet sheet name, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.TableRows">
+            <summary>
+            Table rows for tables, header row first.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.ListItems">
+            <summary>
+            List items for lists.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ExtractedBlock.Ordered">
+            <summary>
+            Whether a list is ordered.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.AtomExtractionResult">
+            <summary>
+            Result of extracting a document: the flat readable text and its structural blocks.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AtomExtractionResult.Text">
+            <summary>
+            Flat readable text (blocks separated by blank lines).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AtomExtractionResult.Blocks">
+            <summary>
+            Structural blocks in reading order.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AtomExtractionResult.ErrorMessage">
+            <summary>
+            Reason extraction failed or was refused, when it did.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Models.FactVerdict">
             <summary>
             Verdict for a single expected fact within an evaluation result.
@@ -10803,6 +11251,31 @@
             Regex pattern for regex-based chunking.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.CellMode">
+            <summary>
+            How extracted content is sent for chunking. "Flat" sends the whole document as one text cell (the
+            Strategy applies to all of it). "Structured" sends each section's text, each table and each list as its
+            own cell, so tables and lists use TableStrategy and ListStrategy, chunks never span sections, and every
+            chunk carries page and sheet tags.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.TableStrategy">
+            <summary>
+            Chunking strategy for tables in Structured mode: Row, RowWithHeaders, RowGroupWithHeaders (the default;
+            RowGroupSize rows per chunk, header repeated), KeyValuePairs or WholeTable.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.ListStrategy">
+            <summary>
+            Chunking strategy for lists in Structured mode: WholeList (the default) or ListEntry.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionChunkingConfig.ContextHeader">
+            <summary>
+            Context embedded with each chunk in Structured mode, without changing the stored chunk text: "None",
+            "Title" (the document name) or "TitleAndHeadings" (the document name and the section's heading path).
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.IngestionChunkingConfig.#ctor">
             <summary>
             Instantiate.
@@ -10830,10 +11303,63 @@
             Whether to apply L2 normalization to embeddings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.IngestionEmbeddingConfig.TaskPrefixes">
+            <summary>
+            Prepend the embedding model's document task prefix (for example "search_document: " for nomic-embed-text)
+            when embedding chunks. The stored chunk text is unchanged. Assistants searching the collection should turn
+            on EmbeddingTaskPrefixes so queries get the matching query prefix.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Models.IngestionEmbeddingConfig.#ctor">
             <summary>
             Instantiate.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.IngestionExtractionConfig">
+            <summary>
+            Extraction and intake settings for an ingestion rule: options passed to DocumentAtom when a document is
+            extracted, and how duplicate uploads are handled.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.OcrEmbeddedImages">
+            <summary>
+            Run OCR on images embedded in PDF, Word, PowerPoint, Excel and RTF documents. Null uses DocumentAtom's
+            default (on).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.CsvHasHeaderRow">
+            <summary>
+            Treat the first row of a CSV or TSV file as its header row. Null uses DocumentAtom's default (true).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.CsvRowsPerAtom">
+            <summary>
+            Number of CSV or TSV rows per extracted table (0 or null keeps the whole file as one table).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.ExcelHeaderRowScoreThreshold">
+            <summary>
+            Score a spreadsheet row must reach to be detected as a header row. Null uses DocumentAtom's default (3).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.DuplicatePolicy">
+            <summary>
+            What to do when an upload's content exactly matches a document already in the rule's collection:
+            "Allow" (ingest it), "Warn" (ingest it and record the match) or "Reject" (refuse the upload with 409).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.IngestionExtractionConfig.NearDuplicateThreshold">
+            <summary>
+            Similarity (0 to 1) at which another document in the collection is recorded as a near-duplicate after
+            ingestion, using the new document's first chunk. 0 disables the check. Default 0.85.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.IngestionExtractionConfig.ToDocumentAtomSettings(System.String)">
+            <summary>
+            Build the DocumentAtom processor settings for this configuration, or null when nothing is set.
+            </summary>
+            <param name="documentType">Detected document type (lowercase, e.g. "pdf", "tsv").</param>
+            <returns>Settings object to send, or null.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.IngestionRule">
             <summary>
@@ -10890,9 +11416,10 @@
             Tags to apply to ingested documents.
             </summary>
         </member>
-        <member name="P:AssistantHub.Core.Models.IngestionRule.Atomization">
+        <member name="P:AssistantHub.Core.Models.IngestionRule.Extraction">
             <summary>
-            Atomization configuration (placeholder).
+            Extraction and intake settings: DocumentAtom options (OCR of embedded images, CSV and spreadsheet header
+            handling) and the duplicate-upload policy.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.IngestionRule.Summarization">
@@ -12114,6 +12641,37 @@
             Populated when IncludeNeighbors is specified. Null when not requested.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.PageStart">
+            <summary>
+            First page (or slide) of the source document this chunk came from, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.PageEnd">
+            <summary>
+            Last page (or slide) of the source document this chunk came from, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Sheet">
+            <summary>
+            Spreadsheet sheet this chunk came from, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.Section">
+            <summary>
+            Heading path of the section this chunk came from, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalChunk.SupersededBy">
+            <summary>
+            Identifier of the document that supersedes this chunk's document, when the chunk is kept as outdated.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.RetrievalChunk.ProvenanceLabel">
+            <summary>
+            Build a short provenance label such as "p. 3", "pp. 3-4" or "sheet Q1", or null when none is known.
+            </summary>
+            <returns>Label or null.</returns>
+        </member>
         <member name="P:AssistantHub.Core.Models.RetrievalChunk.MergedContent">
             <summary>
             Returns the matched chunk's content with neighbor content merged in positional order.
@@ -12140,7 +12698,39 @@
         </member>
         <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.TextWeight">
             <summary>
-            Weight of full-text score in hybrid mode (0.0 to 1.0).
+            Share of the full-text leg in hybrid mode (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FusionStrategy">
+            <summary>
+            Hybrid fusion strategy sent to RecallDB: Rrf or Linear.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.RrfK">
+            <summary>
+            RRF constant k sent to RecallDB for Rrf fusion.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FusionCandidatePool">
+            <summary>
+            Candidates each hybrid leg retrieves before fusion. Null uses RecallDB's default.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.RecencyWeight">
+            <summary>
+            Weight of RecallDB's recency signal in Rrf fusion. 0 disables it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.ApplyThresholdToFullText">
+            <summary>
+            Apply the score threshold to full-text scores too. Off by default, because an assistant's threshold is a
+            vector-similarity threshold and full-text scores sit far below it; set it when a caller chose a threshold
+            for this search explicitly (for example a tool call's score_threshold).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.EmbeddingTaskPrefixes">
+            <summary>
+            Prepend the embedding model's query task prefix (for example "search_query: ") before embedding the query.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.FullTextSearchType">
@@ -12189,6 +12779,21 @@
             Set by the retrieval service when the query embedding could not be generated (after retries), so vector
             and hybrid search returned nothing. Callers surface it instead of treating the turn as "no relevant context".
             </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.RetrievalSearchOptions.KeywordFallbackRan">
+            <summary>
+            Set by the retrieval service when a hybrid search could not embed the query and ran its full-text leg alone,
+            so the turn still gets keyword matches instead of no context.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.RetrievalSearchOptions.FromAssistantSettings(AssistantHub.Core.Models.AssistantSettings,AssistantHub.Core.Models.ChatMetadataFilter,System.Collections.Generic.List{System.String})">
+            <summary>
+            Build search options from an assistant's retrieval settings.
+            </summary>
+            <param name="settings">Assistant settings.</param>
+            <param name="metadataFilter">Optional metadata filter.</param>
+            <param name="documentIds">Optional document scope.</param>
+            <returns>Search options.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.RetrievalStageSnapshot">
             <summary>
@@ -12865,7 +13470,9 @@
         </member>
         <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowRedirects">
             <summary>
-            Follow HTTP redirects.
+            Follow HTTP redirects. Currently informational: ordinary redirects are always followed by the HTTP client
+            (the page is listed under the linking address), and CrawlSharp's own redirect following stays off because it
+            never ends on a redirect cycle.
             Default: true.
             </summary>
         </member>
@@ -13347,6 +13954,21 @@
             Text content of the atom.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.HeaderLevel">
+            <summary>
+            Heading level (1 = top level) when the atom is a heading; null otherwise.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.PageNumber">
+            <summary>
+            Page, slide or sheet number, when the extractor reports it.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.AtomResponse.SheetName">
+            <summary>
+            Spreadsheet sheet name, when the extractor reports it.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Services.AtomResponse.OrderedList">
             <summary>
             Ordered list content.
@@ -13765,6 +14387,14 @@
             </summary>
             <param name="disposing">Disposing.</param>
         </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.FindCrawledDocumentAsync(System.String)">
+            <summary>
+            Find the document this crawl plan created for a source key, paging through every document in the tenant
+            (a single page could miss it once the tenant has more documents than the page size).
+            </summary>
+            <param name="key">Source key or URL.</param>
+            <returns>The document, or null.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.Crawlers.CrawlerBase.CleanupDocumentAsync(AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
             <summary>
             Cleanup a document by removing embeddings, S3 object, processing log, and database record.
@@ -13938,6 +14568,39 @@
         <member name="M:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler.RetrieveDataAsync(AssistantHub.Core.Services.Crawlers.CrawledObject,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Services.CrossEncoderRerankClient">
+            <summary>
+            Client for cross-encoder rerank services: HuggingFace text-embeddings-inference ("Tei", POST /rerank) and
+            Cohere-compatible services ("Cohere", POST /v1/rerank).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.CrossEncoderRerankClient.#ctor(System.Net.Http.HttpClient)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="httpClient">Optional HTTP client (for tests); a shared client is used otherwise.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.CrossEncoderRerankClient.ScoreAsync(AssistantHub.Core.Settings.RerankerSettings,System.String,System.Collections.Generic.IReadOnlyList{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Score passages against a query.
+            </summary>
+            <param name="reranker">Reranker settings.</param>
+            <param name="query">Query text.</param>
+            <param name="passages">Passages to score.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>One relevance score per passage, in passage order.</returns>
+            <exception cref="T:System.InvalidOperationException">The service failed or returned an unusable response.</exception>
+            <exception cref="T:System.TimeoutException">The request exceeded the reranker's timeout.</exception>
+        </member>
+        <member name="M:AssistantHub.Core.Services.CrossEncoderRerankClient.ParseScores(System.String,System.Int32,System.Boolean)">
+            <summary>
+            Parse a rerank response into one score per passage.
+            </summary>
+            <param name="responseBody">Response body.</param>
+            <param name="passageCount">Number of passages sent.</param>
+            <param name="cohere">Whether the response is Cohere-format.</param>
+            <returns>Scores in passage order; passages the service did not score get 0.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.DocumentAtomAtomizationService">
             <summary>
             DocumentAtom implementation of the atomization service.
@@ -13956,6 +14619,103 @@
         </member>
         <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.ExtractTextAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.ExtractAsync(System.String,System.Byte[],System.String,System.String,AssistantHub.Core.Models.IngestionExtractionConfig,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.IsLegacyBinaryOfficeType(System.String)">
+            <summary>
+            Whether a document type is a legacy binary Office format that DocumentAtom's OpenXML processors cannot read.
+            </summary>
+            <param name="documentType">Detected document type.</param>
+            <returns>True for doc, xls and ppt.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.GetAtomPath(System.String)">
+            <summary>
+            Map a detected document type to its DocumentAtom route.
+            </summary>
+            <param name="documentType">Detected document type.</param>
+            <returns>Route, or null when the type is not supported.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.AppendBlocks(AssistantHub.Core.Services.AtomResponse,System.Collections.Generic.List{AssistantHub.Core.Models.ExtractedBlock},System.Nullable{System.Int32},System.String)">
+            <summary>
+            Walk an atom and its children into structural blocks, carrying the page and sheet down to children that
+            do not report their own.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.TableRows(System.Text.Json.JsonElement)">
+            <summary>
+            Convert a DocumentAtom table to rows with the header row first, or null when it has no data rows.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.RenderHeading(System.String,System.Int32)">
+            <summary>
+            Render a heading as a markdown heading so its level survives into the chunk text. Markdown sources already
+            carry their own marker and are left as they are.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentAtomAtomizationService.AppendBlock(System.Text.StringBuilder,System.String)">
+            <summary>
+            Append an extracted block, separated from the previous one by a blank line so paragraph-based chunking
+            can find block boundaries.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.DocumentSupersession">
+            <summary>
+            Maintains supersession links between documents: a replacing document lists the documents it supersedes, and
+            each superseded document records its replacement, which retrieval uses to demote, hide or mark it.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentSupersession.ParseIds(System.String)">
+            <summary>
+            Parse a JSON array of document identifiers, tolerating empty or invalid values.
+            </summary>
+            <param name="json">JSON array.</param>
+            <returns>Identifiers.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentSupersession.ValidateAsync(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.AssistantDocument,System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Check that a document can supersede the given documents: each exists in the same tenant, and none is the
+            document itself or its own replacement.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="replacement">Replacing document (its Id may not be persisted yet).</param>
+            <param name="targetIds">Documents to supersede.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>An error message, or null when valid.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentSupersession.SetAsync(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.AssistantDocument,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Set the documents a replacing document supersedes, releasing any it no longer supersedes.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="replacement">Replacing document.</param>
+            <param name="targetIds">Documents it supersedes (empty to clear).</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.DocumentSupersession.ReleaseAsync(AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.AssistantDocument,System.Threading.CancellationToken)">
+            <summary>
+            Release a document's supersession links before it is deleted: the documents it superseded become current
+            again, and its own replacement stops listing it.
+            </summary>
+            <param name="database">Database driver.</param>
+            <param name="document">Document being deleted.</param>
+            <param name="token">Cancellation token.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.EmbeddingModelProfiles">
+            <summary>
+            Task prefixes that embedding models were trained with. Models such as nomic-embed-text and e5 expect queries
+            and documents to be marked ("search_query: " / "search_document: "); embedding without them costs quality.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.EmbeddingModelProfiles.Resolve(System.String)">
+            <summary>
+            Resolve the task prefixes for an embedding model name.
+            </summary>
+            <param name="model">Model name, for example "nomic-embed-text:latest".</param>
+            <returns>The query and document prefixes; both empty when the model uses none or is unknown.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.EndpointConcurrencyLimiter">
             <summary>
@@ -14121,6 +14881,12 @@
         <member name="M:AssistantHub.Core.Services.IAtomizationService.ExtractTextAsync(System.String,System.Byte[],System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Extract text content from a document.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IAtomizationService.ExtractAsync(System.String,System.Byte[],System.String,System.String,AssistantHub.Core.Models.IngestionExtractionConfig,System.Threading.CancellationToken)">
+            <summary>
+            Extract a document's text and its structural blocks, applying an ingestion rule's extraction settings.
+            Implementations that only produce text return it with no blocks.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.IChunkingService">
@@ -14578,12 +15344,46 @@
             <param name="token">Cancellation token.</param>
             <returns>Extracted text content.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ExtractDocumentAsync(System.String,System.Byte[],System.String,System.String,AssistantHub.Core.Models.IngestionExtractionConfig,System.Threading.CancellationToken)">
+            <summary>
+            Extract a document's text and structural blocks with the ingestion rule's extraction settings.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ParseChunkRecordIds(System.String)">
+            <summary>
+            Parse a document's stored chunk record identifiers (a JSON array), tolerating empty or invalid values.
+            </summary>
+            <param name="json">JSON array of record identifiers.</param>
+            <returns>Identifiers.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.MergeExactDuplicates(System.String,System.String)">
+            <summary>
+            Merge exact-duplicate matches recorded at upload with near-duplicate matches found after ingestion, keeping
+            one entry per document (an exact match wins).
+            </summary>
+            <param name="existingJson">Matches already on the document, or null.</param>
+            <param name="nearJson">Near-duplicate matches, or null.</param>
+            <returns>Merged JSON array, or null when there are none.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ComputeContentSha256(System.Byte[])">
+            <summary>
+            SHA-256 of a document's bytes as lowercase hex.
+            </summary>
+            <param name="bytes">Document bytes.</param>
+            <returns>Hash.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.FindNearDuplicatesAsync(System.String,System.String,System.String,System.Collections.Generic.List{System.Single},System.Double,System.Threading.CancellationToken)">
+            <summary>
+            Find other documents in the collection whose content is close to a new document's, using its first chunk's
+            embedding. Returns up to three matches at or above the threshold as a JSON array, or null.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.GetAtomPath(System.String)">
             <summary>
             Map a detected document type to the corresponding DocumentAtom atom endpoint path.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ChunkAndEmbedContentAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken)">
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ChunkAndEmbedContentAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Threading.CancellationToken,System.Collections.Generic.List{AssistantHub.Core.Models.ExtractedBlock},System.String)">
             <summary>
             Chunk and embed document content using the Partio chunking service.
             </summary>
@@ -14593,11 +15393,24 @@
             <param name="labels">Merged labels.</param>
             <param name="tags">Merged tags.</param>
             <param name="token">Cancellation token.</param>
+            <param name="blocks">Structural blocks from extraction, used in Structured cell mode.</param>
+            <param name="documentTitle">Document title, used for context headers.</param>
             <returns>List of chunks with their embeddings.</returns>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.FlattenChunks(AssistantHub.Core.Services.SemanticCellResponse)">
             <summary>
             Recursively flatten all chunks from a SemanticCellResponse hierarchy.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ChunkAndEmbedStructuredAsync(System.String,AssistantHub.Core.Models.IngestionRule,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.List{AssistantHub.Core.Models.ExtractedBlock},System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object,System.Threading.CancellationToken)">
+            <summary>
+            Structured mode: send each section, table and list as its own Partio cell (via the batch route), with a
+            context header embedded ahead of each chunk and page, sheet and section provenance tags on every chunk.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ResolveEmbeddingModelAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read the model name of an embedding endpoint, or null when it cannot be resolved.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.IngestionServiceBase.ComputeEmbeddingAsync(System.String,System.String,AssistantHub.Core.Models.IngestionRule,System.Threading.CancellationToken)">
@@ -15115,6 +15928,92 @@
             Process response from the Partio v0.4.0 service.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Services.ProvenanceTags">
+            <summary>
+            Chunk tags AssistantHub writes at ingestion to record where a chunk came from. Page numbers are zero-padded so
+            RecallDB's string comparisons (GreaterThan, LessThan) order them correctly in metadata filters.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.ProvenanceTags.PageStart">
+            <summary>
+            First page or slide of the chunk.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.ProvenanceTags.PageEnd">
+            <summary>
+            Last page or slide of the chunk.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.ProvenanceTags.Sheet">
+            <summary>
+            Spreadsheet sheet name.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.ProvenanceTags.Section">
+            <summary>
+            Heading path of the chunk's section, for example "Setup > Networking".
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProvenanceTags.FormatPage(System.Int32)">
+            <summary>
+            Format a page number for a tag value (five digits, zero-padded).
+            </summary>
+            <param name="page">Page number.</param>
+            <returns>Tag value.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.ProvenanceTags.Apply(AssistantHub.Core.Models.RetrievalChunk,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Copy provenance from a chunk's tags onto a retrieval chunk.
+            </summary>
+            <param name="chunk">Retrieval chunk.</param>
+            <param name="tags">Tags returned with the chunk, or null.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Services.QueryEmbeddingCache">
+            <summary>
+            Thread-safe least-recently-used cache of query embeddings, keyed by embedding endpoint and a SHA-256 of the
+            query text. Repeated questions, suggested prompts and multi-query retrieval reuse a vector instead of calling
+            the embedding model again.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.QueryEmbeddingCache.Capacity">
+            <summary>
+            Maximum number of entries. Zero disables the cache.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.QueryEmbeddingCache.Count">
+            <summary>
+            Current number of entries.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.QueryEmbeddingCache.#ctor(System.Int32)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="capacity">Maximum number of entries; zero disables the cache.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.QueryEmbeddingCache.BuildKey(System.String,System.String)">
+            <summary>
+            Build the cache key for an endpoint and query.
+            </summary>
+            <param name="endpointId">Embedding endpoint identifier.</param>
+            <param name="query">Query text.</param>
+            <returns>Cache key.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.QueryEmbeddingCache.TryGet(System.String,System.Collections.Generic.List{System.Double}@)">
+            <summary>
+            Look up a cached embedding.
+            </summary>
+            <param name="key">Cache key from <see cref="M:AssistantHub.Core.Services.QueryEmbeddingCache.BuildKey(System.String,System.String)"/>.</param>
+            <param name="embedding">A copy of the cached vector when found.</param>
+            <returns>True when found.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.QueryEmbeddingCache.Set(System.String,System.Collections.Generic.List{System.Double})">
+            <summary>
+            Store an embedding, evicting the least recently used entry when full.
+            </summary>
+            <param name="key">Cache key from <see cref="M:AssistantHub.Core.Services.QueryEmbeddingCache.BuildKey(System.String,System.String)"/>.</param>
+            <param name="embedding">Embedding vector; a copy is stored.</param>
+        </member>
         <member name="T:AssistantHub.Core.Services.RecallDbStoreResponse">
             <summary>
             Response from RecallDB when storing a document/embedding.
@@ -15140,18 +16039,64 @@
         <member name="M:AssistantHub.Core.Services.RecallDbVectorStoreService.SendAsync(System.Net.Http.HttpMethod,System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
+        <member name="T:AssistantHub.Core.Services.RetrievalContextOrder">
+            <summary>
+            Arranges retrieved chunks for the prompt. Ranking decides which chunks are used; this decides the order the
+            answer model reads them in.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.RetrievalContextOrder.Score">
+            <summary>
+            Most relevant chunk first (the ranking order).
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Services.RetrievalContextOrder.ReadingOrder">
+            <summary>
+            Chunks grouped by document, documents ordered by their best-ranked chunk, chunks in document order, and
+            chunks that touch or overlap merged into one passage.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalContextOrder.Apply(System.Collections.Generic.List{AssistantHub.Core.Models.RetrievalChunk},System.String)">
+            <summary>
+            Arrange ranked chunks for the prompt.
+            </summary>
+            <param name="rankedChunks">Chunks in ranking order (most relevant first).</param>
+            <param name="contextOrder">Score or ReadingOrder.</param>
+            <returns>The chunks to inject, in prompt order. Score returns the input list unchanged.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalContextOrder.JoinWithoutOverlap(System.String,System.String)">
+            <summary>
+            Join two passages, dropping text the second repeats from the end of the first (chunk overlap).
+            </summary>
+            <param name="first">Earlier passage.</param>
+            <param name="second">Later passage.</param>
+            <returns>Joined text.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalContextOrder.MergeAdjacent(System.Collections.Generic.List{AssistantHub.Core.Models.RetrievalChunk})">
+            <summary>
+            Merge chunks of one document whose covered positions (the chunk plus its neighbors) touch or overlap.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalContextOrder.MergeRun(System.Collections.Generic.List{AssistantHub.Core.Models.RetrievalChunk})">
+            <summary>
+            Merge a run of touching chunks into one passage: every covered position once, in document order, with
+            repeated overlap text removed. Scores keep the best value in the run so ranking evidence is not lost.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Services.RetrievalFusionHelper">
             <summary>
             Shared retrieval result fusion helpers.
             </summary>
         </member>
-        <member name="M:AssistantHub.Core.Services.RetrievalFusionHelper.FuseByReciprocalRank(System.Collections.Generic.IEnumerable{System.Collections.Generic.IReadOnlyList{AssistantHub.Core.Models.RetrievalChunk}},System.Int32,System.Double)">
+        <member name="M:AssistantHub.Core.Services.RetrievalFusionHelper.FuseByReciprocalRank(System.Collections.Generic.IEnumerable{System.Collections.Generic.IReadOnlyList{AssistantHub.Core.Models.RetrievalChunk}},System.Int32,System.Double,System.Collections.Generic.IReadOnlyList{System.Double})">
             <summary>
             Fuse multiple ranked retrieval result lists using Reciprocal Rank Fusion.
             </summary>
             <param name="rankedResults">Ranked result lists in query order.</param>
             <param name="maxResults">Maximum fused results to return.</param>
             <param name="rrfK">RRF K constant. Defaults to 60.</param>
+            <param name="weights">Optional weight per result list, in the same order (missing entries are 1.0). Lower
+            weights let extra queries re-rank the main query's candidates without displacing them.</param>
             <returns>Fused, deduplicated chunks ordered by descending fusion score.</returns>
         </member>
         <member name="T:AssistantHub.Core.Services.RetrievalService">
@@ -15183,6 +16128,24 @@
             <param name="searchOptions">Search mode and full-text options.</param>
             <returns>List of retrieval chunks with source identification and scoring.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.PassesScoreThreshold(System.Double,System.Nullable{System.Double},System.Nullable{System.Int32},System.String,System.Boolean,System.Double,System.Boolean)">
+            <summary>
+            Apply the retrieval score threshold on a scale that means the same thing in every mode: vector similarity.
+            Full-text scores (ts_rank) sit far below any similarity threshold, so keyword search is not thresholded here;
+            FullText.MinimumScore is its cutoff. In hybrid mode the fused score caps a chunk found only by the text leg
+            at TextWeight, so the threshold is applied to vector similarity instead, and only to chunks the vector leg
+            found on its own: a chunk the text leg also found is kept whatever its similarity, since strong keyword
+            matches often have low embedding similarity.
+            </summary>
+            <param name="score">Score reported by the store (similarity, ts_rank or fused, depending on mode).</param>
+            <param name="vectorScore">Vector-leg similarity reported for a hybrid result, when present.</param>
+            <param name="textRank">Text-leg rank reported for a hybrid result, when present.</param>
+            <param name="mode">Retrieval mode that produced the result (vector, keyword or hybrid).</param>
+            <param name="hybridFallbackRan">Whether a hybrid search fell back to vector-only.</param>
+            <param name="scoreThreshold">Minimum similarity.</param>
+            <param name="applyToFullText">Also threshold keyword-only results on their full-text score.</param>
+            <returns>True when the result is kept.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.ReadCollectionRecordAsync(System.String,System.String,System.String,System.Threading.CancellationToken)">
             <summary>
             Read a single stored RecallDB collection record by its server-known record identifier.
@@ -15196,6 +16159,18 @@
         <member name="M:AssistantHub.Core.Services.RetrievalService.BuildSearchBody(System.String,System.Collections.Generic.List{System.Double},System.Int32,AssistantHub.Core.Models.RetrievalSearchOptions)">
             <summary>
             Build the RecallDB search request body based on search mode.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.BuildVectorQuery(System.Collections.Generic.List{System.Double},AssistantHub.Core.Models.RetrievalSearchOptions)">
+            <summary>
+            Build the RecallDB vector query. A label, tag or document filter is applied after pgvector's HNSW scan,
+            so filtered searches raise ef_search to keep enough candidates for the filter to leave a full page.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.BuildHybridOptions(AssistantHub.Core.Models.RetrievalSearchOptions)">
+            <summary>
+            Build RecallDB's hybrid fusion options. They are sent explicitly so the fusion that runs is the one the
+            assistant is configured for, not whatever the store defaults to.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.AddDocumentFilters(System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.String})">
@@ -15220,12 +16195,23 @@
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.EmbedQueryAsync(System.String,System.Threading.CancellationToken,System.String)">
             <summary>
-            Embed a query string using the Partio chunking service.
+            Embed a query string with Partio's standalone embedding route.
             </summary>
+            <remarks>
+            Queries go to <c>/v1.0/embed</c>, which embeds the text as given. The chunking route (<c>/v1.0/process</c>)
+            would split a long query at the default chunk size and keep only the first chunk. Each attempt is bounded by
+            <see cref="P:AssistantHub.Core.Settings.ChunkingSettings.QueryEmbeddingTimeoutMs"/> rather than the ingestion timeout, and a timed-out
+            attempt is not retried. Successful embeddings are cached per endpoint and query text.
+            </remarks>
             <param name="query">Query text.</param>
             <param name="token">Cancellation token.</param>
             <param name="embeddingEndpointId">Optional embedding endpoint override.</param>
-            <returns>Embedding vector.</returns>
+            <returns>Embedding vector, or null when it could not be generated.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ResolveQueryPrefixAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Resolve the query task prefix for an embedding endpoint's model (cached for five minutes).
+            </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.IsTransientEmbeddingStatus(System.Int32)">
             <summary>
@@ -15298,6 +16284,11 @@
             <summary>
             Neighboring chunks surrounding this match in positional order.
             Populated when IncludeNeighbors is specified on the search query.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.SearchResult.Tags">
+            <summary>
+            Tags stored on the chunk record (including AssistantHub's page, sheet and section provenance tags).
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.SemanticCellResponse">
@@ -15427,6 +16418,99 @@
             <param name="bucketName">Bucket name.</param>
             <returns>S3 blob client for the bucket.</returns>
         </member>
+        <member name="T:AssistantHub.Core.Services.StructuredCell">
+            <summary>
+            One cell to send to Partio in Structured mode.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Type">
+            <summary>
+            Partio cell type: "Text", "Table" or "List".
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Text">
+            <summary>
+            Text for Text cells.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Table">
+            <summary>
+            Rows for Table cells, header row first.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Items">
+            <summary>
+            Items for List cells.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Ordered">
+            <summary>
+            Whether a List cell is ordered.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Strategy">
+            <summary>
+            Chunking strategy for this cell.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.ContextPrefix">
+            <summary>
+            Text embedded ahead of every chunk of this cell (task prefix and context header); not stored.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.PageStart">
+            <summary>
+            First page of the cell's content, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.PageEnd">
+            <summary>
+            Last page of the cell's content, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Sheet">
+            <summary>
+            Sheet name, when known.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.StructuredCell.Section">
+            <summary>
+            Heading path of the section, for example "Setup > Networking".
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StructuredCell.ProvenanceTagValues">
+            <summary>
+            Provenance tags for this cell's chunks.
+            </summary>
+            <returns>Tag dictionary (possibly empty).</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.StructuredCellBuilder">
+            <summary>
+            Groups a document's extracted blocks into Partio cells for Structured mode: each run of text under one heading
+            path becomes a Text cell, and each table and list its own cell. Every cell carries its heading path and the
+            pages or sheet it covers.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StructuredCellBuilder.Build(System.Collections.Generic.List{AssistantHub.Core.Models.ExtractedBlock},System.String,AssistantHub.Core.Models.IngestionChunkingConfig,System.String)">
+            <summary>
+            Build the cells for a document.
+            </summary>
+            <param name="blocks">Extracted blocks in reading order.</param>
+            <param name="title">Document title (for context headers).</param>
+            <param name="chunking">Chunking configuration (strategies, ContextHeader, FixedTokenCount).</param>
+            <param name="documentPrefix">Embedding task prefix for documents (may be empty).</param>
+            <returns>Cells in reading order.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.StructuredCellBuilder.BuildHeader(System.String,System.String,System.String,System.Int32)">
+            <summary>
+            Build the context header for a section.
+            </summary>
+            <param name="contextHeader">None, Title or TitleAndHeadings.</param>
+            <param name="title">Document title.</param>
+            <param name="section">Section heading path.</param>
+            <param name="maxCharacters">Maximum header length; longer headers are cut at a word boundary.</param>
+            <returns>Header line ending in a newline, or an empty string.</returns>
+        </member>
         <member name="T:AssistantHub.Core.Services.TavilySearchClient">
             <summary>
             Client for Tavily search.
@@ -15548,6 +16632,40 @@
         <member name="P:AssistantHub.Core.Services.TypeDetectResponse.Type">
             <summary>
             Detected document type.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.UtilityCircuitBreaker">
+            <summary>
+            Process-wide circuit breaker for optional model steps (retrieval gate, query rewrite, reranking, answerability).
+            After a number of consecutive failures on one key (a step and an endpoint), the step is skipped for a while and
+            falls back to its default behavior, so a slow or failing model does not add its timeout to every request.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.UtilityCircuitBreaker.IsOpen(System.String)">
+            <summary>
+            Whether the breaker for a key is open (the step should be skipped).
+            </summary>
+            <param name="key">Step and endpoint key.</param>
+            <returns>True when open.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.UtilityCircuitBreaker.RecordSuccess(System.String)">
+            <summary>
+            Record a successful call, closing the breaker.
+            </summary>
+            <param name="key">Step and endpoint key.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.UtilityCircuitBreaker.RecordFailure(System.String,System.Int32,System.Int32)">
+            <summary>
+            Record a failed call. The breaker opens once the failures reach the threshold.
+            </summary>
+            <param name="key">Step and endpoint key.</param>
+            <param name="failureThreshold">Consecutive failures that open the breaker.</param>
+            <param name="openMs">How long the breaker stays open, in milliseconds.</param>
+            <returns>True when this failure opened the breaker.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.UtilityCircuitBreaker.Reset">
+            <summary>
+            Reset every breaker (for tests).
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Services.VerbexInvertedIndexService">
@@ -15683,6 +16801,11 @@
             Telemetry (OpenTelemetry metrics and traces) settings.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.AssistantHubSettings.Rerankers">
+            <summary>
+            Cross-encoder rerank services available to assistants (RerankerType "CrossEncoder").
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.AssistantHubSettings.#ctor">
             <summary>
             Instantiate.
@@ -15747,6 +16870,21 @@
             <summary>
             Timeout, in milliseconds, for a single Partio request. Chunking and embedding a large document is one
             request, so this bounds the largest document that can be ingested. Minimum 1,000 ms; default 900,000 ms.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.QueryEmbeddingTimeoutMs">
+            <summary>
+            Timeout, in milliseconds, for a single query-embedding request made at retrieval time. Kept separate from
+            <see cref="P:AssistantHub.Core.Settings.ChunkingSettings.RequestTimeoutMs"/>, which is sized for ingesting large documents, so a stalled embedding model
+            cannot hold a chat request for minutes. A timed-out query embedding is not retried. Minimum 1,000 ms;
+            default 30,000 ms.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.ChunkingSettings.QueryEmbeddingCacheSize">
+            <summary>
+            Maximum number of query embeddings kept in the in-process cache, keyed by embedding endpoint and query text.
+            Repeated questions and multi-stage retrieval reuse a cached vector instead of calling the model again.
+            Zero disables the cache. Default 10,000.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Settings.ChunkingSettings.#ctor">
@@ -16083,6 +17221,42 @@
             Browser URL for the inference provider dashboard.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.RequestTimeoutMs">
+            <summary>
+            Timeout, in milliseconds, for an answer-model request (1,000 to 3,600,000). Default 300,000.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.UtilityTimeoutMs">
+            <summary>
+            Timeout, in milliseconds, for a utility-model step (retrieval gate, query or conversation rewrite, LLM
+            rerank), from 1,000 to 600,000. A timed-out step falls back to its default
+            behavior. Default 30,000.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.MaxRetries">
+            <summary>
+            Number of times the answer model is retried after a transient failure (HTTP 408, 429, 502, 503 or 504)
+            before any output was sent, from 0 to 5. Default 2.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.RetryDelayMs">
+            <summary>
+            Base delay, in milliseconds, before retrying the answer model (0 to 30,000). It doubles per attempt, with
+            jitter. Default 500.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.CircuitBreakerFailures">
+            <summary>
+            Consecutive failures of a utility step on one endpoint that open its circuit breaker (1 to 100). While
+            open, the step is skipped and falls back to its default behavior. Default 3.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.InferenceSettings.CircuitBreakerOpenMs">
+            <summary>
+            How long, in milliseconds, an open circuit breaker skips its step before trying again (1,000 to
+            3,600,000). Default 30,000.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.InferenceSettings.#ctor">
             <summary>
             Instantiate.
@@ -16184,6 +17358,14 @@
             When false, AssistantHub loops over single DocumentId searches and merges results server-side.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.RecallDbSettings.FilteredEfSearch">
+            <summary>
+            HNSW <c>ef_search</c> sent with vector and hybrid searches that carry a label, tag or document filter.
+            pgvector applies filters after the index scan, so a restrictive filter can leave fewer than the requested
+            number of rows at RecallDB's default, which only covers the page. Zero leaves RecallDB's default in place.
+            Range 0 to 1,000; default 400.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.RecallDbSettings.#ctor">
             <summary>
             Instantiate.
@@ -16247,6 +17429,53 @@
         <member name="P:AssistantHub.Core.Settings.RequestHistorySettings.RedactedJsonFields">
             <summary>
             JSON field names to redact.
+            </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Settings.RerankerSettings">
+            <summary>
+            A cross-encoder rerank service that assistants can use with RerankerType "CrossEncoder". Rerankers are
+            configured by the server operator, so API keys stay in server settings and are never returned by the API.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.Id">
+            <summary>
+            Identifier that assistants reference in RerankEndpointId.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.Name">
+            <summary>
+            Display name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.Format">
+            <summary>
+            Request format: "Tei" (HuggingFace text-embeddings-inference, POST {Endpoint}/rerank) or "Cohere"
+            (Cohere-compatible, POST {Endpoint}/v1/rerank with a model and top_n).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.Endpoint">
+            <summary>
+            Base URL of the rerank service, for example http://reranker:80.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.Model">
+            <summary>
+            Model name sent with Cohere-format requests.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.ApiKey">
+            <summary>
+            Optional bearer token.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.TimeoutMs">
+            <summary>
+            Timeout for one rerank request, in milliseconds (1,000 to 120,000). Default 10,000.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.RerankerSettings.MaxPassageCharacters">
+            <summary>
+            Characters of each passage sent to the reranker (200 to 20,000). Default 2,000.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Settings.S3Settings">
@@ -16429,6 +17658,29 @@
             Base delay in milliseconds before retrying a transient Verbex indexing failure.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.EnableLemmatizer">
+            <summary>
+            Enable lemmatization on Verbex indexes that AssistantHub creates, so inflected forms ("running", "ran")
+            match their base form. Applies to new indexes only; Verbex fixes the option when the index is created.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.EnableStopWordRemover">
+            <summary>
+            Enable stop-word removal on Verbex indexes that AssistantHub creates. Applies to new indexes only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.MinTokenLength">
+            <summary>
+            Minimum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit).
+            Applies to new indexes only.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.VerbexSettings.MaxTokenLength">
+            <summary>
+            Maximum token length indexed by Verbex indexes that AssistantHub creates (0 disables the limit).
+            Applies to new indexes only.
+            </summary>
+        </member>
         <member name="M:AssistantHub.Core.Settings.VerbexSettings.#ctor">
             <summary>
             Instantiate.
@@ -16557,6 +17809,12 @@
             </summary>
             <param name="mode">Retrieval mode (for example vector, keyword, hybrid).</param>
             <param name="count">Result count.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordQueryEmbeddingCache(System.Boolean)">
+            <summary>
+            Record a query-embedding cache lookup.
+            </summary>
+            <param name="hit">Whether the embedding was served from the cache.</param>
         </member>
         <member name="M:AssistantHub.Core.Telemetry.AssistantHubTelemetry.RecordIngestedDocument(System.String)">
             <summary>

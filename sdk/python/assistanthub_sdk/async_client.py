@@ -41,6 +41,9 @@ from .models import (
     EvalRun,
     EvalRunRequest,
     ExternalSearchConfigurationStatus,
+    RerankerSummary,
+    RerankerTestRequest,
+    RerankerTestResult,
     InferenceModel,
     IngestionRule,
     PartioEndpointConfig,
@@ -1043,6 +1046,7 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         content_type: Optional[str] = None,
         labels: Optional[list[str]] = None,
         tags: Optional[dict[str, str]] = None,
+        supersedes_document_ids: Optional[list[str]] = None,
     ) -> AssistantDocument:
         """Upload a document for ingestion.
 
@@ -1056,6 +1060,8 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             content_type: Optional MIME type of the document.
             labels: Optional list of labels.
             tags: Optional key-value tags.
+            supersedes_document_ids: Optional IDs of documents the new
+                document supersedes.
 
         Returns:
             The created document metadata.
@@ -1083,6 +1089,8 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             body["labels"] = labels
         if tags is not None:
             body["tags"] = tags
+        if supersedes_document_ids:
+            body["supersedesDocumentIds"] = supersedes_document_ids
 
         response = await self._request("PUT", "/v1.0/documents", json=body)
         return AssistantDocument.model_validate(response.json())
@@ -1094,6 +1102,26 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
             document_id: The document identifier.
         """
         await self._request("DELETE", f"/v1.0/documents/{document_id}")
+
+    async def set_document_supersedes(
+        self, document_id: str, supersedes_document_ids: list[str]
+    ) -> AssistantDocument:
+        """Set the documents a document supersedes.
+
+        Args:
+            document_id: The document identifier.
+            supersedes_document_ids: IDs of documents superseded by this
+                document. Pass an empty list to clear supersession.
+
+        Returns:
+            The updated document metadata.
+        """
+        response = await self._request(
+            "PUT",
+            f"/v1.0/documents/{document_id}/supersedes",
+            json={"supersedesDocumentIds": list(supersedes_document_ids or [])},
+        )
+        return AssistantDocument.model_validate(response.json())
 
     async def bulk_delete_documents(self, document_ids: list[str]) -> None:
         """Delete multiple documents at once.
@@ -1915,6 +1943,42 @@ class AsyncAssistantHubClient(AsyncAssistantHubClientParityMixin):
         """
         response = await self._request("GET", "/v1.0/configuration/external-search/status")
         return ExternalSearchConfigurationStatus.model_validate(response.json())
+
+    # ------------------------------------------------------------------
+    # Rerankers
+    # ------------------------------------------------------------------
+
+    async def list_rerankers(self) -> list[RerankerSummary]:
+        """List the cross-encoder rerankers configured in server settings.
+
+        API keys are never returned; ``has_api_key`` indicates whether one is set.
+        """
+        response = await self._request("GET", "/v1.0/rerankers")
+        return [RerankerSummary.model_validate(item) for item in response.json()]
+
+    async def test_reranker(
+        self,
+        reranker_id: str,
+        query: str,
+        documents: list[str],
+    ) -> RerankerTestResult:
+        """Score passages against a query with a configured reranker.
+
+        Args:
+            reranker_id: The reranker identifier.
+            query: The query to score the documents against.
+            documents: Passages to score (at most 100).
+
+        Returns:
+            The reranker test result with one score per document.
+        """
+        request = RerankerTestRequest(query=query, documents=documents)
+        response = await self._request(
+            "POST",
+            f"/v1.0/rerankers/{reranker_id}/test",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+        return RerankerTestResult.model_validate(response.json())
 
     async def update_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """Update the server configuration.

@@ -153,6 +153,12 @@ namespace Test.Shared
             CrawlSchedulerService crawlScheduler = new CrawlSchedulerService(Database, Logging, Settings, null, null, null);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, null, crawlScheduler);
             CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, null);
+            DocumentHandler documentHandler = new DocumentHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
+            RerankerHandler rerankerHandler = new RerankerHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference);
+            // Uploads need storage and an ingestion service; nothing is stored, and background ingestion fails harmlessly.
+            IObjectStorageService uploadStorage = new DiscardingObjectStorageService();
+            IngestionService uploadIngestion = new IngestionService(Database, uploadStorage, new DocumentAtomSettings(), Settings.Chunking, Settings.RecallDb, new VerbexSettings(), Logging);
+            DocumentHandler uploadHandler = new DocumentHandler(Database, Logging, Settings, Authentication, uploadStorage, uploadIngestion, Retrieval, Inference);
             OpenApiDocumentService openApiDocumentService = new OpenApiDocumentService(() => _server);
             OpenApiHandler openApiHandler = new OpenApiHandler(Database, Logging, Settings, Authentication, null, null, Retrieval, Inference, openApiDocumentService);
 
@@ -236,6 +242,12 @@ namespace Test.Shared
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.GetOperationAsync, openApiMetadata: CrawlApiDocs.ReadOperation);
             _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/crawlplans/{planId}/operations/{id}", crawlOperationHandler.DeleteOperationAsync, openApiMetadata: CrawlApiDocs.DeleteOperation);
 
+            // Authenticated routes - Documents and rerankers
+            _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents", uploadHandler.PutDocumentAsync, openApiMetadata: DocumentApiDocs.Upload);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents/{documentId}/supersedes", documentHandler.PutDocumentSupersedesAsync, openApiMetadata: DocumentApiDocs.Supersedes);
+            _server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/rerankers", rerankerHandler.GetRerankersAsync, openApiMetadata: RerankerApiDocs.List);
+            _server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/rerankers/{rerankerId}/test", rerankerHandler.TestRerankerAsync, openApiMetadata: RerankerApiDocs.Test);
+
             // Start the server
             _server.Start();
             BaseUrl = $"http://127.0.0.1:{_port}";
@@ -283,5 +295,24 @@ namespace Test.Shared
                 try { System.IO.File.Delete(_dbFilename); } catch { }
             }
         }
+    }
+
+    /// <summary>
+    /// Object storage that accepts and discards writes, for upload routes in integration tests.
+    /// </summary>
+    internal sealed class DiscardingObjectStorageService : IObjectStorageService
+    {
+        public Task UploadAsync(string key, string contentType, byte[] data, CancellationToken token = default) => Task.CompletedTask;
+        public Task UploadAsync(string bucketName, string key, string contentType, byte[] data, CancellationToken token = default) => Task.CompletedTask;
+        public Task<byte[]> DownloadAsync(string key, CancellationToken token = default) => Task.FromResult(Array.Empty<byte>());
+        public Task<byte[]> DownloadAsync(string bucketName, string key, CancellationToken token = default) => Task.FromResult(Array.Empty<byte>());
+        public Task<byte[]> DownloadRangeAsync(string bucketName, string key, long start, int length, CancellationToken token = default) => Task.FromResult(Array.Empty<byte>());
+        public Task<ObjectStorageItem> GetObjectMetadataAsync(string bucketName, string key, CancellationToken token = default) => Task.FromResult(new ObjectStorageItem { Key = key });
+        public Task DeleteAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task DeleteAsync(string bucketName, string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task<bool> ExistsAsync(string key, CancellationToken token = default) => Task.FromResult(false);
+        public Task<bool> ExistsAsync(string bucketName, string key, CancellationToken token = default) => Task.FromResult(false);
+        public Task<ObjectStorageListResult> ListObjectsAsync(string bucketName, string prefix = null, int maxResults = 100, string continuationToken = null, CancellationToken token = default)
+            => Task.FromResult(new ObjectStorageListResult { BucketName = bucketName, Prefix = prefix, MaxResults = maxResults, EndOfResults = true });
     }
 }

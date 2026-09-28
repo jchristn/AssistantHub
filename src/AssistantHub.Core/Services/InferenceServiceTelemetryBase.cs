@@ -47,7 +47,8 @@ namespace AssistantHub.Core.Services
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
-            _HttpClient = new HttpClient();
+            // The client-wide timeout is the answer-model limit; utility steps pass shorter cancellation tokens.
+            _HttpClient = new HttpClient { Timeout = TimeSpan.FromMilliseconds(_Settings.RequestTimeoutMs) };
         }
 
         #region Private-Methods

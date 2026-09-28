@@ -38,7 +38,7 @@ namespace Test.Benchmark.Runners
         /// <summary>
         /// Parameters a sweep can vary.
         /// </summary>
-        public static readonly string[] SweepParameters = new string[] { "threshold", "k", "text-weight", "neighbors", "rerank-k", "rerank-threshold", "fulltext-type" };
+        public static readonly string[] SweepParameters = new string[] { "threshold", "k", "text-weight", "neighbors", "rerank-k", "rerank-threshold", "fulltext-type", "rrf-k", "candidate-pool", "recency-weight", "fusion" };
 
         #endregion
 
@@ -157,6 +157,10 @@ namespace Test.Benchmark.Runners
                         case "rerank-k": variant.RerankTopK = int.Parse(value, CultureInfo.InvariantCulture); break;
                         case "rerank-threshold": variant.RerankThreshold = double.Parse(value, CultureInfo.InvariantCulture); break;
                         case "fulltext-type": variant.FullTextSearchType = value; break;
+                        case "rrf-k": variant.RrfK = int.Parse(value, CultureInfo.InvariantCulture); break;
+                        case "candidate-pool": variant.CandidatePool = int.Parse(value, CultureInfo.InvariantCulture); break;
+                        case "recency-weight": variant.RecencyWeight = double.Parse(value, CultureInfo.InvariantCulture); break;
+                        case "fusion": variant.FusionStrategy = value; break;
                     }
 
                     configurations.Add((mode + " " + parameter + "=" + value, variant));

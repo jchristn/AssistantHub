@@ -72,6 +72,29 @@ namespace AssistantHub.Sdk
             string contentType = null,
             CancellationToken cancellationToken = default)
         {
+            return await UploadDocumentAsync(ingestionRuleId, content, name, originalFilename, contentType, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload a document for ingestion, optionally marking the documents it supersedes.
+        /// </summary>
+        /// <param name="ingestionRuleId">Ingestion rule identifier to process the document with.</param>
+        /// <param name="content">Raw file content as bytes.</param>
+        /// <param name="name">Display name for the document, or null.</param>
+        /// <param name="originalFilename">Original filename, or null.</param>
+        /// <param name="contentType">MIME content type, or null.</param>
+        /// <param name="supersedesDocumentIds">Identifiers of documents the new document supersedes, or null.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created document.</returns>
+        public async Task<AssistantDocument> UploadDocumentAsync(
+            string ingestionRuleId,
+            byte[] content,
+            string name,
+            string originalFilename,
+            string contentType,
+            List<string> supersedesDocumentIds,
+            CancellationToken cancellationToken = default)
+        {
             if (String.IsNullOrWhiteSpace(ingestionRuleId))
                 throw new ArgumentNullException(nameof(ingestionRuleId));
             if (content == null)
@@ -89,6 +112,8 @@ namespace AssistantHub.Sdk
                 body["OriginalFilename"] = originalFilename;
             if (!String.IsNullOrEmpty(contentType))
                 body["ContentType"] = contentType;
+            if (supersedesDocumentIds != null && supersedesDocumentIds.Count > 0)
+                body["SupersedesDocumentIds"] = supersedesDocumentIds;
 
             return await SendAsync<AssistantDocument>(HttpMethod.Put, "/v1.0/documents", body, cancellationToken).ConfigureAwait(false);
         }
@@ -111,6 +136,29 @@ namespace AssistantHub.Sdk
             string contentType = null,
             CancellationToken cancellationToken = default)
         {
+            return await UploadDocumentAsync(ingestionRuleId, stream, name, originalFilename, contentType, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload a document for ingestion from a stream, optionally marking the documents it supersedes.
+        /// </summary>
+        /// <param name="ingestionRuleId">Ingestion rule identifier to process the document with.</param>
+        /// <param name="stream">Stream containing the file content.</param>
+        /// <param name="name">Display name for the document, or null.</param>
+        /// <param name="originalFilename">Original filename, or null.</param>
+        /// <param name="contentType">MIME content type, or null.</param>
+        /// <param name="supersedesDocumentIds">Identifiers of documents the new document supersedes, or null.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created document.</returns>
+        public async Task<AssistantDocument> UploadDocumentAsync(
+            string ingestionRuleId,
+            Stream stream,
+            string name,
+            string originalFilename,
+            string contentType,
+            List<string> supersedesDocumentIds,
+            CancellationToken cancellationToken = default)
+        {
             if (String.IsNullOrWhiteSpace(ingestionRuleId))
                 throw new ArgumentNullException(nameof(ingestionRuleId));
             if (stream == null)
@@ -119,7 +167,7 @@ namespace AssistantHub.Sdk
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 await stream.CopyToAsync(memoryStream, 81920, cancellationToken).ConfigureAwait(false);
-                return await UploadDocumentAsync(ingestionRuleId, memoryStream.ToArray(), name, originalFilename, contentType, cancellationToken).ConfigureAwait(false);
+                return await UploadDocumentAsync(ingestionRuleId, memoryStream.ToArray(), name, originalFilename, contentType, supersedesDocumentIds, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -134,6 +182,22 @@ namespace AssistantHub.Sdk
                 throw new ArgumentNullException(nameof(documentId));
 
             await SendAsync(HttpMethod.Delete, "/v1.0/documents/" + documentId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Set the documents a document supersedes. Pass an empty list to clear supersession.
+        /// </summary>
+        /// <param name="documentId">Document identifier.</param>
+        /// <param name="supersedesDocumentIds">Identifiers of documents superseded by this document.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated document.</returns>
+        public async Task<AssistantDocument> SetDocumentSupersedesAsync(string documentId, List<string> supersedesDocumentIds, CancellationToken cancellationToken = default)
+        {
+            if (String.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentNullException(nameof(documentId));
+
+            object body = new { SupersedesDocumentIds = supersedesDocumentIds ?? new List<string>() };
+            return await SendAsync<AssistantDocument>(HttpMethod.Put, "/v1.0/documents/" + Uri.EscapeDataString(documentId) + "/supersedes", body, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

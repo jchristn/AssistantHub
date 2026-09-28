@@ -146,10 +146,43 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                // Exact-duplicate policy from the ingestion rule
+                string contentSha256 = IngestionServiceBase.ComputeContentSha256(data);
+                string duplicatePolicy = rule.Extraction?.DuplicatePolicy ?? "Allow";
+                List<AssistantDocument> duplicates = new List<AssistantDocument>();
+                if (!String.Equals(duplicatePolicy, "Allow", StringComparison.OrdinalIgnoreCase))
+                {
+                    duplicates = (await Database.AssistantDocument.ReadByContentHashAsync(rule.TenantId, rule.CollectionId, contentSha256).ConfigureAwait(false))
+                        .Where(d => d.Status != Enums.DocumentStatusEnum.Failed)
+                        .ToList();
+                    if (duplicates.Count > 0 && String.Equals(duplicatePolicy, "Reject", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ctx.Response.StatusCode = 409;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.Conflict, null,
+                            "A document with identical content already exists in this collection: " + String.Join(", ", duplicates.Select(d => d.Id))))).ConfigureAwait(false);
+                        return;
+                    }
+                }
+
                 // Create the document record
                 AssistantDocument doc = new AssistantDocument();
                 doc.Id = IdGenerator.NewAssistantDocumentId();
-                doc.TenantId = auth.TenantId;
+                doc.TenantId = rule.TenantId;
+                doc.ContentSha256 = contentSha256;
+                if (duplicates.Count > 0)
+                    doc.NearDuplicates = JsonSerializer.Serialize(duplicates.Select(d => new { DocumentId = d.Id, Score = 1.0, Exact = true }).ToList());
+
+                List<string> supersedes = (uploadRequest.SupersedesDocumentIds ?? new List<string>())
+                    .Where(id => !String.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal).ToList();
+                string supersessionError = await DocumentSupersession.ValidateAsync(Database, doc, supersedes).ConfigureAwait(false);
+                if (supersessionError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, supersessionError))).ConfigureAwait(false);
+                    return;
+                }
                 doc.Name = filename;
                 doc.OriginalFilename = uploadRequest.OriginalFilename ?? filename;
                 doc.ContentType = contentType;
@@ -170,6 +203,8 @@ namespace AssistantHub.Server.Handlers
                 doc.LastUpdateUtc = DateTime.UtcNow;
 
                 doc = await Database.AssistantDocument.CreateAsync(doc).ConfigureAwait(false);
+                if (supersedes.Count > 0)
+                    await DocumentSupersession.SetAsync(Database, doc, supersedes).ConfigureAwait(false);
 
                 // Upload to storage
                 try
@@ -229,7 +264,7 @@ namespace AssistantHub.Server.Handlers
             {
                 AuthContext auth = GetAuthContext(ctx);
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<AssistantDocument> result = await Database.AssistantDocument.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<AssistantDocument> result = await Database.AssistantDocument.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -281,6 +316,71 @@ namespace AssistantHub.Server.Handlers
             catch (Exception e)
             {
                 Logging.Warn(_Header + "exception in GetDocumentAsync: " + e.Message);
+                ctx.Response.StatusCode = 500;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// PUT /v1.0/documents/{documentId}/supersedes - Set the documents a document supersedes.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        public async Task PutDocumentSupersedesAsync(HttpContextBase ctx)
+        {
+            if (ctx == null) throw new ArgumentNullException(nameof(ctx));
+
+            try
+            {
+                AuthContext auth = GetAuthContext(ctx);
+                string documentId = ctx.Request.Url.Parameters["documentId"];
+                AssistantDocument doc = String.IsNullOrEmpty(documentId) ? null : await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+                if (doc == null || !EnforceTenantOwnership(auth, doc.TenantId))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.NotFound))).ConfigureAwait(false);
+                    return;
+                }
+
+                DocumentSupersedesRequest request = String.IsNullOrWhiteSpace(ctx.Request.DataAsString)
+                    ? null
+                    : Serializer.DeserializeJson<DocumentSupersedesRequest>(ctx.Request.DataAsString);
+                if (request == null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, "A body with SupersedesDocumentIds is required."))).ConfigureAwait(false);
+                    return;
+                }
+
+                List<string> targets = (request.SupersedesDocumentIds ?? new List<string>())
+                    .Where(id => !String.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal).ToList();
+                string error = await DocumentSupersession.ValidateAsync(Database, doc, targets).ConfigureAwait(false);
+                if (error != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, error))).ConfigureAwait(false);
+                    return;
+                }
+
+                await DocumentSupersession.SetAsync(Database, doc, targets).ConfigureAwait(false);
+                AssistantDocument updated = await Database.AssistantDocument.ReadAsync(documentId).ConfigureAwait(false);
+
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(updated)).ConfigureAwait(false);
+            }
+            catch (JsonException e)
+            {
+                ctx.Response.StatusCode = 400;
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, e.Message))).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logging.Warn(_Header + "exception in PutDocumentSupersedesAsync: " + e.Message);
                 ctx.Response.StatusCode = 500;
                 ctx.Response.ContentType = "application/json";
                 await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.InternalError))).ConfigureAwait(false);
@@ -427,6 +527,7 @@ namespace AssistantHub.Server.Handlers
                     }
                 }
 
+                await DocumentSupersession.ReleaseAsync(Database, doc).ConfigureAwait(false);
                 await Database.AssistantDocument.DeleteAsync(documentId).ConfigureAwait(false);
 
                 try { await Database.DocumentPerformanceEvent.DeleteByDocumentIdAsync(documentId).ConfigureAwait(false); }
@@ -565,6 +666,7 @@ namespace AssistantHub.Server.Handlers
                         }
                     }
 
+                    await DocumentSupersession.ReleaseAsync(Database, doc).ConfigureAwait(false);
                     await Database.AssistantDocument.DeleteAsync(doc.Id).ConfigureAwait(false);
                 }
 
@@ -804,7 +906,7 @@ namespace AssistantHub.Server.Handlers
                 else
                 {
                     EnumerationQuery query = BuildEnumerationQuery(ctx);
-                    EnumerationResult<AssistantDocument> page = await Database.AssistantDocument.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                    EnumerationResult<AssistantDocument> page = await Database.AssistantDocument.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
                     docs.AddRange(page.Objects);
                     batch.Requested = docs.Count;
                     batch.ContinuationToken = page.ContinuationToken;

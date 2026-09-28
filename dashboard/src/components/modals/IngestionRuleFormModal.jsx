@@ -44,20 +44,41 @@ const defaultSummarization = {
 const SUMMARIZATION_ORDER_OPTIONS = ['BottomUp', 'TopDown'];
 
 const defaultChunking = {
-  Strategy: 'FixedTokenCount',
+  Strategy: 'ParagraphBased',
   FixedTokenCount: 256,
   OverlapCount: 0,
   OverlapPercentage: '',
   OverlapStrategy: '',
   RowGroupSize: 5,
   ContextPrefix: '',
-  RegexPattern: ''
+  RegexPattern: '',
+  CellMode: 'Flat',
+  TableStrategy: 'RowGroupWithHeaders',
+  ListStrategy: 'WholeList',
+  ContextHeader: 'None'
 };
 
 const defaultEmbedding = {
   EmbeddingEndpointId: '',
-  L2Normalization: false
+  L2Normalization: false,
+  TaskPrefixes: false
 };
+
+const defaultExtraction = {
+  OcrEmbeddedImages: '',
+  CsvHasHeaderRow: '',
+  CsvRowsPerAtom: '',
+  ExcelHeaderRowScoreThreshold: '',
+  DuplicatePolicy: 'Allow',
+  NearDuplicateThreshold: 0.85
+};
+
+const TABLE_STRATEGY_OPTIONS = ['RowGroupWithHeaders', 'RowWithHeaders', 'Row', 'KeyValuePairs', 'WholeTable'];
+
+// '' (server default), 'true' or 'false' for optional booleans
+const toOptionalBool = (value) => (value === '' || value === null || value === undefined ? '' : String(value));
+const fromOptionalBool = (value) => (value === '' ? null : value === 'true');
+const toOptionalInt = (value) => (value === '' || value === null || value === undefined || Number.isNaN(parseInt(value)) ? null : parseInt(value));
 
 const getIndexId = (index) => index?.Identifier || index?.Id || index?.GUID || index?.IndexId || index?.Name || '';
 
@@ -83,7 +104,15 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
     Tags: source?.Tags ? { ...source.Tags } : {},
     Summarization: source?.Summarization ? { ...defaultSummarization, ...source.Summarization } : { ...defaultSummarization },
     Chunking: source?.Chunking ? { ...defaultChunking, ...source.Chunking } : { ...defaultChunking },
-    Embedding: source?.Embedding ? { ...defaultEmbedding, ...source.Embedding } : { ...defaultEmbedding }
+    Embedding: source?.Embedding ? { ...defaultEmbedding, ...source.Embedding } : { ...defaultEmbedding },
+    Extraction: source?.Extraction ? {
+      ...defaultExtraction,
+      ...source.Extraction,
+      OcrEmbeddedImages: toOptionalBool(source.Extraction.OcrEmbeddedImages),
+      CsvHasHeaderRow: toOptionalBool(source.Extraction.CsvHasHeaderRow),
+      CsvRowsPerAtom: source.Extraction.CsvRowsPerAtom ?? '',
+      ExcelHeaderRowScoreThreshold: source.Extraction.ExcelHeaderRowScoreThreshold ?? ''
+    } : { ...defaultExtraction }
   });
 
   const [saving, setSaving] = useState(false);
@@ -94,6 +123,7 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
   const [summarizationOpen, setSummarizationOpen] = useState(false);
   const [chunkingOpen, setChunkingOpen] = useState(false);
   const [embeddingOpen, setEmbeddingOpen] = useState(false);
+  const [extractionOpen, setExtractionOpen] = useState(false);
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -110,6 +140,13 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
     setForm(prev => ({
       ...prev,
       Chunking: { ...prev.Chunking, [field]: value }
+    }));
+  };
+
+  const handleExtractionChange = (field, value) => {
+    setForm(prev => ({
+      ...prev,
+      Extraction: { ...prev.Extraction, [field]: value }
     }));
   };
 
@@ -189,11 +226,24 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
           OverlapStrategy: form.Chunking.OverlapStrategy || undefined,
           RowGroupSize: parseInt(form.Chunking.RowGroupSize) || 5,
           ContextPrefix: form.Chunking.ContextPrefix || undefined,
-          RegexPattern: form.Chunking.RegexPattern || undefined
+          RegexPattern: form.Chunking.RegexPattern || undefined,
+          CellMode: form.Chunking.CellMode || 'Flat',
+          TableStrategy: form.Chunking.TableStrategy || 'RowGroupWithHeaders',
+          ListStrategy: form.Chunking.ListStrategy || 'WholeList',
+          ContextHeader: form.Chunking.ContextHeader || 'None'
         },
         Embedding: {
           EmbeddingEndpointId: form.Embedding.EmbeddingEndpointId || undefined,
-          L2Normalization: form.Embedding.L2Normalization
+          L2Normalization: form.Embedding.L2Normalization,
+          TaskPrefixes: !!form.Embedding.TaskPrefixes
+        },
+        Extraction: {
+          OcrEmbeddedImages: fromOptionalBool(form.Extraction.OcrEmbeddedImages),
+          CsvHasHeaderRow: fromOptionalBool(form.Extraction.CsvHasHeaderRow),
+          CsvRowsPerAtom: toOptionalInt(form.Extraction.CsvRowsPerAtom),
+          ExcelHeaderRowScoreThreshold: toOptionalInt(form.Extraction.ExcelHeaderRowScoreThreshold),
+          DuplicatePolicy: form.Extraction.DuplicatePolicy || 'Allow',
+          NearDuplicateThreshold: Number.isNaN(parseFloat(form.Extraction.NearDuplicateThreshold)) ? 0.85 : parseFloat(form.Extraction.NearDuplicateThreshold)
         }
       };
       if (isEdit && rule.GUID) data.GUID = rule.GUID;
@@ -539,7 +589,7 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
           {chunkingOpen && (
             <div style={{ marginTop: '0.5rem' }}>
               <div className="form-group">
-                <label><Tooltip text="Algorithm used to split document content into chunks for embedding">Strategy</Tooltip></label>
+                <label><Tooltip text="Algorithm used to split document content into chunks for embedding. FixedTokenCount: fixed-size token windows. SentenceBased: sentence boundaries. ParagraphBased: packs whole blocks of extracted text (each paragraph, heading, list or table) into chunks up to the token count, splitting an oversized block at sentences. RegexBased: split on the regex pattern. In Flat cell mode the list and table strategies do not apply, because extracted documents are sent as text; use Structured cell mode to chunk tables and lists with their own strategies.">Strategy</Tooltip></label>
                 <select
                   value={form.Chunking.Strategy}
                   onChange={(e) => handleChunkingChange('Strategy', e.target.value)}
@@ -630,6 +680,101 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
                   placeholder="Optional"
                 />
               </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Flat: the extracted text is chunked as one stream with the strategy above. Structured: each section (text under a heading), table and list becomes its own cell, so tables use Table Strategy, lists use List Strategy, chunks never span sections, and page and sheet numbers are kept for citations.">Cell Mode</Tooltip></label>
+                  <select value={form.Chunking.CellMode} onChange={(e) => handleChunkingChange('CellMode', e.target.value)}>
+                    <option value="Flat">Flat</option>
+                    <option value="Structured">Structured</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Adds a short header to the embedded text of each chunk (it is not stored in the chunk). Title: the document title. TitleAndHeadings: the title and the heading path of the section (Structured cell mode only).">Context Header</Tooltip></label>
+                  <select value={form.Chunking.ContextHeader} onChange={(e) => handleChunkingChange('ContextHeader', e.target.value)}>
+                    <option value="None">None</option>
+                    <option value="Title">Title</option>
+                    <option value="TitleAndHeadings">Title and headings</option>
+                  </select>
+                </div>
+              </div>
+
+              {form.Chunking.CellMode === 'Structured' && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label><Tooltip text="How table cells are chunked. RowGroupWithHeaders repeats the header row on each group of Row Group Size rows.">Table Strategy</Tooltip></label>
+                    <select value={form.Chunking.TableStrategy} onChange={(e) => handleChunkingChange('TableStrategy', e.target.value)}>
+                      {TABLE_STRATEGY_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label><Tooltip text="How list cells are chunked. WholeList keeps a list together; ListEntry makes each item a chunk.">List Strategy</Tooltip></label>
+                    <select value={form.Chunking.ListStrategy} onChange={(e) => handleChunkingChange('ListStrategy', e.target.value)}>
+                      <option value="WholeList">WholeList</option>
+                      <option value="ListEntry">ListEntry</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Extraction (collapsible) */}
+        <div className="form-group">
+          <button
+            type="button"
+            style={collapsibleButtonStyle}
+            onClick={() => setExtractionOpen(prev => !prev)}
+          >
+            {extractionOpen ? '\u25BE' : '\u25B8'} Extraction and Duplicates
+          </button>
+          {extractionOpen && (
+            <div style={{ marginTop: '0.5rem' }}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Run OCR on images embedded in PDF, Word and PowerPoint files. Slower; leave at the default unless documents contain scanned pages or text in images.">OCR Embedded Images</Tooltip></label>
+                  <select value={form.Extraction.OcrEmbeddedImages} onChange={(e) => handleExtractionChange('OcrEmbeddedImages', e.target.value)}>
+                    <option value="">Default</option>
+                    <option value="true">On</option>
+                    <option value="false">Off</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="Whether the first row of a CSV or TSV file is a header row.">CSV Header Row</Tooltip></label>
+                  <select value={form.Extraction.CsvHasHeaderRow} onChange={(e) => handleExtractionChange('CsvHasHeaderRow', e.target.value)}>
+                    <option value="">Default</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="Rows per extracted block for CSV and TSV files. Leave empty for the extractor default.">CSV Rows per Block</Tooltip></label>
+                  <input type="number" min="1" value={form.Extraction.CsvRowsPerAtom} onChange={(e) => handleExtractionChange('CsvRowsPerAtom', e.target.value)} placeholder="Default" />
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="How confident (0-100) the extractor must be that a spreadsheet row is a header row. Leave empty for the extractor default.">Spreadsheet Header Threshold</Tooltip></label>
+                  <input type="number" min="0" max="100" value={form.Extraction.ExcelHeaderRowScoreThreshold} onChange={(e) => handleExtractionChange('ExcelHeaderRowScoreThreshold', e.target.value)} placeholder="Default" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label><Tooltip text="What happens when an uploaded file is byte-for-byte identical to a document already in the collection. Allow: accept it. Warn: accept it and mark it as a duplicate. Reject: refuse the upload (409).">Duplicate Uploads</Tooltip></label>
+                  <select value={form.Extraction.DuplicatePolicy} onChange={(e) => handleExtractionChange('DuplicatePolicy', e.target.value)}>
+                    <option value="Allow">Allow</option>
+                    <option value="Warn">Warn</option>
+                    <option value="Reject">Reject</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label><Tooltip text="After ingestion, documents whose first chunk is at least this similar (0-1) to another document's are marked as near-duplicates. 0 turns it off.">Near-Duplicate Similarity</Tooltip></label>
+                  <input type="number" min="0" max="1" step="0.01" value={form.Extraction.NearDuplicateThreshold} onChange={(e) => handleExtractionChange('NearDuplicateThreshold', e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -669,6 +814,20 @@ function IngestionRuleFormModal({ rule, initialData, buckets, collections, indic
                     <span className="toggle-slider"></span>
                   </label>
                   <span><Tooltip text="Apply L2 normalization to embedding vectors, normalizing them to unit length for cosine similarity comparisons">L2 Normalization</Tooltip></span>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <div className="form-toggle">
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={!!form.Embedding.TaskPrefixes}
+                      onChange={(e) => handleEmbeddingChange('TaskPrefixes', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span><Tooltip text="Add the document prefix the embedding model expects (for example 'search_document: ' for nomic-embed-text, 'passage: ' for e5). Turn on Embedding task prefixes in the assistant settings too, so queries get the matching prefix. Models without known prefixes are unaffected. Reprocess existing documents after changing it.">Task Prefixes</Tooltip></span>
                 </div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 namespace AssistantHub.Core.Database.Interfaces
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Enums;
@@ -89,5 +90,44 @@ namespace AssistantHub.Core.Database.Interfaces
         /// <param name="token">Cancellation token.</param>
         /// <returns>Task.</returns>
         Task UpdateVerbexIndexMetadataAsync(string id, string verbexTenantId, string verbexIndexId, string verbexRecordId, CancellationToken token = default);
+
+        /// <summary>
+        /// Update a document's supersession links.
+        /// </summary>
+        /// <param name="id">Document identifier.</param>
+        /// <param name="supersedesJson">JSON array of document identifiers this document replaces, or null.</param>
+        /// <param name="supersededBy">Identifier of the document that replaces this one, or null.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        Task UpdateSupersessionAsync(string id, string supersedesJson, string supersededBy, CancellationToken token = default);
+
+        /// <summary>
+        /// Update a document's content hash and near-duplicate matches.
+        /// </summary>
+        /// <param name="id">Document identifier.</param>
+        /// <param name="contentSha256">SHA-256 of the uploaded bytes (hex), or null.</param>
+        /// <param name="nearDuplicatesJson">JSON array of near-duplicate matches, or null.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Task.</returns>
+        Task UpdateContentHashAsync(string id, string contentSha256, string nearDuplicatesJson, CancellationToken token = default);
+
+        /// <summary>
+        /// Read the documents in a tenant (optionally one collection) with a given content hash.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="collectionId">Optional collection identifier.</param>
+        /// <param name="contentSha256">SHA-256 of the content (hex).</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Matching documents.</returns>
+        Task<List<AssistantDocument>> ReadByContentHashAsync(string tenantId, string collectionId, string contentSha256, CancellationToken token = default);
+
+        /// <summary>
+        /// Read the documents that a given document supersedes (their SupersededBy is that document).
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier.</param>
+        /// <param name="replacementId">Identifier of the replacing document.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>Superseded documents.</returns>
+        Task<List<AssistantDocument>> ReadSupersededByAsync(string tenantId, string replacementId, CancellationToken token = default);
     }
 }

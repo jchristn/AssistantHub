@@ -4,6 +4,7 @@ namespace Test.Benchmark.Runners
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Globalization;
     using System.Linq;
     using System.Net.Http;
     using System.Text.Json;
@@ -53,6 +54,7 @@ namespace Test.Benchmark.Runners
         private readonly bool _Reingest;
         private readonly int _TimeoutSeconds;
         private readonly bool _DateOrder;
+        private readonly bool _LinkSupersedes;
         private readonly Dictionary<string, string> _Assistants = new Dictionary<string, string>(StringComparer.Ordinal);
 
         #endregion
@@ -71,6 +73,7 @@ namespace Test.Benchmark.Runners
             _Reingest = context.Arguments.GetFlag("reingest");
             _TimeoutSeconds = context.Arguments.GetInt("ingest-timeout-seconds", 900);
             _DateOrder = context.Arguments.GetFlag("date-order");
+            _LinkSupersedes = context.Arguments.GetFlag("link-supersedes");
         }
 
         #endregion
@@ -201,7 +204,12 @@ namespace Test.Benchmark.Runners
                 string id = document["Id"]?.GetValue<string>() ?? string.Empty;
                 string status = document["Status"]?.GetValue<string>() ?? string.Empty;
                 string? datasetId = ReadTag(document, "bench_doc_id");
-                bool keep = !_Reingest && datasetId != null && wanted.ContainsKey(datasetId) && !existing.ContainsKey(datasetId) && status == "Completed";
+                // Reuse documents from the requested pipeline version, and any written by the current one: uploads are
+                // always tagged with the version the server actually runs, even when an older version was requested.
+                string pipeline = ReadTag(document, "bench_pipeline") ?? "1";
+                bool currentPipeline = pipeline == Variant.Pipeline.ToString(CultureInfo.InvariantCulture)
+                    || pipeline == IngestionVariant.CurrentPipeline.ToString(CultureInfo.InvariantCulture);
+                bool keep = !_Reingest && currentPipeline && datasetId != null && wanted.ContainsKey(datasetId) && !existing.ContainsKey(datasetId) && status == "Completed";
                 if (keep) existing[datasetId!] = (id, status);
                 else toDelete.Add(id);
             }
@@ -220,7 +228,11 @@ namespace Test.Benchmark.Runners
 
             summary.Reused += existing.Count;
             List<BenchmarkDocument> missing = corpus.Documents.Where(d => !existing.ContainsKey(d.Id)).ToList();
-            if (missing.Count == 0) return provisioned;
+            if (missing.Count == 0)
+            {
+                await LinkSupersedesAsync(corpus, provisioned, token).ConfigureAwait(false);
+                return provisioned;
+            }
 
             bool dated = _DateOrder && missing.Any(d => !string.IsNullOrEmpty(d.Date));
             if (dated) missing = missing.OrderBy(d => d.Date ?? string.Empty, StringComparer.Ordinal).ThenBy(d => d.Id, StringComparer.Ordinal).ToList();
@@ -251,7 +263,35 @@ namespace Test.Benchmark.Runners
                 }
             }, token).ConfigureAwait(false);
 
+            await LinkSupersedesAsync(corpus, provisioned, token).ConfigureAwait(false);
             return provisioned;
+        }
+
+        /// <summary>
+        /// With --link-supersedes, record each dataset document's "supersedes" link in AssistantHub, so the newer
+        /// version replaces the older one at retrieval (SupersessionMode). Without it the links are cleared, so a
+        /// collection shared between runs never carries links a run did not ask for.
+        /// </summary>
+        private async Task LinkSupersedesAsync(BenchmarkCorpus corpus, ProvisionedCollection provisioned, CancellationToken token)
+        {
+            List<BenchmarkDocument> replacements = corpus.Documents.Where(d => !string.IsNullOrEmpty(d.Supersedes)).ToList();
+            if (replacements.Count == 0) return;
+
+            int linked = 0;
+            foreach (BenchmarkDocument document in replacements)
+            {
+                if (!provisioned.DocumentIdByDatasetId.TryGetValue(document.Id, out string? replacementId)) continue;
+                if (!provisioned.DocumentIdByDatasetId.TryGetValue(document.Supersedes!, out string? supersededId)) continue;
+
+                JsonArray ids = new JsonArray();
+                if (_LinkSupersedes) ids.Add(supersededId);
+                TimedCall call = await _Context.Client.SendAsync(HttpMethod.Put, "/v1.0/documents/" + replacementId + "/supersedes",
+                    new JsonObject { ["SupersedesDocumentIds"] = ids }.ToJsonString(), token).ConfigureAwait(false);
+                if (call.IsSuccess) linked++;
+                else Console.WriteLine("[ingest] could not set supersedes for " + document.Id + ": " + call.Describe());
+            }
+
+            Console.WriteLine("[ingest] " + corpus.Id + ": " + (_LinkSupersedes ? "linked " : "cleared ") + linked + " supersedes link(s)");
         }
 
         private async Task<IngestDocumentOutcome> IngestDocumentAsync(BenchmarkDataset dataset, BenchmarkCorpus corpus, ProvisionedCollection provisioned, BenchmarkDocument document, CancellationToken token)
@@ -266,6 +306,7 @@ namespace Test.Benchmark.Runners
             }
 
             tags["bench_doc_id"] = document.Id;
+            tags["bench_pipeline"] = IngestionVariant.CurrentPipeline.ToString(CultureInfo.InvariantCulture);
             JsonArray labels = new JsonArray();
             foreach (string label in document.Labels ?? new List<string>()) labels.Add(label);
 

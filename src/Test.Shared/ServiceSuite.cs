@@ -27,7 +27,7 @@ namespace Test.Automated
     using SyslogLogging;
     using Test.Shared;
 
-    public class ServiceSuite : SuiteBase
+    public partial class ServiceSuite : SuiteBase
     {
         public async Task<IReadOnlyList<AutomatedTestResult>> RunAsync()
         {
@@ -2193,7 +2193,7 @@ namespace Test.Automated
                 vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_one\",\"Score\":0.9,\"Content\":\"fallback text\",\"Position\":1}]}");
 
                 RecordingChunkingService chunking = new RecordingChunkingService();
-                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
 
                 RetrievalService retrieval = new RetrievalService(
                     new ChunkingSettings(),
@@ -2230,7 +2230,9 @@ namespace Test.Automated
                 string handlerSource = File.ReadAllText(Path.Combine(root, "src", "AssistantHub.Server", "Handlers", "ChatHandler.cs"));
 
                 AssertMultiQueryDocumentFilterInvariant(serviceSource, "_Retrieval.RetrieveAsync", "AssistantChatService");
-                AssertMultiQueryDocumentFilterInvariant(handlerSource, "Retrieval.RetrieveAsync", "ChatHandler");
+                // The streaming handler builds its prompt context through the same service path instead of retrieving itself.
+                AssertHelper.StringContains(handlerSource, "BuildPromptContextAsync(", "ChatHandler delegates retrieval to the chat service");
+                AssertHelper.IsFalse(handlerSource.Contains("Retrieval.RetrieveAsync("), "ChatHandler does not run its own retrieval");
             });
 
             await ExecuteTestAsync("Chat orchestration: attached document references add retrieval hints", async () =>
@@ -2751,7 +2753,7 @@ namespace Test.Automated
             {
                 RecordingChunkingService chunking = new RecordingChunkingService();
                 chunking.Enqueue(HttpStatusCode.TooManyRequests, "{\"Error\":\"TooManyRequests\"}");
-                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
                 RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
                 vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_r\",\"Score\":0.8,\"Content\":\"retried\",\"Position\":0}]}");
                 RetrievalService retrieval = new RetrievalService(
@@ -2775,7 +2777,7 @@ namespace Test.Automated
                     CreateSilentLogging(),
                     new RecordingVectorStoreService(),
                     failing);
-                RetrievalSearchOptions failedOptions = new RetrievalSearchOptions { SearchMode = "Hybrid" };
+                RetrievalSearchOptions failedOptions = new RetrievalSearchOptions { SearchMode = "Vector" };
                 List<RetrievalChunk> none = await exhausted.RetrieveAsync("tenant_r", "col_r", "query", 5, 0, default, null, failedOptions).ConfigureAwait(false);
                 AssertHelper.HasCount(none, 0, "no results when embedding fails");
                 AssertHelper.AreEqual(4, failing.Calls.Count, "one attempt plus three retries");
@@ -2790,7 +2792,7 @@ namespace Test.Automated
 
                 RecordingChunkingService chunking = new RecordingChunkingService();
                 chunking.Enqueue(HttpStatusCode.InternalServerError, "{\"Error\":\"InternalError\",\"Message\":\"HTTP 429: All eligible endpoints are at capacity.\"}");
-                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
                 RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
                 vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_w\",\"Score\":0.8,\"Content\":\"wrapped\",\"Position\":0}]}");
                 RetrievalService retrieval = new RetrievalService(new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 }, new RecallDbSettings(), CreateSilentLogging(), vectorStore, chunking);
@@ -2859,6 +2861,277 @@ namespace Test.Automated
                 AssertHelper.AreEqual(1, result.Response.Retrieval.QueryCount, "query count reported");
                 AssertHelper.HasCount(result.Response.Retrieval.Chunks, 1, "fallback chunk returned");
                 AssertHelper.AreEqual(0.66, result.Response.Retrieval.Chunks[0].VectorScore, "fallback score is a vector score");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: embeds queries through /v1.0/embed without chunking them", async () =>
+            {
+                RecordingChunkingService chunking = new RecordingChunkingService();
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings { EndpointId = "eep_default" }, new RecallDbSettings(), CreateSilentLogging(), vectorStore, chunking);
+
+                string longQuery = String.Join(" ", Enumerable.Range(0, 600).Select(i => "word" + i));
+                await retrieval.RetrieveAsync("tenant_e", "col_e", longQuery, 5, 0, default, "eep_query", new RetrievalSearchOptions { SearchMode = "Vector" }).ConfigureAwait(false);
+
+                AssertHelper.HasCount(chunking.Calls, 1, "one embedding call");
+                AssertHelper.AreEqual("/v1.0/embed", chunking.Calls[0].Path, "standalone embed route");
+                AssertHelper.StringContains(chunking.Calls[0].Body, "\"EndpointId\":\"eep_query\"", "endpoint override sent");
+                AssertHelper.StringContains(chunking.Calls[0].Body, "word599", "long query sent whole");
+                AssertHelper.IsFalse(chunking.Calls[0].Body.Contains("\"Type\"", StringComparison.Ordinal), "no chunking request fields");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"Embeddings\":[0.1", "embedding forwarded to RecallDB");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: a query-embedding timeout is bounded separately and not retried", async () =>
+            {
+                HangingChunkingService chunking = new HangingChunkingService();
+                RetrievalService retrieval = new RetrievalService(
+                    new ChunkingSettings { QueryEmbeddingTimeoutMs = 1000, RequestTimeoutMs = 900000, MaxRetries = 3, RetryDelayMs = 1 },
+                    new RecallDbSettings(),
+                    CreateSilentLogging(),
+                    new RecordingVectorStoreService(),
+                    chunking);
+
+                RetrievalSearchOptions options = new RetrievalSearchOptions { SearchMode = "Vector" };
+                System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+                List<RetrievalChunk> chunks = await retrieval.RetrieveAsync("tenant_t", "col_t", "query", 5, 0, default, null, options).ConfigureAwait(false);
+                sw.Stop();
+
+                AssertHelper.HasCount(chunks, 0, "no results when the embedding times out");
+                AssertHelper.IsTrue(options.EmbeddingFailed, "timeout flagged as embedding failure");
+                AssertHelper.AreEqual(1, chunking.CallCount, "timed-out attempt not retried");
+                AssertHelper.IsTrue(sw.Elapsed < TimeSpan.FromSeconds(10), "bounded by QueryEmbeddingTimeoutMs, not RequestTimeoutMs (" + sw.ElapsedMilliseconds + " ms)");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: caches query embeddings per endpoint and query", async () =>
+            {
+                RecordingChunkingService chunking = new RecordingChunkingService();
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                for (int i = 0; i < 5; i++) vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, chunking);
+                RetrievalSearchOptions options = new RetrievalSearchOptions { SearchMode = "Vector" };
+
+                await retrieval.RetrieveAsync("tenant_c", "col_c", "same question", 5, 0, default, "eep_a", options).ConfigureAwait(false);
+                await retrieval.RetrieveAsync("tenant_c", "col_c", "same question", 5, 0, default, "eep_a", options).ConfigureAwait(false);
+                AssertHelper.AreEqual(1, chunking.Calls.Count, "repeat query served from cache");
+                AssertHelper.HasCount(vectorStore.Calls, 2, "search still runs for each retrieval");
+
+                await retrieval.RetrieveAsync("tenant_c", "col_c", "same question", 5, 0, default, "eep_b", options).ConfigureAwait(false);
+                await retrieval.RetrieveAsync("tenant_c", "col_c", "another question", 5, 0, default, "eep_a", options).ConfigureAwait(false);
+                AssertHelper.AreEqual(3, chunking.Calls.Count, "different endpoint or query is a miss");
+
+                RecordingChunkingService uncachedChunking = new RecordingChunkingService();
+                RetrievalService uncached = new RetrievalService(new ChunkingSettings { QueryEmbeddingCacheSize = 0 }, new RecallDbSettings(), CreateSilentLogging(), new RecordingVectorStoreService(), uncachedChunking);
+                await uncached.RetrieveAsync("tenant_c", "col_c", "same question", 5, 0, default, null, options).ConfigureAwait(false);
+                await uncached.RetrieveAsync("tenant_c", "col_c", "same question", 5, 0, default, null, options).ConfigureAwait(false);
+                AssertHelper.AreEqual(2, uncachedChunking.Calls.Count, "cache size 0 disables caching");
+
+                QueryEmbeddingCache cache = new QueryEmbeddingCache(2);
+                cache.Set("a", new List<double> { 1 });
+                cache.Set("b", new List<double> { 2 });
+                AssertHelper.IsTrue(cache.TryGet("a", out _), "a present");
+                cache.Set("c", new List<double> { 3 });
+                AssertHelper.IsFalse(cache.TryGet("b", out _), "least recently used entry evicted");
+                AssertHelper.IsTrue(cache.TryGet("a", out List<double> a) && a[0] == 1, "recently used entry kept");
+                AssertHelper.AreEqual(2, cache.Count, "capacity respected");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: hybrid falls back to full-text when the query embedding fails", async () =>
+            {
+                RecordingChunkingService failing = new RecordingChunkingService();
+                for (int i = 0; i < 4; i++) failing.Enqueue(HttpStatusCode.TooManyRequests, "{}");
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_kw\",\"Score\":0.02,\"TextScore\":0.02,\"Content\":\"keyword hit\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 }, new RecallDbSettings(), CreateSilentLogging(), vectorStore, failing);
+
+                RetrievalSearchOptions options = new RetrievalSearchOptions { SearchMode = "Hybrid", DocumentIds = new List<string> { "adoc_kw" } };
+                List<RetrievalChunk> chunks = await retrieval.RetrieveAsync("tenant_k", "col_k", "keyword", 5, 0.3, default, null, options).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(options.EmbeddingFailed, "embedding failure flagged");
+                AssertHelper.IsTrue(options.KeywordFallbackRan, "keyword fallback flagged");
+                AssertHelper.HasCount(vectorStore.Calls, 1, "one full-text search");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"FullText\"", "full-text leg sent");
+                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("\"Vector\"", StringComparison.Ordinal), "no vector leg without an embedding");
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"DocumentIds\":[\"adoc_kw\"]", "document scope kept");
+                AssertHelper.HasCount(chunks, 1, "keyword results returned despite the similarity threshold");
+
+                RecordingChunkingService vectorFailing = new RecordingChunkingService();
+                for (int i = 0; i < 4; i++) vectorFailing.Enqueue(HttpStatusCode.TooManyRequests, "{}");
+                RecordingVectorStoreService unused = new RecordingVectorStoreService();
+                RetrievalService vectorRetrieval = new RetrievalService(new ChunkingSettings { MaxRetries = 3, RetryDelayMs = 1 }, new RecallDbSettings(), CreateSilentLogging(), unused, vectorFailing);
+                RetrievalSearchOptions vectorOptions = new RetrievalSearchOptions { SearchMode = "Vector" };
+                List<RetrievalChunk> none = await vectorRetrieval.RetrieveAsync("tenant_k", "col_k", "keyword", 5, 0, default, null, vectorOptions).ConfigureAwait(false);
+                AssertHelper.HasCount(none, 0, "vector mode has nothing to fall back to");
+                AssertHelper.IsFalse(vectorOptions.KeywordFallbackRan, "no keyword fallback in vector mode");
+                AssertHelper.HasCount(unused.Calls, 0, "no search without an embedding in vector mode");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: hybrid sends explicit fusion options", async () =>
+            {
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                for (int i = 0; i < 4; i++) vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_f\",\"Score\":0.9,\"VectorScore\":0.8,\"Content\":\"x\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+
+                await retrieval.RetrieveAsync("tenant_f", "col_f", "q", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Hybrid" }).ConfigureAwait(false);
+                AssertHelper.StringContains(vectorStore.Calls[0].Body, "\"Hybrid\":{\"Strategy\":\"Rrf\",\"RrfK\":60}", "default fusion sent explicitly");
+
+                await retrieval.RetrieveAsync("tenant_f", "col_f", "q2", 5, 0, default, null, new RetrievalSearchOptions
+                {
+                    SearchMode = "Hybrid",
+                    RrfK = 20,
+                    FusionCandidatePool = 50,
+                    RecencyWeight = 0.1
+                }).ConfigureAwait(false);
+                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"RrfK\":20", "RRF k");
+                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"CandidatePool\":50", "candidate pool");
+                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"RecencyWeight\":0.1", "recency weight");
+
+                await retrieval.RetrieveAsync("tenant_f", "col_f", "q3", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Hybrid", FusionStrategy = "Linear", RecencyWeight = 0.1 }).ConfigureAwait(false);
+                AssertHelper.StringContains(vectorStore.Calls[2].Body, "\"Hybrid\":{\"Strategy\":\"Linear\"}", "linear fusion without RRF-only options");
+
+                await retrieval.RetrieveAsync("tenant_f", "col_f", "q4", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Vector" }).ConfigureAwait(false);
+                AssertHelper.IsFalse(vectorStore.Calls[3].Body.Contains("\"Hybrid\"", StringComparison.Ordinal), "no fusion options outside hybrid");
+
+                RetrievalSearchOptions fromSettings = RetrievalSearchOptions.FromAssistantSettings(new AssistantSettings { SearchMode = "Hybrid", FusionStrategy = "Linear", RrfK = 15, FusionCandidatePool = 80, RecencyWeight = 0.2, RetrievalIncludeNeighbors = 2 });
+                AssertHelper.AreEqual("Linear", fromSettings.FusionStrategy, "strategy copied from settings");
+                AssertHelper.AreEqual(15, fromSettings.RrfK, "RRF k copied from settings");
+                AssertHelper.AreEqual(80, fromSettings.FusionCandidatePool, "pool copied from settings");
+                AssertHelper.AreEqual(0.2, fromSettings.RecencyWeight, "recency copied from settings");
+                AssertHelper.AreEqual(2, fromSettings.IncludeNeighbors, "neighbors copied from settings");
+                List<string> scope = new List<string> { "adoc_scope" };
+                ChatMetadataFilter filter = new ChatMetadataFilter { RequiredLabels = new List<string> { "x" } };
+                RetrievalSearchOptions scoped = RetrievalSearchOptions.FromAssistantSettings(new AssistantSettings(), filter, scope);
+                AssertHelper.AreEqual(scope, scoped.DocumentIds, "document scope carried");
+                AssertHelper.AreEqual(filter, scoped.MetadataFilter, "metadata filter carried");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: applies the similarity threshold to the vector leg in hybrid and not to full-text", async () =>
+            {
+                AssertHelper.IsTrue(RetrievalService.PassesScoreThreshold(0.01, null, null, "keyword", false, 0.3), "full-text is not held to a similarity threshold");
+                AssertHelper.IsFalse(RetrievalService.PassesScoreThreshold(0.01, null, null, "keyword", false, 0.3, true), "an explicit full-text threshold still applies");
+                AssertHelper.IsFalse(RetrievalService.PassesScoreThreshold(0.9, 0.2, null, "hybrid", false, 0.3), "hybrid thresholds a vector-only hit on its similarity, not the fused score");
+                AssertHelper.IsTrue(RetrievalService.PassesScoreThreshold(0.9, 0.2, 5, "hybrid", false, 0.3), "a chunk the text leg also found is kept despite low similarity");
+                AssertHelper.IsTrue(RetrievalService.PassesScoreThreshold(0.25, null, 2, "hybrid", false, 0.3), "text-only hybrid hit kept");
+                AssertHelper.IsTrue(RetrievalService.PassesScoreThreshold(0.3, 0.5, null, "hybrid", false, 0.3), "vector similarity above threshold kept");
+                AssertHelper.IsFalse(RetrievalService.PassesScoreThreshold(0.2, null, null, "hybrid", true, 0.3), "hybrid fallback thresholds the vector score");
+                AssertHelper.IsFalse(RetrievalService.PassesScoreThreshold(0.2, null, null, "vector", false, 0.3), "vector mode thresholds the score");
+
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                vectorStore.Enqueue(
+                    HttpStatusCode.OK,
+                    "{\"Documents\":[" +
+                    "{\"DocumentId\":\"adoc_both\",\"Score\":1.0,\"VectorScore\":0.7,\"VectorRank\":1,\"TextRank\":1,\"Content\":\"both\",\"Position\":0}," +
+                    "{\"DocumentId\":\"adoc_keyword\",\"Score\":0.8,\"VectorScore\":0.12,\"VectorRank\":9,\"TextRank\":1,\"Content\":\"strong keyword, weak vector\",\"Position\":0}," +
+                    "{\"DocumentId\":\"adoc_weak\",\"Score\":0.6,\"VectorScore\":0.1,\"VectorRank\":2,\"Content\":\"weak vector\",\"Position\":0}," +
+                    "{\"DocumentId\":\"adoc_text\",\"Score\":0.29,\"TextRank\":2,\"Content\":\"text only\",\"Position\":0}" +
+                    "]}");
+                vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_ft\",\"Score\":0.04,\"TextScore\":0.04,\"Content\":\"low ts_rank\",\"Position\":0}]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+
+                List<RetrievalChunk> hybrid = await retrieval.RetrieveAsync("tenant_h", "col_h", "q", 10, 0.3, default, null, new RetrievalSearchOptions { SearchMode = "Hybrid" }).ConfigureAwait(false);
+                AssertHelper.HasCount(hybrid, 3, "vector-only weak match dropped, every text-leg match kept");
+                AssertHelper.AreEqual("adoc_both", hybrid[0].DocumentId, "strong match kept");
+                AssertHelper.AreEqual("adoc_keyword", hybrid[1].DocumentId, "keyword match with low similarity kept");
+                AssertHelper.AreEqual("adoc_text", hybrid[2].DocumentId, "text-only match kept");
+
+                List<RetrievalChunk> fullText = await retrieval.RetrieveAsync("tenant_h", "col_h", "q", 10, 0.3, default, null, new RetrievalSearchOptions { SearchMode = "FullText" }).ConfigureAwait(false);
+                AssertHelper.HasCount(fullText, 1, "full-text result kept below the similarity threshold");
+            });
+
+            await ExecuteTestAsync("RetrievalService.RetrieveAsync: filtered vector searches raise EfSearch", async () =>
+            {
+                RecordingVectorStoreService vectorStore = new RecordingVectorStoreService();
+                for (int i = 0; i < 4; i++) vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[]}");
+                RetrievalService retrieval = new RetrievalService(new ChunkingSettings(), new RecallDbSettings(), CreateSilentLogging(), vectorStore, new RecordingChunkingService());
+
+                await retrieval.RetrieveAsync("tenant_ef", "col_ef", "q1", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Vector" }).ConfigureAwait(false);
+                AssertHelper.IsFalse(vectorStore.Calls[0].Body.Contains("EfSearch", StringComparison.Ordinal), "no EfSearch without filters");
+
+                await retrieval.RetrieveAsync("tenant_ef", "col_ef", "q2", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Vector", DocumentIds = new List<string> { "adoc_1" } }).ConfigureAwait(false);
+                AssertHelper.StringContains(vectorStore.Calls[1].Body, "\"EfSearch\":400", "document filter raises EfSearch");
+
+                await retrieval.RetrieveAsync("tenant_ef", "col_ef", "q3", 5, 0, default, null, new RetrievalSearchOptions
+                {
+                    SearchMode = "Hybrid",
+                    MetadataFilter = new ChatMetadataFilter { RequiredLabels = new List<string> { "policy" } }
+                }).ConfigureAwait(false);
+                AssertHelper.StringContains(vectorStore.Calls[2].Body, "\"EfSearch\":400", "label filter raises EfSearch in hybrid");
+
+                RecordingVectorStoreService disabledStore = new RecordingVectorStoreService();
+                disabledStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[]}");
+                RetrievalService disabled = new RetrievalService(new ChunkingSettings(), new RecallDbSettings { FilteredEfSearch = 0 }, CreateSilentLogging(), disabledStore, new RecordingChunkingService());
+                await disabled.RetrieveAsync("tenant_ef", "col_ef", "q4", 5, 0, default, null, new RetrievalSearchOptions { SearchMode = "Vector", DocumentIds = new List<string> { "adoc_1" } }).ConfigureAwait(false);
+                AssertHelper.IsFalse(disabledStore.Calls[0].Body.Contains("EfSearch", StringComparison.Ordinal), "FilteredEfSearch 0 leaves RecallDB's default");
+            });
+
+            await ExecuteTestAsync("RetrievalContextOrder.Apply: reading order groups, orders and merges chunks", async () =>
+            {
+                List<RetrievalChunk> ranked = new List<RetrievalChunk>
+                {
+                    new RetrievalChunk { DocumentId = "doc_b", Position = 7, Score = 0.9, Content = "B7" },
+                    new RetrievalChunk { DocumentId = "doc_a", Position = 4, Score = 0.8, Content = "The engine runs at 3000 rpm. Service it yearly." },
+                    new RetrievalChunk { DocumentId = "doc_b", Position = 2, Score = 0.7, Content = "B2" },
+                    new RetrievalChunk { DocumentId = null, Score = 0.6, Content = "web result" },
+                    new RetrievalChunk { DocumentId = "doc_a", Position = 3, Score = 0.5, Content = "Intro text. The engine runs at 3000 rpm." }
+                };
+
+                AssertHelper.AreEqual(ranked, RetrievalContextOrder.Apply(ranked, "Score"), "Score keeps the ranked list");
+
+                List<RetrievalChunk> ordered = RetrievalContextOrder.Apply(ranked, "ReadingOrder");
+                AssertHelper.HasCount(ordered, 4, "adjacent doc_a chunks merged");
+                AssertHelper.AreEqual("B2", ordered[0].Content, "best document first, in document order");
+                AssertHelper.AreEqual("B7", ordered[1].Content, "non-adjacent chunks stay separate");
+                AssertHelper.AreEqual("doc_a", ordered[2].DocumentId, "second document next");
+                AssertHelper.AreEqual("Intro text. The engine runs at 3000 rpm. Service it yearly.", ordered[2].Content, "overlapping text appears once");
+                AssertHelper.AreEqual(3, ordered[2].Position, "merged passage starts at the first position");
+                AssertHelper.AreEqual(0.8, ordered[2].Score, "merged passage keeps the best score");
+                AssertHelper.AreEqual("web result", ordered[3].Content, "chunk without a document kept");
+
+                List<RetrievalChunk> withNeighbors = new List<RetrievalChunk>
+                {
+                    new RetrievalChunk
+                    {
+                        DocumentId = "doc_n", Position = 5, Score = 0.9, Content = "five",
+                        Neighbors = new List<RetrievalChunk> { new RetrievalChunk { DocumentId = "doc_n", Position = 4, Content = "four" }, new RetrievalChunk { DocumentId = "doc_n", Position = 6, Content = "six" } }
+                    },
+                    new RetrievalChunk
+                    {
+                        DocumentId = "doc_n", Position = 7, Score = 0.8, Content = "seven",
+                        Neighbors = new List<RetrievalChunk> { new RetrievalChunk { DocumentId = "doc_n", Position = 6, Content = "six" }, new RetrievalChunk { DocumentId = "doc_n", Position = 8, Content = "eight" } }
+                    }
+                };
+                List<RetrievalChunk> mergedNeighbors = RetrievalContextOrder.Apply(withNeighbors, "ReadingOrder");
+                AssertHelper.HasCount(mergedNeighbors, 1, "overlapping neighbor windows merged");
+                AssertHelper.AreEqual("four\nfive\nsix\nseven\neight", mergedNeighbors[0].MergedContent, "each position appears once");
+
+                AssertHelper.AreEqual("0123456789abcdefghijKLMN", RetrievalContextOrder.JoinWithoutOverlap("0123456789abcdefghij", "456789abcdefghijKLMN"), "overlap of 16+ characters removed");
+                AssertHelper.AreEqual("first part\nsecond part", RetrievalContextOrder.JoinWithoutOverlap("first part", "second part"), "no overlap joins with a newline");
+            });
+
+            await ExecuteTestAsync("DocumentAtomAtomizationService.ExtractTextAsync: renders heading levels and separates blocks with blank lines", async () =>
+            {
+                string atomJson =
+                    "[" +
+                    "{\"Type\":\"Text\",\"Text\":\"Installation\",\"HeaderLevel\":1}," +
+                    "{\"Type\":\"Text\",\"Text\":\"Download the package.\"}," +
+                    "{\"Type\":\"Text\",\"Text\":\"Run the installer.\"}," +
+                    "{\"Type\":\"Text\",\"Text\":\"## Already markdown\",\"HeaderLevel\":2}," +
+                    "{\"Type\":\"Text\",\"Text\":\"Deep\",\"HeaderLevel\":9}" +
+                    "]";
+
+                using (DocumentAtomStubServer stub = new DocumentAtomStubServer(GetAvailableTcpPort(), atomJson))
+                {
+                    stub.Start();
+                    DocumentAtomAtomizationService service = new DocumentAtomAtomizationService(
+                        new DocumentAtomSettings { Endpoint = stub.BaseUrl, AccessKey = "test-key" },
+                        CreateSilentLogging());
+
+                    string text = await service.ExtractTextAsync("adoc_headings", Encoding.UTF8.GetBytes("pdf bytes"), "pdf", "headings.pdf").ConfigureAwait(false);
+
+                    AssertHelper.AreEqual(
+                        "# Installation\n\nDownload the package.\n\nRun the installer.\n\n## Already markdown\n\n###### Deep",
+                        text,
+                        "headings rendered as markdown and blocks separated by blank lines");
+                }
             });
 
             await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: Verbex search uses mapped index and filters documents", async () =>
@@ -2946,6 +3219,61 @@ namespace Test.Automated
                 AssertHelper.IsFalse(result.OutputJson.Contains(verbexDocument.S3Key, StringComparison.Ordinal), "Verbex output does not expose S3 key");
                 AssertHelper.IsFalse(result.OutputJson.Contains("unmapped_record", StringComparison.Ordinal), "unmapped Verbex result excluded");
                 AssertHelper.IsFalse(result.OutputJson.Contains("adoc_other_verbex"), "other collection Verbex result excluded");
+            });
+
+            await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: Verbex search applies required and excluded terms and labels", async () =>
+            {
+                MockDatabaseDriver database = new MockDatabaseDriver();
+                await database.Tenant.CreateAsync(new TenantMetadata
+                {
+                    Id = "tenant_tool",
+                    Name = "Tool Tenant",
+                    Tags = new Dictionary<string, string> { [Constants.VerbexDefaultIndexIdTag] = "tenant_tool_default" }
+                }).ConfigureAwait(false);
+                await database.AssistantDocument.CreateAsync(CreateToolDocument("adoc_keep", "tenant_tool", "col_tool", "Keep", DocumentStatusEnum.Completed)).ConfigureAwait(false);
+                await database.AssistantDocument.CreateAsync(CreateToolDocument("adoc_excluded", "tenant_tool", "col_tool", "Excluded", DocumentStatusEnum.Completed)).ConfigureAwait(false);
+                await database.AssistantDocument.CreateAsync(CreateToolDocument("adoc_missing_required", "tenant_tool", "col_tool", "Missing Required", DocumentStatusEnum.Completed)).ConfigureAwait(false);
+
+                RecordingInvertedIndexService invertedIndex = new RecordingInvertedIndexService();
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{\"Results\":[{\"Id\":\"adoc_keep\"},{\"Id\":\"adoc_excluded\"}]}");
+                invertedIndex.Enqueue(HttpStatusCode.OK, "{\"Results\":[{\"Id\":\"adoc_excluded\"}]}");
+                invertedIndex.Enqueue(
+                    HttpStatusCode.OK,
+                    "{\"Results\":[" +
+                    "{\"Id\":\"adoc_keep\",\"Score\":0.9,\"Content\":\"keep text\"}," +
+                    "{\"Id\":\"adoc_excluded\",\"Score\":0.8,\"Content\":\"excluded text\"}," +
+                    "{\"Id\":\"adoc_missing_required\",\"Score\":0.7,\"Content\":\"missing text\"}" +
+                    "]}");
+
+                AssistantToolPolicy policy = new AssistantToolPolicy
+                {
+                    EnableToolCalls = true,
+                    EnableVerbexFullTextSearchTool = true,
+                    MaxSearchResultsPerCall = 5,
+                    MaxToolResultItems = 5
+                };
+
+                AssistantToolExecutionResult result = await CreateToolExecutor(database, invertedIndex: invertedIndex).ExecuteAsync(
+                    CreateToolContext(policy),
+                    new AssistantToolExecutionRequest
+                    {
+                        ToolName = "verbex_full_text_search",
+                        ArgumentsJson = "{\"query\":\"alpha\",\"required_terms\":[\"beta\"],\"excluded_terms\":[\"gamma\"],\"labels\":[\"public\"],\"max_results\":3}"
+                    }).ConfigureAwait(false);
+
+                AssertHelper.IsTrue(result.Success, "Verbex search success");
+                AssertHelper.HasCount(invertedIndex.Calls, 3, "required side query, excluded side query, main search");
+                AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"Query\":\"beta\"", "required terms side query");
+                AssertHelper.StringContains(invertedIndex.Calls[0].Body, "\"UseAndLogic\":true", "required terms must all match");
+                AssertHelper.StringContains(invertedIndex.Calls[1].Body, "\"Query\":\"gamma\"", "excluded terms side query");
+                AssertHelper.StringContains(invertedIndex.Calls[1].Body, "\"UseAndLogic\":false", "any excluded term excludes");
+                AssertHelper.StringContains(invertedIndex.Calls[2].Body, "\"Labels\":[\"public\"]", "labels passed to Verbex");
+                AssertHelper.StringContains(invertedIndex.Calls[2].Body, "\"MaxResults\":12", "main search over-fetches for filtering");
+                AssertHelper.IsFalse(invertedIndex.Calls[2].Body.Contains("RequiredTerms", StringComparison.Ordinal), "RequiredTerms (not a Verbex field) not sent");
+                AssertHelper.IsFalse(invertedIndex.Calls[2].Body.Contains("ExcludedTerms", StringComparison.Ordinal), "ExcludedTerms (not a Verbex field) not sent");
+                AssertHelper.StringContains(result.OutputJson, "adoc_keep", "matching record kept");
+                AssertHelper.IsFalse(result.OutputJson.Contains("adoc_excluded", StringComparison.Ordinal), "record with an excluded term dropped");
+                AssertHelper.IsFalse(result.OutputJson.Contains("adoc_missing_required", StringComparison.Ordinal), "record without the required term dropped");
             });
 
             await ExecuteTestAsync("AssistantToolExecutor.ExecuteAsync: rejects Verbex index outside assistant policy", async () =>
@@ -3099,7 +3427,7 @@ namespace Test.Automated
                     "}");
 
                 RecordingChunkingService chunking = new RecordingChunkingService();
-                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
 
                 RetrievalService retrieval = new RetrievalService(
                     new ChunkingSettings(),
@@ -3517,7 +3845,7 @@ namespace Test.Automated
                 vectorStore.Enqueue(HttpStatusCode.OK, "{\"Documents\":[{\"DocumentId\":\"adoc_fallback\",\"Score\":0.9,\"Content\":\"fallback chunk\",\"Position\":1}]}");
 
                 RecordingChunkingService chunking = new RecordingChunkingService();
-                chunking.Enqueue(HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                chunking.Enqueue(HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
 
                 RetrievalService retrieval = new RetrievalService(
                     new ChunkingSettings(),
@@ -9350,6 +9678,8 @@ namespace Test.Automated
                 using JsonDocument indexBody = JsonDocument.Parse(invertedIndex.Calls[1].Body);
                 AssertHelper.AreEqual("ten_search_default", indexBody.RootElement.GetProperty("Identifier").GetString(), "created index identifier");
                 AssertHelper.AreEqual("verbex-ten-search", indexBody.RootElement.GetProperty("TenantId").GetString(), "created index tenant id");
+                AssertHelper.IsFalse(indexBody.RootElement.GetProperty("EnableLemmatizer").GetBoolean(), "created index lemmatizer option sent");
+                AssertHelper.IsFalse(indexBody.RootElement.GetProperty("EnableStopWordRemover").GetBoolean(), "created index stop-word option sent");
                 AssertHelper.AreEqual("Search Tenant", JsonDocument.Parse(invertedIndex.Calls[0].Body).RootElement.GetProperty("name").GetString(), "created tenant name");
 
                 TenantMetadata updatedTenant = await database.Tenant.ReadByIdAsync("ten_search").ConfigureAwait(false);
@@ -9412,6 +9742,8 @@ namespace Test.Automated
                 AssertHelper.IsFalse(ensured, "Unavailable Verbex should not be ensured");
                 AssertHelper.AreEqual(1, invertedIndex.CallCount, "Verbex first-run unavailable call count");
             });
+
+            await RunRetrievalImprovementTestsAsync().ConfigureAwait(false);
 
             return GetResults();
         }
@@ -9635,9 +9967,10 @@ namespace Test.Automated
 
         private static void AssertMultiQueryDocumentFilterInvariant(string source, string retrievalCall, string sourceName)
         {
-            int searchOptionsIndex = source.IndexOf("RetrievalSearchOptions searchOptions = new RetrievalSearchOptions", StringComparison.Ordinal);
+            // searchOptions is built from the assistant settings with the attached document IDs as its document scope.
+            int searchOptionsIndex = source.IndexOf("RetrievalSearchOptions searchOptions = RetrievalSearchOptions.FromAssistantSettings(", StringComparison.Ordinal);
             int documentIdsIndex = searchOptionsIndex >= 0
-                ? source.IndexOf("DocumentIds = attachedDocumentIds", searchOptionsIndex, StringComparison.Ordinal)
+                ? source.IndexOf("attachedDocumentIds);", searchOptionsIndex, StringComparison.Ordinal)
                 : -1;
             int multiQueryIndex = documentIdsIndex >= 0
                 ? source.IndexOf("if (retrievalQueries.Count > 1)", documentIdsIndex, StringComparison.Ordinal)
@@ -10193,6 +10526,21 @@ namespace Test.Automated
             }
         }
 
+        private class HangingChunkingService : IChunkingService
+        {
+            public int CallCount { get; private set; }
+
+            public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
+            {
+                CallCount++;
+                await Task.Delay(TimeSpan.FromSeconds(30), token).ConfigureAwait(false);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{\"Success\":true,\"Embeddings\":[[0.1]]}", Encoding.UTF8, "application/json")
+                };
+            }
+        }
+
         private class RecordingChunkingService : IChunkingService
         {
             private readonly Queue<(HttpStatusCode StatusCode, string Body)> _Responses = new Queue<(HttpStatusCode StatusCode, string Body)>();
@@ -10215,7 +10563,7 @@ namespace Test.Automated
 
                 (HttpStatusCode statusCode, string responseBody) = _Responses.Count > 0
                     ? _Responses.Dequeue()
-                    : (HttpStatusCode.OK, "{\"Chunks\":[{\"Embeddings\":[0.1,0.2,0.3]}]}");
+                    : (HttpStatusCode.OK, "{\"Success\":true,\"Embeddings\":[[0.1,0.2,0.3]]}");
 
                 HttpResponseMessage response = new HttpResponseMessage(statusCode)
                 {

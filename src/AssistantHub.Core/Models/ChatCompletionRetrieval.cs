@@ -118,12 +118,63 @@ namespace AssistantHub.Core.Models
         public bool HybridFallbackRan { get; set; } = false;
 
         /// <summary>
-        /// Indicates whether the query embedding failed after retries, so vector or hybrid search returned nothing
-        /// and the answer was generated without retrieved context.
+        /// Indicates whether the query embedding failed after retries. Vector search then returns nothing; hybrid
+        /// search falls back to its full-text leg (see <see cref="KeywordFallbackRan"/>).
         /// </summary>
         [JsonPropertyName("embedding_failed")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool EmbeddingFailed { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether a hybrid search ran its full-text leg alone because the query embedding failed.
+        /// </summary>
+        [JsonPropertyName("keyword_fallback_ran")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool KeywordFallbackRan { get; set; } = false;
+
+        /// <summary>
+        /// Standalone rewrite of a follow-up question, searched alongside the original message, when the conversation
+        /// rewrite ran.
+        /// </summary>
+        [JsonPropertyName("conversation_rewrite")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string ConversationRewrite { get; set; } = null;
+
+        /// <summary>
+        /// Reranker that ran: "llm" or "cross_encoder"; null when reranking is off.
+        /// </summary>
+        [JsonPropertyName("reranker")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Reranker { get; set; } = null;
+
+        /// <summary>
+        /// Whether reranking was skipped because its circuit breaker was open or no cross-encoder is configured.
+        /// </summary>
+        [JsonPropertyName("rerank_skipped")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool RerankSkipped { get; set; } = false;
+
+        /// <summary>
+        /// Whether the cross-encoder scored every candidate below RerankMinScore, so no context was injected.
+        /// </summary>
+        [JsonPropertyName("no_relevant_context")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool NoRelevantContext { get; set; } = false;
+
+        /// <summary>
+        /// Number of retrieved chunks that came from superseded documents.
+        /// </summary>
+        [JsonPropertyName("superseded_chunks")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int SupersededChunks { get; set; } = 0;
+
+        /// <summary>
+        /// Whether a degenerate cited answer (only a few words or only citation markers) was regenerated without the
+        /// citation instructions.
+        /// </summary>
+        [JsonPropertyName("answer_regenerated")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool AnswerRegenerated { get; set; } = false;
 
         /// <summary>
         /// Indicates whether the re-ranker's reply could not be parsed, so the original retrieval order was kept.

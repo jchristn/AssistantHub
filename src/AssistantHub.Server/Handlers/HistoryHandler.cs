@@ -60,7 +60,7 @@ namespace AssistantHub.Server.Handlers
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
                 AuthContext auth = GetAuthContext(ctx);
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 // Non-admin users: filter to only their assistants' history
                 if (!isAdmin && result != null && result.Objects != null)
@@ -216,7 +216,7 @@ namespace AssistantHub.Server.Handlers
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
 
                 // Fetch all history records (up to maxResults)
-                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<ChatHistory> result = await Database.ChatHistory.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 // Group by thread_id
                 Dictionary<string, List<ChatHistory>> threadGroups = new Dictionary<string, List<ChatHistory>>();

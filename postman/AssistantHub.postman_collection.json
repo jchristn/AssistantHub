@@ -4318,6 +4318,41 @@
             },
             "description": "Ingestion performance events for the caller's tenant within a trailing window (hours max 2160, maxResults max 50000)."
           }
+        },
+        {
+          "name": "Set Superseded Documents",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/documents/:documentId/supersedes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "documents",
+                ":documentId",
+                "supersedes"
+              ],
+              "variable": [
+                {
+                  "key": "documentId",
+                  "value": "adoc_example"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SupersedesDocumentIds\": [\n    \"adoc_previous_version\"\n  ]\n}"
+            },
+            "description": "Set the documents this document replaces. Retrieval treats superseded documents according to the assistant's SupersessionMode. An empty list clears the links."
+          }
         }
       ]
     },
@@ -4778,6 +4813,64 @@
               ]
             },
             "description": "Fetch the current configuration first, merge the fields you want to change, then submit a full AssistantHubSettings object. Configuration responses redact ExternalSearch provider API keys as [REDACTED]; submitting that marker preserves the existing key for the matching provider."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rerankers",
+      "item": [
+        {
+          "name": "List Rerankers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/rerankers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "rerankers"
+              ]
+            },
+            "description": "List the cross-encoder rerankers configured in server settings (API keys are never returned)."
+          }
+        },
+        {
+          "name": "Test Reranker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/rerankers/:rerankerId/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "rerankers",
+                ":rerankerId",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "rerankerId",
+                  "value": "cross-encoder"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Query\": \"What is the engine's rated speed?\",\n  \"Documents\": [\n    \"The engine is rated at 3000 rpm under continuous load.\",\n    \"Bananas are rich in potassium.\"\n  ]\n}"
+            },
+            "description": "Score passages against a query with a configured reranker."
           }
         }
       ]

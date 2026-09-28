@@ -14,7 +14,7 @@ namespace AssistantHub.Core.Models
         /// Chunking strategy (e.g. None, FixedTokenCount, SentenceBased, ParagraphBased, RegexBased, etc.).
         /// When set to "None", chunking is skipped and the entire document content is treated as a single chunk.
         /// </summary>
-        public string Strategy { get; set; } = "FixedTokenCount";
+        public string Strategy { get; set; } = "ParagraphBased";
 
         private int _fixedTokenCount = 256;
 
@@ -82,6 +82,62 @@ namespace AssistantHub.Core.Models
         /// Regex pattern for regex-based chunking.
         /// </summary>
         public string RegexPattern { get; set; } = null;
+
+        /// <summary>
+        /// How extracted content is sent for chunking. "Flat" sends the whole document as one text cell (the
+        /// Strategy applies to all of it). "Structured" sends each section's text, each table and each list as its
+        /// own cell, so tables and lists use TableStrategy and ListStrategy, chunks never span sections, and every
+        /// chunk carries page and sheet tags.
+        /// </summary>
+        public string CellMode
+        {
+            get => _cellMode;
+            set => _cellMode = Normalize(value, "Flat", new[] { "Flat", "Structured" }, nameof(CellMode));
+        }
+
+        /// <summary>
+        /// Chunking strategy for tables in Structured mode: Row, RowWithHeaders, RowGroupWithHeaders (the default;
+        /// RowGroupSize rows per chunk, header repeated), KeyValuePairs or WholeTable.
+        /// </summary>
+        public string TableStrategy
+        {
+            get => _tableStrategy;
+            set => _tableStrategy = Normalize(value, "RowGroupWithHeaders", new[] { "Row", "RowWithHeaders", "RowGroupWithHeaders", "KeyValuePairs", "WholeTable" }, nameof(TableStrategy));
+        }
+
+        /// <summary>
+        /// Chunking strategy for lists in Structured mode: WholeList (the default) or ListEntry.
+        /// </summary>
+        public string ListStrategy
+        {
+            get => _listStrategy;
+            set => _listStrategy = Normalize(value, "WholeList", new[] { "WholeList", "ListEntry" }, nameof(ListStrategy));
+        }
+
+        /// <summary>
+        /// Context embedded with each chunk in Structured mode, without changing the stored chunk text: "None",
+        /// "Title" (the document name) or "TitleAndHeadings" (the document name and the section's heading path).
+        /// </summary>
+        public string ContextHeader
+        {
+            get => _contextHeader;
+            set => _contextHeader = Normalize(value, "None", new[] { "None", "Title", "TitleAndHeadings" }, nameof(ContextHeader));
+        }
+
+        private string _cellMode = "Flat";
+        private string _tableStrategy = "RowGroupWithHeaders";
+        private string _listStrategy = "WholeList";
+        private string _contextHeader = "None";
+
+        private static string Normalize(string value, string fallback, string[] allowed, string name)
+        {
+            if (String.IsNullOrWhiteSpace(value)) return fallback;
+            foreach (string option in allowed)
+            {
+                if (value.Trim().Equals(option, StringComparison.OrdinalIgnoreCase)) return option;
+            }
+            throw new ArgumentOutOfRangeException(name, name + " must be one of: " + String.Join(", ", allowed) + ".");
+        }
 
         #endregion
 

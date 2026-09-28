@@ -684,24 +684,7 @@ namespace AssistantHub.Core.Services.Crawlers
             try
             {
                 // Find existing document
-                EnumerationQuery query = new EnumerationQuery();
-                query.MaxResults = 1;
-
-                EnumerationResult<AssistantDocument> existingDocs = await _Database.AssistantDocument.EnumerateAsync(
-                    _CrawlPlan.TenantId, query, _Token).ConfigureAwait(false);
-
-                AssistantDocument existingDoc = null;
-                foreach (AssistantDocument doc in existingDocs.Objects)
-                {
-                    if (!String.IsNullOrEmpty(doc.SourceUrl) &&
-                        doc.SourceUrl.Equals(obj.Key, StringComparison.OrdinalIgnoreCase) &&
-                        !String.IsNullOrEmpty(doc.CrawlPlanId) &&
-                        doc.CrawlPlanId.Equals(_CrawlPlan.Id, StringComparison.OrdinalIgnoreCase))
-                    {
-                        existingDoc = doc;
-                        break;
-                    }
-                }
+                AssistantDocument existingDoc = await FindCrawledDocumentAsync(obj.Key).ConfigureAwait(false);
 
                 // Delete existing document via cleanup
                 if (existingDoc != null)
@@ -730,23 +713,9 @@ namespace AssistantHub.Core.Services.Crawlers
             try
             {
                 // Find existing document
-                EnumerationQuery query = new EnumerationQuery();
-                query.MaxResults = 1000;
-
-                EnumerationResult<AssistantDocument> existingDocs = await _Database.AssistantDocument.EnumerateAsync(
-                    _CrawlPlan.TenantId, query, _Token).ConfigureAwait(false);
-
-                foreach (AssistantDocument doc in existingDocs.Objects)
-                {
-                    if (!String.IsNullOrEmpty(doc.SourceUrl) &&
-                        doc.SourceUrl.Equals(obj.Key, StringComparison.OrdinalIgnoreCase) &&
-                        !String.IsNullOrEmpty(doc.CrawlPlanId) &&
-                        doc.CrawlPlanId.Equals(_CrawlPlan.Id, StringComparison.OrdinalIgnoreCase))
-                    {
-                        await CleanupDocumentAsync(doc, _Token).ConfigureAwait(false);
-                        break;
-                    }
-                }
+                AssistantDocument existingDoc = await FindCrawledDocumentAsync(obj.Key).ConfigureAwait(false);
+                if (existingDoc != null)
+                    await CleanupDocumentAsync(existingDoc, _Token).ConfigureAwait(false);
 
                 lock (_EnumerationLock)
                 {
@@ -767,6 +736,34 @@ namespace AssistantHub.Core.Services.Crawlers
         }
 
         /// <summary>
+        /// Find the document this crawl plan created for a source key, paging through every document in the tenant
+        /// (a single page could miss it once the tenant has more documents than the page size).
+        /// </summary>
+        /// <param name="key">Source key or URL.</param>
+        /// <returns>The document, or null.</returns>
+        internal async Task<AssistantDocument> FindCrawledDocumentAsync(string key)
+        {
+            EnumerationQuery query = new EnumerationQuery { MaxResults = 1000 };
+            while (true)
+            {
+                EnumerationResult<AssistantDocument> page = await _Database.AssistantDocument.EnumerateAsync(
+                    _CrawlPlan.TenantId, query, _Token).ConfigureAwait(false);
+
+                foreach (AssistantDocument doc in page?.Objects ?? new List<AssistantDocument>())
+                {
+                    if (!String.IsNullOrEmpty(doc.SourceUrl) &&
+                        doc.SourceUrl.Equals(key, StringComparison.OrdinalIgnoreCase) &&
+                        !String.IsNullOrEmpty(doc.CrawlPlanId) &&
+                        doc.CrawlPlanId.Equals(_CrawlPlan.Id, StringComparison.OrdinalIgnoreCase))
+                        return doc;
+                }
+
+                if (page == null || page.EndOfResults || String.IsNullOrEmpty(page.ContinuationToken)) return null;
+                query.ContinuationToken = page.ContinuationToken;
+            }
+        }
+
+        /// <summary>
         /// Cleanup a document by removing embeddings, S3 object, processing log, and database record.
         /// </summary>
         /// <param name="doc">Document to clean up.</param>
@@ -774,6 +771,9 @@ namespace AssistantHub.Core.Services.Crawlers
         /// <returns>Task.</returns>
         internal async Task CleanupDocumentAsync(AssistantDocument doc, CancellationToken token = default)
         {
+            try { await DocumentSupersession.ReleaseAsync(_Database, doc, token).ConfigureAwait(false); }
+            catch (Exception e) { _Logging.Warn(_Header + "could not release supersession links for " + doc?.Id + ": " + e.Message); }
+
             if (doc == null) return;
 
             try

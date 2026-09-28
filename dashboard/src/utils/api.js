@@ -523,6 +523,11 @@ export class ApiClient {
   validateAssistantToolPolicy(assistantId, request) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/tools/validate`, request); }
   testAssistantToolPolicy(assistantId, request) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/tools/test`, request); }
   updateAssistantSettings(assistantId, settings) { return this.request('PUT', `/v1.0/assistants/${assistantId}/settings`, settings); }
+  retrieveForAssistant(assistantId, request) { return this.request('POST', `/v1.0/assistants/${assistantId}/retrieve`, request); }
+
+  // Rerankers
+  getRerankers() { return this.request('GET', '/v1.0/rerankers'); }
+  testReranker(rerankerId, request) { return this.request('POST', `/v1.0/rerankers/${rerankerId}/test`, request); }
   verifyAssistantSlackSettings(assistantId, settings) { return this.request('POST', `/v1.0/assistants/${assistantId}/settings/slack/verify`, settings); }
 
   // Assistant Analytics
@@ -613,6 +618,7 @@ export class ApiClient {
   getIngestionAnalytics(params) { return this.request('GET', '/v1.0/analytics/ingestion' + this.buildQuery(params)); }
   reindexDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reindex`, {}); }
   reprocessDocument(id) { return this.request('POST', `/v1.0/documents/${id}/reprocess`, {}); }
+  setDocumentSupersedes(id, documentIds) { return this.request('PUT', `/v1.0/documents/${id}/supersedes`, { SupersedesDocumentIds: documentIds }); }
   deleteDocument(id) { return this.request('DELETE', `/v1.0/documents/${id}`); }
   deleteDocuments(ids) { return this.request('POST', '/v1.0/documents/delete', { DocumentIds: ids }); }
 

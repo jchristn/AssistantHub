@@ -168,6 +168,15 @@ namespace AssistantHub.Core.Settings
             set { if (value != null) _Telemetry = value; }
         }
 
+        /// <summary>
+        /// Cross-encoder rerank services available to assistants (RerankerType "CrossEncoder").
+        /// </summary>
+        public List<RerankerSettings> Rerankers
+        {
+            get => _Rerankers;
+            set => _Rerankers = value ?? new List<RerankerSettings>();
+        }
+
         #endregion
 
         #region Private-Members
@@ -189,6 +198,7 @@ namespace AssistantHub.Core.Settings
         private DefaultTenantSettings _DefaultTenant = new DefaultTenantSettings();
         private CrawlSettings _Crawl = new CrawlSettings();
         private TelemetrySettings _Telemetry = new TelemetrySettings();
+        private List<RerankerSettings> _Rerankers = new List<RerankerSettings>();
 
         #endregion
 

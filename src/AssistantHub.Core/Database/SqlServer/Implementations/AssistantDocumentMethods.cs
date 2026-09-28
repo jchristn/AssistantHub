@@ -57,7 +57,7 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "(id, tenant_id, name, original_filename, content_type, size_bytes, s3_key, " +
                 "status, status_message, ingestion_rule_id, bucket_name, collection_id, " +
                 "verbex_tenant_id, verbex_index_id, verbex_record_id, labels_json, tags_json, chunk_record_ids, " +
-                "crawl_plan_id, crawl_operation_id, source_url, " +
+                "crawl_plan_id, crawl_operation_id, source_url, supersedes_json, superseded_by, content_sha256, near_duplicates_json, " +
                 "created_utc, last_update_utc) " +
                 "VALUES " +
                 "('" + _Driver.Sanitize(document.Id) + "', " +
@@ -81,6 +81,10 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 _Driver.FormatNullableString(document.CrawlPlanId) + ", " +
                 _Driver.FormatNullableString(document.CrawlOperationId) + ", " +
                 _Driver.FormatNullableString(document.SourceUrl) + ", " +
+                _Driver.FormatNullableString(document.Supersedes) + ", " +
+                _Driver.FormatNullableString(document.SupersededBy) + ", " +
+                _Driver.FormatNullableString(document.ContentSha256) + ", " +
+                _Driver.FormatNullableString(document.NearDuplicates) + ", " +
                 "'" + _Driver.FormatDateTime(document.CreatedUtc) + "', " +
                 "'" + _Driver.FormatDateTime(document.LastUpdateUtc) + "');";
 
@@ -129,6 +133,10 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "crawl_plan_id = " + _Driver.FormatNullableString(document.CrawlPlanId) + ", " +
                 "crawl_operation_id = " + _Driver.FormatNullableString(document.CrawlOperationId) + ", " +
                 "source_url = " + _Driver.FormatNullableString(document.SourceUrl) + ", " +
+                "supersedes_json = " + _Driver.FormatNullableString(document.Supersedes) + ", " +
+                "superseded_by = " + _Driver.FormatNullableString(document.SupersededBy) + ", " +
+                "content_sha256 = " + _Driver.FormatNullableString(document.ContentSha256) + ", " +
+                "near_duplicates_json = " + _Driver.FormatNullableString(document.NearDuplicates) + ", " +
                 "last_update_utc = '" + _Driver.FormatDateTime(document.LastUpdateUtc) + "' " +
                 "WHERE id = '" + _Driver.Sanitize(document.Id) + "';";
 
@@ -275,6 +283,73 @@ namespace AssistantHub.Core.Database.SqlServer.Implementations
                 "WHERE id = '" + _Driver.Sanitize(id) + "';";
 
             await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
+        }
+
+
+        /// <inheritdoc />
+        public async Task UpdateSupersessionAsync(string id, string supersedesJson, string supersededBy, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+
+            string query =
+                "UPDATE assistant_documents SET " +
+                "supersedes_json = " + _Driver.FormatNullableString(supersedesJson) + ", " +
+                "superseded_by = " + _Driver.FormatNullableString(supersededBy) + ", " +
+                "last_update_utc = '" + _Driver.FormatDateTime(DateTime.UtcNow) + "' " +
+                "WHERE id = '" + _Driver.Sanitize(id) + "';";
+
+            await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task UpdateContentHashAsync(string id, string contentSha256, string nearDuplicatesJson, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+
+            string query =
+                "UPDATE assistant_documents SET " +
+                "content_sha256 = " + _Driver.FormatNullableString(contentSha256) + ", " +
+                "near_duplicates_json = " + _Driver.FormatNullableString(nearDuplicatesJson) + ", " +
+                "last_update_utc = '" + _Driver.FormatDateTime(DateTime.UtcNow) + "' " +
+                "WHERE id = '" + _Driver.Sanitize(id) + "';";
+
+            await _Driver.ExecuteQueryAsync(query, true, token).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<AssistantDocument>> ReadByContentHashAsync(string tenantId, string collectionId, string contentSha256, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrEmpty(contentSha256)) throw new ArgumentNullException(nameof(contentSha256));
+
+            string query =
+                "SELECT * FROM assistant_documents WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' " +
+                "AND content_sha256 = '" + _Driver.Sanitize(contentSha256) + "'" +
+                (String.IsNullOrEmpty(collectionId) ? "" : " AND collection_id = '" + _Driver.Sanitize(collectionId) + "'") + ";";
+
+            return await ReadListAsync(query, token).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<AssistantDocument>> ReadSupersededByAsync(string tenantId, string replacementId, CancellationToken token = default)
+        {
+            if (String.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
+            if (String.IsNullOrEmpty(replacementId)) throw new ArgumentNullException(nameof(replacementId));
+
+            string query =
+                "SELECT * FROM assistant_documents WHERE tenant_id = '" + _Driver.Sanitize(tenantId) + "' " +
+                "AND superseded_by = '" + _Driver.Sanitize(replacementId) + "';";
+
+            return await ReadListAsync(query, token).ConfigureAwait(false);
+        }
+
+        private async Task<List<AssistantDocument>> ReadListAsync(string query, CancellationToken token)
+        {
+            List<AssistantDocument> ret = new List<AssistantDocument>();
+            DataTable result = await _Driver.ExecuteQueryAsync(query, false, token).ConfigureAwait(false);
+            if (result == null) return ret;
+            foreach (DataRow row in result.Rows) ret.Add(AssistantDocument.FromDataRow(row));
+            return ret;
         }
 
         #endregion

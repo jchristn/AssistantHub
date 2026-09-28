@@ -134,6 +134,28 @@ namespace AssistantHub.Core.Models
         public string SourceUrl { get; set; } = null;
 
         /// <summary>
+        /// Identifiers of documents this document replaces (JSON array). Retrieval treats the replaced documents as
+        /// outdated according to the assistant's SupersessionMode.
+        /// </summary>
+        public string Supersedes { get; set; } = null;
+
+        /// <summary>
+        /// Identifier of the document that replaces this one, if any.
+        /// </summary>
+        public string SupersededBy { get; set; } = null;
+
+        /// <summary>
+        /// SHA-256 of the uploaded bytes (lowercase hex), used to detect exact duplicates.
+        /// </summary>
+        public string ContentSha256 { get; set; } = null;
+
+        /// <summary>
+        /// Near-duplicate documents in the same collection found after ingestion (JSON array of objects with
+        /// DocumentId and Score).
+        /// </summary>
+        public string NearDuplicates { get; set; } = null;
+
+        /// <summary>
         /// Timestamp when the record was created in UTC.
         /// </summary>
         public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -193,6 +215,10 @@ namespace AssistantHub.Core.Models
             obj.CrawlPlanId = DataTableHelper.GetStringValue(row, "crawl_plan_id");
             obj.CrawlOperationId = DataTableHelper.GetStringValue(row, "crawl_operation_id");
             obj.SourceUrl = DataTableHelper.GetStringValue(row, "source_url");
+            obj.Supersedes = DataTableHelper.GetStringValue(row, "supersedes_json");
+            obj.SupersededBy = DataTableHelper.GetStringValue(row, "superseded_by");
+            obj.ContentSha256 = DataTableHelper.GetStringValue(row, "content_sha256");
+            obj.NearDuplicates = DataTableHelper.GetStringValue(row, "near_duplicates_json");
             obj.CreatedUtc = DataTableHelper.GetDateTimeValue(row, "created_utc");
             obj.LastUpdateUtc = DataTableHelper.GetDateTimeValue(row, "last_update_utc");
             return obj;

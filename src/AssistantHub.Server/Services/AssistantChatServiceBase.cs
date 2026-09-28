@@ -77,6 +77,19 @@ namespace AssistantHub.Server.Services
             "User query:\n{query}\n\n" +
             "Retrieved chunks:\n{chunks}";
 
+        private protected static readonly string _DefaultConversationRewritePrompt =
+            "You rewrite the user's latest message into a standalone search query for a document collection.\n" +
+            "Use the conversation to resolve pronouns, ellipsis and references such as \"it\", \"that one\" or \"and for the 220?\", " +
+            "so the query can be understood without the conversation. Keep names, numbers and terms exactly as written. " +
+            "If the latest message already stands on its own, return it unchanged.\n\n" +
+            "Respond with ONLY a JSON object: {\"query\": \"the standalone query\"}\n\n" +
+            "Conversation:\n{conversation}\n\n" +
+            "Latest user message:\n{question}";
+
+        private protected static readonly string _NoRelevantContextNote =
+            "No sufficiently relevant information was found in the knowledge base for this question. " +
+            "Tell the user you could not find the answer in the available documents instead of guessing.";
+
         private protected static readonly string _DefaultAnswerabilityPrompt =
             "You are an answerability classifier for a retrieval augmented assistant. Given the user's question and the final retrieval context that will be sent to the assistant, decide whether the assistant has enough grounded information to answer.\n\n" +
             "Return ONLY a JSON object with these fields:\n" +
@@ -588,6 +601,96 @@ namespace AssistantHub.Server.Services
             }
         }
 
+        /// <summary>
+        /// Result of an optional utility-model step.
+        /// </summary>
+        private protected sealed class UtilityStepResult
+        {
+            public InferenceResult Result { get; set; } = null;
+            public bool Skipped { get; set; } = false;
+            public bool TimedOut { get; set; } = false;
+            public bool Succeeded => Result != null && Result.Success && !String.IsNullOrEmpty(Result.Content);
+        }
+
+        /// <summary>
+        /// Run an optional utility-model step (gate, rewrite, rerank, answerability) with the utility timeout and a
+        /// circuit breaker keyed by step and endpoint. A skipped or failed step lets the caller fall back.
+        /// </summary>
+        private protected async Task<UtilityStepResult> RunUtilityStepAsync(
+            string step,
+            string endpointId,
+            List<ChatCompletionMessage> messages,
+            int maxTokens,
+            CancellationToken token)
+        {
+            ResolvedEndpoint endpoint = await ResolveCompletionEndpointOrFallbackAsync(endpointId, token).ConfigureAwait(false);
+            string model = !String.IsNullOrEmpty(endpoint.Model) ? endpoint.Model : _Settings.Inference.DefaultModel;
+            string breakerKey = step + ":" + (endpoint.EndpointId ?? endpointId ?? "default");
+            if (UtilityCircuitBreaker.IsOpen(breakerKey))
+            {
+                _Logging.Warn(_Header + step + " skipped: circuit breaker open for " + breakerKey);
+                return new UtilityStepResult { Skipped = true };
+            }
+
+            using (CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
+                timeout.CancelAfter(_Settings.Inference.UtilityTimeoutMs);
+                InferenceResult result = await GenerateWithCompletionEndpointLimitAsync(
+                    messages, model, maxTokens, 0.0, 1.0,
+                    endpoint.Provider, endpoint.Endpoint, endpoint.ApiKey, endpoint.EndpointId, endpoint.MaxConcurrentRequests,
+                    timeout.Token).ConfigureAwait(false);
+
+                bool timedOut = timeout.IsCancellationRequested && !token.IsCancellationRequested;
+                UtilityStepResult ret = new UtilityStepResult { Result = result, TimedOut = timedOut };
+                if (ret.Succeeded)
+                {
+                    UtilityCircuitBreaker.RecordSuccess(breakerKey);
+                }
+                else
+                {
+                    if (timedOut) _Logging.Warn(_Header + step + " timed out after " + _Settings.Inference.UtilityTimeoutMs + " ms (Inference.UtilityTimeoutMs)");
+                    if (UtilityCircuitBreaker.RecordFailure(breakerKey, _Settings.Inference.CircuitBreakerFailures, _Settings.Inference.CircuitBreakerOpenMs))
+                        _Logging.Warn(_Header + step + " circuit breaker opened for " + breakerKey + " (" + _Settings.Inference.CircuitBreakerOpenMs + " ms)");
+                }
+
+                return ret;
+            }
+        }
+
+        /// <summary>
+        /// Whether an answer-model failure is transient (HTTP 408, 429, 502, 503 or 504) and worth retrying.
+        /// </summary>
+        private protected static bool IsTransientInferenceFailure(InferenceResult result)
+        {
+            if (result == null || result.Success) return false;
+            int? status = result.Telemetry?.HttpStatusCode;
+            if (status.HasValue) return status.Value == 408 || status.Value == 429 || status.Value == 502 || status.Value == 503 || status.Value == 504;
+            return !String.IsNullOrEmpty(result.ErrorMessage)
+                && System.Text.RegularExpressions.Regex.IsMatch(result.ErrorMessage, @"\b(408|429|502|503|504)\b");
+        }
+
+        /// <summary>
+        /// Call the answer model, retrying transient failures with jittered exponential backoff
+        /// (Inference.MaxRetries, Inference.RetryDelayMs).
+        /// </summary>
+        private protected async Task<InferenceResult> GenerateAnswerWithRetryAsync(Func<CancellationToken, Task<InferenceResult>> call, CancellationToken token)
+        {
+            int maxAttempts = Math.Max(1, _Settings.Inference.MaxRetries + 1);
+            InferenceResult result = null;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                result = await call(token).ConfigureAwait(false);
+                if (!IsTransientInferenceFailure(result) || attempt >= maxAttempts || token.IsCancellationRequested) return result;
+
+                int baseDelay = _Settings.Inference.RetryDelayMs * (1 << Math.Min(attempt - 1, 4));
+                int delay = baseDelay + Random.Shared.Next(0, baseDelay / 2 + 1);
+                _Logging.Warn(_Header + "answer model returned a transient failure (" + result.ErrorMessage + "); retrying in " + delay + " ms, attempt " + attempt + " of " + maxAttempts);
+                if (delay > 0) await Task.Delay(delay, token).ConfigureAwait(false);
+            }
+
+            return result;
+        }
+
         private protected async Task<InferenceResult> GenerateStreamingWithCompletionEndpointLimitAsync(
             List<ChatCompletionMessage> messages,
             string model,
@@ -623,7 +726,12 @@ namespace AssistantHub.Server.Services
                 string completedContent = null;
                 string errorMessage = null;
                 AssistantPerformanceStage telemetry = null;
+                int maxAttempts = Math.Max(1, _Settings.Inference.MaxRetries + 1);
 
+                for (int attempt = 1; ; attempt++)
+                {
+                completedContent = null;
+                errorMessage = null;
                 await _Inference.GenerateResponseStreamingAsync(
                     messages,
                     model,
@@ -668,6 +776,22 @@ namespace AssistantHub.Server.Services
                                 await onThinkingDelta(delta).ConfigureAwait(false);
                         }
                     }).ConfigureAwait(false);
+
+                // A transient failure is retried only while nothing has been streamed to the caller yet.
+                if (!String.IsNullOrWhiteSpace(errorMessage)
+                    && content.Length == 0 && thinking.Length == 0
+                    && attempt < maxAttempts && !token.IsCancellationRequested
+                    && IsTransientInferenceFailure(InferenceResult.FromError(errorMessage, telemetry)))
+                {
+                    int baseDelay = _Settings.Inference.RetryDelayMs * (1 << Math.Min(attempt - 1, 4));
+                    int delay = baseDelay + Random.Shared.Next(0, baseDelay / 2 + 1);
+                    _Logging.Warn(_Header + "streaming answer model returned a transient failure (" + errorMessage + "); retrying in " + delay + " ms");
+                    if (delay > 0) await Task.Delay(delay, token).ConfigureAwait(false);
+                    continue;
+                }
+
+                break;
+                }
 
                 if (!String.IsNullOrWhiteSpace(errorMessage))
                     return InferenceResult.FromError(errorMessage, telemetry);

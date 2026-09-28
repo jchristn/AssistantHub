@@ -189,8 +189,9 @@ namespace AssistantHub.Server.Services
                             ["record_ids"] = ArrayField(StringField("Verbex record ID that already maps to a completed assistant document."), "Optional Verbex record IDs to narrow results. Each ID must map to a visible assistant document."),
                             ["max_results"] = IntegerField("Maximum results to return.", 1, verbexMaxResults),
                             ["use_and_logic"] = BooleanField("Whether all query terms must match."),
-                            ["required_terms"] = ArrayField(StringField("Required term."), "Terms that must be present."),
-                            ["excluded_terms"] = ArrayField(StringField("Excluded term."), "Terms that must not be present.")
+                            ["required_terms"] = ArrayField(StringField("Required term."), "Terms every result must contain."),
+                            ["excluded_terms"] = ArrayField(StringField("Excluded term."), "Terms no result may contain."),
+                            ["labels"] = ArrayField(StringField("Label."), "Optional labels; only records with these labels are searched.")
                         },
                         new List<string> { "query" }));
 

@@ -159,6 +159,90 @@ namespace AssistantHub.Sdk.Models
         public double TextWeight { get; set; }
 
         /// <summary>
+        /// Hybrid fusion strategy: "Rrf" (reciprocal rank fusion) or "Linear" (normalized score blend).
+        /// </summary>
+        [JsonPropertyName("FusionStrategy")]
+        public string FusionStrategy { get; set; } = "Rrf";
+
+        /// <summary>
+        /// RRF constant k (1 to 100,000) for Rrf fusion.
+        /// </summary>
+        [JsonPropertyName("RrfK")]
+        public int RrfK { get; set; } = 60;
+
+        /// <summary>
+        /// Candidates each hybrid leg retrieves before fusion (1 to 10,000); null uses the store default.
+        /// </summary>
+        [JsonPropertyName("FusionCandidatePool")]
+        public int? FusionCandidatePool { get; set; }
+
+        /// <summary>
+        /// Weight of the recency signal in Rrf fusion (0.0 to 1.0); 0 disables it.
+        /// </summary>
+        [JsonPropertyName("RecencyWeight")]
+        public double RecencyWeight { get; set; }
+
+        /// <summary>
+        /// Prompt context order: "Score" or "ReadingOrder".
+        /// </summary>
+        [JsonPropertyName("ContextOrder")]
+        public string ContextOrder { get; set; } = "Score";
+
+        /// <summary>
+        /// Whether to apply embedding task prefixes (query/document) when embedding retrieval queries.
+        /// </summary>
+        [JsonPropertyName("EmbeddingTaskPrefixes")]
+        public bool EmbeddingTaskPrefixes { get; set; }
+
+        /// <summary>
+        /// Whether to rewrite follow-up questions into standalone queries using conversation history.
+        /// </summary>
+        [JsonPropertyName("EnableConversationRewrite")]
+        public bool EnableConversationRewrite { get; set; }
+
+        /// <summary>
+        /// Custom conversation rewrite prompt template; null uses the server default.
+        /// </summary>
+        [JsonPropertyName("ConversationRewritePrompt")]
+        public string ConversationRewritePrompt { get; set; }
+
+        /// <summary>
+        /// Reranker type: "Llm" or "CrossEncoder".
+        /// </summary>
+        [JsonPropertyName("RerankerType")]
+        public string RerankerType { get; set; } = "Llm";
+
+        /// <summary>
+        /// Identifier of the configured cross-encoder reranker used when RerankerType is "CrossEncoder".
+        /// </summary>
+        [JsonPropertyName("RerankEndpointId")]
+        public string RerankEndpointId { get; set; }
+
+        /// <summary>
+        /// Number of candidates sent to the reranker (1 to 200).
+        /// </summary>
+        [JsonPropertyName("RerankCandidateCount")]
+        public int RerankCandidateCount { get; set; } = 20;
+
+        /// <summary>
+        /// Minimum cross-encoder rerank score (0.0 to 1.0) for a chunk to survive re-ranking; null disables the floor.
+        /// </summary>
+        [JsonPropertyName("RerankMinScore")]
+        public double? RerankMinScore { get; set; }
+
+        /// <summary>
+        /// Handling of chunks from superseded documents: "Demote", "Hide", or "Include".
+        /// </summary>
+        [JsonPropertyName("SupersessionMode")]
+        public string SupersessionMode { get; set; } = "Demote";
+
+        /// <summary>
+        /// Completion endpoint identifier used for evaluation judge calls. Falls back to InferenceEndpointId when unset.
+        /// </summary>
+        [JsonPropertyName("EvalJudgeInferenceEndpointId")]
+        public string EvalJudgeInferenceEndpointId { get; set; }
+
+        /// <summary>
         /// Full-text ranking function.
         /// </summary>
         [JsonPropertyName("FullTextSearchType")]

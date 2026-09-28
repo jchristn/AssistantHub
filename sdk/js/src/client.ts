@@ -79,6 +79,9 @@ import type {
   EvalResult,
   AssistantHubSettings,
   ExternalSearchConfigurationStatus,
+  RerankerSummary,
+  RerankerTestRequest,
+  RerankerTestResult,
 } from "./types.js";
 
 /** Error thrown when the API returns a non-success status code. */
@@ -538,6 +541,11 @@ export class AssistantHubClient {
   /** Delete a document. */
   async deleteDocument(documentId: string): Promise<void> {
     return this._request("DELETE", `/v1.0/documents/${encodeURIComponent(documentId)}`);
+  }
+
+  /** Set the documents a document supersedes. Pass an empty array to clear supersession. */
+  async setDocumentSupersedes(documentId: string, supersedesDocumentIds: string[]): Promise<AssistantDocument> {
+    return this._request("PUT", `/v1.0/documents/${encodeURIComponent(documentId)}/supersedes`, { SupersedesDocumentIds: supersedesDocumentIds });
   }
 
   /** Check if a document exists. */
@@ -1361,6 +1369,20 @@ export class AssistantHubClient {
   /** Update server configuration (Global Admin). */
   async updateConfiguration(settings: AssistantHubSettings): Promise<AssistantHubSettings> {
     return this._request("PUT", "/v1.0/configuration", settings);
+  }
+
+  // --------------------------------------------------------------------------
+  // Rerankers
+  // --------------------------------------------------------------------------
+
+  /** List the cross-encoder rerankers configured in server settings (API keys omitted). */
+  async listRerankers(): Promise<RerankerSummary[]> {
+    return this._request("GET", "/v1.0/rerankers");
+  }
+
+  /** Score passages against a query with a configured reranker. */
+  async testReranker(rerankerId: string, request: RerankerTestRequest): Promise<RerankerTestResult> {
+    return this._request("POST", `/v1.0/rerankers/${encodeURIComponent(rerankerId)}/test`, request);
   }
 
   // --------------------------------------------------------------------------

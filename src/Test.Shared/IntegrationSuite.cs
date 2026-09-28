@@ -1130,6 +1130,178 @@ namespace Test.Automated
                     AssertHelper.AreEqual(true, settingsDocument.RootElement.GetProperty("ExposeDocumentSourceUrls").GetBoolean(), "response ExposeDocumentSourceUrls");
                 });
 
+                await ExecuteTestAsync("Settings.Validation_RejectsUnknownCrossEncoderAndBadRewritePrompt", async () =>
+                {
+                    AssertHelper.IsNotNull(settingsAssistantId, "assistant ID for settings");
+                    server.Settings.Rerankers = new List<AssistantHub.Core.Settings.RerankerSettings>
+                    {
+                        new AssistantHub.Core.Settings.RerankerSettings { Id = "xenc", Endpoint = "http://127.0.0.1:9" }
+                    };
+
+                    async Task<HttpResponseMessage> PutSettingsAsync(Dictionary<string, object> payload)
+                    {
+                        payload["AssistantId"] = settingsAssistantId;
+                        payload["InferenceEndpointId"] = "ep_test_inference";
+                        return await server.Client.PutAsync($"/v1.0/assistants/{settingsAssistantId}/settings",
+                            new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"));
+                    }
+
+                    HttpResponseMessage unknown = await PutSettingsAsync(new Dictionary<string, object> { { "EnableReranking", true }, { "RerankerType", "CrossEncoder" }, { "RerankEndpointId", "missing" } });
+                    AssertHelper.AreEqual(400, (int)unknown.StatusCode, "unknown cross-encoder rejected");
+
+                    HttpResponseMessage badType = await PutSettingsAsync(new Dictionary<string, object> { { "RerankerType", "Bm25" } });
+                    AssertHelper.AreEqual(400, (int)badType.StatusCode, "unknown reranker type rejected");
+
+                    HttpResponseMessage badPrompt = await PutSettingsAsync(new Dictionary<string, object> { { "EnableConversationRewrite", true }, { "ConversationRewritePrompt", "Rewrite: {conversation}" } });
+                    AssertHelper.AreEqual(400, (int)badPrompt.StatusCode, "rewrite prompt without {question} rejected");
+
+                    HttpResponseMessage ok = await PutSettingsAsync(new Dictionary<string, object>
+                    {
+                        { "EnableReranking", true }, { "RerankerType", "CrossEncoder" }, { "RerankEndpointId", "xenc" },
+                        { "RerankCandidateCount", 30 }, { "RerankMinScore", 0.2 }, { "SupersessionMode", "Hide" },
+                        { "EnableConversationRewrite", true }, { "EmbeddingTaskPrefixes", true }
+                    });
+                    AssertHelper.AreEqual(200, (int)ok.StatusCode, "valid settings saved");
+
+                    string body = await (await server.Client.GetAsync($"/v1.0/assistants/{settingsAssistantId}/settings")).Content.ReadAsStringAsync();
+                    using JsonDocument saved = JsonDocument.Parse(body);
+                    AssertHelper.AreEqual("CrossEncoder", saved.RootElement.GetProperty("RerankerType").GetString(), "RerankerType persisted");
+                    AssertHelper.AreEqual(30, saved.RootElement.GetProperty("RerankCandidateCount").GetInt32(), "RerankCandidateCount persisted");
+                    AssertHelper.AreEqual(0.2, saved.RootElement.GetProperty("RerankMinScore").GetDouble(), "RerankMinScore persisted");
+                    AssertHelper.AreEqual("Hide", saved.RootElement.GetProperty("SupersessionMode").GetString(), "SupersessionMode persisted");
+                    AssertHelper.IsTrue(saved.RootElement.GetProperty("EnableConversationRewrite").GetBoolean(), "EnableConversationRewrite persisted");
+                    AssertHelper.IsTrue(saved.RootElement.GetProperty("EmbeddingTaskPrefixes").GetBoolean(), "EmbeddingTaskPrefixes persisted");
+                });
+
+                await ExecuteTestAsync("Rerankers.ListAndTest_HideKeysAndReportFailures", async () =>
+                {
+                    server.Settings.Rerankers = new List<AssistantHub.Core.Settings.RerankerSettings>
+                    {
+                        new AssistantHub.Core.Settings.RerankerSettings { Id = "xenc", Name = "Cross", Endpoint = "http://127.0.0.1:9", ApiKey = "secret-key", TimeoutMs = 1000 }
+                    };
+
+                    HttpResponseMessage list = await server.Client.GetAsync("/v1.0/rerankers");
+                    AssertHelper.AreEqual(200, (int)list.StatusCode, "list rerankers");
+                    string listBody = await list.Content.ReadAsStringAsync();
+                    AssertHelper.IsFalse(listBody.Contains("secret-key"), "API key never returned");
+                    using (JsonDocument listed = JsonDocument.Parse(listBody))
+                    {
+                        AssertHelper.AreEqual("xenc", listed.RootElement[0].GetProperty("Id").GetString(), "reranker id");
+                        AssertHelper.IsTrue(listed.RootElement[0].GetProperty("HasApiKey").GetBoolean(), "HasApiKey reported");
+                    }
+
+                    HttpResponseMessage missing = await server.Client.PostAsync("/v1.0/rerankers/nope/test",
+                        new StringContent("{\"Query\":\"q\",\"Documents\":[\"a\"]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(404, (int)missing.StatusCode, "unknown reranker");
+
+                    HttpResponseMessage empty = await server.Client.PostAsync("/v1.0/rerankers/xenc/test",
+                        new StringContent("{\"Query\":\"q\",\"Documents\":[]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(400, (int)empty.StatusCode, "documents required");
+
+                    HttpResponseMessage unreachable = await server.Client.PostAsync("/v1.0/rerankers/xenc/test",
+                        new StringContent("{\"Query\":\"q\",\"Documents\":[\"a\"]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(200, (int)unreachable.StatusCode, "failure reported in the body");
+                    using JsonDocument result = JsonDocument.Parse(await unreachable.Content.ReadAsStringAsync());
+                    AssertHelper.IsFalse(result.RootElement.GetProperty("Success").GetBoolean(), "unreachable reranker fails");
+                    AssertHelper.IsFalse(String.IsNullOrEmpty(result.RootElement.GetProperty("ErrorMessage").GetString()), "error message returned");
+                });
+
+                await ExecuteTestAsync("Documents.Supersedes_SetClearAndValidate", async () =>
+                {
+                    AssistantDocument oldDoc = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId, Name = "Policy v1", OriginalFilename = "v1.txt", CollectionId = "col_it", Status = DocumentStatusEnum.Completed
+                    });
+                    AssistantDocument newDoc = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                    {
+                        TenantId = server.DefaultTenantId, Name = "Policy v2", OriginalFilename = "v2.txt", CollectionId = "col_it", Status = DocumentStatusEnum.Completed
+                    });
+
+                    HttpResponseMessage set = await server.Client.PutAsync($"/v1.0/documents/{newDoc.Id}/supersedes",
+                        new StringContent("{\"SupersedesDocumentIds\":[\"" + oldDoc.Id + "\"]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(200, (int)set.StatusCode, "set supersedes");
+                    AssertHelper.StringContains(await set.Content.ReadAsStringAsync(), oldDoc.Id, "response lists the superseded document");
+                    AssertHelper.AreEqual(newDoc.Id, (await server.Database.AssistantDocument.ReadAsync(oldDoc.Id)).SupersededBy, "old document points at the replacement");
+
+                    HttpResponseMessage self = await server.Client.PutAsync($"/v1.0/documents/{newDoc.Id}/supersedes",
+                        new StringContent("{\"SupersedesDocumentIds\":[\"" + newDoc.Id + "\"]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(400, (int)self.StatusCode, "cannot supersede itself");
+
+                    HttpResponseMessage unknown = await server.Client.PutAsync("/v1.0/documents/adoc_missing/supersedes",
+                        new StringContent("{\"SupersedesDocumentIds\":[]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(404, (int)unknown.StatusCode, "unknown document");
+
+                    HttpResponseMessage clear = await server.Client.PutAsync($"/v1.0/documents/{newDoc.Id}/supersedes",
+                        new StringContent("{\"SupersedesDocumentIds\":[]}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(200, (int)clear.StatusCode, "clear supersedes");
+                    AssertHelper.IsNull((await server.Database.AssistantDocument.ReadAsync(oldDoc.Id)).SupersededBy, "old document released");
+                });
+
+                await ExecuteTestAsync("Documents.Upload_DuplicatePolicyRejectsOrWarns", async () =>
+                {
+                    byte[] content = Encoding.UTF8.GetBytes("identical duplicate content " + Guid.NewGuid().ToString("N"));
+                    string sha = AssistantHub.Core.Services.IngestionServiceBase.ComputeContentSha256(content);
+
+                    async Task<IngestionRule> CreateRuleAsync(string policy)
+                    {
+                        return await server.Database.IngestionRule.CreateAsync(new IngestionRule
+                        {
+                            Id = "irule_dup_" + policy.ToLowerInvariant() + "_" + Guid.NewGuid().ToString("N").Substring(0, 6),
+                            TenantId = server.DefaultTenantId,
+                            Name = "dup " + policy,
+                            Bucket = "default",
+                            CollectionId = "col_dup_" + policy.ToLowerInvariant(),
+                            CollectionName = "dup",
+                            Extraction = new IngestionExtractionConfig { DuplicatePolicy = policy }
+                        });
+                    }
+
+                    async Task<AssistantDocument> SeedAsync(IngestionRule rule)
+                    {
+                        AssistantDocument seeded = await server.Database.AssistantDocument.CreateAsync(new AssistantDocument
+                        {
+                            TenantId = server.DefaultTenantId, Name = "original", OriginalFilename = "a.txt", CollectionId = rule.CollectionId,
+                            IngestionRuleId = rule.Id, Status = DocumentStatusEnum.Completed
+                        });
+                        await server.Database.AssistantDocument.UpdateContentHashAsync(seeded.Id, sha, null);
+                        return seeded;
+                    }
+
+                    StringContent Upload(IngestionRule rule) => new StringContent(JsonSerializer.Serialize(new Dictionary<string, object>
+                    {
+                        { "IngestionRuleId", rule.Id }, { "Name", "copy" }, { "OriginalFilename", "copy.txt" }, { "ContentType", "text/plain" },
+                        { "Base64Content", Convert.ToBase64String(content) }
+                    }), Encoding.UTF8, "application/json");
+
+                    IngestionRule reject = await CreateRuleAsync("Reject");
+                    AssistantDocument rejectOriginal = await SeedAsync(reject);
+                    HttpResponseMessage rejected = await server.Client.PutAsync("/v1.0/documents", Upload(reject));
+                    AssertHelper.AreEqual(409, (int)rejected.StatusCode, "identical upload rejected");
+                    AssertHelper.StringContains(await rejected.Content.ReadAsStringAsync(), rejectOriginal.Id, "conflict names the existing document");
+
+                    IngestionRule warn = await CreateRuleAsync("Warn");
+                    AssistantDocument warnOriginal = await SeedAsync(warn);
+                    HttpResponseMessage warned = await server.Client.PutAsync("/v1.0/documents", Upload(warn));
+                    string warnedBody = await warned.Content.ReadAsStringAsync();
+                    AssertHelper.IsTrue((int)warned.StatusCode == 200 || (int)warned.StatusCode == 201, "Warn accepts the upload, got " + (int)warned.StatusCode + " " + warnedBody);
+                    using JsonDocument warnedDoc = JsonDocument.Parse(warnedBody);
+                    AssertHelper.AreEqual(sha, warnedDoc.RootElement.GetProperty("ContentSha256").GetString(), "content hash stored");
+                    AssertHelper.StringContains(warnedDoc.RootElement.GetProperty("NearDuplicates").GetString(), warnOriginal.Id, "exact duplicate recorded");
+                });
+
+                await ExecuteTestAsync("Auth.AdminApiKey_ListsInResolvedTenant", async () =>
+                {
+                    server.Settings.AdminApiKeys.Add("it-admin-api-key");
+                    using HttpClient admin = new HttpClient { BaseAddress = new Uri(server.BaseUrl) };
+                    admin.DefaultRequestHeaders.Add("Authorization", "Bearer it-admin-api-key");
+
+                    HttpResponseMessage list = await admin.GetAsync("/v1.0/assistants?tenantId=" + server.DefaultTenantId);
+                    AssertHelper.AreEqual(200, (int)list.StatusCode, "admin key can list assistants");
+
+                    HttpResponseMessage rules = await admin.GetAsync("/v1.0/ingestion-rules");
+                    AssertHelper.AreEqual(200, (int)rules.StatusCode, "admin key without tenantId uses the default tenant");
+                });
+
                 await ExecuteTestAsync("CRUD.Settings.Cleanup", async () =>
                 {
                     if (settingsAssistantId != null)

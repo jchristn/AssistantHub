@@ -320,6 +320,10 @@ namespace AssistantHub.Core.Services
                     Name = _Settings.Verbex.DefaultIndexId,
                     Description = "Default AssistantHub text search index for tenant " + assistantHubTenantId,
                     Labels = new[] { "assistanthub", "default" },
+                    EnableLemmatizer = _Settings.Verbex.EnableLemmatizer,
+                    EnableStopWordRemover = _Settings.Verbex.EnableStopWordRemover,
+                    MinTokenLength = _Settings.Verbex.MinTokenLength,
+                    MaxTokenLength = _Settings.Verbex.MaxTokenLength,
                     Tags = new Dictionary<string, string>
                     {
                         { "AssistantHubTenantId", assistantHubTenantId },

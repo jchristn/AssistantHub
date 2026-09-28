@@ -29,6 +29,13 @@ namespace Test.Benchmark.Reporting
         {
             string baselinePath = args.Get("baseline", string.Empty);
             string candidatePath = args.Get("candidate", string.Empty);
+            if (string.Equals(baselinePath, "previous", StringComparison.OrdinalIgnoreCase) && File.Exists(candidatePath))
+            {
+                // The most recent earlier run in the ledger that measured the same configuration.
+                string results = Path.GetDirectoryName(Path.GetFullPath(candidatePath)) ?? ".";
+                baselinePath = RunHistory.PreviousReport(candidatePath, RunHistory.LedgerPath(results))
+                    ?? throw new FileNotFoundException("No earlier run with the same configuration is in the history ledger.");
+            }
             if (!File.Exists(baselinePath) || !File.Exists(candidatePath)) throw new FileNotFoundException("compare needs existing --baseline and --candidate report files.");
             double tolerance = args.GetDouble("tolerance", 0.01);
             double alpha = args.GetDouble("alpha", 0.05);

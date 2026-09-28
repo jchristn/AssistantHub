@@ -165,6 +165,114 @@ namespace AssistantHub.Core.Services
         }
 
         /// <summary>
+        /// Extract a document's text and structural blocks with the ingestion rule's extraction settings.
+        /// </summary>
+        private protected async Task<AtomExtractionResult> ExtractDocumentAsync(string documentId, byte[] fileBytes, string documentType, string filename, IngestionExtractionConfig extraction, CancellationToken token)
+        {
+            return await _Atomization.ExtractAsync(documentId, fileBytes, documentType, filename, extraction, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Parse a document's stored chunk record identifiers (a JSON array), tolerating empty or invalid values.
+        /// </summary>
+        /// <param name="json">JSON array of record identifiers.</param>
+        /// <returns>Identifiers.</returns>
+        public static List<string> ParseChunkRecordIds(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json)) return new List<string>();
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(json)?.Where(id => !String.IsNullOrWhiteSpace(id)).ToList() ?? new List<string>();
+            }
+            catch (JsonException)
+            {
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
+        /// Merge exact-duplicate matches recorded at upload with near-duplicate matches found after ingestion, keeping
+        /// one entry per document (an exact match wins).
+        /// </summary>
+        /// <param name="existingJson">Matches already on the document, or null.</param>
+        /// <param name="nearJson">Near-duplicate matches, or null.</param>
+        /// <returns>Merged JSON array, or null when there are none.</returns>
+        public static string MergeExactDuplicates(string existingJson, string nearJson)
+        {
+            List<System.Text.Json.Nodes.JsonObject> merged = new List<System.Text.Json.Nodes.JsonObject>();
+            HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string json in new[] { existingJson, nearJson })
+            {
+                if (String.IsNullOrWhiteSpace(json)) continue;
+                try
+                {
+                    if (System.Text.Json.Nodes.JsonNode.Parse(json) is not System.Text.Json.Nodes.JsonArray array) continue;
+                    foreach (System.Text.Json.Nodes.JsonNode node in array)
+                    {
+                        if (node is not System.Text.Json.Nodes.JsonObject match) continue;
+                        string id = match["DocumentId"]?.GetValue<string>();
+                        if (String.IsNullOrEmpty(id) || !seen.Add(id)) continue;
+                        merged.Add((System.Text.Json.Nodes.JsonObject)match.DeepClone());
+                    }
+                }
+                catch (JsonException)
+                {
+                }
+            }
+
+            return merged.Count > 0 ? new System.Text.Json.Nodes.JsonArray(merged.ToArray()).ToJsonString() : null;
+        }
+
+        /// <summary>
+        /// SHA-256 of a document's bytes as lowercase hex.
+        /// </summary>
+        /// <param name="bytes">Document bytes.</param>
+        /// <returns>Hash.</returns>
+        public static string ComputeContentSha256(byte[] bytes)
+        {
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes ?? Array.Empty<byte>())).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Find other documents in the collection whose content is close to a new document's, using its first chunk's
+        /// embedding. Returns up to three matches at or above the threshold as a JSON array, or null.
+        /// </summary>
+        private protected async Task<string> FindNearDuplicatesAsync(string tenantId, string collectionId, string documentId, List<float> firstChunkEmbedding, double threshold, CancellationToken token)
+        {
+            if (threshold <= 0 || firstChunkEmbedding == null || firstChunkEmbedding.Count == 0) return null;
+            try
+            {
+                string path = "/v1.0/tenants/" + tenantId + "/collections/" + collectionId + "/search";
+                string body = JsonSerializer.Serialize(new
+                {
+                    Vector = new { SearchType = "CosineSimilarity", Embeddings = firstChunkEmbedding },
+                    MaxResults = 10
+                });
+                using (HttpResponseMessage response = await _VectorStore.SendAsync(HttpMethod.Post, path, body, token).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode) return null;
+                    string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    SearchResponse search = JsonSerializer.Deserialize<SearchResponse>(responseBody, _JsonOptions);
+                    List<object> matches = (search?.Documents ?? new List<SearchResult>())
+                        .Where(r => !String.IsNullOrEmpty(r.DocumentId) && !String.Equals(r.DocumentId, documentId, StringComparison.Ordinal))
+                        .Where(r => r.Score >= threshold)
+                        .GroupBy(r => r.DocumentId)
+                        .Select(g => new { DocumentId = g.Key, Score = Math.Round(g.Max(r => r.Score), 4) })
+                        .OrderByDescending(m => m.Score)
+                        .Take(3)
+                        .Cast<object>()
+                        .ToList();
+                    return matches.Count > 0 ? JsonSerializer.Serialize(matches) : null;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "near-duplicate check failed for document " + documentId + ": " + e.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Map a detected document type to the corresponding DocumentAtom atom endpoint path.
         /// </summary>
         private protected static string GetAtomPath(string documentType)
@@ -210,6 +318,8 @@ namespace AssistantHub.Core.Services
         /// <param name="labels">Merged labels.</param>
         /// <param name="tags">Merged tags.</param>
         /// <param name="token">Cancellation token.</param>
+        /// <param name="blocks">Structural blocks from extraction, used in Structured cell mode.</param>
+        /// <param name="documentTitle">Document title, used for context headers.</param>
         /// <returns>List of chunks with their embeddings.</returns>
         private protected async Task<List<ChunkResult>> ChunkAndEmbedContentAsync(
             string documentId,
@@ -217,7 +327,9 @@ namespace AssistantHub.Core.Services
             IngestionRule rule,
             List<string> labels,
             Dictionary<string, string> tags,
-            CancellationToken token)
+            CancellationToken token,
+            List<ExtractedBlock> blocks = null,
+            string documentTitle = null)
         {
             // When strategy is "None", skip Partio chunking entirely and produce a single chunk
             if (rule?.Chunking != null
@@ -290,21 +402,43 @@ namespace AssistantHub.Core.Services
                     requestBody["SummarizationConfiguration"] = sumConfig;
                 }
 
-                if (rule?.Chunking != null)
+                string documentPrefix = "";
+                if (rule?.Embedding?.TaskPrefixes == true)
                 {
+                    string model = await ResolveEmbeddingModelAsync(embedConfig["EmbeddingEndpointId"]?.ToString(), token).ConfigureAwait(false);
+                    documentPrefix = EmbeddingModelProfiles.Resolve(model).DocumentPrefix;
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Embedding task prefixes: model " + (model ?? "(unknown)") + ", document prefix \"" + documentPrefix + "\"").ConfigureAwait(false);
+                }
+
+                if (String.Equals(rule?.Chunking?.CellMode, "Structured", StringComparison.OrdinalIgnoreCase) && blocks != null && blocks.Count > 0)
+                {
+                    return await ChunkAndEmbedStructuredAsync(documentId, rule, labels, tags, blocks, documentTitle, documentPrefix, embedConfig,
+                        requestBody.ContainsKey("SummarizationConfiguration") ? requestBody["SummarizationConfiguration"] : null, token).ConfigureAwait(false);
+                }
+
+                string flatPrefix = documentPrefix
+                    + (rule?.Chunking != null ? StructuredCellBuilder.BuildHeader(
+                        String.Equals(rule.Chunking.ContextHeader, "None", StringComparison.OrdinalIgnoreCase) ? "None" : "Title",
+                        documentTitle, null, Math.Max(40, rule.Chunking.FixedTokenCount)) : "")
+                    + (rule?.Chunking?.ContextPrefix ?? "");
+
+                if (rule?.Chunking != null || flatPrefix.Length > 0)
+                {
+                    IngestionChunkingConfig chunking = rule?.Chunking ?? new IngestionChunkingConfig { Strategy = "FixedTokenCount" };
                     Dictionary<string, object> chunkConfig = new Dictionary<string, object>();
-                    chunkConfig["Strategy"] = rule.Chunking.Strategy ?? "FixedTokenCount";
-                    chunkConfig["FixedTokenCount"] = rule.Chunking.FixedTokenCount;
-                    chunkConfig["OverlapCount"] = rule.Chunking.OverlapCount;
-                    if (rule.Chunking.OverlapPercentage.HasValue)
-                        chunkConfig["OverlapPercentage"] = rule.Chunking.OverlapPercentage.Value;
-                    if (!String.IsNullOrEmpty(rule.Chunking.OverlapStrategy))
-                        chunkConfig["OverlapStrategy"] = rule.Chunking.OverlapStrategy;
-                    chunkConfig["RowGroupSize"] = rule.Chunking.RowGroupSize;
-                    if (!String.IsNullOrEmpty(rule.Chunking.ContextPrefix))
-                        chunkConfig["ContextPrefix"] = rule.Chunking.ContextPrefix;
-                    if (!String.IsNullOrEmpty(rule.Chunking.RegexPattern))
-                        chunkConfig["RegexPattern"] = rule.Chunking.RegexPattern;
+                    chunkConfig["Strategy"] = chunking.Strategy ?? "FixedTokenCount";
+                    chunkConfig["FixedTokenCount"] = chunking.FixedTokenCount;
+                    chunkConfig["OverlapCount"] = chunking.OverlapCount;
+                    if (chunking.OverlapPercentage.HasValue)
+                        chunkConfig["OverlapPercentage"] = chunking.OverlapPercentage.Value;
+                    if (!String.IsNullOrEmpty(chunking.OverlapStrategy))
+                        chunkConfig["OverlapStrategy"] = chunking.OverlapStrategy;
+                    chunkConfig["RowGroupSize"] = chunking.RowGroupSize;
+                    if (flatPrefix.Length > 0)
+                        chunkConfig["ContextPrefix"] = flatPrefix;
+                    if (!String.IsNullOrEmpty(chunking.RegexPattern))
+                        chunkConfig["RegexPattern"] = chunking.RegexPattern;
                     requestBody["ChunkingConfiguration"] = chunkConfig;
                 }
 
@@ -393,6 +527,135 @@ namespace AssistantHub.Core.Services
                     all.AddRange(FlattenChunks(child));
             }
             return all;
+        }
+
+        /// <summary>
+        /// Structured mode: send each section, table and list as its own Partio cell (via the batch route), with a
+        /// context header embedded ahead of each chunk and page, sheet and section provenance tags on every chunk.
+        /// </summary>
+        private protected async Task<List<ChunkResult>> ChunkAndEmbedStructuredAsync(
+            string documentId,
+            IngestionRule rule,
+            List<string> labels,
+            Dictionary<string, string> tags,
+            List<ExtractedBlock> blocks,
+            string documentTitle,
+            string documentPrefix,
+            Dictionary<string, object> embedConfig,
+            object summarizationConfig,
+            CancellationToken token)
+        {
+            IngestionChunkingConfig chunking = rule.Chunking;
+            List<StructuredCell> cells = StructuredCellBuilder.Build(blocks, documentTitle, chunking, documentPrefix);
+            if (cells.Count == 0) return null;
+
+            List<Dictionary<string, object>> requests = new List<Dictionary<string, object>>();
+            foreach (StructuredCell cell in cells)
+            {
+                Dictionary<string, object> cellRequest = new Dictionary<string, object>();
+                cellRequest["Type"] = cell.Type;
+                if (cell.Type == "Table") cellRequest["Table"] = cell.Table;
+                else if (cell.Type == "List")
+                {
+                    if (cell.Ordered) cellRequest["OrderedList"] = cell.Items;
+                    else cellRequest["UnorderedList"] = cell.Items;
+                }
+                else cellRequest["Text"] = cell.Text;
+
+                // Children do not inherit configuration in Partio, so every cell carries its own.
+                cellRequest["EmbeddingConfiguration"] = new Dictionary<string, object>(embedConfig);
+                Dictionary<string, object> chunkConfig = new Dictionary<string, object>
+                {
+                    ["Strategy"] = cell.Strategy ?? "FixedTokenCount",
+                    ["FixedTokenCount"] = chunking.FixedTokenCount,
+                    ["OverlapCount"] = chunking.OverlapCount,
+                    ["RowGroupSize"] = chunking.RowGroupSize
+                };
+                if (cell.Type == "Text")
+                {
+                    if (chunking.OverlapPercentage.HasValue) chunkConfig["OverlapPercentage"] = chunking.OverlapPercentage.Value;
+                    if (!String.IsNullOrEmpty(chunking.OverlapStrategy)) chunkConfig["OverlapStrategy"] = chunking.OverlapStrategy;
+                    if (!String.IsNullOrEmpty(chunking.RegexPattern)) chunkConfig["RegexPattern"] = chunking.RegexPattern;
+                }
+
+                string prefix = (cell.ContextPrefix ?? "") + (chunking.ContextPrefix ?? "");
+                if (prefix.Length > 0) chunkConfig["ContextPrefix"] = prefix;
+                cellRequest["ChunkingConfiguration"] = chunkConfig;
+
+                // Partio's summarizer gives a table or list cell's summary child the parent's table or list strategy,
+                // which then fails validation, so only text cells are summarized.
+                if (summarizationConfig != null && cell.Type == "Text")
+                    cellRequest["SummarizationConfiguration"] = summarizationConfig;
+
+                if (labels != null && labels.Count > 0) cellRequest["Labels"] = labels;
+                Dictionary<string, string> cellTags = tags != null ? new Dictionary<string, string>(tags) : new Dictionary<string, string>();
+                foreach (KeyValuePair<string, string> tag in cell.ProvenanceTagValues()) cellTags[tag.Key] = tag.Value;
+                if (cellTags.Count > 0) cellRequest["Tags"] = cellTags;
+                requests.Add(cellRequest);
+            }
+
+            string embEndpointId = embedConfig.ContainsKey("EmbeddingEndpointId") ? embedConfig["EmbeddingEndpointId"]?.ToString() : "(unknown)";
+            string json = JsonSerializer.Serialize(requests, _JsonOptions);
+            if (_ProcessingLog != null)
+                await _ProcessingLog.LogAsync(documentId, "INFO",
+                    "Partio structured request: " + cells.Count + " cells (" + cells.Count(c => c.Type == "Text") + " text, "
+                    + cells.Count(c => c.Type == "Table") + " table, " + cells.Count(c => c.Type == "List") + " list)"
+                    + ", contextHeader=" + chunking.ContextHeader + ", embeddingEndpoint=" + embEndpointId
+                    + ", requestBodyLength=" + json.Length + " chars").ConfigureAwait(false);
+
+            string completionEndpointId = rule.Summarization?.CompletionEndpointId;
+            using (IDisposable limiterLease = await AcquireEndpointLimitersAsync(
+                documentId,
+                new List<EndpointLimiterTarget>
+                {
+                    new EndpointLimiterTarget("embedding", embEndpointId),
+                    summarizationConfig != null && !String.IsNullOrWhiteSpace(completionEndpointId) ? new EndpointLimiterTarget("completion", completionEndpointId) : null
+                },
+                token).ConfigureAwait(false))
+            {
+                PartioCallResult result = await SendPartioWithRetryAsync(
+                    documentId, "Structured chunking/embedding", HttpMethod.Post, "/v1.0/process/batch", json, token).ConfigureAwait(false);
+                if (!result.IsSuccess)
+                {
+                    _Logging.Warn(_Header + "structured processing returned " + result.StatusCode + ": " + result.Body);
+                    if (_ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "ERROR", "Step: Structured chunking via Partio - HTTP " + result.StatusCode + ", response: " + result.Body).ConfigureAwait(false);
+                    return null;
+                }
+
+                List<SemanticCellResponse> responses = JsonSerializer.Deserialize<List<SemanticCellResponse>>(result.Body, _JsonOptions);
+                if (responses == null) return null;
+
+                List<ChunkResult> chunks = new List<ChunkResult>();
+                foreach (SemanticCellResponse response in responses)
+                {
+                    if (response != null) chunks.AddRange(FlattenChunks(response));
+                }
+
+                return chunks;
+            }
+        }
+
+        /// <summary>
+        /// Read the model name of an embedding endpoint, or null when it cannot be resolved.
+        /// </summary>
+        private protected async Task<string> ResolveEmbeddingModelAsync(string endpointId, CancellationToken token)
+        {
+            if (String.IsNullOrWhiteSpace(endpointId)) return null;
+            try
+            {
+                using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Get, "/v1.0/endpoints/embedding/" + endpointId, null, token).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode) return null;
+                    string body = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                    return JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions)?.Model;
+                }
+            }
+            catch (Exception e)
+            {
+                _Logging.Warn(_Header + "could not resolve embedding model for endpoint " + endpointId + ": " + e.Message);
+                return null;
+            }
         }
 
         /// <summary>
@@ -529,7 +792,11 @@ namespace AssistantHub.Core.Services
                     { "Identifier", indexId },
                     { "TenantId", tenantId },
                     { "Name", indexId },
-                    { "Description", "AssistantHub text search index" }
+                    { "Description", "AssistantHub text search index" },
+                    { "EnableLemmatizer", _VerbexSettings.EnableLemmatizer },
+                    { "EnableStopWordRemover", _VerbexSettings.EnableStopWordRemover },
+                    { "MinTokenLength", _VerbexSettings.MinTokenLength },
+                    { "MaxTokenLength", _VerbexSettings.MaxTokenLength }
                 };
 
                 string json = JsonSerializer.Serialize(createBody, _JsonOptions);

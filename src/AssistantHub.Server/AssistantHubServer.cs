@@ -669,6 +669,7 @@ namespace AssistantHub.Server
             RequestHistoryHandler requestHistoryHandler = new RequestHistoryHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             InferenceHandler inferenceHandler = new InferenceHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             ConfigurationHandler configurationHandler = new ConfigurationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
+            RerankerHandler rerankerHandler = new RerankerHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference);
             CrawlPlanHandler crawlPlanHandler = new CrawlPlanHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog, _CrawlScheduler);
             CrawlOperationHandler crawlOperationHandler = new CrawlOperationHandler(_Database, _Logging, _Settings, _Authentication, _Storage, _Ingestion, _Retrieval, _Inference, _ProcessingLog);
             AssistantChatEvalExecutor evalChatExecutor = new AssistantChatEvalExecutor(
@@ -860,6 +861,7 @@ namespace AssistantHub.Server
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents", documentHandler.GetDocumentsAsync, openApiMetadata: DocumentApiDocs.List);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/documents/{documentId}", documentHandler.GetDocumentAsync, openApiMetadata: DocumentApiDocs.Read);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.DELETE, "/v1.0/documents/{documentId}", documentHandler.DeleteDocumentAsync, openApiMetadata: DocumentApiDocs.Delete);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/documents/{documentId}/supersedes", documentHandler.PutDocumentSupersedesAsync, openApiMetadata: DocumentApiDocs.Supersedes);
             _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.HEAD, "/v1.0/documents/{documentId}", documentHandler.HeadDocumentAsync, openApiMetadata: DocumentApiDocs.Exists);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/delete", documentHandler.BulkDeleteDocumentsAsync, openApiMetadata: DocumentApiDocs.BulkDelete);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/documents/reindex", documentHandler.ReindexDocumentsAsync, openApiMetadata: DocumentApiDocs.ReindexBatch);
@@ -891,6 +893,8 @@ namespace AssistantHub.Server
 
             // Authenticated routes - Configuration (admin only)
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration", configurationHandler.GetConfigurationAsync, openApiMetadata: ConfigurationApiDocs.Read);
+            _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/rerankers", rerankerHandler.GetRerankersAsync, openApiMetadata: RerankerApiDocs.List);
+            _Server.Routes.PostAuthentication.Parameter.Add(WatsonWebserver.Core.HttpMethod.POST, "/v1.0/rerankers/{rerankerId}/test", rerankerHandler.TestRerankerAsync, openApiMetadata: RerankerApiDocs.Test);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.GET, "/v1.0/configuration/external-search/status", configurationHandler.GetExternalSearchStatusAsync, openApiMetadata: ConfigurationApiDocs.ExternalSearchStatus);
             _Server.Routes.PostAuthentication.Static.Add(WatsonWebserver.Core.HttpMethod.PUT, "/v1.0/configuration", configurationHandler.PutConfigurationAsync, openApiMetadata: ConfigurationApiDocs.Update);
 

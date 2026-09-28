@@ -88,6 +88,20 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  retrieval_score_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.3, " +
             "  search_mode TEXT DEFAULT 'Vector', " +
             "  text_weight DOUBLE PRECISION DEFAULT 0.3, " +
+            "  fusion_strategy TEXT DEFAULT 'Rrf', " +
+            "  rrf_k INTEGER NOT NULL DEFAULT 60, " +
+            "  fusion_candidate_pool INTEGER, " +
+            "  recency_weight DOUBLE PRECISION NOT NULL DEFAULT 0, " +
+            "  context_order TEXT DEFAULT 'Score', " +
+            "  eval_judge_inference_endpoint_id TEXT, " +
+            "  embedding_task_prefixes BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  enable_conversation_rewrite BOOLEAN NOT NULL DEFAULT FALSE, " +
+            "  conversation_rewrite_prompt TEXT, " +
+            "  reranker_type TEXT DEFAULT 'Llm', " +
+            "  rerank_endpoint_id TEXT, " +
+            "  rerank_candidate_count INTEGER NOT NULL DEFAULT 20, " +
+            "  rerank_min_score DOUBLE PRECISION, " +
+            "  supersession_mode TEXT DEFAULT 'Demote', " +
             "  fulltext_search_type TEXT DEFAULT 'TsRank', " +
             "  fulltext_language TEXT DEFAULT 'english', " +
             "  fulltext_normalization INTEGER DEFAULT 32, " +
@@ -163,6 +177,48 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
         internal static string AddAssistantSettingsExposeDocumentSourceUrlsColumn =
             "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS expose_document_source_urls BOOLEAN NOT NULL DEFAULT FALSE";
 
+        internal static string AddAssistantSettingsFusionStrategyColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS fusion_strategy TEXT DEFAULT 'Rrf'";
+
+        internal static string AddAssistantSettingsRrfKColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rrf_k INTEGER NOT NULL DEFAULT 60";
+
+        internal static string AddAssistantSettingsFusionCandidatePoolColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS fusion_candidate_pool INTEGER";
+
+        internal static string AddAssistantSettingsRecencyWeightColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS recency_weight DOUBLE PRECISION NOT NULL DEFAULT 0";
+
+        internal static string AddAssistantSettingsContextOrderColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS context_order TEXT DEFAULT 'Score'";
+
+        internal static string AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS eval_judge_inference_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsEmbeddingTaskPrefixesColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS embedding_task_prefixes BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsEnableConversationRewriteColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS enable_conversation_rewrite BOOLEAN NOT NULL DEFAULT FALSE";
+
+        internal static string AddAssistantSettingsConversationRewritePromptColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS conversation_rewrite_prompt TEXT";
+
+        internal static string AddAssistantSettingsRerankerTypeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS reranker_type TEXT DEFAULT 'Llm'";
+
+        internal static string AddAssistantSettingsRerankEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_endpoint_id TEXT";
+
+        internal static string AddAssistantSettingsRerankCandidateCountColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_candidate_count INTEGER NOT NULL DEFAULT 20";
+
+        internal static string AddAssistantSettingsRerankMinScoreColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS rerank_min_score DOUBLE PRECISION";
+
+        internal static string AddAssistantSettingsSupersessionModeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN IF NOT EXISTS supersession_mode TEXT DEFAULT 'Demote'";
+
         internal static string CreateAssistantDocumentsTable =
             "CREATE TABLE IF NOT EXISTS assistant_documents (" +
             "  id TEXT PRIMARY KEY, " +
@@ -186,6 +242,10 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
             "  crawl_plan_id TEXT, " +
             "  crawl_operation_id TEXT, " +
             "  source_url TEXT, " +
+            "  supersedes_json TEXT, " +
+            "  superseded_by TEXT, " +
+            "  content_sha256 TEXT, " +
+            "  near_duplicates_json TEXT, " +
             "  created_utc TEXT NOT NULL, " +
             "  last_update_utc TEXT NOT NULL " +
             ")";
@@ -232,6 +292,18 @@ namespace AssistantHub.Core.Database.Postgresql.Queries
 
         internal static string AddAssistantDocumentsVerbexRecordIdColumn =
             "ALTER TABLE assistant_documents ADD COLUMN IF NOT EXISTS verbex_record_id TEXT";
+
+        internal static string AddAssistantDocumentsSupersedesJsonColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN IF NOT EXISTS supersedes_json TEXT";
+
+        internal static string AddAssistantDocumentsSupersededByColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN IF NOT EXISTS superseded_by TEXT";
+
+        internal static string AddAssistantDocumentsContentSha256Column =
+            "ALTER TABLE assistant_documents ADD COLUMN IF NOT EXISTS content_sha256 TEXT";
+
+        internal static string AddAssistantDocumentsNearDuplicatesJsonColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN IF NOT EXISTS near_duplicates_json TEXT";
 
         internal static string AddIngestionRulesVerbexIndexIdColumn =
             "ALTER TABLE ingestion_rules ADD COLUMN IF NOT EXISTS verbex_index_id TEXT";

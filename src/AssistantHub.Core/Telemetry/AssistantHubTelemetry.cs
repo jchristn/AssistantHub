@@ -60,6 +60,8 @@ namespace AssistantHub.Core.Telemetry
             "inference.tokens", "{token}", "Tokens processed by inference operations.");
         private static readonly Histogram<int> _RetrievalResults = _Meter.CreateHistogram<int>(
             "retrieval.results", "{result}", "Results returned per retrieval query.");
+        private static readonly Counter<long> _QueryEmbeddingCache = _Meter.CreateCounter<long>(
+            "retrieval.query_embedding.cache", "{lookup}", "Query-embedding cache lookups, by result (hit or miss).");
         private static readonly Counter<long> _IngestionDocuments = _Meter.CreateCounter<long>(
             "ingestion.documents", "{document}", "Documents processed by ingestion.");
         private static readonly Counter<long> _IngestionChunks = _Meter.CreateCounter<long>(
@@ -227,6 +229,15 @@ namespace AssistantHub.Core.Telemetry
         public static void RecordRetrievalResults(string mode, int count)
         {
             _RetrievalResults.Record(count, new KeyValuePair<string, object?>("mode", mode ?? "unknown"));
+        }
+
+        /// <summary>
+        /// Record a query-embedding cache lookup.
+        /// </summary>
+        /// <param name="hit">Whether the embedding was served from the cache.</param>
+        public static void RecordQueryEmbeddingCache(bool hit)
+        {
+            _QueryEmbeddingCache.Add(1, new KeyValuePair<string, object?>("result", hit ? "hit" : "miss"));
         }
 
         /// <summary>

@@ -90,7 +90,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                plan.TenantId = auth.TenantId;
+                plan.TenantId = ResolveTenantId(ctx, auth);
                 List<string> errors = plan.ValidateRepositorySettings();
                 if (errors.Count > 0)
                 {
@@ -135,7 +135,7 @@ namespace AssistantHub.Server.Handlers
                 }
 
                 EnumerationQuery query = BuildEnumerationQuery(ctx);
-                EnumerationResult<CrawlPlan> result = await Database.CrawlPlan.EnumerateAsync(auth.TenantId, query).ConfigureAwait(false);
+                EnumerationResult<CrawlPlan> result = await Database.CrawlPlan.EnumerateAsync(ResolveTenantId(ctx, auth), query).ConfigureAwait(false);
 
                 ctx.Response.StatusCode = 200;
                 ctx.Response.ContentType = "application/json";
@@ -517,7 +517,7 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
-                plan.TenantId = auth.TenantId;
+                plan.TenantId = ResolveTenantId(ctx, auth);
                 List<string> errors = plan.ValidateRepositorySettings();
                 if (errors.Count > 0)
                 {

@@ -84,9 +84,10 @@ namespace AssistantHub.Core.Models
         public Dictionary<string, string> Tags { get; set; } = null;
 
         /// <summary>
-        /// Atomization configuration (placeholder).
+        /// Extraction and intake settings: DocumentAtom options (OCR of embedded images, CSV and spreadsheet header
+        /// handling) and the duplicate-upload policy.
         /// </summary>
-        public Dictionary<string, object> Atomization { get; set; } = null;
+        public IngestionExtractionConfig Extraction { get; set; } = null;
 
         /// <summary>
         /// Summarization configuration.
@@ -174,7 +175,7 @@ namespace AssistantHub.Core.Models
             string atomizationJson = DataTableHelper.GetStringValue(row, "atomization_json");
             if (!String.IsNullOrEmpty(atomizationJson))
             {
-                try { obj.Atomization = JsonSerializer.Deserialize<Dictionary<string, object>>(atomizationJson, _JsonOptions); }
+                try { obj.Extraction = JsonSerializer.Deserialize<IngestionExtractionConfig>(atomizationJson, _JsonOptions); }
                 catch { }
             }
 

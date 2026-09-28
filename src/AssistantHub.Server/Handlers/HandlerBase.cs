@@ -202,6 +202,21 @@ namespace AssistantHub.Server.Handlers
         }
 
         /// <summary>
+        /// Resolve the tenant a request acts on. Tenant-scoped callers always use their own tenant; the
+        /// administrator API key (which has no tenant) uses the tenantId query parameter, else the default tenant.
+        /// </summary>
+        /// <param name="ctx">HTTP context.</param>
+        /// <param name="auth">Auth context.</param>
+        /// <returns>Tenant identifier.</returns>
+        protected string ResolveTenantId(HttpContextBase ctx, AuthContext auth)
+        {
+            if (auth != null && !String.IsNullOrEmpty(auth.TenantId)) return auth.TenantId;
+            string requested = ctx?.Request?.Query?.Elements?["tenantId"];
+            if (!String.IsNullOrWhiteSpace(requested)) return requested.Trim();
+            return Constants.DefaultTenantId;
+        }
+
+        /// <summary>
         /// Enforce that a loaded record belongs to the caller's tenant.
         /// Global admins bypass this check.
         /// </summary>

@@ -14,6 +14,7 @@
 #   38321  Partio (chunking, embedding, completion endpoints)
 #   38401  RecallDB (vector and full-text store)
 #   38090  Verbex (inverted index; AssistantHub requires it at startup, benchmark ingestion does not index into it)
+#   38087  Cross-encoder reranker (HuggingFace TEI, cross-encoder/ms-marco-MiniLM-L-6-v2)
 #   38889  OpenTelemetry collector Prometheus exporter (AssistantHub metrics)
 #   34317  OpenTelemetry collector OTLP gRPC receiver
 
@@ -171,6 +172,16 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    container_name: assistanthub-bench-reranker
+    command: ["--model-id", "cross-encoder/ms-marco-MiniLM-L-6-v2", "--auto-truncate"]
+    ports:
+      - "127.0.0.1:38087:80"
+    volumes:
+      - bench-reranker-models:/data
+    restart: unless-stopped
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.109.0
     container_name: assistanthub-bench-otel
@@ -184,5 +195,6 @@ services:
 
 volumes:
   bench-postgres:
+  bench-reranker-models:
   bench-less3-disk:
   bench-less3-temp:

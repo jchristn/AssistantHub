@@ -83,6 +83,20 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  retrieval_score_threshold REAL NOT NULL DEFAULT 0.3, " +
                 "  search_mode TEXT DEFAULT 'Vector', " +
                 "  text_weight REAL DEFAULT 0.3, " +
+                "  fusion_strategy TEXT DEFAULT 'Rrf', " +
+                "  rrf_k INTEGER NOT NULL DEFAULT 60, " +
+                "  fusion_candidate_pool INTEGER, " +
+                "  recency_weight REAL NOT NULL DEFAULT 0, " +
+                "  context_order TEXT DEFAULT 'Score', " +
+                "  eval_judge_inference_endpoint_id TEXT, " +
+                "  embedding_task_prefixes INTEGER NOT NULL DEFAULT 0, " +
+                "  enable_conversation_rewrite INTEGER NOT NULL DEFAULT 0, " +
+                "  conversation_rewrite_prompt TEXT, " +
+                "  reranker_type TEXT DEFAULT 'Llm', " +
+                "  rerank_endpoint_id TEXT, " +
+                "  rerank_candidate_count INTEGER NOT NULL DEFAULT 20, " +
+                "  rerank_min_score REAL, " +
+                "  supersession_mode TEXT DEFAULT 'Demote', " +
                 "  fulltext_search_type TEXT DEFAULT 'TsRank', " +
                 "  fulltext_language TEXT DEFAULT 'english', " +
                 "  fulltext_normalization INTEGER DEFAULT 32, " +
@@ -138,6 +152,10 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
                 "  crawl_plan_id TEXT, " +
                 "  crawl_operation_id TEXT, " +
                 "  source_url TEXT, " +
+                "  supersedes_json TEXT, " +
+                "  superseded_by TEXT, " +
+                "  content_sha256 TEXT, " +
+                "  near_duplicates_json TEXT, " +
                 "  created_utc TEXT NOT NULL, " +
                 "  last_update_utc TEXT NOT NULL" +
                 "); " +
@@ -532,6 +550,90 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
             "ALTER TABLE assistant_settings ADD COLUMN expose_document_source_urls INTEGER NOT NULL DEFAULT 0;";
 
         /// <summary>
+        /// Add the assistant hybrid fusion strategy column.
+        /// </summary>
+        public static string AddAssistantSettingsFusionStrategyColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN fusion_strategy TEXT DEFAULT 'Rrf';";
+
+        /// <summary>
+        /// Add the assistant RRF constant column.
+        /// </summary>
+        public static string AddAssistantSettingsRrfKColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN rrf_k INTEGER NOT NULL DEFAULT 60;";
+
+        /// <summary>
+        /// Add the assistant hybrid candidate pool column.
+        /// </summary>
+        public static string AddAssistantSettingsFusionCandidatePoolColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN fusion_candidate_pool INTEGER;";
+
+        /// <summary>
+        /// Add the assistant recency weight column.
+        /// </summary>
+        public static string AddAssistantSettingsRecencyWeightColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN recency_weight REAL NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the assistant context order column.
+        /// </summary>
+        public static string AddAssistantSettingsContextOrderColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN context_order TEXT DEFAULT 'Score';";
+
+        /// <summary>
+        /// Add the assistant_settings eval_judge_inference_endpoint_id column.
+        /// </summary>
+        public static string AddAssistantSettingsEvalJudgeInferenceEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN eval_judge_inference_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the assistant_settings embedding_task_prefixes column.
+        /// </summary>
+        public static string AddAssistantSettingsEmbeddingTaskPrefixesColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN embedding_task_prefixes INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the assistant_settings enable_conversation_rewrite column.
+        /// </summary>
+        public static string AddAssistantSettingsEnableConversationRewriteColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN enable_conversation_rewrite INTEGER NOT NULL DEFAULT 0;";
+
+        /// <summary>
+        /// Add the assistant_settings conversation_rewrite_prompt column.
+        /// </summary>
+        public static string AddAssistantSettingsConversationRewritePromptColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN conversation_rewrite_prompt TEXT;";
+
+        /// <summary>
+        /// Add the assistant_settings reranker_type column.
+        /// </summary>
+        public static string AddAssistantSettingsRerankerTypeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN reranker_type TEXT DEFAULT 'Llm';";
+
+        /// <summary>
+        /// Add the assistant_settings rerank_endpoint_id column.
+        /// </summary>
+        public static string AddAssistantSettingsRerankEndpointIdColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN rerank_endpoint_id TEXT;";
+
+        /// <summary>
+        /// Add the assistant_settings rerank_candidate_count column.
+        /// </summary>
+        public static string AddAssistantSettingsRerankCandidateCountColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN rerank_candidate_count INTEGER NOT NULL DEFAULT 20;";
+
+        /// <summary>
+        /// Add the assistant_settings rerank_min_score column.
+        /// </summary>
+        public static string AddAssistantSettingsRerankMinScoreColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN rerank_min_score REAL;";
+
+        /// <summary>
+        /// Add the assistant_settings supersession_mode column.
+        /// </summary>
+        public static string AddAssistantSettingsSupersessionModeColumn =
+            "ALTER TABLE assistant_settings ADD COLUMN supersession_mode TEXT DEFAULT 'Demote';";
+
+        /// <summary>
         /// Add the Verbex tenant ID column to assistant documents.
         /// </summary>
         public static string AddAssistantDocumentsVerbexTenantIdColumn =
@@ -548,6 +650,30 @@ namespace AssistantHub.Core.Database.Sqlite.Queries
         /// </summary>
         public static string AddAssistantDocumentsVerbexRecordIdColumn =
             "ALTER TABLE assistant_documents ADD COLUMN verbex_record_id TEXT;";
+
+        /// <summary>
+        /// Add the assistant_documents supersedes_json column.
+        /// </summary>
+        public static string AddAssistantDocumentsSupersedesJsonColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN supersedes_json TEXT;";
+
+        /// <summary>
+        /// Add the assistant_documents superseded_by column.
+        /// </summary>
+        public static string AddAssistantDocumentsSupersededByColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN superseded_by TEXT;";
+
+        /// <summary>
+        /// Add the assistant_documents content_sha256 column.
+        /// </summary>
+        public static string AddAssistantDocumentsContentSha256Column =
+            "ALTER TABLE assistant_documents ADD COLUMN content_sha256 TEXT;";
+
+        /// <summary>
+        /// Add the assistant_documents near_duplicates_json column.
+        /// </summary>
+        public static string AddAssistantDocumentsNearDuplicatesJsonColumn =
+            "ALTER TABLE assistant_documents ADD COLUMN near_duplicates_json TEXT;";
 
         /// <summary>
         /// Add the Verbex index ID column to ingestion rules.

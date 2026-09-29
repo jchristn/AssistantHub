@@ -217,13 +217,13 @@ namespace AssistantHub.Core.Services
 
         private static double? MaxOrNull(IEnumerable<double?> values)
         {
-            List<double> present = values.Where(v => v.HasValue).Select(v => v.Value).ToList();
+            List<double> present = values.OfType<double>().ToList();
             return present.Count > 0 ? present.Max() : null;
         }
 
         private static int? MinOrNull(IEnumerable<int?> values)
         {
-            List<int> present = values.Where(v => v.HasValue).Select(v => v.Value).ToList();
+            List<int> present = values.OfType<int>().ToList();
             return present.Count > 0 ? present.Min() : null;
         }
 

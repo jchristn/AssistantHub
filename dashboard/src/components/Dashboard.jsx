@@ -1,49 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Tour from './Tour';
 import SetupWizard from './SetupWizard';
 import ChatDrawer from './ChatDrawer';
-import TenantsView from '../views/TenantsView';
-import UsersView from '../views/UsersView';
-import CredentialsView from '../views/CredentialsView';
-import AssistantsView from '../views/AssistantsView';
-import DocumentsView from '../views/DocumentsView';
-import FeedbackView from '../views/FeedbackView';
-import HistoryView from '../views/HistoryView';
-import AssistantAnalyticsView from '../views/AssistantAnalyticsView';
-import RequestHistoryView from '../views/RequestHistoryView';
-import ApiExplorerView from '../views/ApiExplorerView';
-import CollectionsView from '../views/CollectionsView';
-import CollectionSearchView from '../views/CollectionSearchView';
-import BucketsView from '../views/BucketsView';
-import ObjectsView from '../views/ObjectsView';
-import RecordsView from '../views/RecordsView';
-import IndicesView from '../views/IndicesView';
-import IndexRecordsView from '../views/IndexRecordsView';
-import IndexSearchView from '../views/IndexSearchView';
-import ModelsView from '../views/ModelsView';
-import ConfigurationView from '../views/ConfigurationView';
-import AssistantSettingsView from '../views/AssistantSettingsView';
-import IngestionRulesView from '../views/IngestionRulesView';
-import EmbeddingEndpointsView from '../views/EmbeddingEndpointsView';
-import InferenceEndpointsView from '../views/InferenceEndpointsView';
-import CrawlersView from '../views/CrawlersView';
-import EvaluationView from '../views/EvaluationView';
 import { useAuth } from '../context/AuthContext';
 import { ApiClient } from '../utils/api';
 import { useUploadQueue } from '../hooks/useUploadQueue';
 import UploadProgressPanel from './UploadProgressPanel';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
-import AssistantsHub from '../views/hubs/AssistantsHub';
-import BucketsHub from '../views/hubs/BucketsHub';
-import CollectionsHub from '../views/hubs/CollectionsHub';
-import IndicesHub from '../views/hubs/IndicesHub';
-import EndpointsHub from '../views/hubs/EndpointsHub';
-import AuthenticationHub from '../views/hubs/AuthenticationHub';
-import AnalyticsHub from '../views/hubs/AnalyticsHub';
+
+// Views load when first opened, which keeps the initial bundle small.
+const DocumentsView = lazy(() => import('../views/DocumentsView'));
+const ApiExplorerView = lazy(() => import('../views/ApiExplorerView'));
+const ConfigurationView = lazy(() => import('../views/ConfigurationView'));
+const IngestionRulesView = lazy(() => import('../views/IngestionRulesView'));
+const CrawlersView = lazy(() => import('../views/CrawlersView'));
+const AssistantsHub = lazy(() => import('../views/hubs/AssistantsHub'));
+const BucketsHub = lazy(() => import('../views/hubs/BucketsHub'));
+const CollectionsHub = lazy(() => import('../views/hubs/CollectionsHub'));
+const IndicesHub = lazy(() => import('../views/hubs/IndicesHub'));
+const EndpointsHub = lazy(() => import('../views/hubs/EndpointsHub'));
+const AuthenticationHub = lazy(() => import('../views/hubs/AuthenticationHub'));
+const AnalyticsHub = lazy(() => import('../views/hubs/AnalyticsHub'));
 
 function Dashboard() {
   const { serverUrl, credential, isAdmin, isGlobalAdmin, isTenantAdmin } = useAuth();
@@ -106,6 +87,7 @@ function Dashboard() {
       <div className="main-content">
         <Topbar />
         <div className="content-area">
+          <Suspense fallback={<div className="loading">Loading...</div>}>
           <Routes>
             <Route path="/" element={<Navigate to="/assistants" />} />
 
@@ -150,6 +132,7 @@ function Dashboard() {
 
             <Route path="*" element={<Navigate to="/assistants" />} />
           </Routes>
+          </Suspense>
         </div>
       </div>
       <ChatDrawer assistantId={drawerAssistantId} isOpen={drawerOpen} onClose={closeChatDrawer} />

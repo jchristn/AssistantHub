@@ -1,5 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
+# No npm update or funding notices in build output.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false NPM_CONFIG_FUND=false
 COPY dashboard/package.json dashboard/package-lock.json* ./
 RUN npm ci
 COPY dashboard/ .

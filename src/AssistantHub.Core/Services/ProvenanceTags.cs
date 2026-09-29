@@ -70,7 +70,7 @@ namespace AssistantHub.Core.Services
             string text = Normalize(content);
 
             // Block start offsets in the normalized text.
-            List<(int Offset, int? Page, string Sheet)> spans = new List<(int Offset, int? Page, string Sheet)>();
+            List<(int Offset, int? Page, string? Sheet)> spans = new List<(int Offset, int? Page, string? Sheet)>();
             int cursor = 0;
             foreach (ExtractedBlock block in blocks)
             {
@@ -101,12 +101,12 @@ namespace AssistantHub.Core.Services
                 int end = Math.Min(text.Length, start + Math.Max(1, length)) - 1;
                 searchFrom = start;
 
-                List<(int Offset, int? Page, string Sheet)> covered = spans.Where(s => s.Offset <= end).ToList();
+                List<(int Offset, int? Page, string? Sheet)> covered = spans.Where(s => s.Offset <= end).ToList();
                 int firstIndex = covered.FindLastIndex(s => s.Offset <= start);
                 if (firstIndex < 0) firstIndex = 0;
                 covered = covered.Skip(firstIndex).ToList();
 
-                List<int> pages = covered.Where(s => s.Page.HasValue).Select(s => s.Page.Value).ToList();
+                List<int> pages = covered.Select(s => s.Page).OfType<int>().ToList();
                 if (pages.Count > 0)
                 {
                     result[i][PageStart] = FormatPage(pages.Min());

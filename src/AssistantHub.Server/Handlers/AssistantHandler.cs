@@ -506,7 +506,7 @@ namespace AssistantHub.Server.Handlers
         /// </summary>
         /// <param name="body">Request body.</param>
         /// <returns>Tenant and user identifiers, or an HTTP status and error message.</returns>
-        private async Task<(string TenantId, string UserId, int Status, string Error)> ResolveAdminKeyOwnerAsync(string body)
+        private async Task<(string? TenantId, string? UserId, int Status, string? Error)> ResolveAdminKeyOwnerAsync(string body)
         {
             string tenantId = null;
             string userId = null;

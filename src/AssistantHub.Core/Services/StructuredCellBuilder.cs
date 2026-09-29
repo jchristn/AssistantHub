@@ -224,7 +224,7 @@ namespace AssistantHub.Core.Services
             IngestionChunkingConfig chunking,
             string documentPrefix)
         {
-            List<int> pages = sourceBlocks.Where(b => b.PageNumber.HasValue && b.PageNumber.Value > 0).Select(b => b.PageNumber.Value).ToList();
+            List<int> pages = sourceBlocks.Select(b => b.PageNumber).OfType<int>().Where(p => p > 0).ToList();
             string sheet = sourceBlocks.Select(b => b.SheetName).FirstOrDefault(s => !String.IsNullOrWhiteSpace(s));
             string section = headings.Count > 0 ? String.Join(" > ", headings.Select(h => h.Text).Where(t => t.Length > 0)) : null;
 

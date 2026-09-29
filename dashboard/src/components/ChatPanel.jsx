@@ -2,8 +2,90 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ApiClient } from '../utils/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import bashLang from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+import cLang from 'react-syntax-highlighter/dist/esm/languages/prism/c';
+import cppLang from 'react-syntax-highlighter/dist/esm/languages/prism/cpp';
+import csharpLang from 'react-syntax-highlighter/dist/esm/languages/prism/csharp';
+import cssLang from 'react-syntax-highlighter/dist/esm/languages/prism/css';
+import diffLang from 'react-syntax-highlighter/dist/esm/languages/prism/diff';
+import dockerLang from 'react-syntax-highlighter/dist/esm/languages/prism/docker';
+import goLang from 'react-syntax-highlighter/dist/esm/languages/prism/go';
+import iniLang from 'react-syntax-highlighter/dist/esm/languages/prism/ini';
+import javaLang from 'react-syntax-highlighter/dist/esm/languages/prism/java';
+import javascriptLang from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import jsonLang from 'react-syntax-highlighter/dist/esm/languages/prism/json';
+import jsxLang from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
+import kotlinLang from 'react-syntax-highlighter/dist/esm/languages/prism/kotlin';
+import markdownLang from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import markupLang from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
+import phpLang from 'react-syntax-highlighter/dist/esm/languages/prism/php';
+import powershellLang from 'react-syntax-highlighter/dist/esm/languages/prism/powershell';
+import pythonLang from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import rubyLang from 'react-syntax-highlighter/dist/esm/languages/prism/ruby';
+import rustLang from 'react-syntax-highlighter/dist/esm/languages/prism/rust';
+import sqlLang from 'react-syntax-highlighter/dist/esm/languages/prism/sql';
+import swiftLang from 'react-syntax-highlighter/dist/esm/languages/prism/swift';
+import tomlLang from 'react-syntax-highlighter/dist/esm/languages/prism/toml';
+import tsxLang from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
+import typescriptLang from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
+import yamlLang from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// The light build bundles only the languages registered here (the full build carries every Prism language, over
+// a megabyte). Code in other languages is shown without highlighting.
+const CODE_LANGUAGES = {
+  bash: bashLang,
+  sh: bashLang,
+  shell: bashLang,
+  zsh: bashLang,
+  c: cLang,
+  cpp: cppLang,
+  cc: cppLang,
+  hpp: cppLang,
+  csharp: csharpLang,
+  cs: csharpLang,
+  dotnet: csharpLang,
+  css: cssLang,
+  diff: diffLang,
+  docker: dockerLang,
+  dockerfile: dockerLang,
+  go: goLang,
+  golang: goLang,
+  ini: iniLang,
+  java: javaLang,
+  javascript: javascriptLang,
+  js: javascriptLang,
+  mjs: javascriptLang,
+  json: jsonLang,
+  jsx: jsxLang,
+  kotlin: kotlinLang,
+  markdown: markdownLang,
+  md: markdownLang,
+  markup: markupLang,
+  html: markupLang,
+  xml: markupLang,
+  svg: markupLang,
+  php: phpLang,
+  powershell: powershellLang,
+  ps1: powershellLang,
+  pwsh: powershellLang,
+  python: pythonLang,
+  py: pythonLang,
+  ruby: rubyLang,
+  rb: rubyLang,
+  rust: rustLang,
+  rs: rustLang,
+  sql: sqlLang,
+  swift: swiftLang,
+  toml: tomlLang,
+  tsx: tsxLang,
+  typescript: typescriptLang,
+  ts: typescriptLang,
+  yaml: yamlLang,
+  yml: yamlLang,
+};
+Object.entries(CODE_LANGUAGES).forEach(([name, language]) => SyntaxHighlighter.registerLanguage(name, language));
 import MetadataFilterModal from './modals/MetadataFilterModal';
 import DocumentAttachmentModal from './modals/DocumentAttachmentModal';
 import CopyButton from './CopyButton';

@@ -223,7 +223,7 @@ namespace AssistantHub.Core.Models
             Dictionary<string, string> tags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (GetIgnoreCase(endpoint, "Tags", out _) is JsonObject tagObject)
             {
-                foreach (KeyValuePair<string, JsonNode> tag in tagObject)
+                foreach (KeyValuePair<string, JsonNode?> tag in tagObject)
                     tags[tag.Key] = tag.Value?.ToString();
             }
 
@@ -250,7 +250,7 @@ namespace AssistantHub.Core.Models
         private static JsonNode GetIgnoreCase(JsonObject obj, string name, out string key)
         {
             key = null;
-            foreach (KeyValuePair<string, JsonNode> property in obj)
+            foreach (KeyValuePair<string, JsonNode?> property in obj)
             {
                 if (String.Equals(property.Key, name, StringComparison.OrdinalIgnoreCase))
                 {

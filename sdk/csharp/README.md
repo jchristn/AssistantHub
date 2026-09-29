@@ -543,7 +543,20 @@ using (AssistantHubClient client = new AssistantHubClient("http://localhost:8800
 | `TestCrawlConnectivityAsync(planId)` | Test saved crawl plan connectivity |
 | `TestCrawlPlanDraftConnectivityAsync(plan)` | Test unsaved crawl plan settings |
 
-Repository settings are polymorphic. Use `WebCrawlRepositorySettings`, `CifsCrawlRepositorySettings`, or `NfsCrawlRepositorySettings` with the matching `RepositoryTypeEnum` value.
+Repository settings are polymorphic. Use the settings class that matches the `RepositoryTypeEnum` value:
+
+| `RepositoryType` | Settings class | Key properties |
+|---|---|---|
+| `Web` | `WebCrawlRepositorySettings` | `StartUrl` |
+| `CIFS` | `CifsCrawlRepositorySettings` | `CifsHostname`, `CifsShareName`, `CifsUsername`, `CifsPassword` |
+| `NFS` | `NfsCrawlRepositorySettings` | `NfsHostname`, `NfsShareName` (absolute export path) |
+| `S3` | `S3CrawlRepositorySettings` | `S3BucketName`, `S3Region`, `S3AccessKey`, `S3SecretKey`, `S3Endpoint` (S3-compatible stores only) |
+| `AzureBlob` | `AzureBlobCrawlRepositorySettings` | `AzureAccountName`, `AzureAccessKey`, `AzureContainer`, `AzureEndpoint` (optional) |
+| `GoogleCloud` | `GoogleCloudCrawlRepositorySettings` | `GcpProjectId`, `GcpBucketName`, `GcpJsonCredentials` (service account key JSON) |
+| `LocalDisk` | `LocalDiskCrawlRepositorySettings` | `DiskPath` (absolute path on the server, inside `Crawl.AllowedLocalPaths`) |
+| `Git` | `GitCrawlRepositorySettings` | `GitRepositoryUrl` (https://github.com/owner/repo), `GitAccessToken` |
+
+`S3SecretKey`, `AzureAccessKey`, `GcpJsonCredentials`, `GitAccessToken` and `CifsPassword` are stored with the crawl plan; treat crawl plan responses as sensitive. Local disk crawling is disabled until an operator lists allowed folders in `Crawl.AllowedLocalPaths`. To crawl one folder of a bucket, container or repository, set `Filter.ObjectPrefix` (for example `docs/`).
 
 ```csharp
 CrawlPlan webPlan = new CrawlPlan
@@ -587,6 +600,33 @@ CrawlPlan nfsPlan = new CrawlPlan
         NfsVersion = NfsVersionEnum.V3,
         IncludeSubdirectories = true
     }
+};
+
+CrawlPlan s3Plan = new CrawlPlan
+{
+    Name = "S3 Bucket Crawl",
+    RepositoryType = RepositoryTypeEnum.S3,
+    RepositorySettings = new S3CrawlRepositorySettings
+    {
+        S3BucketName = "company-docs",
+        S3Region = "us-east-1",
+        S3AccessKey = "AKIA...",
+        S3SecretKey = "secret"
+        // S3Endpoint = "http://minio.example.com:9000/" for an S3-compatible store
+    },
+    Filter = new CrawlFilterSettings { ObjectPrefix = "handbook/" }
+};
+
+CrawlPlan gitPlan = new CrawlPlan
+{
+    Name = "GitHub Repository Crawl",
+    RepositoryType = RepositoryTypeEnum.Git,
+    RepositorySettings = new GitCrawlRepositorySettings
+    {
+        GitRepositoryUrl = "https://github.com/owner/repo",
+        GitAccessToken = "github_pat_..."
+    },
+    Filter = new CrawlFilterSettings { ObjectPrefix = "docs/", ObjectSuffix = ".md" }
 };
 ```
 

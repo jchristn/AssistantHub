@@ -4460,22 +4460,47 @@
         </member>
         <member name="T:AssistantHub.Core.Enums.RepositoryTypeEnum">
             <summary>
-            Repository type enumeration.
+            Repository type for crawl plans.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.Web">
             <summary>
-            Web.
+            Web site, crawled with CrawlSharp.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.CIFS">
             <summary>
-            Common Internet File System file server.
+            SMB/CIFS file share, crawled with Blobject.CIFS.
             </summary>
         </member>
         <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.NFS">
             <summary>
-            Network File System file server.
+            NFSv3 export, crawled with Blobject.NFS.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.S3">
+            <summary>
+            Amazon S3 or S3-compatible bucket, crawled with Blobject.AmazonS3.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.AzureBlob">
+            <summary>
+            Azure Blob Storage container, crawled with Blobject.AzureBlob.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.GoogleCloud">
+            <summary>
+            Google Cloud Storage bucket, crawled with Blobject.GoogleCloud.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.LocalDisk">
+            <summary>
+            Folder on the AssistantHub server's file system, crawled with Blobject.Disk.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Enums.RepositoryTypeEnum.Git">
+            <summary>
+            Git repository hosted on GitHub, crawled with GitHubCrawler.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Enums.ScheduleIntervalEnum">
@@ -8116,6 +8141,46 @@
             Instantiate.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings">
+            <summary>
+            Azure Blob Storage crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.AzureAccountName">
+            <summary>
+            Storage account name, for example contosodocs.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.AzureAccessKey">
+            <summary>
+            Storage account access key (key1 or key2 from Access keys in the Azure portal).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.AzureContainer">
+            <summary>
+            Container name only, for example documents.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.AzureEndpoint">
+            <summary>
+            Blob service endpoint. Null or empty uses https://{account}.blob.core.windows.net/. Set it for sovereign clouds,
+            private endpoints or the Azurite emulator (for example http://127.0.0.1:10000/devstoreaccount1/).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.GetEffectiveEndpoint">
+            <summary>
+            The endpoint to connect to: <see cref="P:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.AzureEndpoint"/>, or the public endpoint for the account.
+            </summary>
+            <returns>Endpoint URL ending with a slash.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.AzureBlobCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.ChatCompletionChoice">
             <summary>
             OpenAI-compatible chat completion choice.
@@ -11116,6 +11181,72 @@
             Total token count.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.GitCrawlRepositorySettings">
+            <summary>
+            Git repository crawl settings. Repositories on github.com are crawled through the GitHub REST API (GitHubCrawler),
+            reading the default branch.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GitCrawlRepositorySettings.GitRepositoryUrl">
+            <summary>
+            Repository URL: https://github.com/owner/repo, https://github.com/owner/repo.git or git@github.com:owner/repo.git.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GitCrawlRepositorySettings.GitAccessToken">
+            <summary>
+            Personal access token. Required for private repositories, and recommended for public ones: without it GitHub
+            allows 60 API requests an hour (one per folder), with it 5,000.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.GitCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.GitCrawlRepositorySettings.TryParseRepository(System.String@,System.String@)">
+            <summary>
+            Parse the owner and repository name from <see cref="P:AssistantHub.Core.Models.GitCrawlRepositorySettings.GitRepositoryUrl"/>.
+            </summary>
+            <param name="owner">Repository owner.</param>
+            <param name="repository">Repository name.</param>
+            <returns>True when the URL is a supported GitHub repository URL.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.GitCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings">
+            <summary>
+            Google Cloud Storage crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.GcpProjectId">
+            <summary>
+            Google Cloud project ID, for example contoso-docs-123456.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.GcpBucketName">
+            <summary>
+            Bucket name only, for example contoso-documents (not gs://contoso-documents).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.GcpJsonCredentials">
+            <summary>
+            Full JSON key of a service account with read access to the bucket (Storage Object Viewer).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.GcpEndpoint">
+            <summary>
+            Custom endpoint, for example for a private endpoint or an emulator. Null or empty uses the standard endpoint.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.GoogleCloudCrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.HealthCheckRecord">
             <summary>
             A single health check result record.
@@ -11585,6 +11716,32 @@
             <inheritdoc />
         </member>
         <member name="M:AssistantHub.Core.Models.JsonStringOrRawJsonConverter.Write(System.Text.Json.Utf8JsonWriter,System.String,System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Models.LocalDiskCrawlRepositorySettings">
+            <summary>
+            Local disk crawl repository settings: a folder on the AssistantHub server's own file system. The folder must be
+            inside one of the roots the operator lists in Crawl.AllowedLocalPaths.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.LocalDiskCrawlRepositorySettings.DiskPath">
+            <summary>
+            Absolute path of the folder to crawl on the AssistantHub server, for example /data/documents or
+            D:\Shared\Documents. In Docker this is a path inside the container, so the host folder must be mounted.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.LocalDiskCrawlRepositorySettings.IncludeSubdirectories">
+            <summary>
+            Include files in subfolders while crawling.
+            Default: true.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.LocalDiskCrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.LocalDiskCrawlRepositorySettings.Validate">
             <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Models.NfsCrawlRepositorySettings">
@@ -13010,6 +13167,46 @@
             Ranked chunks, best first.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Models.S3CrawlRepositorySettings">
+            <summary>
+            Amazon S3 or S3-compatible (MinIO, Less3, Ceph, Wasabi, Cloudflare R2) crawl repository settings.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3Endpoint">
+            <summary>
+            Service URL of an S3-compatible store, for example http://minio.example.com:9000/. Null or empty uses Amazon S3
+            in <see cref="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3Region"/>. The scheme decides whether TLS is used.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3Region">
+            <summary>
+            Region, for example us-east-1. Required by Amazon S3; S3-compatible stores usually accept any value.
+            Default: us-east-1.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3BucketName">
+            <summary>
+            Bucket name only, for example company-docs (not a URL or s3:// path).
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3AccessKey">
+            <summary>
+            Access key ID. Leave both keys empty for a public bucket.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.S3CrawlRepositorySettings.S3SecretKey">
+            <summary>
+            Secret access key.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.S3CrawlRepositorySettings.#ctor">
+            <summary>
+            Instantiate.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.S3CrawlRepositorySettings.Validate">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Models.SearchProviderOptions">
             <summary>
             Provider-neutral search provider options.
@@ -14266,6 +14463,28 @@
             A single chunk result from Partio v0.4.0.
             </summary>
         </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.AzureBlobRepositoryCrawler">
+            <summary>
+            Crawler for Azure Blob Storage containers, using Blobject.AzureBlob.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.AzureBlobRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.AzureBlobRepositoryCrawler.GetDiagnosticInfo">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.CifsRepositoryCrawler">
             <summary>
             CIFS repository crawler.
@@ -14648,7 +14867,8 @@
         </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase">
             <summary>
-            Base class for Blobject-backed file-server repository crawlers.
+            Base class for Blobject-backed repository crawlers: CIFS and NFS file servers, S3, Azure Blob and Google Cloud
+            Storage object stores, and local disk.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken,Blobject.Core.BlobClientBase,System.Boolean,System.Boolean)">
@@ -14719,6 +14939,191 @@
         <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.Dispose(System.Boolean)">
             <inheritdoc />
         </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.IncludeBlob(System.String)">
+            <summary>
+            Whether an enumerated object should be crawled. The default includes everything.
+            </summary>
+            <param name="key">Object key.</param>
+            <returns>True to crawl the object.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.GetDiagnosticInfo">
+            <summary>
+            Describe the repository for connectivity diagnostics. File-server crawlers are described from their settings;
+            other crawlers override this.
+            </summary>
+            <returns>Diagnostic description.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo">
+            <summary>
+            Description of a repository for connectivity diagnostics.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.RepositoryLabel">
+            <summary>Repository label, for example CIFS or S3.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.ConfiguredHostname">
+            <summary>Hostname as configured.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.Hostname">
+            <summary>Hostname actually contacted.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.Port">
+            <summary>TCP port probed.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.ShareName">
+            <summary>Share, export, bucket, container or folder.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.LocationLabel">
+            <summary>What <see cref="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.ShareName"/> is, for messages: share/export, bucket, container or folder.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.Principal">
+            <summary>Identity used to connect, for messages.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.PrincipalLabel">
+            <summary>What <see cref="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.Principal"/> is, for messages.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.NetworkProbe">
+            <summary>Whether to resolve the hostname and probe the TCP port before connecting.</summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.RequireServerCheck">
+            <summary>
+            Whether Blobject's server-level check must pass as well as listing the location. Object stores turn this
+            off: their server-level check lists every bucket or container in the account, which a least-privilege
+            credential scoped to one bucket cannot do even though it can crawl that bucket.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.FileServerRepositoryCrawlerBase.RepositoryDiagnosticInfo.Guidance">
+            <summary>What to check when access fails, for messages; null uses the file-server guidance.</summary>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler">
+            <summary>
+            Git repository crawler for github.com, using GitHubCrawler (the GitHub REST contents API). Reads the default
+            branch. Object keys are repository-relative paths such as docs/setup.md, so Filter.ObjectPrefix selects a folder.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken,System.Func{System.Net.Http.HttpMessageHandler})">
+            <summary>
+            Instantiate with a custom HTTP handler, for example a proxy configuration or a fake GitHub API in tests.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+            <param name="handlerFactory">Creates a handler for each GitHub client; null uses the default handler.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.EnumerateAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.ValidateConnectivityAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.GetConnectivityStatusAsync(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.EnumerateContentsAsync(System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.GetKey(System.String)">
+            <summary>
+            Repository-relative path for a raw download URL (https://raw.githubusercontent.com/owner/repo/ref/path).
+            </summary>
+            <param name="downloadUrl">Download URL.</param>
+            <returns>Path, or null when the URL is not a raw GitHub URL.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GitRepositoryCrawler.RetrieveDataAsync(AssistantHub.Core.Services.Crawlers.CrawledObject,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.GoogleCloudRepositoryCrawler">
+            <summary>
+            Crawler for Google Cloud Storage buckets, using Blobject.GoogleCloud.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GoogleCloudRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.GoogleCloudRepositoryCrawler.GetDiagnosticInfo">
+            <inheritdoc />
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.LocalDiskCrawlPolicy">
+            <summary>
+            Which folders on the AssistantHub server local disk crawl plans may read. A local disk crawler can read anything
+            the server process can, so the operator lists the allowed roots in Crawl.AllowedLocalPaths; with none listed,
+            local disk crawling is disabled. The server configures the policy at startup.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Services.Crawlers.LocalDiskCrawlPolicy.AllowedRoots">
+            <summary>
+            The configured roots, as full paths.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.LocalDiskCrawlPolicy.Configure(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Set the allowed roots (from Crawl.AllowedLocalPaths). Relative paths are resolved against the working directory.
+            </summary>
+            <param name="roots">Allowed root folders; null or empty disables local disk crawling.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.LocalDiskCrawlPolicy.Check(System.String)">
+            <summary>
+            Check that a path may be crawled.
+            </summary>
+            <param name="path">Folder to crawl.</param>
+            <returns>An error message, or null when the path is allowed.</returns>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.LocalDiskRepositoryCrawler">
+            <summary>
+            Crawler for a folder on the AssistantHub server, using Blobject.Disk. Only folders inside Crawl.AllowedLocalPaths may be crawled, and files reached through a symbolic link or junction are skipped so a crawl cannot leave the allowed folder.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.LocalDiskRepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.LocalDiskRepositoryCrawler.GetDiagnosticInfo">
+            <inheritdoc />
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.LocalDiskRepositoryCrawler.IncludeBlob(System.String)">
+            <inheritdoc />
+        </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.NfsRepositoryCrawler">
             <summary>
             NFS repository crawler.
@@ -14737,6 +15142,28 @@
             <param name="processingLog">Processing log service (nullable).</param>
             <param name="enumerationDirectory">Enumeration directory.</param>
             <param name="token">Cancellation token.</param>
+        </member>
+        <member name="T:AssistantHub.Core.Services.Crawlers.S3RepositoryCrawler">
+            <summary>
+            Crawler for Amazon S3 buckets and S3-compatible stores (MinIO, Less3, Ceph, Wasabi, Cloudflare R2), using Blobject.AmazonS3.
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.S3RepositoryCrawler.#ctor(SyslogLogging.LoggingModule,AssistantHub.Core.Database.DatabaseDriverBase,AssistantHub.Core.Models.CrawlPlan,AssistantHub.Core.Models.CrawlOperation,AssistantHub.Core.Services.IngestionService,AssistantHub.Core.Services.IObjectStorageService,AssistantHub.Core.Services.ProcessingLogService,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="logging">Logging module.</param>
+            <param name="database">Database driver.</param>
+            <param name="crawlPlan">Crawl plan.</param>
+            <param name="crawlOperation">Crawl operation.</param>
+            <param name="ingestion">Ingestion service (nullable).</param>
+            <param name="storage">Storage service (nullable).</param>
+            <param name="processingLog">Processing log service (nullable).</param>
+            <param name="enumerationDirectory">Enumeration directory.</param>
+            <param name="token">Cancellation token.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Services.Crawlers.S3RepositoryCrawler.GetDiagnosticInfo">
+            <inheritdoc />
         </member>
         <member name="T:AssistantHub.Core.Services.Crawlers.WebRepositoryCrawler">
             <summary>
@@ -17197,6 +17624,14 @@
             <summary>
             Directory for storing crawl enumeration files.
             Default: ./crawl-enumerations/
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Settings.CrawlSettings.AllowedLocalPaths">
+            <summary>
+            Folders on this server that LocalDisk crawl plans may read, as absolute paths. A crawl plan's DiskPath must be
+            one of these folders or inside one. Empty (the default) disables local disk crawling, because a local disk
+            crawler can read anything the server process can.
+            Default: empty.
             </summary>
         </member>
         <member name="T:AssistantHub.Core.Settings.DatabaseSettings">

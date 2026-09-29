@@ -236,6 +236,47 @@ const nfsPlan = await client.createCrawlPlan({
   },
 });
 
+// Object stores: S3 (and S3-compatible), AzureBlob and GoogleCloud work the same way.
+const s3Plan = await client.createCrawlPlan({
+  Name: "S3 Bucket Crawl",
+  RepositoryType: RepositoryType.S3,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.S3,
+    S3BucketName: "company-docs",
+    S3Region: "us-east-1",
+    S3AccessKey: "AKIA...",
+    S3SecretKey: "secret",
+    // S3Endpoint: "http://minio.example.com:9000/" for an S3-compatible store
+  },
+  Filter: { ObjectPrefix: "handbook/" },
+});
+
+// GitHub repository (default branch); ObjectPrefix selects a folder.
+const gitPlan = await client.createCrawlPlan({
+  Name: "GitHub Docs Crawl",
+  RepositoryType: RepositoryType.Git,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.Git,
+    GitRepositoryUrl: "https://github.com/owner/repo",
+    GitAccessToken: "github_pat_...",
+  },
+  Filter: { ObjectPrefix: "docs/", ObjectSuffix: ".md" },
+});
+
+// Local disk: DiskPath must be inside the server's Crawl.AllowedLocalPaths (disabled when empty).
+const diskPlan = await client.createCrawlPlan({
+  Name: "Handbook Folder Crawl",
+  RepositoryType: RepositoryType.LocalDisk,
+  RepositorySettings: {
+    RepositoryType: RepositoryType.LocalDisk,
+    DiskPath: "/app/crawl-sources/handbook",
+    IncludeSubdirectories: true,
+  },
+});
+
+// Secrets (S3SecretKey, AzureAccessKey, GcpJsonCredentials, GitAccessToken, CifsPassword) are stored with the
+// crawl plan and returned by the API; treat crawl plan responses as sensitive.
+
 // Start crawling
 await client.startCrawl(webPlan.Id!);
 

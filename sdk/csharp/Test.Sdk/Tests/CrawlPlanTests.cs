@@ -135,6 +135,42 @@ namespace Test.Sdk.Tests
                 createdNfsPlanId = created.Id;
             }, token).ConfigureAwait(false);
 
+            await runner.RunTestAsync("CrawlPlan: Create object store and Git crawl plans", async (CancellationToken ct) =>
+            {
+                CrawlRepositorySettings[] settings =
+                {
+                    new S3CrawlRepositorySettings { S3BucketName = "company-docs", S3Region = "us-west-2", S3AccessKey = "AKIDEXAMPLE", S3SecretKey = "secret" },
+                    new AzureBlobCrawlRepositorySettings { AzureAccountName = "contosodocs", AzureAccessKey = "a2V5", AzureContainer = "documents" },
+                    new GoogleCloudCrawlRepositorySettings { GcpProjectId = "contoso-docs-123456", GcpBucketName = "contoso-documents", GcpJsonCredentials = "{\"type\":\"service_account\",\"private_key\":\"x\",\"client_email\":\"crawler@example.iam.gserviceaccount.com\"}" },
+                    new GitCrawlRepositorySettings { GitRepositoryUrl = "https://github.com/owner/repo" }
+                };
+
+                foreach (CrawlRepositorySettings repositorySettings in settings)
+                {
+                    CrawlPlan plan = new CrawlPlan
+                    {
+                        Name = "test-" + repositorySettings.RepositoryType.ToString().ToLowerInvariant() + "-crawlplan-" + uniqueSuffix,
+                        RepositoryType = repositorySettings.RepositoryType,
+                        RepositorySettings = repositorySettings,
+                        Schedule = new CrawlScheduleSettings { IntervalType = ScheduleIntervalEnum.OneTime, IntervalValue = 1 },
+                        MaxDrainTasks = 1,
+                        RetentionDays = 7
+                    };
+
+                    CrawlPlan created = await client.CreateCrawlPlanAsync(plan, ct).ConfigureAwait(false);
+                    try
+                    {
+                        AssertHelper.IsNotNull(created?.Id, repositorySettings.RepositoryType + " crawl plan ID");
+                        AssertHelper.AreEqual(repositorySettings.RepositoryType, created.RepositoryType, repositorySettings.RepositoryType + " repository type");
+                        AssertHelper.AreEqual(repositorySettings.GetType(), created.RepositorySettings.GetType(), repositorySettings.RepositoryType + " repository settings class");
+                    }
+                    finally
+                    {
+                        if (created?.Id != null) await client.DeleteCrawlPlanAsync(created.Id, ct).ConfigureAwait(false);
+                    }
+                }
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("CrawlPlan: List crawl plans includes created one", async (CancellationToken ct) =>
             {
                 AssertHelper.IsNotNull(createdPlanId, "createdPlanId from previous test");

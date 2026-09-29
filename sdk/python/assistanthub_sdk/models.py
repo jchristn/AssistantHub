@@ -1837,9 +1837,114 @@ class NfsCrawlRepositorySettings(CrawlRepositorySettings):
     include_subdirectories: bool = Field(True, alias="includeSubdirectories")
 
 
+class S3CrawlRepositorySettings(CrawlRepositorySettings):
+    """Amazon S3 or S3-compatible (MinIO, Less3, Ceph, Wasabi, Cloudflare R2) repository settings.
+
+    ``s3_endpoint`` is the service URL of an S3-compatible store; leave it unset for Amazon S3.
+    ``s3_secret_key`` is sensitive: it is stored with the crawl plan and returned by the API.
+    """
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.S3, alias="repositoryType"
+    )
+    s3_endpoint: Optional[str] = Field(None, alias="s3Endpoint")
+    s3_region: str = Field("us-east-1", alias="s3Region")
+    s3_bucket_name: Optional[str] = Field(None, alias="s3BucketName")
+    s3_access_key: Optional[str] = Field(None, alias="s3AccessKey")
+    s3_secret_key: Optional[str] = Field(None, alias="s3SecretKey")
+
+
+class AzureBlobCrawlRepositorySettings(CrawlRepositorySettings):
+    """Azure Blob Storage repository settings.
+
+    ``azure_endpoint`` defaults to https://{account}.blob.core.windows.net/; set it for Azurite or private endpoints.
+    ``azure_access_key`` is sensitive: it is stored with the crawl plan and returned by the API.
+    """
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.AZURE_BLOB, alias="repositoryType"
+    )
+    azure_account_name: Optional[str] = Field(None, alias="azureAccountName")
+    azure_access_key: Optional[str] = Field(None, alias="azureAccessKey")
+    azure_container: Optional[str] = Field(None, alias="azureContainer")
+    azure_endpoint: Optional[str] = Field(None, alias="azureEndpoint")
+
+
+class GoogleCloudCrawlRepositorySettings(CrawlRepositorySettings):
+    """Google Cloud Storage repository settings.
+
+    ``gcp_json_credentials`` is the full service account key JSON (Storage Object Viewer). It is sensitive: it is
+    stored with the crawl plan and returned by the API.
+    """
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.GOOGLE_CLOUD, alias="repositoryType"
+    )
+    gcp_project_id: Optional[str] = Field(None, alias="gcpProjectId")
+    gcp_bucket_name: Optional[str] = Field(None, alias="gcpBucketName")
+    gcp_json_credentials: Optional[str] = Field(None, alias="gcpJsonCredentials")
+    gcp_endpoint: Optional[str] = Field(None, alias="gcpEndpoint")
+
+
+class LocalDiskCrawlRepositorySettings(CrawlRepositorySettings):
+    """Local disk repository settings: a folder on the AssistantHub server.
+
+    ``disk_path`` must be an absolute path inside the server's Crawl.AllowedLocalPaths (inside the container when
+    running in Docker). Local disk crawling is disabled when no paths are allowed.
+    """
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.LOCAL_DISK, alias="repositoryType"
+    )
+    disk_path: Optional[str] = Field(None, alias="diskPath")
+    include_subdirectories: bool = Field(True, alias="includeSubdirectories")
+
+
+class GitCrawlRepositorySettings(CrawlRepositorySettings):
+    """Git repository settings (github.com, default branch). Use ``filter.object_prefix`` to crawl one folder.
+
+    ``git_access_token`` is required for private repositories and raises GitHub's rate limit from 60 to 5,000
+    requests an hour. It is sensitive: it is stored with the crawl plan and returned by the API.
+    """
+
+    repository_type: RepositoryType = Field(
+        RepositoryType.GIT, alias="repositoryType"
+    )
+    git_repository_url: Optional[str] = Field(None, alias="gitRepositoryUrl")
+    git_access_token: Optional[str] = Field(None, alias="gitAccessToken")
+
+
 RepositorySettingsValue = (
-    WebCrawlRepositorySettings | CifsCrawlRepositorySettings | NfsCrawlRepositorySettings
+    WebCrawlRepositorySettings
+    | CifsCrawlRepositorySettings
+    | NfsCrawlRepositorySettings
+    | S3CrawlRepositorySettings
+    | AzureBlobCrawlRepositorySettings
+    | GoogleCloudCrawlRepositorySettings
+    | LocalDiskCrawlRepositorySettings
+    | GitCrawlRepositorySettings
 )
+
+_REPOSITORY_SETTINGS_BY_TYPE = {
+    RepositoryType.CIFS.value: CifsCrawlRepositorySettings,
+    RepositoryType.NFS.value: NfsCrawlRepositorySettings,
+    RepositoryType.S3.value: S3CrawlRepositorySettings,
+    RepositoryType.AZURE_BLOB.value: AzureBlobCrawlRepositorySettings,
+    RepositoryType.GOOGLE_CLOUD.value: GoogleCloudCrawlRepositorySettings,
+    RepositoryType.LOCAL_DISK.value: LocalDiskCrawlRepositorySettings,
+    RepositoryType.GIT.value: GitCrawlRepositorySettings,
+}
+
+# A property that only one settings class has, for payloads without a repository type.
+_REPOSITORY_SETTINGS_BY_PROPERTY = {
+    "cifshostname": CifsCrawlRepositorySettings,
+    "nfshostname": NfsCrawlRepositorySettings,
+    "s3bucketname": S3CrawlRepositorySettings,
+    "azureaccountname": AzureBlobCrawlRepositorySettings,
+    "gcpbucketname": GoogleCloudCrawlRepositorySettings,
+    "diskpath": LocalDiskCrawlRepositorySettings,
+    "gitrepositoryurl": GitCrawlRepositorySettings,
+}
 
 
 class CrawlPlan(BaseModel):
@@ -1888,14 +1993,15 @@ class CrawlPlan(BaseModel):
                 or value.get("repository_type")
             )
 
-            if repository_type == RepositoryType.CIFS.value:
-                return CifsCrawlRepositorySettings.model_validate(value)
-            if repository_type == RepositoryType.NFS.value:
-                return NfsCrawlRepositorySettings.model_validate(value)
-            if "cifsHostname" in value or "CifsHostname" in value:
-                return CifsCrawlRepositorySettings.model_validate(value)
-            if "nfsHostname" in value or "NfsHostname" in value:
-                return NfsCrawlRepositorySettings.model_validate(value)
+            if isinstance(repository_type, RepositoryType):
+                repository_type = repository_type.value
+            settings_class = _REPOSITORY_SETTINGS_BY_TYPE.get(repository_type)
+            if settings_class is not None:
+                return settings_class.model_validate(value)
+            for key in value:
+                settings_class = _REPOSITORY_SETTINGS_BY_PROPERTY.get(str(key).replace("_", "").lower())
+                if settings_class is not None:
+                    return settings_class.model_validate(value)
 
             return WebCrawlRepositorySettings.model_validate(value)
 

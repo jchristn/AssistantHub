@@ -28,7 +28,12 @@ namespace AssistantHub.McpServer.Classes
             "AccessKey",
             "SecretKey",
             "SlackAppToken",
-            "SlackBotToken"
+            "SlackBotToken",
+            "CifsPassword",
+            "S3SecretKey",
+            "AzureAccessKey",
+            "GcpJsonCredentials",
+            "GitAccessToken"
         };
 
         /// <summary>

@@ -218,10 +218,14 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
 from assistanthub_sdk import (
     AssistantHubClient,
     CifsCrawlRepositorySettings,
+    CrawlFilterSettings,
     CrawlPlan,
+    GitCrawlRepositorySettings,
+    LocalDiskCrawlRepositorySettings,
     NfsCrawlRepositorySettings,
     NfsVersion,
     RepositoryType,
+    S3CrawlRepositorySettings,
     WebCrawlRepositorySettings,
 )
 
@@ -276,7 +280,48 @@ with AssistantHubClient(base_url="http://localhost:8800", api_key="key") as clie
             ),
         )
     )
+
+    # Object stores: S3 (and S3-compatible via s3_endpoint), AzureBlob and GoogleCloud work the same way.
+    s3_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="S3 Bucket Crawl",
+            repository_type=RepositoryType.S3,
+            repository_settings=S3CrawlRepositorySettings(
+                s3_bucket_name="company-docs",
+                s3_region="us-east-1",
+                s3_access_key="AKIA...",
+                s3_secret_key="secret",
+            ),
+            filter=CrawlFilterSettings(object_prefix="handbook/"),
+        )
+    )
+
+    # GitHub repository (default branch); object_prefix selects a folder.
+    git_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="GitHub Docs Crawl",
+            repository_type=RepositoryType.GIT,
+            repository_settings=GitCrawlRepositorySettings(
+                git_repository_url="https://github.com/owner/repo",
+                git_access_token="github_pat_...",
+            ),
+            filter=CrawlFilterSettings(object_prefix="docs/", object_suffix=".md"),
+        )
+    )
+
+    # Local disk: disk_path must be inside the server's Crawl.AllowedLocalPaths (disabled when empty).
+    disk_plan = client.create_crawl_plan(
+        CrawlPlan(
+            name="Handbook Folder Crawl",
+            repository_type=RepositoryType.LOCAL_DISK,
+            repository_settings=LocalDiskCrawlRepositorySettings(
+                disk_path="/app/crawl-sources/handbook",
+            ),
+        )
+    )
 ```
+
+Repository secrets (`s3_secret_key`, `azure_access_key`, `gcp_json_credentials`, `git_access_token`, `cifs_password`) are stored with the crawl plan and returned by the API; treat crawl plan responses as sensitive.
 
 ## Available Methods
 

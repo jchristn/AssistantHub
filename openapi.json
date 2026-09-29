@@ -103,7 +103,7 @@
     },
     {
       "name": "Crawl Plans",
-      "description": "Crawler management for Web, CIFS file-server, and NFS file-server repositories"
+      "description": "Crawler management for Web, CIFS and NFS file-server, S3, Azure Blob, Google Cloud Storage, local disk, and GitHub repositories"
     },
     {
       "name": "Models",
@@ -10873,7 +10873,7 @@
           "Crawl Plans"
         ],
         "summary": "Create a crawl plan",
-        "description": "Create a Web, CIFS file-server, or NFS file-server crawl plan.",
+        "description": "Create a Web, CIFS, NFS, S3, Azure Blob, Google Cloud Storage, local disk, or GitHub crawl plan.",
         "requestBody": {
           "required": true,
           "content": {
@@ -11413,7 +11413,7 @@
           }
         ],
         "operationId": "put_v1_0_crawlplans_id",
-        "description": "Replaces a crawl plan with the supplied values. Id, TenantId, and CreatedUtc are preserved from the stored plan and LastUpdateUtc is set by the server; every other field is taken from the request body, so send the complete plan. Repository settings are revalidated. RepositorySettings is polymorphic and selected by RepositoryType (or by its own RepositoryType property): Web uses AuthenticationType (None, Basic, ApiKey, BearerToken), Username, Password, ApiKeyHeader, ApiKeyValue, BearerToken, UserAgent, StartUrl (required), UseHeadlessBrowser, FollowLinks, FollowRedirects, ExtractSitemapLinks, RestrictToChildUrls, RestrictToSubdomain, RestrictToRootDomain, IgnoreRobotsTxt, MaxDepth (1-100), MaxParallelTasks (1-64), and CrawlDelayMs (0-60000); CIFS uses CifsHostname, CifsUsername, CifsPassword, CifsShareName, and IncludeSubdirectories; NFS uses NfsHostname, NfsUserId, NfsGroupId, NfsShareName, NfsVersion, and IncludeSubdirectories. Repository credentials are stored and returned in plain text, so treat crawl plan responses as sensitive."
+        "description": "Replaces a crawl plan with the supplied values. Id, TenantId, and CreatedUtc are preserved from the stored plan and LastUpdateUtc is set by the server; every other field is taken from the request body, so send the complete plan. Repository settings are revalidated. RepositorySettings is polymorphic and selected by RepositoryType (or by its own RepositoryType property): Web uses AuthenticationType (None, Basic, ApiKey, BearerToken), Username, Password, ApiKeyHeader, ApiKeyValue, BearerToken, UserAgent, StartUrl (required), UseHeadlessBrowser, FollowLinks, FollowRedirects, ExtractSitemapLinks, RestrictToChildUrls, RestrictToSubdomain, RestrictToRootDomain, IgnoreRobotsTxt, MaxDepth (1-100), MaxParallelTasks (1-64), and CrawlDelayMs (0-60000); CIFS uses CifsHostname, CifsUsername, CifsPassword, CifsShareName, and IncludeSubdirectories; NFS uses NfsHostname, NfsUserId, NfsGroupId, NfsShareName, NfsVersion, and IncludeSubdirectories; S3 uses S3Endpoint (empty for Amazon S3), S3Region, S3BucketName, S3AccessKey, and S3SecretKey; AzureBlob uses AzureAccountName, AzureAccessKey, AzureContainer, and AzureEndpoint (empty for https://{account}.blob.core.windows.net/); GoogleCloud uses GcpProjectId, GcpBucketName, GcpJsonCredentials (a service account JSON key), and GcpEndpoint; LocalDisk uses DiskPath (an absolute folder inside the server's Crawl.AllowedLocalPaths) and IncludeSubdirectories; Git uses GitRepositoryUrl (https://github.com/owner/repo) and GitAccessToken. Bucket, container, and repository settings name the whole store; use Filter.ObjectPrefix to crawl one folder. Repository credentials are stored and returned in plain text, so treat crawl plan responses as sensitive."
       },
       "delete": {
         "tags": [
@@ -32666,6 +32666,39 @@
           }
         }
       },
+      "AzureBlobCrawlRepositorySettings": {
+        "type": "object",
+        "description": "Azure Blob Storage container. Use Filter.ObjectPrefix to crawl one virtual folder.",
+        "required": [
+          "RepositoryType",
+          "AzureAccountName",
+          "AzureAccessKey",
+          "AzureContainer"
+        ],
+        "properties": {
+          "RepositoryType": {
+            "$ref": "#/components/schemas/RepositoryTypeEnum"
+          },
+          "AzureAccountName": {
+            "type": "string",
+            "description": "Storage account name only: 3 to 24 lowercase letters and digits, for example contosodocs."
+          },
+          "AzureAccessKey": {
+            "type": "string",
+            "format": "password",
+            "description": "Storage account access key (key1 or key2). Stored and returned in plain text."
+          },
+          "AzureContainer": {
+            "type": "string",
+            "description": "Container name only: 3 to 63 lowercase letters, digits, and hyphens, or $root."
+          },
+          "AzureEndpoint": {
+            "type": "string",
+            "nullable": true,
+            "description": "Blob service endpoint. Null or empty uses https://{account}.blob.core.windows.net/. Set it for sovereign clouds, private endpoints, or Azurite (http://127.0.0.1:10000/devstoreaccount1/)."
+          }
+        }
+      },
       "BulkDeleteRequest": {
         "type": "object",
         "properties": {
@@ -34273,6 +34306,21 @@
           },
           {
             "$ref": "#/components/schemas/NfsCrawlRepositorySettings"
+          },
+          {
+            "$ref": "#/components/schemas/S3CrawlRepositorySettings"
+          },
+          {
+            "$ref": "#/components/schemas/AzureBlobCrawlRepositorySettings"
+          },
+          {
+            "$ref": "#/components/schemas/GoogleCloudCrawlRepositorySettings"
+          },
+          {
+            "$ref": "#/components/schemas/LocalDiskCrawlRepositorySettings"
+          },
+          {
+            "$ref": "#/components/schemas/GitCrawlRepositorySettings"
           }
         ],
         "discriminator": {
@@ -34280,7 +34328,12 @@
           "mapping": {
             "Web": "#/components/schemas/WebCrawlRepositorySettings",
             "CIFS": "#/components/schemas/CifsCrawlRepositorySettings",
-            "NFS": "#/components/schemas/NfsCrawlRepositorySettings"
+            "NFS": "#/components/schemas/NfsCrawlRepositorySettings",
+            "S3": "#/components/schemas/S3CrawlRepositorySettings",
+            "AzureBlob": "#/components/schemas/AzureBlobCrawlRepositorySettings",
+            "GoogleCloud": "#/components/schemas/GoogleCloudCrawlRepositorySettings",
+            "LocalDisk": "#/components/schemas/LocalDiskCrawlRepositorySettings",
+            "Git": "#/components/schemas/GitCrawlRepositorySettings"
           }
         },
         "properties": {
@@ -34290,7 +34343,12 @@
             "enum": [
               "Web",
               "CIFS",
-              "NFS"
+              "NFS",
+              "S3",
+              "AzureBlob",
+              "GoogleCloud",
+              "LocalDisk",
+              "Git"
             ]
           }
         }
@@ -34322,6 +34380,13 @@
           "EnumerationDirectory": {
             "type": "string",
             "description": "Directory for storing crawl enumeration files. Default: ./crawl-enumerations/"
+          },
+          "AllowedLocalPaths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Absolute folders on the server that LocalDisk crawl plans may read (a plan DiskPath must be one of them or inside one). Empty disables local disk crawling. Default: empty."
           }
         }
       },
@@ -36211,6 +36276,62 @@
           }
         }
       },
+      "GitCrawlRepositorySettings": {
+        "type": "object",
+        "description": "GitHub repository, read from its default branch through the GitHub REST API. Object keys are repository-relative paths such as docs/setup.md; use Filter.ObjectPrefix (for example docs/) to crawl one folder.",
+        "required": [
+          "RepositoryType",
+          "GitRepositoryUrl"
+        ],
+        "properties": {
+          "RepositoryType": {
+            "$ref": "#/components/schemas/RepositoryTypeEnum"
+          },
+          "GitRepositoryUrl": {
+            "type": "string",
+            "description": "Repository URL: https://github.com/owner/repo, https://github.com/owner/repo.git, or git@github.com:owner/repo.git. Branch, folder, and file URLs and other Git hosts are rejected."
+          },
+          "GitAccessToken": {
+            "type": "string",
+            "nullable": true,
+            "format": "password",
+            "description": "GitHub personal access token. Required for private repositories (fine-grained: Contents read-only; classic: repo) and recommended for public ones, since GitHub allows 60 unauthenticated API requests an hour versus 5,000 with a token. Stored and returned in plain text."
+          }
+        }
+      },
+      "GoogleCloudCrawlRepositorySettings": {
+        "type": "object",
+        "description": "Google Cloud Storage bucket. Use Filter.ObjectPrefix to crawl one folder.",
+        "required": [
+          "RepositoryType",
+          "GcpProjectId",
+          "GcpBucketName",
+          "GcpJsonCredentials"
+        ],
+        "properties": {
+          "RepositoryType": {
+            "$ref": "#/components/schemas/RepositoryTypeEnum"
+          },
+          "GcpProjectId": {
+            "type": "string",
+            "description": "Google Cloud project ID, for example contoso-docs-123456."
+          },
+          "GcpBucketName": {
+            "type": "string",
+            "description": "Bucket name only, for example contoso-documents (not gs://contoso-documents)."
+          },
+          "GcpJsonCredentials": {
+            "type": "string",
+            "format": "password",
+            "description": "Full JSON key of a service account with the Storage Object Viewer role on the bucket. Stored and returned in plain text."
+          },
+          "GcpEndpoint": {
+            "type": "string",
+            "nullable": true,
+            "description": "Custom endpoint for a private endpoint or emulator. Null or empty uses the standard endpoint."
+          }
+        }
+      },
       "HealthCheckRecord": {
         "type": "object",
         "description": "A single health check result record.",
@@ -36529,6 +36650,28 @@
             "type": "integer",
             "format": "int32",
             "description": "Timeout in milliseconds for each summarization request. Default: 300000. Minimum: 100. Values below the minimum are clamped."
+          }
+        }
+      },
+      "LocalDiskCrawlRepositorySettings": {
+        "type": "object",
+        "description": "Folder on the AssistantHub server. DiskPath must be inside one of the folders listed in the server setting Crawl.AllowedLocalPaths; with none listed, local disk crawling is disabled. Files reached through symbolic links or junctions are skipped.",
+        "required": [
+          "RepositoryType",
+          "DiskPath"
+        ],
+        "properties": {
+          "RepositoryType": {
+            "$ref": "#/components/schemas/RepositoryTypeEnum"
+          },
+          "DiskPath": {
+            "type": "string",
+            "description": "Absolute path of the folder on the AssistantHub server, for example /app/crawl-sources/handbook (Docker) or D:\\Shared\\Documents. The folder must exist; it is never created."
+          },
+          "IncludeSubdirectories": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include files in subfolders."
           }
         }
       },
@@ -37051,7 +37194,12 @@
         "enum": [
           "Web",
           "CIFS",
-          "NFS"
+          "NFS",
+          "S3",
+          "AzureBlob",
+          "GoogleCloud",
+          "LocalDisk",
+          "Git"
         ]
       },
       "RequestHistoryEntry": {
@@ -37462,6 +37610,44 @@
             "items": {
               "$ref": "#/components/schemas/RetrievalChunk"
             }
+          }
+        }
+      },
+      "S3CrawlRepositorySettings": {
+        "type": "object",
+        "description": "Amazon S3 or S3-compatible (MinIO, Less3, Ceph, Wasabi, Cloudflare R2) bucket. Object keys are paths inside the bucket; use Filter.ObjectPrefix to crawl one folder.",
+        "required": [
+          "RepositoryType",
+          "S3BucketName"
+        ],
+        "properties": {
+          "RepositoryType": {
+            "$ref": "#/components/schemas/RepositoryTypeEnum"
+          },
+          "S3Endpoint": {
+            "type": "string",
+            "nullable": true,
+            "description": "Service URL of an S3-compatible store, for example http://minio.example.com:9000/. Null or empty uses Amazon S3 in S3Region. The scheme decides whether TLS is used; path-style requests are sent."
+          },
+          "S3Region": {
+            "type": "string",
+            "default": "us-east-1",
+            "description": "Region, for example us-east-1. Required for Amazon S3; S3-compatible stores usually accept any value."
+          },
+          "S3BucketName": {
+            "type": "string",
+            "description": "Bucket name only, for example company-docs. Not a URL, s3:// path, or folder."
+          },
+          "S3AccessKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "Access key ID. Leave both keys empty for a public bucket."
+          },
+          "S3SecretKey": {
+            "type": "string",
+            "nullable": true,
+            "format": "password",
+            "description": "Secret access key. Stored and returned in plain text."
           }
         }
       },

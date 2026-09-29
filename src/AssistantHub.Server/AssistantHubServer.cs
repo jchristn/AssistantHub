@@ -15,6 +15,7 @@ namespace AssistantHub.Server
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
     using AssistantHub.Core.Services;
+    using AssistantHub.Core.Services.Crawlers;
     using AssistantHub.Core.Settings;
     using AssistantHub.Core.Telemetry;
     using AssistantHub.Server.Handlers;
@@ -170,6 +171,7 @@ namespace AssistantHub.Server
             if (!ValidateSettings(_Settings))
                 return false;
 
+            LocalDiskCrawlPolicy.Configure(_Settings.Crawl?.AllowedLocalPaths);
             Console.WriteLine("Settings loaded from " + Constants.SettingsFile);
             return true;
         }

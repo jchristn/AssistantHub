@@ -102,6 +102,12 @@ namespace AssistantHub.Core.Models
             if (String.IsNullOrWhiteSpace(NfsShareName)) errors.Add("NfsShareName is required for NFS crawl repository settings.");
             if (NfsVersion != NfsVersionEnum.V3) errors.Add("NfsVersion " + NfsVersion + " is not supported; NFS crawling supports V3 only.");
             if (NfsPort.HasValue && (NfsPort.Value < 1 || NfsPort.Value > 65535)) errors.Add("NfsPort must be between 1 and 65535.");
+
+            // Common path mistakes: host:/export in the hostname, or a relative export path.
+            if (!String.IsNullOrWhiteSpace(NfsHostname) && (NfsHostname.IndexOfAny(new[] { '\\', '/', ':' }) >= 0))
+                errors.Add("NfsHostname must be only the server name or IPv4 address (for example nfs.example.com), without the export path; put the export in NfsShareName.");
+            if (!String.IsNullOrWhiteSpace(NfsShareName) && !NfsShareName.Trim().Replace('\\', '/').StartsWith("/", StringComparison.Ordinal))
+                errors.Add("NfsShareName must be the absolute export path, starting with / (for example /exports/content).");
             if (NfsMountPort.HasValue && (NfsMountPort.Value < 0 || NfsMountPort.Value > 65535)) errors.Add("NfsMountPort must be between 0 and 65535.");
             if (NfsPortmapperPort.HasValue && (NfsPortmapperPort.Value < 1 || NfsPortmapperPort.Value > 65535)) errors.Add("NfsPortmapperPort must be between 1 and 65535.");
             return errors;

@@ -195,8 +195,15 @@ The `crawlplan/create` and `crawlplan/update` tools accept a `planJson` string c
 | `Web` | `WebCrawlRepositorySettings` | Uses `StartUrl`, web authentication fields, link-following settings, sitemap/robots settings, depth, parallelism, and crawl delay. |
 | `CIFS` | `CifsCrawlRepositorySettings` | Uses `CifsHostname`, `CifsUsername`, `CifsPassword`, `CifsShareName`, and `IncludeSubdirectories`. |
 | `NFS` | `NfsCrawlRepositorySettings` | Uses `NfsHostname`, `NfsUserId`, `NfsGroupId`, `NfsShareName`, `NfsVersion`, and `IncludeSubdirectories`. |
+| `S3` | `S3CrawlRepositorySettings` | Uses `S3Endpoint` (empty for Amazon S3), `S3Region`, `S3BucketName`, `S3AccessKey`, and `S3SecretKey`. |
+| `AzureBlob` | `AzureBlobCrawlRepositorySettings` | Uses `AzureAccountName`, `AzureAccessKey`, `AzureContainer`, and `AzureEndpoint`. |
+| `GoogleCloud` | `GoogleCloudCrawlRepositorySettings` | Uses `GcpProjectId`, `GcpBucketName`, `GcpJsonCredentials`, and `GcpEndpoint`. |
+| `LocalDisk` | `LocalDiskCrawlRepositorySettings` | Uses `DiskPath` and `IncludeSubdirectories`. `DiskPath` must be inside the server's `Crawl.AllowedLocalPaths`; with none configured, local disk plans are rejected. |
+| `Git` | `GitCrawlRepositorySettings` | Uses `GitRepositoryUrl` (`https://github.com/owner/repo`) and `GitAccessToken`. Reads the default branch of a github.com repository. |
 
-CIFS passwords, web passwords, bearer tokens, and API keys are secret-bearing repository settings. MCP responses are redacted by default when serialized through the helper layer; callers should keep `includeSecrets=false` unless raw settings are explicitly needed.
+Bucket, container, folder and repository settings name the whole store; use `Filter.ObjectPrefix` to crawl one folder. See the Crawl Plans section of [REST_API.md](REST_API.md) for how to write each value.
+
+CIFS passwords, S3 secret keys, Azure access keys, Google Cloud service account keys, GitHub tokens, web passwords, bearer tokens, and API keys are secret-bearing repository settings. MCP responses are redacted by default when serialized through the helper layer; callers should keep `includeSecrets=false` unless raw settings are explicitly needed.
 
 Example CIFS `planJson` payload:
 

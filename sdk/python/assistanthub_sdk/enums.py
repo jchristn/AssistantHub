@@ -98,6 +98,11 @@ class RepositoryType(str, Enum):
     WEB = "Web"
     CIFS = "CIFS"
     NFS = "NFS"
+    S3 = "S3"
+    AZURE_BLOB = "AzureBlob"
+    GOOGLE_CLOUD = "GoogleCloud"
+    LOCAL_DISK = "LocalDisk"
+    GIT = "Git"
 
 
 class NfsVersion(str, Enum):

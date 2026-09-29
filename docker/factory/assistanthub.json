@@ -114,6 +114,12 @@
     "Id": "default",
     "Name": "Default"
   },
+  "Crawl": {
+    "EnumerationDirectory": "./crawl-enumerations/",
+    "AllowedLocalPaths": [
+      "/app/crawl-sources"
+    ]
+  },
   "ProcessingLog": {
     "Directory": "./processing-logs/",
     "RetentionDays": 30

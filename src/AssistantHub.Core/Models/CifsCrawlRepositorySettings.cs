@@ -73,6 +73,13 @@ namespace AssistantHub.Core.Models
             if (String.IsNullOrWhiteSpace(CifsPassword)) errors.Add("CifsPassword is required for CIFS crawl repository settings.");
             if (String.IsNullOrWhiteSpace(CifsShareName)) errors.Add("CifsShareName is required for CIFS crawl repository settings.");
             if (CifsPort.HasValue && (CifsPort.Value < 1 || CifsPort.Value > 65535)) errors.Add("CifsPort must be between 1 and 65535.");
+
+            // Common path mistakes: a UNC path or URL in the hostname, or a folder in the share name.
+            if (!String.IsNullOrWhiteSpace(CifsHostname) && (CifsHostname.IndexOfAny(new[] { '\\', '/' }) >= 0 || CifsHostname.Contains("://")))
+                errors.Add("CifsHostname must be only the server name or IPv4 address (for example fileserver.example.com), not a UNC path or URL; put the share in CifsShareName.");
+            string share = (CifsShareName ?? "").Trim().Trim('\\', '/');
+            if (share.IndexOfAny(new[] { '\\', '/' }) >= 0)
+                errors.Add("CifsShareName must be the share only (for example Documents); to crawl a folder inside it, use Filter.ObjectPrefix (for example Policies/).");
             return errors;
         }
 

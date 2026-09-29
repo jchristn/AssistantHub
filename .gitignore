@@ -44,6 +44,8 @@ docker/less3/disk/
 docker/partio/request-history/
 docker/verbex/data/
 docker/verbex/logs/
+docker/assistanthub/crawl-sources/*
+!docker/assistanthub/crawl-sources/README.md
 
 # Docker configuration
 !docker/**/*.json

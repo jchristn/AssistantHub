@@ -120,12 +120,14 @@ namespace Test.Automated
                 AssertHelper.AreEqual(2, Enum.GetValues<EnumerationOrderEnum>().Length, "count");
             });
 
-            await ExecuteTestAsync("Enum.RepositoryTypeEnum: Web, CIFS, and NFS", async () =>
+            await ExecuteTestAsync("Enum.RepositoryTypeEnum: all repository types", async () =>
             {
                 AssertHelper.AreEqual(RepositoryTypeEnum.Web, Enum.Parse<RepositoryTypeEnum>("Web"), "Web");
                 AssertHelper.AreEqual(RepositoryTypeEnum.CIFS, Enum.Parse<RepositoryTypeEnum>("CIFS"), "CIFS");
                 AssertHelper.AreEqual(RepositoryTypeEnum.NFS, Enum.Parse<RepositoryTypeEnum>("NFS"), "NFS");
-                AssertHelper.AreEqual(3, Enum.GetValues<RepositoryTypeEnum>().Length, "count");
+                foreach (string name in new[] { "S3", "AzureBlob", "GoogleCloud", "LocalDisk", "Git" })
+                    AssertHelper.IsTrue(Enum.TryParse<RepositoryTypeEnum>(name, out _), name);
+                AssertHelper.AreEqual(8, Enum.GetValues<RepositoryTypeEnum>().Length, "count");
             });
 
             await ExecuteTestAsync("Enum.NfsVersionEnum: V2, V3, and V4", async () =>

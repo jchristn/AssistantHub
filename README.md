@@ -187,7 +187,7 @@ Operational notes:
 
 - **Assistants** -- Create and manage multiple AI assistants, each with their own configuration, personality, and knowledge base.
 - **Documents** -- Upload documents (PDF, text, HTML, and more) to build a knowledge base for each assistant. Documents are automatically chunked, embedded, and indexed.
-- **Crawlers** -- Native web, CIFS/SMB, and NFS crawling engine that automatically discovers, retrieves, and ingests repository content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, web authentication, and CIFS/NFS connectivity validation. Each crawled document is traceable back to its source crawler and operation.
+- **Crawlers** -- Native web, CIFS/SMB, NFS, Amazon S3 (and S3-compatible), Azure Blob, Google Cloud Storage, local disk, and GitHub crawling engine that automatically discovers, retrieves, and ingests repository content on a schedule. Supports delta-based crawling (only new/changed/deleted content is processed), configurable depth, parallelism, throttling, content filtering, web authentication, and CIFS/NFS connectivity validation. Each crawled document is traceable back to its source crawler and operation.
 - **Ingestion Rules** -- Define reusable ingestion configurations that specify target S3 buckets, RecallDB collections, summarization, chunking strategies, and embedding settings. Documents reference an ingestion rule for processing.
 - **Summarization** -- Optionally summarize document content before or after chunking using configurable completion endpoints, improving retrieval quality for long documents.
 - **Endpoint Management** -- Manage, test, and explicitly load or warm embedding and completion (inference) endpoint models on the Partio service directly from the dashboard or API. Each endpoint carries per-endpoint concurrency controls -- `MaxConcurrentRequests`, `MaxQueueDepth` (queue requests over the concurrency limit instead of rejecting them with `429`), and `MaximumTimeoutMs` -- that are forwarded to Partio. Ingestion automatically retries transient Partio failures (`408`/`429`/`502`/`503`/`504`) with exponential backoff so bursts do not fail documents.
@@ -235,6 +235,8 @@ Once all services are healthy, open [http://localhost:8801](http://localhost:880
 On a fresh startup, `assistanthub-server` now waits for `partio-server` to become healthy before it starts. This avoids the transient `partio-server:8400` DNS/startup race that could previously abort AssistantHub startup immediately after a factory reset.
 
 For CIFS/NFS crawl plans in the local Docker deployment, remember that `localhost` from inside `assistanthub-server` means the container, not the host machine. The default compose file maps `host.docker.internal` to the Docker host, and AssistantHub normalizes loopback file-server hostnames to that alias when it is available so local shares such as `//localhost/Share` can be reached from the server container.
+
+Crawl plans support these repository types: `Web` (CrawlSharp), `CIFS` and `NFS` file servers, `S3` (Amazon S3 or S3-compatible stores such as MinIO and Less3), `AzureBlob`, `GoogleCloud`, `LocalDisk`, and `Git` (GitHub repositories, via GitHubCrawler); the file-server, object-store and disk types use Blobject. To crawl a local folder with the Docker deployment, copy it under `docker/assistanthub/crawl-sources/` (mounted read-only at `/app/crawl-sources`) and use `DiskPath` `/app/crawl-sources/<folder>`. Repository credentials (passwords, access keys, service account keys, GitHub tokens) are stored in the crawl plan, so use read-only credentials limited to the one bucket, container or repository.
 
 > **Note:** Deploying individual services outside of Docker is also possible, but requires manual configuration and deployment of each dependency (PostgreSQL with pgvector, Ollama, Less3, DocumentAtom, Partio, RecallDB, Verbex). The Docker Compose stack handles all service wiring, health checks, and startup ordering automatically, which is why manual setup documentation is not provided.
 
@@ -518,7 +520,8 @@ The server reads configuration from `assistanthub.json` in the working directory
     "RetentionDays": 7
   },
   "Crawl": {
-    "EnumerationDirectory": "./crawl-enumerations/"
+    "EnumerationDirectory": "./crawl-enumerations/",
+    "AllowedLocalPaths": []
   },
   "Logging": {
     "ConsoleLogging": true,
@@ -552,7 +555,7 @@ The server reads configuration from `assistanthub.json` in the working directory
 | `DefaultTenant` | ID and name for the default tenant, auto-created on first run. |
 | `ProcessingLog` | Directory and retention for per-document processing logs (namespaced by tenant). |
 | `ChatHistory` | Retention period in days for chat history records (0 = keep indefinitely). Background cleanup runs hourly. |
-| `Crawl` | Directory for storing crawl enumeration files (delta snapshots used for change detection between crawl runs). |
+| `Crawl` | `EnumerationDirectory` stores crawl enumeration files (delta snapshots used for change detection between crawl runs). `AllowedLocalPaths` lists the absolute folders on the server that `LocalDisk` crawl plans may read; a plan's `DiskPath` must be one of them or inside one. Empty (the default) disables local disk crawling. The Docker configuration allows `/app/crawl-sources`, mounted read-only from `docker/assistanthub/crawl-sources/`. |
 | `Logging` | Console/file logging toggles, severity level, log directory, and optional syslog servers. |
 
 ### Cross-Encoder Reranking

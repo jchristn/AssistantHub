@@ -16,7 +16,8 @@ namespace AssistantHub.Core.Services.Crawlers
     using SyslogLogging;
 
     /// <summary>
-    /// Base class for Blobject-backed file-server repository crawlers.
+    /// Base class for Blobject-backed repository crawlers: CIFS and NFS file servers, S3, Azure Blob and Google Cloud
+    /// Storage object stores, and local disk.
     /// </summary>
     public abstract class FileServerRepositoryCrawlerBase : CrawlerBase
     {
@@ -153,6 +154,7 @@ namespace AssistantHub.Core.Services.Crawlers
                 if (token.IsCancellationRequested) yield break;
                 if (blob == null) continue;
                 if (!ShouldIncludeObject(blob.Key)) continue;
+                if (!IncludeBlob(blob.Key)) continue;
 
                 yield return FromBlobMetadata(blob);
             }
@@ -168,11 +170,11 @@ namespace AssistantHub.Core.Services.Crawlers
         /// <inheritdoc />
         public override async Task<CrawlConnectivityResult> GetConnectivityStatusAsync(CancellationToken token = default)
         {
-            FileServerDiagnosticInfo info = GetDiagnosticInfo();
+            RepositoryDiagnosticInfo info = GetDiagnosticInfo();
             CrawlConnectivityResult settingsResult = ValidateDiagnosticInfo(info);
             if (settingsResult != null) return settingsResult;
 
-            if (_EnableNetworkDiagnostics)
+            if (_EnableNetworkDiagnostics && info.NetworkProbe)
             {
                 CrawlConnectivityResult networkResult = await ValidateNetworkAsync(info, token).ConfigureAwait(false);
                 if (networkResult != null) return networkResult;
@@ -212,7 +214,7 @@ namespace AssistantHub.Core.Services.Crawlers
                 return CreateResult(false, BuildRepositoryAccessFailureMessage(info, e, serverConnectivity, serverConnectivityException));
             }
 
-            if (serverConnectivity) return CreateResult(true, BuildRepositoryAccessSuccessMessage(info));
+            if (serverConnectivity || !info.RequireServerCheck) return CreateResult(true, BuildRepositoryAccessSuccessMessage(info));
             return CreateResult(false, BuildRepositoryAccessFailureMessage(info, null, serverConnectivity, serverConnectivityException));
         }
 
@@ -264,16 +266,27 @@ namespace AssistantHub.Core.Services.Crawlers
             base.Dispose(disposing);
         }
 
-        #endregion
+        /// <summary>
+        /// Whether an enumerated object should be crawled. The default includes everything.
+        /// </summary>
+        /// <param name="key">Object key.</param>
+        /// <returns>True to crawl the object.</returns>
+        protected virtual bool IncludeBlob(string key)
+        {
+            return true;
+        }
 
-        #region Private-Methods
-
-        private FileServerDiagnosticInfo GetDiagnosticInfo()
+        /// <summary>
+        /// Describe the repository for connectivity diagnostics. File-server crawlers are described from their settings;
+        /// other crawlers override this.
+        /// </summary>
+        /// <returns>Diagnostic description.</returns>
+        protected virtual RepositoryDiagnosticInfo GetDiagnosticInfo()
         {
             if (_CrawlPlan.RepositoryType == RepositoryTypeEnum.CIFS || _CrawlPlan.RepositorySettings is CifsCrawlRepositorySettings)
             {
                 CifsCrawlRepositorySettings settings = _CrawlPlan.RepositorySettings as CifsCrawlRepositorySettings;
-                return new FileServerDiagnosticInfo
+                return new RepositoryDiagnosticInfo
                 {
                     RepositoryLabel = "CIFS",
                     ConfiguredHostname = settings?.CifsHostname,
@@ -288,7 +301,7 @@ namespace AssistantHub.Core.Services.Crawlers
             if (_CrawlPlan.RepositoryType == RepositoryTypeEnum.NFS || _CrawlPlan.RepositorySettings is NfsCrawlRepositorySettings)
             {
                 NfsCrawlRepositorySettings settings = _CrawlPlan.RepositorySettings as NfsCrawlRepositorySettings;
-                return new FileServerDiagnosticInfo
+                return new RepositoryDiagnosticInfo
                 {
                     RepositoryLabel = "NFS",
                     ConfiguredHostname = settings?.NfsHostname,
@@ -300,7 +313,7 @@ namespace AssistantHub.Core.Services.Crawlers
                 };
             }
 
-            return new FileServerDiagnosticInfo
+            return new RepositoryDiagnosticInfo
             {
                 RepositoryLabel = "file-server",
                 ConfiguredHostname = null,
@@ -312,16 +325,21 @@ namespace AssistantHub.Core.Services.Crawlers
             };
         }
 
-        private CrawlConnectivityResult ValidateDiagnosticInfo(FileServerDiagnosticInfo info)
+        #endregion
+
+        #region Private-Methods
+
+        private CrawlConnectivityResult ValidateDiagnosticInfo(RepositoryDiagnosticInfo info)
         {
-            if (info == null) return CreateResult(false, "Unable to determine file-server repository settings.");
+            if (info == null) return CreateResult(false, "Unable to determine repository settings.");
+            if (String.IsNullOrWhiteSpace(info.ShareName)) return CreateResult(false, info.RepositoryLabel + " " + info.LocationLabel + " is missing.");
+            if (!info.NetworkProbe) return null;
             if (String.IsNullOrWhiteSpace(info.Hostname)) return CreateResult(false, info.RepositoryLabel + " hostname is missing.");
-            if (String.IsNullOrWhiteSpace(info.ShareName)) return CreateResult(false, info.RepositoryLabel + " share/export name is missing.");
             if (info.Port <= 0) return CreateResult(false, info.RepositoryLabel + " connectivity port is not configured.");
             return null;
         }
 
-        private async Task<CrawlConnectivityResult> ValidateNetworkAsync(FileServerDiagnosticInfo info, CancellationToken token)
+        private async Task<CrawlConnectivityResult> ValidateNetworkAsync(RepositoryDiagnosticInfo info, CancellationToken token)
         {
             IPAddress[] addresses = null;
 
@@ -378,23 +396,29 @@ namespace AssistantHub.Core.Services.Crawlers
             return null;
         }
 
-        private string BuildRepositoryAccessSuccessMessage(FileServerDiagnosticInfo info)
+        private string BuildRepositoryAccessSuccessMessage(RepositoryDiagnosticInfo info)
         {
-            string target = info.RepositoryLabel + " repository connectivity verified. " + BuildHostnameDescription(info) + " resolved, port " + info.Port + " is reachable, and share/export '" + info.ShareName + "' is accessible";
+            string target = info.NetworkProbe
+                ? info.RepositoryLabel + " repository connectivity verified. " + BuildHostnameDescription(info) + " resolved, port " + info.Port + " is reachable, and " + info.LocationLabel + " '" + info.ShareName + "' is accessible"
+                : info.RepositoryLabel + " repository connectivity verified. " + Capitalize(info.LocationLabel) + " '" + info.ShareName + "' is accessible";
             if (!String.IsNullOrWhiteSpace(info.Principal))
                 target += " with " + info.PrincipalLabel + " '" + info.Principal + "'";
 
             return target + ".";
         }
 
-        private string BuildRepositoryAccessFailureMessage(FileServerDiagnosticInfo info, Exception exception, bool serverConnectivity = false, Exception serverConnectivityException = null)
+        private string BuildRepositoryAccessFailureMessage(RepositoryDiagnosticInfo info, Exception exception, bool serverConnectivity = false, Exception serverConnectivityException = null)
         {
-            string message = "Resolved " + info.RepositoryLabel + " " + BuildHostnameDescription(info) + " and reached port " + info.Port + ", but could not access share/export '" + info.ShareName + "'";
+            string message = info.NetworkProbe
+                ? "Resolved " + info.RepositoryLabel + " " + BuildHostnameDescription(info) + " and reached port " + info.Port + ", but could not access " + info.LocationLabel + " '" + info.ShareName + "'"
+                : "Could not access " + info.RepositoryLabel + " " + info.LocationLabel + " '" + info.ShareName + "'";
 
             if (!String.IsNullOrWhiteSpace(info.Principal))
                 message += " with " + info.PrincipalLabel + " '" + info.Principal + "'";
 
-            if (String.Equals(info.RepositoryLabel, "CIFS", StringComparison.OrdinalIgnoreCase))
+            if (!String.IsNullOrWhiteSpace(info.Guidance))
+                message += ". " + info.Guidance;
+            else if (String.Equals(info.RepositoryLabel, "CIFS", StringComparison.OrdinalIgnoreCase))
                 message += ". Verify the share name, username, password, and share permissions.";
             else if (String.Equals(info.RepositoryLabel, "NFS", StringComparison.OrdinalIgnoreCase))
                 message += ". Verify the export path, UID/GID permissions, NFS version, and export ACLs.";
@@ -416,7 +440,12 @@ namespace AssistantHub.Core.Services.Crawlers
             return message;
         }
 
-        private static string BuildHostnameDescription(FileServerDiagnosticInfo info)
+        private static string Capitalize(string value)
+        {
+            return String.IsNullOrEmpty(value) ? value : Char.ToUpperInvariant(value[0]) + value.Substring(1);
+        }
+
+        private static string BuildHostnameDescription(RepositoryDiagnosticInfo info)
         {
             if (info == null) return "hostname";
 
@@ -541,15 +570,47 @@ namespace AssistantHub.Core.Services.Crawlers
             return obj;
         }
 
-        private class FileServerDiagnosticInfo
+        /// <summary>
+        /// Description of a repository for connectivity diagnostics.
+        /// </summary>
+        protected class RepositoryDiagnosticInfo
         {
+            /// <summary>Repository label, for example CIFS or S3.</summary>
             public string RepositoryLabel { get; set; }
+
+            /// <summary>Hostname as configured.</summary>
             public string ConfiguredHostname { get; set; }
+
+            /// <summary>Hostname actually contacted.</summary>
             public string Hostname { get; set; }
+
+            /// <summary>TCP port probed.</summary>
             public int Port { get; set; }
+
+            /// <summary>Share, export, bucket, container or folder.</summary>
             public string ShareName { get; set; }
+
+            /// <summary>What <see cref="ShareName"/> is, for messages: share/export, bucket, container or folder.</summary>
+            public string LocationLabel { get; set; } = "share/export";
+
+            /// <summary>Identity used to connect, for messages.</summary>
             public string Principal { get; set; }
+
+            /// <summary>What <see cref="Principal"/> is, for messages.</summary>
             public string PrincipalLabel { get; set; }
+
+            /// <summary>Whether to resolve the hostname and probe the TCP port before connecting.</summary>
+            public bool NetworkProbe { get; set; } = true;
+
+            /// <summary>
+            /// Whether Blobject's server-level check must pass as well as listing the location. Object stores turn this
+            /// off: their server-level check lists every bucket or container in the account, which a least-privilege
+            /// credential scoped to one bucket cannot do even though it can crawl that bucket.
+            /// </summary>
+            public bool RequireServerCheck { get; set; } = true;
+
+            /// <summary>What to check when access fails, for messages; null uses the file-server guidance.</summary>
+            public string Guidance { get; set; }
         }
 
         #endregion

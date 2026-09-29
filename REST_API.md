@@ -4630,7 +4630,7 @@ Submit feedback for an assistant response.
 
 ## Crawl Plans (Admin Only)
 
-Manage crawl plans that define how content is discovered and ingested from external sources. Supported repository types are `Web`, `CIFS`, and `NFS`.
+Manage crawl plans that define how content is discovered and ingested from external sources. Supported repository types are `Web`, `CIFS`, `NFS`, `S3`, `AzureBlob`, `GoogleCloud`, `LocalDisk`, and `Git`.
 
 ### PUT /v1.0/crawlplans
 
@@ -4672,7 +4672,7 @@ Create a new crawl plan.
 | Field               | Type   | Default | Description                                                    |
 |---------------------|--------|---------|----------------------------------------------------------------|
 | `Name`              | string | "My crawl plan" | Display name for the crawl plan.                        |
-| `RepositoryType`    | string | Web     | Repository type: `Web`, `CIFS`, or `NFS`.                       |
+| `RepositoryType`    | string | Web     | Repository type: `Web`, `CIFS`, `NFS`, `S3`, `AzureBlob`, `GoogleCloud`, `LocalDisk`, or `Git`. |
 | `IngestionSettings` | object | null    | Ingestion configuration (e.g., `IngestionRuleId`).             |
 | `RepositorySettings`| object | null    | Repository-specific settings. See examples below.              |
 | `Schedule`          | object | null    | Schedule configuration (`Interval`: `OneTime`, `Minutes`, `Hours`, `Days`, `Weeks`; `IntervalCount`). |
@@ -4689,7 +4689,12 @@ Create a new crawl plan.
 |--------|-------------|
 | `Web`  | Crawls HTTP/HTTPS pages starting at `StartUrl`. |
 | `CIFS` | Crawls a CIFS/SMB file share. |
-| `NFS`  | Crawls an NFS export. |
+| `NFS`  | Crawls an NFSv3 export. |
+| `S3`   | Crawls an Amazon S3 bucket or a bucket on an S3-compatible store (MinIO, Less3, Ceph, Wasabi, Cloudflare R2). |
+| `AzureBlob` | Crawls an Azure Blob Storage container. |
+| `GoogleCloud` | Crawls a Google Cloud Storage bucket. |
+| `LocalDisk` | Crawls a folder on the AssistantHub server, limited to the server's `Crawl.AllowedLocalPaths`. |
+| `Git` | Crawls the default branch of a GitHub repository. |
 
 **Web Authentication Types (`AuthenticationType`):** `None`, `Basic`, `ApiKey`, `BearerToken`
 
@@ -4748,9 +4753,144 @@ Redirects are followed one hop at a time, up to `MaxRedirects` (1 to 50, default
 
 NFS crawling supports NFSv3 only; a plan with `NfsVersion` `V2` or `V4` is rejected with 400. CIFS crawling negotiates SMB 3.x signing and encryption when the server requires them.
 
+How to write CIFS and NFS locations:
+
+| Setting | Write it as | Not |
+|---|---|---|
+| `CifsHostname` | `fileserver.example.com` or `10.0.0.12` | `\\fileserver\Documents`, `smb://fileserver` |
+| `CifsShareName` | The share only, for example `Documents` for `\\fileserver\Documents` | `Documents\Policies` (use `Filter.ObjectPrefix` = `Policies/` for a folder) |
+| `CifsUsername` | `svc-crawler`, or `CORP\svc-crawler` for a domain account (or set `CifsDomain`) | |
+| `NfsHostname` | `nfs.example.com` or `10.0.0.20` | `nfs.example.com:/exports/content` |
+| `NfsShareName` | The absolute export path, for example `/exports/content` (see `showmount -e server`) | `exports/content` |
+| `NfsUserId` / `NfsGroupId` | Numeric IDs that can read the files, for example `1000` | `0`, when the server squashes root |
+| `Filter.ObjectPrefix` | A path relative to the share or export root, with forward slashes and no leading slash, for example `Policies/2026/` | `/Policies`, `\\fileserver\Documents\Policies` |
+
+The mistakes in the last column are rejected with 400. When AssistantHub runs in Docker, `localhost` and `127.0.0.1` are sent to the Docker host (`host.docker.internal`).
+
 Optional connection settings: `CifsPort` (default 445) and `CifsDomain` (domain or workgroup of the user, for example an Active Directory domain; a `DOMAIN\user` username also works) for CIFS, and `NfsPort` (default 2049), `NfsMountPort` (default: discovered through the portmapper) and `NfsPortmapperPort` (default 111) for NFS. Ports must be between 1 and 65535 (`NfsMountPort` also accepts 0 for discovery); invalid values return 400. The connectivity test connects, authenticates and lists the share or export root, and reports the configured port.
 
-CIFS passwords, web passwords, API keys, and bearer tokens are stored in crawl-plan repository settings until a future credential abstraction is introduced. Treat crawl-plan JSON responses and admin JSON views as sensitive.
+**S3 Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "S3",
+  "S3Endpoint": null,
+  "S3Region": "us-east-1",
+  "S3BucketName": "company-docs",
+  "S3AccessKey": "AKIAIOSFODNN7EXAMPLE",
+  "S3SecretKey": "secret"
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `S3Endpoint` | null | Service URL of an S3-compatible store (MinIO, Less3, Ceph, Wasabi, Cloudflare R2), for example `http://minio.example.com:9000/`. Empty uses Amazon S3. The scheme decides TLS; requests are path-style. |
+| `S3Region` | `us-east-1` | Required for Amazon S3. S3-compatible stores usually accept any value. |
+| `S3BucketName` | | Required. The bucket name only. |
+| `S3AccessKey` / `S3SecretKey` | null | Set both, or neither for a public bucket. The key needs `s3:ListBucket` and `s3:GetObject` on the bucket. |
+
+**Azure Blob Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "AzureBlob",
+  "AzureAccountName": "contosodocs",
+  "AzureAccessKey": "base64-account-key",
+  "AzureContainer": "documents",
+  "AzureEndpoint": null
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `AzureAccountName` | | Required. Storage account name: 3 to 24 lowercase letters and digits. |
+| `AzureAccessKey` | | Required. `key1` or `key2` from the account's Access keys page. |
+| `AzureContainer` | | Required. Container name only: 3 to 63 lowercase letters, digits and hyphens, or `$root`. |
+| `AzureEndpoint` | null | Empty uses `https://{account}.blob.core.windows.net/`. Set it for sovereign clouds, private endpoints, or Azurite (`http://127.0.0.1:10000/devstoreaccount1/`). |
+
+**Google Cloud Storage Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "GoogleCloud",
+  "GcpProjectId": "contoso-docs-123456",
+  "GcpBucketName": "contoso-documents",
+  "GcpJsonCredentials": "{\"type\":\"service_account\",\"project_id\":\"contoso-docs-123456\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\n...\",\"client_email\":\"crawler@contoso-docs-123456.iam.gserviceaccount.com\"}",
+  "GcpEndpoint": null
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `GcpProjectId` | | Required. Project ID (not the project number or display name). |
+| `GcpBucketName` | | Required. Bucket name only. |
+| `GcpJsonCredentials` | | Required. The whole JSON key file of a service account with the Storage Object Viewer role on the bucket, as a string. |
+| `GcpEndpoint` | null | Custom endpoint for a private endpoint or emulator. Empty uses the standard endpoint. |
+
+**Local Disk Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "LocalDisk",
+  "DiskPath": "/app/crawl-sources/handbook",
+  "IncludeSubdirectories": true
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `DiskPath` | | Required. Absolute path of a folder on the AssistantHub server, for example `/app/crawl-sources/handbook` or `D:\Shared\Documents`. |
+| `IncludeSubdirectories` | true | Include files in subfolders. |
+
+A local disk crawler reads the server's own file system, so it is limited to the folders an operator lists in the server setting `Crawl.AllowedLocalPaths` (in `assistanthub.json`):
+
+```json
+"Crawl": {
+  "EnumerationDirectory": "./crawl-enumerations/",
+  "AllowedLocalPaths": [ "/app/crawl-sources" ]
+}
+```
+
+`DiskPath` must be one of those folders or inside one; `..` segments are resolved before the check. With the list empty (the default), local disk crawl plans are rejected with 400. The folder must already exist (it is never created), and files or folders reached through a symbolic link or junction are skipped, so a crawl cannot leave the allowed folder. The check runs again at every crawl, so removing a folder from the list stops plans that use it.
+
+In Docker, `DiskPath` is a path inside the container. The supplied `docker/compose.yaml` mounts `docker/assistanthub/crawl-sources/` read-only at `/app/crawl-sources`, and the supplied `assistanthub.json` allows that folder: copy a folder to `docker/assistanthub/crawl-sources/handbook` and crawl `/app/crawl-sources/handbook`. To crawl another host folder, add a volume for it and add its container path to `AllowedLocalPaths`.
+
+**Git Repository Settings Example:**
+
+```json
+{
+  "RepositoryType": "Git",
+  "GitRepositoryUrl": "https://github.com/contoso/handbook",
+  "GitAccessToken": "github_pat_..."
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `GitRepositoryUrl` | | Required. `https://github.com/owner/repo`, `https://github.com/owner/repo.git`, or `git@github.com:owner/repo.git`. |
+| `GitAccessToken` | null | GitHub personal access token. Required for private repositories: a fine-grained token with **Contents: Read-only** on the repository, or a classic token with the `repo` scope. |
+
+Git crawling reads the repository's default branch on github.com through the GitHub REST API; other Git hosts are not supported yet. The API allows 60 requests an hour without a token and 5,000 with one, and a crawl uses one request per folder, so set a token for anything but small public repositories. Each file is downloaded during enumeration to detect changes (by SHA-256). Object keys are repository-relative paths such as `docs/setup.md`.
+
+How to write object-store, disk and Git locations:
+
+| Setting | Write it as | Not |
+|---|---|---|
+| `S3BucketName` | `company-docs` | `s3://company-docs`, `https://company-docs.s3.amazonaws.com`, `company-docs/policies` |
+| `S3Endpoint` | `http://minio.example.com:9000/`, or empty for Amazon S3 | `minio.example.com:9000` (scheme required), a URL that includes the bucket |
+| `AzureAccountName` | `contosodocs` | `contosodocs.blob.core.windows.net`, a connection string |
+| `AzureContainer` | `documents` | `documents/policies`, `https://contosodocs.blob.core.windows.net/documents` |
+| `GcpBucketName` | `contoso-documents` | `gs://contoso-documents`, `contoso-documents/policies` |
+| `GcpJsonCredentials` | The full contents of the service account key file | The file path, or only the `private_key` value |
+| `DiskPath` | `/app/crawl-sources/handbook`, `D:\Shared\Documents` | `handbook` (relative), a host path when AssistantHub runs in Docker |
+| `GitRepositoryUrl` | `https://github.com/contoso/handbook` | `https://github.com/contoso/handbook/tree/main/docs`, `https://gitlab.com/...` |
+| `Filter.ObjectPrefix` | A path inside the bucket, container, folder or repository, with forward slashes and no leading slash, for example `policies/2026/` or `docs/` | `/policies`, `s3://company-docs/policies` |
+
+These settings name the whole bucket, container, folder or repository; to crawl one folder, set `Filter.ObjectPrefix`. Type the prefix with the folder's exact case: it is sent to the storage API, so on S3, Azure Blob, Google Cloud Storage and Linux folders `policies/` does not match `Policies/` (CIFS, Windows folders and Git ignore case). The mistakes in the last column are rejected with 400. For `S3Endpoint` and `AzureEndpoint`, `localhost` and `127.0.0.1` are sent to the Docker host when AssistantHub runs in Docker.
+
+For S3, Azure Blob, Google Cloud Storage and local disk, the connectivity test lists the bucket, container or folder root. For the object stores that is the only requirement: a credential scoped to one bucket or container (for example an S3 key with only `s3:ListBucket` and `s3:GetObject` on it, or a service account with Storage Object Viewer on one bucket) passes even though it cannot list the account's other buckets; for Git it lists the repository through the GitHub API and explains `404` (wrong name, or a private repository without a usable token) and rate-limit failures.
+
+CIFS passwords, S3 secret keys, Azure access keys, Google Cloud service account keys, GitHub tokens, web passwords, API keys, and bearer tokens are stored in crawl-plan repository settings, in plain text, until a future credential abstraction is introduced. Treat crawl-plan JSON responses and admin JSON views as sensitive, and prefer read-only credentials scoped to the one bucket, container or repository.
 
 **Response (201 Created):** The created `CrawlPlan` object.
 
@@ -4814,6 +4954,8 @@ When AssistantHub runs in Docker and `host.docker.internal` resolves, loopback f
   }
 }
 ```
+
+For S3, Azure Blob, Google Cloud Storage and local disk plans, the test lists the root of the bucket, container or folder with the supplied credentials (no hostname or port probe). For Git plans, it lists the repository through the GitHub API.
 
 **Response (200 OK):**
 

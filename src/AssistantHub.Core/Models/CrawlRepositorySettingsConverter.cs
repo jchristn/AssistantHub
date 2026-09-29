@@ -26,6 +26,16 @@ namespace AssistantHub.Core.Models
                         return JsonSerializer.Deserialize<CifsCrawlRepositorySettings>(json, options);
                     case RepositoryTypeEnum.NFS:
                         return JsonSerializer.Deserialize<NfsCrawlRepositorySettings>(json, options);
+                    case RepositoryTypeEnum.S3:
+                        return JsonSerializer.Deserialize<S3CrawlRepositorySettings>(json, options);
+                    case RepositoryTypeEnum.AzureBlob:
+                        return JsonSerializer.Deserialize<AzureBlobCrawlRepositorySettings>(json, options);
+                    case RepositoryTypeEnum.GoogleCloud:
+                        return JsonSerializer.Deserialize<GoogleCloudCrawlRepositorySettings>(json, options);
+                    case RepositoryTypeEnum.LocalDisk:
+                        return JsonSerializer.Deserialize<LocalDiskCrawlRepositorySettings>(json, options);
+                    case RepositoryTypeEnum.Git:
+                        return JsonSerializer.Deserialize<GitCrawlRepositorySettings>(json, options);
                     case RepositoryTypeEnum.Web:
                     default:
                         return JsonSerializer.Deserialize<WebCrawlRepositorySettings>(json, options);
@@ -55,6 +65,11 @@ namespace AssistantHub.Core.Models
 
             if (TryGetProperty(root, "CifsHostname", out _)) return RepositoryTypeEnum.CIFS;
             if (TryGetProperty(root, "NfsHostname", out _)) return RepositoryTypeEnum.NFS;
+            if (TryGetProperty(root, "S3BucketName", out _)) return RepositoryTypeEnum.S3;
+            if (TryGetProperty(root, "AzureAccountName", out _)) return RepositoryTypeEnum.AzureBlob;
+            if (TryGetProperty(root, "GcpBucketName", out _)) return RepositoryTypeEnum.GoogleCloud;
+            if (TryGetProperty(root, "DiskPath", out _)) return RepositoryTypeEnum.LocalDisk;
+            if (TryGetProperty(root, "GitRepositoryUrl", out _)) return RepositoryTypeEnum.Git;
             return RepositoryTypeEnum.Web;
         }
 

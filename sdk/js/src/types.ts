@@ -103,6 +103,11 @@ export const RepositoryType = {
   Web: "Web",
   CIFS: "CIFS",
   NFS: "NFS",
+  S3: "S3",
+  AzureBlob: "AzureBlob",
+  GoogleCloud: "GoogleCloud",
+  LocalDisk: "LocalDisk",
+  Git: "Git",
 } as const;
 export type RepositoryType = (typeof RepositoryType)[keyof typeof RepositoryType];
 

@@ -988,6 +988,28 @@ namespace Test.Automated
                 await Task.CompletedTask;
             });
 
+            await ExecuteTestAsync("CIFS and NFS settings: path mistakes are rejected with guidance", async () =>
+            {
+                CifsCrawlRepositorySettings cifs = new CifsCrawlRepositorySettings { CifsHostname = "fileserver.example.com", CifsUsername = "svc", CifsPassword = "p", CifsShareName = "\\Documents\\" };
+                AssertHelper.HasCount(cifs.Validate(), 0, "share with surrounding slashes accepted");
+                cifs.CifsShareName = "Documents\\Policies";
+                AssertHelper.StringContains(String.Join(" ", cifs.Validate()), "ObjectPrefix", "folder in share name rejected with a pointer to ObjectPrefix");
+                cifs.CifsShareName = "Documents";
+                cifs.CifsHostname = "\\\\fileserver\\Documents";
+                AssertHelper.StringContains(String.Join(" ", cifs.Validate()), "not a UNC path", "UNC hostname rejected");
+                cifs.CifsHostname = "smb://fileserver";
+                AssertHelper.HasCount(cifs.Validate(), 1, "URL hostname rejected");
+
+                NfsCrawlRepositorySettings nfs = new NfsCrawlRepositorySettings { NfsHostname = "nfs.example.com", NfsUserId = 1000, NfsGroupId = 1000, NfsShareName = "/exports/content" };
+                AssertHelper.HasCount(nfs.Validate(), 0, "valid NFS settings");
+                nfs.NfsShareName = "exports/content";
+                AssertHelper.StringContains(String.Join(" ", nfs.Validate()), "starting with /", "relative export rejected");
+                nfs.NfsShareName = "/exports/content";
+                nfs.NfsHostname = "nfs.example.com:/exports/content";
+                AssertHelper.StringContains(String.Join(" ", nfs.Validate()), "without the export path", "host:/export rejected");
+                await Task.CompletedTask;
+            });
+
             await ExecuteTestAsync("IngestionService: reprocessing deletes the previous chunk records after storing new ones", async () =>
             {
                 string source = System.IO.File.ReadAllText(System.IO.Path.Combine(GetRepositoryRoot(), "src", "AssistantHub.Core", "Services", "IngestionService.cs"));

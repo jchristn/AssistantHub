@@ -191,6 +191,21 @@ namespace AssistantHub.Core.Models
                     case RepositoryTypeEnum.NFS:
                         obj.RepositorySettings = Serializer.DeserializeJson<NfsCrawlRepositorySettings>(repoJson);
                         break;
+                    case RepositoryTypeEnum.S3:
+                        obj.RepositorySettings = Serializer.DeserializeJson<S3CrawlRepositorySettings>(repoJson);
+                        break;
+                    case RepositoryTypeEnum.AzureBlob:
+                        obj.RepositorySettings = Serializer.DeserializeJson<AzureBlobCrawlRepositorySettings>(repoJson);
+                        break;
+                    case RepositoryTypeEnum.GoogleCloud:
+                        obj.RepositorySettings = Serializer.DeserializeJson<GoogleCloudCrawlRepositorySettings>(repoJson);
+                        break;
+                    case RepositoryTypeEnum.LocalDisk:
+                        obj.RepositorySettings = Serializer.DeserializeJson<LocalDiskCrawlRepositorySettings>(repoJson);
+                        break;
+                    case RepositoryTypeEnum.Git:
+                        obj.RepositorySettings = Serializer.DeserializeJson<GitCrawlRepositorySettings>(repoJson);
+                        break;
                     default:
                         obj.RepositorySettings = Serializer.DeserializeJson<WebCrawlRepositorySettings>(repoJson);
                         break;
@@ -270,6 +285,26 @@ namespace AssistantHub.Core.Models
                     if (!(RepositorySettings is NfsCrawlRepositorySettings))
                         errors.Add("RepositorySettings must be NfsCrawlRepositorySettings when RepositoryType is NFS.");
                     break;
+                case RepositoryTypeEnum.S3:
+                    if (!(RepositorySettings is S3CrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be S3CrawlRepositorySettings when RepositoryType is S3.");
+                    break;
+                case RepositoryTypeEnum.AzureBlob:
+                    if (!(RepositorySettings is AzureBlobCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be AzureBlobCrawlRepositorySettings when RepositoryType is AzureBlob.");
+                    break;
+                case RepositoryTypeEnum.GoogleCloud:
+                    if (!(RepositorySettings is GoogleCloudCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be GoogleCloudCrawlRepositorySettings when RepositoryType is GoogleCloud.");
+                    break;
+                case RepositoryTypeEnum.LocalDisk:
+                    if (!(RepositorySettings is LocalDiskCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be LocalDiskCrawlRepositorySettings when RepositoryType is LocalDisk.");
+                    break;
+                case RepositoryTypeEnum.Git:
+                    if (!(RepositorySettings is GitCrawlRepositorySettings))
+                        errors.Add("RepositorySettings must be GitCrawlRepositorySettings when RepositoryType is Git.");
+                    break;
                 default:
                     errors.Add("Unsupported repository type " + RepositoryType + ".");
                     break;
@@ -291,6 +326,16 @@ namespace AssistantHub.Core.Models
                     return new CifsCrawlRepositorySettings();
                 case RepositoryTypeEnum.NFS:
                     return new NfsCrawlRepositorySettings();
+                case RepositoryTypeEnum.S3:
+                    return new S3CrawlRepositorySettings();
+                case RepositoryTypeEnum.AzureBlob:
+                    return new AzureBlobCrawlRepositorySettings();
+                case RepositoryTypeEnum.GoogleCloud:
+                    return new GoogleCloudCrawlRepositorySettings();
+                case RepositoryTypeEnum.LocalDisk:
+                    return new LocalDiskCrawlRepositorySettings();
+                case RepositoryTypeEnum.Git:
+                    return new GitCrawlRepositorySettings();
                 case RepositoryTypeEnum.Web:
                 default:
                     return new WebCrawlRepositorySettings();

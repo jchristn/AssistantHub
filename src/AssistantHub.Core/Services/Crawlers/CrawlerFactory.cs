@@ -52,6 +52,26 @@ namespace AssistantHub.Core.Services.Crawlers
                     return new NfsRepositoryCrawler(
                         logging, database, crawlPlan, crawlOperation,
                         ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.S3:
+                    return new S3RepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.AzureBlob:
+                    return new AzureBlobRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.GoogleCloud:
+                    return new GoogleCloudRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.LocalDisk:
+                    return new LocalDiskRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
+                case RepositoryTypeEnum.Git:
+                    return new GitRepositoryCrawler(
+                        logging, database, crawlPlan, crawlOperation,
+                        ingestion, storage, processingLog, enumerationDirectory, token);
                 default:
                     throw new NotSupportedException("Repository type " + type + " is not supported.");
             }

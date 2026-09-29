@@ -94,11 +94,75 @@ export interface NfsCrawlRepositorySettings extends CrawlRepositorySettingsBase 
   IncludeSubdirectories?: boolean;
 }
 
+/** Amazon S3 or S3-compatible (MinIO, Less3, Ceph, Wasabi, Cloudflare R2) crawl repository settings. */
+export interface S3CrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'S3';
+  /** Service URL of an S3-compatible store, e.g. http://minio.example.com:9000/. Omit for Amazon S3. */
+  S3Endpoint?: string | null;
+  /** Region (default us-east-1). Required by Amazon S3. */
+  S3Region?: string;
+  /** Bucket name only, e.g. company-docs (not a URL or s3:// path). */
+  S3BucketName?: string;
+  /** Access key ID. Leave both keys empty for a public bucket. */
+  S3AccessKey?: string | null;
+  /** Secret access key. Sensitive: stored with the crawl plan. */
+  S3SecretKey?: string | null;
+}
+
+/** Azure Blob Storage crawl repository settings. */
+export interface AzureBlobCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'AzureBlob';
+  /** Storage account name, e.g. contosodocs. */
+  AzureAccountName?: string;
+  /** Storage account access key. Sensitive: stored with the crawl plan. */
+  AzureAccessKey?: string;
+  /** Container name only, e.g. documents. */
+  AzureContainer?: string;
+  /** Blob service endpoint (default https://{account}.blob.core.windows.net/); set for Azurite or private endpoints. */
+  AzureEndpoint?: string | null;
+}
+
+/** Google Cloud Storage crawl repository settings. */
+export interface GoogleCloudCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'GoogleCloud';
+  /** Google Cloud project ID. */
+  GcpProjectId?: string;
+  /** Bucket name only, e.g. contoso-documents (not gs://...). */
+  GcpBucketName?: string;
+  /** Full service account key JSON (Storage Object Viewer). Sensitive: stored with the crawl plan. */
+  GcpJsonCredentials?: string;
+  /** Custom endpoint, e.g. for an emulator. Omit for the standard endpoint. */
+  GcpEndpoint?: string | null;
+}
+
+/** Local disk crawl repository settings: a folder on the AssistantHub server, inside Crawl.AllowedLocalPaths. */
+export interface LocalDiskCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'LocalDisk';
+  /** Absolute path on the server (inside the container when running in Docker), e.g. /app/crawl-sources/handbook. */
+  DiskPath?: string;
+  /** Include files in subfolders (default true). */
+  IncludeSubdirectories?: boolean;
+}
+
+/** Git repository crawl settings (github.com, default branch). Use Filter.ObjectPrefix to crawl one folder. */
+export interface GitCrawlRepositorySettings extends CrawlRepositorySettingsBase {
+  RepositoryType?: 'Git';
+  /** https://github.com/owner/repo, https://github.com/owner/repo.git or git@github.com:owner/repo.git. */
+  GitRepositoryUrl?: string;
+  /** Personal access token; required for private repositories. Sensitive: stored with the crawl plan. */
+  GitAccessToken?: string | null;
+}
+
 /** Crawl repository settings. */
 export type CrawlRepositorySettings =
   | WebCrawlRepositorySettings
   | CifsCrawlRepositorySettings
-  | NfsCrawlRepositorySettings;
+  | NfsCrawlRepositorySettings
+  | S3CrawlRepositorySettings
+  | AzureBlobCrawlRepositorySettings
+  | GoogleCloudCrawlRepositorySettings
+  | LocalDiskCrawlRepositorySettings
+  | GitCrawlRepositorySettings;
 
 /** Crawl repository connectivity test result. */
 export interface CrawlConnectivityResult {

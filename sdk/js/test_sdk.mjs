@@ -2,7 +2,7 @@
 // Standalone CLI test runner matching the C# and Python test output format.
 
 import { randomUUID } from "node:crypto";
-import { AssistantHubClient } from "./dist/esm/index.js";
+import { AssistantHubClient, RepositoryType } from "./dist/esm/index.js";
 
 // ---------------------------------------------------------------------------
 // Assertion helpers
@@ -571,6 +571,37 @@ async function sdkContractTests(runner) {
     assertTrue(requests[2].url.includes("toolName=collection_search"), "tool-call bulk delete query");
     assertEqual("DELETE", requests[3].init.method, "tool-call delete method");
     assertTrue(requests[3].url.endsWith("/v1.0/assistants/asst_local/tool-calls/atc_local"), "tool-call delete path");
+  });
+
+  await runner.runTest("SDK contract: createCrawlPlan sends every repository type", async () => {
+    const expected = ["Web", "CIFS", "NFS", "S3", "AzureBlob", "GoogleCloud", "LocalDisk", "Git"];
+    assertEqual(expected.join(","), Object.values(RepositoryType).join(","), "RepositoryType values");
+
+    const bodies = [];
+    const client = new AssistantHubClient({
+      baseUrl: "http://localhost:6600",
+      apiKey: "test-key",
+      fetch: async (url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return new Response(init.body, { status: 201, headers: { "Content-Type": "application/json" } });
+      },
+    });
+
+    const settings = [
+      { RepositoryType: RepositoryType.S3, S3BucketName: "company-docs", S3Region: "us-east-1" },
+      { RepositoryType: RepositoryType.AzureBlob, AzureAccountName: "contosodocs", AzureAccessKey: "a2V5", AzureContainer: "documents" },
+      { RepositoryType: RepositoryType.GoogleCloud, GcpProjectId: "p", GcpBucketName: "b", GcpJsonCredentials: "{}" },
+      { RepositoryType: RepositoryType.LocalDisk, DiskPath: "/app/crawl-sources/handbook", IncludeSubdirectories: false },
+      { RepositoryType: RepositoryType.Git, GitRepositoryUrl: "https://github.com/owner/repo" },
+    ];
+    for (const s of settings) {
+      const created = await client.createCrawlPlan({ Name: s.RepositoryType, RepositoryType: s.RepositoryType, RepositorySettings: s });
+      assertEqual(s.RepositoryType, created.RepositoryType, "echoed repository type");
+    }
+    assertEqual(settings.length, bodies.length, "request count");
+    assertEqual("company-docs", bodies[0].RepositorySettings.S3BucketName, "S3 bucket sent");
+    assertEqual("/app/crawl-sources/handbook", bodies[3].RepositorySettings.DiskPath, "DiskPath sent");
+    assertEqual("https://github.com/owner/repo", bodies[4].RepositorySettings.GitRepositoryUrl, "Git URL sent");
   });
 
   await runner.runTest("SDK contract: ChatHistory parses attached document metadata", async () => {

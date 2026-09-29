@@ -4957,6 +4957,136 @@
           }
         },
         {
+          "name": "Create S3 Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My S3 Crawl\",\n\t\"RepositoryType\": \"S3\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"S3\",\n\t\t\"S3Endpoint\": null,\n\t\t\"S3Region\": \"us-east-1\",\n\t\t\"S3BucketName\": \"company-docs\",\n\t\t\"S3AccessKey\": \"access-key-id\",\n\t\t\"S3SecretKey\": \"secret-access-key\"\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Azure Blob Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My Azure Blob Crawl\",\n\t\"RepositoryType\": \"AzureBlob\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"AzureBlob\",\n\t\t\"AzureAccountName\": \"contosodocs\",\n\t\t\"AzureAccessKey\": \"account-key\",\n\t\t\"AzureContainer\": \"documents\",\n\t\t\"AzureEndpoint\": null\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Google Cloud Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My Google Cloud Storage Crawl\",\n\t\"RepositoryType\": \"GoogleCloud\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"GoogleCloud\",\n\t\t\"GcpProjectId\": \"contoso-docs-123456\",\n\t\t\"GcpBucketName\": \"contoso-documents\",\n\t\t\"GcpJsonCredentials\": \"{\\\"type\\\":\\\"service_account\\\",\\\"project_id\\\":\\\"contoso-docs-123456\\\",\\\"private_key\\\":\\\"...\\\",\\\"client_email\\\":\\\"crawler@contoso-docs-123456.iam.gserviceaccount.com\\\"}\",\n\t\t\"GcpEndpoint\": null\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Local Disk Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My Local Disk Crawl\",\n\t\"RepositoryType\": \"LocalDisk\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"LocalDisk\",\n\t\t\"DiskPath\": \"/app/crawl-sources/handbook\",\n\t\t\"IncludeSubdirectories\": true\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": null,\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Git Crawl Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"Name\": \"My GitHub Crawl\",\n\t\"RepositoryType\": \"Git\",\n\t\"IngestionSettings\": {\n\t\t\"IngestionRuleId\": \"rule-guid-here\",\n\t\t\"StoreInS3\": true,\n\t\t\"S3BucketName\": \"my-bucket\"\n\t},\n\t\"RepositorySettings\": {\n\t\t\"RepositoryType\": \"Git\",\n\t\t\"GitRepositoryUrl\": \"https://github.com/contoso/handbook\",\n\t\t\"GitAccessToken\": null\n\t},\n\t\"Schedule\": {\n\t\t\"IntervalType\": \"Hours\",\n\t\t\"IntervalValue\": 24\n\t},\n\t\"Filter\": {\n\t\t\"ObjectPrefix\": \"docs/\",\n\t\t\"ObjectSuffix\": null,\n\t\t\"AllowedContentTypes\": null,\n\t\t\"MinimumSize\": 0,\n\t\t\"MaximumSize\": null\n\t},\n\t\"ProcessAdditions\": true,\n\t\"ProcessUpdates\": true,\n\t\"ProcessDeletions\": false,\n\t\"MaxDrainTasks\": 8,\n\t\"RetentionDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1.0/crawlplans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1.0",
+                "crawlplans"
+              ]
+            }
+          }
+        },
+        {
           "name": "List Crawl Plans",
           "request": {
             "method": "GET",

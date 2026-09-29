@@ -26,7 +26,13 @@ namespace AssistantHub.Server.OpenApi
             " UserAgent, StartUrl (required), UseHeadlessBrowser, FollowLinks, FollowRedirects, ExtractSitemapLinks, RestrictToChildUrls," +
             " RestrictToSubdomain, RestrictToRootDomain, IgnoreRobotsTxt, MaxDepth (1-100), MaxParallelTasks (1-64), and CrawlDelayMs (0-60000);" +
             " CIFS uses CifsHostname, CifsUsername, CifsPassword, CifsShareName, and IncludeSubdirectories;" +
-            " NFS uses NfsHostname, NfsUserId, NfsGroupId, NfsShareName, NfsVersion, and IncludeSubdirectories." +
+            " NFS uses NfsHostname, NfsUserId, NfsGroupId, NfsShareName, NfsVersion, and IncludeSubdirectories;" +
+            " S3 uses S3Endpoint (empty for Amazon S3), S3Region, S3BucketName, S3AccessKey, and S3SecretKey;" +
+            " AzureBlob uses AzureAccountName, AzureAccessKey, AzureContainer, and AzureEndpoint (empty for https://{account}.blob.core.windows.net/);" +
+            " GoogleCloud uses GcpProjectId, GcpBucketName, GcpJsonCredentials (a service account JSON key), and GcpEndpoint;" +
+            " LocalDisk uses DiskPath (an absolute folder inside the server's Crawl.AllowedLocalPaths) and IncludeSubdirectories;" +
+            " Git uses GitRepositoryUrl (https://github.com/owner/repo) and GitAccessToken." +
+            " Bucket, container, and repository settings name the whole store; use Filter.ObjectPrefix to crawl one folder." +
             " Repository credentials are stored and returned in plain text, so treat crawl plan responses as sensitive.";
 
         private static WebCrawlRepositorySettings ExampleWebRepository()
@@ -187,7 +193,7 @@ namespace AssistantHub.Server.OpenApi
 
         /// <summary>PUT /v1.0/crawlplans.</summary>
         public static OpenApiRouteMetadata Create => ApiDoc.Create("Create crawl plan", _Tag)
-            .Describe("Creates a crawl plan in the caller's tenant. A crawl plan defines a content repository (Web, CIFS, or NFS), a schedule, filters, and the ingestion rule used for discovered content. TenantId is always set to the caller's tenant; Id is generated when omitted. Repository settings are validated for the selected repository type." + _RepositorySettingsNote)
+            .Describe("Creates a crawl plan in the caller's tenant. A crawl plan defines a content repository (Web, CIFS, NFS, S3, AzureBlob, GoogleCloud, LocalDisk, or Git), a schedule, filters, and the ingestion rule used for discovered content. TenantId is always set to the caller's tenant; Id is generated when omitted. Repository settings are validated for the selected repository type." + _RepositorySettingsNote)
             .Body("Crawl plan to create.", ExamplePlanRequest())
             .Returns(201, "Crawl plan created.", ExamplePlan())
             .Errors(400, 401, 500);

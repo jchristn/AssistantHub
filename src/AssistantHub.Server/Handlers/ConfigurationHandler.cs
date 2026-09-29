@@ -6,6 +6,7 @@ namespace AssistantHub.Server.Handlers
     using System.Threading.Tasks;
     using AssistantHub.Core;
     using AssistantHub.Core.Database;
+    using AssistantHub.Core.Services.Crawlers;
     using Enums = AssistantHub.Core.Enums;
     using AssistantHub.Core.Helpers;
     using AssistantHub.Core.Models;
@@ -159,6 +160,7 @@ namespace AssistantHub.Server.Handlers
                 Settings.ChatHistory = updated.ChatHistory;
                 Settings.RequestHistory = updated.RequestHistory;
                 Settings.Crawl = updated.Crawl;
+                LocalDiskCrawlPolicy.Configure(Settings.Crawl?.AllowedLocalPaths);
 
                 string json = Serializer.SerializeJson(Settings, true);
                 File.WriteAllText(Constants.SettingsFile, json);

@@ -8,6 +8,7 @@ namespace Test.Sdk.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Sdk;
+    using AssistantHub.Sdk.Enums;
     using AssistantHub.Sdk.Models;
     using Test.Shared;
 
@@ -23,6 +24,49 @@ namespace Test.Sdk.Tests
         /// <param name="token">Cancellation token.</param>
         public static async Task RunAsync(TestRunner runner, CancellationToken token)
         {
+            await runner.RunTestAsync("SDK contract: crawl plan repository settings round-trip for every repository type", async (CancellationToken ct) =>
+            {
+                using SerializationProbeClient probe = new SerializationProbeClient();
+
+                List<CrawlRepositorySettings> samples = new List<CrawlRepositorySettings>
+                {
+                    new S3CrawlRepositorySettings { S3Endpoint = "http://minio.example.com:9000/", S3BucketName = "company-docs", S3AccessKey = "AKIDEXAMPLE", S3SecretKey = "s3-secret" },
+                    new AzureBlobCrawlRepositorySettings { AzureAccountName = "contosodocs", AzureAccessKey = "azure-key", AzureContainer = "documents" },
+                    new GoogleCloudCrawlRepositorySettings { GcpProjectId = "contoso-docs-123456", GcpBucketName = "contoso-documents", GcpJsonCredentials = "{\"private_key\":\"x\"}" },
+                    new LocalDiskCrawlRepositorySettings { DiskPath = "/app/crawl-sources/handbook", IncludeSubdirectories = false },
+                    new GitCrawlRepositorySettings { GitRepositoryUrl = "https://github.com/owner/repo", GitAccessToken = "ghp_example" }
+                };
+
+                foreach (CrawlRepositorySettings settings in samples)
+                {
+                    CrawlPlan plan = new CrawlPlan { Name = "contract " + settings.RepositoryType, RepositoryType = settings.RepositoryType, RepositorySettings = settings };
+                    string json = probe.Serialize(plan);
+                    AssertHelper.StringContains(json, "\"RepositoryType\":\"" + settings.RepositoryType + "\"", settings.RepositoryType + " serialized type");
+
+                    CrawlPlan roundTrip = probe.Deserialize<CrawlPlan>(json);
+                    AssertHelper.AreEqual(settings.RepositoryType, roundTrip.RepositoryType, settings.RepositoryType + " round-trip plan type");
+                    AssertHelper.AreEqual(settings.GetType(), roundTrip.RepositorySettings.GetType(), settings.RepositoryType + " round-trip settings class");
+                    AssertHelper.AreEqual(json, probe.Serialize(roundTrip), settings.RepositoryType + " round-trip JSON");
+                }
+
+                // Without RepositoryType, the settings class is inferred from its distinctive property.
+                string[] inferred =
+                {
+                    "{\"S3BucketName\":\"b\"}", "{\"AzureAccountName\":\"a\"}", "{\"GcpBucketName\":\"g\"}", "{\"DiskPath\":\"/d\"}", "{\"GitRepositoryUrl\":\"https://github.com/o/r\"}"
+                };
+                Type[] expected = { typeof(S3CrawlRepositorySettings), typeof(AzureBlobCrawlRepositorySettings), typeof(GoogleCloudCrawlRepositorySettings), typeof(LocalDiskCrawlRepositorySettings), typeof(GitCrawlRepositorySettings) };
+                for (int i = 0; i < inferred.Length; i++)
+                {
+                    CrawlPlan plan = probe.Deserialize<CrawlPlan>("{\"RepositorySettings\":" + inferred[i] + "}");
+                    AssertHelper.AreEqual(expected[i], plan.RepositorySettings.GetType(), "inferred settings class for " + inferred[i]);
+                }
+
+                AssertHelper.AreEqual("us-east-1", new S3CrawlRepositorySettings().S3Region, "S3 default region");
+                AssertHelper.IsTrue(new LocalDiskCrawlRepositorySettings().IncludeSubdirectories, "LocalDisk default IncludeSubdirectories");
+
+                await Task.CompletedTask.ConfigureAwait(false);
+            }, token).ConfigureAwait(false);
+
             await runner.RunTestAsync("SDK contract: ChatCompletionRequest serializes attached_document_ids", async (CancellationToken ct) =>
             {
                 using SerializationProbeClient probe = new SerializationProbeClient();

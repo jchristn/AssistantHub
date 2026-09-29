@@ -85,6 +85,27 @@ function CrawlersView() {
       return hostname || shareName ? `${hostname}:${shareName}` : '';
     }
 
+    if (repositoryType === 'S3') {
+      if (!settings.S3BucketName) return '';
+      return 's3://' + settings.S3BucketName + (settings.S3Endpoint ? ' @ ' + settings.S3Endpoint : '');
+    }
+
+    if (repositoryType === 'AzureBlob') {
+      return settings.AzureAccountName || settings.AzureContainer ? `${settings.AzureAccountName || ''}/${settings.AzureContainer || ''}` : '';
+    }
+
+    if (repositoryType === 'GoogleCloud') {
+      return settings.GcpBucketName ? 'gs://' + settings.GcpBucketName : '';
+    }
+
+    if (repositoryType === 'LocalDisk') {
+      return settings.DiskPath || '';
+    }
+
+    if (repositoryType === 'Git') {
+      return settings.GitRepositoryUrl || '';
+    }
+
     return settings.StartUrl || row.StartUrl || '';
   };
 

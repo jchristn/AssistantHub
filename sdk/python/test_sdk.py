@@ -26,6 +26,11 @@ from assistanthub_sdk.models import (
     AssistantToolPolicyValidationResult,
     AssistantToolPolicyTestResult,
     CifsCrawlRepositorySettings,
+    AzureBlobCrawlRepositorySettings,
+    GitCrawlRepositorySettings,
+    GoogleCloudCrawlRepositorySettings,
+    LocalDiskCrawlRepositorySettings,
+    S3CrawlRepositorySettings,
     CrawlPlan,
     CrawlScheduleSettings,
     ChatLocalAttachment,
@@ -825,6 +830,43 @@ def run_sdk_contract_tests(runner: TestRunner) -> None:
         assert_true("adoc_one" in history.attached_document_ids_json, "history attached document IDs JSON")
         assert_true("Policy Handbook" in history.attached_documents_json, "history attached documents JSON")
 
+    def test_crawl_repository_settings_round_trip() -> None:
+        samples = [
+            S3CrawlRepositorySettings(s3_bucket_name="company-docs", s3_access_key="AKIDEXAMPLE", s3_secret_key="secret"),
+            AzureBlobCrawlRepositorySettings(azure_account_name="contosodocs", azure_access_key="a2V5", azure_container="documents"),
+            GoogleCloudCrawlRepositorySettings(gcp_project_id="p", gcp_bucket_name="b", gcp_json_credentials="{}"),
+            LocalDiskCrawlRepositorySettings(disk_path="/app/crawl-sources/handbook", include_subdirectories=False),
+            GitCrawlRepositorySettings(git_repository_url="https://github.com/owner/repo"),
+        ]
+        for settings in samples:
+            plan = CrawlPlan(name="contract", repository_type=settings.repository_type, repository_settings=settings)
+            payload = plan.model_dump(by_alias=True, exclude_none=True, mode="json")
+            round_trip = CrawlPlan.model_validate(payload)
+            assert_equal(type(settings), type(round_trip.repository_settings), f"{settings.repository_type.value} settings class")
+            assert_equal(
+                settings.model_dump(by_alias=True, mode="json"),
+                round_trip.repository_settings.model_dump(by_alias=True, mode="json"),
+                f"{settings.repository_type.value} round-trip payload",
+            )
+
+        # The client normalizes server keys to camelCase; without repositoryType the class is inferred from a
+        # distinctive property.
+        inferred = {
+            "s3BucketName": S3CrawlRepositorySettings,
+            "azureAccountName": AzureBlobCrawlRepositorySettings,
+            "gcpBucketName": GoogleCloudCrawlRepositorySettings,
+            "diskPath": LocalDiskCrawlRepositorySettings,
+            "gitRepositoryUrl": GitCrawlRepositorySettings,
+        }
+        for key, expected in inferred.items():
+            plan = CrawlPlan.model_validate({"repositorySettings": {key: "x"}})
+            assert_equal(expected, type(plan.repository_settings), f"inferred class for {key}")
+
+        typed = CrawlPlan.model_validate({"repositoryType": "Git", "repositorySettings": {"repositoryType": "Git", "gitRepositoryUrl": "https://github.com/o/r"}})
+        assert_equal(RepositoryType.GIT, typed.repository_type, "Git plan type")
+        assert_equal("https://github.com/o/r", typed.repository_settings.git_repository_url, "Git URL parsed")
+
+    runner.run_test("SDK contract: crawl repository settings round-trip for every repository type", test_crawl_repository_settings_round_trip)
     runner.run_test("SDK contract: ChatCompletionRequest serializes attached_document_ids", test_request_attached_document_ids)
     runner.run_test("SDK contract: ChatCompletionRequest serializes local_attachments", test_request_local_attachments)
     runner.run_test(

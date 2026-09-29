@@ -9747,6 +9747,7 @@ namespace Test.Automated
             await RunRetrievalImprovementTestsAsync().ConfigureAwait(false);
             await RunEndpointAndPageTestsAsync().ConfigureAwait(false);
             await RunFileShareCrawlTestsAsync().ConfigureAwait(false);
+            await RunRepositoryTypeTestsAsync().ConfigureAwait(false);
 
             return GetResults();
         }

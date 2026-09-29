@@ -295,6 +295,8 @@ services:
       - ./assistanthub/logs/:/app/logs/
       - ./assistanthub/processing-logs/:/app/processing-logs/
       - ./assistanthub/crawl-enumerations/:/app/crawl-enumerations/
+      # Folders here can be crawled with LocalDisk crawl plans (DiskPath /app/crawl-sources/...).
+      - ./assistanthub/crawl-sources/:/app/crawl-sources/:ro
     depends_on:
       postgres-init:
         condition: service_completed_successfully

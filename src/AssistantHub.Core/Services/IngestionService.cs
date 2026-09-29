@@ -441,6 +441,24 @@ namespace AssistantHub.Core.Services
                 List<ChunkResult> chunks = await ChunkAndEmbedContentAsync(
                     documentId, extractedContent, rule, mergedLabels, mergedTags, token,
                     extraction?.Blocks, document.Name ?? document.OriginalFilename).ConfigureAwait(false);
+
+                // Structured cells carry their own provenance; flat chunks are mapped back to the blocks they came from.
+                if (chunks != null && chunks.Count > 0 && !String.Equals(rule?.Chunking?.CellMode, "Structured", StringComparison.OrdinalIgnoreCase)
+                    && extraction?.Blocks != null && extraction.Blocks.Count > 0)
+                {
+                    List<Dictionary<string, string>> provenance = ProvenanceTags.MapFlatChunks(extractedContent, extraction.Blocks, chunks.Select(c => c.Text).ToList());
+                    int tagged = 0;
+                    for (int i = 0; i < chunks.Count; i++)
+                    {
+                        if (provenance[i].Count == 0) continue;
+                        chunks[i].Tags = chunks[i].Tags != null ? new Dictionary<string, string>(chunks[i].Tags) : new Dictionary<string, string>();
+                        foreach (KeyValuePair<string, string> tag in provenance[i]) chunks[i].Tags[tag.Key] = tag.Value;
+                        tagged++;
+                    }
+
+                    if (tagged > 0 && _ProcessingLog != null)
+                        await _ProcessingLog.LogAsync(documentId, "INFO", "Page provenance recorded on " + tagged + " of " + chunks.Count + " chunks").ConfigureAwait(false);
+                }
                 if (chunks == null || chunks.Count == 0)
                 {
                     chunkSw.Stop();

@@ -42,10 +42,26 @@ namespace AssistantHub.Core.Models
         public string NfsShareName { get; set; } = null;
 
         /// <summary>
-        /// NFS protocol version.
+        /// NFS protocol version. Only V3 is supported: Blobject 6 (OpenNFS) rejects NFSv2 and NFSv4, so a plan with
+        /// another version fails validation.
         /// Default: V3.
         /// </summary>
         public NfsVersionEnum NfsVersion { get; set; } = NfsVersionEnum.V3;
+
+        /// <summary>
+        /// TCP port of the NFS service (1 to 65535). Null uses 2049.
+        /// </summary>
+        public int? NfsPort { get; set; } = null;
+
+        /// <summary>
+        /// TCP port of the MOUNT service (1 to 65535). Null or 0 discovers it through the portmapper.
+        /// </summary>
+        public int? NfsMountPort { get; set; } = null;
+
+        /// <summary>
+        /// TCP port of the portmapper (rpcbind) used to discover the MOUNT port (1 to 65535). Null uses 111.
+        /// </summary>
+        public int? NfsPortmapperPort { get; set; } = null;
 
         /// <summary>
         /// Include files in subdirectories while crawling.
@@ -84,6 +100,10 @@ namespace AssistantHub.Core.Models
             if (NfsUserId == null) errors.Add("NfsUserId is required for NFS crawl repository settings.");
             if (NfsGroupId == null) errors.Add("NfsGroupId is required for NFS crawl repository settings.");
             if (String.IsNullOrWhiteSpace(NfsShareName)) errors.Add("NfsShareName is required for NFS crawl repository settings.");
+            if (NfsVersion != NfsVersionEnum.V3) errors.Add("NfsVersion " + NfsVersion + " is not supported; NFS crawling supports V3 only.");
+            if (NfsPort.HasValue && (NfsPort.Value < 1 || NfsPort.Value > 65535)) errors.Add("NfsPort must be between 1 and 65535.");
+            if (NfsMountPort.HasValue && (NfsMountPort.Value < 0 || NfsMountPort.Value > 65535)) errors.Add("NfsMountPort must be between 0 and 65535.");
+            if (NfsPortmapperPort.HasValue && (NfsPortmapperPort.Value < 1 || NfsPortmapperPort.Value > 65535)) errors.Add("NfsPortmapperPort must be between 1 and 65535.");
             return errors;
         }
 

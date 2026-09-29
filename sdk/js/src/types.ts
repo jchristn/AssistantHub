@@ -761,7 +761,10 @@ export interface ChatCompletionRequest {
   Temperature?: number;
   TopP?: number;
   MaxTokens?: number;
+  /** @deprecated The server reads `metadata_filter`; use that instead. */
   MetadataFilter?: ChatMetadataFilter;
+  /** Request-level retrieval filter, merged with the assistant's filter (page ranges intersect). */
+  metadata_filter?: ChatMetadataFilter;
   AttachedDocumentIds?: string[];
   attached_document_ids?: string[];
   LocalAttachments?: ChatLocalAttachment[];
@@ -941,11 +944,26 @@ export interface ChatCompletionChunk {
   tool_calls?: ChatCompletionToolTrace[];
 }
 
-/** Metadata filter for chat retrieval. */
+/**
+ * Metadata filter for chat retrieval. The server reads the snake_case keys; the PascalCase keys are kept for
+ * compatibility but are not recognized by the server.
+ */
 export interface ChatMetadataFilter {
+  required_labels?: string[];
+  excluded_labels?: string[];
+  required_tags?: ChatTagCondition[];
+  excluded_tags?: ChatTagCondition[];
+  /** First page of a page range (1 to 99999). Only chunks with page provenance overlapping the range are retrieved; chunks without page numbers are excluded when a range is set. Omit for an open start. */
+  page_start?: number;
+  /** Last page of a page range (1 to 99999, at least page_start). Omit for an open end. */
+  page_end?: number;
+  /** @deprecated Use required_labels. */
   RequiredLabels?: string[];
+  /** @deprecated Use excluded_labels. */
   ExcludedLabels?: string[];
+  /** @deprecated Use required_tags. */
   RequiredTags?: ChatTagCondition[];
+  /** @deprecated Use excluded_tags. */
   ExcludedTags?: ChatTagCondition[];
 }
 
@@ -1157,6 +1175,10 @@ export interface PartioEndpointRequest {
   MaxQueueDepth?: number;
   /** Maximum request timeout, in milliseconds, for upstream calls. Distinct from the health check timeout. */
   MaximumTimeoutMs?: number;
+  /** AssistantHub's timeout, in milliseconds (1000 to 3600000), for its own calls through this endpoint: answer calls (completion) or query embeddings (embedding). Omit or null for the server default; 0 clears; omitted on update keeps the stored value. Distinct from MaximumTimeoutMs, which bounds Partio's side. */
+  RequestTimeoutMs?: number | null;
+  /** Completion endpoints only: AssistantHub's timeout, in milliseconds (1000 to 3600000), for utility steps (retrieval gate, query/conversation rewrite, LLM rerank). Omit or null for the server default; 0 clears. */
+  UtilityTimeoutMs?: number | null;
   SupportsToolCalling?: boolean;
   ToolCallingApiFormat?: string | null;
   SupportsParallelToolCalls?: boolean;
@@ -1190,6 +1212,10 @@ export interface PartioEndpointConfig {
   MaxQueueDepth?: number;
   /** Maximum request timeout, in milliseconds, for upstream calls. Distinct from the health check timeout. */
   MaximumTimeoutMs?: number;
+  /** AssistantHub's timeout, in milliseconds (1000 to 3600000), for its own calls through this endpoint: answer calls (completion) or query embeddings (embedding). Omit or null for the server default; 0 clears; omitted on update keeps the stored value. Distinct from MaximumTimeoutMs, which bounds Partio's side. */
+  RequestTimeoutMs?: number | null;
+  /** Completion endpoints only: AssistantHub's timeout, in milliseconds (1000 to 3600000), for utility steps (retrieval gate, query/conversation rewrite, LLM rerank). Omit or null for the server default; 0 clears. */
+  UtilityTimeoutMs?: number | null;
   SupportsToolCalling?: boolean;
   ToolCallingApiFormat?: string | null;
   SupportsParallelToolCalls?: boolean;

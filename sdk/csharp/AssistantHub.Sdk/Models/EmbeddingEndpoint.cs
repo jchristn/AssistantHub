@@ -77,6 +77,15 @@ namespace AssistantHub.Sdk.Models
         public int MaximumTimeoutMs { get; set; } = 60000;
 
         /// <summary>
+        /// AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for query embeddings through this endpoint.
+        /// Null uses the server default (Chunking.QueryEmbeddingTimeoutMs); on timeout retrieval falls back to keyword
+        /// search. 0 clears a stored value; leaving it null on updates keeps the stored value. Distinct from
+        /// <see cref="MaximumTimeoutMs"/>, which bounds Partio's side.
+        /// </summary>
+        [JsonPropertyName("RequestTimeoutMs")]
+        public int? RequestTimeoutMs { get; set; }
+
+        /// <summary>
         /// Whether this endpoint explicitly supports model tool calls.
         /// </summary>
         [JsonPropertyName("SupportsToolCalling")]

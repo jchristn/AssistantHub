@@ -65,10 +65,20 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string timeoutError = PartioEndpointTimeouts.ValidateRequestJson(ctx.Request.DataAsString);
+                if (timeoutError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, timeoutError))).ConfigureAwait(false);
+                    return;
+                }
+
                 string body = PartioEndpointMerge.BuildCreateBody(ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding", body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode) respBody = PartioEndpointTimeouts.ExposeInJson(respBody);
 
                 if (resp.IsSuccessStatusCode)
                     AssistantHubServer.HealthCheckService?.OnEndpointCreated(respBody);
@@ -112,7 +122,7 @@ namespace AssistantHub.Server.Handlers
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    string converted = ConvertPartioEnvelopeToEnumerationResult(respBody);
+                    string converted = PartioEndpointTimeouts.ExposeInJson(ConvertPartioEnvelopeToEnumerationResult(respBody));
                     await ctx.Response.Send(converted).ConfigureAwait(false);
                 }
                 else
@@ -149,6 +159,7 @@ namespace AssistantHub.Server.Handlers
 
                 HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Get, "/v1.0/endpoints/embedding/" + endpointId).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode) respBody = PartioEndpointTimeouts.ExposeInJson(respBody);
 
                 ctx.Response.StatusCode = (int)resp.StatusCode;
                 ctx.Response.ContentType = "application/json";
@@ -181,10 +192,20 @@ namespace AssistantHub.Server.Handlers
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
                 string existingRaw = await ReadExistingEmbeddingEndpointRawAsync(endpointId).ConfigureAwait(false);
+                string timeoutError = PartioEndpointTimeouts.ValidateRequestJson(ctx.Request.DataAsString);
+                if (timeoutError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, timeoutError))).ConfigureAwait(false);
+                    return;
+                }
+
                 string body = PartioEndpointMerge.BuildUpdateBody(existingRaw, ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _EmbeddingEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/embedding/" + endpointId, body).ConfigureAwait(false);
                 string respBody = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (resp.IsSuccessStatusCode) respBody = PartioEndpointTimeouts.ExposeInJson(respBody);
 
                 if (resp.IsSuccessStatusCode)
                     AssistantHubServer.HealthCheckService?.OnEndpointUpdated(respBody);

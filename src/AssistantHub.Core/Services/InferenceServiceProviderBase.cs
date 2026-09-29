@@ -90,7 +90,7 @@ namespace AssistantHub.Core.Services
 
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
@@ -102,7 +102,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Bearer token  : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
                         _Logging.Warn(_Header + "OpenAI streaming returned " + (int)response.StatusCode);
                         string error = "OpenAI API returned " + (int)response.StatusCode + ": " + errorBody;
@@ -208,7 +208,7 @@ namespace AssistantHub.Core.Services
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
@@ -220,7 +220,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| API key       : " + apiKey + Environment.NewLine +
+                            "| API key       : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
                         string error = "Gemini API returned " + (int)response.StatusCode + ": " + errorBody;
                         EmitTelemetry(false, "HttpStatus", error);
@@ -334,7 +334,7 @@ namespace AssistantHub.Core.Services
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 }
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     onConnectionEstablished?.Invoke();
@@ -346,7 +346,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Bearer token  : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + errorBody);
                         _Logging.Warn(_Header + "Ollama streaming returned " + (int)response.StatusCode);
                         string error = "Ollama API returned " + (int)response.StatusCode + ": " + errorBody;

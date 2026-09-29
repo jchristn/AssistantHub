@@ -329,6 +329,8 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
   const [externalSearchStatus, setExternalSearchStatus] = useState(null);
   const [rerankers, setRerankers] = useState([]);
   const [inspectQuery, setInspectQuery] = useState('');
+  const [inspectPageStart, setInspectPageStart] = useState('');
+  const [inspectPageEnd, setInspectPageEnd] = useState('');
   const [inspecting, setInspecting] = useState(false);
   const [inspectResult, setInspectResult] = useState(null);
   const [inspectError, setInspectError] = useState(null);
@@ -643,8 +645,14 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
     setInspecting(true);
     setInspectError(null);
     try {
+      const pageStart = parseInt(inspectPageStart);
+      const pageEnd = parseInt(inspectPageEnd);
+      const pageFilter = {};
+      if (!Number.isNaN(pageStart) && pageStart > 0) pageFilter.page_start = pageStart;
+      if (!Number.isNaN(pageEnd) && pageEnd > 0) pageFilter.page_end = pageEnd;
       const result = await api.retrieveForAssistant(selectedId, {
         query: inspectQuery.trim(),
+        metadata_filter: Object.keys(pageFilter).length > 0 ? pageFilter : undefined,
         include_stages: true,
         include_answerability: false,
         settings_override: buildSettingsPayload(settings.ToolPolicyJson?.trim() || '')
@@ -1450,6 +1458,12 @@ function AssistantSettingsView({ onOpenChatDrawer, embedded = false, scopeAssist
                 <div className="form-row">
                   <div className="form-group" style={{ flex: 3 }}>
                     <input className="form-input" type="text" title="Question to run through retrieval." value={inspectQuery} onChange={(e) => setInspectQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleInspect(); }} placeholder="Ask a question to see what retrieval finds" />
+                  </div>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <input className="form-input" type="number" min="1" title="Only search from this page (documents with page numbers)." value={inspectPageStart} onChange={(e) => setInspectPageStart(e.target.value)} placeholder="From page" />
+                  </div>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <input className="form-input" type="number" min="1" title="Only search up to this page (documents with page numbers)." value={inspectPageEnd} onChange={(e) => setInspectPageEnd(e.target.value)} placeholder="To page" />
                   </div>
                   <div className="form-group" style={{ flex: 0 }}>
                     <button className="btn btn-secondary" onClick={handleInspect} disabled={inspecting || !inspectQuery.trim()}>{inspecting ? 'Running...' : 'Inspect'}</button>

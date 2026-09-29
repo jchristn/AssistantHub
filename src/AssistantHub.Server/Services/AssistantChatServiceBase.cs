@@ -592,6 +592,7 @@ namespace AssistantHub.Server.Services
                         ", waitedMs=" + waitSw.ElapsedMilliseconds);
                 }
 
+                using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                 InferenceResult result = await _Inference.GenerateResponseAsync(
                     messages, model, maxTokens, temperature, topP,
                     provider, endpoint, apiKey, token).ConfigureAwait(false);
@@ -634,7 +635,8 @@ namespace AssistantHub.Server.Services
 
             using (CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
-                timeout.CancelAfter(_Settings.Inference.UtilityTimeoutMs);
+                int utilityTimeoutMs = PartioEndpointTimeouts.GetUtilityTimeoutMs(endpoint.EndpointId) ?? _Settings.Inference.UtilityTimeoutMs;
+                timeout.CancelAfter(utilityTimeoutMs);
                 InferenceResult result = await GenerateWithCompletionEndpointLimitAsync(
                     messages, model, maxTokens, 0.0, 1.0,
                     endpoint.Provider, endpoint.Endpoint, endpoint.ApiKey, endpoint.EndpointId, endpoint.MaxConcurrentRequests,
@@ -648,7 +650,7 @@ namespace AssistantHub.Server.Services
                 }
                 else
                 {
-                    if (timedOut) _Logging.Warn(_Header + step + " timed out after " + _Settings.Inference.UtilityTimeoutMs + " ms (Inference.UtilityTimeoutMs)");
+                    if (timedOut) _Logging.Warn(_Header + step + " timed out after " + utilityTimeoutMs + " ms (the endpoint's UtilityTimeoutMs, else Inference.UtilityTimeoutMs)");
                     if (UtilityCircuitBreaker.RecordFailure(breakerKey, _Settings.Inference.CircuitBreakerFailures, _Settings.Inference.CircuitBreakerOpenMs))
                         _Logging.Warn(_Header + step + " circuit breaker opened for " + breakerKey + " (" + _Settings.Inference.CircuitBreakerOpenMs + " ms)");
                 }
@@ -732,6 +734,7 @@ namespace AssistantHub.Server.Services
                 {
                 completedContent = null;
                 errorMessage = null;
+                using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                 await _Inference.GenerateResponseStreamingAsync(
                     messages,
                     model,
@@ -835,6 +838,7 @@ namespace AssistantHub.Server.Services
                         ", waitedMs=" + waitSw.ElapsedMilliseconds);
                 }
 
+                using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                 InferenceResult result = await _Inference.GenerateResponseWithToolsAsync(
                     messages, model, maxTokens, temperature, topP,
                     provider, endpoint, apiKey, tools, toolChoice, token).ConfigureAwait(false);

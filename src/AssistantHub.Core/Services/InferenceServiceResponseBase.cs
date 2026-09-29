@@ -125,7 +125,7 @@ namespace AssistantHub.Core.Services
 
             using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url))
             {
-                HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -165,7 +165,7 @@ namespace AssistantHub.Core.Services
             {
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, _Settings.ApiKey);
 
-                HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -211,7 +211,7 @@ namespace AssistantHub.Core.Services
             {
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, _Settings.ApiKey);
 
-                HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                 string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -280,7 +280,7 @@ namespace AssistantHub.Core.Services
 
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -291,7 +291,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "OpenAI API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Bearer token  : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + responseBody);
                         string error = "OpenAI API returned " + (int)response.StatusCode;
                         FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
@@ -362,7 +362,7 @@ namespace AssistantHub.Core.Services
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 }
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -373,7 +373,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "Ollama API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| Bearer token  : " + apiKey + Environment.NewLine +
+                            "| Bearer token  : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + responseBody);
                         string error = "Ollama API returned " + (int)response.StatusCode;
                         FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);
@@ -450,7 +450,7 @@ namespace AssistantHub.Core.Services
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.OpenAI, apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -528,7 +528,7 @@ namespace AssistantHub.Core.Services
                 if (!String.IsNullOrEmpty(apiKey))
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -592,7 +592,7 @@ namespace AssistantHub.Core.Services
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 InferenceProviderHelper.ApplyAuthentication(request, InferenceProviderEnum.Gemini, apiKey);
 
-                using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                 {
                     MarkResponseHeaders(telemetry, telemetrySw, response);
                     string responseBody = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
@@ -603,7 +603,7 @@ namespace AssistantHub.Core.Services
                             _Header +
                             "Gemini API returned status " + (int)response.StatusCode + Environment.NewLine +
                             "| URL           : " + url + Environment.NewLine +
-                            "| API key       : " + apiKey + Environment.NewLine +
+                            "| API key       : " + InferenceProviderHelper.DescribeSecret(apiKey) + Environment.NewLine +
                             "| Response body : " + Environment.NewLine + responseBody);
                         string error = "Gemini API returned " + (int)response.StatusCode;
                         FinishTelemetry(telemetry, telemetrySw, false, "HttpStatus", error);

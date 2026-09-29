@@ -130,7 +130,7 @@ namespace AssistantHub.Core.Services
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                    HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
                     string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
@@ -182,7 +182,7 @@ namespace AssistantHub.Core.Services
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    using (HttpResponseMessage response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                    using (HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
                     {
                         if (!response.IsSuccessStatusCode)
                         {
@@ -271,7 +271,7 @@ namespace AssistantHub.Core.Services
                 {
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    HttpResponseMessage response = await _HttpClient.SendAsync(request).ConfigureAwait(false);
+                    HttpResponseMessage response = await SendWithTimeoutAsync(request, HttpCompletionOption.ResponseContentRead, CancellationToken.None).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
                     {

@@ -105,6 +105,9 @@ namespace AssistantHub.Core.Services.Crawlers
                 settings.NfsGroupId.Value,
                 settings.NfsShareName,
                 NfsVersionConverter.ToBlobjectNfsVersion(settings.NfsVersion));
+            if (settings.NfsPort.HasValue) nfs.Port = settings.NfsPort.Value;
+            if (settings.NfsMountPort.HasValue) nfs.MountPort = settings.NfsMountPort.Value;
+            if (settings.NfsPortmapperPort.HasValue) nfs.PortmapperPort = settings.NfsPortmapperPort.Value;
 
             return new NfsBlobClient(nfs);
         }

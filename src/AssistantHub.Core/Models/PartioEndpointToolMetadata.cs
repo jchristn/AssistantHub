@@ -111,6 +111,7 @@ namespace AssistantHub.Core.Models
         public static void ReadTagsToToolFields(PartioEndpointConfig endpoint)
         {
             if (endpoint == null) return;
+            PartioEndpointTimeouts.Apply(endpoint);
 
             bool hasMetadata = HasLabel(endpoint.Labels, ToolCallingLabel)
                 || TryGetTag(endpoint.Tags, SupportsToolCallingTag, out _)
@@ -154,6 +155,7 @@ namespace AssistantHub.Core.Models
             {
                 foreach (string name in RequestToolFieldNames)
                     RemovePropertyIgnoreCase(obj, name);
+                PartioEndpointTimeouts.StripFields(obj);
             }
 
             return node?.ToJsonString() ?? "{}";

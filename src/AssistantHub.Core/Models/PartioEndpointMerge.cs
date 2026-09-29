@@ -56,16 +56,19 @@ namespace AssistantHub.Core.Models
                 string name = prop.Key;
                 if (EqualsIgnoreCase(name, "Tags") || EqualsIgnoreCase(name, "Labels")) continue;
                 if (IsToolField(name)) continue; // folded into tags/labels below
+                if (PartioEndpointTimeouts.FieldNames.Any(n => EqualsIgnoreCase(n, name))) continue; // folded into tags below
                 if (EqualsIgnoreCase(name, "ApiKey") && IsBlank(prop.Value)) continue; // blank key preserves stored key
                 SetProperty(baseObj, name, prop.Value?.DeepClone());
             }
 
             // Fold AssistantHub tool-calling capabilities (from the caller) into the merged tags/labels.
             FoldToolFields(incoming, tags, labels);
+            PartioEndpointTimeouts.FoldIntoTags(incoming, tags);
 
             SetProperty(baseObj, "Tags", tags);
             SetProperty(baseObj, "Labels", labels);
             StripToolFields(baseObj);
+            PartioEndpointTimeouts.StripFields(baseObj);
 
             if (!HasNonEmptyString(baseObj, "TenantId"))
                 SetProperty(baseObj, "TenantId", JsonValue.Create(defaultTenantId));

@@ -8308,15 +8308,16 @@ namespace Test.Automated
                     AssertHelper.StringContains(result.Message, "share/export 'content'", "connectivity success share detail");
                     AssertHelper.StringContains(result.Message, "user 'crawler'", "connectivity success principal detail");
                     AssertHelper.AreEqual(1, blob.ValidateConnectivityCount, "host validation count");
-                    AssertHelper.AreEqual(1, blob.GetMetadataCount, "root metadata validation count");
-                    AssertHelper.AreEqual(String.Empty, blob.LastMetadataKey, "root metadata key");
+                    AssertHelper.AreEqual(1, blob.EnumerateCount, "root listing validation count");
+                    AssertHelper.AreEqual(String.Empty, blob.LastAsyncFilter?.Prefix, "root listing prefix");
+                    AssertHelper.AreEqual(0, blob.GetMetadataCount, "no root metadata request (Blobject 6 rejects it)");
                 }
             });
 
             await ExecuteTestAsync("FileServerRepositoryCrawlerBase.ValidateConnectivity: fails when configured repository root is inaccessible", async () =>
             {
                 FakeBlobClient blob = new FakeBlobClient();
-                blob.ThrowOnGetMetadata = true;
+                blob.ThrowOnEnumerate = true;
 
                 CrawlPlan plan = new CrawlPlan
                 {
@@ -8343,9 +8344,9 @@ namespace Test.Automated
                     AssertHelper.StringContains(result.Message, "share/export 'content'", "connectivity failure share detail");
                     AssertHelper.StringContains(result.Message, "user 'crawler'", "connectivity failure principal detail");
                     AssertHelper.StringContains(result.Message, "username, password", "connectivity failure credential guidance");
-                    AssertHelper.StringContains(result.Message, "metadata unavailable", "connectivity failure exception detail");
+                    AssertHelper.StringContains(result.Message, "root listing unavailable", "connectivity failure exception detail");
                     AssertHelper.AreEqual(1, blob.ValidateConnectivityCount, "host validation count");
-                    AssertHelper.AreEqual(1, blob.GetMetadataCount, "root metadata validation count");
+                    AssertHelper.AreEqual(1, blob.EnumerateCount, "root listing validation count");
                 }
             });
 
@@ -9744,6 +9745,8 @@ namespace Test.Automated
             });
 
             await RunRetrievalImprovementTestsAsync().ConfigureAwait(false);
+            await RunEndpointAndPageTestsAsync().ConfigureAwait(false);
+            await RunFileShareCrawlTestsAsync().ConfigureAwait(false);
 
             return GetResults();
         }
@@ -10532,7 +10535,8 @@ namespace Test.Automated
 
             public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
             {
-                CallCount++;
+                // Only embedding attempts are counted; endpoint lookups hang too but are not attempts.
+                if (relativePathAndQuery.StartsWith("/v1.0/embed", StringComparison.Ordinal)) CallCount++;
                 await Task.Delay(TimeSpan.FromSeconds(30), token).ConfigureAwait(false);
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -10547,19 +10551,37 @@ namespace Test.Automated
 
             public List<RecordedHttpCall> Calls { get; } = new List<RecordedHttpCall>();
 
+            /// <summary>Body returned for embedding endpoint lookups (GET /v1.0/endpoints/embedding/{id}); null returns 404.</summary>
+            public string EndpointResponse { get; set; } = null;
+
+            /// <summary>Delay applied to query embeddings (POST /v1.0/embed), honoring cancellation.</summary>
+            public int EmbedDelayMs { get; set; } = 0;
+
             public void Enqueue(HttpStatusCode statusCode, string body = "")
             {
                 _Responses.Enqueue((statusCode, body));
             }
 
-            public Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
+            public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string relativePathAndQuery, string body = null, CancellationToken token = default)
             {
+                // Endpoint lookups are answered separately so they never consume queued responses.
+                if (method == HttpMethod.Get && relativePathAndQuery.StartsWith("/v1.0/endpoints/embedding/", StringComparison.Ordinal))
+                {
+                    return new HttpResponseMessage(EndpointResponse == null ? HttpStatusCode.NotFound : HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(EndpointResponse ?? "{}", Encoding.UTF8, "application/json")
+                    };
+                }
+
                 Calls.Add(new RecordedHttpCall
                 {
                     Method = method.Method,
                     Path = relativePathAndQuery,
                     Body = body
                 });
+
+                if (EmbedDelayMs > 0 && relativePathAndQuery.StartsWith("/v1.0/embed", StringComparison.Ordinal))
+                    await Task.Delay(EmbedDelayMs, token).ConfigureAwait(false);
 
                 (HttpStatusCode statusCode, string responseBody) = _Responses.Count > 0
                     ? _Responses.Dequeue()
@@ -10570,7 +10592,7 @@ namespace Test.Automated
                     Content = new StringContent(responseBody ?? "", Encoding.UTF8, "application/json")
                 };
 
-                return Task.FromResult(response);
+                return response;
             }
         }
 
@@ -10623,6 +10645,10 @@ namespace Test.Automated
             public int ValidateConnectivityCount { get; private set; }
 
             public int GetMetadataCount { get; private set; }
+
+            public int EnumerateCount { get; private set; }
+
+            public bool ThrowOnEnumerate { get; set; }
 
             public string LastMetadataKey { get; private set; }
 
@@ -10715,6 +10741,8 @@ namespace Test.Automated
             public override async IAsyncEnumerable<BlobMetadata> EnumerateAsync(EnumerationFilter filter = null, [EnumeratorCancellation] CancellationToken token = default)
             {
                 LastAsyncFilter = filter;
+                EnumerateCount++;
+                if (ThrowOnEnumerate) throw new InvalidOperationException("root listing unavailable");
 
                 if (ThrowOnNullPrefix && (filter == null || filter.Prefix == null))
                     throw new InvalidOperationException("prefix must not be null");

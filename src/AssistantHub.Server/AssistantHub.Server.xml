@@ -146,6 +146,15 @@
             </summary>
             <param name="ctx">HTTP context.</param>
         </member>
+        <member name="M:AssistantHub.Server.Handlers.AssistantHandler.ResolveAdminKeyOwnerAsync(System.String)">
+            <summary>
+            Resolve the tenant and owner of an assistant created with the administrator API key: TenantId is required in
+            the body and must exist; UserId, when given, must belong to that tenant, and otherwise the tenant's first
+            administrator (tenant administrator first, then any administrator) owns the assistant.
+            </summary>
+            <param name="body">Request body.</param>
+            <returns>Tenant and user identifiers, or an HTTP status and error message.</returns>
+        </member>
         <member name="T:AssistantHub.Server.Handlers.AssistantRetrieveHandler">
             <summary>
             Handles the retrieval-only diagnostic route, which runs an assistant's retrieval pipeline without final

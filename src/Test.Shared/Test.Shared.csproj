@@ -16,6 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OpenCIFS.Server" Version="0.1.1" />
+    <PackageReference Include="OpenNFS.Server" Version="0.1.1" />
     <PackageReference Include="Touchstone.Core" Version="0.1.12" />
     <PackageReference Include="Voltaic" Version="2.0.0" />
   </ItemGroup>

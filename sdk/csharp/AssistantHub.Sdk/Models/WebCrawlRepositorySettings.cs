@@ -88,6 +88,19 @@ namespace AssistantHub.Sdk.Models
         public bool FollowRedirects { get; set; }
 
         /// <summary>
+        /// Most redirects followed for one page (1 to 50, default 10).
+        /// </summary>
+        [JsonPropertyName("MaxRedirects")]
+        public int MaxRedirects { get; set; } = 10;
+
+        /// <summary>
+        /// Additional origins (absolute http or https URLs) that receive the crawl's credentials. By default credentials
+        /// go only to the start URL's origin.
+        /// </summary>
+        [JsonPropertyName("CredentialOrigins")]
+        public List<string> CredentialOrigins { get; set; } = new List<string>();
+
+        /// <summary>
         /// Whether to extract URLs from sitemaps.
         /// </summary>
         [JsonPropertyName("ExtractSitemapLinks")]

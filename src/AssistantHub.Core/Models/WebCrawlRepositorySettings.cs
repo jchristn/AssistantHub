@@ -74,12 +74,34 @@ namespace AssistantHub.Core.Models
         public bool FollowLinks { get; set; } = true;
 
         /// <summary>
-        /// Follow HTTP redirects. Currently informational: ordinary redirects are always followed by the HTTP client
-        /// (the page is listed under the linking address), and CrawlSharp's own redirect following stays off because it
-        /// never ends on a redirect cycle.
+        /// Follow HTTP redirects, one hop at a time, up to <see cref="MaxRedirects"/> hops. A redirect cycle ends the
+        /// chain instead of repeating it, and a page is listed under the address that links to it, with the target's
+        /// content. When false, redirects are not followed and redirecting pages are skipped.
         /// Default: true.
         /// </summary>
         public bool FollowRedirects { get; set; } = true;
+
+        /// <summary>
+        /// Most redirects followed for one page (1 to 50). A longer chain is skipped.
+        /// Default: 10.
+        /// </summary>
+        public int MaxRedirects
+        {
+            get => _MaxRedirects;
+            set => _MaxRedirects = Math.Clamp(value, 1, 50);
+        }
+
+        /// <summary>
+        /// Additional origins (for example "https://docs.example.com") that receive the crawl's credentials. By default
+        /// credentials go only to the start URL's origin (and its HTTPS upgrade), never to other sites a page links or
+        /// redirects to. Each entry must be an absolute http or https URL; only its scheme, host and port are used.
+        /// Default: empty.
+        /// </summary>
+        public List<string> CredentialOrigins
+        {
+            get => _CredentialOrigins;
+            set => _CredentialOrigins = value ?? new List<string>();
+        }
 
         /// <summary>
         /// Extract and follow sitemap links.
@@ -150,6 +172,8 @@ namespace AssistantHub.Core.Models
         private int _MaxDepth = 5;
         private int _MaxParallelTasks = 8;
         private int _CrawlDelayMs = 100;
+        private int _MaxRedirects = 10;
+        private List<string> _CredentialOrigins = new List<string>();
 
         #endregion
 
@@ -172,6 +196,12 @@ namespace AssistantHub.Core.Models
         {
             List<string> errors = new List<string>();
             if (String.IsNullOrWhiteSpace(StartUrl)) errors.Add("StartUrl is required for web crawl repository settings.");
+            foreach (string origin in CredentialOrigins)
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out Uri uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                    errors.Add("CredentialOrigins entries must be absolute http or https URLs: " + origin);
+            }
+
             return errors;
         }
 

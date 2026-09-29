@@ -90,6 +90,15 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string metadataFilterError = chatReq.MetadataFilter?.Validate();
+                if (metadataFilterError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, metadataFilterError))).ConfigureAwait(false);
+                    return;
+                }
+
                 TelemetryContext telemetryContext = EnsureTelemetryContext(ctx);
 
                 AssistantSettings settings = await Database.AssistantSettings.ReadByAssistantIdAsync(assistantId).ConfigureAwait(false);

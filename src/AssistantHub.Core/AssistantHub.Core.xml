@@ -4847,6 +4847,13 @@
             Helper methods for inference provider resolution and provider-specific defaults.
             </summary>
         </member>
+        <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.DescribeSecret(System.String)">
+            <summary>
+            Describe a secret for logs without revealing it: "(not set)" or "(set, N characters)".
+            </summary>
+            <param name="secret">API key or token.</param>
+            <returns>A description safe to log.</returns>
+        </member>
         <member name="M:AssistantHub.Core.Helpers.InferenceProviderHelper.FromApiFormat(System.String,AssistantHub.Core.Enums.InferenceProviderEnum)">
             <summary>
             Resolve an inference provider from a Partio API format string.
@@ -9167,10 +9174,35 @@
             Tag conditions that must NOT match on retrieved documents.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.PageStart">
+            <summary>
+            First page of a page range (1 or more). Only chunks with page provenance that overlap the range are
+            retrieved; chunks without page numbers (for example from Markdown or HTML) are excluded.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.PageEnd">
+            <summary>
+            Last page of a page range (1 or more, at least <see cref="P:AssistantHub.Core.Models.ChatMetadataFilter.PageStart"/>). Omit it for an open-ended range.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.ChatMetadataFilter.IsEmpty">
             <summary>
             Returns true if no filters are configured.
             </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatMetadataFilter.Validate">
+            <summary>
+            Check the page range.
+            </summary>
+            <returns>An error message, or null when valid.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.ChatMetadataFilter.PageTagConditions">
+            <summary>
+            Tag conditions that select chunks overlapping the page range: the chunk starts on or before the last page
+            and ends on or after the first. Page tags are zero-padded to five digits, so RecallDB's string comparison
+            orders them numerically.
+            </summary>
+            <returns>Conditions (empty when no page range is set).</returns>
         </member>
         <member name="M:AssistantHub.Core.Models.ChatMetadataFilter.Merge(AssistantHub.Core.Models.ChatMetadataFilter)">
             <summary>
@@ -9283,6 +9315,17 @@
         <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsShareName">
             <summary>
             CIFS share name.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsPort">
+            <summary>
+            TCP port of the SMB server (1 to 65535). Null uses 445.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.CifsDomain">
+            <summary>
+            Domain or workgroup of the user, for example an Active Directory domain. Null takes the domain from a
+            DOMAIN\user username, or sends none.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.CifsCrawlRepositorySettings.IncludeSubdirectories">
@@ -11573,8 +11616,24 @@
         </member>
         <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsVersion">
             <summary>
-            NFS protocol version.
+            NFS protocol version. Only V3 is supported: Blobject 6 (OpenNFS) rejects NFSv2 and NFSv4, so a plan with
+            another version fails validation.
             Default: V3.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsPort">
+            <summary>
+            TCP port of the NFS service (1 to 65535). Null uses 2049.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsMountPort">
+            <summary>
+            TCP port of the MOUNT service (1 to 65535). Null or 0 discovers it through the portmapper.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.NfsPortmapperPort">
+            <summary>
+            TCP port of the portmapper (rpcbind) used to discover the MOUNT port (1 to 65535). Null uses 111.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.NfsCrawlRepositorySettings.IncludeSubdirectories">
@@ -11818,6 +11877,21 @@
             This is distinct from the health check timeout.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.RequestTimeoutMs">
+            <summary>
+            AssistantHub's timeout, in milliseconds, for its own calls to this endpoint: answer calls to a completion
+            endpoint, or query embeddings through an embedding endpoint. Null uses the server default
+            (<c>Inference.RequestTimeoutMs</c> or <c>Chunking.QueryEmbeddingTimeoutMs</c>). Stored as the
+            <c>AssistantHub.RequestTimeoutMs</c> tag.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.UtilityTimeoutMs">
+            <summary>
+            AssistantHub's timeout, in milliseconds, for utility steps (retrieval gate, query and conversation rewrite,
+            LLM rerank) on this completion endpoint. Null uses <c>Inference.UtilityTimeoutMs</c>. Stored as the
+            <c>AssistantHub.UtilityTimeoutMs</c> tag.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointConfig.ContextSize">
             <summary>
             Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.
@@ -11979,6 +12053,19 @@
             This is distinct from the health check timeout. Left null on partial updates to preserve the stored value.
             </summary>
         </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.RequestTimeoutMs">
+            <summary>
+            AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for its own calls to this endpoint: answer
+            calls to a completion endpoint, or query embeddings through an embedding endpoint. 0 clears it (server
+            default); omit it on updates to keep the stored value.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.UtilityTimeoutMs">
+            <summary>
+            AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for utility steps on this completion endpoint
+            (retrieval gate, rewrites, LLM rerank). 0 clears it; omit it on updates to keep the stored value.
+            </summary>
+        </member>
         <member name="P:AssistantHub.Core.Models.PartioEndpointRequest.ContextSize">
             <summary>
             Context window size (maximum tokens) for the model served by this endpoint. Left null on partial
@@ -12064,6 +12151,113 @@
             <summary>
             Whether auth is used on health checks.
             </summary>
+        </member>
+        <member name="T:AssistantHub.Core.Models.PartioEndpointTimeouts">
+            <summary>
+            AssistantHub's own per-endpoint timeouts. Partio owns endpoint records, so the values are stored as endpoint
+            tags and exposed to API callers as top-level fields (<c>RequestTimeoutMs</c>, <c>UtilityTimeoutMs</c>). They
+            bound the calls AssistantHub itself makes: answer and utility calls to a completion endpoint, and query
+            embeddings through an embedding endpoint. Partio's <c>MaximumTimeoutMs</c> is separate and bounds Partio's side.
+            Endpoints read by AssistantHub are remembered here so the chat rail can apply their timeouts.
+            </summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.RequestTimeoutTag">
+            <summary>Tag key for the request timeout.</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.UtilityTimeoutTag">
+            <summary>Tag key for the utility-step timeout (completion endpoints).</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.RequestTimeoutField">
+            <summary>Top-level request field for the request timeout.</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.UtilityTimeoutField">
+            <summary>Top-level request field for the utility-step timeout.</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.MinimumTimeoutMs">
+            <summary>Smallest accepted timeout in milliseconds.</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.MaximumTimeoutMs">
+            <summary>Largest accepted timeout in milliseconds (one hour).</summary>
+        </member>
+        <member name="F:AssistantHub.Core.Models.PartioEndpointTimeouts.FieldNames">
+            <summary>Top-level field names that are AssistantHub-only and must not be sent to Partio.</summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.Validate(System.Nullable{System.Int32})">
+            <summary>
+            Validate a timeout value from an API request.
+            </summary>
+            <param name="value">Value (null or 0 clears it).</param>
+            <returns>An error message, or null when valid.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.ValidateRequestJson(System.String)">
+            <summary>
+            Validate the timeout fields in a raw endpoint request body.
+            </summary>
+            <param name="json">Request body.</param>
+            <returns>An error message, or null when valid.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.FoldIntoTags(System.Text.Json.Nodes.JsonObject,System.Text.Json.Nodes.JsonObject)">
+            <summary>
+            Move the timeout fields of an incoming request into endpoint tags, and remove the top-level fields.
+            A value of 0 or null removes the tag (server default). Absent fields leave the tags unchanged.
+            </summary>
+            <param name="incoming">Caller request body.</param>
+            <param name="tags">Merged tags (modified).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.StripFields(System.Text.Json.Nodes.JsonObject)">
+            <summary>
+            Remove the AssistantHub-only timeout fields from an endpoint body bound for Partio.
+            </summary>
+            <param name="obj">Endpoint body (modified).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.Apply(AssistantHub.Core.Models.PartioEndpointConfig)">
+            <summary>
+            Read an endpoint's timeouts from its tags into its top-level fields, and remember them by endpoint id.
+            </summary>
+            <param name="endpoint">Endpoint (modified).</param>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.ExposeInJson(System.String)">
+            <summary>
+            Expose the timeout tags of a raw endpoint JSON document (an endpoint, a Partio envelope with <c>Data</c>,
+            or an enumeration result with <c>Objects</c>) as top-level fields, and remember them by endpoint id.
+            </summary>
+            <param name="json">Endpoint JSON.</param>
+            <returns>JSON with the fields added, or the input when it is not an endpoint document.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.Remember(System.String,System.Nullable{System.Int32},System.Nullable{System.Int32})">
+            <summary>
+            Remember an endpoint's timeouts.
+            </summary>
+            <param name="endpointId">Endpoint id.</param>
+            <param name="requestTimeoutMs">Request timeout, or null.</param>
+            <param name="utilityTimeoutMs">Utility timeout, or null.</param>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.GetRequestTimeoutMs(System.String)">
+            <summary>
+            The request timeout configured on an endpoint AssistantHub has read, or null for the server default.
+            </summary>
+            <param name="endpointId">Endpoint id.</param>
+            <returns>Timeout in milliseconds, or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.GetUtilityTimeoutMs(System.String)">
+            <summary>
+            The utility-step timeout configured on a completion endpoint AssistantHub has read, or null for the default.
+            </summary>
+            <param name="endpointId">Endpoint id.</param>
+            <returns>Timeout in milliseconds, or null.</returns>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.Reset">
+            <summary>
+            Forget every remembered endpoint (tests).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Models.PartioEndpointTimeouts.ReadTag(System.Collections.Generic.IDictionary{System.String,System.String},System.String)">
+            <summary>
+            Parse a timeout tag value.
+            </summary>
+            <param name="tags">Endpoint tags.</param>
+            <param name="key">Tag key.</param>
+            <returns>Timeout in milliseconds, or null when absent or invalid.</returns>
         </member>
         <member name="T:AssistantHub.Core.Models.PartioEndpointToolMetadata">
             <summary>
@@ -13470,10 +13664,24 @@
         </member>
         <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.FollowRedirects">
             <summary>
-            Follow HTTP redirects. Currently informational: ordinary redirects are always followed by the HTTP client
-            (the page is listed under the linking address), and CrawlSharp's own redirect following stays off because it
-            never ends on a redirect cycle.
+            Follow HTTP redirects, one hop at a time, up to <see cref="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxRedirects"/> hops. A redirect cycle ends the
+            chain instead of repeating it, and a page is listed under the address that links to it, with the target's
+            content. When false, redirects are not followed and redirecting pages are skipped.
             Default: true.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.MaxRedirects">
+            <summary>
+            Most redirects followed for one page (1 to 50). A longer chain is skipped.
+            Default: 10.
+            </summary>
+        </member>
+        <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.CredentialOrigins">
+            <summary>
+            Additional origins (for example "https://docs.example.com") that receive the crawl's credentials. By default
+            credentials go only to the start URL's origin (and its HTTPS upgrade), never to other sites a page links or
+            redirects to. Each entry must be an absolute http or https URL; only its scheme, host and port are used.
+            Default: empty.
             </summary>
         </member>
         <member name="P:AssistantHub.Core.Models.WebCrawlRepositorySettings.ExtractSitemapLinks">
@@ -15192,6 +15400,19 @@
             <param name="settings">Inference settings.</param>
             <param name="logging">Logging module.</param>
         </member>
+        <member name="M:AssistantHub.Core.Services.InferenceServiceTelemetryBase.UseRequestTimeout(System.Nullable{System.Int32})">
+            <summary>
+            Apply a per-endpoint request timeout to the inference calls made in the current async flow until the
+            returned scope is disposed. Null or a non-positive value keeps <c>Inference.RequestTimeoutMs</c>.
+            </summary>
+            <param name="timeoutMs">Timeout in milliseconds.</param>
+            <returns>Scope that restores the previous timeout.</returns>
+        </member>
+        <member name="P:AssistantHub.Core.Services.InferenceServiceTelemetryBase.EffectiveRequestTimeoutMs">
+            <summary>
+            The request timeout in effect for the current async flow.
+            </summary>
+        </member>
         <member name="T:AssistantHub.Core.Services.IngestionService">
             <summary>
             Background document ingestion pipeline service.
@@ -15961,6 +16182,18 @@
             <param name="page">Page number.</param>
             <returns>Tag value.</returns>
         </member>
+        <member name="M:AssistantHub.Core.Services.ProvenanceTags.MapFlatChunks(System.String,System.Collections.Generic.IList{AssistantHub.Core.Models.ExtractedBlock},System.Collections.Generic.IList{System.String})">
+            <summary>
+            Work out page and sheet provenance for chunks cut from a document's flat text (Flat cell mode), where
+            Partio chunks the whole text at once. Each chunk is located in the text by its opening words, and its span is
+            mapped to the pages and sheet of the extracted blocks it covers. Whitespace is normalized on both sides, and
+            a chunk that cannot be located gets no tags.
+            </summary>
+            <param name="content">The extracted text that was chunked.</param>
+            <param name="blocks">Extracted blocks, in reading order.</param>
+            <param name="chunkTexts">Chunk texts, in chunk order.</param>
+            <returns>One tag dictionary per chunk (possibly empty).</returns>
+        </member>
         <member name="M:AssistantHub.Core.Services.ProvenanceTags.Apply(AssistantHub.Core.Models.RetrievalChunk,System.Collections.Generic.IDictionary{System.String,System.String})">
             <summary>
             Copy provenance from a chunk's tags onto a retrieval chunk.
@@ -16211,6 +16444,12 @@
         <member name="M:AssistantHub.Core.Services.RetrievalService.ResolveQueryPrefixAsync(System.String,System.Threading.CancellationToken)">
             <summary>
             Resolve the query task prefix for an embedding endpoint's model (cached for five minutes).
+            </summary>
+        </member>
+        <member name="M:AssistantHub.Core.Services.RetrievalService.ResolveEmbeddingEndpointInfoAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Read an embedding endpoint's model task prefix and AssistantHub request timeout (cached for five minutes).
+            A failed read is cached too, as no prefix and the server default timeout.
             </summary>
         </member>
         <member name="M:AssistantHub.Core.Services.RetrievalService.IsTransientEmbeddingStatus(System.Int32)">

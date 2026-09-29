@@ -319,8 +319,8 @@ namespace AssistantHub.Server
             _Logging.Info(_Header + "default admin created:");
             _Logging.Info(_Header + "  tenant: " + defaultTenant.Id + " (" + defaultTenant.Name + ")");
             _Logging.Info(_Header + "  email: " + admin.Email);
-            _Logging.Info(_Header + "  password: " + adminPassword);
-            _Logging.Info(_Header + "  bearer token: " + credential.BearerToken);
+            // The password and bearer token are shown once on the console below, never written to the log file.
+            _Logging.Info(_Header + "  password and bearer token: shown on the console at first start only");
 
             Console.WriteLine("");
             Console.WriteLine("*** Default tenant credentials ***");

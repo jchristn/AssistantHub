@@ -65,6 +65,21 @@ namespace AssistantHub.Core.Models
         public int? MaximumTimeoutMs { get; set; } = null;
 
         /// <summary>
+        /// AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for its own calls to this endpoint: answer
+        /// calls to a completion endpoint, or query embeddings through an embedding endpoint. 0 clears it (server
+        /// default); omit it on updates to keep the stored value.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? RequestTimeoutMs { get; set; } = null;
+
+        /// <summary>
+        /// AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for utility steps on this completion endpoint
+        /// (retrieval gate, rewrites, LLM rerank). 0 clears it; omit it on updates to keep the stored value.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? UtilityTimeoutMs { get; set; } = null;
+
+        /// <summary>
         /// Context window size (maximum tokens) for the model served by this endpoint. Left null on partial
         /// updates to preserve the stored value.
         /// </summary>

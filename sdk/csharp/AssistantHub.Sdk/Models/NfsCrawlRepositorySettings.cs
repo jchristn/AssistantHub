@@ -33,6 +33,24 @@ namespace AssistantHub.Sdk.Models
         public string NfsShareName { get; set; }
 
         /// <summary>
+        /// TCP port of the NFS service (null uses 2049).
+        /// </summary>
+        [JsonPropertyName("NfsPort")]
+        public int? NfsPort { get; set; }
+
+        /// <summary>
+        /// TCP port of the MOUNT service (null or 0 discovers it through the portmapper).
+        /// </summary>
+        [JsonPropertyName("NfsMountPort")]
+        public int? NfsMountPort { get; set; }
+
+        /// <summary>
+        /// TCP port of the portmapper (null uses 111).
+        /// </summary>
+        [JsonPropertyName("NfsPortmapperPort")]
+        public int? NfsPortmapperPort { get; set; }
+
+        /// <summary>
         /// NFS protocol version.
         /// </summary>
         [JsonPropertyName("NfsVersion")]

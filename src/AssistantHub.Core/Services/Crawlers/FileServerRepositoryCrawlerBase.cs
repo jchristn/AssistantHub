@@ -200,16 +200,19 @@ namespace AssistantHub.Core.Services.Crawlers
                 serverConnectivityException = e;
             }
 
+            // The share or export root must be listable. Blobject 6 has no metadata for the root itself
+            // (GetMetadataAsync("") throws), so the check reads the first entry of the root instead. A failed listing
+            // also explains a validation that failed without an exception, such as a rejected logon.
             try
             {
-                BlobMetadata metadata = await blob.GetMetadataAsync(String.Empty, token).ConfigureAwait(false);
-                if (metadata != null) return CreateResult(true, BuildRepositoryAccessSuccessMessage(info));
+                await foreach (BlobMetadata item in blob.EnumerateAsync(new EnumerationFilter { Prefix = String.Empty, Suffix = String.Empty }, token).ConfigureAwait(false)) break;
             }
             catch (Exception e)
             {
                 return CreateResult(false, BuildRepositoryAccessFailureMessage(info, e, serverConnectivity, serverConnectivityException));
             }
 
+            if (serverConnectivity) return CreateResult(true, BuildRepositoryAccessSuccessMessage(info));
             return CreateResult(false, BuildRepositoryAccessFailureMessage(info, null, serverConnectivity, serverConnectivityException));
         }
 
@@ -275,7 +278,7 @@ namespace AssistantHub.Core.Services.Crawlers
                     RepositoryLabel = "CIFS",
                     ConfiguredHostname = settings?.CifsHostname,
                     Hostname = ResolveEffectiveHostname(settings?.CifsHostname),
-                    Port = 445,
+                    Port = settings?.CifsPort ?? 445,
                     ShareName = settings?.CifsShareName,
                     Principal = settings?.CifsUsername,
                     PrincipalLabel = "user"
@@ -290,7 +293,7 @@ namespace AssistantHub.Core.Services.Crawlers
                     RepositoryLabel = "NFS",
                     ConfiguredHostname = settings?.NfsHostname,
                     Hostname = ResolveEffectiveHostname(settings?.NfsHostname),
-                    Port = 2049,
+                    Port = settings?.NfsPort ?? 2049,
                     ShareName = settings?.NfsShareName,
                     Principal = settings != null ? "UID " + settings.NfsUserId + "/GID " + settings.NfsGroupId + ", " + settings.NfsVersion : null,
                     PrincipalLabel = "identity"

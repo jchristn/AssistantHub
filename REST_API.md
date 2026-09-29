@@ -1596,6 +1596,7 @@ Create a new embedding endpoint.
   "MaxConcurrentRequests": 2,
   "MaxQueueDepth": 0,
   "MaximumTimeoutMs": 60000,
+  "RequestTimeoutMs": 20000,
   "HealthCheckEnabled": true,
   "HealthCheckUrl": "https://generativelanguage.googleapis.com/v1beta/models",
   "HealthCheckMethod": "GET",
@@ -1613,9 +1614,18 @@ Create a new embedding endpoint.
 **Concurrency and queueing fields (optional, forwarded to Partio):**
 - `MaxConcurrentRequests` (default `2`) -- maximum in-flight upstream calls Partio allows for this endpoint.
 - `MaxQueueDepth` (default `0`) -- how many additional requests Partio queues once the concurrency limit is reached. `0` rejects excess requests immediately with `429 Too Many Requests`; a positive value lets that many requests wait for a slot, and a queued request that waits past `MaximumTimeoutMs` returns `504 Gateway Timeout`.
-- `MaximumTimeoutMs` (default `60000`) -- per-request upstream timeout, distinct from the health-check timeout.
+- `MaximumTimeoutMs` (default `60000`) -- per-request upstream timeout, distinct from the health-check timeout. This is Partio's timeout: it bounds Partio's own call to the upstream model and the time a request waits in Partio's queue (the dashboard labels it "Partio Timeout").
+
+**AssistantHub timeout (optional, not forwarded as a Partio field):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `RequestTimeoutMs` | int or null | AssistantHub's own client timeout, in milliseconds, for query embeddings it requests through this endpoint during retrieval. Accepts `1000` to `3600000`; `0` or `null` clears it so the server default `Chunking.QueryEmbeddingTimeoutMs` (default `30000`) applies. When a query embedding times out, retrieval falls back to keyword search. Retrieval caches the endpoint's value for up to five minutes. |
+
+AssistantHub stores the value in Partio as the endpoint tag `AssistantHub.RequestTimeoutMs` and returns it as the top-level `RequestTimeoutMs` field (`null` when unset) on create, read, enumerate, and update responses. On update, omitting the field keeps the stored value. A value outside the accepted range, or one that is not a whole number, returns `400 Bad Request`. It is independent of `MaximumTimeoutMs`: set the AssistantHub timeout no longer than the Partio timeout if you want AssistantHub's fallback to run before Partio gives up.
 
 **Error Responses:**
+- `400` -- `RequestTimeoutMs` is not a whole number between `1000` and `3600000` (or `0`).
 - `403` -- Not an admin user.
 - `502` -- Partio service unavailable.
 
@@ -1650,11 +1660,12 @@ Update an existing embedding endpoint.
 
 **Auth:** Required (admin only)
 
-**Request Body:** Same format as create.
+**Request Body:** Same format as create. Omit `RequestTimeoutMs` to keep the stored value, or send `0` to clear it.
 
 **Response (200 OK):** The updated endpoint object.
 
 **Error Responses:**
+- `400` -- `RequestTimeoutMs` is out of range.
 - `404` -- Endpoint not found.
 
 ### DELETE /v1.0/endpoints/embedding/{endpointId}
@@ -1819,6 +1830,8 @@ Create a new completion endpoint.
   "MaxConcurrentRequests": 2,
   "MaxQueueDepth": 0,
   "MaximumTimeoutMs": 60000,
+  "RequestTimeoutMs": 120000,
+  "UtilityTimeoutMs": 15000,
   "Labels": ["production"],
   "Tags": {
     "owner": "assistant-team"
@@ -1843,9 +1856,19 @@ Create a new completion endpoint.
 
 Tool-calling capability is disabled unless `SupportsToolCalling` is explicitly set on the managed completion endpoint and the assistant policy separately enables tool calls. AssistantHub persists these capability fields in Partio endpoint metadata using the reserved label `assistanthub:tool-calling` and reserved tags `AssistantHub.SupportsToolCalling`, `AssistantHub.ToolCallingApiFormat`, `AssistantHub.SupportsParallelToolCalls`, and `AssistantHub.SupportsStreamingToolCalls`. Other caller-supplied labels and tags are preserved. First-release provider support targets native Ollama endpoints with `ToolCallingApiFormat: "OllamaChat"` and OpenAI-compatible chat-completions endpoints with `ToolCallingApiFormat: "OpenAIChatCompletions"`.
 
-`MaxConcurrentRequests` (default `2`), `MaxQueueDepth` (default `0`), and `MaximumTimeoutMs` (default `60000`) are forwarded to Partio and behave as described under [PUT /v1.0/endpoints/embedding](#put-v10endpointsembedding): `MaxQueueDepth` of `0` rejects requests over the concurrency limit with `429`, while a positive value queues them until a slot frees or the request times out with `504`.
+`MaxConcurrentRequests` (default `2`), `MaxQueueDepth` (default `0`), and `MaximumTimeoutMs` (default `60000`) are forwarded to Partio and behave as described under [PUT /v1.0/endpoints/embedding](#put-v10endpointsembedding): `MaxQueueDepth` of `0` rejects requests over the concurrency limit with `429`, while a positive value queues them until a slot frees or the request times out with `504`. `MaximumTimeoutMs` is Partio's timeout (the dashboard labels it "Partio Timeout").
+
+**AssistantHub timeouts (optional, not forwarded as Partio fields):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `RequestTimeoutMs` | int or null | AssistantHub's own client timeout, in milliseconds, for answer calls made to this endpoint (chat answers, streaming or not, and evaluation answer and judge calls). `null` or `0` uses `Inference.RequestTimeoutMs` (default `300000`). |
+| `UtilityTimeoutMs` | int or null | AssistantHub's own client timeout, in milliseconds, for utility steps run on this endpoint: the retrieval gate, query and conversation rewrite, and LLM rerank. `null` or `0` uses `Inference.UtilityTimeoutMs` (default `30000`). |
+
+Both accept `1000` to `3600000`; `0` or `null` clears the value so the server default applies. AssistantHub stores them in Partio as the endpoint tags `AssistantHub.RequestTimeoutMs` and `AssistantHub.UtilityTimeoutMs` and returns them as top-level fields (`null` when unset) on create, read, enumerate, and update responses. On update, omitting a field keeps its stored value. Values out of range, or not whole numbers, return `400 Bad Request`. These timeouts are separate from `MaximumTimeoutMs`, which bounds Partio's own upstream call and queue wait.
 
 **Error Responses:**
+- `400` -- `RequestTimeoutMs` or `UtilityTimeoutMs` is not a whole number between `1000` and `3600000` (or `0`).
 - `403` -- Not an admin user.
 - `502` -- Partio service unavailable.
 
@@ -1880,11 +1903,12 @@ Update an existing completion endpoint.
 
 **Auth:** Required (admin only)
 
-**Request Body:** Same format as create.
+**Request Body:** Same format as create. Omit `RequestTimeoutMs` or `UtilityTimeoutMs` to keep the stored value, or send `0` to clear it.
 
 **Response (200 OK):** The updated endpoint object.
 
 **Error Responses:**
+- `400` -- `RequestTimeoutMs` or `UtilityTimeoutMs` is out of range.
 - `404` -- Endpoint not found.
 
 ### DELETE /v1.0/endpoints/completion/{endpointId}
@@ -2034,7 +2058,22 @@ Authenticated users can manage their own assistants. Admin users can see and man
 
 ### PUT /v1.0/assistants
 
-Create a new assistant. The `UserId` is set automatically from the authenticated user. Default assistant settings are created alongside the assistant.
+Create a new assistant. The `TenantId` and `UserId` are set automatically from the authenticated user. Default assistant settings are created alongside the assistant.
+
+**Administrator API key:** the administrator API key belongs to no tenant or user, so a request authenticated with it must name the tenant in the body:
+
+- `TenantId` (required) -- the tenant that owns the assistant. Missing returns `400`; a tenant that does not exist returns `404`.
+- `UserId` (optional) -- the owning user, which must belong to that tenant (otherwise `400`). When omitted, the owner is the tenant's first active tenant administrator, or else its first active administrator; if the tenant has neither, the request returns `400` and you must pass `UserId`.
+
+```json
+{
+  "TenantId": "ten_abc123...",
+  "UserId": "usr_abc123...",
+  "Name": "Customer Support Bot"
+}
+```
+
+For other callers nothing changes: the assistant always belongs to the caller's tenant and user, and `TenantId` or `UserId` in the body are ignored.
 
 **Auth:** Required
 
@@ -2063,7 +2102,8 @@ Create a new assistant. The `UserId` is set automatically from the authenticated
 ```
 
 **Error Responses:**
-- `400` -- Name is required.
+- `400` -- Name is required; or, with the administrator API key, `TenantId` is missing, `UserId` is not a user of that tenant, or the tenant has no active administrator to own the assistant.
+- `404` -- With the administrator API key, the `TenantId` tenant does not exist.
 
 ### GET /v1.0/assistants
 
@@ -2574,7 +2614,7 @@ Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, 
 {
   "query": "What is the per diem in Rotterdam?",
   "messages": null,
-  "metadata_filter": { "required_labels": ["policy"] },
+  "metadata_filter": { "required_labels": ["policy"], "page_start": 3, "page_end": 12 },
   "attached_document_ids": null,
   "include_stages": true,
   "include_answerability": true,
@@ -2582,7 +2622,7 @@ Run the assistant's retrieval pipeline exactly as chat does — retrieval gate, 
 }
 ```
 
-Either `query` or `messages` is required. When both are given, `query` is appended as the last user message. `metadata_filter` and `attached_document_ids` behave as they do on the chat route.
+Either `query` or `messages` is required. When both are given, `query` is appended as the last user message. `metadata_filter` and `attached_document_ids` behave as they do on the chat route, including the `page_start` / `page_end` page range (see [Page ranges](#post-v10assistantsassistantidchat)); an invalid range returns `400`. The dashboard's Retrieval Inspector has From/To page inputs that set this range.
 
 `settings_override` is an optional full `AssistantSettings` object (the same shape as `PUT /v1.0/assistants/{assistantId}/settings`) used for this call instead of the saved settings, so changes can be tried before they are saved. When it has no `CollectionId` or `InferenceEndpointId`, the saved values are used. Nothing is persisted. The dashboard's Retrieval Inspector uses it. An out-of-range value in the override returns `400`.
 
@@ -2654,7 +2694,7 @@ The following fields are omitted when they are null, false or zero:
 Each chunk can also carry `page_start`, `page_end` (first and last page or slide), `sheet` (spreadsheet sheet) and `section` (heading path) when the document was ingested with `Structured` cell mode, and `superseded_by` (the replacing document ID) when `SupersessionMode` is `Include` and the chunk comes from a superseded document.
 
 **Error Responses:**
-- `400` -- Missing query, or malformed JSON.
+- `400` -- Missing query, malformed JSON, or an invalid `metadata_filter` page range.
 - `403` -- Not an admin.
 - `404` -- Assistant or settings not found.
 
@@ -4148,7 +4188,9 @@ When the conversation history approaches the context window limit, older message
     ],
     "excluded_tags": [
       { "key": "status", "condition": "Equals", "value": "archived" }
-    ]
+    ],
+    "page_start": 10,
+    "page_end": 25
   }
 }
 ```
@@ -4173,10 +4215,14 @@ When the conversation history approaches the context window limit, older message
 | `excluded_labels` | array  | Labels that must NOT be present on retrieved documents.        |
 | `required_tags`   | array  | Tag conditions that must all match. Each has `key`, `condition`, `value`. |
 | `excluded_tags`   | array  | Tag conditions that must NOT match. Same structure as required_tags. |
+| `page_start`      | int    | First page of a page range (`1` to `99999`). Omit for an open start. |
+| `page_end`        | int    | Last page of a page range (`1` to `99999`, at least `page_start`). Omit for an open end. |
 
 **Tag Condition Operators:** `Equals`, `NotEquals`, `GreaterThan`, `LessThan`, `Contains`, `ContainsNot`, `StartsWith`, `EndsWith`, `IsNull`, `IsNotNull`
 
 When `metadata_filter` is omitted or null, no filtering is applied. If the assistant also has default filters configured, they are merged with request-level filters (unions of required/excluded lists).
+
+**Page ranges:** when `page_start` or `page_end` is set, only chunks with page provenance (the `ah_page_start` / `ah_page_end` chunk tags, zero-padded to five digits) that overlap the range are retrieved: a chunk matches when it starts on or before `page_end` and ends on or after `page_start`. Chunks without page numbers (for example from Markdown, HTML, or plain-text sources) are excluded whenever a range is set. Page provenance is recorded at ingestion for both Structured and Flat cell modes; documents ingested before Flat-mode page provenance was added must be reprocessed before they can be filtered by page. When an assistant-level range and a request range are both present, they intersect (the later start and the earlier end apply). An invalid range -- a page below `1` or above `99999`, or `page_end` less than `page_start` -- returns `400 Bad Request`. The same validation applies to the OpenAI-compatible and streaming chat routes that accept this request body, and to `POST /v1.0/assistants/{assistantId}/retrieve`.
 
 When `attached_document_ids` is provided, the server validates every ID before retrieval. Each document must belong to the assistant tenant, belong to the assistant's configured collection, have `Completed` status, and fit within the assistant setting `DocumentAttachmentMaxCount`. Duplicate IDs and blank values are ignored during normalization. Document attachments must be enabled in assistant settings.
 
@@ -4392,6 +4438,7 @@ Web-search tool evidence uses `source_type: "web"` and includes `url`:
 
 **Error Responses:**
 - `400` -- At least one message is required.
+- `400` -- `metadata_filter` has an invalid page range (`page_start` or `page_end` below `1` or above `99999`, or `page_end` less than `page_start`).
 - `400` -- Document attachments are disabled, too many documents were attached, the assistant has no collection configured, or at least one attached document is missing, inaccessible, in another collection, in another tenant, or not completed.
 - `404` -- Assistant not found or not active.
 - `500` -- Assistant settings not configured.
@@ -4657,6 +4704,8 @@ Create a new crawl plan.
   "UseHeadlessBrowser": false,
   "FollowLinks": true,
   "FollowRedirects": true,
+  "MaxRedirects": 10,
+  "CredentialOrigins": [],
   "ExtractSitemapLinks": true,
   "RestrictToChildUrls": true,
   "RestrictToSubdomain": false,
@@ -4667,6 +4716,8 @@ Create a new crawl plan.
   "CrawlDelayMs": 100
 }
 ```
+
+Redirects are followed one hop at a time, up to `MaxRedirects` (1 to 50, default 10). A redirected page is listed under the address that links to it, with the target's content. A redirect loop, a longer chain, or a target outside the crawl scope skips the page instead of stalling the crawl; with `FollowRedirects` set to `false`, redirecting pages are skipped. Credentials (`Basic`, `ApiKey`, `BearerToken`) are sent only to the start URL's origin (and its HTTPS upgrade), never to other sites a page links or redirects to. List any other origins that should receive them in `CredentialOrigins` (absolute `http` or `https` URLs; only scheme, host and port are used). An invalid entry returns 400. `CrawlDelayMs` is the delay between requests.
 
 **CIFS Repository Settings Example:**
 
@@ -4694,6 +4745,10 @@ Create a new crawl plan.
   "IncludeSubdirectories": true
 }
 ```
+
+NFS crawling supports NFSv3 only; a plan with `NfsVersion` `V2` or `V4` is rejected with 400. CIFS crawling negotiates SMB 3.x signing and encryption when the server requires them.
+
+Optional connection settings: `CifsPort` (default 445) and `CifsDomain` (domain or workgroup of the user, for example an Active Directory domain; a `DOMAIN\user` username also works) for CIFS, and `NfsPort` (default 2049), `NfsMountPort` (default: discovered through the portmapper) and `NfsPortmapperPort` (default 111) for NFS. Ports must be between 1 and 65535 (`NfsMountPort` also accepts 0 for discovery); invalid values return 400. The connectivity test connects, authenticates and lists the share or export root, and reports the configured port.
 
 CIFS passwords, web passwords, API keys, and bearer tokens are stored in crawl-plan repository settings until a future credential abstraction is introduced. Treat crawl-plan JSON responses and admin JSON views as sensitive.
 

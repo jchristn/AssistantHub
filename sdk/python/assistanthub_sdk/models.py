@@ -626,12 +626,23 @@ class ChatCompletionMessage(BaseModel):
 
 
 class ChatMetadataFilter(BaseModel):
-    """Metadata filter for chat retrieval."""
+    """Metadata filter for chat retrieval.
 
-    required_labels: Optional[list[str]] = Field(None, alias="requiredLabels")
-    excluded_labels: Optional[list[str]] = Field(None, alias="excludedLabels")
-    required_tags: Optional[list[ChatTagCondition]] = Field(None, alias="requiredTags")
-    excluded_tags: Optional[list[ChatTagCondition]] = Field(None, alias="excludedTags")
+    The server reads snake_case keys (``required_labels``, ``page_start``, ...).
+    ``page_start`` and ``page_end`` (1 to 99999, ``page_end >= page_start``,
+    either may be omitted) restrict retrieval to chunks with page provenance
+    that overlap the range; chunks without page numbers are excluded when a
+    range is set.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    required_labels: Optional[list[str]] = Field(None, alias="required_labels", validation_alias=AliasChoices("required_labels", "requiredLabels", "RequiredLabels"))
+    excluded_labels: Optional[list[str]] = Field(None, alias="excluded_labels", validation_alias=AliasChoices("excluded_labels", "excludedLabels", "ExcludedLabels"))
+    required_tags: Optional[list[ChatTagCondition]] = Field(None, alias="required_tags", validation_alias=AliasChoices("required_tags", "requiredTags", "RequiredTags"))
+    excluded_tags: Optional[list[ChatTagCondition]] = Field(None, alias="excluded_tags", validation_alias=AliasChoices("excluded_tags", "excludedTags", "ExcludedTags"))
+    page_start: Optional[int] = Field(None, alias="page_start", validation_alias=AliasChoices("page_start", "pageStart", "PageStart"))
+    page_end: Optional[int] = Field(None, alias="page_end", validation_alias=AliasChoices("page_end", "pageEnd", "PageEnd"))
 
 
 class ChatTagCondition(BaseModel):
@@ -1417,6 +1428,12 @@ class PartioEndpointConfig(BaseModel):
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     max_queue_depth: int = Field(0, alias="maxQueueDepth", validation_alias=AliasChoices("MaxQueueDepth", "maxQueueDepth", "max_queue_depth"))
     maximum_timeout_ms: int = Field(60000, alias="maximumTimeoutMs", validation_alias=AliasChoices("MaximumTimeoutMs", "maximumTimeoutMs", "maximum_timeout_ms"))
+    # AssistantHub's own per-endpoint timeouts (1000-3600000 ms; 0 clears; None
+    # omits the field so updates keep the stored value). request_timeout_ms bounds
+    # answer calls (completion) or query embeddings (embedding);
+    # utility_timeout_ms bounds utility steps on completion endpoints.
+    request_timeout_ms: Optional[int] = Field(None, alias="requestTimeoutMs", validation_alias=AliasChoices("RequestTimeoutMs", "requestTimeoutMs", "request_timeout_ms"))
+    utility_timeout_ms: Optional[int] = Field(None, alias="utilityTimeoutMs", validation_alias=AliasChoices("UtilityTimeoutMs", "utilityTimeoutMs", "utility_timeout_ms"))
     supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
     tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
     supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))
@@ -1447,6 +1464,12 @@ class PartioEndpointRequest(BaseModel):
     max_concurrent_requests: int = Field(2, alias="maxConcurrentRequests")
     max_queue_depth: int = Field(0, alias="maxQueueDepth", validation_alias=AliasChoices("MaxQueueDepth", "maxQueueDepth", "max_queue_depth"))
     maximum_timeout_ms: int = Field(60000, alias="maximumTimeoutMs", validation_alias=AliasChoices("MaximumTimeoutMs", "maximumTimeoutMs", "maximum_timeout_ms"))
+    # AssistantHub's own per-endpoint timeouts (1000-3600000 ms; 0 clears; None
+    # omits the field so updates keep the stored value). request_timeout_ms bounds
+    # answer calls (completion) or query embeddings (embedding);
+    # utility_timeout_ms bounds utility steps on completion endpoints.
+    request_timeout_ms: Optional[int] = Field(None, alias="requestTimeoutMs", validation_alias=AliasChoices("RequestTimeoutMs", "requestTimeoutMs", "request_timeout_ms"))
+    utility_timeout_ms: Optional[int] = Field(None, alias="utilityTimeoutMs", validation_alias=AliasChoices("UtilityTimeoutMs", "utilityTimeoutMs", "utility_timeout_ms"))
     supports_tool_calling: bool = Field(False, alias="supportsToolCalling", validation_alias=AliasChoices("SupportsToolCalling", "supportsToolCalling", "supports_tool_calling"))
     tool_calling_api_format: Optional[str] = Field(None, alias="toolCallingApiFormat", validation_alias=AliasChoices("ToolCallingApiFormat", "toolCallingApiFormat", "tool_calling_api_format"))
     supports_parallel_tool_calls: bool = Field(False, alias="supportsParallelToolCalls", validation_alias=AliasChoices("SupportsParallelToolCalls", "supportsParallelToolCalls", "supports_parallel_tool_calls"))
@@ -1770,6 +1793,8 @@ class WebCrawlRepositorySettings(CrawlRepositorySettings):
     use_headless_browser: bool = Field(False, alias="useHeadlessBrowser")
     follow_links: bool = Field(True, alias="followLinks")
     follow_redirects: bool = Field(True, alias="followRedirects")
+    max_redirects: int = Field(10, alias="maxRedirects")
+    credential_origins: list[str] = Field(default_factory=list, alias="credentialOrigins")
     extract_sitemap_links: bool = Field(False, alias="extractSitemapLinks")
     restrict_to_child_urls: bool = Field(True, alias="restrictToChildUrls")
     restrict_to_subdomain: bool = Field(False, alias="restrictToSubdomain")
@@ -1790,6 +1815,8 @@ class CifsCrawlRepositorySettings(CrawlRepositorySettings):
     cifs_username: Optional[str] = Field(None, alias="cifsUsername")
     cifs_password: Optional[str] = Field(None, alias="cifsPassword")
     cifs_share_name: Optional[str] = Field(None, alias="cifsShareName")
+    cifs_port: Optional[int] = Field(None, alias="cifsPort")
+    cifs_domain: Optional[str] = Field(None, alias="cifsDomain")
     include_subdirectories: bool = Field(True, alias="includeSubdirectories")
 
 
@@ -1804,6 +1831,9 @@ class NfsCrawlRepositorySettings(CrawlRepositorySettings):
     nfs_group_id: Optional[int] = Field(None, alias="nfsGroupId")
     nfs_share_name: Optional[str] = Field(None, alias="nfsShareName")
     nfs_version: NfsVersion = Field(NfsVersion.V3, alias="nfsVersion")
+    nfs_port: Optional[int] = Field(None, alias="nfsPort")
+    nfs_mount_port: Optional[int] = Field(None, alias="nfsMountPort")
+    nfs_portmapper_port: Optional[int] = Field(None, alias="nfsPortmapperPort")
     include_subdirectories: bool = Field(True, alias="includeSubdirectories")
 
 

@@ -92,6 +92,10 @@ namespace AssistantHub.Server.Services
             if (String.IsNullOrWhiteSpace(settings.InferenceEndpointId))
                 return new AssistantChatExecutionResult { Success = false, ErrorMessage = "Assistant inference endpoint not configured." };
 
+            string metadataFilterError = request.MetadataFilter?.Validate();
+            if (metadataFilterError != null)
+                return new AssistantChatExecutionResult { Success = false, StatusCode = 400, ErrorMessage = metadataFilterError };
+
             ChatMetadataFilter effectiveMetadataFilter = BuildEffectiveMetadataFilter(settings, request.MetadataFilter);
             string metadataFilterJson = null;
             if (effectiveMetadataFilter != null && !effectiveMetadataFilter.IsEmpty)
@@ -756,6 +760,10 @@ namespace AssistantHub.Server.Services
             string lastUserMessage = GetLastUserMessage(messages);
             if (String.IsNullOrWhiteSpace(lastUserMessage))
                 return new AssistantRetrievalExecutionResult { StatusCode = 400, ErrorMessage = "A query or at least one user message is required." };
+
+            string retrieveFilterError = request.MetadataFilter?.Validate();
+            if (retrieveFilterError != null)
+                return new AssistantRetrievalExecutionResult { StatusCode = 400, ErrorMessage = retrieveFilterError };
 
             using (OperationScope op = AssistantHubTelemetry.StartOperation("chat", "retrieve"))
             {

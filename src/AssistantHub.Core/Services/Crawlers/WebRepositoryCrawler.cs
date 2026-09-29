@@ -74,7 +74,14 @@ namespace AssistantHub.Core.Services.Crawlers
             {
                 if (token.IsCancellationRequested) yield break;
 
-                if (resource.Status < 200 || resource.Status >= 400)
+                if (resource.RedirectOutcome != RedirectOutcomeEnum.None && resource.RedirectOutcome != RedirectOutcomeEnum.Followed)
+                {
+                    // A redirect that was not resolved to a page (loop, too many hops, out of scope, or not followed).
+                    _Logging.Warn(_Header + "skipping " + resource.Url + " (redirect " + resource.RedirectOutcome + ", HTTP " + resource.Status + ")");
+                    continue;
+                }
+
+                if (resource.Status < 200 || resource.Status >= 300)
                 {
                     _Logging.Warn(_Header + "skipping " + resource.Url + " (HTTP " + resource.Status + ")");
                     continue;
@@ -200,10 +207,10 @@ namespace AssistantHub.Core.Services.Crawlers
             settings.Crawl.StartUrl = _WebSettings.StartUrl;
             settings.Crawl.UserAgent = _WebSettings.UserAgent;
             settings.Crawl.FollowLinks = _WebSettings.FollowLinks;
-            // CrawlSharp's own redirect following loops forever on a redirect cycle (A -> B -> A), so it stays off. The
-            // HTTP client still follows ordinary redirects: the page is listed under the linking address with the
-            // target's content, and a cycle ends as an error page.
-            settings.Crawl.FollowRedirects = false;
+            // CrawlSharp (1.1.0 and later) follows redirects itself: a cycle or a chain longer than MaxRedirects ends
+            // the chain, and credentials go only to the start origin and CredentialOrigins.
+            settings.Crawl.FollowRedirects = _WebSettings.FollowRedirects;
+            settings.Crawl.MaxRedirects = _WebSettings.MaxRedirects;
             settings.Crawl.IncludeSitemap = _WebSettings.ExtractSitemapLinks;
             settings.Crawl.RestrictToChildUrls = _WebSettings.RestrictToChildUrls;
             settings.Crawl.RestrictToSameSubdomain = _WebSettings.RestrictToSubdomain;
@@ -235,6 +242,9 @@ namespace AssistantHub.Core.Services.Crawlers
                     settings.Authentication.BearerToken = _WebSettings.BearerToken;
                     break;
             }
+
+            if (_WebSettings.AuthenticationType != Enums.WebAuthTypeEnum.None && _WebSettings.CredentialOrigins.Count > 0)
+                settings.Authentication.CredentialOrigins = new List<string>(_WebSettings.CredentialOrigins);
 
             return settings;
         }

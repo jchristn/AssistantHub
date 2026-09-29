@@ -13,6 +13,12 @@ import {
   isDefaultHealthCheckUrl
 } from '../../utils/endpointDefaults';
 
+// Empty means the server default (0 clears a stored value).
+const toTimeoutValue = (value) => {
+  const parsed = parseInt(value);
+  return Number.isNaN(parsed) || parsed <= 0 ? 0 : Math.min(3600000, Math.max(1000, parsed));
+};
+
 function isAbsoluteUrl(url) {
   try {
     new URL(url);
@@ -104,6 +110,8 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     MaxQueueDepth: getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') !== undefined ? getSourceField(source, 'MaxQueueDepth', 'maxQueueDepth') : 16,
     ContextSize: getSourceField(source, 'ContextSize', 'contextSize') !== undefined ? getSourceField(source, 'ContextSize', 'contextSize') : 0,
     MaximumTimeoutMs: getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') !== undefined ? getSourceField(source, 'MaximumTimeoutMs', 'maximumTimeoutMs') : initialDefaults.MaximumTimeoutMs,
+    RequestTimeoutMs: getSourceField(source, 'RequestTimeoutMs', 'requestTimeoutMs') ?? '',
+    UtilityTimeoutMs: getSourceField(source, 'UtilityTimeoutMs', 'utilityTimeoutMs') ?? '',
     SupportsToolCalling: getSourceToolBoolean(source, ['SupportsToolCalling', 'supportsToolCalling'], TOOL_TAG_SUPPORTS, initialLabels),
     ToolCallingApiFormat: getSourceText(source, 'ToolCallingApiFormat', 'toolCallingApiFormat') || getTagValue(initialTags, TOOL_TAG_FORMAT) || getDefaultToolCallingApiFormat(initialApiFormat),
     SupportsParallelToolCalls: getSourceToolBoolean(source, ['SupportsParallelToolCalls', 'supportsParallelToolCalls'], TOOL_TAG_PARALLEL, []),
@@ -191,6 +199,8 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 16 : Math.max(0, parseInt(form.MaxQueueDepth)),
         ContextSize: Number.isNaN(parseInt(form.ContextSize)) ? 0 : Math.max(0, parseInt(form.ContextSize)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
+        RequestTimeoutMs: toTimeoutValue(form.RequestTimeoutMs),
+        UtilityTimeoutMs: toTimeoutValue(form.UtilityTimeoutMs),
         SupportsToolCalling: form.SupportsToolCalling,
         ToolCallingApiFormat: form.SupportsToolCalling ? form.ToolCallingApiFormat : null,
         SupportsParallelToolCalls: form.SupportsToolCalling && form.SupportsParallelToolCalls,
@@ -333,13 +343,41 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
 
             <div className="form-group">
-              <label><Tooltip text="Maximum time in milliseconds to wait for an inference response from the upstream model before the request is aborted. This is the request timeout, not the health check timeout (e.g. 300000 = 5 minutes).">Request Timeout (ms)</Tooltip></label>
+              <label><Tooltip text="Partio's limit, in milliseconds, for requests it proxies to the upstream model, and for how long a queued request waits for a slot (e.g. 300000 = 5 minutes). AssistantHub calls the model directly and uses the AssistantHub timeouts below.">Partio Timeout (ms)</Tooltip></label>
               <input
                 type="number"
                 value={form.MaximumTimeoutMs}
                 onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
                 min="1000"
                 step="1000"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="How long AssistantHub waits for an answer from this endpoint (1,000 to 3,600,000 ms). Empty uses the server default (Inference.RequestTimeoutMs, 300,000).">AssistantHub Answer Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                title="How long AssistantHub waits for an answer from this endpoint (1,000 to 3,600,000 ms). Empty uses the server default (Inference.RequestTimeoutMs, 300,000)."
+                value={form.RequestTimeoutMs}
+                onChange={(e) => handleChange('RequestTimeoutMs', e.target.value)}
+                min="1000"
+                max="3600000"
+                step="1000"
+                placeholder="Server default"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="How long AssistantHub waits for a utility step on this endpoint (retrieval gate, query or conversation rewrite, LLM re-rank) before falling back (1,000 to 3,600,000 ms). Empty uses the server default (Inference.UtilityTimeoutMs, 30,000).">AssistantHub Utility Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                title="How long AssistantHub waits for a utility step on this endpoint (retrieval gate, query or conversation rewrite, LLM re-rank) before falling back (1,000 to 3,600,000 ms). Empty uses the server default (Inference.UtilityTimeoutMs, 30,000)."
+                value={form.UtilityTimeoutMs}
+                onChange={(e) => handleChange('UtilityTimeoutMs', e.target.value)}
+                min="1000"
+                max="3600000"
+                step="1000"
+                placeholder="Server default"
               />
             </div>
 

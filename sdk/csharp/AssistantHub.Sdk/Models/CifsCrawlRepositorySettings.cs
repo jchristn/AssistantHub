@@ -33,6 +33,18 @@ namespace AssistantHub.Sdk.Models
         public string CifsShareName { get; set; }
 
         /// <summary>
+        /// TCP port of the SMB server (null uses 445).
+        /// </summary>
+        [JsonPropertyName("CifsPort")]
+        public int? CifsPort { get; set; }
+
+        /// <summary>
+        /// Domain or workgroup of the user (optional).
+        /// </summary>
+        [JsonPropertyName("CifsDomain")]
+        public string CifsDomain { get; set; }
+
+        /// <summary>
         /// Include files in subdirectories while crawling.
         /// </summary>
         [JsonPropertyName("IncludeSubdirectories")]

@@ -13,6 +13,12 @@ import {
   isDefaultHealthCheckUrl
 } from '../../utils/endpointDefaults';
 
+// Empty means the server default (0 clears a stored value).
+const toTimeoutValue = (value) => {
+  const parsed = parseInt(value);
+  return Number.isNaN(parsed) || parsed <= 0 ? 0 : Math.min(3600000, Math.max(1000, parsed));
+};
+
 function isAbsoluteUrl(url) {
   try {
     new URL(url);
@@ -39,6 +45,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     MaxQueueDepth: source?.MaxQueueDepth !== undefined ? source.MaxQueueDepth : 16,
     ContextSize: source?.ContextSize !== undefined ? source.ContextSize : 0,
     MaximumTimeoutMs: source?.MaximumTimeoutMs !== undefined ? source.MaximumTimeoutMs : initialDefaults.MaximumTimeoutMs,
+    RequestTimeoutMs: source?.RequestTimeoutMs ?? '',
     HealthCheckEnabled: source?.HealthCheckEnabled !== undefined ? source.HealthCheckEnabled : initialDefaults.HealthCheckEnabled,
     HealthCheckUrl: source?.HealthCheckUrl || initialDefaults.HealthCheckUrl,
     HealthCheckMethod: source?.HealthCheckMethod || initialDefaults.HealthCheckMethod,
@@ -115,6 +122,7 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
         MaxQueueDepth: Number.isNaN(parseInt(form.MaxQueueDepth)) ? 16 : Math.max(0, parseInt(form.MaxQueueDepth)),
         ContextSize: Number.isNaN(parseInt(form.ContextSize)) ? 0 : Math.max(0, parseInt(form.ContextSize)),
         MaximumTimeoutMs: parseInt(form.MaximumTimeoutMs) || getApiFormatDefaults(form.ApiFormat, form.Endpoint).MaximumTimeoutMs,
+        RequestTimeoutMs: toTimeoutValue(form.RequestTimeoutMs),
         HealthCheckEnabled: form.HealthCheckEnabled,
         HealthCheckUrl: form.HealthCheckUrl,
         HealthCheckMethod: form.HealthCheckMethod,
@@ -251,13 +259,27 @@ function EmbeddingEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
 
             <div className="form-group">
-              <label><Tooltip text="Maximum time in milliseconds to wait for an embedding response from the upstream model before the request is aborted. This is the request timeout, not the health check timeout (e.g. 300000 = 5 minutes).">Request Timeout (ms)</Tooltip></label>
+              <label><Tooltip text="Partio's limit, in milliseconds, for its own call to the upstream embedding model, and for how long a queued request waits for a slot (e.g. 300000 = 5 minutes). AssistantHub's own wait is the AssistantHub timeout below.">Partio Timeout (ms)</Tooltip></label>
               <input
                 type="number"
                 value={form.MaximumTimeoutMs}
                 onChange={(e) => handleChange('MaximumTimeoutMs', e.target.value)}
                 min="1000"
                 step="1000"
+              />
+            </div>
+
+            <div className="form-group">
+              <label><Tooltip text="How long AssistantHub waits for a query embedding through this endpoint before retrieval falls back to keyword search (1,000 to 3,600,000 ms). Empty uses the server default (Chunking.QueryEmbeddingTimeoutMs, 30,000).">AssistantHub Query Timeout (ms)</Tooltip></label>
+              <input
+                type="number"
+                title="How long AssistantHub waits for a query embedding through this endpoint before retrieval falls back to keyword search (1,000 to 3,600,000 ms). Empty uses the server default (Chunking.QueryEmbeddingTimeoutMs, 30,000)."
+                value={form.RequestTimeoutMs}
+                onChange={(e) => handleChange('RequestTimeoutMs', e.target.value)}
+                min="1000"
+                max="3600000"
+                step="1000"
+                placeholder="Server default"
               />
             </div>
 

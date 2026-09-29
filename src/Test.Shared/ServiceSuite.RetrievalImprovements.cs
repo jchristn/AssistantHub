@@ -932,15 +932,60 @@ namespace Test.Automated
 
                     sw.Stop();
                     AssertHelper.IsTrue(site.AuthorizedRequests > 0, "credentials were sent");
-                    // Known limitation until CrawlSharp handles redirect cycles itself: with its redirect following off, the HTTP
-                    // client follows redirects and (by .NET design) drops the Authorization header, so only redirect targets
-                    // are requested without credentials.
-                    AssertHelper.AllMatch(site.UnauthorizedPaths, p => p.Contains("/loop-", StringComparison.Ordinal),
-                        "only redirect targets are fetched without credentials: " + String.Join(", ", site.UnauthorizedPaths));
+                    AssertHelper.AreEqual(0, site.UnauthorizedRequests, "every request, including redirect targets, carried credentials: " + String.Join(", ", site.UnauthorizedPaths));
                     AssertHelper.IsTrue(keys.Any(k => k.EndsWith("/page2", StringComparison.Ordinal)), "linked page crawled: " + String.Join(", ", keys));
                     AssertHelper.IsTrue(keys.Any(k => k.EndsWith("/moved", StringComparison.Ordinal)), "redirected page listed under its linking address: " + String.Join(", ", keys));
+                    AssertHelper.IsFalse(keys.Any(k => k.Contains("/loop-", StringComparison.Ordinal)), "a redirect loop yields no page: " + String.Join(", ", keys));
                     AssertHelper.IsTrue(sw.Elapsed.TotalSeconds < 10, "crawl delay applied between requests (took " + sw.Elapsed.TotalSeconds.ToString("F1") + " s; CrawlSharp's 2.5 s default would take much longer)");
                 }
+            });
+
+            await ExecuteTestAsync("WebRepositoryCrawler: redirect and credential-scope settings reach CrawlSharp and are validated", async () =>
+            {
+                WebCrawlRepositorySettings web = new WebCrawlRepositorySettings
+                {
+                    StartUrl = "https://example.com",
+                    AuthenticationType = WebAuthTypeEnum.BearerToken,
+                    BearerToken = "token",
+                    FollowRedirects = true,
+                    MaxRedirects = 3,
+                    CredentialOrigins = new List<string> { "https://docs.example.com" }
+                };
+                CrawlPlan plan = new CrawlPlan { Id = "cplan_r", TenantId = "tenant_crawl", RepositoryType = RepositoryTypeEnum.Web, RepositorySettings = web };
+
+                using (CrawlerBase crawler = CrawlerFactory.Create(RepositoryTypeEnum.Web, CreateSilentLogging(), new MockDatabaseDriver(), plan, new CrawlOperation(), null, null, null, "./crawl-enumerations/", CancellationToken.None))
+                {
+                    MethodInfo build = typeof(WebRepositoryCrawler).GetMethod("BuildSettings", BindingFlags.Instance | BindingFlags.NonPublic);
+                    CrawlSharp.Web.Settings settings = (CrawlSharp.Web.Settings)build.Invoke(crawler, null);
+                    AssertHelper.IsTrue(settings.Crawl.FollowRedirects, "redirects followed by CrawlSharp");
+                    AssertHelper.AreEqual(3, settings.Crawl.MaxRedirects, "hop limit passed through");
+                    AssertHelper.AreEqual("https://docs.example.com", settings.Authentication.CredentialOrigins.Single(), "credential origins passed through");
+                }
+
+                AssertHelper.AreEqual(50, new WebCrawlRepositorySettings { MaxRedirects = 500 }.MaxRedirects, "hop limit clamped to 50");
+                AssertHelper.AreEqual(1, new WebCrawlRepositorySettings { MaxRedirects = 0 }.MaxRedirects, "hop limit clamped to 1");
+                AssertHelper.HasCount(web.Validate(), 0, "valid settings");
+                web.CredentialOrigins = new List<string> { "docs.example.com" };
+                AssertHelper.HasCount(web.Validate(), 1, "a credential origin must be an absolute http(s) URL");
+                await Task.CompletedTask;
+            });
+
+            await ExecuteTestAsync("NfsCrawlRepositorySettings.Validate: only NFSv3 is accepted (Blobject 6)", async () =>
+            {
+                NfsCrawlRepositorySettings nfs = new NfsCrawlRepositorySettings
+                {
+                    NfsHostname = "nfs-server",
+                    NfsUserId = 1000,
+                    NfsGroupId = 1000,
+                    NfsShareName = "/exports/content",
+                    NfsVersion = NfsVersionEnum.V3
+                };
+                AssertHelper.HasCount(nfs.Validate(), 0, "V3 accepted");
+                nfs.NfsVersion = NfsVersionEnum.V4;
+                AssertHelper.StringContains(String.Join(" ", nfs.Validate()), "V3 only", "V4 rejected");
+                nfs.NfsVersion = NfsVersionEnum.V2;
+                AssertHelper.HasCount(nfs.Validate(), 1, "V2 rejected");
+                await Task.CompletedTask;
             });
 
             await ExecuteTestAsync("IngestionService: reprocessing deletes the previous chunk records after storing new ones", async () =>
@@ -987,7 +1032,9 @@ namespace Test.Automated
             Action<AssistantSettings> configure,
             MockHttpMessageHandler rerankHandler = null,
             Func<HttpRequestMessage, HttpResponseMessage> chatResponder = null,
-            MockDatabaseDriver database = null)
+            MockDatabaseDriver database = null,
+            Dictionary<string, string> endpointTags = null,
+            HttpMessageHandler chatHandlerOverride = null)
         {
             database ??= new MockDatabaseDriver();
             Assistant assistant = CreateToolAssistant();
@@ -1007,7 +1054,7 @@ namespace Test.Automated
 
             MockHttpMessageHandler chat = new MockHttpMessageHandler();
             if (chatResponder != null) chat.When("chat/completions", chatResponder);
-            HttpClient chatClient = chat.CreateClient();
+            HttpClient chatClient = chatHandlerOverride != null ? new HttpClient(chatHandlerOverride) : chat.CreateClient();
 
             AssistantHubSettings serverSettings = new AssistantHubSettings();
             serverSettings.Inference.RetryDelayMs = 1;
@@ -1038,7 +1085,8 @@ namespace Test.Automated
                     ApiKey = "k",
                     Model = "m",
                     Active = true,
-                    MaxConcurrentRequests = 4
+                    MaxConcurrentRequests = 4,
+                    Tags = endpointTags
                 }),
                 rerankClient: new CrossEncoderRerankClient(rerankHandler?.CreateClient() ?? new MockHttpMessageHandler().CreateClient()));
 
@@ -1089,8 +1137,7 @@ namespace Test.Automated
         }
 
         /// <summary>
-        /// A tiny website for crawl tests: Basic authentication (except the public redirect target), links, an ordinary
-        /// redirect and a redirect loop.
+        /// A tiny website for crawl tests: Basic authentication, links, an ordinary redirect and a redirect loop.
         /// </summary>
         private sealed class CrawlStubServer : IDisposable
         {
@@ -1153,7 +1200,7 @@ namespace Test.Automated
                 try
                 {
                     string path = context.Request.Url?.AbsolutePath ?? "/";
-                    if (path != "/target" && !String.Equals(context.Request.Headers["Authorization"], _ExpectedAuthorization, StringComparison.Ordinal))
+                    if (!String.Equals(context.Request.Headers["Authorization"], _ExpectedAuthorization, StringComparison.Ordinal))
                     {
                         Interlocked.Increment(ref _Unauthorized);
                         lock (UnauthorizedPaths) UnauthorizedPaths.Add(context.Request.HttpMethod + " " + path);

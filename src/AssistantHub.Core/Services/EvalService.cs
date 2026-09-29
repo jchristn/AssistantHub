@@ -222,6 +222,7 @@ namespace AssistantHub.Core.Services
                 // The judge uses its own endpoint when one is configured, so the assistant does not grade itself.
                 InferenceProviderEnum judgeProvider = provider;
                 string judgeEndpoint = endpoint;
+                string judgeEndpointId = settings.InferenceEndpointId;
                 string judgeApiKey = apiKey;
                 string judgeModel = model;
                 if (!String.IsNullOrEmpty(settings.EvalJudgeInferenceEndpointId))
@@ -231,6 +232,7 @@ namespace AssistantHub.Core.Services
                     {
                         judgeProvider = judgeResolved.Value.Provider;
                         judgeEndpoint = judgeResolved.Value.Endpoint;
+                        judgeEndpointId = settings.EvalJudgeInferenceEndpointId;
                         judgeApiKey = judgeResolved.Value.ApiKey;
                         judgeModel = !String.IsNullOrEmpty(judgeResolved.Value.Model) ? judgeResolved.Value.Model : _Settings.Inference.DefaultModel;
                     }
@@ -285,6 +287,7 @@ namespace AssistantHub.Core.Services
                                 new ChatCompletionMessage { Role = "user", Content = fact.Question }
                             };
 
+                            using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(settings.InferenceEndpointId));
                             InferenceResult chatResult = await _Inference.GenerateResponseAsync(
                                 messages, model, maxTokens, temperature, topP,
                                 provider, endpoint, apiKey).ConfigureAwait(false);
@@ -322,6 +325,7 @@ namespace AssistantHub.Core.Services
                                 new ChatCompletionMessage { Role = "user", Content = judgeQuestion }
                             };
 
+                            using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(judgeEndpointId));
                             InferenceResult judgeResult = await _Inference.GenerateResponseAsync(
                                 judgeMessages, judgeModel, 512, 0.0, 1.0,
                                 judgeProvider, judgeEndpoint, judgeApiKey).ConfigureAwait(false);

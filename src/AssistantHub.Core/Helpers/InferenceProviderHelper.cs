@@ -11,6 +11,16 @@ namespace AssistantHub.Core.Helpers
     public static class InferenceProviderHelper
     {
         /// <summary>
+        /// Describe a secret for logs without revealing it: "(not set)" or "(set, N characters)".
+        /// </summary>
+        /// <param name="secret">API key or token.</param>
+        /// <returns>A description safe to log.</returns>
+        public static string DescribeSecret(string secret)
+        {
+            return String.IsNullOrEmpty(secret) ? "(not set)" : "(set, " + secret.Length + " characters)";
+        }
+
+        /// <summary>
         /// Resolve an inference provider from a Partio API format string.
         /// </summary>
         /// <param name="apiFormat">API format string.</param>

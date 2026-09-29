@@ -973,6 +973,7 @@ namespace AssistantHub.Server.Handlers
                         ", waitedMs=" + waitSw.ElapsedMilliseconds);
                 }
 
+                using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                 InferenceResult result = await Inference.GenerateResponseAsync(
                     messages, model, maxTokens, temperature, topP,
                     provider, endpoint, apiKey).ConfigureAwait(false);
@@ -1023,6 +1024,7 @@ namespace AssistantHub.Server.Handlers
                     string transientError = null;
                     int currentAttempt = attempt;
 
+                    using IDisposable endpointTimeout = InferenceService.UseRequestTimeout(PartioEndpointTimeouts.GetRequestTimeoutMs(endpointId));
                     await Inference.GenerateResponseStreamingAsync(
                         messages, model, maxTokens, temperature, topP,
                         provider, endpoint, apiKey,

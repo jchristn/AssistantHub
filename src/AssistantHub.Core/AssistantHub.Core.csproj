@@ -42,15 +42,15 @@
     <PackageReference Include="SyslogLogging" Version="2.2.2" />
     <PackageReference Include="Timestamps" Version="1.0.12" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.103.4" />
-    <PackageReference Include="Blobject.AmazonS3" Version="5.1.0" />
-    <PackageReference Include="Blobject.CIFS" Version="5.1.0" />
-    <PackageReference Include="Blobject.Core" Version="5.1.0" />
-    <PackageReference Include="Blobject.NFS" Version="5.1.0" />
+    <PackageReference Include="Blobject.AmazonS3" Version="6.0.0" />
+    <PackageReference Include="Blobject.CIFS" Version="6.0.0" />
+    <PackageReference Include="Blobject.Core" Version="6.0.0" />
+    <PackageReference Include="Blobject.NFS" Version="6.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <PackageReference Include="MySql.Data" Version="26.7.0" />
-    <PackageReference Include="CrawlSharp" Version="1.0.22" />
+    <PackageReference Include="CrawlSharp" Version="1.1.0" />
   </ItemGroup>
 
 </Project>

@@ -49,6 +49,10 @@ export interface WebCrawlRepositorySettings extends CrawlRepositorySettingsBase 
   UseHeadlessBrowser?: boolean;
   FollowLinks?: boolean;
   FollowRedirects?: boolean;
+  /** Most redirects followed for one page (1 to 50, default 10). */
+  MaxRedirects?: number;
+  /** Additional origins (absolute http or https URLs) that receive the crawl's credentials. */
+  CredentialOrigins?: string[];
   ExtractSitemapLinks?: boolean;
   RestrictToChildUrls?: boolean;
   RestrictToSubdomain?: boolean;
@@ -66,6 +70,10 @@ export interface CifsCrawlRepositorySettings extends CrawlRepositorySettingsBase
   CifsUsername?: string;
   CifsPassword?: string;
   CifsShareName?: string;
+  /** TCP port of the SMB server (default 445). */
+  CifsPort?: number | null;
+  /** Domain or workgroup of the user (optional). */
+  CifsDomain?: string | null;
   IncludeSubdirectories?: boolean;
 }
 
@@ -77,6 +85,12 @@ export interface NfsCrawlRepositorySettings extends CrawlRepositorySettingsBase 
   NfsGroupId?: number | null;
   NfsShareName?: string;
   NfsVersion?: NfsVersion;
+  /** TCP port of the NFS service (default 2049). */
+  NfsPort?: number | null;
+  /** TCP port of the MOUNT service (default: discovered through the portmapper). */
+  NfsMountPort?: number | null;
+  /** TCP port of the portmapper (default 111). */
+  NfsPortmapperPort?: number | null;
   IncludeSubdirectories?: boolean;
 }
 

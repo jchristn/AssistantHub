@@ -48,9 +48,9 @@ here is measured against.
 | [IR-10](#ir-10-document-supersession) | Document supersession: newer versions outrank the documents they replace | Ingestion + retrieval | Isis | 5 | 7 | 12 | Done (round 5) |
 | [IR-11](#ir-11-source-diversity) | Source diversity: collapse or cap chunks per document, optional MMR | Retrieval | Pneuma, Isis, RecallDB | 7 | 5 | 12 | Not started |
 | [IR-12](#ir-12-retrieval-inspector-in-the-dashboard) | Retrieval inspector in the dashboard (stages, per-leg scores and ranks, flags) | Product | Pneuma, Isis | 7 | 5 | 12 | Done (round 5) |
-| [IR-13](#ir-13-fault-isolation-for-utility-models) | Fault isolation for utility models: per-endpoint timeouts and a circuit breaker | Retrieval | Isis | 7 | 5 | 12 | Done (round 5), partly |
+| [IR-13](#ir-13-fault-isolation-for-utility-models) | Fault isolation for utility models: per-endpoint timeouts and a circuit breaker | Retrieval | Isis | 7 | 5 | 12 | Done (round 5), partly: breaker state not shown |
 | [IR-14](#ir-14-reading-order-context-assembly) | Reading-order context assembly: group by document, order by position, merge adjacent chunks | Retrieval | Pneuma | 8 | 4 | 12 | Done (negative) |
-| [IR-15](#ir-15-page-sheet-and-slide-provenance) | Page, sheet and slide provenance on chunks, in citations and as filters | Ingestion + retrieval | DocumentAtom, Pneuma | 5 | 6 | 11 | Done (round 5), partly |
+| [IR-15](#ir-15-page-sheet-and-slide-provenance) | Page, sheet and slide provenance on chunks, in citations and as filters | Ingestion + retrieval | DocumentAtom, Pneuma | 5 | 6 | 11 | Done (round 5, page filters after), partly: no slide numbers |
 | [IR-16](#ir-16-additive-query-expansion-and-multi-query-fusion) | Additive query expansion split by leg (hypothetical answer → vector, keywords → text) and small-k multi-query fusion | Retrieval | Isis | 5 | 6 | 11 | Not started |
 | [IR-17](#ir-17-exact-identifier-matching) | Exact-identifier matching (quoted phrases, codes, versions) through RecallDB match modes and `Terms` | Retrieval | RecallDB, RI #3 | 6 | 5 | 11 | Not started |
 | [IR-18](#ir-18-duplicate-and-near-duplicate-detection-at-ingest) | Duplicate and near-duplicate detection at ingest | Ingestion | Isis, Pneuma | 7 | 4 | 11 | Done (round 5) |
@@ -506,7 +506,7 @@ tune with it.
 
 ## IR-13 Fault isolation for utility models
 
-**Status:** Done (round 5), partly: global utility timeout and circuit breaker, answer retry · **Simplicity 7 · Value 5 · Total 12** · Fixes the RI "InferenceService 100 s timeout" defect and RI #9
+**Status:** Done (round 5, per-endpoint timeouts after), partly: timeouts, circuit breaker and answer retry are done; breaker state is not shown in the endpoint health view · **Simplicity 7 · Value 5 · Total 12** · Fixes the RI "InferenceService 100 s timeout" defect and RI #9
 
 **Why.** Rerank, rewrite, answerability and gate calls use `InferenceService` with `HttpClient`'s fixed 100 s
 timeout. On a slow shared model server, 23 of 24 rerank calls timed out in one run, and every chat paid for the wait.
@@ -514,14 +514,14 @@ Isis gives each query step a 20 s timeout, falls back to the original query, and
 breaker. The answer model is also not retried on transient 429/502/503 errors (RI #9).
 
 - **Server**
-  - [ ] Add a per-endpoint `TimeoutMs` on completion endpoints, and a per-step default (utility steps 20 s). *A global `Inference.UtilityTimeoutMs` (30 s) and `RequestTimeoutMs` instead.*
+  - [x] Add a per-endpoint `TimeoutMs` on completion endpoints, and a per-step default (utility steps 20 s). *Round 5 added the global `Inference.UtilityTimeoutMs` (30 s) and `RequestTimeoutMs`; after round 5, completion endpoints gained `RequestTimeoutMs` and `UtilityTimeoutMs` and embedding endpoints `RequestTimeoutMs` (overriding `Chunking.QueryEmbeddingTimeoutMs`), stored as `AssistantHub.*` endpoint tags. The utility default stays 30 s.*
   - [x] Add a shared circuit breaker per endpoint and step (open after N consecutive failures, half-open after 30 s), with a flag in retrieval details. *Closes after `CircuitBreakerOpenMs`; a skipped rerank sets `rerank_skipped`.*
-  - [x] Retry the answer model on transient status codes with jittered backoff. *Linear backoff (`RetryDelayMs`), not jittered.*
+  - [x] Retry the answer model on transient status codes with jittered backoff. *Jittered exponential backoff: `RetryDelayMs` doubled per attempt (capped at 16x) plus up to half again at random (`GenerateAnswerWithRetryAsync`).*
 - **Dashboard**
-  - [ ] Add a timeout field in `InferenceEndpointsView.jsx`. *Not done (global setting).*
+  - [x] Add a timeout field in `InferenceEndpointsView.jsx`. *In the endpoint form modals (`InferenceEndpointFormModal.jsx`, `EmbeddingEndpointFormModal.jsx`); Partio's `MaximumTimeoutMs` is now labeled "Partio Timeout".*
   - [ ] Show breaker state in the endpoint health view. *Not done.*
 - **Tests**
-  - [ ] Timeout per endpoint. *Not applicable (global setting).*
+  - [x] Timeout per endpoint. *Tag storage and validation, and the answer, utility and query-embedding calls each bounded by the endpoint's value.*
   - [x] Breaker open, half-open and close.
   - [x] Answer retry on 429, and no retry on 400.
 - **Docs**
@@ -555,7 +555,7 @@ by position, which gives the answer model coherent passages.
 
 ## IR-15 Page, sheet and slide provenance
 
-**Status:** Done (round 5), partly: provenance tags, citations and prompt labels. Page filters and slide numbers are not done · **Simplicity 5 · Value 6 · Total 11** · Depends on IR-05, and easier after IR-09
+**Status:** Done (round 5, page filters after), partly: provenance tags, citations, prompt labels and page filters (`page_start` / `page_end`). Slide numbers are not done · **Simplicity 5 · Value 6 · Total 11** · Depends on IR-05, and easier after IR-09
 
 **Why.** DocumentAtom reports `PageNumber`, `SheetName` and slide position for each atom, and AssistantHub discards
 them. Citations can only point at a whole document, and users can't scope a question to pages or sheets.
@@ -563,14 +563,14 @@ them. Citations can only point at a whole document, and users can't scope a ques
 - **Server**
   - [x] Carry the page, sheet and slide range of each chunk into RecallDB tags (`page_start`, `page_end`, `sheet`, `slide`). *As `ah_page_start`, `ah_page_end`, `ah_sheet` and `ah_section`. Slides use the page number DocumentAtom reports.*
   - [x] Return them on citations and in retrieval details.
-  - [ ] Allow them in metadata filters. Numeric comparisons need RecallDB to compare numbers as numbers: its tag `GreaterThan` / `LessThan` compare strings today, so report that upstream or zero-pad. *Possible through tag filters on the zero-padded values, but not exposed or tested.*
+  - [x] Allow them in metadata filters. Numeric comparisons need RecallDB to compare numbers as numbers: its tag `GreaterThan` / `LessThan` compare strings today, so report that upstream or zero-pad. *After round 5: `page_start` / `page_end` on `metadata_filter` (chat and retrieve), turned into tag conditions on the zero-padded values; chunks overlapping the range match, chunks without pages are excluded, and invalid ranges return 400. Flat cell mode now records page tags too; older documents need reprocessing. Sheet and section are not filterable fields.*
 - **Dashboard**
   - [x] Show "p. 12–13" and the sheet name in citations and the chunk view. *In the prompt's source labels, citations and the retrieval inspector.*
-  - [ ] Add a page filter in the retrieval inspector. *Not done.*
+  - [x] Add a page filter in the retrieval inspector. *From/To page inputs, also in the chat metadata filter dialog.*
 - **Tests**
   - [x] Tags for PDF, XLSX and PPTX fixtures. *Tested with extracted blocks and structured cells, not per-format fixtures.*
   - [x] Citation formatting.
-  - [ ] Filter behavior. *Not tested.*
+  - [x] Filter behavior. *Validation, tag conditions, merge intersection, the conditions sent to RecallDB, the 400 on the retrieve route, and Flat-mode page tags.*
 - **Docs**
   - [x] `CHAT_DATA_FLOW.md` and `REST_API.md` (citations and metadata filters), `CHANGELOG.md`.
 - **Benchmark**

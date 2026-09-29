@@ -35,8 +35,7 @@ namespace AssistantHub.Core.Services
         private LoggingModule _Logging = null;
         private HttpClient _HttpClient = null;
         private QueryEmbeddingCache _EmbeddingCache = null;
-        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Prefix, DateTime ExpiresUtc)> _QueryPrefixes =
-            new System.Collections.Concurrent.ConcurrentDictionary<string, (string Prefix, DateTime ExpiresUtc)>(StringComparer.Ordinal);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string QueryPrefix, int? RequestTimeoutMs, DateTime ExpiresUtc)> _EmbeddingEndpointInfo = new System.Collections.Concurrent.ConcurrentDictionary<string, (string QueryPrefix, int? RequestTimeoutMs, DateTime ExpiresUtc)>(StringComparer.Ordinal);
 
         private JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
@@ -595,13 +594,14 @@ namespace AssistantHub.Core.Services
                 body["LabelFilter"] = labelFilter;
             }
 
-            bool hasRequiredTags = filter.RequiredTags != null && filter.RequiredTags.Count > 0;
+            List<ChatTagCondition> requiredTags = (filter.RequiredTags ?? new List<ChatTagCondition>()).Concat(filter.PageTagConditions()).ToList();
+            bool hasRequiredTags = requiredTags.Count > 0;
             bool hasExcludedTags = filter.ExcludedTags != null && filter.ExcludedTags.Count > 0;
             if (hasRequiredTags || hasExcludedTags)
             {
                 Dictionary<string, object> tagFilter = new Dictionary<string, object>();
                 if (hasRequiredTags)
-                    tagFilter["Required"] = filter.RequiredTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
+                    tagFilter["Required"] = requiredTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
                 if (hasExcludedTags)
                     tagFilter["Excluded"] = filter.ExcludedTags.Select(t => new { Key = t.Key, Condition = t.Condition, Value = t.Value }).ToList();
                 body["TagFilter"] = tagFilter;
@@ -821,6 +821,8 @@ namespace AssistantHub.Core.Services
             };
             string json = JsonSerializer.Serialize(requestBody, _JsonOptions);
             int maxAttempts = Math.Max(1, _ChunkingSettings.MaxRetries + 1);
+            int timeoutMs = (await ResolveEmbeddingEndpointInfoAsync(effectiveEndpointId, token).ConfigureAwait(false)).RequestTimeoutMs
+                ?? _ChunkingSettings.QueryEmbeddingTimeoutMs;
 
             for (int attempt = 1; ; attempt++)
             {
@@ -829,7 +831,7 @@ namespace AssistantHub.Core.Services
 
                 using (CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
                 {
-                    timeout.CancelAfter(_ChunkingSettings.QueryEmbeddingTimeoutMs);
+                    timeout.CancelAfter(timeoutMs);
                     try
                     {
                         using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Post, "/v1.0/embed", json, timeout.Token).ConfigureAwait(false))
@@ -840,7 +842,7 @@ namespace AssistantHub.Core.Services
                     }
                     catch (Exception e) when (!token.IsCancellationRequested && (e is OperationCanceledException || e is TimeoutException))
                     {
-                        _Logging.Warn(_Header + "query embedding did not complete within " + _ChunkingSettings.QueryEmbeddingTimeoutMs + " ms (Chunking.QueryEmbeddingTimeoutMs); not retrying");
+                        _Logging.Warn(_Header + "query embedding did not complete within " + timeoutMs + " ms (the embedding endpoint's RequestTimeoutMs, else Chunking.QueryEmbeddingTimeoutMs); not retrying");
                         return null;
                     }
                 }
@@ -877,34 +879,50 @@ namespace AssistantHub.Core.Services
         private async Task<string> ResolveQueryPrefixAsync(string embeddingEndpointId, CancellationToken token)
         {
             string endpointId = !String.IsNullOrEmpty(embeddingEndpointId) ? embeddingEndpointId : _ChunkingSettings.EndpointId;
-            if (_QueryPrefixes.TryGetValue(endpointId, out (string Prefix, DateTime ExpiresUtc) cached) && cached.ExpiresUtc > DateTime.UtcNow)
-                return cached.Prefix;
+            return (await ResolveEmbeddingEndpointInfoAsync(endpointId, token).ConfigureAwait(false)).QueryPrefix;
+        }
+
+        /// <summary>
+        /// Read an embedding endpoint's model task prefix and AssistantHub request timeout (cached for five minutes).
+        /// A failed read is cached too, as no prefix and the server default timeout.
+        /// </summary>
+        private async Task<(string QueryPrefix, int? RequestTimeoutMs)> ResolveEmbeddingEndpointInfoAsync(string endpointId, CancellationToken token)
+        {
+            if (String.IsNullOrEmpty(endpointId)) return ("", null);
+            if (_EmbeddingEndpointInfo.TryGetValue(endpointId, out (string QueryPrefix, int? RequestTimeoutMs, DateTime ExpiresUtc) cached) && cached.ExpiresUtc > DateTime.UtcNow)
+                return (cached.QueryPrefix, cached.RequestTimeoutMs);
 
             string prefix = "";
+            int? requestTimeoutMs = null;
             try
             {
-                using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Get, "/v1.0/endpoints/embedding/" + Uri.EscapeDataString(endpointId), null, token).ConfigureAwait(false))
+                using (CancellationTokenSource lookup = CancellationTokenSource.CreateLinkedTokenSource(token))
                 {
-                    string body = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                    if (response.IsSuccessStatusCode)
+                    lookup.CancelAfter(Math.Min(5000, _ChunkingSettings.QueryEmbeddingTimeoutMs));
+                    using (HttpResponseMessage response = await _ChunkingService.SendAsync(HttpMethod.Get, "/v1.0/endpoints/embedding/" + Uri.EscapeDataString(endpointId), null, lookup.Token).ConfigureAwait(false))
                     {
-                        using JsonDocument document = JsonDocument.Parse(body);
-                        string model = GetStringAny(document.RootElement, "Model");
-                        prefix = EmbeddingModelProfiles.Resolve(model).QueryPrefix;
-                    }
-                    else
-                    {
-                        _Logging.Warn(_Header + "could not read embedding endpoint " + endpointId + " for task prefixes: " + (int)response.StatusCode);
+                        string body = await response.Content.ReadAsStringAsync(lookup.Token).ConfigureAwait(false);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            PartioEndpointConfig endpoint = JsonSerializer.Deserialize<PartioEndpointConfig>(body, _JsonOptions);
+                            prefix = EmbeddingModelProfiles.Resolve(endpoint?.Model).QueryPrefix;
+                            PartioEndpointTimeouts.Apply(endpoint);
+                            requestTimeoutMs = endpoint?.RequestTimeoutMs;
+                        }
+                        else
+                        {
+                            _Logging.Debug(_Header + "could not read embedding endpoint " + endpointId + ": " + (int)response.StatusCode);
+                        }
                     }
                 }
             }
             catch (Exception e) when (!token.IsCancellationRequested)
             {
-                _Logging.Warn(_Header + "could not resolve task prefix for embedding endpoint " + endpointId + ": " + e.Message);
+                _Logging.Warn(_Header + "could not read embedding endpoint " + endpointId + ": " + e.Message);
             }
 
-            _QueryPrefixes[endpointId] = (prefix, DateTime.UtcNow.AddMinutes(5));
-            return prefix;
+            _EmbeddingEndpointInfo[endpointId] = (prefix, requestTimeoutMs, DateTime.UtcNow.AddMinutes(5));
+            return (prefix, requestTimeoutMs);
         }
 
         private List<double> ParseQueryEmbedding(string responseBody)

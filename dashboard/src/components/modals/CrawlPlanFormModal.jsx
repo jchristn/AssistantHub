@@ -16,7 +16,8 @@ const AUTH_TYPES = [
   { value: 'ApiKey', label: 'API Key' },
 ];
 
-const NFS_VERSIONS = ['V2', 'V3', 'V4'];
+// NFS crawling supports NFSv3 only (Blobject 6, OpenNFS).
+const NFS_VERSIONS = ['V3'];
 const INTERVAL_TYPES = ['Minutes', 'Hours', 'Days', 'Weeks'];
 
 const defaultRepositories = {
@@ -32,6 +33,8 @@ const defaultRepositories = {
     UserAgent: '',
     FollowLinks: true,
     FollowRedirects: true,
+    MaxRedirects: 10,
+    CredentialOrigins: '',
     ExtractSitemapLinks: true,
     RestrictToChildUrls: true,
     RestrictToSubdomain: true,
@@ -48,6 +51,8 @@ const defaultRepositories = {
     CifsUsername: '',
     CifsPassword: '',
     CifsShareName: '',
+    CifsDomain: '',
+    CifsPort: '',
     IncludeSubdirectories: true,
   },
   NFS: {
@@ -57,6 +62,9 @@ const defaultRepositories = {
     NfsGroupId: '',
     NfsShareName: '',
     NfsVersion: 'V3',
+    NfsPort: '',
+    NfsMountPort: '',
+    NfsPortmapperPort: '',
     IncludeSubdirectories: true,
   },
 };
@@ -97,6 +105,9 @@ const normalizeRepositorySettings = (repoSettings, repositoryType) => {
     normalized.AuthType = repoSettings?.AuthenticationType || repoSettings?.AuthType || defaults.AuthType;
     normalized.ApiKey = repoSettings?.ApiKeyValue || repoSettings?.ApiKey || defaults.ApiKey;
     normalized.ApiKeyHeader = repoSettings?.ApiKeyHeader || defaults.ApiKeyHeader;
+    normalized.CredentialOrigins = Array.isArray(repoSettings?.CredentialOrigins)
+      ? repoSettings.CredentialOrigins.join('\n')
+      : (repoSettings?.CredentialOrigins || defaults.CredentialOrigins);
   }
 
   if (selectedType === 'NFS') {
@@ -226,6 +237,8 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
         CifsUsername: form.Repository.CifsUsername,
         CifsPassword: form.Repository.CifsPassword,
         CifsShareName: form.Repository.CifsShareName,
+        CifsDomain: form.Repository.CifsDomain?.trim() || null,
+        CifsPort: parseOptionalNumber(form.Repository.CifsPort) ?? null,
         IncludeSubdirectories: form.Repository.IncludeSubdirectories,
       };
     }
@@ -238,6 +251,9 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
         NfsGroupId: parseOptionalNumber(form.Repository.NfsGroupId),
         NfsShareName: form.Repository.NfsShareName,
         NfsVersion: form.Repository.NfsVersion || 'V3',
+        NfsPort: parseOptionalNumber(form.Repository.NfsPort) ?? null,
+        NfsMountPort: parseOptionalNumber(form.Repository.NfsMountPort) ?? null,
+        NfsPortmapperPort: parseOptionalNumber(form.Repository.NfsPortmapperPort) ?? null,
         IncludeSubdirectories: form.Repository.IncludeSubdirectories,
       };
     }
@@ -252,6 +268,8 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
       UserAgent: form.Repository.UserAgent || undefined,
       FollowLinks: form.Repository.FollowLinks,
       FollowRedirects: form.Repository.FollowRedirects,
+      MaxRedirects: Math.min(50, Math.max(1, parseNumberOrDefault(form.Repository.MaxRedirects, 10))),
+      CredentialOrigins: String(form.Repository.CredentialOrigins || '').split(/[\s,]+/).map(s => s.trim()).filter(Boolean),
       ExtractSitemapLinks: form.Repository.ExtractSitemapLinks,
       RestrictToChildUrls: form.Repository.RestrictToChildUrls,
       RestrictToSubdomain: form.Repository.RestrictToSubdomain,
@@ -469,6 +487,12 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                   {AUTH_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
+              {form.Repository.AuthType !== 'None' && (
+                <div className="form-group">
+                  <label><Tooltip text="Credentials are sent only to the start URL's site. List other sites (one per line, for example https://docs.example.com) that should also receive them.">Credential Origins</Tooltip></label>
+                  <textarea className="form-input" rows={2} title="Other sites that receive the crawl credentials, one per line." value={form.Repository.CredentialOrigins} onChange={(e) => handleRepoChange('CredentialOrigins', e.target.value)} placeholder="https://docs.example.com" />
+                </div>
+              )}
               {form.Repository.AuthType === 'Basic' && (
                 <div className="form-row">
                   <div className="form-group">
@@ -520,9 +544,15 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                       <input type="checkbox" checked={form.Repository.FollowRedirects} onChange={(e) => handleRepoChange('FollowRedirects', e.target.checked)} />
                       <span className="toggle-slider"></span>
                     </label>
-                    <span><Tooltip text="Follow HTTP redirects (301, 302, etc.)">Follow Redirects</Tooltip></span>
+                    <span><Tooltip text="Follow HTTP redirects (301, 302, etc.), up to Max Redirects hops. A redirect loop ends the chain and the page is skipped. When off, redirecting pages are skipped.">Follow Redirects</Tooltip></span>
                   </div>
                 </div>
+                {form.Repository.FollowRedirects && (
+                  <div className="form-group">
+                    <label><Tooltip text="Most redirects followed for one page (1-50, default 10). A longer chain is skipped.">Max Redirects</Tooltip></label>
+                    <input type="number" title="Most redirects followed for one page (1-50)." value={form.Repository.MaxRedirects} onChange={(e) => handleRepoChange('MaxRedirects', e.target.value)} min="1" max="50" />
+                  </div>
+                )}
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -615,6 +645,16 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                   </div>
                   <div className="form-row">
                     <div className="form-group">
+                      <label><Tooltip text="Domain or workgroup of the user, for example an Active Directory domain. Leave empty to send none, or write the username as DOMAIN\user.">Domain</Tooltip></label>
+                      <input type="text" title="Domain or workgroup of the user (optional)." value={form.Repository.CifsDomain ?? ''} onChange={(e) => handleRepoChange('CifsDomain', e.target.value)} placeholder="Optional" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="TCP port of the SMB server. Leave empty for 445.">Port</Tooltip></label>
+                      <input type="number" title="TCP port of the SMB server (default 445)." value={form.Repository.CifsPort ?? ''} onChange={(e) => handleRepoChange('CifsPort', e.target.value)} min="1" max="65535" placeholder="445" />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
                       <label><Tooltip text="Username used to connect to the CIFS share">Username</Tooltip></label>
                       <input type="text" value={form.Repository.CifsUsername} onChange={(e) => handleRepoChange('CifsUsername', e.target.value)} />
                     </div>
@@ -656,10 +696,24 @@ function CrawlPlanFormModal({ plan, initialData, ingestionRules, buckets, onSave
                       <input type="text" value={form.Repository.NfsShareName} onChange={(e) => handleRepoChange('NfsShareName', e.target.value)} placeholder="/exports/content" />
                     </div>
                     <div className="form-group">
-                      <label><Tooltip text="NFS protocol version. Default: V3">NFS Version</Tooltip></label>
+                      <label><Tooltip text="NFS protocol version. Only NFSv3 is supported.">NFS Version</Tooltip></label>
                       <select value={form.Repository.NfsVersion} onChange={(e) => handleRepoChange('NfsVersion', e.target.value)}>
                         {NFS_VERSIONS.map(version => <option key={version} value={version}>{version}</option>)}
                       </select>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Tooltip text="TCP port of the NFS service. Leave empty for 2049.">NFS Port</Tooltip></label>
+                      <input type="number" title="TCP port of the NFS service (default 2049)." value={form.Repository.NfsPort ?? ''} onChange={(e) => handleRepoChange('NfsPort', e.target.value)} min="1" max="65535" placeholder="2049" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="TCP port of the MOUNT service. Leave empty to discover it through the portmapper.">Mount Port</Tooltip></label>
+                      <input type="number" title="TCP port of the MOUNT service (default: discovered)." value={form.Repository.NfsMountPort ?? ''} onChange={(e) => handleRepoChange('NfsMountPort', e.target.value)} min="0" max="65535" placeholder="Discover" />
+                    </div>
+                    <div className="form-group">
+                      <label><Tooltip text="TCP port of the portmapper (rpcbind) used to discover the MOUNT port. Leave empty for 111.">Portmapper Port</Tooltip></label>
+                      <input type="number" title="TCP port of the portmapper (default 111)." value={form.Repository.NfsPortmapperPort ?? ''} onChange={(e) => handleRepoChange('NfsPortmapperPort', e.target.value)} min="1" max="65535" placeholder="111" />
                     </div>
                   </div>
                   <div className="form-group">

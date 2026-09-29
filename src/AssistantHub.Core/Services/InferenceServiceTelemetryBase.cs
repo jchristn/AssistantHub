@@ -47,9 +47,69 @@ namespace AssistantHub.Core.Services
         {
             _Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _Logging = logging ?? throw new ArgumentNullException(nameof(logging));
-            // The client-wide timeout is the answer-model limit; utility steps pass shorter cancellation tokens.
-            _HttpClient = new HttpClient { Timeout = TimeSpan.FromMilliseconds(_Settings.RequestTimeoutMs) };
+            // Each request is bounded by SendWithTimeoutAsync: the calling endpoint's timeout when one is in scope,
+            // otherwise Inference.RequestTimeoutMs.
+            _HttpClient = new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
         }
+
+        #region Request-Timeouts
+
+        private static readonly System.Threading.AsyncLocal<int?> _RequestTimeoutOverrideMs = new System.Threading.AsyncLocal<int?>();
+
+        /// <summary>
+        /// Apply a per-endpoint request timeout to the inference calls made in the current async flow until the
+        /// returned scope is disposed. Null or a non-positive value keeps <c>Inference.RequestTimeoutMs</c>.
+        /// </summary>
+        /// <param name="timeoutMs">Timeout in milliseconds.</param>
+        /// <returns>Scope that restores the previous timeout.</returns>
+        public static IDisposable UseRequestTimeout(int? timeoutMs)
+        {
+            int? previous = _RequestTimeoutOverrideMs.Value;
+            _RequestTimeoutOverrideMs.Value = timeoutMs.HasValue && timeoutMs.Value > 0 ? timeoutMs : previous;
+            return new TimeoutScope(previous);
+        }
+
+        /// <summary>
+        /// The request timeout in effect for the current async flow.
+        /// </summary>
+        public int EffectiveRequestTimeoutMs => _RequestTimeoutOverrideMs.Value ?? _Settings.RequestTimeoutMs;
+
+        private protected async Task<HttpResponseMessage> SendWithTimeoutAsync(HttpRequestMessage request, HttpCompletionOption option, System.Threading.CancellationToken token)
+        {
+            int timeoutMs = EffectiveRequestTimeoutMs;
+            using (System.Threading.CancellationTokenSource timeout = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
+                timeout.CancelAfter(timeoutMs);
+                try
+                {
+                    return await _HttpClient.SendAsync(request, option, timeout.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException e) when (!token.IsCancellationRequested)
+                {
+                    throw new TimeoutException("The inference endpoint did not respond within " + timeoutMs + " ms.", e);
+                }
+            }
+        }
+
+        private sealed class TimeoutScope : IDisposable
+        {
+            private readonly int? _Previous;
+            private bool _Disposed;
+
+            public TimeoutScope(int? previous)
+            {
+                _Previous = previous;
+            }
+
+            public void Dispose()
+            {
+                if (_Disposed) return;
+                _Disposed = true;
+                _RequestTimeoutOverrideMs.Value = _Previous;
+            }
+        }
+
+        #endregion
 
         #region Private-Methods
 

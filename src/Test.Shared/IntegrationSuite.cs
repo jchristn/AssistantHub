@@ -1298,6 +1298,33 @@ namespace Test.Automated
                     HttpResponseMessage list = await admin.GetAsync("/v1.0/assistants?tenantId=" + server.DefaultTenantId);
                     AssertHelper.AreEqual(200, (int)list.StatusCode, "admin key can list assistants");
 
+                    HttpResponseMessage noTenant = await admin.PutAsync("/v1.0/assistants",
+                        new StringContent("{\"Name\":\"Admin key assistant\"}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(400, (int)noTenant.StatusCode, "admin key must name the tenant in the body");
+                    AssertHelper.StringContains(await noTenant.Content.ReadAsStringAsync(), "TenantId", "error names the missing field");
+
+                    HttpResponseMessage unknownTenant = await admin.PutAsync("/v1.0/assistants",
+                        new StringContent("{\"Name\":\"Admin key assistant\",\"TenantId\":\"ten_missing\"}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(404, (int)unknownTenant.StatusCode, "unknown tenant");
+
+                    HttpResponseMessage foreignUser = await admin.PutAsync("/v1.0/assistants",
+                        new StringContent("{\"Name\":\"Admin key assistant\",\"TenantId\":\"" + server.DefaultTenantId + "\",\"UserId\":\"usr_missing\"}", Encoding.UTF8, "application/json"));
+                    AssertHelper.AreEqual(400, (int)foreignUser.StatusCode, "owner must belong to the tenant");
+
+                    HttpResponseMessage created = await admin.PutAsync("/v1.0/assistants",
+                        new StringContent("{\"Name\":\"Admin key assistant\",\"TenantId\":\"" + server.DefaultTenantId + "\"}", Encoding.UTF8, "application/json"));
+                    string createdBody = await created.Content.ReadAsStringAsync();
+                    AssertHelper.IsTrue((int)created.StatusCode == 200 || (int)created.StatusCode == 201, "admin key creates an assistant, got " + (int)created.StatusCode + " " + createdBody);
+                    using (JsonDocument createdDoc = JsonDocument.Parse(createdBody))
+                    {
+                        AssertHelper.AreEqual(server.DefaultTenantId, createdDoc.RootElement.GetProperty("TenantId").GetString(), "assistant in the body's tenant");
+                        AssertHelper.AreEqual(server.DefaultUserId, createdDoc.RootElement.GetProperty("UserId").GetString(), "owned by the tenant administrator");
+                    }
+
+                    HttpResponseMessage explicitOwner = await admin.PutAsync("/v1.0/assistants",
+                        new StringContent("{\"Name\":\"Owned assistant\",\"TenantId\":\"" + server.DefaultTenantId + "\",\"UserId\":\"" + server.DefaultUserId + "\"}", Encoding.UTF8, "application/json"));
+                    AssertHelper.IsTrue((int)explicitOwner.StatusCode == 200 || (int)explicitOwner.StatusCode == 201, "explicit owner accepted");
+
                     HttpResponseMessage rules = await admin.GetAsync("/v1.0/ingestion-rules");
                     AssertHelper.AreEqual(200, (int)rules.StatusCode, "admin key without tenantId uses the default tenant");
                 });

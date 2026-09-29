@@ -77,6 +77,22 @@ namespace AssistantHub.Sdk.Models
         public int MaximumTimeoutMs { get; set; } = 60000;
 
         /// <summary>
+        /// AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for answer calls it makes to this endpoint.
+        /// Null uses the server default (Inference.RequestTimeoutMs); 0 clears a stored value; leaving it null on
+        /// updates keeps the stored value. Distinct from <see cref="MaximumTimeoutMs"/>, which bounds Partio's side.
+        /// </summary>
+        [JsonPropertyName("RequestTimeoutMs")]
+        public int? RequestTimeoutMs { get; set; }
+
+        /// <summary>
+        /// AssistantHub's timeout, in milliseconds (1,000 to 3,600,000), for utility steps on this endpoint (retrieval
+        /// gate, query and conversation rewrite, LLM rerank). Null uses the server default (Inference.UtilityTimeoutMs);
+        /// 0 clears a stored value; leaving it null on updates keeps the stored value.
+        /// </summary>
+        [JsonPropertyName("UtilityTimeoutMs")]
+        public int? UtilityTimeoutMs { get; set; }
+
+        /// <summary>
         /// Whether this endpoint explicitly supports model tool calls.
         /// </summary>
         [JsonPropertyName("SupportsToolCalling")]

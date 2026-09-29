@@ -99,6 +99,8 @@ namespace AssistantHub.Core.Services.Crawlers
                 settings.CifsUsername,
                 settings.CifsPassword,
                 settings.CifsShareName);
+            if (settings.CifsPort.HasValue) cifs.Port = settings.CifsPort.Value;
+            if (!String.IsNullOrWhiteSpace(settings.CifsDomain)) cifs.Domain = settings.CifsDomain.Trim();
 
             return new CifsBlobClient(cifs);
         }

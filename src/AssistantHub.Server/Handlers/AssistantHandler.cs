@@ -76,9 +76,30 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                if (String.IsNullOrEmpty(auth.TenantId) || String.IsNullOrEmpty(auth.UserId))
+                {
+                    // The administrator API key belongs to no tenant or user, so the body must name the tenant; the
+                    // owner is the body's UserId, or else the tenant's first administrator.
+                    (string ownerTenantId, string ownerUserId, int status, string error) = await ResolveAdminKeyOwnerAsync(body).ConfigureAwait(false);
+                    if (error != null)
+                    {
+                        ctx.Response.StatusCode = status;
+                        ctx.Response.ContentType = "application/json";
+                        await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(
+                            status == 404 ? Enums.ApiErrorEnum.NotFound : Enums.ApiErrorEnum.BadRequest, null, error))).ConfigureAwait(false);
+                        return;
+                    }
+
+                    assistant.TenantId = ownerTenantId;
+                    assistant.UserId = ownerUserId;
+                }
+                else
+                {
+                    assistant.TenantId = auth.TenantId;
+                    assistant.UserId = auth.UserId;
+                }
+
                 assistant.Id = IdGenerator.NewAssistantId();
-                assistant.TenantId = ResolveTenantId(ctx, auth);
-                assistant.UserId = auth.UserId;
                 assistant.CreatedUtc = DateTime.UtcNow;
                 assistant.LastUpdateUtc = DateTime.UtcNow;
 
@@ -476,6 +497,69 @@ namespace AssistantHub.Server.Handlers
                 ctx.Response.StatusCode = 500;
                 await ctx.Response.Send().ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Resolve the tenant and owner of an assistant created with the administrator API key: TenantId is required in
+        /// the body and must exist; UserId, when given, must belong to that tenant, and otherwise the tenant's first
+        /// administrator (tenant administrator first, then any administrator) owns the assistant.
+        /// </summary>
+        /// <param name="body">Request body.</param>
+        /// <returns>Tenant and user identifiers, or an HTTP status and error message.</returns>
+        private async Task<(string TenantId, string UserId, int Status, string Error)> ResolveAdminKeyOwnerAsync(string body)
+        {
+            string tenantId = null;
+            string userId = null;
+            try
+            {
+                using (System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(body))
+                {
+                    foreach (System.Text.Json.JsonProperty property in document.RootElement.EnumerateObject())
+                    {
+                        if (property.Value.ValueKind != System.Text.Json.JsonValueKind.String) continue;
+                        if (String.Equals(property.Name, "TenantId", StringComparison.OrdinalIgnoreCase)) tenantId = property.Value.GetString();
+                        else if (String.Equals(property.Name, "UserId", StringComparison.OrdinalIgnoreCase)) userId = property.Value.GetString();
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+            }
+
+            if (String.IsNullOrWhiteSpace(tenantId))
+                return (null, null, 400, "TenantId is required in the request body when creating an assistant with the administrator API key.");
+
+            tenantId = tenantId.Trim();
+            if (await Database.Tenant.ReadByIdAsync(tenantId).ConfigureAwait(false) == null)
+                return (null, null, 404, "Tenant not found: " + tenantId);
+
+            if (!String.IsNullOrWhiteSpace(userId))
+            {
+                UserMaster user = await Database.User.ReadAsync(userId.Trim()).ConfigureAwait(false);
+                if (user == null || !String.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
+                    return (null, null, 400, "UserId " + userId + " is not a user of tenant " + tenantId + ".");
+                return (tenantId, user.Id, 0, null);
+            }
+
+            UserMaster owner = null;
+            EnumerationQuery query = new EnumerationQuery { MaxResults = 1000, Ordering = Enums.EnumerationOrderEnum.CreatedAscending };
+            while (true)
+            {
+                EnumerationResult<UserMaster> page = await Database.User.EnumerateAsync(tenantId, query).ConfigureAwait(false);
+                foreach (UserMaster user in page?.Objects ?? new List<UserMaster>())
+                {
+                    if (!user.Active) continue;
+                    if (user.IsTenantAdmin) { owner = user; break; }
+                    if (owner == null && user.IsAdmin) owner = user;
+                }
+
+                if ((owner != null && owner.IsTenantAdmin) || page == null || page.EndOfResults || String.IsNullOrEmpty(page.ContinuationToken)) break;
+                query.ContinuationToken = page.ContinuationToken;
+            }
+
+            if (owner == null)
+                return (null, null, 400, "Tenant " + tenantId + " has no active administrator to own the assistant; pass UserId in the request body.");
+            return (tenantId, owner.Id, 0, null);
         }
     }
 }

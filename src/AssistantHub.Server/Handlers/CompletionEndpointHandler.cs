@@ -65,6 +65,15 @@ namespace AssistantHub.Server.Handlers
                     return;
                 }
 
+                string timeoutError = PartioEndpointTimeouts.ValidateRequestJson(ctx.Request.DataAsString);
+                if (timeoutError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, timeoutError))).ConfigureAwait(false);
+                    return;
+                }
+
                 string body = PartioEndpointMerge.BuildCreateBody(ctx.Request.DataAsString);
 
                 HttpResponseMessage resp = await _InferenceEndpoints.SendAsync(System.Net.Http.HttpMethod.Put, "/v1.0/endpoints/completion", body).ConfigureAwait(false);
@@ -187,6 +196,15 @@ namespace AssistantHub.Server.Handlers
 
                 string endpointId = ctx.Request.Url.Parameters["endpointId"];
                 string requestBody = ctx.Request.DataAsString;
+                string timeoutError = PartioEndpointTimeouts.ValidateRequestJson(ctx.Request.DataAsString);
+                if (timeoutError != null)
+                {
+                    ctx.Response.StatusCode = 400;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.Send(Serializer.SerializeJson(new ApiErrorResponse(Enums.ApiErrorEnum.BadRequest, null, timeoutError))).ConfigureAwait(false);
+                    return;
+                }
+
                 string existingRaw = await ReadExistingCompletionEndpointRawAsync(endpointId).ConfigureAwait(false);
                 string body = PartioEndpointMerge.BuildUpdateBody(existingRaw, requestBody);
 

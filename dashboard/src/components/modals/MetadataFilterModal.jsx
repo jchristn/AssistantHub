@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
+import Tooltip from '../Tooltip';
 
 const CONDITIONS = [
   'Equals', 'NotEquals', 'Contains', 'StartsWith', 'EndsWith',
   'GreaterThan', 'LessThan', 'IsNull', 'IsNotNull'
 ];
 
+function parsePage(value) {
+  const parsed = parseInt(value);
+  return Number.isNaN(parsed) || parsed < 1 ? null : parsed;
+}
+
 function MetadataFilterModal({ filter, availableLabels, availableTags, onApply, onClose }) {
   const [requiredLabels, setRequiredLabels] = useState(filter?.required_labels || []);
   const [excludedLabels, setExcludedLabels] = useState(filter?.excluded_labels || []);
   const [requiredTags, setRequiredTags] = useState(filter?.required_tags || []);
   const [excludedTags, setExcludedTags] = useState(filter?.excluded_tags || []);
+  const [pageStart, setPageStart] = useState(filter?.page_start ?? '');
+  const [pageEnd, setPageEnd] = useState(filter?.page_end ?? '');
   const [customLabel, setCustomLabel] = useState('');
 
   const toggleLabel = (label, list, setList) => {
@@ -42,14 +50,19 @@ function MetadataFilterModal({ filter, availableLabels, availableTags, onApply, 
     setExcludedLabels([]);
     setRequiredTags([]);
     setExcludedTags([]);
+    setPageStart('');
+    setPageEnd('');
   };
 
   const handleApply = () => {
     const hasLabels = requiredLabels.length > 0 || excludedLabels.length > 0;
     const hasReqTags = requiredTags.some(t => t.Key);
     const hasExclTags = excludedTags.some(t => t.Key);
+    const firstPage = parsePage(pageStart);
+    const lastPage = parsePage(pageEnd);
+    const hasPages = firstPage !== null || lastPage !== null;
 
-    if (!hasLabels && !hasReqTags && !hasExclTags) {
+    if (!hasLabels && !hasReqTags && !hasExclTags && !hasPages) {
       onApply(null);
       return;
     }
@@ -59,6 +72,8 @@ function MetadataFilterModal({ filter, availableLabels, availableTags, onApply, 
     if (excludedLabels.length > 0) result.excluded_labels = excludedLabels;
     if (hasReqTags) result.required_tags = requiredTags.filter(t => t.Key);
     if (hasExclTags) result.excluded_tags = excludedTags.filter(t => t.Key);
+    if (firstPage !== null) result.page_start = firstPage;
+    if (lastPage !== null) result.page_end = lastPage !== null && firstPage !== null && lastPage < firstPage ? firstPage : lastPage;
     onApply(result);
   };
 
@@ -163,6 +178,20 @@ function MetadataFilterModal({ filter, availableLabels, availableTags, onApply, 
         <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Tags</h4>
         {renderTagSection('Required Tags', requiredTags, setRequiredTags)}
         {renderTagSection('Excluded Tags', excludedTags, setExcludedTags)}
+
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '0.25rem 0' }} />
+
+        <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Pages</h4>
+        <div className="form-row">
+          <div className="form-group">
+            <label><Tooltip text="Only use passages from this page onward. Needs documents with page numbers (for example PDF, Word or PowerPoint).">From Page</Tooltip></label>
+            <input type="number" className="form-input" min="1" title="First page to search (inclusive)." value={pageStart} onChange={e => setPageStart(e.target.value)} placeholder="Any" />
+          </div>
+          <div className="form-group">
+            <label><Tooltip text="Only use passages up to this page. Passages without page numbers are excluded when a page range is set.">To Page</Tooltip></label>
+            <input type="number" className="form-input" min="1" title="Last page to search (inclusive)." value={pageEnd} onChange={e => setPageEnd(e.target.value)} placeholder="Any" />
+          </div>
+        </div>
       </div>
     </Modal>
   );

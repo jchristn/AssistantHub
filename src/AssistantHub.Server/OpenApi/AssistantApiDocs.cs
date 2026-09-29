@@ -48,11 +48,11 @@ namespace AssistantHub.Server.OpenApi
 
         /// <summary>PUT /v1.0/assistants.</summary>
         public static OpenApiRouteMetadata Create => ApiDoc.Create("Create assistant", _Tag)
-            .Describe("Creates an assistant owned by the calling user in the caller's tenant. Name is required. Id, TenantId, UserId, CreatedUtc, and LastUpdateUtc are assigned by the server and any supplied values are ignored. "
+            .Describe("Creates an assistant owned by the calling user in the caller's tenant. Name is required. Id, TenantId, UserId, CreatedUtc, and LastUpdateUtc are assigned by the server and any supplied values are ignored, except with the administrator API key, which belongs to no tenant or user: TenantId is then required in the body (400 when missing, 404 when the tenant does not exist), and the assistant is owned by the body's UserId (400 unless it is a user of that tenant) or else the tenant's first administrator. "
                 + "Default assistant settings are created alongside the assistant: RAG is enabled against the collection of the first ingestion rule in the tenant (when one exists), and the first available completion and embedding endpoints are assigned when they can be enumerated. Any authenticated user may create an assistant.")
             .Body("Assistant to create. Name is required; Description and Active are optional.", ExampleAssistantRequest())
             .Returns(201, "Assistant created.", ExampleAssistant())
-            .Errors(400, 401, 500);
+            .Errors(400, 401, 404, 500);
 
         /// <summary>GET /v1.0/assistants.</summary>
         public static OpenApiRouteMetadata List => ApiDoc.Create("List assistants", _Tag)

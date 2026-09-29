@@ -69,6 +69,21 @@ namespace AssistantHub.Core.Models
         public int MaximumTimeoutMs { get; set; } = 60000;
 
         /// <summary>
+        /// AssistantHub's timeout, in milliseconds, for its own calls to this endpoint: answer calls to a completion
+        /// endpoint, or query embeddings through an embedding endpoint. Null uses the server default
+        /// (<c>Inference.RequestTimeoutMs</c> or <c>Chunking.QueryEmbeddingTimeoutMs</c>). Stored as the
+        /// <c>AssistantHub.RequestTimeoutMs</c> tag.
+        /// </summary>
+        public int? RequestTimeoutMs { get; set; } = null;
+
+        /// <summary>
+        /// AssistantHub's timeout, in milliseconds, for utility steps (retrieval gate, query and conversation rewrite,
+        /// LLM rerank) on this completion endpoint. Null uses <c>Inference.UtilityTimeoutMs</c>. Stored as the
+        /// <c>AssistantHub.UtilityTimeoutMs</c> tag.
+        /// </summary>
+        public int? UtilityTimeoutMs { get; set; } = null;
+
+        /// <summary>
         /// Context window size (maximum tokens) for the model served by this endpoint. 0 means unspecified.
         /// </summary>
         public int ContextSize { get; set; } = 0;

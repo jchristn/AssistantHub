@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "feedback/list",
+                    Name = "feedback_list",
                     Description = "List feedback records using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -39,7 +39,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "feedback/get",
+                    Name = "feedback_get",
                     Description = "Get a feedback record by identifier.",
                     InputSchema = new
                     {
@@ -54,7 +54,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "feedback/delete",
+                    Name = "feedback_delete",
                     Description = "Delete a feedback record.",
                     InputSchema = new
                     {

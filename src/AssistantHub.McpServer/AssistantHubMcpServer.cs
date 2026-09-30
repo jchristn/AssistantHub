@@ -295,6 +295,12 @@ namespace AssistantHub.McpServer
             _McpWebSocketServer.ServerName = "AssistantHub.McpServer";
             _McpWebSocketServer.ServerVersion = AssistantHub.Core.Constants.ProductVersion;
 
+            // A failed tool call returns an isError result (Voltaic 2.1). Its text is the AssistantHub API error, such
+            // as "Tenant not found", so the caller or model can act on it; Voltaic's default is a generic message.
+            _McpHttpServer.IncludeToolExceptionMessages = true;
+            _McpTcpServer.IncludeToolExceptionMessages = true;
+            _McpWebSocketServer.IncludeToolExceptionMessages = true;
+
             _McpHttpServer.ClientConnected += ClientConnected;
             _McpHttpServer.ClientDisconnected += ClientDisconnected;
             _McpHttpServer.RequestReceived += ClientRequestReceived;

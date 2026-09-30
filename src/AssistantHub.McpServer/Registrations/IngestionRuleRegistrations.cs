@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "ingestionrule/list",
+                    Name = "ingestionrule_list",
                     Description = "List ingestion rules using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "ingestionrule/get",
+                    Name = "ingestionrule_get",
                     Description = "Get an ingestion rule by identifier.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "ingestionrule/create",
+                    Name = "ingestionrule_create",
                     Description = "Create an ingestion rule.",
                     InputSchema = new
                     {
@@ -76,7 +76,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "ingestionrule/update",
+                    Name = "ingestionrule_update",
                     Description = "Update an ingestion rule.",
                     InputSchema = new
                     {
@@ -97,7 +97,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "ingestionrule/delete",
+                    Name = "ingestionrule_delete",
                     Description = "Delete an ingestion rule.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "ingestionrule/exists",
+                    Name = "ingestionrule_exists",
                     Description = "Check whether an ingestion rule exists.",
                     InputSchema = new
                     {

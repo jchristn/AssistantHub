@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "collection/record/list",
+                    Name = "collection_record_list",
                     Description = "List records in a collection using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -41,7 +41,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/record/get",
+                    Name = "collection_record_get",
                     Description = "Get a single collection record.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/record/create",
+                    Name = "collection_record_create",
                     Description = "Create a record in a collection.",
                     InputSchema = new
                     {
@@ -78,7 +78,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/record/delete",
+                    Name = "collection_record_delete",
                     Description = "Delete a single collection record.",
                     InputSchema = new
                     {
@@ -98,7 +98,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/record/batch-delete",
+                    Name = "collection_record_batch-delete",
                     Description = "Delete multiple collection records.",
                     InputSchema = new
                     {

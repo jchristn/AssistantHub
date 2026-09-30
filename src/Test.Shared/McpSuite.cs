@@ -63,9 +63,9 @@ namespace Test.Automated
             {
                 List<string> toolNames = await ListAllToolNamesAsync(host).ConfigureAwait(false);
 
-                AssertHelper.IsTrue(toolNames.Contains("system/health"), "tools/list should include system/health");
-                AssertHelper.IsTrue(toolNames.Contains("tenant/create"), "tools/list should include tenant/create");
-                AssertHelper.IsTrue(toolNames.Contains("configuration/get"), "tools/list should include configuration/get");
+                AssertHelper.IsTrue(toolNames.Contains("system_health"), "tools/list should include system_health");
+                AssertHelper.IsTrue(toolNames.Contains("tenant_create"), "tools/list should include tenant_create");
+                AssertHelper.IsTrue(toolNames.Contains("configuration_get"), "tools/list should include configuration_get");
 
                 foreach (string removed in new[] { "ping", "echo", "getTime", "getSessions", "getClients" })
                 {
@@ -73,11 +73,16 @@ namespace Test.Automated
                 }
 
                 AssertHelper.AreEqual(toolNames.Count, new HashSet<string>(toolNames).Count, "tools/list should not contain duplicate tool names");
+
+                // LLM tool-calling APIs (Claude, OpenAI) accept only these names, so clients can hand tools to a model as-is.
+                List<string> invalid = toolNames.Where(n => !System.Text.RegularExpressions.Regex.IsMatch(n, "^[a-zA-Z0-9_-]{1,64}$")).ToList();
+                AssertHelper.AreEqual(0, invalid.Count, "tool names must match ^[a-zA-Z0-9_-]{1,64}$: " + String.Join(", ", invalid));
+                AssertHelper.IsTrue(toolNames.Count >= 170, "tools/list should publish every AssistantHub tool (found " + toolNames.Count + ")");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Protocol.BareToolMethod.Rejected", async () =>
             {
-                JsonRpcResponse response = await host.Client.CallAsync("system/health", new { }).ConfigureAwait(false);
+                JsonRpcResponse response = await host.Client.CallAsync("system_health", new { }).ConfigureAwait(false);
                 AssertHelper.IsNotNull(response.Error, "calling a tool as a bare JSON-RPC method should fail");
                 AssertHelper.AreEqual(-32601, response.Error!.Code, "bare tool method error code");
             }).ConfigureAwait(false);
@@ -91,14 +96,29 @@ namespace Test.Automated
                 AssertHelper.AreEqual(-32602, response.Error!.Code, "unknown tool error code");
             }).ConfigureAwait(false);
 
-            await ExecuteTestAsync("MCP.Protocol.ToolsCall.MissingRequiredArgument.Rejected", async () =>
+            await ExecuteTestAsync("MCP.Protocol.ToolsCall.MissingRequiredArgument.ToolError", async () =>
             {
-                JsonRpcResponse response = await host.Client.CallAsync(
+                // Invalid arguments are a tool execution error the model can correct (MCP 2025-11-25 and later), not a
+                // JSON-RPC protocol error; the handler never runs.
+                McpToolCallTextResult result = await host.Client.CallAsync<McpToolCallTextResult>(
                     "tools/call",
-                    new { name = "tenant/get", arguments = new { } }).ConfigureAwait(false);
-                AssertHelper.IsNotNull(response.Error, "tools/call without a required argument should fail");
-                AssertHelper.AreEqual(-32602, response.Error!.Code, "missing required argument error code");
-                AssertHelper.StringContains(response.Error.Message, "tenantId", "missing required argument error message");
+                    new { name = "tenant_get", arguments = new { } }).ConfigureAwait(false);
+                AssertHelper.IsNotNull(result, "tools/call without a required argument should return a result");
+                AssertHelper.IsTrue(result.IsError == true, "tools/call without a required argument should be a tool error");
+                AssertHelper.StringContains(result.Content.Count > 0 ? result.Content[0].Text ?? "" : "", "tenantId", "the tool error names the missing argument");
+            }).ConfigureAwait(false);
+
+            await ExecuteTestAsync("MCP.Protocol.ToolsCall.ApiError.MessageShown", async () =>
+            {
+                // A failing AssistantHub call reaches the caller as the API's error, not a generic "internal error".
+                McpToolCallTextResult result = await host.Client.CallAsync<McpToolCallTextResult>(
+                    "tools/call",
+                    new { name = "tenant_get", arguments = new { tenantId = "ten_does_not_exist_" + uniqueSuffix } }).ConfigureAwait(false);
+                AssertHelper.IsNotNull(result, "tools/call for a missing tenant should return a result");
+                AssertHelper.IsTrue(result.IsError == true, "tools/call for a missing tenant should be a tool error");
+                string text = result.Content.Count > 0 ? result.Content[0].Text ?? "" : "";
+                AssertHelper.StringContains(text, "tenant_get", "the tool error names the tool");
+                AssertHelper.IsFalse(text.Contains("internal error", StringComparison.OrdinalIgnoreCase), "the tool error carries the API message: " + text);
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Transport.Tcp.MethodsAndPing", async () =>
@@ -109,9 +129,14 @@ namespace Test.Automated
 
                 await client.CallAsync<object?>("ping").ConfigureAwait(false);
 
-                string resultJson = await client.CallAsync<string>("system/health", new { }).ConfigureAwait(false);
-                using JsonDocument doc = JsonDocument.Parse(resultJson);
-                AssertHelper.IsTrue(doc.RootElement.GetProperty("Healthy").GetBoolean(), "TCP system/health should report a healthy upstream");
+                // A JSON-RPC result is always an object: the tool's own JSON object, or {"result": value} for anything else.
+                JsonElement health = await client.CallAsync<JsonElement>("system_health", new { }).ConfigureAwait(false);
+                AssertHelper.AreEqual(JsonValueKind.Object, health.ValueKind, "TCP system_health result is an object");
+                AssertHelper.IsTrue(health.GetProperty("Healthy").GetBoolean(), "TCP system_health should report a healthy upstream");
+
+                JsonElement exists = await client.CallAsync<JsonElement>("tenant_exists", new { tenantId = "ten_does_not_exist_" + uniqueSuffix }).ConfigureAwait(false);
+                AssertHelper.AreEqual(JsonValueKind.Object, exists.ValueKind, "TCP tenant_exists result is an object");
+                AssertHelper.IsFalse(exists.GetProperty("result").GetBoolean(), "TCP tenant_exists wraps its boolean as {\"result\": false}");
 
                 Exception? echoError = null;
                 try
@@ -129,16 +154,16 @@ namespace Test.Automated
 
             await ExecuteTestAsync("MCP.System.Health", async () =>
             {
-                string resultJson = await CallToolTextAsync(host, "system/health", new { }).ConfigureAwait(false);
+                string resultJson = await CallToolTextAsync(host, "system_health", new { }).ConfigureAwait(false);
                 using JsonDocument doc = JsonDocument.Parse(resultJson);
                 bool healthy = doc.RootElement.GetProperty("Healthy").GetBoolean();
-                AssertHelper.IsTrue(healthy, "system/health should report a healthy upstream");
+                AssertHelper.IsTrue(healthy, "system_health should report a healthy upstream");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.System.OpenApi", async () =>
             {
-                string resultJson = await CallToolTextAsync(host, "system/openapi", new { versioned = true }).ConfigureAwait(false);
-                AssertHelper.StringContains(resultJson, "openapi", "system/openapi payload");
+                string resultJson = await CallToolTextAsync(host, "system_openapi", new { versioned = true }).ConfigureAwait(false);
+                AssertHelper.StringContains(resultJson, "openapi", "system_openapi payload");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Tenant.Create", async () =>
@@ -150,7 +175,7 @@ namespace Test.Automated
                 };
 
                 string resultJson = await CallToolTextAsync(host, 
-                    "tenant/create",
+                    "tenant_create",
                     new { tenantJson = Serializer.SerializeJson(tenant, false) }).ConfigureAwait(false);
 
                 using JsonDocument doc = JsonDocument.Parse(resultJson);
@@ -165,21 +190,21 @@ namespace Test.Automated
             {
                 AssertHelper.IsNotNull(createdTenantId, "createdTenantId from previous test");
                 string resultJson = await CallToolTextAsync(host, 
-                    "tenant/get",
+                    "tenant_get",
                     new { tenantId = createdTenantId }).ConfigureAwait(false);
 
                 TenantMetadata? tenant = Serializer.DeserializeJson<TenantMetadata>(resultJson);
-                AssertHelper.IsNotNull(tenant, "tenant/get result");
-                AssertHelper.AreEqual(createdTenantId, tenant!.Id, "tenant/get identifier");
+                AssertHelper.IsNotNull(tenant, "tenant_get result");
+                AssertHelper.AreEqual(createdTenantId, tenant!.Id, "tenant_get identifier");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Tenant.Exists", async () =>
             {
                 AssertHelper.IsNotNull(createdTenantId, "createdTenantId from previous test");
                 bool exists = await CallToolBoolAsync(host, 
-                    "tenant/exists",
+                    "tenant_exists",
                     new { tenantId = createdTenantId }).ConfigureAwait(false);
-                AssertHelper.IsTrue(exists, "tenant/exists should return true for the created tenant");
+                AssertHelper.IsTrue(exists, "tenant_exists should return true for the created tenant");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Assistant.Create", async () =>
@@ -191,11 +216,11 @@ namespace Test.Automated
                 };
 
                 string resultJson = await CallToolTextAsync(host, 
-                    "assistant/create",
+                    "assistant_create",
                     new { assistantJson = Serializer.SerializeJson(assistant, false) }).ConfigureAwait(false);
 
                 Assistant? createdAssistant = Serializer.DeserializeJson<Assistant>(resultJson);
-                AssertHelper.IsNotNull(createdAssistant, "assistant/create result");
+                AssertHelper.IsNotNull(createdAssistant, "assistant_create result");
                 AssertHelper.IsNotNull(createdAssistant!.Id, "created assistant ID");
                 AssertHelper.StartsWith(createdAssistant.Id!, "asst_", "created assistant ID prefix");
                 createdAssistantId = createdAssistant.Id;
@@ -205,17 +230,17 @@ namespace Test.Automated
             {
                 AssertHelper.IsNotNull(createdAssistantId, "createdAssistantId from previous test");
                 string resultJson = await CallToolTextAsync(host, 
-                    "assistant/get",
+                    "assistant_get",
                     new { assistantId = createdAssistantId }).ConfigureAwait(false);
 
                 Assistant? assistant = Serializer.DeserializeJson<Assistant>(resultJson);
-                AssertHelper.IsNotNull(assistant, "assistant/get result");
-                AssertHelper.AreEqual(createdAssistantId, assistant!.Id, "assistant/get identifier");
+                AssertHelper.IsNotNull(assistant, "assistant_get result");
+                AssertHelper.AreEqual(createdAssistantId, assistant!.Id, "assistant_get identifier");
             }).ConfigureAwait(false);
 
             await ExecuteTestAsync("MCP.Configuration.GetRedacted", async () =>
             {
-                string resultJson = await CallToolTextAsync(host, "configuration/get", new { }).ConfigureAwait(false);
+                string resultJson = await CallToolTextAsync(host, "configuration_get", new { }).ConfigureAwait(false);
                 using JsonDocument doc = JsonDocument.Parse(resultJson);
 
                 AssertHelper.AreEqual("[REDACTED]", doc.RootElement.GetProperty("S3").GetProperty("AccessKey").GetString(), "S3 access key redaction");
@@ -230,7 +255,7 @@ namespace Test.Automated
             await ExecuteTestAsync("MCP.Configuration.GetWithSecrets", async () =>
             {
                 string resultJson = await CallToolTextAsync(host, 
-                    "configuration/get",
+                    "configuration_get",
                     new { includeSecrets = true }).ConfigureAwait(false);
 
                 using JsonDocument doc = JsonDocument.Parse(resultJson);
@@ -242,7 +267,7 @@ namespace Test.Automated
 
             await ExecuteTestAsync("MCP.RequestHistory.CaptureAndList", async () =>
             {
-                await CallToolTextAsync(host, "system/whoami", new { }).ConfigureAwait(false);
+                await CallToolTextAsync(host, "system_whoami", new { }).ConfigureAwait(false);
                 string? lastResultJson = null;
 
                 for (int attempt = 0; attempt < 20; attempt++)
@@ -254,13 +279,13 @@ namespace Test.Automated
                     };
 
                     string resultJson = await CallToolTextAsync(host, 
-                        "requesthistory/list",
+                        "requesthistory_list",
                         new { filterJson = Serializer.SerializeJson(filter, false) }).ConfigureAwait(false);
                     lastResultJson = resultJson;
 
                     EnumerationResult<RequestHistoryEntry>? result = Serializer.DeserializeJson<EnumerationResult<RequestHistoryEntry>>(resultJson);
-                    AssertHelper.IsNotNull(result, "requesthistory/list result");
-                    AssertHelper.IsNotNull(result!.Objects, "requesthistory/list objects");
+                    AssertHelper.IsNotNull(result, "requesthistory_list result");
+                    AssertHelper.IsNotNull(result!.Objects, "requesthistory_list objects");
 
                     RequestHistoryEntry? entry = null;
                     foreach (RequestHistoryEntry item in result.Objects)
@@ -284,7 +309,7 @@ namespace Test.Automated
                 throw new Exception(
                     "Timed out waiting for request-history capture of /v1.0/whoami."
                     + Environment.NewLine
-                    + "Last requesthistory/list payload:"
+                    + "Last requesthistory_list payload:"
                     + Environment.NewLine
                     + (lastResultJson ?? "<null>"));
             }).ConfigureAwait(false);
@@ -294,11 +319,11 @@ namespace Test.Automated
                 AssertHelper.IsNotNull(capturedRequestId, "capturedRequestId from previous test");
 
                 string detailJson = await CallToolTextAsync(host, 
-                    "requesthistory/detail",
+                    "requesthistory_detail",
                     new { requestId = capturedRequestId }).ConfigureAwait(false);
                 RequestHistoryEntry? detail = Serializer.DeserializeJson<RequestHistoryEntry>(detailJson);
-                AssertHelper.IsNotNull(detail, "requesthistory/detail result");
-                AssertHelper.AreEqual(capturedRequestId, detail!.Id, "requesthistory/detail identifier");
+                AssertHelper.IsNotNull(detail, "requesthistory_detail result");
+                AssertHelper.AreEqual(capturedRequestId, detail!.Id, "requesthistory_detail identifier");
 
                 RequestHistorySearchFilter filter = new RequestHistorySearchFilter
                 {
@@ -308,10 +333,10 @@ namespace Test.Automated
                 };
 
                 string summaryJson = await CallToolTextAsync(host, 
-                    "requesthistory/summary",
+                    "requesthistory_summary",
                     new { filterJson = Serializer.SerializeJson(filter, false) }).ConfigureAwait(false);
                 RequestHistorySummaryResult? summary = Serializer.DeserializeJson<RequestHistorySummaryResult>(summaryJson);
-                AssertHelper.IsNotNull(summary, "requesthistory/summary result");
+                AssertHelper.IsNotNull(summary, "requesthistory_summary result");
                 if (summary!.TotalCount < 1)
                 {
                     throw new Exception(
@@ -364,9 +389,9 @@ namespace Test.Automated
                     return;
 
                 bool deleted = await CallToolBoolAsync(host, 
-                    "assistant/delete",
+                    "assistant_delete",
                     new { assistantId = createdAssistantId }).ConfigureAwait(false);
-                AssertHelper.IsTrue(deleted, "assistant/delete should return true");
+                AssertHelper.IsTrue(deleted, "assistant_delete should return true");
                 createdAssistantId = null;
             }).ConfigureAwait(false);
 
@@ -376,9 +401,9 @@ namespace Test.Automated
                     return;
 
                 bool deleted = await CallToolBoolAsync(host, 
-                    "tenant/delete",
+                    "tenant_delete",
                     new { tenantId = createdTenantId }).ConfigureAwait(false);
-                AssertHelper.IsTrue(deleted, "tenant/delete should return true");
+                AssertHelper.IsTrue(deleted, "tenant_delete should return true");
                 createdTenantId = null;
             }).ConfigureAwait(false);
 

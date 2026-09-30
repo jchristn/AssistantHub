@@ -47,7 +47,7 @@ namespace AssistantHub.McpServer.Classes
             foreach (McpMethodDefinition definition in definitions)
             {
                 McpMethodDefinition instrumented = Instrument(definition, "tcp");
-                server.RegisterMethod(instrumented.Name, parameters => instrumented.Handler(ToJsonElement(parameters)));
+                server.RegisterMethod(instrumented.Name, parameters => ToObjectResult(instrumented.Handler(ToJsonElement(parameters))));
             }
         }
 
@@ -59,7 +59,7 @@ namespace AssistantHub.McpServer.Classes
             foreach (McpMethodDefinition definition in definitions)
             {
                 McpMethodDefinition instrumented = Instrument(definition, "ws");
-                server.RegisterMethod(instrumented.Name, parameters => instrumented.Handler(ToJsonElement(parameters)));
+                server.RegisterMethod(instrumented.Name, parameters => ToObjectResult(instrumented.Handler(ToJsonElement(parameters))));
             }
         }
 
@@ -94,6 +94,35 @@ namespace AssistantHub.McpServer.Classes
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Shape a handler's output as a JSON-RPC method result for the TCP and WebSocket transports, where every
+        /// result must be a JSON object. Handlers return JSON text: an object is returned as that object, and any
+        /// other value (an array, string, number, boolean or null) is wrapped as <c>{"result": value}</c>.
+        /// </summary>
+        private static object ToObjectResult(object? value)
+        {
+            JsonElement element;
+            if (value is string text)
+            {
+                try
+                {
+                    using JsonDocument document = JsonDocument.Parse(text);
+                    element = document.RootElement.Clone();
+                }
+                catch (JsonException)
+                {
+                    element = JsonSerializer.SerializeToElement(text);
+                }
+            }
+            else
+            {
+                element = JsonSerializer.SerializeToElement(value);
+            }
+
+            if (element.ValueKind == JsonValueKind.Object) return element;
+            return new Dictionary<string, JsonElement> { ["result"] = element };
         }
 
         /// <summary>

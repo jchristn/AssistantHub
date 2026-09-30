@@ -21,7 +21,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "index/record/list",
+                    Name = "index_record_list",
                     Description = "List records in a Verbex inverted index using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/get",
+                    Name = "index_record_get",
                     Description = "Get a single Verbex inverted-index record.",
                     InputSchema = new
                     {
@@ -58,7 +58,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/create",
+                    Name = "index_record_create",
                     Description = "Create a record in a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -79,7 +79,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/create-batch",
+                    Name = "index_record_create-batch",
                     Description = "Create records in a Verbex inverted index in batch.",
                     InputSchema = new
                     {
@@ -100,7 +100,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/exists",
+                    Name = "index_record_exists",
                     Description = "Check whether a Verbex inverted-index record exists.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/exists-batch",
+                    Name = "index_record_exists-batch",
                     Description = "Check whether multiple Verbex inverted-index records exist.",
                     InputSchema = new
                     {
@@ -137,7 +137,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/delete",
+                    Name = "index_record_delete",
                     Description = "Delete a single Verbex inverted-index record.",
                     InputSchema = new
                     {
@@ -157,7 +157,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/batch-delete",
+                    Name = "index_record_batch-delete",
                     Description = "Delete multiple Verbex inverted-index records.",
                     InputSchema = new
                     {
@@ -179,7 +179,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/labels/update",
+                    Name = "index_record_labels_update",
                     Description = "Update labels on a Verbex inverted-index record.",
                     InputSchema = new
                     {
@@ -202,7 +202,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/tags/update",
+                    Name = "index_record_tags_update",
                     Description = "Update tags on a Verbex inverted-index record.",
                     InputSchema = new
                     {
@@ -225,7 +225,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/record/custom-metadata/update",
+                    Name = "index_record_custom-metadata_update",
                     Description = "Update custom metadata on a Verbex inverted-index record.",
                     InputSchema = new
                     {

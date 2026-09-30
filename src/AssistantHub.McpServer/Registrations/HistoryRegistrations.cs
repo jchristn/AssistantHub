@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "history/list",
+                    Name = "history_list",
                     Description = "List chat history using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "history/get",
+                    Name = "history_get",
                     Description = "Get a chat history entry by identifier.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "history/delete",
+                    Name = "history_delete",
                     Description = "Delete a chat history entry.",
                     InputSchema = new
                     {
@@ -76,7 +76,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "thread/list",
+                    Name = "thread_list",
                     Description = "List thread summaries using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -95,7 +95,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "thread/get",
+                    Name = "thread_get",
                     Description = "Get full thread history for an assistant thread.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "thread/create",
+                    Name = "thread_create",
                     Description = "Create a new thread for an assistant.",
                     InputSchema = new
                     {
@@ -134,7 +134,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "thread/delete",
+                    Name = "thread_delete",
                     Description = "Delete a thread.",
                     InputSchema = new
                     {

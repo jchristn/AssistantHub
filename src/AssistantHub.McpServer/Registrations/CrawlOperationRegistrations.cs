@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "crawloperation/list",
+                    Name = "crawloperation_list",
                     Description = "List crawl operations for a plan using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -46,7 +46,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawloperation/get",
+                    Name = "crawloperation_get",
                     Description = "Get a crawl operation by identifier.",
                     InputSchema = new
                     {
@@ -72,7 +72,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawloperation/delete",
+                    Name = "crawloperation_delete",
                     Description = "Delete a crawl operation.",
                     InputSchema = new
                     {
@@ -92,7 +92,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawloperation/statistics",
+                    Name = "crawloperation_statistics",
                     Description = "Get aggregate crawl operation statistics for a plan or a specific operation.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawloperation/enumeration",
+                    Name = "crawloperation_enumeration",
                     Description = "Get the saved enumeration payload for a crawl operation.",
                     InputSchema = new
                     {

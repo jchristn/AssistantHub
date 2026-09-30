@@ -496,6 +496,13 @@
             telemetry host subscribes.
             </summary>
         </member>
+        <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.ToObjectResult(System.Object)">
+            <summary>
+            Shape a handler's output as a JSON-RPC method result for the TCP and WebSocket transports, where every
+            result must be a JSON object. Handlers return JSON text: an object is returned as that object, and any
+            other value (an array, string, number, boolean or null) is wrapped as <c>{"result": value}</c>.
+            </summary>
+        </member>
         <member name="M:AssistantHub.McpServer.Classes.McpRegistrationHelper.ToJsonElement(Voltaic.Core.RpcParameters)">
             <summary>
             Convert Voltaic RPC parameters into a JsonElement so tool handlers can consume them.

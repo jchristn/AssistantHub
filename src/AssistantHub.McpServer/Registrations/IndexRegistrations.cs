@@ -21,7 +21,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "index/list",
+                    Name = "index_list",
                     Description = "List Verbex inverted indices using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -40,7 +40,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/get",
+                    Name = "index_get",
                     Description = "Get a Verbex inverted index by identifier.",
                     InputSchema = new
                     {
@@ -55,7 +55,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/create",
+                    Name = "index_create",
                     Description = "Create a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -74,7 +74,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/update",
+                    Name = "index_update",
                     Description = "Update a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -95,7 +95,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/delete",
+                    Name = "index_delete",
                     Description = "Delete a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -114,7 +114,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/exists",
+                    Name = "index_exists",
                     Description = "Check whether a Verbex inverted index exists.",
                     InputSchema = new
                     {
@@ -129,7 +129,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/labels/update",
+                    Name = "index_labels_update",
                     Description = "Update labels on a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -150,7 +150,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/tags/update",
+                    Name = "index_tags_update",
                     Description = "Update tags on a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -171,7 +171,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/custom-metadata/update",
+                    Name = "index_custom-metadata_update",
                     Description = "Update custom metadata on a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -192,7 +192,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/terms/top",
+                    Name = "index_terms_top",
                     Description = "Get top terms from a Verbex inverted index.",
                     InputSchema = new
                     {
@@ -213,7 +213,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "index/search",
+                    Name = "index_search",
                     Description = "Search a Verbex inverted index.",
                     InputSchema = new
                     {

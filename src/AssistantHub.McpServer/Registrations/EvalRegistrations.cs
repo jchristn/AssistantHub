@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "eval/fact/list",
+                    Name = "eval_fact_list",
                     Description = "List evaluation facts using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/fact/get",
+                    Name = "eval_fact_get",
                     Description = "Get an evaluation fact by identifier.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/fact/create",
+                    Name = "eval_fact_create",
                     Description = "Create an evaluation fact.",
                     InputSchema = new
                     {
@@ -76,7 +76,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/fact/update",
+                    Name = "eval_fact_update",
                     Description = "Update an evaluation fact.",
                     InputSchema = new
                     {
@@ -97,7 +97,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/fact/delete",
+                    Name = "eval_fact_delete",
                     Description = "Delete an evaluation fact.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/run/create",
+                    Name = "eval_run_create",
                     Description = "Start an evaluation run.",
                     InputSchema = new
                     {
@@ -135,7 +135,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/run/list",
+                    Name = "eval_run_list",
                     Description = "List evaluation runs using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -157,7 +157,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/run/get",
+                    Name = "eval_run_get",
                     Description = "Get an evaluation run by identifier.",
                     InputSchema = new
                     {
@@ -172,7 +172,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/run/delete",
+                    Name = "eval_run_delete",
                     Description = "Delete an evaluation run and its results.",
                     InputSchema = new
                     {
@@ -191,7 +191,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/run/results",
+                    Name = "eval_run_results",
                     Description = "Get all evaluation results for a run.",
                     InputSchema = new
                     {
@@ -206,7 +206,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/result/get",
+                    Name = "eval_result_get",
                     Description = "Get a single evaluation result by identifier.",
                     InputSchema = new
                     {
@@ -221,7 +221,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "eval/judge-prompt/default",
+                    Name = "eval_judge-prompt_default",
                     Description = "Get the default evaluation judge prompt.",
                     InputSchema = McpRegistrationHelper.EmptySchema,
                     Handler = _ => AssistantHubMcpServerHelpers.Serialize(context, new { Prompt = context.Sdk.GetDefaultJudgePromptAsync().GetAwaiter().GetResult() }, includeSecrets: true)

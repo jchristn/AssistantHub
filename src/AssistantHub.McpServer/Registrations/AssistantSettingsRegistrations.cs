@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "assistant/settings/get",
+                    Name = "assistant_settings_get",
                     Description = "Get assistant settings.",
                     InputSchema = new
                     {
@@ -40,7 +40,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/settings/update",
+                    Name = "assistant_settings_update",
                     Description = "Create or update assistant settings.",
                     InputSchema = new
                     {
@@ -63,7 +63,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/settings/tools/list",
+                    Name = "assistant_settings_tools_list",
                     Description = "Get effective server-side tool availability for an assistant.",
                     InputSchema = new
                     {
@@ -80,7 +80,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/settings/tools/validate",
+                    Name = "assistant_settings_tools_validate",
                     Description = "Validate a draft assistant tool policy without persisting it.",
                     InputSchema = new
                     {
@@ -104,7 +104,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/settings/tools/test",
+                    Name = "assistant_settings_tools_test",
                     Description = "Run administrator dry-run diagnostics for an assistant tool policy without executing tools.",
                     InputSchema = new
                     {
@@ -128,7 +128,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/settings/slack/verify",
+                    Name = "assistant_settings_slack_verify",
                     Description = "Verify Slack settings for an assistant without persisting them.",
                     InputSchema = new
                     {

@@ -40,7 +40,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new McpMethodDefinition
                 {
-                    Name = "auth/authenticate",
+                    Name = "auth_authenticate",
                     Description = "Authenticate using email, password, and tenant and return the bearer token result.",
                     InputSchema = new
                     {

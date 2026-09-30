@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "document/list",
+                    Name = "document_list",
                     Description = "List documents using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -39,7 +39,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/get",
+                    Name = "document_get",
                     Description = "Get a document by identifier.",
                     InputSchema = new
                     {
@@ -54,7 +54,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/upload",
+                    Name = "document_upload",
                     Description = "Upload a document for ingestion.",
                     InputSchema = new
                     {
@@ -82,7 +82,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/delete",
+                    Name = "document_delete",
                     Description = "Delete a document.",
                     InputSchema = new
                     {
@@ -101,7 +101,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/bulk-delete",
+                    Name = "document_bulk-delete",
                     Description = "Delete multiple documents by identifier.",
                     InputSchema = new
                     {
@@ -121,7 +121,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/exists",
+                    Name = "document_exists",
                     Description = "Check whether a document exists.",
                     InputSchema = new
                     {
@@ -136,7 +136,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/reindex",
+                    Name = "document_reindex",
                     Description = "Reindex a single completed document into Verbex.",
                     InputSchema = new
                     {
@@ -151,7 +151,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/reindex-batch",
+                    Name = "document_reindex-batch",
                     Description = "Reindex completed documents into Verbex using optional DocumentReindexRequest and EnumerationQuery payloads.",
                     InputSchema = new
                     {
@@ -172,7 +172,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/processing-log",
+                    Name = "document_processing-log",
                     Description = "Get a document processing log payload.",
                     InputSchema = new
                     {
@@ -187,7 +187,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "document/download",
+                    Name = "document_download",
                     Description = "Download a document and return it inline as base64.",
                     InputSchema = new
                     {
@@ -202,7 +202,7 @@ namespace AssistantHub.McpServer.Registrations
                     {
                         string documentId = AssistantHubMcpServerHelpers.GetStringRequired(args, "documentId");
                         BinaryResponse response = AssistantHubMcpRestProxy.Download(context, "/v1.0/documents/" + AssistantHubMcpRestProxy.Escape(documentId) + "/download");
-                        AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "document/download");
+                        AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "document_download");
                         return AssistantHubMcpServerHelpers.SerializeBinaryEnvelope(response, "document/" + documentId);
                     }
                 }

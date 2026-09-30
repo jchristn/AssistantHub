@@ -1,6 +1,6 @@
 # AssistantHub Chat Data Flow
 
-This document describes the current public assistant chat path for v0.16.0. The archived historical version remains in `archive/CHAT_DATA_FLOW.md`.
+This document describes the current public assistant chat path for v0.17.0. The archived historical version remains in `archive/CHAT_DATA_FLOW.md`.
 
 ## Scope
 

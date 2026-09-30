@@ -21,7 +21,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "collection/list",
+                    Name = "collection_list",
                     Description = "List collections using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -43,7 +43,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/get",
+                    Name = "collection_get",
                     Description = "Get a collection by identifier.",
                     InputSchema = new
                     {
@@ -58,7 +58,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/create",
+                    Name = "collection_create",
                     Description = "Create a collection.",
                     InputSchema = new
                     {
@@ -77,7 +77,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/update",
+                    Name = "collection_update",
                     Description = "Update a collection.",
                     InputSchema = new
                     {
@@ -98,7 +98,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/delete",
+                    Name = "collection_delete",
                     Description = "Delete a collection.",
                     InputSchema = new
                     {
@@ -117,7 +117,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/exists",
+                    Name = "collection_exists",
                     Description = "Check whether a collection exists.",
                     InputSchema = new
                     {
@@ -132,7 +132,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/labels/distinct",
+                    Name = "collection_labels_distinct",
                     Description = "List distinct labels in a collection.",
                     InputSchema = new
                     {
@@ -147,7 +147,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/tags/distinct",
+                    Name = "collection_tags_distinct",
                     Description = "List distinct tags in a collection.",
                     InputSchema = new
                     {
@@ -162,7 +162,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "collection/search",
+                    Name = "collection_search",
                     Description = "Search records in a RecallDB collection.",
                     InputSchema = new
                     {

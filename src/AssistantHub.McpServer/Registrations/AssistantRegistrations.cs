@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "assistant/list",
+                    Name = "assistant_list",
                     Description = "List assistants using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/get",
+                    Name = "assistant_get",
                     Description = "Get an assistant by identifier.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/create",
+                    Name = "assistant_create",
                     Description = "Create an assistant.",
                     InputSchema = new
                     {
@@ -76,7 +76,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/update",
+                    Name = "assistant_update",
                     Description = "Update an assistant.",
                     InputSchema = new
                     {
@@ -97,7 +97,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/delete",
+                    Name = "assistant_delete",
                     Description = "Delete an assistant.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/exists",
+                    Name = "assistant_exists",
                     Description = "Check whether an assistant exists.",
                     InputSchema = new
                     {
@@ -131,7 +131,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/public/get",
+                    Name = "assistant_public_get",
                     Description = "Get the public information for an assistant.",
                     InputSchema = new
                     {
@@ -146,7 +146,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/documents/list",
+                    Name = "assistant_documents_list",
                     Description = "List safe public document metadata selectable in assistant chat.",
                     InputSchema = new
                     {
@@ -174,7 +174,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/labels/distinct",
+                    Name = "assistant_labels_distinct",
                     Description = "List distinct labels for an assistant.",
                     InputSchema = new
                     {
@@ -189,7 +189,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/tags/distinct",
+                    Name = "assistant_tags_distinct",
                     Description = "List distinct tags for an assistant.",
                     InputSchema = new
                     {

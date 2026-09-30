@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "configuration/get",
+                    Name = "configuration_get",
                     Description = "Get the current AssistantHub server configuration.",
                     InputSchema = new
                     {
@@ -39,7 +39,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "configuration/update",
+                    Name = "configuration_update",
                     Description = "Replace the current AssistantHub server configuration.",
                     InputSchema = new
                     {

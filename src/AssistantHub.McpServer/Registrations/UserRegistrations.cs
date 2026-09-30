@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "user/list",
+                    Name = "user_list",
                     Description = "List users for a tenant.",
                     InputSchema = new
                     {
@@ -44,7 +44,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "user/get",
+                    Name = "user_get",
                     Description = "Get a user by identifier.",
                     InputSchema = new
                     {
@@ -60,7 +60,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "user/create",
+                    Name = "user_create",
                     Description = "Create a user under a tenant.",
                     InputSchema = new
                     {
@@ -81,7 +81,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "user/update",
+                    Name = "user_update",
                     Description = "Update a user under a tenant.",
                     InputSchema = new
                     {
@@ -104,7 +104,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "user/delete",
+                    Name = "user_delete",
                     Description = "Delete a user under a tenant.",
                     InputSchema = new
                     {
@@ -124,7 +124,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "user/exists",
+                    Name = "user_exists",
                     Description = "Check whether a user exists under a tenant.",
                     InputSchema = new
                     {

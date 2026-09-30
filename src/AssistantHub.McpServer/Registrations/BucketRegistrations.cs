@@ -20,14 +20,14 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "bucket/list",
+                    Name = "bucket_list",
                     Description = "List buckets.",
                     InputSchema = McpRegistrationHelper.EmptySchema,
                     Handler = _ => AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.ListBucketsAsync().GetAwaiter().GetResult(), includeSecrets: true)
                 },
                 new()
                 {
-                    Name = "bucket/get",
+                    Name = "bucket_get",
                     Description = "Get a bucket by name.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/create",
+                    Name = "bucket_create",
                     Description = "Create a bucket.",
                     InputSchema = new
                     {
@@ -61,7 +61,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/delete",
+                    Name = "bucket_delete",
                     Description = "Delete a bucket.",
                     InputSchema = new
                     {
@@ -80,7 +80,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/exists",
+                    Name = "bucket_exists",
                     Description = "Check whether a bucket exists.",
                     InputSchema = new
                     {

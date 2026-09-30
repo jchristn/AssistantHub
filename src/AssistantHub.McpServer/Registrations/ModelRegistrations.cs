@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "model/list",
+                    Name = "model_list",
                     Description = "List available inference models, optionally scoped to an assistant endpoint.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "model/pull",
+                    Name = "model_pull",
                     Description = "Start pulling a model in the background.",
                     InputSchema = new
                     {
@@ -62,14 +62,14 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "model/pull/status",
+                    Name = "model_pull_status",
                     Description = "Get the current model pull status.",
                     InputSchema = McpRegistrationHelper.EmptySchema,
                     Handler = _ => AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetPullStatusAsync().GetAwaiter().GetResult(), includeSecrets: true)
                 },
                 new()
                 {
-                    Name = "model/delete",
+                    Name = "model_delete",
                     Description = "Delete a model from the provider.",
                     InputSchema = new
                     {

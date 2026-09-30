@@ -40,7 +40,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new McpMethodDefinition
                 {
-                    Name = "system/health",
+                    Name = "system_health",
                     Description = "Check AssistantHub health using the root endpoint.",
                     InputSchema = McpRegistrationHelper.EmptySchema,
                     Handler = _ => AssistantHubMcpServerHelpers.Serialize(context, new
@@ -51,14 +51,14 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new McpMethodDefinition
                 {
-                    Name = "system/whoami",
+                    Name = "system_whoami",
                     Description = "Return the current authenticated identity.",
                     InputSchema = McpRegistrationHelper.EmptySchema,
                     Handler = _ => AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.WhoAmIAsync().GetAwaiter().GetResult(), includeSecrets: true)
                 },
                 new McpMethodDefinition
                 {
-                    Name = "system/openapi",
+                    Name = "system_openapi",
                     Description = "Fetch the current AssistantHub OpenAPI document.",
                     InputSchema = new
                     {

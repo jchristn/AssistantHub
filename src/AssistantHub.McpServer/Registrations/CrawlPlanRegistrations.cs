@@ -21,7 +21,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "crawlplan/list",
+                    Name = "crawlplan_list",
                     Description = "List crawl plans using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -45,7 +45,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/get",
+                    Name = "crawlplan_get",
                     Description = "Get a crawl plan by identifier.",
                     InputSchema = new
                     {
@@ -65,7 +65,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/create",
+                    Name = "crawlplan_create",
                     Description = "Create a crawl plan.",
                     InputSchema = new
                     {
@@ -86,7 +86,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/update",
+                    Name = "crawlplan_update",
                     Description = "Update a crawl plan.",
                     InputSchema = new
                     {
@@ -109,7 +109,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/delete",
+                    Name = "crawlplan_delete",
                     Description = "Delete a crawl plan.",
                     InputSchema = new
                     {
@@ -128,7 +128,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/exists",
+                    Name = "crawlplan_exists",
                     Description = "Check whether a crawl plan exists.",
                     InputSchema = new
                     {
@@ -143,7 +143,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/start",
+                    Name = "crawlplan_start",
                     Description = "Start a crawl plan.",
                     InputSchema = new
                     {
@@ -158,7 +158,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/stop",
+                    Name = "crawlplan_stop",
                     Description = "Stop a crawl plan.",
                     InputSchema = new
                     {
@@ -173,7 +173,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/connectivity",
+                    Name = "crawlplan_connectivity",
                     Description = "Test crawl plan connectivity.",
                     InputSchema = new
                     {
@@ -188,7 +188,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "crawlplan/enumerate",
+                    Name = "crawlplan_enumerate",
                     Description = "Enumerate crawl plan contents.",
                     InputSchema = new
                     {

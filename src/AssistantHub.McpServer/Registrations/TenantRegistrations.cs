@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "tenant/list",
+                    Name = "tenant_list",
                     Description = "List tenants using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -42,7 +42,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "tenant/get",
+                    Name = "tenant_get",
                     Description = "Get a tenant by identifier.",
                     InputSchema = new
                     {
@@ -57,7 +57,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "tenant/create",
+                    Name = "tenant_create",
                     Description = "Create a tenant.",
                     InputSchema = new
                     {
@@ -76,7 +76,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "tenant/update",
+                    Name = "tenant_update",
                     Description = "Update an existing tenant.",
                     InputSchema = new
                     {
@@ -97,7 +97,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "tenant/delete",
+                    Name = "tenant_delete",
                     Description = "Delete a tenant.",
                     InputSchema = new
                     {
@@ -116,7 +116,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "tenant/exists",
+                    Name = "tenant_exists",
                     Description = "Check whether a tenant exists.",
                     InputSchema = new
                     {

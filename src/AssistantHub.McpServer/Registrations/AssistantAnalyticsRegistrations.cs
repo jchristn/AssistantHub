@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             return new List<McpMethodDefinition>
             {
                 CreateDefinition(
-                    "assistantanalytics/overview",
+                    "assistantanalytics_overview",
                     "Get assistant analytics overview for the selected range.",
                     args =>
                     {
@@ -29,7 +29,7 @@ namespace AssistantHub.McpServer.Registrations
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetAssistantAnalyticsOverviewAsync(assistantId, query).GetAwaiter().GetResult(), includeSecrets: true);
                     }),
                 CreateDefinition(
-                    "assistantanalytics/timeseries",
+                    "assistantanalytics_timeseries",
                     "Get chart-ready assistant analytics time series for the selected range.",
                     args =>
                     {
@@ -38,7 +38,7 @@ namespace AssistantHub.McpServer.Registrations
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetAssistantAnalyticsTimeSeriesAsync(assistantId, query).GetAwaiter().GetResult(), includeSecrets: true);
                     }),
                 CreateDefinition(
-                    "assistantanalytics/stages",
+                    "assistantanalytics_stages",
                     "Get assistant analytics stage summaries for the selected range.",
                     args =>
                     {
@@ -47,7 +47,7 @@ namespace AssistantHub.McpServer.Registrations
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetAssistantAnalyticsStagesAsync(assistantId, query).GetAwaiter().GetResult(), includeSecrets: true);
                     }),
                 CreateDefinition(
-                    "assistantanalytics/endpoints",
+                    "assistantanalytics_endpoints",
                     "Get assistant analytics endpoint/model/provider summaries for the selected range.",
                     args =>
                     {
@@ -56,7 +56,7 @@ namespace AssistantHub.McpServer.Registrations
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetAssistantAnalyticsEndpointsAsync(assistantId, query).GetAwaiter().GetResult(), includeSecrets: true);
                     }),
                 CreateDefinition(
-                    "assistantanalytics/slowest",
+                    "assistantanalytics_slowest",
                     "Get slowest assistant requests for the selected range.",
                     args =>
                     {
@@ -65,7 +65,7 @@ namespace AssistantHub.McpServer.Registrations
                         return AssistantHubMcpServerHelpers.Serialize(context, context.Sdk.GetAssistantAnalyticsSlowestAsync(assistantId, query).GetAwaiter().GetResult(), includeSecrets: true);
                     }),
                 CreateDefinition(
-                    "assistantanalytics/feedback",
+                    "assistantanalytics_feedback",
                     "Get assistant feedback analytics for the selected range.",
                     args =>
                     {

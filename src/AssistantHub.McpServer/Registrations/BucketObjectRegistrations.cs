@@ -19,7 +19,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "bucket/object/put",
+                    Name = "bucket_object_put",
                     Description = "Create an empty object marker in a bucket.",
                     InputSchema = new
                     {
@@ -35,7 +35,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/object/list",
+                    Name = "bucket_object_list",
                     Description = "List objects in a bucket.",
                     InputSchema = new
                     {
@@ -58,7 +58,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/object/metadata",
+                    Name = "bucket_object_metadata",
                     Description = "Get metadata for a bucket object.",
                     InputSchema = new
                     {
@@ -74,7 +74,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/object/delete",
+                    Name = "bucket_object_delete",
                     Description = "Delete an object from a bucket.",
                     InputSchema = new
                     {
@@ -94,7 +94,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "bucket/object/download",
+                    Name = "bucket_object_download",
                     Description = "Download a bucket object and return it inline as base64.",
                     InputSchema = new
                     {
@@ -113,13 +113,13 @@ namespace AssistantHub.McpServer.Registrations
                         BinaryResponse response = AssistantHubMcpRestProxy.Download(
                             context,
                             "/v1.0/buckets/" + AssistantHubMcpRestProxy.Escape(bucketName) + "/objects/download?key=" + AssistantHubMcpRestProxy.Escape(key));
-                        AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "bucket/object/download");
+                        AssistantHubMcpServerHelpers.EnsureBinaryWithinLimit(response.Bytes.LongLength, context.Settings.Storage.MaxInlineBinaryBytes, "bucket_object_download");
                         return AssistantHubMcpServerHelpers.SerializeBinaryEnvelope(response, "bucket/" + bucketName + "/" + key);
                     }
                 },
                 new()
                 {
-                    Name = "bucket/object/upload",
+                    Name = "bucket_object_upload",
                     Description = "Upload binary content to a bucket object.",
                     InputSchema = new
                     {

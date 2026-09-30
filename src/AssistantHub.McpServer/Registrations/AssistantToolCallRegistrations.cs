@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "assistant/tool-calls/list",
+                    Name = "assistant_tool-calls_list",
                     Description = "List redacted model-directed tool-call traces for an assistant.",
                     InputSchema = new
                     {
@@ -41,7 +41,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/tool-calls/get",
+                    Name = "assistant_tool-calls_get",
                     Description = "Get one redacted model-directed tool-call trace for an assistant.",
                     InputSchema = new
                     {
@@ -61,7 +61,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/tool-calls/delete",
+                    Name = "assistant_tool-calls_delete",
                     Description = "Delete one assistant tool-call trace record.",
                     InputSchema = new
                     {
@@ -83,7 +83,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "assistant/tool-calls/delete-bulk",
+                    Name = "assistant_tool-calls_delete-bulk",
                     Description = "Delete assistant tool-call trace records matching the supplied filters.",
                     InputSchema = new
                     {

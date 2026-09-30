@@ -280,7 +280,7 @@ services:
   # --- AssistantHub ---
 
   assistanthub-server:
-    image: jchristn77/assistanthub-server:v0.16.0
+    image: jchristn77/assistanthub-server:v0.17.0
     container_name: assistanthub-server
     ports:
       - "8800:8800"
@@ -319,7 +319,7 @@ services:
     restart: unless-stopped
 
   assistanthub-mcp-server:
-    image: jchristn77/assistanthub-mcp:v0.16.0
+    image: jchristn77/assistanthub-mcp:v0.17.0
     container_name: assistanthub-mcp-server
     ports:
       - "8820:8820"
@@ -412,7 +412,7 @@ services:
     restart: unless-stopped
 
   assistanthub-dashboard:
-    image: jchristn77/assistanthub-dashboard:v0.16.0
+    image: jchristn77/assistanthub-dashboard:v0.17.0
     container_name: assistanthub-dashboard
     ports:
       - "8801:8801"

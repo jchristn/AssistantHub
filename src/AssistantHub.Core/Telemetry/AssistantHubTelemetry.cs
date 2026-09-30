@@ -141,7 +141,7 @@ namespace AssistantHub.Core.Telemetry
         /// Begin timing an MCP tool invocation. Dispose the returned scope when the invocation completes;
         /// call <see cref="McpToolScope.Fail"/> on failure.
         /// </summary>
-        /// <param name="tool">The MCP tool name (for example assistant/list).</param>
+        /// <param name="tool">The MCP tool name (for example assistant_list).</param>
         /// <param name="transport">The transport the invocation arrived on (http, tcp, ws).</param>
         /// <returns>A disposable MCP tool scope.</returns>
         public static McpToolScope StartMcpTool(string tool, string transport)

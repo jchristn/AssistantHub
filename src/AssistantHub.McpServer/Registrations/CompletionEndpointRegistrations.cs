@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "completionendpoint/list",
+                    Name = "completionendpoint_list",
                     Description = "List completion endpoints using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -41,7 +41,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/get",
+                    Name = "completionendpoint_get",
                     Description = "Get a completion endpoint by identifier.",
                     InputSchema = new
                     {
@@ -61,7 +61,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/create",
+                    Name = "completionendpoint_create",
                     Description = "Create a completion endpoint.",
                     InputSchema = new
                     {
@@ -82,7 +82,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/update",
+                    Name = "completionendpoint_update",
                     Description = "Update a completion endpoint.",
                     InputSchema = new
                     {
@@ -105,7 +105,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/delete",
+                    Name = "completionendpoint_delete",
                     Description = "Delete a completion endpoint.",
                     InputSchema = new
                     {
@@ -124,7 +124,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/exists",
+                    Name = "completionendpoint_exists",
                     Description = "Check whether a completion endpoint exists.",
                     InputSchema = new
                     {
@@ -139,7 +139,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/health",
+                    Name = "completionendpoint_health",
                     Description = "Get health status for all completion endpoints or a specific endpoint.",
                     InputSchema = new
                     {
@@ -161,7 +161,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "completionendpoint/test",
+                    Name = "completionendpoint_test",
                     Description = "Test a completion endpoint.",
                     InputSchema = new
                     {

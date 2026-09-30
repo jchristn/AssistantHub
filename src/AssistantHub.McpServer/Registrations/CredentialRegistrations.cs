@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "credential/list",
+                    Name = "credential_list",
                     Description = "List credentials for a tenant.",
                     InputSchema = new
                     {
@@ -46,7 +46,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "credential/get",
+                    Name = "credential_get",
                     Description = "Get a credential by identifier.",
                     InputSchema = new
                     {
@@ -72,7 +72,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "credential/create",
+                    Name = "credential_create",
                     Description = "Create a credential under a tenant.",
                     InputSchema = new
                     {
@@ -95,7 +95,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "credential/update",
+                    Name = "credential_update",
                     Description = "Update a credential under a tenant.",
                     InputSchema = new
                     {
@@ -120,7 +120,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "credential/delete",
+                    Name = "credential_delete",
                     Description = "Delete a credential under a tenant.",
                     InputSchema = new
                     {
@@ -140,7 +140,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "credential/exists",
+                    Name = "credential_exists",
                     Description = "Check whether a credential exists under a tenant.",
                     InputSchema = new
                     {

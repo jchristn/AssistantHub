@@ -11,7 +11,7 @@
 
 AssistantHub ships as a fully orchestrated Docker Compose stack -- one command brings up the entire platform, including the LLM inference engine, document processing pipeline, vector database, object storage, and a browser-based management dashboard.
 
-`v0.16.0` adds CIFS and NFS file-server crawler support alongside the existing web crawler, attached-document chat selection for assistant collections, and the first disabled-by-default server-side tool policy surface for model-directed collection, Verbex, S3, and Tavily web-search tools, including optional dedicated tool-routing endpoints.
+`v0.17.0` adds S3, Azure Blob, Google Cloud Storage, local disk and GitHub crawl plans, cross-encoder reranking, conversation rewrite, structured chunking with page and sheet provenance, document supersession and duplicate detection, and per-endpoint timeouts. `v0.16.0` added CIFS and NFS file-server crawler support alongside the existing web crawler, attached-document chat selection for assistant collections, and the first disabled-by-default server-side tool policy surface for model-directed collection, Verbex, S3, and Tavily web-search tools, including optional dedicated tool-routing endpoints.
 
 <details>
 <summary><strong>Screenshots</strong> (click to expand)</summary>
@@ -29,6 +29,14 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 </details>
 
 ---
+
+## New in v0.17.0
+
+- **More crawl sources** -- Crawl plans can read Amazon S3 and S3-compatible stores, Azure Blob Storage, Google Cloud Storage, folders on the server (limited to `Crawl.AllowedLocalPaths`) and GitHub repositories, alongside web, CIFS and NFS. The dashboard form explains how to write each location and warns about common mistakes.
+- **Better retrieval** -- Cross-encoder reranking, conversation rewrite for follow-up questions, hybrid fusion settings, reading-order context, embedding task prefixes and a query-embedding cache.
+- **Better ingestion** -- Structured chunking that keeps tables and lists intact, page, sheet and section provenance on chunks and citations, document supersession, and duplicate detection.
+- **Resilience** -- Per-endpoint request and utility timeouts, retries and a circuit breaker for the answer model, and retries for transient Partio failures.
+- **Diagnostics** -- A retrieval-only route with unsaved settings overrides (the dashboard's Retrieval Inspector), page-range filters, and OpenAPI metadata on every route.
 
 ## New in v0.16.0
 
@@ -685,20 +693,20 @@ Default transport endpoints:
 
 Supported tool families include:
 
-- `system/*`, `auth/*`
-- `tenant/*`, `user/*`, `credential/*`
-- `assistant/*`, `assistant/settings/*`
-- `bucket/*`, `bucket/object/*`, `collection/*`, `collection/record/*`
-- `document/*`, `ingestionrule/*`
-- `embeddingendpoint/*`, `completionendpoint/*`, `model/*`
-- `crawlplan/*`, `crawloperation/*`
-- `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*`
-- `eval/*`
-- `configuration/*`
+- `system_*`, `auth_*`
+- `tenant_*`, `user_*`, `credential_*`
+- `assistant_*`, `assistant_settings_*`
+- `bucket_*`, `bucket_object_*`, `collection_*`, `collection_record_*`
+- `document_*`, `ingestionrule_*`
+- `embeddingendpoint_*`, `completionendpoint_*`, `model_*`
+- `crawlplan_*`, `crawloperation_*`
+- `history_*`, `thread_*`, `requesthistory_*`, `assistantanalytics_*`
+- `eval_*`
+- `configuration_*`
 
 Operational notes:
 
-- `configuration/get`, `assistant/settings/*`, and `credential/*` redact secret-bearing fields by default.
+- `configuration_get`, `assistant_settings_*`, and `credential_*` redact secret-bearing fields by default.
 - Document and bucket-object binary transfers use base64 envelopes and enforce `Storage.MaxInlineBinaryBytes`.
 - Eval SSE and public assistant chat/generate/compact/feedback/download routes remain REST-only in the current MCP release.
 

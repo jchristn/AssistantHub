@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "requesthistory/list",
+                    Name = "requesthistory_list",
                     Description = "List request history using a RequestHistorySearchFilter serialized as query parameters.",
                     InputSchema = new
                     {
@@ -39,7 +39,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "requesthistory/summary",
+                    Name = "requesthistory_summary",
                     Description = "Summarize request history using a RequestHistorySearchFilter serialized as query parameters.",
                     InputSchema = new
                     {
@@ -58,7 +58,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "requesthistory/get",
+                    Name = "requesthistory_get",
                     Description = "Get a request history entry.",
                     InputSchema = new
                     {
@@ -73,7 +73,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "requesthistory/detail",
+                    Name = "requesthistory_detail",
                     Description = "Get a request history entry detail payload.",
                     InputSchema = new
                     {
@@ -88,7 +88,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "requesthistory/delete",
+                    Name = "requesthistory_delete",
                     Description = "Delete a single request history entry.",
                     InputSchema = new
                     {
@@ -107,7 +107,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "requesthistory/bulk-delete",
+                    Name = "requesthistory_bulk-delete",
                     Description = "Delete request history entries matching a RequestHistorySearchFilter.",
                     InputSchema = new
                     {

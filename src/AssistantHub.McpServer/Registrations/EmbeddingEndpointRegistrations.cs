@@ -20,7 +20,7 @@ namespace AssistantHub.McpServer.Registrations
             {
                 new()
                 {
-                    Name = "embeddingendpoint/list",
+                    Name = "embeddingendpoint_list",
                     Description = "List embedding endpoints using an optional EnumerationQuery payload.",
                     InputSchema = new
                     {
@@ -41,7 +41,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/get",
+                    Name = "embeddingendpoint_get",
                     Description = "Get an embedding endpoint by identifier.",
                     InputSchema = new
                     {
@@ -61,7 +61,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/create",
+                    Name = "embeddingendpoint_create",
                     Description = "Create an embedding endpoint.",
                     InputSchema = new
                     {
@@ -82,7 +82,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/update",
+                    Name = "embeddingendpoint_update",
                     Description = "Update an embedding endpoint.",
                     InputSchema = new
                     {
@@ -105,7 +105,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/delete",
+                    Name = "embeddingendpoint_delete",
                     Description = "Delete an embedding endpoint.",
                     InputSchema = new
                     {
@@ -124,7 +124,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/exists",
+                    Name = "embeddingendpoint_exists",
                     Description = "Check whether an embedding endpoint exists.",
                     InputSchema = new
                     {
@@ -139,7 +139,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/health",
+                    Name = "embeddingendpoint_health",
                     Description = "Get health status for all embedding endpoints or a specific endpoint.",
                     InputSchema = new
                     {
@@ -161,7 +161,7 @@ namespace AssistantHub.McpServer.Registrations
                 },
                 new()
                 {
-                    Name = "embeddingendpoint/test",
+                    Name = "embeddingendpoint_test",
                     Description = "Test an embedding endpoint.",
                     InputSchema = new
                     {

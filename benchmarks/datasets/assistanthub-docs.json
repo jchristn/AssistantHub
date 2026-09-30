@@ -1,6 +1,6 @@
 {
   "name": "assistanthub-docs",
-  "description": "Retrieval benchmark over a frozen snapshot (2026-09-24) of AssistantHub's own documentation: README, REST/MCP API references, chat data flow, telemetry, testing, changelog, Docker links, and nine archived design notes. 120 questions spanning paraphrase, lexical, multi-document, deep-detail, table, metadata-filter, follow-up and unanswerable cases.",
+  "description": "Retrieval benchmark over a frozen snapshot (2026-09-24, MCP tool names updated to the v0.17.0 underscore form) of AssistantHub's own documentation: README, REST/MCP API references, chat data flow, telemetry, testing, changelog, Docker links, and nine archived design notes. 120 questions spanning paraphrase, lexical, multi-document, deep-detail, table, metadata-filter, follow-up and unanswerable cases.",
   "corpora": [
     {
       "id": "assistanthub-docs",
@@ -1289,9 +1289,9 @@
           },
           "evidence": [
             "When present, RAG retrieval is constrained to those completed documents in the assistant's configured collection.",
-            "Assistant public document listing is exposed as assistant/documents/list and mirrors GET /v1.0/assistants/{assistantId}/documents."
+            "Assistant public document listing is exposed as assistant_documents_list and mirrors GET /v1.0/assistants/{assistantId}/documents."
           ],
-          "answer": "attached_document_ids; the MCP tool assistant/documents/list."
+          "answer": "attached_document_ids; the MCP tool assistant_documents_list."
         },
         {
           "id": "q056",
@@ -1313,7 +1313,7 @@
             "Reindex a page of completed documents into Verbex",
             "Reindex a bounded page of completed documents into Verbex for upgrade/backfill and repair workflows."
           ],
-          "answer": "POST /v1.0/documents/reindex (or /v1.0/documents/{id}/reindex); in MCP use document/reindex-batch or document/reindex."
+          "answer": "POST /v1.0/documents/reindex (or /v1.0/documents/{id}/reindex); in MCP use document_reindex-batch or document_reindex."
         },
         {
           "id": "q057",
@@ -1437,9 +1437,9 @@
           },
           "evidence": [
             "Tool-call trace retention follows RequestHistory.RetentionDays.",
-            "assistant/tool-calls/list, assistant/tool-calls/get, assistant/tool-calls/delete, assistant/tool-calls/delete-bulk"
+            "assistant_tool-calls_list, assistant_tool-calls_get, assistant_tool-calls_delete, assistant_tool-calls_delete-bulk"
           ],
-          "answer": "They follow RequestHistory.RetentionDays; MCP tools assistant/tool-calls/list, get, delete and delete-bulk."
+          "answer": "They follow RequestHistory.RetentionDays; MCP tools assistant_tool-calls_list, get, delete and delete-bulk."
         },
         {
           "id": "q063",
@@ -1457,11 +1457,11 @@
             "testing": 1
           },
           "evidence": [
-            "Browser Swagger UI; use system/openapi for the OpenAPI JSON from MCP",
+            "Browser Swagger UI; use system_openapi for the OpenAPI JSON from MCP",
             "Serves the Swagger UI for the live AssistantHub OpenAPI document.",
             "Swagger rendering at http://localhost:8800/swagger"
           ],
-          "answer": "No, it's deferred in MCP (use system/openapi); over REST it's GET /swagger, e.g. http://localhost:8800/swagger."
+          "answer": "No, it's deferred in MCP (use system_openapi); over REST it's GET /swagger, e.g. http://localhost:8800/swagger."
         },
         {
           "id": "q064",
@@ -1482,7 +1482,7 @@
           },
           "evidence": [
             "SlackBotToken must start with xoxb-",
-            "assistant/settings/get and assistant/settings/update return redacted secret-bearing fields by default."
+            "assistant_settings_get and assistant_settings_update return redacted secret-bearing fields by default."
           ],
           "answer": "It must start with xoxb-; MCP redacts it unless includeSecrets=true."
         },
@@ -2256,7 +2256,7 @@
             },
             {
               "role": "assistant",
-              "content": "document/list, document/get, document/upload, document/delete, document/download, document/reindex and a few others."
+              "content": "document_list, document_get, document_upload, document_delete, document_download, document_reindex and a few others."
             }
           ]
         },

@@ -126,7 +126,7 @@ External validation is still required for browser layout checks, live Docker ing
 The MCP suite exercises:
 
 - HTTP, TCP, and WebSocket MCP server startup
-- `system/health` and `system/openapi`
+- `system_health` and `system_openapi`
 - tenant CRUD
 - assistant CRUD
 - configuration redaction and `includeSecrets=true`

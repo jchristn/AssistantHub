@@ -644,20 +644,20 @@ Default transport endpoints:
 
 Supported tool families include:
 
-- `system/*`, `auth/*`
-- `tenant/*`, `user/*`, `credential/*`
-- `assistant/*`, `assistant/settings/*`
-- `bucket/*`, `bucket/object/*`, `collection/*`, `collection/record/*`
-- `document/*`, `ingestionrule/*`
-- `embeddingendpoint/*`, `completionendpoint/*`, `model/*`
-- `crawlplan/*`, `crawloperation/*`
-- `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*`
-- `eval/*`
-- `configuration/*`
+- `system_*`, `auth_*`
+- `tenant_*`, `user_*`, `credential_*`
+- `assistant_*`, `assistant_settings_*`
+- `bucket_*`, `bucket_object_*`, `collection_*`, `collection_record_*`
+- `document_*`, `ingestionrule_*`
+- `embeddingendpoint_*`, `completionendpoint_*`, `model_*`
+- `crawlplan_*`, `crawloperation_*`
+- `history_*`, `thread_*`, `requesthistory_*`, `assistantanalytics_*`
+- `eval_*`
+- `configuration_*`
 
 Operational notes:
 
-- `configuration/get`, `assistant/settings/*`, and `credential/*` redact secret-bearing fields by default.
+- `configuration_get`, `assistant_settings_*`, and `credential_*` redact secret-bearing fields by default.
 - Document and bucket-object binary transfers use base64 envelopes and enforce `Storage.MaxInlineBinaryBytes`.
 - Eval SSE and public assistant chat/generate/compact/feedback/download routes remain REST-only in the current MCP release.
 

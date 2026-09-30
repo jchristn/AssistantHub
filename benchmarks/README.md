@@ -60,7 +60,7 @@ AssistantHub collection. Queries carry:
 
 | Dataset | In the repo? | Size | What it tests |
 |---|---|---|---|
-| `datasets/assistanthub-docs.json` | yes | 18 real AssistantHub docs (snapshot 2026-09-24), 120 questions | Real documents: exact identifiers (routes, settings), long reference docs, tables, archive-vs-current filters, follow-ups, negatives |
+| `datasets/assistanthub-docs.json` | yes | 18 real AssistantHub docs (snapshot 2026-09-24; MCP tool names updated to the v0.17.0 underscore form on 2026-09-30), 120 questions | Real documents: exact identifiers (routes, settings), long reference docs, tables, archive-vs-current filters, follow-ups, negatives |
 | `datasets/meridian.json` | yes (built by `datasets/meridian/build.py`) | 160 documents in md/txt/html/pdf/docx, 308 questions | Synthetic enterprise knowledge base: superseded policy versions, regional and model near-duplicates, tables, long runbooks, label/tag filters, attachments, follow-ups, negatives. Questions were written by a separate pass from the corpus. |
 | BEIR SciFact | downloaded | 5,183 abstracts, 300 queries | Sanity check against published nDCG@10 (BM25 ≈ 0.665; all-MiniLM-L6-v2 ≈ 0.645) |
 | BEIR NFCorpus | downloaded | 3,633 documents, 323 queries | Graded relevance, heavy lexical mismatch (BM25 ≈ 0.325) |

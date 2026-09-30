@@ -99,20 +99,20 @@ Supported environment overrides:
 
 ## Tool Naming Rules
 
-- Tools use lowercase slash-delimited names.
-- CRUD-style tools follow `domain/action`.
-- Sub-resource tools follow `domain/subdomain/action`.
-- HTTP `HEAD` existence checks are normalized as `*/exists`.
-- Public assistant metadata helpers remain under the `assistant/*` namespace.
+- Tools use lowercase underscore-delimited names that match `^[a-zA-Z0-9_-]{1,64}$`, the tool-name rule of the MCP specification and of LLM tool-calling APIs (Claude, OpenAI), so clients can pass them to a model unchanged. Before v0.17.0 names were slash-delimited (`assistant/list` is now `assistant_list`).
+- CRUD-style tools follow `domain_action`.
+- Sub-resource tools follow `domain_subdomain_action`.
+- HTTP `HEAD` existence checks are normalized as `*_exists`.
+- Public assistant metadata helpers remain under the `assistant_*` namespace.
 
 Examples:
 
-- `tenant/create`
-- `assistant/settings/get`
-- `assistantanalytics/overview`
-- `bucket/object/upload`
-- `requesthistory/summary`
-- `eval/judge-prompt/default`
+- `tenant_create`
+- `assistant_settings_get`
+- `assistantanalytics_overview`
+- `bucket_object_upload`
+- `requesthistory_summary`
+- `eval_judge-prompt_default`
 
 ## Secret Handling
 
@@ -132,19 +132,19 @@ Redaction is on by default for responses serialized through the MCP helper layer
 
 Important behaviors:
 
-- `configuration/get` returns a redacted configuration by default.
-- `assistant/settings/get` and `assistant/settings/update` return redacted secret-bearing fields by default.
-- `credential/list`, `credential/get`, `credential/create`, and `credential/update` redact bearer tokens by default.
+- `configuration_get` returns a redacted configuration by default.
+- `assistant_settings_get` and `assistant_settings_update` return redacted secret-bearing fields by default.
+- `credential_list`, `credential_get`, `credential_create`, and `credential_update` redact bearer tokens by default.
 - Set `includeSecrets=true` only when the caller explicitly needs the raw secret values.
 
 ## Binary And Streaming Rules
 
 Binary wrappers:
 
-- `document/upload`
-- `document/download`
-- `bucket/object/upload`
-- `bucket/object/download`
+- `document_upload`
+- `document_download`
+- `bucket_object_upload`
+- `bucket_object_download`
 
 Binary contract:
 
@@ -157,7 +157,7 @@ Streaming status:
 
 - Eval SSE is not exposed through MCP in this release.
 - Public assistant chat/generate/compact/feedback/download flows are not exposed through MCP in this release.
-- Assistant public document listing is exposed as `assistant/documents/list` and mirrors `GET /v1.0/assistants/{assistantId}/documents`. Sending attached-document chat requests remains REST-only in this release; send `attached_document_ids` to `POST /v1.0/assistants/{assistantId}/chat`.
+- Assistant public document listing is exposed as `assistant_documents_list` and mirrors `GET /v1.0/assistants/{assistantId}/documents`. Sending attached-document chat requests remains REST-only in this release; send `attached_document_ids` to `POST /v1.0/assistants/{assistantId}/chat`.
 - Model-directed runtime tools such as collection search, Verbex search, S3 object reads, and Tavily web search are not exposed as MCP tools for public chat users. Configure assistant tool policy, optional `ToolRoutingInferenceEndpointId`, and optional default-off `ExposeThinking` through the REST API, SDKs, or dashboard. Admins can inspect redacted global Tavily readiness through `GET /v1.0/configuration/external-search/status` or the SDK status helpers. When enabled, REST assistant chat executes those tools server-side against explicit OpenAI-compatible or Ollama tool-capable completion endpoints; a dedicated tool-routing endpoint may decide tool calls while `InferenceEndpointId` still writes final answers. Streaming REST chat can emit safe tool-progress SSE events, including heartbeat events for long-running tool calls, and can emit provider thinking deltas only when the assistant permits it, while MCP remains management-only for this release.
 - Use the REST API directly for these streaming or interaction-heavy routes.
 
@@ -165,23 +165,23 @@ Streaming status:
 
 | Family | Representative tools |
 |---|---|
-| System | `system/health`, `system/whoami`, `system/openapi` |
-| Authentication | `auth/authenticate` |
-| Tenants / Users / Credentials | `tenant/*`, `user/*`, `credential/*` |
-| Storage | `bucket/*`, `bucket/object/*` |
-| Collections | `collection/*`, `collection/record/*`, `collection/search` |
-| Indices | `index/*`, `index/record/*`, `index/search` |
-| Assistants | `assistant/*`, `assistant/settings/*`, `assistant/tool-calls/*` |
-| Documents / Ingestion | `document/*`, `ingestionrule/*` |
-| Monitoring | `history/*`, `thread/*`, `requesthistory/*`, `assistantanalytics/*` |
-| Endpoint management | `embeddingendpoint/*`, `completionendpoint/*`, `model/*` |
-| Crawl | `crawlplan/*`, `crawloperation/*` |
-| Evaluation | `eval/fact/*`, `eval/run/*`, `eval/result/get`, `eval/judge-prompt/default` |
-| Runtime configuration | `configuration/get`, `configuration/update` |
+| System | `system_health`, `system_whoami`, `system_openapi` |
+| Authentication | `auth_authenticate` |
+| Tenants / Users / Credentials | `tenant_*`, `user_*`, `credential_*` |
+| Storage | `bucket_*`, `bucket_object_*` |
+| Collections | `collection_*`, `collection_record_*`, `collection_search` |
+| Indices | `index_*`, `index_record_*`, `index_search` |
+| Assistants | `assistant_*`, `assistant_settings_*`, `assistant_tool-calls_*` |
+| Documents / Ingestion | `document_*`, `ingestionrule_*` |
+| Monitoring | `history_*`, `thread_*`, `requesthistory_*`, `assistantanalytics_*` |
+| Endpoint management | `embeddingendpoint_*`, `completionendpoint_*`, `model_*` |
+| Crawl | `crawlplan_*`, `crawloperation_*` |
+| Evaluation | `eval_fact_*`, `eval_run_*`, `eval_result_get`, `eval_judge-prompt_default` |
+| Runtime configuration | `configuration_get`, `configuration_update` |
 
 ## Crawl Plan Repository Types
 
-The `crawlplan/create` and `crawlplan/update` tools accept a `planJson` string containing the same `CrawlPlan` JSON contract used by REST and the SDKs. Supported `RepositoryType` values are:
+The `crawlplan_create` and `crawlplan_update` tools accept a `planJson` string containing the same `CrawlPlan` JSON contract used by REST and the SDKs. Supported `RepositoryType` values are:
 
 | Value | Settings type | Notes |
 |---|---|---|
@@ -232,44 +232,44 @@ Example NFS `planJson` payload:
 
 | REST surface | MCP tools | Status | Notes |
 |---|---|---|---|
-| `GET /`, `HEAD /`, `GET /openapi.json`, `GET /v1.0/openapi.json`, `GET /v1.0/whoami` | `system/health`, `system/openapi`, `system/whoami` | Mapped | Health/head collapse into `system/health`; both OpenAPI routes return the same document |
-| `GET /swagger` | None | Deferred | Browser Swagger UI; use `system/openapi` for the OpenAPI JSON from MCP |
-| `POST /v1.0/authenticate` | `auth/authenticate` | Mapped | Useful for diagnosing upstream auth |
-| `tenants` CRUD + HEAD | `tenant/list`, `tenant/get`, `tenant/create`, `tenant/update`, `tenant/delete`, `tenant/exists` | Mapped | |
-| tenant-scoped `users` CRUD + HEAD | `user/list`, `user/get`, `user/create`, `user/update`, `user/delete`, `user/exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/users...` |
-| tenant-scoped `credentials` CRUD + HEAD | `credential/list`, `credential/get`, `credential/create`, `credential/update`, `credential/delete`, `credential/exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/credentials...`; `includeSecrets` opt-in |
-| `buckets` CRUD + HEAD | `bucket/list`, `bucket/get`, `bucket/create`, `bucket/delete`, `bucket/exists` | Mapped | |
-| `bucket objects` list/put/delete/metadata/download/upload | `bucket/object/put`, `bucket/object/list`, `bucket/object/metadata`, `bucket/object/delete`, `bucket/object/download`, `bucket/object/upload` | Mapped | Binary transfers use base64 |
-| `collections` CRUD + HEAD + distinct metadata | `collection/list`, `collection/get`, `collection/create`, `collection/update`, `collection/delete`, `collection/exists`, `collection/labels/distinct`, `collection/tags/distinct` | Mapped | |
-| `collection records` list/get/create/delete/batch-delete | `collection/record/list`, `collection/record/get`, `collection/record/create`, `collection/record/delete`, `collection/record/batch-delete` | Mapped | |
-| `collection search` | `collection/search` | Mapped | Marshals RecallDB search requests through AssistantHub |
-| `indices` CRUD + HEAD + labels/tags/custom metadata + top terms | `index/list`, `index/get`, `index/create`, `index/update`, `index/delete`, `index/exists`, `index/labels/update`, `index/tags/update`, `index/custom-metadata/update`, `index/terms/top` | Mapped | Marshals Verbex index requests through AssistantHub |
-| `index records` list/get/create/batch-create/delete/batch-delete/HEAD/metadata | `index/record/list`, `index/record/get`, `index/record/create`, `index/record/create-batch`, `index/record/delete`, `index/record/batch-delete`, `index/record/exists`, `index/record/exists-batch`, `index/record/labels/update`, `index/record/tags/update`, `index/record/custom-metadata/update` | Mapped | AssistantHub uses `records`; Verbex upstream uses `documents` |
-| `index search` | `index/search` | Mapped | Marshals Verbex search requests through AssistantHub |
-| `assistants` CRUD + HEAD | `assistant/list`, `assistant/get`, `assistant/create`, `assistant/update`, `assistant/delete`, `assistant/exists` | Mapped | |
-| `assistant settings` get/update/slack verify + tool policy helpers | `assistant/settings/get`, `assistant/settings/update`, `assistant/settings/slack/verify`, `assistant/settings/tools/list`, `assistant/settings/tools/validate`, `assistant/settings/tools/test` | Mapped | `includeSecrets` opt-in; tool validation and dry-run diagnostics return redacted policy results and stable `ErrorCodes` by default |
-| `assistant analytics` overview/timeseries/stages/endpoints/slowest/feedback | `assistantanalytics/overview`, `assistantanalytics/timeseries`, `assistantanalytics/stages`, `assistantanalytics/endpoints`, `assistantanalytics/slowest`, `assistantanalytics/feedback` | Mapped | Uses `assistantId` plus optional `AssistantAnalyticsQuery` JSON |
-| `assistant tool-call traces` list/get/delete/bulk delete | `assistant/tool-calls/list`, `assistant/tool-calls/get`, `assistant/tool-calls/delete`, `assistant/tool-calls/delete-bulk` | Mapped | Redacted trace records only; supports `EnumerationQuery` filters for trace, tool, success, denied, chat-history, request-history, and time fields |
-| `assistant public info + public documents + labels/tags` | `assistant/public/get`, `assistant/documents/list`, `assistant/labels/distinct`, `assistant/tags/distinct` | Mapped | Public metadata only; document list supports `queryJson`, text `query`, and `contentType` filters |
-| `documents` list/get/upload/delete/HEAD/log/download/bulk-delete/reindex | `document/list`, `document/get`, `document/upload`, `document/delete`, `document/exists`, `document/processing-log`, `document/download`, `document/bulk-delete`, `document/reindex`, `document/reindex-batch` | Mapped | Binary transfers use base64; reindex tools backfill Verbex |
-| `ingestion-rules` CRUD + HEAD | `ingestionrule/list`, `ingestionrule/get`, `ingestionrule/create`, `ingestionrule/update`, `ingestionrule/delete`, `ingestionrule/exists` | Mapped | |
-| `feedback` list/get/delete | `feedback/list`, `feedback/get`, `feedback/delete` | Mapped | |
-| `history` list/get/delete | `history/list`, `history/get`, `history/delete` | Mapped | |
-| `threads` list/get/create/delete | `thread/list`, `thread/get`, `thread/create`, `thread/delete` | Mapped | |
-| `requesthistory` list/summary/get/detail/delete/bulk-delete | `requesthistory/list`, `requesthistory/summary`, `requesthistory/get`, `requesthistory/detail`, `requesthistory/delete`, `requesthistory/bulk-delete` | Mapped | |
-| `embedding endpoints` CRUD + HEAD + health + test | `embeddingendpoint/list`, `embeddingendpoint/get`, `embeddingendpoint/create`, `embeddingendpoint/update`, `embeddingendpoint/delete`, `embeddingendpoint/exists`, `embeddingendpoint/health`, `embeddingendpoint/test` | Mapped | Create/update accept the same body as REST, including the `MaxConcurrentRequests`, `MaxQueueDepth`, and `MaximumTimeoutMs` passthrough fields |
+| `GET /`, `HEAD /`, `GET /openapi.json`, `GET /v1.0/openapi.json`, `GET /v1.0/whoami` | `system_health`, `system_openapi`, `system_whoami` | Mapped | Health/head collapse into `system_health`; both OpenAPI routes return the same document |
+| `GET /swagger` | None | Deferred | Browser Swagger UI; use `system_openapi` for the OpenAPI JSON from MCP |
+| `POST /v1.0/authenticate` | `auth_authenticate` | Mapped | Useful for diagnosing upstream auth |
+| `tenants` CRUD + HEAD | `tenant_list`, `tenant_get`, `tenant_create`, `tenant_update`, `tenant_delete`, `tenant_exists` | Mapped | |
+| tenant-scoped `users` CRUD + HEAD | `user_list`, `user_get`, `user_create`, `user_update`, `user_delete`, `user_exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/users...` |
+| tenant-scoped `credentials` CRUD + HEAD | `credential_list`, `credential_get`, `credential_create`, `credential_update`, `credential_delete`, `credential_exists` | Mapped | REST path is `/v1.0/tenants/{tenantId}/credentials...`; `includeSecrets` opt-in |
+| `buckets` CRUD + HEAD | `bucket_list`, `bucket_get`, `bucket_create`, `bucket_delete`, `bucket_exists` | Mapped | |
+| `bucket objects` list/put/delete/metadata/download/upload | `bucket_object_put`, `bucket_object_list`, `bucket_object_metadata`, `bucket_object_delete`, `bucket_object_download`, `bucket_object_upload` | Mapped | Binary transfers use base64 |
+| `collections` CRUD + HEAD + distinct metadata | `collection_list`, `collection_get`, `collection_create`, `collection_update`, `collection_delete`, `collection_exists`, `collection_labels_distinct`, `collection_tags_distinct` | Mapped | |
+| `collection records` list/get/create/delete/batch-delete | `collection_record_list`, `collection_record_get`, `collection_record_create`, `collection_record_delete`, `collection_record_batch-delete` | Mapped | |
+| `collection search` | `collection_search` | Mapped | Marshals RecallDB search requests through AssistantHub |
+| `indices` CRUD + HEAD + labels/tags/custom metadata + top terms | `index_list`, `index_get`, `index_create`, `index_update`, `index_delete`, `index_exists`, `index_labels_update`, `index_tags_update`, `index_custom-metadata_update`, `index_terms_top` | Mapped | Marshals Verbex index requests through AssistantHub |
+| `index records` list/get/create/batch-create/delete/batch-delete/HEAD/metadata | `index_record_list`, `index_record_get`, `index_record_create`, `index_record_create-batch`, `index_record_delete`, `index_record_batch-delete`, `index_record_exists`, `index_record_exists-batch`, `index_record_labels_update`, `index_record_tags_update`, `index_record_custom-metadata_update` | Mapped | AssistantHub uses `records`; Verbex upstream uses `documents` |
+| `index search` | `index_search` | Mapped | Marshals Verbex search requests through AssistantHub |
+| `assistants` CRUD + HEAD | `assistant_list`, `assistant_get`, `assistant_create`, `assistant_update`, `assistant_delete`, `assistant_exists` | Mapped | |
+| `assistant settings` get/update/slack verify + tool policy helpers | `assistant_settings_get`, `assistant_settings_update`, `assistant_settings_slack_verify`, `assistant_settings_tools_list`, `assistant_settings_tools_validate`, `assistant_settings_tools_test` | Mapped | `includeSecrets` opt-in; tool validation and dry-run diagnostics return redacted policy results and stable `ErrorCodes` by default |
+| `assistant analytics` overview/timeseries/stages/endpoints/slowest/feedback | `assistantanalytics_overview`, `assistantanalytics_timeseries`, `assistantanalytics_stages`, `assistantanalytics_endpoints`, `assistantanalytics_slowest`, `assistantanalytics_feedback` | Mapped | Uses `assistantId` plus optional `AssistantAnalyticsQuery` JSON |
+| `assistant tool-call traces` list/get/delete/bulk delete | `assistant_tool-calls_list`, `assistant_tool-calls_get`, `assistant_tool-calls_delete`, `assistant_tool-calls_delete-bulk` | Mapped | Redacted trace records only; supports `EnumerationQuery` filters for trace, tool, success, denied, chat-history, request-history, and time fields |
+| `assistant public info + public documents + labels/tags` | `assistant_public_get`, `assistant_documents_list`, `assistant_labels_distinct`, `assistant_tags_distinct` | Mapped | Public metadata only; document list supports `queryJson`, text `query`, and `contentType` filters |
+| `documents` list/get/upload/delete/HEAD/log/download/bulk-delete/reindex | `document_list`, `document_get`, `document_upload`, `document_delete`, `document_exists`, `document_processing-log`, `document_download`, `document_bulk-delete`, `document_reindex`, `document_reindex-batch` | Mapped | Binary transfers use base64; reindex tools backfill Verbex |
+| `ingestion-rules` CRUD + HEAD | `ingestionrule_list`, `ingestionrule_get`, `ingestionrule_create`, `ingestionrule_update`, `ingestionrule_delete`, `ingestionrule_exists` | Mapped | |
+| `feedback` list/get/delete | `feedback_list`, `feedback_get`, `feedback_delete` | Mapped | |
+| `history` list/get/delete | `history_list`, `history_get`, `history_delete` | Mapped | |
+| `threads` list/get/create/delete | `thread_list`, `thread_get`, `thread_create`, `thread_delete` | Mapped | |
+| `requesthistory` list/summary/get/detail/delete/bulk-delete | `requesthistory_list`, `requesthistory_summary`, `requesthistory_get`, `requesthistory_detail`, `requesthistory_delete`, `requesthistory_bulk-delete` | Mapped | |
+| `embedding endpoints` CRUD + HEAD + health + test | `embeddingendpoint_list`, `embeddingendpoint_get`, `embeddingendpoint_create`, `embeddingendpoint_update`, `embeddingendpoint_delete`, `embeddingendpoint_exists`, `embeddingendpoint_health`, `embeddingendpoint_test` | Mapped | Create/update accept the same body as REST, including the `MaxConcurrentRequests`, `MaxQueueDepth`, and `MaximumTimeoutMs` passthrough fields |
 | `embedding endpoint load` | None | Deferred | Use REST `POST /v1.0/endpoints/embedding/{endpointId}/load` |
-| `completion endpoints` CRUD + HEAD + health + test | `completionendpoint/list`, `completionendpoint/get`, `completionendpoint/create`, `completionendpoint/update`, `completionendpoint/delete`, `completionendpoint/exists`, `completionendpoint/health`, `completionendpoint/test` | Mapped | Create/update accept the same body as REST, including the `MaxConcurrentRequests`, `MaxQueueDepth`, and `MaximumTimeoutMs` passthrough fields |
+| `completion endpoints` CRUD + HEAD + health + test | `completionendpoint_list`, `completionendpoint_get`, `completionendpoint_create`, `completionendpoint_update`, `completionendpoint_delete`, `completionendpoint_exists`, `completionendpoint_health`, `completionendpoint_test` | Mapped | Create/update accept the same body as REST, including the `MaxConcurrentRequests`, `MaxQueueDepth`, and `MaximumTimeoutMs` passthrough fields |
 | `completion endpoint load` | None | Deferred | Use REST `POST /v1.0/endpoints/completion/{endpointId}/load` |
-| `models` list/pull/pull-status/delete | `model/list`, `model/pull`, `model/pull/status`, `model/delete` | Mapped | |
-| `crawlplans` CRUD + HEAD + start/stop/connectivity/enumerate | `crawlplan/list`, `crawlplan/get`, `crawlplan/create`, `crawlplan/update`, `crawlplan/delete`, `crawlplan/exists`, `crawlplan/start`, `crawlplan/stop`, `crawlplan/connectivity`, `crawlplan/enumerate` | Mapped | |
+| `models` list/pull/pull-status/delete | `model_list`, `model_pull`, `model_pull_status`, `model_delete` | Mapped | |
+| `crawlplans` CRUD + HEAD + start/stop/connectivity/enumerate | `crawlplan_list`, `crawlplan_get`, `crawlplan_create`, `crawlplan_update`, `crawlplan_delete`, `crawlplan_exists`, `crawlplan_start`, `crawlplan_stop`, `crawlplan_connectivity`, `crawlplan_enumerate` | Mapped | |
 | `crawl plan draft connectivity` | None | Deferred | Use REST `POST /v1.0/crawlplans/connectivity` to test unsaved repository settings |
-| `crawl operations` list/get/delete/statistics/enumeration | `crawloperation/list`, `crawloperation/get`, `crawloperation/delete`, `crawloperation/statistics`, `crawloperation/enumeration` | Mapped | |
-| `eval facts` CRUD | `eval/fact/list`, `eval/fact/get`, `eval/fact/create`, `eval/fact/update`, `eval/fact/delete` | Mapped | |
-| `eval runs` create/list/get/delete/results | `eval/run/create`, `eval/run/list`, `eval/run/get`, `eval/run/delete`, `eval/run/results` | Mapped | |
-| `eval result` get + judge prompt | `eval/result/get`, `eval/judge-prompt/default` | Mapped | |
+| `crawl operations` list/get/delete/statistics/enumeration | `crawloperation_list`, `crawloperation_get`, `crawloperation_delete`, `crawloperation_statistics`, `crawloperation_enumeration` | Mapped | |
+| `eval facts` CRUD | `eval_fact_list`, `eval_fact_get`, `eval_fact_create`, `eval_fact_update`, `eval_fact_delete` | Mapped | |
+| `eval runs` create/list/get/delete/results | `eval_run_create`, `eval_run_list`, `eval_run_get`, `eval_run_delete`, `eval_run_results` | Mapped | |
+| `eval result` get + judge prompt | `eval_result_get`, `eval_judge-prompt_default` | Mapped | |
 | `eval stream` | None | Deferred | Use REST SSE endpoint |
-| `configuration` get/update | `configuration/get`, `configuration/update` | Mapped | `configuration/get` redacts by default |
+| `configuration` get/update | `configuration_get`, `configuration_update` | Mapped | `configuration_get` redacts by default |
 | Public assistant `chat/open`, `chat`, `generate`, `compact`, `feedback`, `documents/{id}/download` | None | Deferred | Use REST directly; public document listing is mapped above |
 
 ## Example Tool Calls
@@ -278,7 +278,7 @@ Get runtime OpenAPI from MCP:
 
 ```json
 {
-  "tool": "system/openapi",
+  "tool": "system_openapi",
   "arguments": {}
 }
 ```
@@ -287,7 +287,7 @@ Get redacted runtime configuration:
 
 ```json
 {
-  "tool": "configuration/get",
+  "tool": "configuration_get",
   "arguments": {}
 }
 ```
@@ -296,7 +296,7 @@ Create a credential and intentionally return the bearer token:
 
 ```json
 {
-  "tool": "credential/create",
+  "tool": "credential_create",
   "arguments": {
     "tenantId": "ten_123",
     "credentialJson": "{\"UserId\":\"usr_123\",\"Name\":\"Automation key\",\"Active\":true}",
@@ -309,7 +309,7 @@ Download a document through the MCP wrapper:
 
 ```json
 {
-  "tool": "document/download",
+  "tool": "document_download",
   "arguments": {
     "documentId": "adoc_123"
   }
@@ -320,7 +320,7 @@ Reindex one completed document into Verbex:
 
 ```json
 {
-  "tool": "document/reindex",
+  "tool": "document_reindex",
   "arguments": {
     "documentId": "adoc_123"
   }
@@ -331,7 +331,7 @@ Reindex a page of completed documents into Verbex:
 
 ```json
 {
-  "tool": "document/reindex-batch",
+  "tool": "document_reindex-batch",
   "arguments": {
     "requestJson": "{\"IncludeAlreadyIndexed\":false}",
     "queryJson": "{\"MaxResults\":50}"
@@ -343,7 +343,7 @@ Search the default Verbex text index:
 
 ```json
 {
-  "tool": "index/search",
+  "tool": "index_search",
   "arguments": {
     "indexId": "default",
     "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10,\"IncludeMatchedTerms\":true,\"IncludeTermDetails\":true,\"IncludeDocumentTermStats\":true}"
@@ -355,7 +355,7 @@ Search a RecallDB collection:
 
 ```json
 {
-  "tool": "collection/search",
+  "tool": "collection_search",
   "arguments": {
     "collectionId": "default",
     "requestJson": "{\"Query\":\"deployment reset\",\"MaxResults\":10}"

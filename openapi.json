@@ -3,7 +3,7 @@
   "info": {
     "title": "AssistantHub REST API",
     "description": "AssistantHub is a platform for building and managing AI assistants with RAG capabilities. It provides endpoints for managing users, credentials, assistants, documents, ingestion rules, embedding/completion endpoints, and chat interactions.",
-    "version": "0.17.1"
+    "version": "0.17.2"
   },
   "servers": [
     {
@@ -193,7 +193,7 @@
                     },
                     "Version": {
                       "type": "string",
-                      "example": "0.17.1"
+                      "example": "0.17.2"
                     },
                     "Timestamp": {
                       "type": "string",
@@ -203,7 +203,7 @@
                 },
                 "example": {
                   "Product": "AssistantHub",
-                  "Version": "0.17.1",
+                  "Version": "0.17.2",
                   "Timestamp": "2026-01-15T17:30:00Z"
                 }
               }
@@ -271,7 +271,7 @@
                   "info": {
                     "title": "AssistantHub REST API",
                     "description": "Runtime route surface for AssistantHub.",
-                    "version": "0.17.1"
+                    "version": "0.17.2"
                   },
                   "servers": [
                     {
@@ -25573,7 +25573,7 @@
                   "info": {
                     "title": "AssistantHub REST API",
                     "description": "Runtime route surface for AssistantHub.",
-                    "version": "0.17.1"
+                    "version": "0.17.2"
                   },
                   "servers": [
                     {

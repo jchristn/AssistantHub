@@ -30,6 +30,10 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
+## New in v0.17.2
+
+- **Package updates** -- EasySlack 1.1.2 (more reliable Slack Socket Mode reconnects), Voltaic 2.2.1 and Timestamps 1.0.13.
+
 ## New in v0.17.1
 
 - **Package updates** -- Blobject 6.1.0, CrawlSharp 1.2.1, GitHubCrawler 1.2.0, Voltaic 2.2.0, Watson 7.2.2, EasySlack 1.1.1, SyslogLogging 2.3.1 and AWSSDK.S3 4.0.104.1.

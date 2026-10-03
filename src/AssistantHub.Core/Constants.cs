@@ -17,7 +17,7 @@ namespace AssistantHub.Core
         /// <summary>
         /// Product version.
         /// </summary>
-        public static string ProductVersion = "0.17.1";
+        public static string ProductVersion = "0.17.2";
 
         /// <summary>
         /// Logo.

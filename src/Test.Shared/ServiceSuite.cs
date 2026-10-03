@@ -8545,6 +8545,26 @@ namespace Test.Automated
                 AssertHelper.IsNull(text, "non tool-call event text");
             });
 
+            await ExecuteTestAsync("EasySlack SlackConnector: stop and dispose without start complete promptly", async () =>
+            {
+                EasySlack.SlackAuthMaterial auth = new EasySlack.SlackAuthMaterial("xoxb-test", "xapp-test");
+                EasySlack.SlackConnectorOptions options = new EasySlack.SlackConnectorOptions(auth)
+                {
+                    AutoReconnect = true
+                };
+
+                EasySlack.SlackConnector connector = new EasySlack.SlackConnector(options);
+                Task shutdown = Task.Run(async () =>
+                {
+                    await connector.StopAsync(CancellationToken.None).ConfigureAwait(false);
+                    await connector.DisposeAsync().ConfigureAwait(false);
+                });
+
+                Task finished = await Task.WhenAny(shutdown, Task.Delay(5000)).ConfigureAwait(false);
+                AssertHelper.IsTrue(finished == shutdown, "stop and dispose should complete within 5 seconds");
+                await shutdown.ConfigureAwait(false);
+            });
+
             await ExecuteTestAsync("EndpointConcurrencyLimiter: max one serializes same endpoint", async () =>
             {
                 string key = "completion:test_" + Guid.NewGuid().ToString("N");

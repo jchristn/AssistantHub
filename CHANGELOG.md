@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.2
+
+### Changed
+- **Package updates**: EasySlack 1.1.2, Voltaic 2.2.1 and Timestamps 1.0.13. EasySlack 1.1.2 fixes automatic reconnects: it runs one receive loop per connection, retries a failed reconnect with backoff, and cancels a pending reconnect when the connector is stopped. Voltaic 2.2.1 updates only its dependencies, with no API or behavior changes.
+
+### Added
+- A Service suite test that checks a Slack connector with `AutoReconnect` stops and disposes promptly without having been started.
+
 ## 0.17.1
 
 ### Changed

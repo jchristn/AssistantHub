@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>AssistantHub.Core</Title>
-    <Version>0.17.1</Version>
+    <Version>0.17.2</Version>
     <Authors>Joel Christner</Authors>
     <Description>AssistantHub core library including models, database, settings, services, and helpers.</Description>
     <Copyright>(c)2025 Joel Christner</Copyright>
@@ -40,7 +40,7 @@
   <ItemGroup>
     <PackageReference Include="PrettyId" Version="2.0.1" />
     <PackageReference Include="SyslogLogging" Version="2.3.1" />
-    <PackageReference Include="Timestamps" Version="1.0.12" />
+    <PackageReference Include="Timestamps" Version="1.0.13" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.104.1" />
     <PackageReference Include="Blobject.AmazonS3" Version="6.1.0" />
     <PackageReference Include="Blobject.AzureBlob" Version="6.1.0" />

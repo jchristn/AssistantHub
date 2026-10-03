@@ -30,6 +30,12 @@ AssistantHub ships as a fully orchestrated Docker Compose stack -- one command b
 
 ---
 
+## New in v0.17.1
+
+- **Package updates** -- Blobject 6.1.0, CrawlSharp 1.2.1, GitHubCrawler 1.2.0, Voltaic 2.2.0, Watson 7.2.2, EasySlack 1.1.1, SyslogLogging 2.3.1 and AWSSDK.S3 4.0.104.1.
+- **Clearer GitHub crawl errors** -- Missing repositories, rate limits (with the reset time) and refused tokens are recognized from GitHubCrawler's exception types.
+- **Shell build scripts** -- `build-all.sh`, `build-server.sh`, `build-mcp.sh` and `build-dashboard.sh` alongside the `.bat` scripts.
+
 ## New in v0.17.0
 
 - **More crawl sources** -- Crawl plans can read Amazon S3 and S3-compatible stores, Azure Blob Storage, Google Cloud Storage, folders on the server (limited to `Crawl.AllowedLocalPaths`) and GitHub repositories, alongside web, CIFS and NFS. The dashboard form explains how to write each location and warns about common mistakes.
@@ -728,7 +734,7 @@ cd src/AssistantHub.McpServer/bin/Debug/net10.0
 
 Docker assets are included for the MCP server:
 
-- image build script: [`build-mcp.bat`](build-mcp.bat)
+- image build scripts: [`build-mcp.sh`](build-mcp.sh) and [`build-mcp.bat`](build-mcp.bat)
 - Dockerfile: [`src/AssistantHub.McpServer/Dockerfile`](src/AssistantHub.McpServer/Dockerfile)
 - compose config: [`docker/assistanthub-mcp/assistanthub-mcp.json`](docker/assistanthub-mcp/assistanthub-mcp.json)
 

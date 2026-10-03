@@ -244,6 +244,11 @@ namespace Test.Automated
                 CrawlConnectivityResult limited = await CrawlGitConnectivityAsync(new GitCrawlRepositorySettings { GitRepositoryUrl = "https://github.com/acme/limited" }, github).ConfigureAwait(false);
                 AssertHelper.IsFalse(limited.Success, "rate-limited request fails");
                 AssertHelper.StringContains(limited.Message, "Add an access token", "rate limit guidance");
+                AssertHelper.StringContains(limited.Message, "The limit resets at 2026-01-01 00:00:00 UTC", "rate limit reset time from X-RateLimit-Reset");
+
+                CrawlConnectivityResult revoked = await CrawlGitConnectivityAsync(new GitCrawlRepositorySettings { GitRepositoryUrl = "https://github.com/acme/revoked", GitAccessToken = "ghp_revoked" }, github).ConfigureAwait(false);
+                AssertHelper.IsFalse(revoked.Success, "refused token fails");
+                AssertHelper.StringContains(revoked.Message, "The access token was refused", "refused token guidance from the 401 status code");
             });
 
             await ExecuteTestAsync("S3 crawler: connectivity and enumeration against an in-process S3 endpoint", async () =>
@@ -345,7 +350,8 @@ namespace Test.Automated
 
         /// <summary>
         /// Emulates the GitHub contents API and raw.githubusercontent.com for acme/handbook; acme/missing returns 404
-        /// and acme/limited 403 (rate limit). GitHubRepoCrawler disposes its handler, so this one ignores Dispose.
+        /// acme/limited 403 (rate limit, with X-RateLimit-Reset)
+        /// and acme/revoked 401 (refused token). GitHubRepoCrawler disposes its handler, so this one ignores Dispose.
         /// </summary>
         private sealed class FakeGitHub : HttpMessageHandler
         {
@@ -368,7 +374,8 @@ namespace Test.Automated
                 if (host == "api.github.com")
                 {
                     if (path.StartsWith("/repos/acme/missing/", StringComparison.Ordinal)) return Respond(request, HttpStatusCode.NotFound, "{\"message\":\"Not Found\"}", "application/json");
-                    if (path.StartsWith("/repos/acme/limited/", StringComparison.Ordinal)) return Respond(request, HttpStatusCode.Forbidden, "{\"message\":\"API rate limit exceeded\"}", "application/json");
+                    if (path.StartsWith("/repos/acme/limited/", StringComparison.Ordinal)) return RespondRateLimited(request);
+                    if (path.StartsWith("/repos/acme/revoked/", StringComparison.Ordinal)) return Respond(request, HttpStatusCode.Unauthorized, "{\"message\":\"Bad credentials\"}", "application/json");
                     if (path == "/repos/acme/handbook/contents/" || path == "/repos/acme/handbook/contents")
                         return Respond(request, HttpStatusCode.OK,
                             "[" + File("README.md", "README.md") + "," + Folder("docs") + "]", "application/json");
@@ -398,6 +405,14 @@ namespace Test.Automated
             private static string Folder(string path)
             {
                 return "{\"name\":\"" + path + "\",\"path\":\"" + path + "\",\"type\":\"dir\",\"download_url\":null}";
+            }
+
+            private static async Task<HttpResponseMessage> RespondRateLimited(HttpRequestMessage request)
+            {
+                HttpResponseMessage response = await Respond(request, HttpStatusCode.Forbidden, "{\"message\":\"API rate limit exceeded\"}", "application/json").ConfigureAwait(false);
+                response.Headers.Add("X-RateLimit-Remaining", "0");
+                response.Headers.Add("X-RateLimit-Reset", new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds().ToString());
+                return response;
             }
 
             private static Task<HttpResponseMessage> Respond(HttpRequestMessage request, HttpStatusCode status, string body, string contentType)

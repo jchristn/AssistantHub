@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.17.1
+
+### Changed
+- **Package updates**: AWSSDK.S3 4.0.104.1, Blobject 6.1.0 (`Blobject.AmazonS3`, `AzureBlob`, `CIFS`, `Core`, `Disk`, `GoogleCloud`, `NFS`), CrawlSharp 1.2.1, GitHubCrawler 1.2.0, SyslogLogging 2.3.1, EasySlack 1.1.1, Watson 7.2.2 and Voltaic 2.2.0; tests use Touchstone 0.2.0 and OpenNFS.Server 0.2.0. EasySlack 1.1.1 fixes Slack Socket Mode reconnects, Watson 7.2.2 returns 403 instead of 500 for access-control denials, and CrawlSharp 1.2.1 no longer sends W3C trace context headers to crawled sites.
+- **Git crawl failure messages use GitHubCrawler's exception types**: a missing repository (`GitHubRepositoryNotFoundException`), a rate limit (`GitHubRateLimitException`) and a refused token (HTTP 401) are recognized from the exception rather than its message text, and a rate-limit message now says when the limit resets.
+- `NuGet.config` lists only nuget.org; the Windows-only local Touchstone sources broke restore on other platforms.
+- Added `build-all.sh`, `build-server.sh`, `build-mcp.sh` and `build-dashboard.sh`, matching the `.bat` scripts.
+
+### Fixed
+- The CIFS crawler test is skipped where .NET has no AES-CCM (macOS), instead of failing the Service suite.
+
 ## 0.17.0
 
 ### Added

@@ -28,6 +28,13 @@ namespace Test.Automated
         {
             await ExecuteTestAsync("CIFS crawler: connectivity, enumeration and a rejected logon against an OpenCIFS server", async () =>
             {
+                // SMB 3 signing and encryption use AES-CCM, which .NET does not provide on macOS.
+                if (!System.Security.Cryptography.AesCcm.IsSupported)
+                {
+                    Console.WriteLine("  AES-CCM unavailable on this platform; skipping the OpenCIFS crawl");
+                    return;
+                }
+
                 string root = CreateSampleShare("ah-cifs");
                 int port = GetFreePort();
                 OpenCifsServerApplication server = new OpenCifsServerBuilder()

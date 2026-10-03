@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Title>AssistantHub.Server</Title>
-    <Version>0.17.0</Version>
+    <Version>0.17.1</Version>
     <Authors>Joel Christner</Authors>
     <Description>AssistantHub REST API server.</Description>
     <Copyright>(c)2025 Joel Christner</Copyright>
@@ -32,9 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EasySlack" Version="1.0.1" />
+    <PackageReference Include="EasySlack" Version="1.1.1" />
     <PackageReference Include="Radiant" Version="0.1.2" />
-    <PackageReference Include="Watson" Version="7.2.1" />
+    <PackageReference Include="Watson" Version="7.2.2" />
   </ItemGroup>
 
 </Project>

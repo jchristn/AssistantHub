@@ -6,6 +6,7 @@ namespace AssistantHub.Core.Services.Crawlers
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Runtime.CompilerServices;
     using System.Security.Cryptography;
@@ -328,19 +329,24 @@ namespace AssistantHub.Core.Services.Crawlers
         {
             string message = "Could not read GitHub repository '" + name + "': " + e.Message;
             string text = e.Message ?? "";
-            if (text.IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0)
+            HttpStatusCode? status = (e as GitHubCrawlerException)?.StatusCode;
+            if (e is GitHubRepositoryNotFoundException || text.IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 message += String.IsNullOrWhiteSpace(_Settings.GitAccessToken)
                     ? ". Check the owner and repository name. A private repository needs an access token with read access to its contents."
                     : ". Check the owner and repository name, and that the access token can read this repository (for a fine-grained token, Contents: Read-only on this repository).";
             }
-            else if (text.IndexOf("rate limit", StringComparison.OrdinalIgnoreCase) >= 0)
+            else if (e is GitHubRateLimitException || text.IndexOf("rate limit", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 message += String.IsNullOrWhiteSpace(_Settings.GitAccessToken)
                     ? " Add an access token: GitHub allows 60 unauthenticated API requests an hour from this server's address."
                     : " The token's hourly limit (5,000 requests) is used up, or the token was refused; wait an hour or use another token.";
+                DateTimeOffset? reset = (e as GitHubRateLimitException)?.RateLimitReset;
+                if (reset != null) message += " The limit resets at " + reset.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss") + " UTC.";
             }
-            else if (text.IndexOf("unauthorized", StringComparison.OrdinalIgnoreCase) >= 0 || text.IndexOf("401", StringComparison.Ordinal) >= 0)
+            else if (status == HttpStatusCode.Unauthorized
+                || text.IndexOf("unauthorized", StringComparison.OrdinalIgnoreCase) >= 0
+                || text.IndexOf("401", StringComparison.Ordinal) >= 0)
             {
                 message += ". The access token was refused; it may be expired or revoked.";
             }

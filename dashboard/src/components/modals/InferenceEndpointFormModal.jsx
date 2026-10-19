@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Tooltip from '../Tooltip';
-import PasswordInput from '../PasswordInput';
+import EndpointConnectionFields from './EndpointConnectionFields';
 import {
   API_FORMAT_OPTIONS,
   HEALTH_CHECK_METHOD_OPTIONS,
   getApiFormatDefaults,
+  getEndpointProviderFields,
+  resolveProviderEndpoint,
   getDefaultEndpoint,
   getDefaultHealthCheckUrl,
   getDefaultModel,
@@ -91,7 +93,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
   const isEdit = !!endpoint;
   const source = endpoint || initialData;
   const initialApiFormat = getSourceText(source, 'ApiFormat', 'apiFormat') || 'Ollama';
-  const initialEndpoint = getSourceText(source, 'Endpoint', 'endpoint');
+  const initialEndpoint = resolveProviderEndpoint(initialApiFormat, getSourceText(source, 'Endpoint', 'endpoint'));
   const initialLabels = getSourceLabels(source);
   const initialTags = getSourceTags(source);
   const initialDefaults = getApiFormatDefaults(initialApiFormat, initialEndpoint || getDefaultEndpoint(initialApiFormat));
@@ -127,6 +129,8 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
   });
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const providerFields = getEndpointProviderFields(form.ApiFormat);
   // The health check URL auto-follows the endpoint until the user edits it manually.
   const [healthCheckUrlTouched, setHealthCheckUrlTouched] = useState(
     !isDefaultHealthCheckUrl(
@@ -136,14 +140,16 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
     )
   );
   const handleChange = (field, value) => {
+    setError('');
     if (field === 'HealthCheckUrl') setHealthCheckUrlTouched(true);
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       if (field === 'ApiFormat') {
         const oldDefaults = getApiFormatDefaults(prev.ApiFormat, prev.Endpoint || getDefaultEndpoint(prev.ApiFormat));
-        const nextEndpoint = !prev.Endpoint || prev.Endpoint === getDefaultEndpoint(prev.ApiFormat)
-          ? getDefaultEndpoint(value)
-          : prev.Endpoint;
+        const nextEndpoint = resolveProviderEndpoint(value,
+          !prev.Endpoint || prev.Endpoint === getDefaultEndpoint(prev.ApiFormat)
+            ? getDefaultEndpoint(value)
+            : prev.Endpoint);
         const newDefaults = getApiFormatDefaults(value, nextEndpoint);
         const oldDefaultModel = getDefaultModel(prev.ApiFormat, 'inference');
         const newDefaultModel = getDefaultModel(value, 'inference');
@@ -183,16 +189,17 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (['OllamaCloud', 'xAI'].includes(form.ApiFormat) && !form.ApiKey?.trim()) {
-      setError('An API key is required for this cloud provider.');
+    if (providerFields.credentialRequired && !form.ApiKey?.trim()) {
+      setError(`${providerFields.credentialLabel} is required for ${form.ApiFormat}.`);
       return;
     }
+    setError('');
     setSaving(true);
     try {
       const data = {
         Name: form.Name,
         Model: form.Model,
-        Endpoint: form.Endpoint,
+        Endpoint: resolveProviderEndpoint(form.ApiFormat, form.Endpoint),
         ApiFormat: form.ApiFormat,
         ApiKey: form.ApiKey,
         Active: form.Active,
@@ -220,6 +227,8 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
       };
       if (isEdit && endpoint.GUID) data.GUID = endpoint.GUID;
       await onSave(data);
+    } catch (err) {
+      setError(err.message || 'Unable to save endpoint.');
     } finally {
       setSaving(false);
     }
@@ -236,7 +245,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={saving || !form.Model.trim() || !form.Endpoint.trim() || !form.ApiFormat || healthCheckUrlInvalid}
+            disabled={saving || !form.Model.trim() || !form.Endpoint.trim() || !form.ApiFormat || healthCheckUrlInvalid || (providerFields.credentialRequired && !form.ApiKey?.trim())}
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -244,6 +253,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
       }
     >
       <form onSubmit={handleSubmit}>
+        {error && <div style={{ color: 'var(--danger-color)' }} role="alert">{error}</div>}
         {/* General */}
         <div className="form-section">
           <div className="form-section-title">General</div>
@@ -274,9 +284,10 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
 
             <div className="form-group">
-              <label><Tooltip text="Name of the language model to use for inference (e.g. llama3, gpt-4o-mini, gemini-2.5-flash)">Model</Tooltip></label>
+              <label><Tooltip text={providerFields.inferenceModelPlaceholder}>Model</Tooltip></label>
               <input
                 type="text"
+                placeholder={providerFields.inferenceModelPlaceholder}
                 value={form.Model}
                 onChange={(e) => handleChange('Model', e.target.value)}
                 required
@@ -284,24 +295,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
             </div>
           </div>
 
-          <div className="form-group">
-            <label><Tooltip text="Base URL of the inference API server (e.g. http://ollama:11434 or https://generativelanguage.googleapis.com)">Endpoint</Tooltip></label>
-            <input
-              type="text"
-              value={form.Endpoint}
-              onChange={(e) => handleChange('Endpoint', e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Tooltip text="API key (required for Ollama Cloud and xAI) for authenticating with the inference endpoint">API Key</Tooltip></label>
-            <PasswordInput
-              value={form.ApiKey}
-              onChange={(e) => handleChange('ApiKey', e.target.value)}
-              placeholder={['OllamaCloud', 'xAI'].includes(form.ApiFormat) ? 'Required' : 'Optional'}
-            />
-          </div>
+          <EndpointConnectionFields form={form} onChange={handleChange} />
         </div>
 
         {/* Request Handling */}
@@ -568,7 +562,7 @@ function InferenceEndpointFormModal({ endpoint, initialData, onSave, onClose }) 
                 />
                 <span className="toggle-slider"></span>
               </label>
-              <span><Tooltip text="Include API key authentication in health check requests">Use Auth for Health Check</Tooltip></span>
+              <span><Tooltip text={`Authenticate health checks using the configured ${providerFields.credentialLabel.toLowerCase()}.`}>Use Auth for Health Check</Tooltip></span>
             </div>
           </div>
         </div>

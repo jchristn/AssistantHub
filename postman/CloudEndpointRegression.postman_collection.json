@@ -1,0 +1,206 @@
+{
+  "info": {
+    "name": "Cloud endpoint format regression",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18400"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "create completion cloud endpoint",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"Cloud endpoint regression\",\n  \"Model\": \"cloud-regression-model\",\n  \"Endpoint\": \"https://ollama.com\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"Labels\": [],\n  \"Tags\": {},\n  \"HealthCheckEnabled\": false,\n  \"HealthCheckUrl\": \"https://ollama.com/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": true,\n  \"ApiKey\": \"dummy-regression-token\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));",
+              "const endpoint = pm.response.json();",
+              "pm.test(\"Cloud API format preserved\", () => pm.expect(endpoint.ApiFormat).to.eql(\"OllamaCloud\"));",
+              "pm.test(\"Cloud host fixed\", () => pm.expect(endpoint.Endpoint).to.eql(\"https://ollama.com\"));",
+              "pm.test(\"Health authentication enabled\", () => pm.expect(endpoint.HealthCheckUseAuth).to.eql(true));",
+              "pm.collectionVariables.set(\"completionId\", endpoint.Id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "update completion cloud endpoint",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{completionId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"Cloud endpoint regression\",\n  \"Model\": \"cloud-regression-model\",\n  \"Endpoint\": \"https://ollama.com\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"Labels\": [],\n  \"Tags\": {},\n  \"HealthCheckEnabled\": false,\n  \"HealthCheckUrl\": \"https://ollama.com/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": true,\n  \"ApiKey\": \"dummy-regression-token\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));",
+              "const endpoint = pm.response.json();",
+              "pm.test(\"Cloud API format preserved\", () => pm.expect(endpoint.ApiFormat).to.eql(\"OllamaCloud\"));",
+              "pm.test(\"Cloud host fixed\", () => pm.expect(endpoint.Endpoint).to.eql(\"https://ollama.com\"));",
+              "pm.test(\"Health authentication enabled\", () => pm.expect(endpoint.HealthCheckUseAuth).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete completion cloud endpoint",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/completion/{{completionId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "create embedding cloud endpoint",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"Cloud endpoint regression\",\n  \"Model\": \"cloud-regression-model\",\n  \"Endpoint\": \"https://ollama.com\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"Labels\": [],\n  \"Tags\": {},\n  \"HealthCheckEnabled\": false,\n  \"HealthCheckUrl\": \"https://ollama.com/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": true,\n  \"ApiKey\": \"dummy-regression-token\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));",
+              "const endpoint = pm.response.json();",
+              "pm.test(\"Cloud API format preserved\", () => pm.expect(endpoint.ApiFormat).to.eql(\"OllamaCloud\"));",
+              "pm.test(\"Cloud host fixed\", () => pm.expect(endpoint.Endpoint).to.eql(\"https://ollama.com\"));",
+              "pm.test(\"Health authentication enabled\", () => pm.expect(endpoint.HealthCheckUseAuth).to.eql(true));",
+              "pm.collectionVariables.set(\"embeddingId\", endpoint.Id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "update embedding cloud endpoint",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{embeddingId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Name\": \"Cloud endpoint regression\",\n  \"Model\": \"cloud-regression-model\",\n  \"Endpoint\": \"https://ollama.com\",\n  \"ApiFormat\": \"OllamaCloud\",\n  \"Active\": false,\n  \"Labels\": [],\n  \"Tags\": {},\n  \"HealthCheckEnabled\": false,\n  \"HealthCheckUrl\": \"https://ollama.com/api/tags\",\n  \"HealthCheckMethod\": \"GET\",\n  \"HealthCheckIntervalMs\": 30000,\n  \"HealthCheckTimeoutMs\": 10000,\n  \"HealthCheckExpectedStatusCode\": 200,\n  \"HealthyThreshold\": 2,\n  \"UnhealthyThreshold\": 2,\n  \"HealthCheckUseAuth\": true,\n  \"ApiKey\": \"dummy-regression-token\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));",
+              "const endpoint = pm.response.json();",
+              "pm.test(\"Cloud API format preserved\", () => pm.expect(endpoint.ApiFormat).to.eql(\"OllamaCloud\"));",
+              "pm.test(\"Cloud host fixed\", () => pm.expect(endpoint.Endpoint).to.eql(\"https://ollama.com\"));",
+              "pm.test(\"Health authentication enabled\", () => pm.expect(endpoint.HealthCheckUseAuth).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete embedding cloud endpoint",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/v1.0/endpoints/embedding/{{embeddingId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Endpoint request succeeds\", () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,8 @@ namespace AssistantHub.Core.Services
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
+    using System.Text.Json;
+    using AssistantHub.Core.Helpers;
     using System.Threading;
     using System.Threading.Tasks;
     using AssistantHub.Core.Settings;
@@ -51,7 +53,23 @@ namespace AssistantHub.Core.Services
                 timeout.CancelAfter(_Settings.RequestTimeoutMs);
                 try
                 {
-                    return await _HttpClient.SendAsync(request, timeout.Token).ConfigureAwait(false);
+                    HttpResponseMessage response = await _HttpClient.SendAsync(request, timeout.Token).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode && response.Content != null)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
+                        string compatibilityError = PartioEndpointCompatibility.GetVersionMismatchMessage(responseBody);
+                        if (compatibilityError != null)
+                        {
+                            response.Content.Dispose();
+                            response.StatusCode = System.Net.HttpStatusCode.BadGateway;
+                            response.Content = new StringContent(JsonSerializer.Serialize(new
+                            {
+                                Error = "PartioVersionMismatch",
+                                Message = compatibilityError
+                            }), Encoding.UTF8, "application/json");
+                        }
+                    }
+                    return response;
                 }
                 catch (OperationCanceledException) when (!token.IsCancellationRequested)
                 {

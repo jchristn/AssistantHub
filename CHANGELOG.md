@@ -2,6 +2,10 @@
 
 ## 0.17.2
 
+### Fixed
+- Inference and embedding create/edit forms now change connection fields by provider: Ollama Cloud uses a required Bearer Token and the fixed `https://ollama.com` endpoint; Gemini uses its API-key header, and other providers show their applicable credential and model guidance. Missing credentials disable saving, and validation/save errors render without an undefined `setError` call.
+- An outdated configured Partio service rejecting `OllamaCloud`/`xAI` now produces an actionable dependency-version error. Compose always refreshes the pinned Partio images; documented how to replace already-running containers.
+
 ### Changed
 - Pin Partio server/dashboard to v0.5.1 (PolyPrompt 3.4.0 provider clients), including the benchmark server image. Project/package versions remain unchanged.
 - **Package updates**: EasySlack 1.1.2, Voltaic 2.2.1 and Timestamps 1.0.13. EasySlack 1.1.2 fixes automatic reconnects: it runs one receive loop per connection, retries a failed reconnect with backoff, and cancels a pending reconnect when the connector is stopped. Voltaic 2.2.1 updates only its dependencies, with no API or behavior changes.

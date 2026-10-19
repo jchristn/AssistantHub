@@ -13,6 +13,16 @@ Set `ApiFormat` on managed endpoints, or `Inference.Provider` in system configur
 
 The Compose stack pins Partio server/dashboard to **v0.5.1**, which provides the **PolyPrompt 3.4.0** provider clients used for managed embeddings and completions. AssistantHub has no direct PolyPrompt package dependency.
 
+If endpoint creation reports `String value 'OllamaCloud' is not valid for enum type ApiFormatEnum`, the Partio service configured by `Chunking.Endpoint` is older than the required release. Rebuilding AssistantHub alone does not upgrade that running dependency. Refresh the deployed stack:
+
+```bash
+docker compose -f docker/compose.yaml pull partio-server partio-dashboard assistanthub-server assistanthub-dashboard assistanthub-mcp
+docker compose -f docker/compose.yaml up -d --force-recreate partio-server partio-dashboard assistanthub-server assistanthub-dashboard assistanthub-mcp
+```
+
+Partio services use `pull_policy: always`. For an external Partio installation, update the service at the configured `Chunking.Endpoint` instead. Ollama Cloud forms show a required **Bearer Token** and a fixed endpoint; other provider choices change the credential label, requirement, URL behavior, and model guidance.
+
+
 
 <p align="center">
   <img src="assets/logo-new-full.png" alt="AssistantHub Logo" width="192"><br>

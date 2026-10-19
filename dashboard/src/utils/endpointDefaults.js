@@ -168,3 +168,46 @@ export function getDefaultModel(apiFormat = 'Ollama', endpointType = 'inference'
 export function getDefaultToolCallingApiFormat(apiFormat) {
   return ['Ollama', 'OllamaCloud'].includes(apiFormat) ? 'OllamaChat' : 'OpenAIChatCompletions';
 }
+
+const PROVIDER_FIELDS = {
+  Ollama: {
+    credentialLabel: 'Bearer Token', credentialRequired: false,
+    credentialHelp: 'Optional bearer token for an authenticated Ollama server.',
+    endpointHelp: 'Base URL of your Ollama server.',
+    inferenceModelPlaceholder: 'e.g. gemma3:4b', embeddingModelPlaceholder: 'e.g. nomic-embed-text'
+  },
+  OllamaCloud: {
+    credentialLabel: 'Bearer Token', credentialRequired: true, fixedEndpoint: true,
+    credentialHelp: 'Ollama Cloud bearer token from ollama.com/settings/keys. Sent in the Authorization header.',
+    endpointHelp: 'Ollama Cloud always uses https://ollama.com.',
+    inferenceModelPlaceholder: 'Model available in your Ollama Cloud account', embeddingModelPlaceholder: 'Embedding model available in your Ollama Cloud account'
+  },
+  OpenAI: {
+    credentialLabel: 'API Key', credentialRequired: false,
+    credentialHelp: 'OpenAI API key, sent as a bearer token. Optional for compatible servers that do not require authentication.',
+    endpointHelp: 'OpenAI or compatible API base URL; a trailing /v1 is accepted.',
+    inferenceModelPlaceholder: 'e.g. gpt-4o-mini', embeddingModelPlaceholder: 'e.g. text-embedding-3-small'
+  },
+  xAI: {
+    credentialLabel: 'Bearer Token', credentialRequired: true,
+    credentialHelp: 'xAI API token from your xAI account. Sent in the Authorization header.',
+    endpointHelp: 'xAI API base URL; defaults to https://api.x.ai. A trailing /v1 is accepted.',
+    inferenceModelPlaceholder: 'Grok model available in your xAI account', embeddingModelPlaceholder: 'Embedding model available in your xAI account'
+  },
+  Gemini: {
+    credentialLabel: 'API Key', credentialRequired: true,
+    credentialHelp: 'Google Gemini API key. Sent in the x-goog-api-key header.',
+    endpointHelp: 'Google Gemini API base URL.',
+    inferenceModelPlaceholder: 'e.g. gemini-2.5-flash', embeddingModelPlaceholder: 'e.g. gemini-embedding-001'
+  }
+};
+
+export function getEndpointProviderFields(apiFormat = 'Ollama') {
+  return PROVIDER_FIELDS[apiFormat] || PROVIDER_FIELDS.Ollama;
+}
+
+export function resolveProviderEndpoint(apiFormat, endpoint) {
+  return getEndpointProviderFields(apiFormat).fixedEndpoint
+    ? getDefaultEndpoint(apiFormat)
+    : (endpoint || getDefaultEndpoint(apiFormat));
+}

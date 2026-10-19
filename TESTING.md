@@ -220,3 +220,21 @@ node --test dashboard/src/utils/endpointDefaults.test.js
 ```
 
 The local mock follows native Ollama `/api/tags` and `/api/chat`, and xAI's OpenAI-compatible `/v1/models` and `/v1/chat/completions` contracts. It requires a dummy bearer token and validates model/messages. Discovery and buffered/streamed chat run over real HTTP. This checks AssistantHub's transport against stand-ins; live provider accounts and model availability are not tested. An owner-provided mock was not searched because the Postman CLI is signed out.
+
+
+Endpoint modal regression rendering (20 create/edit/provider cases):
+
+```bash
+node --test dashboard/tests/endpointModals.test.mjs dashboard/src/utils/endpointDefaults.test.js
+```
+
+The cloud-format acceptance check must also target a real Partio v0.5.1 service: create and update both embedding and completion endpoints with `ApiFormat: "OllamaCloud"`, a dummy token, `Active: false`, and `HealthCheckEnabled: false`. These operations verify endpoint parsing and persistence without calling the cloud provider. Browser verification should switch providers in each create/edit modal, verify required-token/URL behavior, save against that Partio instance, and exercise a failed save.
+
+
+Run the saved create/update/delete checks against a disposable real Partio service (six requests, eighteen assertions):
+
+```bash
+postman collection run postman/CloudEndpointRegression.postman_collection.json --env-var baseUrl=http://127.0.0.1:18400 --env-var bearerToken=YOUR_DISPOSABLE_PARTIO_ADMIN_TOKEN --no-report-events
+```
+
+This collection uses an inactive test model and a dummy cloud token; it does not make model inference or cloud health-check requests. Use a disposable Partio database because it creates endpoint records before deleting them.

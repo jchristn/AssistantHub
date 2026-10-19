@@ -46,6 +46,20 @@ namespace Test.Automated
                 AssertHelper.AreEqual("https://api.x.ai/v1/chat/completions", InferenceProviderHelper.GetCompletionUrl("https://api.x.ai/v1/", InferenceProviderEnum.xAI, "grok-4", true), "xAI version normalized");
             });
 
+            await ExecuteTestAsync("Partio endpoint compatibility: legacy cloud enum rejection identifies deployment fix", async () =>
+            {
+                foreach (string provider in new[] { "OllamaCloud", "xAI" })
+                {
+                    string message = PartioEndpointCompatibility.GetVersionMismatchMessage("String value '" + provider + "' is not valid for enum type ApiFormatEnum");
+                    AssertHelper.StringContains(message, "v0.5.1", "required dependency");
+                    AssertHelper.IsNotNull(PartioEndpointCompatibility.GetVersionMismatchMessage(JsonSerializer.Serialize(new { Message = "String value '" + provider + "' is not valid for enum type ApiFormatEnum" })), "JSON-escaped provider error");
+                    AssertHelper.StringContains(message, "Chunking.Endpoint", "configured service");
+                    AssertHelper.StringContains(message, "recreate partio-server", "container refresh instruction");
+                }
+                AssertHelper.IsTrue(PartioEndpointCompatibility.GetVersionMismatchMessage("Invalid API key") == null, "auth failures preserved");
+                AssertHelper.IsTrue(PartioEndpointCompatibility.GetVersionMismatchMessage("String value 'Bogus' is not valid for enum type ApiFormatEnum") == null, "other format errors preserved");
+            });
+
             // ===== EnumTests =====
 
             await ExecuteTestAsync("Enum.DatabaseTypeEnum: all 4 values parse from string", async () =>
